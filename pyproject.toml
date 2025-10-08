@@ -50,6 +50,7 @@ line-length = 100
 target-version = "py310"
 select = ["E", "F", "I", "UP", "SIM"]
 ignore = ["E203", "E501"]
+exclude = ["scratch/"]
 
 [tool.ruff.format]
 quote-style = "double"

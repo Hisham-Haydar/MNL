@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mnl"
+version = "0.1.0"
+description = "Structural discrete-choice estimation tooling"
+authors = [{ name = "Your Name", email = "your.email@example.com" }]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "pyarrow>=14.0",
+    "scikit-learn>=1.4",
+    "statsmodels>=0.14",
+    "pylogit>=0.2.6",
+    "pyyaml>=6.0",
+    "tqdm>=4.65",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "ruff>=0.5",
+    "ipykernel>=6.29",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+]
+notebook = [
+    "jupyterlab>=4.2",
+    "jupyter-book>=0.15",
+]
+advanced = [
+    "biogeme>=3.2",
+    "pyblp>=0.12",
+]
+euromod = [
+    "euromod>=0.2",
+]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "I", "UP", "SIM"]
+ignore = ["E203", "E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+strict = false

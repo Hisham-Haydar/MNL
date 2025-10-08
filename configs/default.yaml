@@ -1,0 +1,18 @@
+data:
+  # Point to a processed or cleaned dataset ready for modelling
+  preprocessed_path: Data/processed/choice_panel.csv
+
+model:
+  choice_column: choice
+  individual_id_column: individual_id
+  alternative_id_column: alternative_id
+  weights_column:
+  features:
+    - price
+    - time
+    - distance
+
+output:
+  probabilities_path: outputs/probabilities.csv
+  model_summary_path: outputs/model_summary.txt
+

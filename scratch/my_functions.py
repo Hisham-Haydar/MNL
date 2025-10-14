@@ -283,13 +283,18 @@ def sum_nonhead_income(df: pd.DataFrame, income_col: str) -> pd.Series:
 
     Returns a Series indexed by household id (idhh) with summed income.
     """
-    if income_col not in df.columns:
-        raise KeyError(f"Column '{income_col}' not found in dataframe.")
+    required_columns = {"idhh", "hh_IsHead", income_col}
+    missing = required_columns - set(df.columns)
+    if missing:
+        raise KeyError(f"Missing required columns: {sorted(missing)}")
 
-    mask_non_head = df["hh_IsHead"] != 1
+    head_flags = pd.to_numeric(df["hh_IsHead"], errors="coerce").fillna(0)
+    non_head_mask = head_flags != 1
+    income_values = pd.to_numeric(df[income_col], errors="coerce")
+
     grouped = (
-        df.loc[mask_non_head]
-        .groupby("idhh")[income_col]
+        income_values.where(non_head_mask)
+        .groupby(df["idhh"])
         .sum(min_count=1)
     )
     return grouped

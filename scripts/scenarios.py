@@ -208,16 +208,63 @@ def _merge_simulation(
         merged['consumption'] = np.where(head_mask, 0.0, 0.0)
         return merged
 
-    other_income = sum_nonhead_income(merged, income_col)
-    merged['other_members_income'] = merged['idhh'].map(other_income).fillna(0.0)
-    merged.loc[~head_mask, 'other_members_income'] = 0.0
+    if 'idhh' not in merged.columns:
+        raise KeyError("Merged dataset must include 'idhh'.")
 
-    head_income = merged[income_col].fillna(0.0)
-    merged['consumption'] = np.where(
+    head_counts = (
+        pd.to_numeric(merged['hh_IsHead'], errors='coerce')
+        .fillna(0)
+        .groupby(merged['idhh'])
+        .sum(min_count=1)
+    )
+    multi_head_households = head_counts[head_counts != 1]
+    if not multi_head_households.empty:
+        raise AssertionError(
+            "Each household must have exactly one head to compute consumption. "
+            f"Problematic household ids: {tuple(multi_head_households.index)}"
+        )
+
+    income = merged[income_col].fillna(0.0)
+    household_income = (
+        merged.groupby('idhh')[income_col]
+        .transform('sum')
+        .fillna(0.0)
+    )
+
+    merged['other_members_income'] = np.where(
         head_mask,
-        head_income + merged['other_members_income'],
+        household_income - income,
         0.0,
     )
+    merged['consumption'] = np.where(
+        head_mask,
+        household_income,
+        0.0,
+    )
+
+    expected_other_income = (
+        merged['idhh']
+        .map(sum_nonhead_income(merged, income_col))
+        .fillna(0.0)
+    )
+    if not np.allclose(
+        merged.loc[head_mask, 'other_members_income'],
+        expected_other_income.loc[head_mask],
+        atol=1e-6,
+    ):
+        raise AssertionError(
+            "Computed other_members_income does not match summed non-head income."
+        )
+
+    household_consumption = (
+        merged.groupby('idhh')['consumption']
+        .transform('sum')
+        .fillna(0.0)
+    )
+    if not np.allclose(household_consumption, household_income, atol=1e-6):
+        raise AssertionError(
+            "Household consumption totals must match disposable income sums."
+        )
 
     if hours == 0:
         zero_cols = [

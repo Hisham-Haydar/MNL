@@ -615,3 +615,4 @@ couples_partner_plot_paths = _generate_gender_plots(
     bins=plot_bins,
 )
 print("Couples partner plots saved:", couples_partner_plot_paths)
+#%% 

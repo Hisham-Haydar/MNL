@@ -4,7 +4,7 @@
 # @Author  : Hisham Haydar (Hisham.Haydar@liser.lu)
 # @Link    : https://hisham-haydar.github.io/
 # @Version : 1.0.0
-
+#%% 
 """
 Scenario builder for synthetic working-hour adjustments on single households by gender.
 
@@ -360,7 +360,9 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument('--scenarios', nargs='+', choices=GENDERS, help='Run scenarios for the specified genders.')
     parser.add_argument('--wide', nargs='+', choices=GENDERS, help='Build wide DCM input for the specified genders.')
     parser.add_argument('--all', nargs='+', choices=GENDERS, help='Run scenarios and build wide datasets for the specified genders.')
-    args = parser.parse_args(argv)
+    args, unknown = parser.parse_known_args(argv)
+    if unknown:
+        LOGGER.warning("Ignoring unknown CLI arguments: %s", unknown)
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')
 
@@ -391,3 +393,6 @@ def main(argv: list[str] | None = None) -> None:
         run_all_scenarios(hours_seq, GENDERS, context)
 if __name__ == "__main__":
     main()
+#%% 
+
+

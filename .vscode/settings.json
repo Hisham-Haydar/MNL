@@ -1,0 +1,23 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+  "editor.codeLens": true,
+  "jupyter.notebookFileRoot": "${workspaceFolder}",
+  "jupyter.alwaysTrustNotebooks": true,
+  "files.watcherExclude": {
+    "**/EUROMOD_RELEASES_J1.0+/**": true,
+    "**/Data/**": true,
+    "**/outputs/**": true
+  },
+  "search.exclude": {
+    "**/EUROMOD_RELEASES_J1.0+/**": true,
+    "**/Data/**": true,
+    "**/outputs/**": true
+  },
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}\\src"
+  ],
+  "python-envs.pythonProjects": [],
+  "jupyter.interactiveWindow.creationMode": "perFile",
+  "jupyter.interactiveWindow.textEditor.executeSelection": true,
+  "jupyter.interactiveWindow.codeLens.enable": true
+}

@@ -291,28 +291,45 @@ def run_all_scenarios(
     hours_list: Iterable[int] = SCENARIO_HOURS,
     genders: Iterable[str] = GENDERS,
     context: EuromodContext | None = None,
-) -> dict[str, dict[int, dict[str, object]]]:
+) -> dict[str, dict[str, object]]:
     if context is None:
         context = _prepare_euromod()
 
     hours_seq = tuple(hours_list)
-    results: dict[str, dict[int, dict[str, object]]] = {}
+    results: dict[str, dict[str, object]] = {}
     for gender in genders:
         dataset_path = _resolve_single_gender_dataset(gender)
         base_df = _read_dataframe(dataset_path)
 
-        gender_results: dict[int, dict[str, object]] = {}
+        gender_results: dict[str, object] = {}
+        scenario_outputs: dict[int, dict[str, object]] = {}
         for hours in hours_seq:
             scenario_df = _create_scenario(base_df, hours, LES_NLF)
             sim_df = _run_euromod(context, scenario_df)
             merged_df = _merge_simulation(scenario_df, sim_df, hours)
             output_path = _save_scenario(merged_df, gender, hours)
-            gender_results[hours] = {
+            scenario_outputs[hours] = {
                 'input_rows': len(scenario_df),
                 'output_rows': len(merged_df),
                 'output_path': output_path,
             }
             LOGGER.info("[%s] Scenario %sh - rows: %s, saved to %s", gender, hours, f"{len(merged_df):,}", output_path)
+        gender_results['scenarios'] = scenario_outputs
+
+        wide_info = run_baseline_and_build_wide(
+            gender=gender,
+            hours_list=hours_seq,
+            context=context,
+            ensure_scenarios=False,
+        )
+        gender_results['wide'] = wide_info
+        LOGGER.info(
+            "[%s] Wide dataset refreshed - rows: %s, saved to %s",
+            gender,
+            wide_info.get('rows', 'n/a'),
+            wide_info.get('parquet_path'),
+        )
+
         results[gender] = gender_results
     return results
 
@@ -343,12 +360,22 @@ def run_baseline_and_build_wide(
     head_mask = baseline_merged['hh_IsHead'] == 1
     baseline_heads = baseline_merged.loc[head_mask].copy()
 
+    if 'lhw' not in baseline_heads.columns:
+        raise KeyError("Baseline data must include 'lhw'.")
     if 'lhw_original' not in baseline_heads.columns:
         baseline_heads['lhw_original'] = baseline_heads['lhw']
+    if 'yem' in baseline_heads.columns and 'yem_original' not in baseline_heads.columns:
+        baseline_heads['yem_original'] = baseline_heads['yem']
+    if 'ils_dispy' in baseline_heads.columns and 'ils_dispy_original' not in baseline_heads.columns:
+        baseline_heads['ils_dispy_original'] = baseline_heads['ils_dispy']
+    if 'ils_dispy_sim' in baseline_heads.columns and 'ils_dispy_original' not in baseline_heads.columns:
+        baseline_heads['ils_dispy_original'] = baseline_heads['ils_dispy_sim']
     if 'consumption' not in baseline_heads.columns:
         raise KeyError("Baseline merge must produce 'consumption'.")
-    baseline_heads['consumption_original'] = baseline_heads['consumption']
-    baseline_heads['dag2'] = baseline_heads['dag'] ** 2
+    if 'consumption_original' not in baseline_heads.columns:
+        baseline_heads['consumption_original'] = baseline_heads['consumption']
+    if 'dag' in baseline_heads.columns:
+        baseline_heads['dag2'] = baseline_heads['dag'] ** 2
 
     if 'num_children_total' in baseline_heads.columns:
         baseline_heads['num_children_total'] = baseline_heads['num_children_total'].fillna(0).astype(int)
@@ -356,21 +383,46 @@ def run_baseline_and_build_wide(
         child_counts = (baseline_merged['dag'] < 16).groupby(baseline_merged['idhh']).sum(min_count=1)
         baseline_heads['num_children_total'] = baseline_heads['idhh'].map(child_counts).fillna(0).astype(int)
 
+    wide = baseline_heads.copy()
+
     if 'deh' in baseline_heads.columns:
         education_dummies = pd.get_dummies(baseline_heads['deh'], prefix='deh', dtype=int)
-    else:
-        education_dummies = pd.DataFrame(index=baseline_heads.index)
-
-    wide = baseline_heads[['idhh', 'idperson', 'dag', 'dag2', 'num_children_total', 'lhw_original', 'consumption_original']].copy()
-    if not education_dummies.empty:
-        wide = pd.concat([wide, education_dummies], axis=1)
+        if not education_dummies.empty:
+            wide = pd.concat([wide, education_dummies], axis=1)
 
     for hours in hours_seq:
         scenario_path = _scenario_output_path(gender, hours)
         scenario_df = _read_dataframe(scenario_path)
-        scenario_heads = scenario_df.loc[scenario_df['hh_IsHead'] == 1, ['idhh', 'lhw', 'consumption']].copy()
-        scenario_heads = scenario_heads.rename(columns={'lhw': f'lhw_{hours}', 'consumption': f'consumption_{hours}'})
-        wide = wide.merge(scenario_heads, on='idhh', how='left')
+
+        if 'hh_IsHead' not in scenario_df.columns:
+            raise KeyError("Scenario data must include 'hh_IsHead'.")
+        scenario_heads = scenario_df.loc[scenario_df['hh_IsHead'] == 1].copy()
+
+        required_cols = {'idhh', 'lhw', 'yem', 'consumption', 'other_members_income'}
+        missing_required = required_cols - set(scenario_heads.columns)
+        if missing_required:
+            raise KeyError(f"Scenario file for {gender} at {hours} hours missing required columns: {sorted(missing_required)}")
+
+        income_col = None
+        if 'ils_dispy_sim' in scenario_heads.columns:
+            income_col = 'ils_dispy_sim'
+        elif 'ils_dispy' in scenario_heads.columns:
+            income_col = 'ils_dispy'
+        else:
+            raise KeyError("Scenario file must include 'ils_dispy_sim' or 'ils_dispy'.")
+
+        selected_cols = ['idhh', 'lhw', 'yem', income_col, 'consumption', 'other_members_income']
+        scenario_heads = scenario_heads[selected_cols]
+        rename_map = {
+            'lhw': f'lhw_{hours}',
+            'yem': f'yem_{hours}',
+            income_col: f'ils_dispy_{hours}',
+            'consumption': f'consumption_{hours}',
+            'other_members_income': f'other_members_income_{hours}',
+        }
+        scenario_heads = scenario_heads.rename(columns=rename_map)
+
+        wide = wide.merge(scenario_heads, on='idhh', how='left', validate='one_to_one')
 
     wide = wide.sort_values('idhh').reset_index(drop=True)
 
@@ -419,8 +471,6 @@ def main(argv: list[str] | None = None) -> None:
     if args.all:
         context = _prepare_euromod()
         run_all_scenarios(hours_seq, args.all, context)
-        for gender in args.all:
-            run_baseline_and_build_wide(gender, hours_seq, context=context, ensure_scenarios=False)
         return
 
     performed = False
@@ -450,5 +500,30 @@ df_m_20.head()
 df_m_0 = pd.read_parquet(Path("Data/processed/scenarios/single_male_lhw_0.parquet"))
 df_m_0.head()
 #%% 
+df_m= pd.read_parquet(Path("Data/processed/singles_final_filtered_male.parquet"))
+df_m.head()
 
+# %%
+# Load the DataFrames
+
+# Extract columns
+columns_df_m = set(df_m.columns)
+columns_df_m_0 = set(df_m_0.columns)
+
+# Find common columns
+common_columns = columns_df_m.intersection(columns_df_m_0)
+
+# Find unique columns
+unique_to_df_m = columns_df_m - columns_df_m_0
+unique_to_df_m_0 = columns_df_m_0 - columns_df_m
+
+# Display results
+print("Common Columns:")
+print(common_columns)
+
+print("\nUnique to df_m:")
+print(unique_to_df_m)
+
+print("\nUnique to df_m_0:")
+print(unique_to_df_m_0)
 # %%

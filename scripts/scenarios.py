@@ -394,5 +394,14 @@ def main(argv: list[str] | None = None) -> None:
 if __name__ == "__main__":
     main()
 #%% 
+import pandas as pd
+df_m_20 = pd.read_parquet(Path("Data/processed/scenarios/single_male_lhw_20.parquet"))
+df_m_20.head()
 
+#%% 
 
+df_m_0 = pd.read_parquet(Path("Data/processed/scenarios/single_male_lhw_0.parquet"))
+df_m_0.head()
+#%% 
+
+# %%

@@ -354,41 +354,13 @@ def run_baseline_and_build_wide(
     dataset_path = _resolve_single_gender_dataset(gender)
     base_df = _read_dataframe(dataset_path)
 
-    baseline_sim = _run_euromod(context, base_df)
-    baseline_merged = _merge_simulation(base_df.copy(), baseline_sim, hours=None)
+    base_heads = base_df.loc[base_df['hh_IsHead'] == 1].copy()
+    if 'idhh' not in base_heads.columns:
+        raise KeyError("Singles dataset must include 'idhh'.")
+    if 'lhw' not in base_heads.columns:
+        raise KeyError("Singles dataset must include 'lhw' for actual choice computation.")
 
-    head_mask = baseline_merged['hh_IsHead'] == 1
-    baseline_heads = baseline_merged.loc[head_mask].copy()
-
-    if 'lhw' not in baseline_heads.columns:
-        raise KeyError("Baseline data must include 'lhw'.")
-    if 'lhw_original' not in baseline_heads.columns:
-        baseline_heads['lhw_original'] = baseline_heads['lhw']
-    if 'yem' in baseline_heads.columns and 'yem_original' not in baseline_heads.columns:
-        baseline_heads['yem_original'] = baseline_heads['yem']
-    if 'ils_dispy' in baseline_heads.columns and 'ils_dispy_original' not in baseline_heads.columns:
-        baseline_heads['ils_dispy_original'] = baseline_heads['ils_dispy']
-    if 'ils_dispy_sim' in baseline_heads.columns and 'ils_dispy_original' not in baseline_heads.columns:
-        baseline_heads['ils_dispy_original'] = baseline_heads['ils_dispy_sim']
-    if 'consumption' not in baseline_heads.columns:
-        raise KeyError("Baseline merge must produce 'consumption'.")
-    if 'consumption_original' not in baseline_heads.columns:
-        baseline_heads['consumption_original'] = baseline_heads['consumption']
-    if 'dag' in baseline_heads.columns:
-        baseline_heads['dag2'] = baseline_heads['dag'] ** 2
-
-    if 'num_children_total' in baseline_heads.columns:
-        baseline_heads['num_children_total'] = baseline_heads['num_children_total'].fillna(0).astype(int)
-    else:
-        child_counts = (baseline_merged['dag'] < 16).groupby(baseline_merged['idhh']).sum(min_count=1)
-        baseline_heads['num_children_total'] = baseline_heads['idhh'].map(child_counts).fillna(0).astype(int)
-
-    wide = baseline_heads.copy()
-
-    if 'deh' in baseline_heads.columns:
-        education_dummies = pd.get_dummies(baseline_heads['deh'], prefix='deh', dtype=int)
-        if not education_dummies.empty:
-            wide = pd.concat([wide, education_dummies], axis=1)
+    wide = base_heads.copy()
 
     for hours in hours_seq:
         scenario_path = _scenario_output_path(gender, hours)
@@ -428,10 +400,15 @@ def run_baseline_and_build_wide(
 
     priority_order = {20: 0, 40: 1, 0: 2}
 
+    if 'lhw_original' in wide.columns:
+        actual_hours = pd.to_numeric(wide['lhw_original'], errors='coerce')
+    else:
+        actual_hours = pd.to_numeric(wide['lhw'], errors='coerce')
+
     def _select_actual(value: float) -> int:
         return min(hours_seq, key=lambda h: (abs(value - h), priority_order.get(h, len(priority_order))))
 
-    wide['actual_choice'] = wide['lhw_original'].apply(_select_actual)
+    wide['actual_choice'] = actual_hours.apply(_select_actual)
 
     for hours in hours_seq:
         wide[f'is_actual_{hours}'] = (wide['actual_choice'] == hours).astype(int)
@@ -505,25 +482,7 @@ df_m.head()
 
 # %%
 # Load the DataFrames
-
-# Extract columns
-columns_df_m = set(df_m.columns)
-columns_df_m_0 = set(df_m_0.columns)
-
-# Find common columns
-common_columns = columns_df_m.intersection(columns_df_m_0)
-
-# Find unique columns
-unique_to_df_m = columns_df_m - columns_df_m_0
-unique_to_df_m_0 = columns_df_m_0 - columns_df_m
-
-# Display results
-print("Common Columns:")
-print(common_columns)
-
-print("\nUnique to df_m:")
-print(unique_to_df_m)
-
-print("\nUnique to df_m_0:")
-print(unique_to_df_m_0)
-# %%
+df_wide_m = pd.read_parquet(
+    Path("Data/processed/scenarios/heads_wide_single_male.parquet"))
+df_wide_m.head()
+#%% 

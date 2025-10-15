@@ -4,7 +4,7 @@
 This script enriches the wide household heads datasets with utility shifters
 and interaction terms required by the DCM estimation stage.
 """
-
+#%% 
 from __future__ import annotations
 
 import argparse
@@ -21,15 +21,28 @@ DEFAULT_GENDERS: tuple[str, ...] = ("male", "female")
 BASE_FILENAME_TEMPLATE = "heads_wide_single_{gender}.parquet"
 OUTPUT_FILENAME_TEMPLATE = "heads_wide_single_{gender}_dcm.parquet"
 
+MIN_POSITIVE = 1e-6
+
 
 LOGGER = logging.getLogger(__name__)
 
 
-def _safe_log(series: pd.Series) -> pd.Series:
-    """Return the natural log, guarding against non-positive inputs."""
+def _safe_log(series: pd.Series, *, label: str | None = None) -> pd.Series:
+    """Return the natural log, guarding against non-positive inputs.
+
+    Any value <= MIN_POSITIVE is treated as missing (NaN) to avoid -inf.
+    """
     numeric = pd.to_numeric(series, errors="coerce")
+    positive_mask = numeric > MIN_POSITIVE
+    if label and (~positive_mask).any():
+        LOGGER.warning(
+            "%s encountered %d non-positive entries; log set to NaN.",
+            label,
+            int((~positive_mask).sum()),
+        )
+    safe_values = numeric.where(positive_mask, np.nan)
     with np.errstate(divide="ignore", invalid="ignore"):
-        logged = np.where(numeric > 0, np.log(numeric), np.nan)
+        logged = np.log(safe_values)
     return pd.Series(logged, index=series.index, dtype=float)
 
 
@@ -88,11 +101,11 @@ def _augment_gender_dataset(df: pd.DataFrame) -> pd.DataFrame:
         logy_col = f"logy_{suffix}"
         logl_col = f"logl_{suffix}"
 
-        df[logy_col] = _safe_log(df[consumption_col])
+        df[logy_col] = _safe_log(df[consumption_col], label=logy_col)
 
         gap_hours = 80.0 - pd.to_numeric(df[hours_col], errors="coerce")
-        gap_hours = gap_hours.where(gap_hours > 0, np.nan)
-        df[logl_col] = _safe_log(gap_hours)
+        gap_hours = gap_hours.where(gap_hours > MIN_POSITIVE, np.nan)
+        df[logl_col] = _safe_log(gap_hours, label=logl_col)
 
         df[f"log2y_{suffix}"] = df[logy_col] ** 2
         df[f"log2l_{suffix}"] = df[logl_col] ** 2
@@ -175,3 +188,4 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
+#%% 

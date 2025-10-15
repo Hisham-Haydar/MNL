@@ -15,6 +15,7 @@ from typing import Iterable
 import numpy as np
 import pandas as pd
 
+# Resolve canonical project locations so the script works from any cwd.
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SCENARIO_DIR = PROJECT_ROOT / "Data" / "processed" / "scenarios"
 DEFAULT_GENDERS: tuple[str, ...] = ("male", "female")
@@ -32,6 +33,7 @@ def _safe_log(series: pd.Series, *, label: str | None = None) -> pd.Series:
 
     Any value <= MIN_POSITIVE is treated as missing (NaN) to avoid -inf.
     """
+    # Convert to numeric first so string representations do not propagate.
     numeric = pd.to_numeric(series, errors="coerce")
     positive_mask = numeric > MIN_POSITIVE
     if label and (~positive_mask).any():
@@ -48,6 +50,7 @@ def _safe_log(series: pd.Series, *, label: str | None = None) -> pd.Series:
 
 def _detect_scenarios(df: pd.DataFrame) -> list[str]:
     """Infer scenario suffixes from consumption columns."""
+    # Pull suffixes after 'consumption_' and only keep those accompanied by lhw.
     suffixes: list[str] = []
     for col in df.columns:
         if not col.startswith("consumption_"):
@@ -66,6 +69,7 @@ def _detect_scenarios(df: pd.DataFrame) -> list[str]:
 
 
 def _ensure_columns(df: pd.DataFrame, required: Iterable[str]) -> None:
+    """Validate expected columns before attempting transformations."""
     missing = [col for col in required if col not in df.columns]
     if missing:
         raise KeyError(f"Missing required columns: {missing}")
@@ -73,6 +77,7 @@ def _ensure_columns(df: pd.DataFrame, required: Iterable[str]) -> None:
 
 def _augment_gender_dataset(df: pd.DataFrame) -> pd.DataFrame:
     """Add log-based features and interactions for every scenario."""
+    # Operate on a copy so callers keep the pristine dataset.
     df = df.copy()
 
     _ensure_columns(
@@ -85,10 +90,14 @@ def _augment_gender_dataset(df: pd.DataFrame) -> pd.DataFrame:
         ],
     )
 
+    # Age controls are shared across scenarios.
     df["Lage"] = _safe_log(df["dag"])
     df["l2age"] = df["Lage"] ** 2
+    # Flag households with more than one infant/toddler.
+    # NOTE: > 1 means “strictly more than one” to follow the request literally.
     df["DCH"] = ((df["num_children_0_3"] > 1) | (df["num_children_3_6"] > 1)).astype(int)
 
+    # Determine which scenario blocks are available.
     scenarios = _detect_scenarios(df)
     LOGGER.info("Detected scenarios: %s", ", ".join(scenarios))
 
@@ -101,6 +110,7 @@ def _augment_gender_dataset(df: pd.DataFrame) -> pd.DataFrame:
         logy_col = f"logy_{suffix}"
         logl_col = f"logl_{suffix}"
 
+        # Build scenario-specific log variables and derived interactions.
         df[logy_col] = _safe_log(df[consumption_col], label=logy_col)
 
         gap_hours = 80.0 - pd.to_numeric(df[hours_col], errors="coerce")
@@ -148,6 +158,7 @@ def process_gender(gender: str, overwrite: bool = True) -> dict[str, Path]:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse CLI arguments so the script can be run from the terminal."""
     parser = argparse.ArgumentParser(
         description="Augment wide scenario datasets with DCM covariates.",
     )
@@ -167,6 +178,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Entry point used by `python scripts/DCM1.py`."""
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     args = parse_args(argv)
 

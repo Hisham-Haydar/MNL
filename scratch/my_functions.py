@@ -476,6 +476,7 @@ def filter_couples(df_sim, results_dir):
 
 # Create a helper to compute head counts for households
 def get_head_counts(df):
+    """Return counts of total, female-headed, and male-headed households."""
     heads = df[df["hh_IsHead"] == 1]
     total = heads["idhh"].nunique()
     female = heads[heads["dgn"] == 0]["idhh"].nunique()
@@ -853,6 +854,7 @@ def reduce_memory_usage(df):
     return df
 
 def handle_outliers(df, wage_bounds=(2, 300), exp_bound=960):
+    """Remove rows with implausible wages or weekly hours beyond ``exp_bound``."""
     bad_wage = (df["wage"] < wage_bounds[0]) | (df["wage"] > wage_bounds[1])
     bad_exp = df["liwwh"].notna() & df["liwwh"].gt(exp_bound)
     return df.loc[~(bad_wage | bad_exp)].copy()

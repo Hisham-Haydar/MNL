@@ -96,6 +96,7 @@ PLOT_VARIABLES = {
 
 
 def _plot_distribution(series: pd.Series, title: str, output_path: Path, *, discrete: bool, bins: int) -> None:
+    """Persist a histogram or bar plot for the provided series."""
     clean = series.dropna()
     if clean.empty:
         print(f"Skipping '{series.name}' for '{title}': no data after filtering")
@@ -118,6 +119,7 @@ def _plot_distribution(series: pd.Series, title: str, output_path: Path, *, disc
 
 
 def _generate_group_plots(df: pd.DataFrame, *, group_name: str, prefix: str, bins: int) -> dict[str, Path]:
+    """Create plots for ``df`` and return a mapping from variable to saved path."""
     saved_paths: dict[str, Path] = {}
     for column, info in PLOT_VARIABLES.items():
         if column not in df.columns:
@@ -131,6 +133,7 @@ def _generate_group_plots(df: pd.DataFrame, *, group_name: str, prefix: str, bin
 
 
 def _generate_gender_plots(df: pd.DataFrame, *, base_group: str, prefix: str, bins: int) -> dict[str, dict[str, Path]]:
+    """Produce plots for the whole sample and gender-specific subsets."""
     results: dict[str, dict[str, Path]] = {}
     results["overall"] = _generate_group_plots(df, group_name=base_group, prefix=f"{prefix}_overall", bins=bins)
 
@@ -153,6 +156,7 @@ setup_logging("INFO")
 
 # %% Directories and Data import
 def _first_existing(*paths: Path) -> Path:
+    """Return the first path that exists, or the last candidate if none exist."""
     for p in paths:
         if p.exists():
             return p

@@ -78,7 +78,7 @@ def _safe_setattr(obj, attr: str, value) -> None:
 
 
 def _detect_labels_from_df(df: pd.DataFrame) -> tuple[str, ...]:
-    """Infer scenario labels from columns named ``logy_<label>`` in natural order (h0,h1,...)."""
+    """Infer scenario labels from columns named ``logy_<label>`` in natural order (h0,h1,…)."""
     labs = [c.split("logy_", 1)[1] for c in df.columns if c.startswith("logy_")]
     labs = sorted(set(labs), key=lambda s: (len(s), s))
     return tuple(labs)

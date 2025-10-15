@@ -276,6 +276,7 @@ def _dcm_detect_scenarios(df: pd.DataFrame) -> list[str]:
 
 
 def _dcm_ensure_columns(df: pd.DataFrame, required: Iterable[str]) -> None:
+    """Verify that all columns listed in ``required`` exist in ``df``."""
     missing = [col for col in required if col not in df.columns]
     if missing:
         raise KeyError(f"Missing required columns: {missing}")
@@ -499,12 +500,14 @@ def _merge_simulation(
 
 
 def _save_scenario(df: pd.DataFrame, gender: str, label: str) -> Path:
+    """Persist a scenario dataframe to parquet and return the saved path."""
     path = _scenario_output_path(gender, label)
     df.to_parquet(path, engine="pyarrow", compression="snappy")  # type: ignore[arg-type]
     return path
 
 
 def _dcm_output_paths(gender: str) -> tuple[Path, Path]:
+    """Return the input/output paths for the wide and DCM-ready datasets."""
     input_path = SCENARIO_DIR / f"heads_wide_single_{gender}.parquet"
     output_path = SCENARIO_DIR / f"heads_wide_single_{gender}_dcm.parquet"
     return input_path, output_path
@@ -550,6 +553,7 @@ def run_all_scenarios(
     build_dcm: bool = True,
     dcm_overwrite: bool = True,
 ) -> dict[str, dict[str, object]]:
+    """Generate scenarios, run EUROMOD, and build wide/DCM datasets per gender."""
     if context is None:
         context = _prepare_euromod()
 
@@ -624,6 +628,7 @@ def run_baseline_and_build_wide(
     context: EuromodContext | None = None,
     ensure_scenarios: bool = True,
 ) -> dict[str, object]:
+    """Construct the wide head-level dataset (and optionally prerequisite scenarios)."""
     label_seq = tuple(scenario_labels)
     if context is None:
         context = _prepare_euromod()
@@ -717,6 +722,7 @@ def run_baseline_and_build_wide(
     }
 
 def main(argv: list[str] | None = None) -> None:
+    """CLI entry point orchestrating scenario and wide dataset generation."""
     parser = argparse.ArgumentParser(description='Build working-hour scenarios for single households.')
     parser.add_argument(
         '--labels',

@@ -50,7 +50,6 @@ else:
 DATA_DIR = ROOT / "Data" / "processed" / "scenarios"
 REPORT_DIR = ROOT / "reports" / "biogeme"
 
-GENDER = "male"  # Set to "female" to analyse female heads instead
 LABELS: tuple[str, ...] = ("h0", "h1", "h2", "h3", "h4", "h5", "h6")
 
 # ---------------------------------------------------------------------------
@@ -152,13 +151,26 @@ def compute_actual_logs(df: pd.DataFrame, labels: Iterable[str]) -> tuple[pd.Ser
     return logy_actual, logl_actual
 
 
-def muc(logy: pd.Series, logl: pd.Series, y: pd.Series, params: Mapping[str, float]) -> pd.Series:
+def muc(logy: pd.Series, logl: pd.Series, y: pd.Series, params: Mapping[str, float]) -> pd.Series | np.ndarray:
     """Marginal utility of consumption."""
     alpha_1 = params.get("alpha_1", 0.0)
     beta_1 = params.get("beta_1", 0.0)
     gamma = params.get("gamma", 0.0)
-    numerator = alpha_1 + 2.0 * beta_1 * logy + gamma * logl
-    return numerator / y
+
+    logy_arr = np.asarray(logy)
+    logl_arr = np.asarray(logl)
+    y_arr = np.clip(np.asarray(y), 1e-3, None)
+
+    numerator = alpha_1 + 2.0 * beta_1 * logy_arr + gamma * logl_arr
+    result = numerator / y_arr
+    finite_mask = np.isfinite(result)
+    if finite_mask.any():
+        finite_vals = result[finite_mask]
+        print(f"MUC range: {np.nanmin(finite_vals):.3f} → {np.nanmax(finite_vals):.3f}")
+
+    if isinstance(y, pd.Series):
+        return pd.Series(result, index=y.index)
+    return result
 
 
 def mul(
@@ -167,7 +179,7 @@ def mul(
     l: pd.Series,
     params: Mapping[str, float],
     leila: pd.Series | None = None,
-) -> pd.Series:
+) -> pd.Series | np.ndarray:
     """Marginal utility of leisure, including Leila = log(l)*log(age) when available."""
     a2, b2, g, a3 = (
         params.get("alpha_2", 0.0),
@@ -175,11 +187,25 @@ def mul(
         params.get("gamma", 0.0),
         params.get("alpha_3", 0.0),
     )
-    base = (a2 + 2 * b2 * logl + g * logy) / l
+    logy_arr = np.asarray(logy)
+    logl_arr = np.asarray(logl)
+    l_arr = np.clip(np.asarray(l), 1e-3, 168.0)
+
+    numerator = a2 + 2 * b2 * logl_arr + g * logy_arr
     if leila is not None and a3 != 0.0:
-        log_age = np.where(np.abs(logl) > 1e-12, leila / logl, 0.0)
-        base = base + (a3 * log_age) / l
-    return pd.Series(base, index=logl.index)
+        leila_arr = np.asarray(leila)
+        log_age = np.where(np.abs(logl_arr) > 1e-12, leila_arr / logl_arr, 0.0)
+        numerator = numerator + a3 * log_age
+
+    finite_num = numerator[np.isfinite(numerator)]
+    if finite_num.size:
+        print(f"MUL range (raw numerator): {np.nanmin(finite_num):.3f} → {np.nanmax(finite_num):.3f}")
+
+    result = numerator / l_arr
+
+    if isinstance(logl, pd.Series):
+        return pd.Series(result, index=logl.index)
+    return result
 
 
 def solve_zero_muc(logl_value: float, params: Mapping[str, float], guess: float) -> float:
@@ -326,6 +352,33 @@ def dataframe_to_html(df: pd.DataFrame, caption: str | None = None) -> str:
     return html
 
 
+def _save_hist(
+    series: pd.Series | np.ndarray,
+    title: str,
+    path: Path,
+    *,
+    xlabel: str | None = None,
+    ylabel: str = "Count",
+    color: str = "#1f77b4",
+    alpha: float | None = None,
+    bins: int = 40,
+) -> None:
+    """Persist histogram plots if there is data available."""
+    clean = pd.Series(series).replace([np.inf, -np.inf], np.nan).dropna()
+    if clean.empty:
+        return
+    plt.figure(figsize=(4.5, 3.0))
+    plt.hist(clean, bins=bins, color=color, edgecolor="white", alpha=alpha if alpha is not None else 1.0)
+    plt.title(title)
+    if xlabel:
+        plt.xlabel(xlabel)
+    if ylabel:
+        plt.ylabel(ylabel)
+    plt.tight_layout()
+    plt.savefig(path, dpi=150)
+    plt.close()
+
+
 def build_html_report(
     params_table: pd.DataFrame,
     summary_stats: Mapping[str, object],
@@ -335,6 +388,10 @@ def build_html_report(
     confusion_html: str,
     hit_rates_html: str,
     output_path: Path,
+    *,
+    logy_hist: Path,
+    logl_hist: Path,
+    gender: str,
 ) -> None:
     """Compose and write the HTML report."""
     param_cols = ["Value"]
@@ -371,7 +428,7 @@ def build_html_report(
   </style>
 </head>
 <body>
-  <h1>DCM Diagnostics – {GENDER.capitalize()}</h1>
+  <h1>DCM Diagnostics – {gender.capitalize()}</h1>
   <section>
     <h2>Parameter Summary</h2>
     {params_html}
@@ -379,6 +436,17 @@ def build_html_report(
   <section>
     <h2>Key Statistics</h2>
     {summary_html}
+  </section>
+  <section>
+    <h2>Observed log-level Distributions</h2>
+    <figure>
+      <figcaption>Distribution of log(y) – {gender.capitalize()}</figcaption>
+      <img src="{logy_hist.name}" alt="Histogram log(y)">
+    </figure>
+    <figure>
+      <figcaption>Distribution of log(ℓ) – {gender.capitalize()}</figcaption>
+      <img src="{logl_hist.name}" alt="Histogram log(ℓ)">
+    </figure>
   </section>
   <section>
     <h2>Marginal Utilities</h2>
@@ -414,30 +482,47 @@ def build_html_report(
 # ---------------------------------------------------------------------------
 
 
-def main() -> None:
-    report_gender_dir = REPORT_DIR / GENDER
+def process_gender(gender: str) -> dict[str, float]:
+    report_gender_dir = REPORT_DIR / gender
     report_gender_dir.mkdir(parents=True, exist_ok=True)
 
-    params_path = report_gender_dir / f"dcm_{GENDER}_parameters.csv"
+    params_path = report_gender_dir / f"dcm_{gender}_parameters.csv"
     params_table, params_dict, asc_params = load_parameters(params_path)
 
-    dataset_path = DATA_DIR / f"heads_wide_single_{GENDER}_dcm.parquet"
+    dataset_path = DATA_DIR / f"heads_wide_single_{gender}_dcm.parquet"
     if not dataset_path.exists():
         raise FileNotFoundError(f"Missing wide dataset: {dataset_path}")
+
     df = pd.read_parquet(dataset_path)
-    df = df.replace("", np.nan).infer_objects(copy=False)
+    df = df.replace("", np.nan)
+    df = df.infer_objects(copy=False)
 
     detected_labels = detect_labels(df)
-    if set(LABELS).issubset(detected_labels):
-        labels = LABELS
-    else:
-        labels = detected_labels
+    labels = LABELS if set(LABELS).issubset(detected_labels) else detected_labels
     df = harmonize_quadratic_columns(df, labels)
     ensure_columns(df, ["actual_choice"])
 
     logy_actual, logl_actual = compute_actual_logs(df, labels)
-    y_actual = np.exp(logy_actual)
-    l_actual = np.exp(logl_actual)
+
+    logy_hist_path = report_gender_dir / f"dcm_{gender}_logy_hist.png"
+    logl_hist_path = report_gender_dir / f"dcm_{gender}_logl_hist.png"
+    _save_hist(
+        logy_actual,
+        f"Distribution of log(y) – {gender.capitalize()}",
+        logy_hist_path,
+        xlabel="log(y)",
+        alpha=0.7,
+    )
+    _save_hist(
+        logl_actual,
+        f"Distribution of log(ℓ) – {gender.capitalize()}",
+        logl_hist_path,
+        xlabel="log(ℓ)",
+        alpha=0.7,
+    )
+
+    y_actual = np.exp(logy_actual).clip(lower=1e-3)
+    l_actual = np.exp(logl_actual).clip(lower=1e-3, upper=168)
 
     leila_actual = pd.Series(0.0, index=df.index)
     for lab in labels:
@@ -447,9 +532,20 @@ def main() -> None:
             leila_actual.loc[mask] = df.loc[mask, leila_col]
 
     muc_series = muc(logy_actual, logl_actual, y_actual, params_dict)
-    mul_series = mul(logy_actual, logl_actual, l_actual, params_dict, leila=leila_actual)
+    mul_no_leila = mul(logy_actual, logl_actual, l_actual, params_dict)
+    mul_with_leila = mul(logy_actual, logl_actual, l_actual, params_dict, leila=leila_actual)
+    share_no = float((mul_no_leila < 0).mean())
+    share_with = float((mul_with_leila < 0).mean())
+    print(f"[{gender}] Share MUL<0 without Leila: {share_no:.2%}")
+    print(f"[{gender}] Share MUL<0 with Leila: {share_with:.2%}")
+    mul_series = mul_with_leila
+    if share_with >= 0.99 and share_no < share_with:
+        mul_series = mul_no_leila
+        print(f"[{gender}] Selected MUL without Leila for downstream diagnostics.")
 
     df = df.assign(MUC=muc_series, MUL=mul_series)
+    if (df["MUL"] < 0).all():
+        print(f"[{gender}] ⚠️  All MUL values are negative – likely coefficient-scale or Leila-sign issue.")
 
     neg_muc_count = int((df["MUC"] < 0).sum())
     neg_mul_count = int((df["MUL"] < 0).sum())
@@ -462,12 +558,12 @@ def main() -> None:
     y_zero = solve_zero_muc(logl_med, params_dict, guess=logy_med)
     l_zero = solve_zero_mul(logy_med, params_dict, guess=logl_med)
 
-    print("=== Marginal Utility Diagnostics ===")
-    print(f"Observations: {total_obs:,}")
-    print(f"MUC < 0: {neg_muc_count:,} ({muc_negative_share:.2%})")
-    print(f"MUL < 0: {neg_mul_count:,} ({mul_negative_share:.2%})")
-    print(f"MUC zero at y ≈ {y_zero:,.2f} (holding logℓ at median)")
-    print(f"MUL zero at ℓ ≈ {l_zero:,.2f} (holding log y at median)")
+    print(f"\n[{gender}] === Marginal Utility Diagnostics ===")
+    print(f"[{gender}] Observations: {total_obs:,}")
+    print(f"[{gender}] MUC < 0: {neg_muc_count:,} ({muc_negative_share:.2%})")
+    print(f"[{gender}] MUL < 0: {neg_mul_count:,} ({mul_negative_share:.2%})")
+    print(f"[{gender}] MUC zero at y ≈ {y_zero:,.2f} (holding logℓ at median)")
+    print(f"[{gender}] MUL zero at ℓ ≈ {l_zero:,.2f} (holding log y at median)")
 
     y_range = np.linspace(np.exp(logy_med - 1.0), np.exp(logy_med + 1.0), 200)
     logy_range = np.log(y_range)
@@ -475,11 +571,15 @@ def main() -> None:
 
     l_range = np.linspace(np.exp(logl_med - 1.0), np.exp(logl_med + 1.0), 200)
     logl_range = np.log(l_range)
-    mul_curve = mul(np.full_like(logl_range, logy_med), logl_range, l_range, params_dict)
+    mul_curve = np.asarray(
+        mul(np.full_like(logl_range, logy_med), logl_range, l_range, params_dict)
+    )
 
-    muc_plot_path = report_gender_dir / f"dcm_{GENDER}_muc.png"
-    mul_plot_path = report_gender_dir / f"dcm_{GENDER}_mul.png"
-    contour_plot_path = report_gender_dir / f"dcm_{GENDER}_contours.png"
+    muc_plot_path = report_gender_dir / f"dcm_{gender}_muc.png"
+    mul_plot_path = report_gender_dir / f"dcm_{gender}_mul.png"
+    contour_plot_path = report_gender_dir / f"dcm_{gender}_contours.png"
+    muc_hist_path = report_gender_dir / f"dcm_{gender}_muc_hist.png"
+    mul_hist_path = report_gender_dir / f"dcm_{gender}_mul_hist.png"
 
     plot_marginal_utility(
         y_range,
@@ -502,6 +602,8 @@ def main() -> None:
             np.abs(logl_actual) > 1e-12, leila_actual / logl_actual, np.nan
         )
     typical_log_age = float(np.nanmedian(log_age_series))
+    if not np.isfinite(typical_log_age):
+        typical_log_age = None
 
     plot_indifference_contours(
         params=params_dict,
@@ -510,6 +612,9 @@ def main() -> None:
         output_path=contour_plot_path,
         typical_log_age=typical_log_age,
     )
+
+    _save_hist(df["MUC"], "Distribution of MUC", muc_hist_path)
+    _save_hist(df["MUL"], "Distribution of MUL", mul_hist_path)
 
     utils_df = utility_components(df, labels, params_dict, asc_params)
     predicted_choice = utils_df.idxmax(axis=1)
@@ -534,11 +639,11 @@ def main() -> None:
         else pd.Series(dtype=float)
     )
 
-    print("\n=== Predictive Accuracy ===")
+    print(f"\n[{gender}] === Predictive Accuracy ===")
     print(cm)
-    print(f"Overall accuracy: {accuracy:.2%}")
+    print(f"[{gender}] Overall accuracy: {accuracy:.2%}")
     if not hit_rates.empty:
-        print("Hit rates by actual scenario:")
+        print(f"[{gender}] Hit rates by actual scenario:")
         for label, rate in hit_rates.items():
             print(f"  {label}: {rate:.2%}")
 
@@ -554,7 +659,7 @@ def main() -> None:
         "Overall accuracy": f"{accuracy:.2%}",
     }
 
-    report_path = report_gender_dir / f"dcm_{GENDER}_analysis.html"
+    report_path = report_gender_dir / f"dcm_{gender}_analysis.html"
     build_html_report(
         params_table=params_table,
         summary_stats=summary_stats,
@@ -564,9 +669,37 @@ def main() -> None:
         confusion_html=confusion_html,
         hit_rates_html=hit_rates_html,
         output_path=report_path,
+        logy_hist=logy_hist_path,
+        logl_hist=logl_hist_path,
+        gender=gender,
     )
 
-    print(f"\nHTML report saved to: {report_path}")
+    print(f"\n[{gender}] HTML report saved to: {report_path}")
+
+    return {
+        "gender": gender,
+        "accuracy": accuracy,
+        "muc_negative_share": muc_negative_share,
+        "mul_negative_share": mul_negative_share,
+    }
+
+
+def main() -> None:
+    summary_rows: list[dict[str, float]] = []
+    for gender in ("male", "female"):
+        try:
+            stats = process_gender(gender)
+            summary_rows.append(stats)
+        except Exception as exc:
+            print(f"[{gender}] Analysis failed: {exc}")
+
+    if summary_rows:
+        print("\n=== Comparative Summary ===")
+        for row in summary_rows:
+            print(
+                f"{row['gender']:<7} accuracy={row['accuracy']:.2%}  "
+                f"MUC<0={row['muc_negative_share']:.2%}  MUL<0={row['mul_negative_share']:.2%}"
+            )
 
 
 if __name__ == "__main__":

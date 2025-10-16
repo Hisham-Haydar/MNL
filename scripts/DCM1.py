@@ -300,9 +300,11 @@ def estimate_model(
     if avail_cols_used:
         LOGGER.info("[%s] Using availability columns: %s", gender, ", ".join(avail_cols_used))
 
-    model_name = f"dcm_{gender}"
-    model_output_dir = output_dir / gender
+    tag = "ascsON" if include_ascs else "ascsOFF"
+    model_name = f"dcm_{gender}_{tag}"
+    model_output_dir = output_dir / f"{gender}_{tag}"
     model_output_dir.mkdir(parents=True, exist_ok=True)
+    LOGGER.info("[%s] include_ascs=%s  -> model=%s  out=%s", gender, include_ascs, model_name, model_output_dir)
 
     # Remove artefacts from previous runs to avoid versioned files (~01, ~02, ...).
     cleanup_patterns = (
@@ -414,13 +416,14 @@ def estimate_model(
             except OSError:
                 pass
 
-    LOGGER.info("[%s] Estimation completed. Parameters saved to %s", gender, param_path)
+    LOGGER.info("[%s] Estimation completed (%s). Parameters saved to %s", gender, model_name, param_path)
     if opt_ll is not None:
-        LOGGER.info("[%s] Log-likelihood at optimum: %.4f", gender, opt_ll)
+        LOGGER.info("[%s] [%s] Log-likelihood at optimum: %.4f", gender, model_name, opt_ll)
     if null_ll is not None and rho2 is not None and rho2_adj is not None:
         LOGGER.info(
-            "[%s] LL(null)=%.6f  LL*=%.6f  rho2=%.4f  rho2_adj=%.4f",
+            "[%s] [%s] LL(null)=%.6f  LL*=%.6f  rho2=%.4f  rho2_adj=%.4f",
             gender,
+            model_name,
             null_ll,
             opt_ll,
             rho2,
@@ -446,7 +449,7 @@ def estimate_model(
         except Exception:
             continue
 
-    LOGGER.info("[%s] Reports (if any) placed in %s", gender, model_output_dir)
+    LOGGER.info("[%s] Reports (if any) placed in %s", model_name, model_output_dir)
     return param_path
 
 

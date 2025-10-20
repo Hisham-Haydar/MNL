@@ -17,3 +17,47 @@ Data/interim/
 Data/processed/
 notebooks/*checkpoint*.ipynb
 
+# --- data & outputs (never commit) ---
+Data/
+data/
+raw_data/
+reports/
+outputs/
+output/
+artifacts/
+*.parquet
+*.feather
+*.dta
+*.sav
+*.xlsx
+*.xls
+*.csv
+*.html
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.zip
+*.7z
+*.tar
+*.gz
+*.bz2
+*.rar
+
+# EUROMOD distribution dumps
+EUROMOD_RELEASES_J1.0+/
+
+# notebooks & caches
+*.ipynb
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# virtual envs
+.venv/
+venv/
+.env/

@@ -33,6 +33,8 @@ import numpy as np
 import pandas as pd
 import euromod as em
 
+from path_helpers import data_root, euromod_root, ensure_dir
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SCRATCH_DIR = PROJECT_ROOT / "scratch"
 if SCRATCH_DIR.exists():
@@ -41,11 +43,10 @@ try:
     from my_functions import sum_nonhead_income  # type: ignore
 except ModuleNotFoundError as exc:
     raise ModuleNotFoundError(f"Unable to import my_functions from {SCRATCH_DIR}. Ensure scratch/my_functions.py exists.") from exc
-DATA_DIR = PROJECT_ROOT / "Data"
-PROCESSED_DIR = DATA_DIR / "processed"
-SCENARIO_DIR = PROCESSED_DIR / "scenarios"
-SCENARIO_DIR.mkdir(parents=True, exist_ok=True)
-MODEL_DIR = PROJECT_ROOT / "EUROMOD_RELEASES_J1.0+" / "EUROMOD_RELEASES_J1.0+"
+DATA_DIR = data_root()
+PROCESSED_DIR = ensure_dir(DATA_DIR / "processed")
+SCENARIO_DIR = ensure_dir(PROCESSED_DIR / "scenarios")
+MODEL_DIR = euromod_root()
 
 # Configuration shared with preprocessing
 TARGET_COUNTRY = "DE"
@@ -772,20 +773,20 @@ if __name__ == "__main__":
 #%% 
 # The remaining cells are ad-hoc exploratory checks kept for interactive use.
 import pandas as pd
-df_m_h3 = pd.read_parquet(Path("Data/processed/scenarios/single_male_h3.parquet"))
+df_m_h3 = pd.read_parquet(SCENARIO_DIR / "single_male_h3.parquet")
 df_m_h3.head()
 
 #%% 
 
-df_m_h0 = pd.read_parquet(Path("Data/processed/scenarios/single_male_h0.parquet"))
+df_m_h0 = pd.read_parquet(SCENARIO_DIR / "single_male_h0.parquet")
 df_m_h0.head()
 #%% 
-df_m= pd.read_parquet(Path("Data/processed/singles_final_filtered_male.parquet"))
+df_m = pd.read_parquet(PROCESSED_DIR / "singles_final_filtered_male.parquet")
 df_m.head()
 
 # %%
 # Load the DataFrames
 df_wide_m = pd.read_parquet(
-    Path("Data/processed/scenarios/heads_wide_single_male.parquet"))
+    SCENARIO_DIR / "heads_wide_single_male.parquet")
 df_wide_m.head()
 #%% 

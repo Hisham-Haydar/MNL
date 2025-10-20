@@ -16,6 +16,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from path_helpers import data_root, euromod_root, outputs_root, ensure_dir
+
 try:
     SCRIPT_DIR = Path(__file__).resolve().parent
 except NameError:
@@ -55,17 +57,14 @@ except ImportError as e:
         "Missing helpers 'create_income_columns' and 'get_head_counts' in scratch/my_functions.py."
     ) from e
 
-# Canonical project paths
-DATA_ROOT = PROJECT_ROOT / "Data"
+# Canonical project paths (storage-aware)
+DATA_ROOT = data_root()
 RAW_DIR = (DATA_ROOT / "raw") if (DATA_ROOT / "raw").exists() else DATA_ROOT
-PROCESSED_DIR = DATA_ROOT / "processed"
-PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+PROCESSED_DIR = ensure_dir(DATA_ROOT / "processed")
 
-MODEL_DIR = PROJECT_ROOT / "EUROMOD_RELEASES_J1.0+" / "EUROMOD_RELEASES_J1.0+"
-OUTPUTS_DIR = PROJECT_ROOT / "outputs" / "prep"
-OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
-PLOTS_DIR = OUTPUTS_DIR / "plots"
-PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+MODEL_DIR = euromod_root()
+OUTPUTS_DIR = ensure_dir(outputs_root() / "prep")
+PLOTS_DIR = ensure_dir(OUTPUTS_DIR / "plots")
 
 # Configuration parameters
 CONFIG = {
@@ -112,7 +111,7 @@ def _plot_distribution(series: pd.Series, title: str, output_path: Path, *, disc
         ax.set_ylabel("Frequency")
 
     ax.set_title(title)
-    ax.set_xlabel(title.split(" – ")[0])
+    ax.set_xlabel(title.split(" - ")[0])
     fig.tight_layout()
     fig.savefig(output_path)
     plt.close(fig)
@@ -126,7 +125,7 @@ def _generate_group_plots(df: pd.DataFrame, *, group_name: str, prefix: str, bin
             print(f"Skipping '{column}' for '{group_name}': column missing")
             continue
         output_path = PLOTS_DIR / f"{prefix}_{column}.png"
-        title = f"{info['label']} – {group_name}"
+        title = f"{info['label']} - {group_name}"
         _plot_distribution(df[column], title, output_path, discrete=info["discrete"], bins=bins)
         saved_paths[column] = output_path
     return saved_paths
@@ -140,7 +139,7 @@ def _generate_gender_plots(df: pd.DataFrame, *, base_group: str, prefix: str, bi
     for gender_code, gender_label in [(0, "female"), (1, "male")]:
         subset = df[df["dgn"].astype(float) == gender_code]
         if subset.empty:
-            print(f"No records for {base_group} – {gender_label}, skipping plots")
+            print(f"No records for {base_group} - {gender_label}, skipping plots")
             continue
         results[gender_label] = _generate_group_plots(
             subset,
@@ -264,7 +263,7 @@ final_df_sim1["les_orig"] = final_df_sim1["les"]
 final_df_sim1 = correct_labor_status(final_df_sim1, emp_threshold=0)
 
 chg = final_df_sim1["les_enforced"] != final_df_sim1["les_orig"]
-print("Reclassified away from employee (3→≠3):", int(((final_df_sim1["les_orig"] == 3) & chg).sum()))
+print("Reclassified away from employee (3->!=3):", int(((final_df_sim1["les_orig"] == 3) & chg).sum()))
 print("Total status changes:", int(chg.sum()))
 print(
     pd.crosstab(
@@ -343,11 +342,11 @@ prop_yem_zero = (ep["yem_corrected"] == 0).mean()
 print("Share with yem_corrected == 0 in ep:", round(prop_yem_zero, 3))
 print(ep["yem_corrected"].describe())
 eq_rate = np.isclose(ep["wage_final"], ep["yivwg"], rtol=1e-6, atol=1e-6).mean()
-print("Share with wage_final ≈ yivwg:", round(eq_rate, 3))
+print("Share with wage_final ~= yivwg:", round(eq_rate, 3))
 print(ep[["wage_final", "yivwg"]].describe())
 median_recon = ep["wage_final"].median() * ep["lhw"].median() * (52 / 12)
 print(
-    "Medians — yem2_final, diff_yem_final, recon:",
+    "Medians - yem2_final, diff_yem_final, recon:",
     ep["yem2_final"].median(),
     ep["diff_yem_final"].median(),
     median_recon,

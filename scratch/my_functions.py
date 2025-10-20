@@ -1,4 +1,4 @@
-﻿# =============================================================================
+# =============================================================================
 # STEPWISE HOUSEHOLD FILTERING & LATEX EXPORT HELPERS
 # =============================================================================
 
@@ -334,8 +334,8 @@ def correct_labor_status(df, emp_threshold=0):
     les_suggested = np.where(cond_se_to_emp, 3, les_suggested)
     df["les_suggested"] = les_suggested
     reason = np.full(len(df), "", dtype=object)
-    reason[cond_emp_to_se] = "SWITCH 3→2: yem<=100, yse>0, hours>=10"
-    reason[cond_se_to_emp] = "SWITCH 2→3: yem>100, yse≈0, hours>=10"
+    reason[cond_emp_to_se] = "SWITCH 3->2: yem<=100, yse>0, hours>=10"
+    reason[cond_se_to_emp] = "SWITCH 2->3: yem>100, yse~=0, hours>=10"
     df["les_change_reason"] = reason
     return df
 
@@ -701,7 +701,7 @@ def assign_jobs_2(df, threshold=5):
     """
     Assigns job categories with progressive collapsing to ensure minimum frequency.
     Each job code will have at least `threshold` observations unless it's at the most basic level.
-    Uses hierarchy: jobtot â†’ jobloc â†’ job (removing joblind from hierarchy).
+    Uses hierarchy: jobtot -> jobloc -> job (removing joblind from hierarchy).
 
     Returns df with columns:
       - job, jobloc, joblind, jobtot, jobs_2
@@ -709,11 +709,11 @@ def assign_jobs_2(df, threshold=5):
     """
     df = df.copy()
 
-    # 0ï¸âƒ£ Initialize all columns
+    # Step 0: Initialize all columns
     for col in ("job", "jobloc", "joblind", "jobtot", "jobs_2", "jobs_2_key"):
         df[col] = "N"
 
-    # 1ï¸âƒ£ Handle special cases: Unemployed and Inactive
+    # Step 1: Handle special cases: Unemployed and Inactive
     elig = (
         df["dag"].between(16, 65) &
         (df["dec"] == 0) &
@@ -732,7 +732,7 @@ def assign_jobs_2(df, threshold=5):
         df.loc[m_0, col] = "j_0"
     df.loc[m_0, "jobs_2_key"] = df.loc[m_0, "job"]  # mark key
 
-    # 2ï¸âƒ£ Handle workers
+    # Step 2: Handle workers
     m_work = elig & (df["lhw_interval"] > 1) & (df["les"] == 3)
 
     if m_work.any():
@@ -899,7 +899,7 @@ def preprocess_data(df, tgt, threshold=5):
     import logging
     logger = logging.getLogger(__name__)
     
-    logger.info("Processing job categoriesâ€¦")
+    logger.info("Processing job categories...")
     df = df.copy()
     df["job_dec"] = df[tgt].fillna("N")
     counts = df["job_dec"].value_counts()
@@ -1050,9 +1050,9 @@ def log_filtering_step(step_name: str, before_count: int, after_count: int) -> N
     dropped = before_count - after_count
     if before_count > 0:
         percentage = dropped/before_count*100
-        logger.info(f"{step_name}: {before_count:,} â†’ {after_count:,} households (-{dropped:,}, -{percentage:.1f}%)")
+        logger.info(f"{step_name}: {before_count:,} -> {after_count:,} households (-{dropped:,}, -{percentage:.1f}%)")
     else:
-        logger.info(f"{step_name}: {before_count:,} â†’ {after_count:,} households")
+        logger.info(f"{step_name}: {before_count:,} -> {after_count:,} households")
 
 
 def apply_single_filter(df: pd.DataFrame, role_column: str, condition: str, role_name: str) -> pd.DataFrame:

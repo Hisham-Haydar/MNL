@@ -23,8 +23,16 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import sys
 from pathlib import Path
 from typing import Sequence
+
+_JAXLIB_DIR = Path(sys.executable).resolve().parent.parent / "Lib" / "site-packages" / "jaxlib"
+if _JAXLIB_DIR.exists():
+    if hasattr(os, "add_dll_directory"):
+        os.add_dll_directory(str(_JAXLIB_DIR))
+    current_path = os.environ.get("PATH", "")
+    os.environ["PATH"] = f"{_JAXLIB_DIR}{os.pathsep}{current_path}"
 
 os.environ.setdefault("BIOGEME_NO_JAX", "1")
 
@@ -39,15 +47,17 @@ import biogeme.models as models
 from biogeme.expressions import Beta, Variable
 from biogeme.exceptions import BiogemeError
 
+from path_helpers import data_root, reports_root
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-SCENARIO_DIR = PROJECT_ROOT / "Data" / "processed" / "scenarios"
+SCENARIO_DIR = data_root() / "processed" / "scenarios"
 DEFAULT_GENDERS: Sequence[str] = ("male", "female")
 DEFAULT_LABELS: Sequence[str] = ("h0", "h1", "h2", "h3", "h4", "h5", "h6")
-DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "reports" / "biogeme"
+DEFAULT_OUTPUT_DIR = reports_root() / "biogeme"
 
 LOGGER = logging.getLogger(__name__)
 

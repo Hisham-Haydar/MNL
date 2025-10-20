@@ -12,9 +12,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from pathlib import Path
 from typing import Iterable, Mapping
+
+from path_helpers import data_root, reports_root
 
 try:
     import matplotlib
@@ -35,30 +36,9 @@ from scipy.optimize import fsolve
 # Configuration
 # ---------------------------------------------------------------------------
 
-# Resolve project root even if the script resides in ``scripts/``.
-_SCRIPT_DIR = Path(__file__).resolve().parent
-_candidate_roots: list[Path] = [
-    _SCRIPT_DIR,
-    _SCRIPT_DIR.parent,
-    _SCRIPT_DIR.parent.parent,
-]
-
-_env_root = os.environ.get("MNL_DATA_ROOT")
-if _env_root:
-    _candidate_roots.append(Path(_env_root).expanduser())
-
-_default_stash = Path("U:/EUROMOD-STORAGE")
-_candidate_roots.append(_default_stash)
-
-for _candidate in _candidate_roots:
-    if _candidate and (_candidate / "Data" / "processed" / "scenarios").exists():
-        ROOT = _candidate
-        break
-else:
-    ROOT = _SCRIPT_DIR
-
-DATA_DIR = ROOT / "Data" / "processed" / "scenarios"
-REPORT_DIR = ROOT / "reports" / "biogeme"
+# Resolve storage-aware paths for data and reports.
+DATA_DIR = data_root() / "processed" / "scenarios"
+REPORT_DIR = reports_root() / "biogeme"
 
 LABELS: tuple[str, ...] = ("h0", "h1", "h2", "h3", "h4", "h5", "h6")
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import Iterable, Mapping
 
@@ -36,13 +37,21 @@ from scipy.optimize import fsolve
 
 # Resolve project root even if the script resides in ``scripts/``.
 _SCRIPT_DIR = Path(__file__).resolve().parent
-_CANDIDATE_ROOTS = (
+_candidate_roots: list[Path] = [
     _SCRIPT_DIR,
     _SCRIPT_DIR.parent,
     _SCRIPT_DIR.parent.parent,
-)
-for _candidate in _CANDIDATE_ROOTS:
-    if (_candidate / "Data" / "processed" / "scenarios").exists():
+]
+
+_env_root = os.environ.get("MNL_DATA_ROOT")
+if _env_root:
+    _candidate_roots.append(Path(_env_root).expanduser())
+
+_default_stash = Path("U:/EUROMOD-STORAGE")
+_candidate_roots.append(_default_stash)
+
+for _candidate in _candidate_roots:
+    if _candidate and (_candidate / "Data" / "processed" / "scenarios").exists():
         ROOT = _candidate
         break
 else:
@@ -216,7 +225,7 @@ def muc(logy: pd.Series, logl: pd.Series, y: pd.Series, params: Mapping[str, flo
     finite_mask = np.isfinite(result)
     if finite_mask.any():
         finite_vals = result[finite_mask]
-        print(f"MUC range: {np.nanmin(finite_vals):.3f} → {np.nanmax(finite_vals):.3f}")
+        print(f"MUC range: {np.nanmin(finite_vals):.3f} -> {np.nanmax(finite_vals):.3f}")
 
     if isinstance(y, pd.Series):
         return pd.Series(result, index=y.index)
@@ -249,7 +258,7 @@ def mul(
 
     finite_num = numerator[np.isfinite(numerator)]
     if finite_num.size:
-        print(f"MUL range (raw numerator): {np.nanmin(finite_num):.3f} → {np.nanmax(finite_num):.3f}")
+        print(f"MUL range (raw numerator): {np.nanmin(finite_num):.3f} -> {np.nanmax(finite_num):.3f}")
 
     result = numerator / l_arr
 

@@ -3,13 +3,18 @@
 # @Date    : 2025-10-22 11:10:48
 # @Author  : Hisham Haydar (Hisham.Haydar@liser.lu)
 # @Link    : https://hisham-haydar.github.io/
-
+# %%
 # @Version : 1.0.0
 #%%
 # %% Bootstrap (Interactive Window friendly paths and helpers)
 import os
 import sys
 from pathlib import Path
+os.environ.setdefault("PYTHONNET_RUNTIME", "coreclr")
+
+# Ensure pythonnet uses CoreCLR runtime for Euromod
+os.environ.setdefault("PYTHONNET_RUNTIME", "coreclr")
+
 import euromod as em
 import numpy as np
 import pandas as pd
@@ -18,11 +23,6 @@ import matplotlib
 matplotlib.use("Agg")  # ensure headless plotting for batch runs
 import matplotlib.pyplot as plt
 
-from path_helpers import data_root, euromod_root, outputs_root, ensure_dir
-
-# ----- Constants used in multiple places -----
-WPM = 52 / 12  # weeks-per-month factor for wage reconstruction (~4.3333)
-
 # Resolve script paths both in file and notebook modes
 try:
     SCRIPT_DIR = Path(__file__).resolve().parent
@@ -30,7 +30,20 @@ except NameError:
     SCRIPT_DIR = Path.cwd() / "scripts"
 
 PROJECT_ROOT = (SCRIPT_DIR / "..").resolve()
+
+for candidate in (SCRIPT_DIR, PROJECT_ROOT):
+    candidate_str = str(candidate)
+    if candidate_str not in sys.path:
+        sys.path.insert(0, candidate_str)
+
 os.chdir(PROJECT_ROOT)
+
+from path_helpers import data_root, euromod_root, outputs_root, ensure_dir
+
+# ----- Constants used in multiple places -----
+WPM = 52 / 12  # weeks-per-month factor for wage reconstruction (~4.3333)
+
+# Allow importing helper functions from scratch/
 
 # Allow importing helper functions from scratch/
 SCRATCH_DIR = PROJECT_ROOT / "scratch"

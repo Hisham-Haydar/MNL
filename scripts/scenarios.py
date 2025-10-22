@@ -21,6 +21,8 @@ Outputs are written to `Data/processed/scenarios`.
 """
 
 from __future__ import annotations
+import os
+os.environ.setdefault("PYTHONNET_RUNTIME", "coreclr")
 
 import argparse
 import logging

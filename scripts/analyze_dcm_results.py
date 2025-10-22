@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import re
 from typing import Iterable, Mapping
 
 from path_helpers import data_root, reports_root
@@ -43,6 +44,13 @@ REPORT_DIR = reports_root() / "biogeme"
 LABELS: tuple[str, ...] = ("h0", "h1", "h2", "h3", "h4", "h5", "h6")
 
 
+def _load_json_if_exists(path: Path) -> dict:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
 # ---------------------------------------------------------------------------
 # CLI / Variant helpers
 # ---------------------------------------------------------------------------
@@ -62,6 +70,11 @@ def parse_args() -> argparse.Namespace:
         default="auto",
         choices=["ascsON", "ascsOFF", "auto"],
         help="Which parameter variant to analyze (default: auto).",
+    )
+    parser.add_argument(
+        "--annotate-biogeme-html",
+        action="store_true",
+        help="Annotate Biogeme HTML report by wrapping parameter names with tooltip spans.",
     )
     return parser.parse_args()
 
@@ -174,6 +187,30 @@ def get_series(df: pd.DataFrame, column: str) -> pd.Series:
     if column in df.columns:
         return df[column]
     return pd.Series(0.0, index=df.index)
+
+
+def annotate_biogeme_html(html_path: Path, label_map: dict, desc_map: dict):
+    try:
+        html = html_path.read_text(encoding="utf-8", errors="ignore")
+    except Exception:
+        return
+    # Build map from readable label (value) to wrapped HTML span with description.
+    reverse = {}
+    for raw, readable in (label_map or {}).items():
+        desc = (desc_map or {}).get(raw)
+        reverse[str(readable)] = _tooltip_html(readable, desc)
+    # Replace occurrences in table cells only: > name <
+    for readable, wrapped in reverse.items():
+        try:
+            pattern = rf">(\s*){re.escape(readable)}(\s*)<"
+            replacement = rf"> \1{wrapped}\2 <"
+            html = re.sub(pattern, replacement, html)
+        except re.error:
+            continue
+    try:
+        html_path.write_text(html, encoding="utf-8")
+    except Exception:
+        pass
 
 
 def compute_actual_logs(df: pd.DataFrame, labels: Iterable[str]) -> tuple[pd.Series, pd.Series]:
@@ -385,10 +422,22 @@ def plot_indifference_contours(
 
 def dataframe_to_html(df: pd.DataFrame, caption: str | None = None) -> str:
     """Convert a dataframe to an HTML table with optional caption."""
-    html = df.to_html(classes="table table-striped", float_format="{:,.4f}".format, border=0)
+    html = df.to_html(
+        classes="table table-striped",
+        float_format="{:,.4f}".format,
+        border=0,
+        escape=False,
+    )
     if caption:
         return f"<figure><figcaption><strong>{caption}</strong></figcaption>{html}</figure>"
     return html
+
+
+def _tooltip_html(name: str, desc: str | None) -> str:
+    safe_name = str(name)
+    safe_title = (desc or "").replace('"', "&quot;")
+    # dotted underline for discoverability
+    return f'<span title="{safe_title}" style="border-bottom:1px dotted #777; cursor:help;">{safe_name}</span>'
 
 
 def _save_hist(
@@ -465,6 +514,7 @@ def build_html_report(
     figcaption {{ font-weight: bold; margin-bottom: 0.5em; }}
     img {{ max-width: 100%; height: auto; border: 1px solid #ddd; }}
     .stats-table {{ width: auto; }}
+    .param-name[title] {{ border-bottom: 1px dotted #777; cursor: help; }}
   </style>
 </head>
 <body>
@@ -472,6 +522,11 @@ def build_html_report(
   <section>
     <h2>Parameter Summary</h2>
     {params_html}
+    <p style="color:#555;margin-top:-0.75em;">
+      <em>Tip:</em> hover over a parameter name to see a short description (e.g.,
+      <span title="Curvature of leisure: coefficient on (log l)^2." style="border-bottom:1px dotted #777;cursor:help;">beta_log2_leisure</span>
+      = curvature of leisure term).
+    </p>
   </section>
   <section>
     <h2>Key Statistics</h2>
@@ -522,10 +577,40 @@ def build_html_report(
 # ---------------------------------------------------------------------------
 
 
-def process_gender(gender: str, variant: str, param_csv: Path, out_dir: Path) -> dict[str, object]:
+def process_gender(
+    gender: str,
+    variant: str,
+    param_csv: Path,
+    out_dir: Path,
+    *,
+    annotate_biogeme_html_flag: bool = False,
+) -> dict[str, object]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     params_table, params_dict, asc_params = load_parameters(param_csv)
+
+    # Load label and description maps (best-effort)
+    labels_map_path = param_csv.with_name(param_csv.stem.replace("_parameters", "") + "_param_labels.json")
+    desc_map_path = param_csv.with_name(param_csv.stem.replace("_parameters", "") + "_param_descriptions.json")
+    LABEL_MAP = _load_json_if_exists(labels_map_path)
+    DESC_MAP = _load_json_if_exists(desc_map_path)
+    READABLE_TO_RAW = {str(v): str(k) for k, v in (LABEL_MAP or {}).items()}
+
+    # Wrap parameter names with tooltips for display in the HTML table
+    pretty_index: list[str] = []
+    for raw_like in params_table.index:
+        raw_key = READABLE_TO_RAW.get(str(raw_like), str(raw_like))
+        pretty = (LABEL_MAP or {}).get(raw_key, str(raw_like))
+        tip = (DESC_MAP or {}).get(raw_key)
+        pretty_index.append(_tooltip_html(pretty, tip))
+    params_table = params_table.copy()
+    params_table.index = pretty_index
+
+    # Map names back to raw keys for numerical computations
+    params_for_calc: dict[str, float] = {}
+    for k, v in params_dict.items():
+        raw_k = READABLE_TO_RAW.get(str(k), str(k))
+        params_for_calc[raw_k] = float(v)
 
     dataset_path = DATA_DIR / f"heads_wide_single_{gender}_dcm.parquet"
     if not dataset_path.exists():
@@ -566,9 +651,9 @@ def process_gender(gender: str, variant: str, param_csv: Path, out_dir: Path) ->
             mask = df["actual_choice"] == lab
             leila_actual.loc[mask] = df.loc[mask, col]
 
-    muc_series = muc(logy_actual, logl_actual, y_actual, params_dict)
-    mul_no_leila = mul(logy_actual, logl_actual, l_actual, params_dict)
-    mul_with_leila = mul(logy_actual, logl_actual, l_actual, params_dict, leila=leila_actual)
+    muc_series = muc(logy_actual, logl_actual, y_actual, params_for_calc)
+    mul_no_leila = mul(logy_actual, logl_actual, l_actual, params_for_calc)
+    mul_with_leila = mul(logy_actual, logl_actual, l_actual, params_for_calc, leila=leila_actual)
     share_no = float((mul_no_leila < 0).mean())
     share_with = float((mul_with_leila < 0).mean())
     print(f"[{gender}/{variant}] Share MUL<0 without Leila: {share_no:.2%}")
@@ -590,8 +675,8 @@ def process_gender(gender: str, variant: str, param_csv: Path, out_dir: Path) ->
 
     logy_med = logy_actual.median()
     logl_med = logl_actual.median()
-    y_zero = solve_zero_muc(logl_med, params_dict, guess=logy_med)
-    l_zero = solve_zero_mul(logy_med, params_dict, guess=logl_med)
+    y_zero = solve_zero_muc(logl_med, params_for_calc, guess=logy_med)
+    l_zero = solve_zero_mul(logy_med, params_for_calc, guess=logl_med)
 
     print(f"\n[{gender}/{variant}] === Marginal Utility Diagnostics ===")
     print(f"[{gender}/{variant}] Observations: {total_obs:,}")
@@ -609,7 +694,7 @@ def process_gender(gender: str, variant: str, param_csv: Path, out_dir: Path) ->
         y_max = y_min * 1.01 if y_min > 0 else y_min + 1e-3
     y_range = np.linspace(y_min, y_max, 200)
     logy_range = np.log(y_range)
-    muc_curve = muc(logy_range, np.full_like(logy_range, logl_med), y_range, params_dict)
+    muc_curve = muc(logy_range, np.full_like(logy_range, logl_med), y_range, params_for_calc)
 
     l_valid = l_actual.dropna()
     if l_valid.empty:
@@ -620,7 +705,7 @@ def process_gender(gender: str, variant: str, param_csv: Path, out_dir: Path) ->
         l_max = l_min * 1.01 if l_min > 0 else l_min + 1e-3
     l_range = np.linspace(l_min, l_max, 200)
     logl_range = np.log(l_range)
-    mul_curve = mul(np.full_like(logl_range, logy_med), logl_range, l_range, params_dict)
+    mul_curve = mul(np.full_like(logl_range, logy_med), logl_range, l_range, params_for_calc)
 
     muc_plot = out_dir / f"dcm_{gender}_{variant}_muc.png"
     mul_plot = out_dir / f"dcm_{gender}_{variant}_mul.png"
@@ -651,7 +736,7 @@ def process_gender(gender: str, variant: str, param_csv: Path, out_dir: Path) ->
     if not np.isfinite(typical_log_age):
         typical_log_age = None
     plot_indifference_contours(
-        params=params_dict,
+        params=params_for_calc,
         logy_med=logy_med,
         logl_med=logl_med,
         output_path=contour_plot,
@@ -669,7 +754,7 @@ def process_gender(gender: str, variant: str, param_csv: Path, out_dir: Path) ->
         mul_hist,
     )
 
-    utils_df = utility_components(df, labels, params_dict, asc_params)
+    utils_df = utility_components(df, labels, params_for_calc, asc_params)
     predicted_choice = utils_df.idxmax(axis=1)
     df_pred = pd.DataFrame({"actual_choice": df["actual_choice"], "predicted_choice": predicted_choice})
     df_pred["correct"] = (df_pred["actual_choice"] == df_pred["predicted_choice"]).astype(int)
@@ -725,6 +810,14 @@ def process_gender(gender: str, variant: str, param_csv: Path, out_dir: Path) ->
 
     print(f"[{gender}/{variant}] HTML report saved to: {report_path}")
 
+    # Optional: annotate Biogeme HTML table with tooltips
+    if annotate_biogeme_html_flag and LABEL_MAP:
+        try:
+            for html_path in out_dir.glob("dcm_*.html"):
+                annotate_biogeme_html(html_path, LABEL_MAP, DESC_MAP)
+        except Exception:
+            pass
+
     return {
         "gender": gender,
         "variant": variant,
@@ -741,7 +834,13 @@ def main() -> None:
         try:
             variant, param_csv = resolve_variant(gender, args.variant)
             out_dir = param_dir_for(gender, variant)
-            metrics = process_gender(gender, variant, param_csv, out_dir)
+            metrics = process_gender(
+                gender,
+                variant,
+                param_csv,
+                out_dir,
+                annotate_biogeme_html_flag=args.annotate_biogeme_html,
+            )
             summary.append(metrics)
         except Exception as exc:
             print(f"[{gender}] Analysis failed: {exc}")

@@ -21,6 +21,7 @@ Example
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import sys
@@ -73,6 +74,41 @@ SCENARIO_VARIABLES: Sequence[str] = (
     "log2l",
     "logyl",
 )
+
+
+# ---------------------------------------------------------------------------
+# Parameter labeling and descriptions (display only)
+# ---------------------------------------------------------------------------
+
+# Human-readable labels for Biogeme-visible parameter names.
+# Keys are the technical identifiers used internally in code; values are labels
+# that will appear in Biogeme outputs (CSV/HTML). Numerical behavior is unchanged.
+PARAM_NAME_MAP: dict[str, str] = {
+    "alpha_1": "beta_log_consumption",
+    "alpha_2": "beta_log_leisure",
+    "alpha_3": "beta_leila",
+    "alpha_4": "beta_log2_leila",
+    "alpha_5": "beta_log_childcare_cost",
+    "alpha_6": "beta_log_disutility_cost",
+    "beta_1": "beta_log2_consumption",
+    "beta_2": "beta_log2_leisure",
+    "gamma": "beta_logy_logl",
+}
+
+# Short descriptions for tooltip display in reports.
+PARAM_DESC_MAP: dict[str, str] = {
+    "alpha_1": "Slope on log(consumption): dU/d log y (linear term).",
+    "alpha_2": "Slope on log(leisure): dU/d log l (linear term).",
+    "alpha_3": "Effect of Leila (log l * log age) interaction.",
+    "alpha_4": "Quadratic in Leila (curvature on log l * log age).",
+    "alpha_5": "Effect of log(childcare cost) or related disutility shifter.",
+    "alpha_6": "Effect of log(disutility cost) or travel/time cost proxy.",
+    "beta_1": "Curvature of consumption: coefficient on (log y)^2.",
+    "beta_2": "Curvature of leisure: coefficient on (log l)^2.",
+    "gamma": "Interaction between consumption and leisure: log y * log l.",
+    # ASCs (created dynamically) get generic text:
+    "__ASC__": "Alternative-specific constant for this scenario (captures baseline preference).",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -233,15 +269,18 @@ def _build_utility_expressions(
 ) -> tuple[dict[int, object], dict[int, object], dict[str, Beta], list[str]]:
     """Create utility expressions and availability dictionary."""
     coeffs = {
-        "alpha_1": Beta("alpha_1", 0.0, None, None, 0),
-        "alpha_2": Beta("alpha_2", 0.0, None, None, 0),
-        "alpha_3": Beta("alpha_3", 0.0, None, None, 0),
-        "alpha_4": Beta("alpha_4", 0.0, None, None, 0),
-        "alpha_5": Beta("alpha_5", 0.0, None, None, 0),
-        "alpha_6": Beta("alpha_6", 0.0, None, None, 0),
-        "beta_1": Beta("beta_1", 0.0, None, None, 0),
-        "beta_2": Beta("beta_2", 0.0, None, None, 0),
-        "gamma": Beta("gamma", 0.0, None, None, 0),
+        k: Beta(PARAM_NAME_MAP.get(k, k), 0.0, None, None, 0)
+        for k in (
+            "alpha_1",
+            "alpha_2",
+            "alpha_3",
+            "alpha_4",
+            "alpha_5",
+            "alpha_6",
+            "beta_1",
+            "beta_2",
+            "gamma",
+        )
     }
 
     if include_ascs:
@@ -460,6 +499,24 @@ def estimate_model(
             continue
 
     LOGGER.info("[%s] Reports (if any) placed in %s", model_name, model_output_dir)
+
+    # Export label and description maps for downstream HTML tooltips.
+    try:
+        label_map_out = model_output_dir / f"{model_name}_param_labels.json"
+        desc_map_out = model_output_dir / f"{model_name}_param_descriptions.json"
+        label_map_out.write_text(json.dumps(PARAM_NAME_MAP, indent=2), encoding="utf-8")
+        desc_map = PARAM_DESC_MAP.copy()
+        if include_ascs:
+            for lab in labels:
+                key = f"ASC_{lab}"
+                desc_map[key] = PARAM_DESC_MAP.get(
+                    "__ASC__", "Alternative-specific constant."
+                )
+        desc_map_out.write_text(json.dumps(desc_map, indent=2), encoding="utf-8")
+    except Exception:
+        # Best-effort: mapping files are for display only.
+        pass
+
     return param_path
 
 

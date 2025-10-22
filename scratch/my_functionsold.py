@@ -1,4 +1,4 @@
-﻿# =============================================================================
+# =============================================================================
 # STEPWISE HOUSEHOLD FILTERING & LATEX EXPORT HELPERS
 # =============================================================================
 
@@ -299,132 +299,45 @@ def sum_nonhead_income(df: pd.DataFrame, income_col: str) -> pd.Series:
     )
     return grouped
 
-def correct_labor_status(
-    df,
-    *,
-    emp_threshold: float = 100.0,  # monthly employee cash must exceed this to count as employee cash
-    yse_threshold: float = 300.0,  # small self-emp cash under this is treated as side-gig
-    hrs_min: float = 10.0,         # must work at least this many hours/week to be considered working
-    ratio_high: float = 4.0        # if yse/yem >= ratio_high (and both positive), classify as self-employed
-):
-    """
-    Conservative dominance recode that ONLY touches rows whose original LES is in {2, 3, 7}.
-    All other original codes remain exactly as they are.
 
-    Outputs:
-      - les_enforced: int in {0..9}, but only rows with les_orig ∈ {2,3,7} can change,
-                      and any change is restricted to {2,3,7} as well.
-      - les_suggested: equals les_enforced where a change happened, else equals les_orig
-      - les_change_reason: brief textual reason when a change occurs
-      - dominance_ratio, mixed_income, mixed_heavy_yse, yse_loss: diagnostics
+def correct_labor_status(df, emp_threshold=0):
     """
-    import numpy as np
-    import pandas as pd
-
+    Enforce labor status correction based on cash income, self-employment, unemployment benefit, and hours.
+    Returns a DataFrame with columns: les_enforced, les_suggested, les_change_reason.
+    """
     df = df.copy()
+    emp_cash = df["yem"].fillna(0) > emp_threshold
+    se_cash  = df["yse"].fillna(0) > 0
+    hrs10    = df["lhw"].fillna(0) >= 10
+    has_unemp = df.get("replacement_unemployment", pd.Series(0, index=df.index)).fillna(0) > 0
 
-    # Safe pulls
-    les_orig = pd.to_numeric(df.get("les_orig", df.get("les")), errors="coerce").astype("Int64")
-    yem = pd.to_numeric(df.get("yem"), errors="coerce").fillna(0.0)
-    yse = pd.to_numeric(df.get("yse"), errors="coerce").fillna(0.0)
-    hrs = pd.to_numeric(df.get("lhw"), errors="coerce").fillna(0.0)
+    # Enforced status
+    les_enforced = np.select(
+        [emp_cash, (~emp_cash) & se_cash, (~emp_cash) & (~se_cash) & has_unemp],
+        [3, 2, 5],
+        default=7
+    ).astype(float)
+    mask_flip_away = (df["les_orig"] == 3) & (~emp_cash)
+    les_enforced = np.where(mask_flip_away, les_enforced, df["les_orig"])
+    df["les_enforced"] = les_enforced
 
-    # Basic evidence
-    works = hrs >= float(hrs_min)
-    emp_cash = yem > float(emp_threshold)
-    se_pos = yse > 0.0
-
-    # Dominance ratio (only meaningful if yem>0)
-    denom = np.where(yem > 0.0, yem, np.nan)
-    ratio = np.divide(yse, denom, out=np.zeros_like(yse, dtype=float), where=~np.isnan(denom))
-
-    # Start with "no change": keep original LES for everyone
-    les_final = les_orig.astype("float").copy()
-
-    # Only these rows are eligible to be changed
-    eligible = les_orig.isin([2, 3, 7])
-
-    # --- Helper: dominance resolution restricted to {2,3,7} ---
-    # Returns 2 (SE), 3 (EMP), or 7 (Inactive) based on cash & hours.
-    def resolve_row(i):
-        if not eligible.iat[i]:
-            return les_final.iat[i]  # untouched (original)
-
-        has_emp = bool(emp_cash.iat[i])
-        has_se = bool(se_pos.iat[i])
-        has_hrs = bool(works.iat[i])
-        yse_val = float(yse.iat[i])
-        ratio_val = float(ratio.iat[i])
-
-        if has_hrs:
-            # Working scenarios
-            if has_emp:
-                # Employee cash present with hours
-                if yse_val <= float(yse_threshold):
-                    return 3  # small side-gig => Employee
-                # tangible SE on top: check dominance
-                if ratio_val >= float(ratio_high):
-                    return 2  # SE dominates
-                return 3      # mixed but not dominant => Employee
-            else:
-                # No employee cash, but maybe SE cash with hours
-                if has_se:
-                    return 2   # SE only with hours
-                else:
-                    return 7   # hours but no cash signals => keep inactive
-        else:
-            # Not working enough hours -> treat as inactive for our purposes
-            return 7
-
-    # Vectorized via Python loop (keeps logic simple & readable)
-    out = np.empty(len(df), dtype=float)
-    for i in range(len(df)):
-        out[i] = resolve_row(i)
-
-    # Apply changes only to eligible; others keep original
-    les_final[eligible] = out[eligible]
-
-    # Enforce integer type
-    df["les_enforced"] = les_final.astype(int)
-
-    # Suggested + reasons (only where changed)
-    changed = (les_orig.astype("Int64") != df["les_enforced"].astype("Int64")) & eligible
-    df["les_suggested"] = np.where(changed, df["les_enforced"], les_orig)
-
+    # Suggested status
+    is_emp_code  = pd.to_numeric(df["les_orig"], errors="coerce").eq(3)
+    is_se_code   = pd.to_numeric(df["les_orig"], errors="coerce").eq(2)
+    has_emp_cash = df["yem"].fillna(0) > 100
+    has_se_cash  = ~np.isclose(df["yse"].fillna(0), 0, atol=1e-6)
+    works_hours  = df["lhw"].fillna(0) >= 10
+    les_suggested = df["les_orig"].copy()
+    cond_emp_to_se = is_emp_code & has_se_cash & (~has_emp_cash) & works_hours
+    cond_se_to_emp = is_se_code  & has_emp_cash & (~has_se_cash) & works_hours
+    les_suggested = np.where(cond_emp_to_se, 2, les_suggested)
+    les_suggested = np.where(cond_se_to_emp, 3, les_suggested)
+    df["les_suggested"] = les_suggested
     reason = np.full(len(df), "", dtype=object)
-    # Fill concise reasons
-    #  - If changed to 3: employee-dominant or small SE side-gig
-    idx = changed & (df["les_enforced"] == 3)
-    reason[idx] = (
-        "Recode within {2,3,7}: employee-dominant (yem>"
-        f"{int(emp_threshold)}), hours≥{int(hrs_min)}, "
-        f"yse≤{int(yse_threshold)} or (yse/yem)<{ratio_high}."
-    )
-
-    #  - If changed to 2: self-employment dominant
-    idx = changed & (df["les_enforced"] == 2)
-    reason[idx] = (
-        "Recode within {2,3,7}: self-emp dominant (yse/yem≥"
-        f"{ratio_high}) or only SE cash with hours≥{int(hrs_min)}."
-    )
-
-    #  - If changed to 7: insufficient hours or no qualifying cash
-    idx = changed & (df["les_enforced"] == 7)
-    reason[idx] = (
-        "Recode within {2,3,7}: insufficient hours or no qualifying cash; "
-        f"hours<{int(hrs_min)} or yem≤{int(emp_threshold)} and yse≤0."
-    )
-
+    reason[cond_emp_to_se] = "SWITCH 3->2: yem<=100, yse>0, hours>=10"
+    reason[cond_se_to_emp] = "SWITCH 2->3: yem>100, yse~=0, hours>=10"
     df["les_change_reason"] = reason
-
-    # Diagnostics
-    df["dominance_ratio"] = ratio
-    df["mixed_income"] = (emp_cash & (yse != 0)) & eligible
-    df["mixed_heavy_yse"] = (emp_cash & (yse > float(yse_threshold)) & (ratio >= float(ratio_high))) & eligible
-    df["yse_loss"] = yse < 0
-
     return df
-
 
 def compute_wage_recon(df):
     """
@@ -788,7 +701,7 @@ def assign_jobs_2(df, threshold=5):
     """
     Assigns job categories with progressive collapsing to ensure minimum frequency.
     Each job code will have at least `threshold` observations unless it's at the most basic level.
-    Uses hierarchy: jobtot â†’ jobloc â†’ job (removing joblind from hierarchy).
+    Uses hierarchy: jobtot -> jobloc -> job (removing joblind from hierarchy).
 
     Returns df with columns:
       - job, jobloc, joblind, jobtot, jobs_2
@@ -796,11 +709,11 @@ def assign_jobs_2(df, threshold=5):
     """
     df = df.copy()
 
-    # 0ï¸âƒ£ Initialize all columns
+    # Step 0: Initialize all columns
     for col in ("job", "jobloc", "joblind", "jobtot", "jobs_2", "jobs_2_key"):
         df[col] = "N"
 
-    # 1ï¸âƒ£ Handle special cases: Unemployed and Inactive
+    # Step 1: Handle special cases: Unemployed and Inactive
     elig = (
         df["dag"].between(16, 65) &
         (df["dec"] == 0) &
@@ -819,7 +732,7 @@ def assign_jobs_2(df, threshold=5):
         df.loc[m_0, col] = "j_0"
     df.loc[m_0, "jobs_2_key"] = df.loc[m_0, "job"]  # mark key
 
-    # 2ï¸âƒ£ Handle workers
+    # Step 2: Handle workers
     m_work = elig & (df["lhw_interval"] > 1) & (df["les"] == 3)
 
     if m_work.any():
@@ -986,7 +899,7 @@ def preprocess_data(df, tgt, threshold=5):
     import logging
     logger = logging.getLogger(__name__)
     
-    logger.info("Processing job categoriesâ€¦")
+    logger.info("Processing job categories...")
     df = df.copy()
     df["job_dec"] = df[tgt].fillna("N")
     counts = df["job_dec"].value_counts()
@@ -1137,9 +1050,9 @@ def log_filtering_step(step_name: str, before_count: int, after_count: int) -> N
     dropped = before_count - after_count
     if before_count > 0:
         percentage = dropped/before_count*100
-        logger.info(f"{step_name}: {before_count:,} â†’ {after_count:,} households (-{dropped:,}, -{percentage:.1f}%)")
+        logger.info(f"{step_name}: {before_count:,} -> {after_count:,} households (-{dropped:,}, -{percentage:.1f}%)")
     else:
-        logger.info(f"{step_name}: {before_count:,} â†’ {after_count:,} households")
+        logger.info(f"{step_name}: {before_count:,} -> {after_count:,} households")
 
 
 def apply_single_filter(df: pd.DataFrame, role_column: str, condition: str, role_name: str) -> pd.DataFrame:

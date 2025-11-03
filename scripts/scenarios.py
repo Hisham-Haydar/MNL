@@ -35,9 +35,31 @@ import numpy as np
 import pandas as pd
 import euromod as em
 
+# Add the scripts directory to the Python path to find path_helpers
+# Handle both script execution and interactive environments
+try:
+    SCRIPT_DIR = Path(__file__).resolve().parent
+except NameError:
+    # Running in interactive environment (Jupyter, IPython, etc.)
+    import inspect
+    SCRIPT_DIR = Path(inspect.getfile(inspect.currentframe())).resolve().parent
+    if not SCRIPT_DIR.exists() or SCRIPT_DIR.name != "scripts":
+        # Fallback: assume scripts directory is in the current working directory or parent
+        SCRIPT_DIR = Path.cwd() / "scripts"
+        if not SCRIPT_DIR.exists():
+            SCRIPT_DIR = Path.cwd()
+
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
 from path_helpers import data_root, euromod_root, ensure_dir
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# Resolve PROJECT_ROOT handling both script and interactive environments
+try:
+    PROJECT_ROOT = Path(__file__).resolve().parent.parent
+except NameError:
+    PROJECT_ROOT = SCRIPT_DIR.parent if SCRIPT_DIR.name == "scripts" else Path.cwd()
+
 SCRATCH_DIR = PROJECT_ROOT / "scratch"
 if SCRATCH_DIR.exists():
     sys.path.insert(0, str(SCRATCH_DIR))
@@ -777,6 +799,11 @@ if __name__ == "__main__":
 import pandas as pd
 df_m_h3 = pd.read_parquet(SCENARIO_DIR / "single_male_h3.parquet")
 df_m_h3.head()
+
+#%% 
+
+df_f_h4 = pd.read_parquet(SCENARIO_DIR / "single_female_h4.parquet")
+df_f_h4.head()
 
 #%% 
 

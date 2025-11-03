@@ -6,7 +6,7 @@ second_derivatives = 1.0 # float: proportion (between 0 and 1) of iterations whe
                          # the analytical Hessian is calculated
 tolerance = 6.055454452393343e-06 # float: the algorithm stops when this
                                   # precision is reached
-max_iterations = 1000 # int: maximum number of iterations
+max_iterations = 100000 # int: maximum number of iterations
 infeasible_cg = "False" # If True, the conjugate gradient algorithm may generate
                         # infeasible solutions until termination.  The result
                         # will then be projected on the feasible domain.  If
@@ -21,7 +21,7 @@ enlarging_factor = 10 # If an iteration is very successful, the radius of the
                       # trust region is multiplied by this factor
 
 [MonteCarlo]
-number_of_draws = 10000 # int: Number of draws for Monte-Carlo integration.
+number_of_draws = 100000 # int: Number of draws for Monte-Carlo integration.
 seed = 0 # int: Seed used for the pseudo-random number generation. It is useful
          # only when each run should generate the exact same result. If 0, a new
          # seed is used at each run.
@@ -60,7 +60,7 @@ optimization_algorithm = "automatic" # str: optimization algorithm to be used fo
                                      # 'simple_bounds_BFGS']
 
 [Bootstrap]
-number_of_jobs = 2 # int: The maximum number of concurrently running jobs. If -1
+number_of_jobs = -1 # int: The maximum number of concurrently running jobs. If -1
                    # is given, joblib tries to use all CPUs.
 
 [MultiThreading]

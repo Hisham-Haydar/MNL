@@ -24,7 +24,9 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import sys
+from math import log as ln
 from pathlib import Path
 from typing import Sequence
 
@@ -88,11 +90,20 @@ PARAM_NAME_MAP: dict[str, str] = {
     "alpha_2": "beta_log_leisure",
     "alpha_3": "beta_leila",
     "alpha_4": "beta_log2_leila",
-    "alpha_5": "beta_log_childcare_cost",
-    "alpha_6": "beta_log_disutility_cost",
+    "alpha_5": "beta_log_leisure_children_total",
+    "alpha_6": "beta_log_leisure_child_lt6_dummy",
     "beta_1": "beta_log2_consumption",
     "beta_2": "beta_log2_leisure",
     "gamma": "beta_logy_logl",
+    "alpha_1m": "beta_log_consumption_male",
+    "alpha_2m": "beta_log_leisure_male",
+    "alpha_3m": "beta_leila_male",
+    "alpha_4m": "beta_log2_leila_male",
+    "alpha_5m": "beta_log_leisure_children_total_male",
+    "alpha_6m": "beta_log_leisure_child_lt6_dummy_male",
+    "beta_1m": "beta_log2_consumption_male",
+    "beta_2m": "beta_log2_leisure_male",
+    "gamma_m": "beta_logy_logl_male",
 }
 
 # Short descriptions for tooltip display in reports.
@@ -101,11 +112,20 @@ PARAM_DESC_MAP: dict[str, str] = {
     "alpha_2": "Slope on log(leisure): dU/d log l (linear term).",
     "alpha_3": "Effect of Leila (log l * log age) interaction.",
     "alpha_4": "Quadratic in Leila (curvature on log l * log age).",
-    "alpha_5": "Effect of log(childcare cost) or related disutility shifter.",
-    "alpha_6": "Effect of log(disutility cost) or travel/time cost proxy.",
+    "alpha_5": "Effect of log(leisure) interacted with total number of children.",
+    "alpha_6": "Effect of log(leisure) interacted with a young-child (<6) dummy.",
     "beta_1": "Curvature of consumption: coefficient on (log y)^2.",
     "beta_2": "Curvature of leisure: coefficient on (log l)^2.",
     "gamma": "Interaction between consumption and leisure: log y * log l.",
+    "alpha_1m": "Male interaction on log(consumption).",
+    "alpha_2m": "Male interaction on log(leisure).",
+    "alpha_3m": "Male interaction on Leila term.",
+    "alpha_4m": "Male interaction on Leila quadratic.",
+    "alpha_5m": "Male interaction on log(leisure) × total children.",
+    "alpha_6m": "Male interaction on log(leisure) × young-child dummy.",
+    "beta_1m": "Male interaction on (log y)^2.",
+    "beta_2m": "Male interaction on (log l)^2.",
+    "gamma_m": "Male interaction on log y * log l.",
     # ASCs (created dynamically) get generic text:
     "__ASC__": "Alternative-specific constant for this scenario (captures baseline preference).",
 }
@@ -223,9 +243,33 @@ def _load_dataset(
     return df.reset_index(drop=True), labels_tuple
 
 
+def _ensure_gender_flag(df: pd.DataFrame, gender: str, gender_col: str) -> pd.DataFrame:
+    """Ensure the dataset contains a binary gender indicator (1=male, 0=female)."""
+    g = df.copy()
+    if gender_col not in g.columns:
+        g[gender_col] = 1 if gender == "male" else 0
+    g[gender_col] = (g[gender_col] > 0).astype(int)
+    return g
+
+
+def _actual_choice_logs(df: pd.DataFrame, labels: Sequence[str]) -> tuple[pd.Series, pd.Series]:
+    """Return logy/logl series evaluated at each row's actual choice."""
+    logy = pd.Series(np.nan, index=df.index)
+    logl = pd.Series(np.nan, index=df.index)
+    ac = df["actual_choice"]
+    for lab in labels:
+        mask = ac == lab
+        if mask.any():
+            logy.loc[mask] = df.loc[mask, f"logy_{lab}"]
+            logl.loc[mask] = df.loc[mask, f"logl_{lab}"]
+    return logy.astype(float), logl.astype(float)
+
+
 def _prepare_biogeme_database(
     df: pd.DataFrame,
     labels: Sequence[str],
+    *,
+    gender_column: str | None = None,
 ) -> tuple[db.Database, dict[str, int], list[str]]:
     """Construct a Biogeme database in the current (wide) format."""
     alt_ids = {label: idx + 1 for idx, label in enumerate(labels)}
@@ -241,6 +285,8 @@ def _prepare_biogeme_database(
     keep_columns = ["choice_id"] + [
         f"{base}_{label}" for label in labels for base in SCENARIO_VARIABLES
     ] + avail_columns
+    if gender_column and gender_column in numeric_df.columns:
+        keep_columns.append(gender_column)
     missing_keep = set(keep_columns) - set(numeric_df.columns)
     if missing_keep:
         raise KeyError(f"Missing required columns for DCM: {sorted(missing_keep)}")
@@ -249,6 +295,8 @@ def _prepare_biogeme_database(
     numeric_df["choice_id"] = numeric_df["choice_id"].astype(int)
     for col in avail_columns:
         numeric_df[col] = (numeric_df[col] != 0).astype(int)
+    if gender_column and gender_column in numeric_df.columns:
+        numeric_df[gender_column] = (numeric_df[gender_column] > 0).astype(int)
     if numeric_df.isna().any().any():
         raise ValueError("Unexpected NaN values remain in numeric dataset for Biogeme.")
 
@@ -266,8 +314,17 @@ def _build_utility_expressions(
     df: pd.DataFrame,
     *,
     include_ascs: bool = False,
+    center_logs: bool = False,
+    y_scale: float = 1.0,
+    mean_logy_actual: float = 0.0,
+    mean_logl_actual: float = 0.0,
+    gender_column: str = "dgn",
+    pooled: bool = False,
 ) -> tuple[dict[int, object], dict[int, object], dict[str, Beta], list[str]]:
     """Create utility expressions and availability dictionary."""
+    if y_scale <= 0:
+        raise ValueError("y_scale must be positive.")
+
     coeffs = {
         k: Beta(PARAM_NAME_MAP.get(k, k), 0.0, None, None, 0)
         for k in (
@@ -283,40 +340,100 @@ def _build_utility_expressions(
         )
     }
 
+    if pooled:
+        for key in (
+            "alpha_1m",
+            "alpha_2m",
+            "alpha_3m",
+            "alpha_4m",
+            "alpha_5m",
+            "alpha_6m",
+            "beta_1m",
+            "beta_2m",
+            "gamma_m",
+        ):
+            coeffs[key] = Beta(PARAM_NAME_MAP.get(key, key), 0.0, None, None, 0)
+        dgn = Variable(gender_column)
+    else:
+        dgn = 0
+
     if include_ascs:
         base_label = labels[0]
         coeffs[f"ASC_{base_label}"] = Beta(f"ASC_{base_label}", 0.0, None, None, 1)
         for lab in labels[1:]:
             coeffs[f"ASC_{lab}"] = Beta(f"ASC_{lab}", 0.0, None, None, 0)
 
+    use_star = center_logs or (y_scale != 1.0)
+    if use_star:
+        c_logy_val = mean_logy_actual if center_logs else 0.0
+        c_logl_val = mean_logl_actual if center_logs else 0.0
+        ln_scale_val = ln(y_scale) if y_scale != 1.0 else 0.0
+        C_LOGY = Beta("C_LOGY", c_logy_val, None, None, 1)
+        C_LOGL = Beta("C_LOGL", c_logl_val, None, None, 1)
+        LN_SCALE = Beta("LN_SCALE", ln_scale_val, None, None, 1)
+    else:
+        C_LOGY = None
+        C_LOGL = None
+        LN_SCALE = None
+
     V: dict[int, object] = {}
     av: dict[int, object] = {}
     avail_cols_used: list[str] = []
     for label in labels:
         alt = alt_ids[label]
-        logy = Variable(f"logy_{label}")
-        logl = Variable(f"logl_{label}")
+        logy_raw = Variable(f"logy_{label}")
+        logl_raw = Variable(f"logl_{label}")
         leila = Variable(f"Leila_{label}")
         leila2 = Variable(f"Leila2_{label}")
         lochi = Variable(f"lochi_{label}")
         logdc = Variable(f"logdc_{label}")
-        log2y = Variable(f"log2y_{label}")
-        log2l = Variable(f"log2l_{label}")
-        logyl = Variable(f"logyl_{label}")
+
+        if use_star:
+            logy_var = logy_raw - (LN_SCALE + C_LOGY)
+            logl_var = logl_raw - C_LOGL
+            log2y_term = logy_var * logy_var
+            log2l_term = logl_var * logl_var
+            logyl_term = logy_var * logl_var
+        else:
+            logy_var = logy_raw
+            logl_var = logl_raw
+            log2y = Variable(f"log2y_{label}")
+            log2l = Variable(f"log2l_{label}")
+            logyl = Variable(f"logyl_{label}")
+            log2y_term = log2y
+            log2l_term = log2l
+            logyl_term = logyl
 
         asc_term = coeffs.get(f"ASC_{label}", 0) if include_ascs else 0
 
-        V[alt] = asc_term + (
-            coeffs["alpha_1"] * logy
-            + coeffs["alpha_2"] * logl
+        base = (
+            coeffs["alpha_1"] * logy_var
+            + coeffs["alpha_2"] * logl_var
             + coeffs["alpha_3"] * leila
             + coeffs["alpha_4"] * leila2
             + coeffs["alpha_5"] * lochi
             + coeffs["alpha_6"] * logdc
-            + coeffs["beta_1"] * log2y
-            + coeffs["beta_2"] * log2l
-            + coeffs["gamma"] * logyl
+            + coeffs["beta_1"] * log2y_term
+            + coeffs["beta_2"] * log2l_term
+            + coeffs["gamma"] * logyl_term
         )
+
+        if pooled:
+            gender_terms = (
+                coeffs["alpha_1m"] * logy_var * dgn
+                + coeffs["alpha_2m"] * logl_var * dgn
+                + coeffs["alpha_3m"] * leila * dgn
+                + coeffs["alpha_4m"] * leila2 * dgn
+                + coeffs["alpha_5m"] * lochi * dgn
+                + coeffs["alpha_6m"] * logdc * dgn
+                + coeffs["beta_1m"] * log2y_term * dgn
+                + coeffs["beta_2m"] * log2l_term * dgn
+                + coeffs["gamma_m"] * logyl_term * dgn
+            )
+        else:
+            gender_terms = 0
+
+        V[alt] = asc_term + base + gender_terms
 
         avail_name = f"avail_{label}"
         if avail_name in df.columns:
@@ -334,14 +451,44 @@ def estimate_model(
     output_dir: Path,
     *,
     include_ascs: bool = False,
+    center_logs: bool = False,
+    y_scale: float = 1.0,
+    gender_column: str = "dgn",
+    pooled: bool = False,
 ) -> Path:
     """Estimate the multinomial logit model for the given gender."""
-    database, alt_ids, _ = _prepare_biogeme_database(df, labels)
+    logy_actual, logl_actual = _actual_choice_logs(df, labels)
+    if np.all(np.isnan(logy_actual.values)):
+        mean_logy_actual = 0.0
+    else:
+        mean_logy_actual = float(np.nanmean(logy_actual.values))
+    if np.all(np.isnan(logl_actual.values)):
+        mean_logl_actual = 0.0
+    else:
+        mean_logl_actual = float(np.nanmean(logl_actual.values))
+
+    if pooled and gender_column not in df.columns:
+        raise KeyError(
+            f"Pooled estimation requires gender column '{gender_column}' in the dataset."
+        )
+
+    gender_col_arg = gender_column if gender_column in df.columns else None
+    database, alt_ids, _ = _prepare_biogeme_database(
+        df,
+        labels,
+        gender_column=gender_col_arg,
+    )
     V, av, coeffs, avail_cols_used = _build_utility_expressions(
         labels,
         alt_ids,
         df,
         include_ascs=include_ascs,
+        center_logs=center_logs,
+        y_scale=y_scale,
+        mean_logy_actual=mean_logy_actual,
+        mean_logl_actual=mean_logl_actual,
+        gender_column=gender_column,
+        pooled=pooled,
     )
     choice = Variable("choice_id")
     logprob = models.loglogit(V, av, choice)
@@ -349,11 +496,23 @@ def estimate_model(
     if avail_cols_used:
         LOGGER.info("[%s] Using availability columns: %s", gender, ", ".join(avail_cols_used))
 
-    tag = "ascsON" if include_ascs else "ascsOFF"
-    model_name = f"dcm_{gender}_{tag}"
-    model_output_dir = output_dir / f"{gender}_{tag}"
+    variant_tag = "ascsON" if include_ascs else "ascsOFF"
+    if center_logs:
+        variant_tag += "_center"
+    if y_scale and y_scale != 1.0:
+        variant_tag += f"_ys{int(y_scale)}"
+    model_name = f"dcm_{gender}_{variant_tag}"
+    model_output_dir = output_dir / f"{gender}_{variant_tag}"
     model_output_dir.mkdir(parents=True, exist_ok=True)
-    LOGGER.info("[%s] include_ascs=%s  -> model=%s  out=%s", gender, include_ascs, model_name, model_output_dir)
+    LOGGER.info(
+        "[%s] include_ascs=%s center_logs=%s y_scale=%s -> model=%s out=%s",
+        gender,
+        include_ascs,
+        center_logs,
+        y_scale,
+        model_name,
+        model_output_dir,
+    )
 
     # Remove artefacts from previous runs to avoid versioned files (~01, ~02, ...).
     cleanup_patterns = (
@@ -400,6 +559,25 @@ def estimate_model(
         params_df = results.getEstimatedParameters()
     params_df.to_csv(param_path, index=True)
 
+    # Persist transform metadata for analysis stage.
+    try:
+        meta: dict[str, object] = {
+            "include_ascs": bool(include_ascs),
+            "center_logs": bool(center_logs),
+            "y_scale": float(y_scale),
+            "C_LOGY": float(mean_logy_actual if center_logs else 0.0),
+            "C_LOGL": float(mean_logl_actual if center_logs else 0.0),
+            "LN_SCALE": float(np.log(y_scale) if y_scale != 1.0 else 0.0),
+            "labels": list(labels),
+            "pooled": bool(pooled),
+            "gender_column": gender_column if gender_col_arg else None,
+        }
+        meta_path = model_output_dir / f"{model_name}_transform_meta.json"
+        meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        # Best-effort; downstream scripts fall back to legacy behavior.
+        pass
+
     opt_ll = None
     try:
         opt_ll = getattr(results, "log_likelihood", None)
@@ -424,6 +602,7 @@ def estimate_model(
 
     rho2 = None
     rho2_adj = None
+    k_estimated: int | None = None
     if null_ll is not None and opt_ll is not None and null_ll != 0:
         k = 0
         try:
@@ -445,6 +624,14 @@ def estimate_model(
                 k = 0
         rho2 = 1 - opt_ll / null_ll
         rho2_adj = 1 - (opt_ll - k) / null_ll
+        k_estimated = k
+
+    aic = None
+    bic = None
+    if opt_ll is not None and k_estimated is not None:
+        aic = 2 * k_estimated - 2 * opt_ll
+        if len(df) > 0:
+            bic = np.log(len(df)) * k_estimated - 2 * opt_ll
 
     # Remove any reports Biogeme might have generated despite the flags.
     # Move Biogeme reports from project root (where they land by default) into the gender folder.
@@ -461,9 +648,13 @@ def estimate_model(
             try:
                 if target.exists():
                     target.unlink()
-                file_path.replace(target)
+                shutil.move(str(file_path), str(target))
             except OSError:
-                pass
+                try:
+                    shutil.copy2(str(file_path), str(target))
+                    file_path.unlink()
+                except OSError:
+                    pass
 
     LOGGER.info("[%s] Estimation completed (%s). Parameters saved to %s", gender, model_name, param_path)
     if opt_ll is not None:
@@ -477,6 +668,21 @@ def estimate_model(
             opt_ll,
             rho2,
             rho2_adj,
+        )
+    if opt_ll is not None and null_ll is not None and rho2 is not None and rho2_adj is not None:
+        LOGGER.info(
+            "[%s] [%s] checklist LL*=%.6f LL0=%.6f rho2=%.4f rho2_adj=%.4f AIC=%s BIC=%s flags asc=%s center=%s y_scale=%s",
+            gender,
+            model_name,
+            opt_ll,
+            null_ll,
+            rho2,
+            rho2_adj,
+            f"{aic:.4f}" if aic is not None else "na",
+            f"{bic:.4f}" if bic is not None else "na",
+            include_ascs,
+            center_logs,
+            y_scale,
         )
 
     for method_name, suffix in (
@@ -553,6 +759,27 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Include alternative-specific constants (default: disabled).",
     )
     parser.add_argument(
+        "--pooled",
+        action="store_true",
+        help="Estimate one pooled model (male+female) with gender interaction terms.",
+    )
+    parser.add_argument(
+        "--gender-column",
+        default="dgn",
+        help="Gender indicator column name (1=male, 0=female). If absent, it is created. Default: dgn.",
+    )
+    parser.add_argument(
+        "--center-logs",
+        action="store_true",
+        help="Center logy/logl around their actual-choice means (per gender).",
+    )
+    parser.add_argument(
+        "--y-scale",
+        type=float,
+        default=1.0,
+        help="Divide consumption y by this factor inside the model, e.g. 1000 for thousands.",
+    )
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default=DEFAULT_OUTPUT_DIR,
@@ -577,6 +804,9 @@ def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
     logging.basicConfig(level=getattr(logging, args.log_level.upper()), format="%(message)s")
 
+    if args.y_scale <= 0:
+        raise ValueError("--y-scale must be positive.")
+
     labels_cfg: Sequence[str] | None = None
     if not args.auto_labels:
         labels_cfg = tuple(args.labels)
@@ -584,23 +814,65 @@ def main(argv: list[str] | None = None) -> None:
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    for gender in args.genders:
+    if args.pooled:
         try:
-            dataset_path = args.data_dir / f"heads_wide_single_{gender}_dcm.parquet"
-            df, labels = _load_dataset(
-                dataset_path,
+            df_male, labels_m = _load_dataset(
+                args.data_dir / "heads_wide_single_male_dcm.parquet",
                 labels_cfg,
                 auto_labels=args.auto_labels,
             )
+            df_female, labels_f = _load_dataset(
+                args.data_dir / "heads_wide_single_female_dcm.parquet",
+                labels_cfg,
+                auto_labels=args.auto_labels,
+            )
+            if labels_m != labels_f:
+                raise ValueError(
+                    f"Scenario labels differ across genders: male={labels_m} vs female={labels_f}."
+                )
+            df_male = _ensure_gender_flag(df_male, "male", args.gender_column)
+            df_female = _ensure_gender_flag(df_female, "female", args.gender_column)
+            common_cols = sorted(set(df_male.columns).intersection(df_female.columns))
+            pooled_df = pd.concat(
+                [df_male[common_cols], df_female[common_cols]],
+                ignore_index=True,
+                sort=False,
+            )
             estimate_model(
-                gender,
-                df,
-                labels,
+                "pooled",
+                pooled_df,
+                labels_m,
                 output_dir,
                 include_ascs=args.include_ascs,
+                center_logs=args.center_logs,
+                y_scale=args.y_scale,
+                gender_column=args.gender_column,
+                pooled=True,
             )
-        except Exception as exc:  # pragma: no cover - keep running other genders
-            LOGGER.error("[%s] Estimation failed: %s", gender, exc, exc_info=True)
+        except Exception as exc:
+            LOGGER.error("[pooled] Estimation failed: %s", exc, exc_info=True)
+    else:
+        for gender in args.genders:
+            try:
+                dataset_path = args.data_dir / f"heads_wide_single_{gender}_dcm.parquet"
+                df, labels = _load_dataset(
+                    dataset_path,
+                    labels_cfg,
+                    auto_labels=args.auto_labels,
+                )
+                df = _ensure_gender_flag(df, gender, args.gender_column)
+                estimate_model(
+                    gender,
+                    df,
+                    labels,
+                    output_dir,
+                    include_ascs=args.include_ascs,
+                    center_logs=args.center_logs,
+                    y_scale=args.y_scale,
+                    gender_column=args.gender_column,
+                )
+            except Exception as exc:  # pragma: no cover - keep running other genders
+                LOGGER.error("[%s] Estimation failed: %s", gender, exc, exc_info=True)
 
 
 if __name__ == "__main__":

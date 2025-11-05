@@ -32,6 +32,7 @@ except ImportError as exc:  # pragma: no cover - dependency guard
 import numpy as np
 import pandas as pd
 from scipy.optimize import fsolve
+from scipy.special import logsumexp
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -93,6 +94,55 @@ def load_dataset_for_gender(gender: str) -> pd.DataFrame:
     if not dataset_path.exists():
         raise FileNotFoundError(f"Missing wide dataset: {dataset_path}")
     return pd.read_parquet(dataset_path)
+
+
+def bc(x: np.ndarray, alpha: float) -> np.ndarray:
+    x = np.clip(np.asarray(x, dtype=float), 1e-6, None)
+    if abs(alpha) < 1e-8:
+        return np.log(x)
+    return (np.power(x, alpha) - 1.0) / alpha
+
+
+def muc_boxcox(params: Mapping[str, float], consumption: np.ndarray, y_ref: float) -> np.ndarray:
+    c_norm = np.clip(np.asarray(consumption, dtype=float) / y_ref, 1e-6, 1.0)
+    alpha_c = float(params.get("alpha_c", 0.0))
+    beta_c = float(params.get("beta_c", 0.0))
+    return beta_c * np.power(c_norm, alpha_c - 1.0) / y_ref
+
+
+def mul_boxcox(
+    params: Mapping[str, float],
+    leisure: np.ndarray,
+    Z: Mapping[str, float],
+    *,
+    T_endow: float = 80.0,
+) -> np.ndarray:
+    l_norm = np.clip(np.asarray(leisure, dtype=float) / T_endow, 1e-6, 1.0)
+    alpha_l = float(params.get("alpha_l", 0.0))
+    beta_l = float(params.get("beta_l0", 0.0))
+    for key, value in Z.items():
+        beta_l += float(params.get(f"delta_{key}", 0.0)) * float(value)
+    return beta_l * np.power(l_norm, alpha_l - 1.0) / T_endow
+
+
+def uij_boxcox(
+    params: Mapping[str, float],
+    asc_j: float,
+    C_norm: float,
+    L_norm: float,
+    Z: Mapping[str, float],
+) -> float:
+    beta_c = float(params.get("beta_c", 0.0))
+    alpha_c = float(params.get("alpha_c", 0.0))
+    alpha_l = float(params.get("alpha_l", 0.0))
+    beta_l = float(params.get("beta_l0", 0.0))
+    for key, value in Z.items():
+        beta_l += float(params.get(f"delta_{key}", 0.0)) * float(value)
+    return (
+        asc_j
+        + beta_c * bc(C_norm, alpha_c)
+        + beta_l * bc(L_norm, alpha_l)
+    )
 
 
 def eff(

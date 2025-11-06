@@ -434,6 +434,12 @@ def approximate_hessian(theta: np.ndarray, data: ModelData, structure: ParamStru
             H[i, j] = H[j, i] = value
     return H
 
+def _make_spd(M: np.ndarray, lam: float = 1e-8) -> np.ndarray:
+    """Return a symmetric positive-definite version of M by eigenvalue floor."""
+    S = 0.5 * (M + M.T)
+    vals, vecs = np.linalg.eigh(S)
+    vals = np.clip(vals, lam, None)
+    return (vecs * vals) @ vecs.T
 
 # ---------------------------------------------------------------------------
 # Diagnostics & outputs
@@ -687,12 +693,14 @@ def estimate(
     LOGGER.info("[%s] Parameter vector: %s", gender_key, structure.param_names)
 
     theta0 = initial_theta(structure)
+    bounds = [(-2.0, 2.0), (-2.0, 2.0)] + [(None, None)] * (len(theta0) - 2)
 
     result = minimize(
         negative_log_likelihood,
         theta0,
         args=(data, structure),
         method="L-BFGS-B",
+        bounds=bounds,
         options={"maxiter": 1000, "disp": log_level <= logging.DEBUG},
     )
 
@@ -732,13 +740,17 @@ def estimate(
     if Hinv is None or Hinv.shape != (k_params, k_params):
         H = approximate_hessian(theta_hat, data, structure)
         H = 0.5 * (H + H.T)
+        # --- NEW: ridge to avoid near-singularity
+        lam = 1e-6 * max(1.0, np.max(np.abs(np.diag(H))))
+        H = H + lam * np.eye(k_params)
         Hinv = np.linalg.pinv(H)
 
     Hinv = 0.5 * (Hinv + Hinv.T)
-    cov = Hinv.copy()
+    cov = _make_spd(Hinv, lam=1e-8)
+
     G = scores.T @ scores
     cov_rob = Hinv @ G @ Hinv
-    cov_rob = 0.5 * (cov_rob + cov_rob.T)
+    cov_rob = _make_spd(cov_rob, lam=1e-8)
 
     values_vector = np.array([param_values[name] for name in structure.param_names], dtype=float)
 
@@ -806,6 +818,11 @@ def estimate(
         "parameters": param_values,
     }
     meta.update({k: float(v) for k, v in muc_summary.items()})
+    meta.update({
+    "parameters_csv": f"{model_name}_parameters.csv",
+    "confusion_csv": f"{model_name}_confusion.csv",
+})
+
     write_parameter_metadata(output_dir, model_name, param_df, meta)
 
     cm_path = output_dir / f"{model_name}_confusion.csv"

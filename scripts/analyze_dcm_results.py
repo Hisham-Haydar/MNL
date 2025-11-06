@@ -14,7 +14,7 @@ import argparse
 import json
 from pathlib import Path
 import re
-from typing import Iterable, Mapping
+from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
 
 from path_helpers import data_root, reports_root
 
@@ -96,7 +96,7 @@ def load_dataset_for_gender(gender: str) -> pd.DataFrame:
     return pd.read_parquet(dataset_path)
 
 
-def bc(x: np.ndarray, alpha: float) -> np.ndarray:
+def _bc(x: np.ndarray, alpha: float) -> np.ndarray:
     x = np.clip(np.asarray(x, dtype=float), 1e-6, None)
     if abs(alpha) < 1e-8:
         return np.log(x)
@@ -140,8 +140,8 @@ def uij_boxcox(
         beta_l += float(params.get(f"delta_{key}", 0.0)) * float(value)
     return (
         asc_j
-        + beta_c * bc(C_norm, alpha_c)
-        + beta_l * bc(L_norm, alpha_l)
+        + beta_c * _bc(C_norm, alpha_c)
+        + beta_l * _bc(L_norm, alpha_l)
     )
 
 
@@ -219,13 +219,43 @@ def _report_base_dir(source: str) -> Path:
     raise ValueError(f"Unsupported source: {source}")
 
 
+def _candidate_param_dirs(gender: str, variant: str, source: str) -> List[Path]:
+    base_dir = _report_base_dir(source)
+    candidates = [base_dir / f"{gender}_{variant}"]
+    if source == "biogeme":
+        candidates.append(base_dir / "boxcox" / f"{gender}_{variant}")
+    return candidates
+
+
 def param_dir_for(gender: str, variant: str, source: str) -> Path:
-    return _report_base_dir(source) / f"{gender}_{variant}"
+    for candidate in _candidate_param_dirs(gender, variant, source):
+        if candidate.exists():
+            return candidate
+    return _candidate_param_dirs(gender, variant, source)[0]
 
 
 def param_csv_for(gender: str, variant: str, source: str) -> Path:
-    prefix = "dcm" if source == "biogeme" else "mle"
-    return param_dir_for(gender, variant, source) / f"{prefix}_{gender}_{variant}_parameters.csv"
+    if source == "biogeme":
+        prefixes = [f"dcm_{gender}_{variant}", f"boxcox_{gender}_{variant}"]
+    elif source == "mle":
+        prefixes = [f"mle_{gender}_{variant}"]
+    else:
+        prefixes = [f"{gender}_{variant}"]
+
+    for directory in _candidate_param_dirs(gender, variant, source):
+        if not directory.exists():
+            continue
+        for prefix in prefixes:
+            candidate = directory / f"{prefix}_parameters.csv"
+            if candidate.exists():
+                return candidate
+        generic = sorted(directory.glob("*_parameters.csv"))
+        if generic:
+            return generic[0]
+
+    directory = _candidate_param_dirs(gender, variant, source)[0]
+    fallback_prefix = prefixes[0] if prefixes else f"{gender}_{variant}"
+    return directory / f"{fallback_prefix}_parameters.csv"
 
 
 def resolve_variant(gender: str, requested: str, source: str) -> tuple[str, Path]:
@@ -240,22 +270,32 @@ def resolve_variant(gender: str, requested: str, source: str) -> tuple[str, Path
     candidates: list[tuple[str, Path, float]] = []
     base_dir = _report_base_dir(source)
     prefix = f"{gender}_"
-    file_prefix = "dcm" if source == "biogeme" else "mle"
-    for folder in base_dir.glob(f"{gender}_*"):
-        if not folder.is_dir():
-            continue
-        name = folder.name
-        if not name.startswith(prefix):
-            continue
-        variant = name[len(prefix) :]
-        csv_path = folder / f"{file_prefix}_{gender}_{variant}_parameters.csv"
-        if not csv_path.exists():
-            continue
-        try:
-            mtime = csv_path.stat().st_mtime
-        except OSError:
-            mtime = -1.0
-        candidates.append((variant, csv_path, mtime))
+    search_roots: List[Path] = [base_dir]
+    if source == "biogeme":
+        boxcox_root = base_dir / "boxcox"
+        if boxcox_root.exists():
+            search_roots.append(boxcox_root)
+
+    seen: set[str] = set()
+    for root in search_roots:
+        for folder in root.glob(f"{gender}_*"):
+            if not folder.is_dir():
+                continue
+            name = folder.name
+            if not name.startswith(prefix):
+                continue
+            variant = name[len(prefix) :]
+            if variant in seen:
+                continue
+            csv_path = param_csv_for(gender, variant, source)
+            if not csv_path.exists():
+                continue
+            seen.add(variant)
+            try:
+                mtime = csv_path.stat().st_mtime
+            except OSError:
+                mtime = -1.0
+            candidates.append((variant, csv_path, mtime))
 
     if candidates:
         variant, path, _ = max(candidates, key=lambda item: item[2])
@@ -665,6 +705,178 @@ def utility_components(
     return utils
 
 
+def utility_components_boxcox(
+    df: pd.DataFrame,
+    labels: Sequence[str],
+    params: Mapping[str, float],
+    *,
+    y_ref: float,
+    Z_columns: Mapping[str, np.ndarray],
+    T_endow: float = 80.0,
+) -> pd.DataFrame:
+    utils = pd.DataFrame(index=df.index)
+    beta_c = float(params.get("beta_c", 0.0))
+    alpha_c = float(params.get("alpha_c", 0.0))
+    alpha_l = float(params.get("alpha_l", 0.0))
+
+    beta_l_row = np.full(len(df), float(params.get("beta_l0", 0.0)))
+    for key, arr in Z_columns.items():
+        beta_l_row += float(params.get(f"delta_{key}", 0.0)) * arr
+
+    for lab in labels:
+        asc_val = float(params.get(f"ASC_{lab}", 0.0))
+        C_norm = np.clip(
+            pd.to_numeric(df[f"consumption_{lab}"], errors="coerce").to_numpy(dtype=float) / y_ref,
+            1e-6,
+            1.0,
+        )
+        L_norm = np.clip(
+            (T_endow - pd.to_numeric(df[f"lhw_{lab}"], errors="coerce").to_numpy(dtype=float)) / T_endow,
+            1e-6,
+            1.0,
+        )
+        utility = asc_val + beta_c * _bc(C_norm, alpha_c) + beta_l_row * _bc(L_norm, alpha_l)
+        avail_col = f"avail_{lab}"
+        if avail_col in df.columns:
+            available = pd.to_numeric(df[avail_col], errors="coerce").fillna(0.0).to_numpy(dtype=float) > 0
+            utility = np.where(available, utility, -np.inf)
+        utils[lab] = utility
+    return utils
+
+
+def render_boxcox_sections(
+    model_dir: Path,
+    model_name: str,
+    params: Mapping[str, float],
+    labels: Tuple[str, ...],
+    df_src: pd.DataFrame,
+    *,
+    y_ref: float | None,
+    T_endow: float = 80.0,
+) -> Tuple[str, str, Dict[str, float]]:
+    consumption_matrix = np.column_stack(
+        [pd.to_numeric(df_src[f"consumption_{lab}"], errors="coerce").to_numpy(dtype=float) for lab in labels]
+    )
+    lhw_matrix = np.column_stack(
+        [pd.to_numeric(df_src[f"lhw_{lab}"], errors="coerce").to_numpy(dtype=float) for lab in labels]
+    )
+
+    actual_choice = df_src["actual_choice"].astype(str)
+    label_to_idx = {lab: idx for idx, lab in enumerate(labels)}
+    actual_idx = actual_choice.map(label_to_idx).to_numpy(dtype=int)
+
+    if y_ref is None or not np.isfinite(y_ref) or y_ref <= 0:
+        cons_actual = consumption_matrix[np.arange(len(df_src)), actual_idx]
+        cons_valid = cons_actual[np.isfinite(cons_actual) & (cons_actual > 0)]
+        if cons_valid.size == 0:
+            raise ValueError("No valid consumption values to compute y_ref.")
+        for q in (0.99, 0.95, 0.90):
+            candidate = float(np.quantile(cons_valid, q))
+            if np.isfinite(candidate) and candidate > 0:
+                y_ref = candidate
+                break
+        else:
+            y_ref = float(np.nanmax(cons_valid))
+
+    y_ref = float(y_ref)
+
+    rows: List[Dict[str, float]] = []
+    for lab in labels:
+        asc_val = float(params.get(f"ASC_{lab}", 0.0))
+        C_med = float(np.nanmedian(pd.to_numeric(df_src[f"consumption_{lab}"], errors="coerce")))
+        L_med = float(np.nanmedian(T_endow - pd.to_numeric(df_src[f"lhw_{lab}"], errors="coerce")))
+        Cn = float(np.clip(C_med / y_ref, 1e-6, 1.0))
+        Ln = float(np.clip(L_med / T_endow, 1e-6, 1.0))
+
+        cons_term = float(params.get("beta_c", 0.0)) * float(_bc(Cn, float(params.get("alpha_c", 0.0))))
+        beta_l_med = float(params.get("beta_l0", 0.0))
+        for key, value in params.items():
+            if str(key).startswith("delta_"):
+                name = str(key).replace("delta_", "")
+                col = "dgn" if name == "gender" else name
+                med_value = float(np.nanmedian(pd.to_numeric(df_src[col], errors="coerce"))) if col in df_src.columns else 0.0
+                beta_l_med += float(value) * med_value
+        leis_term = beta_l_med * float(_bc(Ln, float(params.get("alpha_l", 0.0))))
+        U_total = asc_val + cons_term + leis_term
+        rows.append({
+            "alt": lab,
+            "ASC": asc_val,
+            "cons_term": cons_term,
+            "leis_term": leis_term,
+            "U_total": U_total,
+        })
+
+    util_table = pd.DataFrame(rows).set_index("alt")
+    if not util_table.empty:
+        U_vec = util_table["U_total"].to_numpy(dtype=float)
+        util_table["P_at_medians"] = np.exp(U_vec - logsumexp(U_vec))
+    util_table.to_csv(model_dir / f"{model_name}_util_decomp.csv", float_format="%.6g")
+    utility_html = util_table.to_html(index=True, float_format="%.6g", border=0, classes="table table-sm")
+
+    C_actual = consumption_matrix[np.arange(len(df_src)), actual_idx]
+    L_actual = T_endow - lhw_matrix[np.arange(len(df_src)), actual_idx]
+
+    z_base_names = sorted({str(name).replace("delta_", "") for name in params if str(name).startswith("delta_")})
+    Z_columns: Dict[str, np.ndarray] = {}
+    for z in z_base_names:
+        col = "dgn" if z == "gender" else z
+        if col in df_src.columns:
+            Z_columns[z] = pd.to_numeric(df_src[col], errors="coerce").fillna(0.0).to_numpy(dtype=float)
+        else:
+            Z_columns[z] = np.zeros(len(df_src), dtype=float)
+
+    muc_list: List[float] = []
+    mul_list: List[float] = []
+    mrs_list: List[float] = []
+    for i in range(len(df_src)):
+        Z_i = {name: float(Z_columns[name][i]) for name in Z_columns}
+        muc_val = float(muc_boxcox(params, float(C_actual[i]), y_ref))
+        mul_val = float(mul_boxcox(params, float(L_actual[i]), Z_i, T_endow=T_endow))
+        muc_list.append(muc_val)
+        mul_list.append(mul_val)
+        mrs_list.append(mul_val / muc_val if muc_val != 0 else np.nan)
+
+    mucmul_df = pd.DataFrame({
+        "actual_choice": actual_choice,
+        "MUC": muc_list,
+        "MUL": mul_list,
+        "MRS": mrs_list,
+    })
+    mucmul_df["MUC_sign"] = np.sign(mucmul_df["MUC"])
+    mucmul_df["MUL_sign"] = np.sign(mucmul_df["MUL"])
+
+    mucmul_df.to_csv(model_dir / f"{model_name}_mucmul_draws.csv", index=False, float_format="%.6g")
+
+    share_table = pd.DataFrame({
+        "count": [
+            int((mucmul_df["MUC"] < 0).sum()),
+            int((mucmul_df["MUC"] > 0).sum()),
+            int((mucmul_df["MUL"] < 0).sum()),
+            int((mucmul_df["MUL"] > 0).sum()),
+        ],
+        "share": [
+            float((mucmul_df["MUC"] < 0).mean()),
+            float((mucmul_df["MUC"] > 0).mean()),
+            float((mucmul_df["MUL"] < 0).mean()),
+            float((mucmul_df["MUL"] > 0).mean()),
+        ],
+    }, index=["MUC<0", "MUC>0", "MUL<0", "MUL>0"])
+    mucmul_html = share_table.to_html(index=True, float_format="%.4f", border=0, classes="table table-sm")
+
+    muc_summary = {
+        "share_MUC_actual_neg": float(share_table.loc["MUC<0", "share"]),
+        "share_MUL_actual_neg": float(share_table.loc["MUL<0", "share"]),
+        "median_consumption_actual": float(np.nanmedian(C_actual)),
+        "median_leisure_actual": float(np.nanmedian(L_actual)),
+        "MUC_med": float(np.nanmedian(muc_list)),
+        "MUL_med": float(np.nanmedian(mul_list)),
+        "y_ref": float(y_ref),
+        "T": float(T_endow),
+    }
+
+    return utility_html, mucmul_html, muc_summary
+
+
 def plot_marginal_utility(
     x: np.ndarray,
     mu: np.ndarray,
@@ -765,7 +977,7 @@ def plot_indifference_contours(
     ax.clabel(cs, inline=True, fontsize=8)
     ax.set_xlabel("Consumption (y)")
     ax.set_ylabel("Leisure (l)")
-    ax.set_title("Utility Contours around Median (log scale ±1)")
+    ax.set_title("Utility Contours around Median (log scale +/-1)")
     fig.tight_layout()
     fig.savefig(output_path, dpi=150)
     plt.close(fig)
@@ -835,14 +1047,17 @@ def build_html_report(
     subgroup_accuracy_html: str | None = None,
     subgroup_mu_html: str | None = None,
     subgroup_plots_html: str | None = None,
+    utility_table_html: str | None = None,
+    mucmul_summary_html: str | None = None,
+    title_suffix: str | None = None,
 ) -> None:
     """Compose and write the HTML report."""
     param_cols = ["Value"]
     if "Value" not in params_table.columns:
         param_cols = params_table.columns.tolist()
     else:
-        for extra in ("robust t-test", "t-test", "Std err", "p-value"):
-            if extra in params_table.columns:
+        for extra in ("robust t-test", "t-test", "Std err", "p-value", "StdErr", "RobustSE", "Robust t", "Robust p"):
+            if extra in params_table.columns and extra not in param_cols:
                 param_cols.append(extra)
     params_html = dataframe_to_html(params_table[param_cols], caption="Estimated Parameters")
 
@@ -851,16 +1066,39 @@ def build_html_report(
         for key, value in summary_stats.items()
     )
     summary_html = f"<table class='table table-sm'>{summary_html_rows}</table>"
+
     subgroup_accuracy_html = subgroup_accuracy_html or ""
     subgroup_mu_html = subgroup_mu_html or ""
     subgroup_plots_html = subgroup_plots_html or ""
+    utility_table_html = utility_table_html or ""
+    mucmul_summary_html = mucmul_summary_html or ""
+    title_suffix = f" [{title_suffix}]" if title_suffix else ""
+
+    utility_section = (
+        f"""
+  <section>
+    <h2>Utility decomposition (medians)</h2>
+    {utility_table_html}
+  </section>"""
+        if utility_table_html
+        else ""
+    )
+    mucmul_section = (
+        f"""
+  <section>
+    <h2>MUC/MUL summary</h2>
+    {mucmul_summary_html}
+  </section>"""
+        if mucmul_summary_html
+        else ""
+    )
 
     html = f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Biogeme DCM Diagnostics - {gender.capitalize()} ({variant})</title>
+  <title>Biogeme DCM Diagnostics - {gender.capitalize()} ({variant}){title_suffix}</title>
   <style>
     body {{ font-family: Arial, sans-serif; margin: 2em; }}
     h1, h2 {{ color: #333; }}
@@ -875,20 +1113,18 @@ def build_html_report(
   </style>
 </head>
 <body>
-  <h1>DCM Diagnostics - {gender.capitalize()} ({variant})</h1>
+  <h1>DCM Diagnostics - {gender.capitalize()} ({variant}){title_suffix}</h1>
   <section>
     <h2>Parameter Summary</h2>
     {params_html}
     <p style="color:#555;margin-top:-0.75em;">
-      <em>Tip:</em> hover over a parameter name to see a short description (e.g.,
-      <span title="Curvature of leisure: coefficient on (log l)^2." style="border-bottom:1px dotted #777;cursor:help;">beta_log2_leisure</span>
-      = curvature of leisure term).
+      <em>Tip:</em> hover over a parameter name to see a short description.
     </p>
   </section>
   <section>
     <h2>Key Statistics</h2>
     {summary_html}
-  </section>
+  </section>{utility_section}{mucmul_section}
   <section>
     <h2>Observed log-level Distributions</h2>
     <figure>
@@ -932,12 +1168,178 @@ def build_html_report(
     output_path.write_text(html, encoding="utf-8")
 
 
-# ---------------------------------------------------------------------------
-# Main execution
-# ---------------------------------------------------------------------------
+def _process_gender_boxcox(
+    gender: str,
+    variant: str,
+    param_csv: Path,
+    out_dir: Path,
+    source: str,
+    meta: Mapping[str, object],
+    *,
+    annotate_biogeme_html_flag: bool = False,
+) -> dict[str, object]:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    tag = f"{source}:{gender}/{variant}"
+
+    params_table, params_dict, asc_params = load_parameters(param_csv)
+    base_name = param_csv.stem.replace("_parameters", "")
+    model_dir = param_csv.parent
+
+    labels_map_path = param_csv.with_name(f"{base_name}_param_labels.json")
+    desc_map_path = param_csv.with_name(f"{base_name}_param_descriptions.json")
+    LABEL_MAP = _load_json_if_exists(labels_map_path)
+    DESC_MAP = _load_json_if_exists(desc_map_path)
+    READABLE_TO_RAW = {str(v): str(k) for k, v in (LABEL_MAP or {}).items()}
+
+    pretty_index: list[str] = []
+    for raw_like in params_table.index:
+        raw_key = READABLE_TO_RAW.get(str(raw_like), str(raw_like))
+        pretty = (LABEL_MAP or {}).get(raw_key, str(raw_like))
+        tip = (DESC_MAP or {}).get(raw_key)
+        pretty_index.append(_tooltip_html(pretty, tip))
+    params_table = params_table.copy()
+    params_table.index = pretty_index
+
+    params_for_calc: dict[str, float] = {}
+    for k, v in params_dict.items():
+        raw_k = READABLE_TO_RAW.get(str(k), str(k))
+        params_for_calc[raw_k] = float(v)
+
+    y_ref = float(meta.get("y_ref", np.nan)) if meta else np.nan
+    T_ENDOW = float(meta.get("T", 80.0)) if meta else 80.0
+
+    df = load_dataset_for_gender(gender)
+    df = df.replace("", np.nan).infer_objects(copy=False)
+
+    if "dgn" in df.columns:
+        df["dgn"] = pd.to_numeric(df["dgn"], errors="coerce").fillna(0.0).clip(0.0, 1.0)
+    else:
+        df["dgn"] = 0.0
+
+    labels = detect_labels(df)
+    ensure_columns(df, ["actual_choice"])
+
+    actual_choice_series = df["actual_choice"].astype(str)
+    label_to_idx = {lab: idx for idx, lab in enumerate(labels)}
+    actual_idx = actual_choice_series.map(label_to_idx).to_numpy(dtype=int)
+
+    logy_hist = out_dir / f"{base_name}_logy_hist.png"
+    logl_hist = out_dir / f"{base_name}_logl_hist.png"
+    logy_actual, logl_actual = compute_actual_logs(df, labels)
+    y_actual = np.exp(logy_actual).clip(lower=1e-3)
+    l_actual = (80.0 - (80.0 - np.exp(logl_actual))).clip(lower=1e-3, upper=T_ENDOW)
+    _save_hist(
+        logy_actual,
+        f"Distribution of log(y) at actual choice - {gender.capitalize()} ({variant})",
+        logy_hist,
+        xlabel="log(y)",
+        alpha=0.7,
+    )
+    _save_hist(
+        logl_actual,
+        f"Distribution of log(l) at actual choice - {gender.capitalize()} ({variant})",
+        logl_hist,
+        xlabel="log(l)",
+        alpha=0.7,
+    )
+
+    util_html, mucmul_html, muc_summary = render_boxcox_sections(
+        model_dir,
+        base_name,
+        params_for_calc,
+        labels,
+        df,
+        y_ref=y_ref,
+        T_endow=T_ENDOW,
+    )
+    y_ref = float(muc_summary["y_ref"])
+
+    Z_columns = {}
+    for key in sorted({str(name).replace("delta_", "") for name in params_for_calc if str(name).startswith("delta_")}):
+        col = "dgn" if key == "gender" else key
+        if col in df.columns:
+            Z_columns[key] = pd.to_numeric(df[col], errors="coerce").fillna(0.0).to_numpy(dtype=float)
+        else:
+            Z_columns[key] = np.zeros(len(df), dtype=float)
+
+    utils_df = utility_components_boxcox(
+        df,
+        labels,
+        params_for_calc,
+        y_ref=y_ref,
+        Z_columns=Z_columns,
+        T_endow=T_ENDOW,
+    )
+    predicted_choice = utils_df.idxmax(axis=1)
+    df_pred = pd.DataFrame({"actual_choice": df["actual_choice"], "predicted_choice": predicted_choice})
+    df_pred["correct"] = (df_pred["actual_choice"] == df_pred["predicted_choice"]).astype(int)
+
+    cm = pd.crosstab(
+        df_pred["actual_choice"],
+        df_pred["predicted_choice"],
+        margins=True,
+        margins_name="Total",
+    )
+    accuracy = float(df_pred["correct"].mean()) if len(df_pred) else float("nan")
+    hit_rates = (
+        df_pred["correct"].groupby(df_pred["actual_choice"]).mean().rename("Hit rate")
+        if len(df_pred)
+        else pd.Series(dtype=float)
+    )
+
+    confusion_html = dataframe_to_html(cm, caption="Confusion Matrix (Actual vs Predicted)")
+    hit_rates_html = dataframe_to_html(hit_rates.to_frame(), caption="Hit Rates by Actual Scenario")
+
+    muc_negative_share = float(muc_summary.get("share_MUC_actual_neg", 0.0))
+    mul_negative_share = float(muc_summary.get("share_MUL_actual_neg", 0.0))
+
+    summary_stats = {
+        "Total observations": f"{len(df):,}",
+        "MUC < 0": f"{int(muc_negative_share * len(df)):,} ({muc_negative_share:.2%})",
+        "MUL < 0": f"{int(mul_negative_share * len(df)):,} ({mul_negative_share:.2%})",
+        "MUC zero crossing y": "n/a",
+        "MUL zero crossing l": "n/a",
+        "Overall accuracy": f"{accuracy:.2%}",
+    }
+
+    report_path = out_dir / f"{base_name}_analysis.html"
+    build_html_report(
+        params_table=params_table,
+        summary_stats=summary_stats,
+        muc_plot=out_dir / f"{base_name}_muc.png",
+        mul_plot=out_dir / f"{base_name}_mul.png",
+        contour_plot=out_dir / f"{base_name}_contours.png",
+        confusion_html=confusion_html,
+        hit_rates_html=hit_rates_html,
+        output_path=report_path,
+        logy_hist=logy_hist,
+        logl_hist=logl_hist,
+        gender=gender,
+        variant=variant,
+        utility_table_html=util_html,
+        mucmul_summary_html=mucmul_html,
+        title_suffix="Box-Cox",
+    )
+
+    if annotate_biogeme_html_flag and LABEL_MAP:
+        for html_path in out_dir.glob("*.html"):
+            try:
+                annotate_biogeme_html(html_path, LABEL_MAP, DESC_MAP)
+            except Exception:
+                continue
+
+    return {
+        "gender": gender,
+        "variant": variant,
+        "source": source,
+        "spec": "boxcox",
+        "accuracy": float(accuracy),
+        "muc_share": float(muc_negative_share),
+        "mul_share": float(mul_negative_share),
+    }
 
 
-def process_gender(
+def _process_gender_translog(
     gender: str,
     variant: str,
     param_csv: Path,
@@ -1488,6 +1890,43 @@ def process_gender(
         "muc_share": float((df["MUC"] < 0).mean()),
         "mul_share": float((df["MUL"] < 0).mean()),
     }
+
+
+def process_gender(
+    gender: str,
+    variant: str,
+    param_csv: Path,
+    out_dir: Path,
+    source: str,
+    *,
+    annotate_biogeme_html_flag: bool = False,
+) -> dict[str, object]:
+    base_name = param_csv.stem.replace("_parameters", "")
+    meta_path = param_csv.parent / f"{base_name}_meta.json"
+    meta = _load_json_if_exists(meta_path)
+    spec = str(meta.get("spec", "translog")).lower() if meta else "translog"
+    if spec == "translog":
+        path_text = f"{param_csv.parent.as_posix()}/{param_csv.stem}".lower()
+        if "boxcox" in path_text:
+            spec = "boxcox"
+    if spec == "boxcox":
+        return _process_gender_boxcox(
+            gender,
+            variant,
+            param_csv,
+            out_dir,
+            source,
+            meta,
+            annotate_biogeme_html_flag=annotate_biogeme_html_flag,
+        )
+    return _process_gender_translog(
+        gender,
+        variant,
+        param_csv,
+        out_dir,
+        source,
+        annotate_biogeme_html_flag=annotate_biogeme_html_flag,
+    )
 
 
 def main() -> None:

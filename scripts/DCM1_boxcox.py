@@ -25,6 +25,7 @@ from scipy.optimize import minimize
 from scipy.special import logsumexp
 from scipy.stats import norm
 
+from analyzer_runner import run_analyzer
 from path_helpers import data_root, reports_root
 
 LOGGER = logging.getLogger(__name__)
@@ -414,24 +415,36 @@ def score_matrix(theta: np.ndarray, data: ModelData, structure: ParamStructure) 
     return scores
 
 
-def approximate_hessian(theta: np.ndarray, data: ModelData, structure: ParamStructure, eps: float = 1e-4) -> np.ndarray:
+def approximate_hessian(theta: np.ndarray, data: ModelData, structure: ParamStructure, eps: float | None = None) -> np.ndarray:
+    """Observed Hessian of the *sum* negative log-likelihood via central differences.
+    Parameter-wise step: h_i = 1e-5 * max(1, |theta_i|) if eps is None.
+    """
     k = len(theta)
     H = np.zeros((k, k), dtype=float)
     f0 = negative_log_likelihood(theta, data, structure)
+
+    def h(i: int) -> float:
+        base = 1e-5 if eps is None else eps
+        return base * max(1.0, abs(theta[i]))
+
     eye = np.eye(k)
     for i in range(k):
-        ei = eye[i] * eps
+        hi = h(i)
+        ei = eye[i] * hi
         f_plus = negative_log_likelihood(theta + ei, data, structure)
         f_minus = negative_log_likelihood(theta - ei, data, structure)
-        H[i, i] = (f_plus - 2.0 * f0 + f_minus) / (eps ** 2)
+        H[i, i] = (f_plus - 2.0 * f0 + f_minus) / (hi * hi)
+
         for j in range(i + 1, k):
-            ej = eye[j] * eps
+            hj = h(j)
+            ej = eye[j] * hj
             f_pp = negative_log_likelihood(theta + ei + ej, data, structure)
             f_pm = negative_log_likelihood(theta + ei - ej, data, structure)
             f_mp = negative_log_likelihood(theta - ei + ej, data, structure)
             f_mm = negative_log_likelihood(theta - ei - ej, data, structure)
-            value = (f_pp - f_pm - f_mp + f_mm) / (4.0 * eps ** 2)
-            H[i, j] = H[j, i] = value
+            H_ij = (f_pp - f_pm - f_mp + f_mm) / (4.0 * hi * hj)
+            H[i, j] = H[j, i] = H_ij
+
     return H
 
 def _make_spd(M: np.ndarray, lam: float = 1e-8) -> np.ndarray:
@@ -690,6 +703,43 @@ def estimate(
     data = prepare_dataset(df, labels, gender_column=gender_column, c_scale_quantile=c_scale_quantile)
     structure = build_param_structure(labels, data, include_ascs=include_ascs)
 
+    # Compute medians/modes for Z shifters (mode for binary, median otherwise)
+    def _is_binary01(arr: np.ndarray) -> bool:
+        finite = arr[np.isfinite(arr)]
+        if finite.size == 0:
+            return False
+        u = np.unique(finite)
+        return len(u) <= 2 and set(np.round(u, 6)).issubset({0.0, 1.0})
+
+    Z_stats: Dict[str, float] = {}
+    _zmap = {
+        "age_norm": "age",
+        "age2_norm": "age2",
+        "child_norm": "child",
+        "dch": "dch",
+        "gender": "gender",
+    }
+    for fk, arr in data.features.items():
+        name = _zmap.get(fk, fk)
+        a = np.asarray(arr, dtype=float)
+        if _is_binary01(a):
+            finite = a[np.isfinite(a)]
+            if finite.size:
+                vals, counts = np.unique(finite, return_counts=True)
+                val = float(vals[np.argmax(counts)])
+            else:
+                val = 0.0
+        else:
+            val = float(np.nanmedian(a))
+        Z_stats[name] = val
+
+    # medians of normalized consumption & leisure at actual choices
+    idx = np.arange(len(data.actual_idx))
+    C_norm_actual = data.C_norm[idx, data.actual_idx]
+    L_norm_actual = data.L_norm[idx, data.actual_idx]
+    c_norm_med = float(np.nanmedian(C_norm_actual))
+    l_norm_med = float(np.nanmedian(L_norm_actual))
+
     LOGGER.info("[%s] Parameter vector: %s", gender_key, structure.param_names)
 
     theta0 = initial_theta(structure)
@@ -712,6 +762,35 @@ def estimate(
     ll_null = compute_null_loglik(data)
 
     param_values = flatten_params(theta_hat, structure)
+
+    # Leisure slope at median Z (scalar)
+    beta_l_med = float(param_values.get("beta_l0", 0.0))
+    for dname in structure.delta_names:
+        base = dname.replace("delta_", "")
+        zval = Z_stats.get(base, 0.0)
+        beta_l_med += float(param_values.get(dname, 0.0)) * float(zval)
+
+    alpha_c = float(param_values.get("alpha_c", 0.0))
+    alpha_l = float(param_values.get("alpha_l", 0.0))
+    beta_c = float(param_values.get("beta_c", 0.0))
+
+    # Normalized marginal utilities (NO division by y_ref or T)
+    # MUC^norm(c_norm) = beta_c * c_norm^(alpha_c - 1)
+    # MUL^norm(l_norm) = beta_l_med * l_norm^(alpha_l - 1)
+    muc_norm_med = beta_c * (c_norm_med ** (alpha_c - 1.0)) if c_norm_med > 0 else float("nan")
+    mul_norm_med = beta_l_med * (l_norm_med ** (alpha_l - 1.0)) if l_norm_med > 0 else float("nan")
+
+    # Normalized MRS at median (dimensionless): MUL^norm / MUC^norm
+    mrs_norm_med = (
+        mul_norm_med / muc_norm_med
+        if (np.isfinite(mul_norm_med) and np.isfinite(muc_norm_med) and muc_norm_med != 0.0)
+        else float("nan")
+    )
+
+    # Zero-crossings in (0,1] only occur if slope coef is exactly zero
+    muc_norm_zero_c = None if beta_c != 0.0 else 0.0
+    mul_norm_zero_l = None if beta_l_med != 0.0 else 0.0
+
     predicted = predict_choices(theta_hat, data, structure)
     accuracy = float(np.mean(predicted == data.actual_idx))
 
@@ -726,31 +805,35 @@ def estimate(
 
     scores = score_matrix(theta_hat, data, structure)
 
-    hess_inv_obj = getattr(result, "hess_inv", None)
-    Hinv = None
-    if hess_inv_obj is not None:
-        if hasattr(hess_inv_obj, "todense"):
-            Hinv = np.asarray(hess_inv_obj.todense(), dtype=float)
-        else:
-            try:
-                Hinv = np.asarray(hess_inv_obj, dtype=float)
-            except Exception:
-                Hinv = None
+    # First-order condition diagnostic (sum of per-obs scores should be ~0 at optimum)
+    foc_norm = float(np.linalg.norm(scores.sum(axis=0)))
+    LOGGER.info("[%s] FOC check: ||Σ_i s_i(θ̂)|| = %.3e", gender_key, foc_norm)
 
-    if Hinv is None or Hinv.shape != (k_params, k_params):
-        H = approximate_hessian(theta_hat, data, structure)
-        H = 0.5 * (H + H.T)
-        # --- NEW: ridge to avoid near-singularity
-        lam = 1e-6 * max(1.0, np.max(np.abs(np.diag(H))))
-        H = H + lam * np.eye(k_params)
-        Hinv = np.linalg.pinv(H)
+    # Recompute observed Hessian of the *sum* NLL by symmetric central differences (scale-aware)
+    H = approximate_hessian(theta_hat, data, structure, eps=None)
+    H = 0.5 * (H + H.T)
 
-    Hinv = 0.5 * (Hinv + Hinv.T)
-    cov = _make_spd(Hinv, lam=1e-8)
+    # Light Tikhonov ridge for numerical stability (scale-aware)
+    ridge = 1e-8 * max(1.0, float(np.mean(np.abs(np.diag(H)))))
+    H = H + ridge * np.eye(k_params)
 
-    G = scores.T @ scores
+    # Invert observed information
+    Hinv = np.linalg.inv(H)
+
+    # Classical covariance = inverse observed information
+    cov = Hinv.copy()
+
+    # Robust (sandwich) covariance: H^{-1} (sum_i s_i s_i^T) H^{-1}
+    G = scores.T @ scores  # sum over observations
     cov_rob = Hinv @ G @ Hinv
-    cov_rob = _make_spd(cov_rob, lam=1e-8)
+    cov_rob = 0.5 * (cov_rob + cov_rob.T)
+
+    # Diagnostics on curvature (optional but handy)
+    w, _ = np.linalg.eigh(0.5 * (H + H.T))
+    min_eig_H = float(np.min(w))
+    max_eig_H = float(np.max(w))
+    cond_H = float(max_eig_H / max(min_eig_H, 1e-16))
+    LOGGER.info("[%s] Observed-Hessian eigs: min=%.3e  max=%.3e  cond≈%.3e", gender_key, min_eig_H, max_eig_H, cond_H)
 
     values_vector = np.array([param_values[name] for name in structure.param_names], dtype=float)
 
@@ -819,9 +902,17 @@ def estimate(
     }
     meta.update({k: float(v) for k, v in muc_summary.items()})
     meta.update({
-    "parameters_csv": f"{model_name}_parameters.csv",
-    "confusion_csv": f"{model_name}_confusion.csv",
-})
+        "parameters_csv": f"{model_name}_parameters.csv",
+        "confusion_csv": f"{model_name}_confusion.csv",
+        "Z_medians_or_modes": Z_stats,
+        "c_norm_median": c_norm_med,
+        "l_norm_median": l_norm_med,
+        "MUC_norm_med": float(muc_norm_med),
+        "MUL_norm_med": float(mul_norm_med),
+        "MRS_norm_med": float(mrs_norm_med),
+        "muc_norm_zero_c_norm": muc_norm_zero_c,
+        "mul_norm_zero_l_norm": mul_norm_zero_l,
+    })
 
     write_parameter_metadata(output_dir, model_name, param_df, meta)
 
@@ -833,6 +924,8 @@ def estimate(
 
     muc_summary_path = output_dir / f"{model_name}_mucmul_summary.json"
     muc_summary_path.write_text(json.dumps(muc_summary, indent=2), encoding="utf-8")
+
+    run_analyzer("mle", [gender_key], variant)
 
 
 # ---------------------------------------------------------------------------
@@ -850,7 +943,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--center-logs", action="store_true", help=argparse.SUPPRESS)  # compatibility placeholder
     parser.add_argument("--y-scale", type=float, default=1.0, help=argparse.SUPPRESS)  # compatibility placeholder
     parser.add_argument("--c-scale-quantile", type=float, default=0.99, help="Quantile for consumption normalisation (default 0.99).")
-    parser.add_argument("--output-dir", type=Path, default=reports_root() / "biogeme" / "boxcox", help="Output directory base.")
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=reports_root() / "mle_dcm" / "boxcox",
+        help="Output directory base (default: reports/mle_dcm/boxcox).",
+    )
     parser.add_argument("--data-dir", type=Path, default=data_root() / "processed" / "scenarios", help="Input directory for wide datasets.")
     parser.add_argument("--log-level", default="INFO", choices=("DEBUG", "INFO", "WARNING", "ERROR"), help="Logging verbosity.")
     return parser.parse_args()

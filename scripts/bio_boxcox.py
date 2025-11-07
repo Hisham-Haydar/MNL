@@ -35,6 +35,8 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence, Tuple
 
@@ -47,9 +49,23 @@ from biogeme.expressions import Beta, Variable
 from biogeme.models import boxcox, loglogit
 
 # Project helpers (provided in your repo)
+from analyzer_runner import run_analyzer
 from path_helpers import data_root, reports_root
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 LOGGER = logging.getLogger("bio_bocox")
+
+
+@contextmanager
+def pushd(path: Path):
+    """Temporarily change the working directory."""
+    prev = Path.cwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(prev)
 
 T_ENDOW: float = 80.0
 EPS: float = 1e-6
@@ -161,6 +177,36 @@ def estimate_one(
     numeric = df[keep].apply(pd.to_numeric, errors="coerce")
     database = db.Database("boxcox_db", numeric)
 
+    # Z medians/modes (mode for binary; median otherwise)
+    def _is_binary01(arr: np.ndarray) -> bool:
+        finite = arr[np.isfinite(arr)]
+        if finite.size == 0:
+            return False
+        u = np.unique(np.round(finite, 6))
+        return len(u) <= 2 and set(u).issubset({0.0, 1.0})
+
+    Z_stats: Dict[str, float] = {}
+    for col in z_cols:
+        a = pd.to_numeric(numeric[col], errors="coerce").to_numpy(dtype=float)
+        if _is_binary01(a):
+            finite = a[np.isfinite(a)]
+            if finite.size:
+                vals, counts = np.unique(finite, return_counts=True)
+                val = float(vals[np.argmax(counts)])
+            else:
+                val = 0.0
+        else:
+            val = float(np.nanmedian(a))
+        key = "gender" if col == "dgn" else col
+        Z_stats[key] = val
+
+    # medians of normalized consumption & leisure at actual choices
+    act_idx = numeric["choice_id"].to_numpy(int) - 1
+    Cn = np.stack([numeric[f"c_norm_{lab}"].to_numpy(float) for lab in labels], axis=1)
+    Ln = np.stack([numeric[f"l_norm_{lab}"].to_numpy(float) for lab in labels], axis=1)
+    c_norm_med = float(np.nanmedian(Cn[np.arange(len(numeric)), act_idx]))
+    l_norm_med = float(np.nanmedian(Ln[np.arange(len(numeric)), act_idx]))
+
     # ------------------------ Parameters -----------------------------------
     # Box–Cox powers & levels  (bounds tightened to [-2, 2], starts improved)
     alpha_c = Beta("alpha_c",  0.10, -2.0,  2.0, 0)
@@ -213,6 +259,27 @@ def estimate_one(
     est_dir = out_dir / f"{gender_key}_{variant}"
     est_dir.mkdir(parents=True, exist_ok=True)
 
+    cleanup_patterns = (
+        f"{model_name}*.html",
+        f"{model_name}*.yaml",
+        f"{model_name}*.tex",
+        f"{model_name}*.estat",
+        f"{model_name}*.log",
+        f"__{model_name}.iter",
+    )
+    for pattern in cleanup_patterns:
+        for path in est_dir.glob(pattern):
+            try:
+                path.unlink()
+            except OSError:
+                pass
+    for pattern in cleanup_patterns:
+        for path in PROJECT_ROOT.glob(pattern):
+            try:
+                path.unlink()
+            except OSError:
+                pass
+
     bg = bio.BIOGEME(database, logprob)
     bg.model_name = model_name
     try:
@@ -220,7 +287,34 @@ def estimate_one(
     except Exception:
         pass
 
-    results = bg.estimate()
+    with pushd(est_dir):
+        results = bg.estimate()
+    betas = results.get_beta_values()
+
+    def _get(name: str, default: float = 0.0) -> float:
+        return float(betas[name]) if name in betas else float(default)
+
+    beta_l_med = _get("beta_l0")
+    for k, zval in Z_stats.items():
+        dname = "delta_gender" if k == "gender" else f"delta_{k}"
+        if dname in betas:
+            beta_l_med += _get(dname) * float(zval)
+
+    alpha_c = _get("alpha_c")
+    alpha_l = _get("alpha_l")
+    beta_c = _get("beta_c")
+
+    # Normalized derivatives (NO division by y_ref or T_ENDOW)
+    muc_norm_med = beta_c * (c_norm_med ** (alpha_c - 1.0)) if c_norm_med > 0 else float("nan")
+    mul_norm_med = beta_l_med * (l_norm_med ** (alpha_l - 1.0)) if l_norm_med > 0 else float("nan")
+    mrs_norm_med = (
+        mul_norm_med / muc_norm_med
+        if (np.isfinite(mul_norm_med) and np.isfinite(muc_norm_med) and muc_norm_med != 0.0)
+        else float("nan")
+    )
+
+    muc_norm_zero_c = None if beta_c != 0.0 else 0.0
+    mul_norm_zero_l = None if beta_l_med != 0.0 else 0.0
 
     # Parameters table (includes robust SE columns in Biogeme ≥3.x)
     params_df = results.get_estimated_parameters()
@@ -337,7 +431,29 @@ def estimate_one(
         "variant": variant,
         "c_scale_quantile": 0.99,
     }
+    meta.update({
+        "Z_medians_or_modes": Z_stats,
+        "c_norm_median": c_norm_med,
+        "l_norm_median": l_norm_med,
+        "MUC_norm_med": float(muc_norm_med),
+        "MUL_norm_med": float(mul_norm_med),
+        "MRS_norm_med": float(mrs_norm_med),
+        "muc_norm_zero_c_norm": muc_norm_zero_c,
+        "mul_norm_zero_l_norm": mul_norm_zero_l,
+    })
     (est_dir / f"{model_name}_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+
+    for pattern in cleanup_patterns:
+        for path in PROJECT_ROOT.glob(pattern):
+            target = est_dir / path.name
+            try:
+                if target.exists():
+                    target.unlink()
+                path.replace(target)
+            except OSError:
+                pass
+
+    run_analyzer("biogeme", [gender_key], variant)
 
     # Console summary
     print(results.short_summary())

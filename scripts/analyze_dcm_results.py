@@ -53,6 +53,20 @@ def _load_json_if_exists(path: Path) -> dict:
         return {}
 
 
+def _unique_path(path: Path) -> Path:
+    """Return a path with ~01, ~02, ... suffix if needed to avoid overwriting existing files."""
+    if not path.exists():
+        return path
+    stem = path.stem
+    suffix = path.suffix
+    counter = 1
+    while True:
+        candidate = path.with_name(f"{stem}~{counter:02d}{suffix}")
+        if not candidate.exists():
+            return candidate
+        counter += 1
+
+
 EFFECT_INTERACTION_PATTERNS: tuple[str, ...] = (
     "{}_m",
     "{}_g",
@@ -97,7 +111,7 @@ def load_dataset_for_gender(gender: str) -> pd.DataFrame:
 
 
 def _bc(x: np.ndarray, alpha: float) -> np.ndarray:
-    x = np.clip(np.asarray(x, dtype=float), 1e-6, None)
+    x = np.clip(np.asarray(x, dtype=float), 1e-12, None)
     if abs(alpha) < 1e-8:
         return np.log(x)
     return (np.power(x, alpha) - 1.0) / alpha
@@ -222,8 +236,12 @@ def _report_base_dir(source: str) -> Path:
 def _candidate_param_dirs(gender: str, variant: str, source: str) -> List[Path]:
     base_dir = _report_base_dir(source)
     candidates = [base_dir / f"{gender}_{variant}"]
-    if source == "biogeme":
-        candidates.append(base_dir / "boxcox" / f"{gender}_{variant}")
+    sub_map = {
+        "biogeme": ("boxcox", "boxcox_biogeme"),
+        "mle": ("boxcox",),
+    }
+    for sub in sub_map.get(source, ()):
+        candidates.append(base_dir / sub / f"{gender}_{variant}")
     return candidates
 
 
@@ -238,7 +256,7 @@ def param_csv_for(gender: str, variant: str, source: str) -> Path:
     if source == "biogeme":
         prefixes = [f"dcm_{gender}_{variant}", f"boxcox_{gender}_{variant}"]
     elif source == "mle":
-        prefixes = [f"mle_{gender}_{variant}"]
+        prefixes = [f"mle_{gender}_{variant}", f"boxcox_{gender}_{variant}"]
     else:
         prefixes = [f"{gender}_{variant}"]
 
@@ -272,9 +290,10 @@ def resolve_variant(gender: str, requested: str, source: str) -> tuple[str, Path
     prefix = f"{gender}_"
     search_roots: List[Path] = [base_dir]
     if source == "biogeme":
-        boxcox_root = base_dir / "boxcox"
-        if boxcox_root.exists():
-            search_roots.append(boxcox_root)
+        for sub in ("boxcox", "boxcox_biogeme"):
+            sub_dir = base_dir / sub
+            if sub_dir.exists():
+                search_roots.append(sub_dir)
 
     seen: set[str] = set()
     for root in search_roots:
@@ -897,6 +916,83 @@ def plot_marginal_utility(
     plt.close(fig)
 
 
+def _set_smart_yscale(ax, y):
+    y = np.asarray(y, float)
+    if np.any(y < 0):
+        ax.set_yscale("symlog", linthresh=1e-6)
+    else:
+        positive = y[y > 0]
+        ymin = float(np.nanmin(positive)) if positive.size else 1e-12
+        ax.set_yscale("log")
+        ax.set_ylim(bottom=max(ymin / 10.0, 1e-12))
+    return ax
+
+
+def plot_mu_norm(
+    x: np.ndarray,
+    mu: np.ndarray,
+    xlabel: str,
+    ylabel: str,
+    title: str,
+    output_path: Path,
+    marks: list[float] | None = None,
+    endpoint: float | None = None,
+) -> None:
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.plot(x, mu, lw=2)
+    ax.axhline(0.0, color="black", lw=1, ls="--", alpha=0.6)
+    if marks:
+        for m in marks:
+            ax.axvline(m, color="black", lw=1, ls=":", alpha=0.5)
+    if endpoint is not None:
+        ax.axhline(endpoint, color="gray", lw=1, ls="-.", alpha=0.7)
+        ax.scatter([1.0], [endpoint], s=20, color="gray")
+        ax.text(1.0, endpoint, f"  @1 → {endpoint:.3g}", va="bottom", ha="left", fontsize=8)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    _set_smart_yscale(ax, mu)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
+def plot_indifference_contours_boxcox(
+    params: Mapping[str, float],
+    beta_l_med: float,
+    output_path: Path,
+    levels_from_percentiles: tuple[int, ...] = (25, 50, 75, 99),
+    grid_points: int = 200,
+) -> None:
+    import matplotlib.pyplot as plt
+
+    c = np.linspace(1e-3, 1.0, grid_points)
+    l = np.linspace(1e-3, 1.0, grid_points)
+    C, L = np.meshgrid(c, l)
+
+    alpha_c = float(params.get("alpha_c", 0.0))
+    alpha_l = float(params.get("alpha_l", 0.0))
+    beta_c = float(params.get("beta_c", 0.0))
+
+    U = beta_c * _bc(C, alpha_c) + beta_l_med * _bc(L, alpha_l)
+    finite = np.isfinite(U)
+    if not finite.any():
+        return
+    levels = np.unique(np.percentile(U[finite], list(levels_from_percentiles)))
+
+    fig, ax = plt.subplots(figsize=(6, 5))
+    cs = ax.contour(C, L, U, levels=levels)
+    ax.clabel(cs, inline=True, fontsize=8)
+    ax.set_xlabel("c_norm")
+    ax.set_ylabel("l_norm")
+    ax.set_title("Utility contours (normalized) at 25/50/75/99th percentiles")
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
 def plot_indifference_contours(
     params: Mapping[str, float],
     logy_med: float,
@@ -1165,7 +1261,10 @@ def build_html_report(
 </body>
 </html>
 """
+    output_path = _unique_path(output_path)
     output_path.write_text(html, encoding="utf-8")
+    LOGGER.info("Analyzer report written to %s", output_path)
+    return output_path
 
 
 def _process_gender_boxcox(
@@ -1252,7 +1351,115 @@ def _process_gender_boxcox(
         y_ref=y_ref,
         T_endow=T_ENDOW,
     )
-    y_ref = float(muc_summary["y_ref"])
+
+    # === Normalized MU/Contours (Box–Cox) ===
+    lab2idx = {lab: i for i, lab in enumerate(labels)}
+    act_idx = actual_choice_series.map(lab2idx).to_numpy(int)
+
+    T_ENDOW = float(meta.get("T", T_ENDOW)) if (meta and "T" in meta) else T_ENDOW
+    y_ref = float(meta.get("y_ref", np.nan)) if meta else float("nan")
+
+    C_mat = np.column_stack(
+        [pd.to_numeric(df[f"consumption_{lab}"], errors="coerce").to_numpy(float) for lab in labels]
+    )
+    L_mat = np.column_stack(
+        [pd.to_numeric(df[f"lhw_{lab}"], errors="coerce").to_numpy(float) for lab in labels]
+    )
+
+    if not np.isfinite(y_ref) or y_ref <= 0:
+        cons_actual = C_mat[np.arange(len(df)), act_idx]
+        cons_actual = cons_actual[np.isfinite(cons_actual) & (cons_actual > 0)]
+        y_ref = float(np.quantile(cons_actual, 0.99)) if cons_actual.size else 1.0
+
+    Z_stats = (meta or {}).get("Z_medians_or_modes", {}) or {}
+    c_norm_med = (meta or {}).get("c_norm_median")
+    l_norm_med = (meta or {}).get("l_norm_median")
+
+    if (c_norm_med is None) or (l_norm_med is None) or (not Z_stats):
+        C_act_recompute = C_mat[np.arange(len(df)), act_idx]
+        L_act_recompute = T_ENDOW - L_mat[np.arange(len(df)), act_idx]
+        c_norm_med = float(np.nanmedian(np.clip(C_act_recompute / y_ref, 1e-12, 1.0)))
+        l_norm_med = float(np.nanmedian(np.clip(L_act_recompute / T_ENDOW, 1e-12, 1.0)))
+
+        def _is_binary01(a: np.ndarray) -> bool:
+            finite = a[np.isfinite(a)]
+            if finite.size == 0:
+                return False
+            u = np.unique(np.round(finite, 6))
+            return len(u) <= 2 and set(u).issubset({0.0, 1.0})
+
+        Z_stats = {}
+        for col in ("age_norm", "age2_norm", "child_norm", "dch", "dgn"):
+            if col in df.columns:
+                arr = pd.to_numeric(df[col], errors="coerce").to_numpy(float)
+                key = "gender" if col == "dgn" else col
+                if _is_binary01(arr):
+                    finite = arr[np.isfinite(arr)]
+                    if finite.size:
+                        vals, cnt = np.unique(finite, return_counts=True)
+                        Z_stats[key] = float(vals[np.argmax(cnt)])
+                    else:
+                        Z_stats[key] = 0.0
+                else:
+                    Z_stats[key] = float(np.nanmedian(arr))
+
+    beta_l_med = float(params_for_calc.get("beta_l0", 0.0))
+    for k, zval in Z_stats.items():
+        dname = "delta_gender" if k == "gender" else f"delta_{k}"
+        if dname in params_for_calc:
+            beta_l_med += float(params_for_calc[dname]) * float(zval)
+
+    alpha_c = float(params_for_calc.get("alpha_c", 0.0))
+    alpha_l = float(params_for_calc.get("alpha_l", 0.0))
+    beta_c = float(params_for_calc.get("beta_c", 0.0))
+
+    C_act = C_mat[np.arange(len(df)), act_idx]
+    L_act = T_ENDOW - L_mat[np.arange(len(df)), act_idx]
+    C_norm_act = np.clip(C_act / y_ref, 1e-12, 1.0)
+    L_norm_act = np.clip(L_act / T_ENDOW, 1e-12, 1.0)
+
+    c_lo = float(np.nanpercentile(C_norm_act, 1)) if np.isfinite(np.nanpercentile(C_norm_act, 1)) else 1e-3
+    l_lo = float(np.nanpercentile(L_norm_act, 1)) if np.isfinite(np.nanpercentile(L_norm_act, 1)) else 1e-3
+    c_lo = max(1e-3, min(c_lo, 0.99))
+    l_lo = max(1e-3, min(l_lo, 0.99))
+
+    c_grid = np.linspace(c_lo, 1.0, 400)
+    l_grid = np.linspace(l_lo, 1.0, 400)
+    muc_curve = beta_c * np.power(c_grid, alpha_c - 1.0)
+    mul_curve = beta_l_med * np.power(l_grid, alpha_l - 1.0)
+
+    c_marks = [float(np.nanpercentile(C_norm_act, q)) for q in (25, 50, 75, 99)]
+    l_marks = [float(np.nanpercentile(L_norm_act, q)) for q in (25, 50, 75, 99)]
+    muc_at_1 = beta_c
+    mul_at_1 = beta_l_med
+
+    muc_norm_png = out_dir / f"{base_name}_muc_norm.png"
+    mul_norm_png = out_dir / f"{base_name}_mul_norm.png"
+    ctr_norm_png = out_dir / f"{base_name}_contours_norm.png"
+
+    plot_mu_norm(
+        c_grid,
+        muc_curve,
+        "c_norm",
+        "MUC (normalized)",
+        f"MUC vs c_norm - {gender.capitalize()} ({variant})",
+        muc_norm_png,
+        marks=c_marks,
+        endpoint=muc_at_1,
+    )
+    plot_mu_norm(
+        l_grid,
+        mul_curve,
+        "l_norm",
+        "MUL (normalized)",
+        f"MUL vs l_norm - {gender.capitalize()} ({variant})",
+        mul_norm_png,
+        marks=l_marks,
+        endpoint=mul_at_1,
+    )
+    plot_indifference_contours_boxcox(params_for_calc, beta_l_med, ctr_norm_png, (25, 50, 75, 99))
+
+    y_ref = float(y_ref)
 
     Z_columns = {}
     for key in sorted({str(name).replace("delta_", "") for name in params_for_calc if str(name).startswith("delta_")}):
@@ -1302,13 +1509,14 @@ def _process_gender_boxcox(
         "Overall accuracy": f"{accuracy:.2%}",
     }
 
+    # Use normalized MU/contour assets in the report
     report_path = out_dir / f"{base_name}_analysis.html"
     build_html_report(
         params_table=params_table,
         summary_stats=summary_stats,
-        muc_plot=out_dir / f"{base_name}_muc.png",
-        mul_plot=out_dir / f"{base_name}_mul.png",
-        contour_plot=out_dir / f"{base_name}_contours.png",
+        muc_plot=muc_norm_png,
+        mul_plot=mul_norm_png,
+        contour_plot=ctr_norm_png,
         confusion_html=confusion_html,
         hit_rates_html=hit_rates_html,
         output_path=report_path,
@@ -1318,7 +1526,7 @@ def _process_gender_boxcox(
         variant=variant,
         utility_table_html=util_html,
         mucmul_summary_html=mucmul_html,
-        title_suffix="Box-Cox",
+        title_suffix="Box-Cox (normalized MUs)",
     )
 
     if annotate_biogeme_html_flag and LABEL_MAP:

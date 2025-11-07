@@ -50,6 +50,7 @@ import biogeme.models as models
 from biogeme.expressions import Beta, Variable
 from biogeme.exceptions import BiogemeError
 
+from analyzer_runner import run_analyzer
 from path_helpers import data_root, reports_root
 
 # ---------------------------------------------------------------------------
@@ -723,6 +724,7 @@ def estimate_model(
         # Best-effort: mapping files are for display only.
         pass
 
+    run_analyzer("biogeme", [gender], variant_tag)
     return param_path
 
 
@@ -877,4 +879,3 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
-

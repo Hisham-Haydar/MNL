@@ -8,18 +8,24 @@ from typing import Iterable
 
 LOGGER = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-ANALYZER_SCRIPT = PROJECT_ROOT / "scripts" / "analyze_dcm_results.py"
+
+ANALYZER_SCRIPTS = {
+    "biogeme": PROJECT_ROOT / "scripts" / "analyze_dcm_results.py",
+    "mle": PROJECT_ROOT / "scripts" / "analyze_dcm_results.py",
+    "gender_split": PROJECT_ROOT / "scripts" / "analyze_dcm_gender_split.py",
+}
 
 
 def run_analyzer(source: str, genders: Iterable[str], variant: str) -> None:
     """Invoke analyze_dcm_results.py for the provided genders/variant."""
     genders = list(genders)
-    if not ANALYZER_SCRIPT.exists():
-        LOGGER.warning("Analyzer script not found at %s; skipping auto-report.", ANALYZER_SCRIPT)
+    script_path = ANALYZER_SCRIPTS.get(source, ANALYZER_SCRIPTS["mle"])
+    if not script_path.exists():
+        LOGGER.warning("Analyzer script not found at %s; skipping auto-report.", script_path)
         return
     base_cmd = [
         sys.executable,
-        str(ANALYZER_SCRIPT),
+        str(script_path),
         "--source",
         source,
         "--variant",

@@ -868,6 +868,8 @@ def estimate(
     variant: str,
     gender_split: bool = False,
     z_by_gender: bool = False,
+    model_prefix: str | None = None,
+    analyzer_source: str = "mle",
 ) -> None:
     if gender_key != "pooled":
         gender_split = False
@@ -1066,7 +1068,8 @@ def estimate(
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    model_name = f"boxcox_{gender_key}_{variant}".replace(".", "_")
+    base_prefix = model_prefix or f"boxcox_{gender_key}"
+    model_name = f"{base_prefix}_{variant}".replace(".", "_")
     meta = {
         "spec": "boxcox",
         "labels": list(labels),
@@ -1112,7 +1115,7 @@ def estimate(
     muc_summary_path = output_dir / f"{model_name}_mucmul_summary.json"
     muc_summary_path.write_text(json.dumps(muc_summary, indent=2), encoding="utf-8")
 
-    run_analyzer("mle", [gender_key], variant)
+    run_analyzer(analyzer_source, [gender_key], variant)
 
 
 # ---------------------------------------------------------------------------

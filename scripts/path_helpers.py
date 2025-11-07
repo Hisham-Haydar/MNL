@@ -20,6 +20,13 @@ DE_DEFAULT_SYSTEMS = {
     2016: 2015,
 }
 
+# Map microdata input year -> underlying income year (per your note)
+DE_INCOME_YEAR = {
+    2014: 2013,  # DE_2014_a3 reflects income 2013
+    2015: 2014,  # DE_2015_a1 reflects income 2014
+    2016: 2015,  # DE_2016_a1 reflects income 2015
+}
+
 
 def _collect_candidates() -> tuple[Path, ...]:
     """Return possible roots that might hold the heavy data/artifacts."""

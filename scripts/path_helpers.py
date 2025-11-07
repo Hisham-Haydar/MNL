@@ -7,6 +7,20 @@ from pathlib import Path
 _ENV_HINTS = ("MNL_STORAGE_ROOT", "MNL_DATA_ROOT", "MNL_ROOT")
 
 
+def euromod_raw_root() -> Path:
+    """Return the EUROMOD raw micro-data directory, honouring env override."""
+    path = os.environ.get("EUROMOD_RAW", r"U:\EUROMOD-STORAGE\Data\raw")
+    return Path(path)
+
+
+# Default mapping: input microdata year -> EUROMOD policy system year
+DE_DEFAULT_SYSTEMS = {
+    2014: 2013,
+    2015: 2014,
+    2016: 2015,
+}
+
+
 def _collect_candidates() -> tuple[Path, ...]:
     """Return possible roots that might hold the heavy data/artifacts."""
     script_dir = Path(__file__).resolve().parent

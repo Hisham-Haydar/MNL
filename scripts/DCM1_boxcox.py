@@ -134,6 +134,21 @@ class ModelData:
     features: Dict[str, np.ndarray]
     has_gender_param: bool
 
+def feature_from_delta(data: ModelData, delta_name: str) -> np.ndarray:
+    base = delta_name.replace("delta_", "")
+    if base.endswith("_f") or base.endswith("_m"):
+        base = base[:-2]
+    mapping = {
+        "age": "age_norm",
+        "age_norm": "age_norm",
+        "age2": "age2_norm",
+        "age2_norm": "age2_norm",
+        "child": "child_norm",
+        "child_norm": "child_norm",
+        "dch": "dch",
+    }
+    key = mapping.get(base, base)
+    return data.features.get(key, np.zeros(len(data.actual_idx), dtype=float))
 
 def compute_reference_consumption(consumption: np.ndarray, actual_idx: np.ndarray, quantile: float) -> float:
     cons_actual = consumption[np.arange(len(consumption)), actual_idx]
@@ -259,12 +274,41 @@ class ParamStructure:
     asc_labels: List[str]
 
 
-def build_param_structure(labels: Tuple[str, ...], data: ModelData, include_ascs: bool) -> ParamStructure:
-    names = ["alpha_c", "alpha_l", "beta_c", "beta_l0"]
-    delta_names = data.Z_names
+def build_param_structure(
+    labels: Tuple[str, ...],
+    data: ModelData,
+    include_ascs: bool,
+    *,
+    pooled: bool = False,
+    gender_split: bool = False,
+    z_by_gender: bool = False,
+) -> ParamStructure:
+    names: List[str] = []
+    delta_names: List[str] = []
+    asc_labels: List[str] = []
+
+    if pooled and gender_split and data.has_gender_param:
+        names += [
+            "alpha_c_f",
+            "alpha_l_f",
+            "beta_c_f",
+            "beta_l0_f",
+            "alpha_c_m",
+            "alpha_l_m",
+            "beta_c_m",
+            "beta_l0_m",
+        ]
+        if z_by_gender:
+            for key in ("age_norm", "age2_norm", "child_norm", "dch"):
+                delta_names += [f"delta_{key}_f", f"delta_{key}_m"]
+        else:
+            delta_names += ["delta_age", "delta_age2", "delta_child", "delta_dch"]
+    else:
+        names += ["alpha_c", "alpha_l", "beta_c", "beta_l0"]
+        delta_names.extend(list(data.Z_names))
+
     names.extend(delta_names)
 
-    asc_labels: List[str] = []
     if include_ascs and len(labels) > 1:
         asc_labels = list(labels[1:])
         names.extend(f"ASC_{lab}" for lab in asc_labels)
@@ -273,28 +317,19 @@ def build_param_structure(labels: Tuple[str, ...], data: ModelData, include_ascs
 
 
 def unpack_params(theta: np.ndarray, structure: ParamStructure) -> Dict[str, float]:
-    values: Dict[str, float] = {}
-    idx = 0
-    values["alpha_c"] = float(theta[idx]); idx += 1
-    values["alpha_l"] = float(theta[idx]); idx += 1
-    values["beta_c"] = float(theta[idx]); idx += 1
-    values["beta_l0"] = float(theta[idx]); idx += 1
-
-    for delta_name in structure.delta_names:
-        values[delta_name] = float(theta[idx]); idx += 1
-
-    for lab in structure.asc_labels:
-        values[f"ASC_{lab}"] = float(theta[idx]); idx += 1
-
-    return values
+    return {name: float(val) for name, val in zip(structure.param_names, theta)}
 
 
 def initial_theta(structure: ParamStructure) -> np.ndarray:
-    init = []
-    init.extend([0.1, 0.1])  # alpha_c, alpha_l
-    init.extend([1.0, 1.0])  # beta_c, beta_l0
-    init.extend([0.0] * len(structure.delta_names))
-    init.extend([0.0] * len(structure.asc_labels))
+    init: List[float] = []
+    if "alpha_c_f" in structure.param_names:
+        init.extend([0.10, 0.10, 1.00, 1.00, 0.10, 0.10, 1.00, 1.00])
+    else:
+        init.extend([0.10, 0.10, 1.00, 1.00])
+    deltas = [0.0] * len(structure.delta_names)
+    init.extend(deltas)
+    ascs = [0.0] * len(structure.asc_labels)
+    init.extend(ascs)
     return np.array(init, dtype=float)
 
 
@@ -303,6 +338,83 @@ def initial_theta(structure: ParamStructure) -> np.ndarray:
 # ---------------------------------------------------------------------------
 
 def compute_terms(params: Dict[str, float], data: ModelData, structure: ParamStructure) -> Dict[str, np.ndarray]:
+    avail = data.availability.astype(float)
+    N, J = data.C_norm.shape
+    result: Dict[str, np.ndarray] = {}
+
+    g_f = data.features.get("gender", np.zeros(N, dtype=float))
+    g_f = np.clip(g_f, 0.0, 1.0).astype(float)
+    g_m = 1.0 - g_f
+    g_f_mat = g_f[:, None]
+    g_m_mat = g_m[:, None]
+
+    if "alpha_c_f" in structure.param_names and data.has_gender_param:
+        alpha_c_f = params["alpha_c_f"]
+        alpha_l_f = params["alpha_l_f"]
+        alpha_c_m = params["alpha_c_m"]
+        alpha_l_m = params["alpha_l_m"]
+        beta_c_f = params["beta_c_f"]
+        beta_c_m = params["beta_c_m"]
+        beta_l0_f = params["beta_l0_f"]
+        beta_l0_m = params["beta_l0_m"]
+
+        bc_c_f = boxcox_transform(data.C_norm, alpha_c_f)
+        bc_c_m = boxcox_transform(data.C_norm, alpha_c_m)
+        bc_l_f = boxcox_transform(data.L_norm, alpha_l_f)
+        bc_l_m = boxcox_transform(data.L_norm, alpha_l_m)
+
+        bc_c_dalpha_f = d_boxcox_dalpha(data.C_norm, alpha_c_f)
+        bc_c_dalpha_m = d_boxcox_dalpha(data.C_norm, alpha_c_m)
+        bc_l_dalpha_f = d_boxcox_dalpha(data.L_norm, alpha_l_f)
+        bc_l_dalpha_m = d_boxcox_dalpha(data.L_norm, alpha_l_m)
+
+        bc_c = bc_c_f * g_f_mat + bc_c_m * g_m_mat
+        bc_l = bc_l_f * g_f_mat + bc_l_m * g_m_mat
+
+        if any(name.endswith("_f") for name in structure.delta_names):
+            beta_l_f = np.full(N, beta_l0_f, dtype=float)
+            beta_l_m = np.full(N, beta_l0_m, dtype=float)
+            for dname in structure.delta_names:
+                feat = feature_from_delta(data, dname)
+                if dname.endswith("_f"):
+                    beta_l_f = beta_l_f + params[dname] * feat
+                else:
+                    beta_l_m = beta_l_m + params[dname] * feat
+            beta_l = beta_l_f * g_f + beta_l_m * g_m
+        else:
+            beta_l_f = np.full(N, beta_l0_f, dtype=float)
+            beta_l_m = np.full(N, beta_l0_m, dtype=float)
+            for key in ("delta_age", "delta_age2", "delta_child", "delta_dch"):
+                if key in params:
+                    feat = feature_from_delta(data, key)
+                    beta_l_f = beta_l_f + params[key] * feat
+                    beta_l_m = beta_l_m + params[key] * feat
+            beta_l = beta_l_f * g_f + beta_l_m * g_m
+
+        beta_c_eff = beta_c_f * g_f + beta_c_m * g_m
+
+        result.update(
+            {
+                "bc_c": bc_c * avail,
+                "bc_l": bc_l * avail,
+                "bc_c_dalpha_f": bc_c_dalpha_f * avail,
+                "bc_c_dalpha_m": bc_c_dalpha_m * avail,
+                "bc_l_dalpha_f": bc_l_dalpha_f * avail,
+                "bc_l_dalpha_m": bc_l_dalpha_m * avail,
+                "beta_l": beta_l,
+                "beta_c_eff": beta_c_eff,
+                "beta_c_f": beta_c_f,
+                "beta_c_m": beta_c_m,
+                "g_f": g_f,
+                "g_m": g_m,
+                "g_f_mat": g_f_mat,
+                "g_m_mat": g_m_mat,
+                "bc_l_f": bc_l_f * avail,
+                "bc_l_m": bc_l_m * avail,
+            }
+        )
+        return result
+
     alpha_c = params["alpha_c"]
     alpha_l = params["alpha_l"]
     beta_c = params["beta_c"]
@@ -314,26 +426,31 @@ def compute_terms(params: Dict[str, float], data: ModelData, structure: ParamStr
     bc_l_dalpha = d_boxcox_dalpha(data.L_norm, alpha_l)
 
     if structure.delta_names:
-        delta_vector = np.array([params[name] for name in structure.delta_names], dtype=float)
-        beta_l = beta_l0 + data.Z_matrix @ delta_vector
+        values = np.array([params.get(name, 0.0) for name in structure.delta_names], dtype=float)
+        beta_l = beta_l0 + data.Z_matrix @ values
     else:
-        beta_l = np.full(data.C_norm.shape[0], beta_l0)
+        beta_l = np.full(N, beta_l0)
 
-    return {
-        "bc_c": bc_c,
-        "bc_l": bc_l,
-        "bc_c_dalpha": bc_c_dalpha,
-        "bc_l_dalpha": bc_l_dalpha,
-        "beta_l": beta_l,
-        "beta_c": beta_c,
-    }
+    result.update(
+        {
+            "bc_c": bc_c * avail,
+            "bc_l": bc_l * avail,
+            "bc_c_dalpha": bc_c_dalpha * avail,
+            "bc_l_dalpha": bc_l_dalpha * avail,
+            "beta_l": beta_l,
+            "beta_c": beta_c,
+        }
+    )
+    return result
 
 
 def assemble_utilities(theta: np.ndarray, data: ModelData, structure: ParamStructure) -> np.ndarray:
     params = unpack_params(theta, structure)
     terms = compute_terms(params, data, structure)
-
-    utilities = params["beta_c"] * terms["bc_c"] + terms["beta_l"][:, None] * terms["bc_l"]
+    if "beta_c_eff" in terms:
+        utilities = terms["beta_c_eff"][:, None] * terms["bc_c"] + terms["beta_l"][:, None] * terms["bc_l"]
+    else:
+        utilities = params["beta_c"] * terms["bc_c"] + terms["beta_l"][:, None] * terms["bc_l"]
 
     if structure.asc_labels:
         asc = np.zeros(len(data.labels))
@@ -341,8 +458,7 @@ def assemble_utilities(theta: np.ndarray, data: ModelData, structure: ParamStruc
             asc[data.labels.index(lab)] = params[f"ASC_{lab}"]
         utilities = utilities + asc
 
-    utilities = np.where(data.availability, utilities, -np.inf)
-    return utilities
+    return np.where(data.availability, utilities, -np.inf)
 
 
 def negative_log_likelihood(theta: np.ndarray, data: ModelData, structure: ParamStructure) -> float:
@@ -365,14 +481,44 @@ def assemble_partials(theta: np.ndarray, data: ModelData, structure: ParamStruct
     availability = data.availability.astype(float)
 
     partials: Dict[str, np.ndarray] = {}
-    partials["alpha_c"] = params["beta_c"] * terms["bc_c_dalpha"]
-    partials["alpha_l"] = terms["beta_l"][:, None] * terms["bc_l_dalpha"]
-    partials["beta_c"] = terms["bc_c"]
-    partials["beta_l0"] = terms["bc_l"]
 
-    for idx, delta_name in enumerate(structure.delta_names):
-        Zk = data.Z_matrix[:, idx]
-        partials[delta_name] = (Zk[:, None]) * terms["bc_l"]
+    if "beta_c_eff" in terms:
+        g_f_mat = terms["g_f_mat"]
+        g_m_mat = terms["g_m_mat"]
+        partials["alpha_c_f"] = terms["beta_c_eff"][:, None] * terms["bc_c_dalpha_f"] * g_f_mat
+        partials["alpha_c_m"] = terms["beta_c_eff"][:, None] * terms["bc_c_dalpha_m"] * g_m_mat
+        partials["alpha_l_f"] = terms["beta_l"][:, None] * terms["bc_l_dalpha_f"] * g_f_mat
+        partials["alpha_l_m"] = terms["beta_l"][:, None] * terms["bc_l_dalpha_m"] * g_m_mat
+        partials["beta_c_f"] = terms["bc_c"] * g_f_mat
+        partials["beta_c_m"] = terms["bc_c"] * g_m_mat
+        partials["beta_l0_f"] = terms["bc_l"] * g_f_mat
+        partials["beta_l0_m"] = terms["bc_l"] * g_m_mat
+
+        if any(name.endswith("_f") for name in structure.delta_names):
+            for dname in structure.delta_names:
+                feat = feature_from_delta(data, dname)
+                if dname.endswith("_f"):
+                    partials[dname] = (feat[:, None]) * terms["bc_l_f"] * g_f_mat
+                else:
+                    partials[dname] = (feat[:, None]) * terms["bc_l_m"] * g_m_mat
+        else:
+            shared = terms["bc_l_f"] * g_f_mat + terms["bc_l_m"] * g_m_mat
+            for key in ("delta_age", "delta_age2", "delta_child", "delta_dch"):
+                if key in structure.delta_names:
+                    feat = feature_from_delta(data, key)
+                    partials[key] = (feat[:, None]) * shared
+    else:
+        partials["alpha_c"] = params["beta_c"] * terms["bc_c_dalpha"]
+        partials["alpha_l"] = terms["beta_l"][:, None] * terms["bc_l_dalpha"]
+        partials["beta_c"] = terms["bc_c"]
+        partials["beta_l0"] = terms["bc_l"]
+
+        for idx, delta_name in enumerate(structure.delta_names):
+            if data.Z_matrix.shape[1] > idx:
+                Zk = data.Z_matrix[:, idx]
+            else:
+                Zk = feature_from_delta(data, delta_name)
+            partials[delta_name] = (Zk[:, None]) * terms["bc_l"]
 
     for lab in structure.asc_labels:
         mat = np.zeros_like(terms["bc_c"])
@@ -380,8 +526,8 @@ def assemble_partials(theta: np.ndarray, data: ModelData, structure: ParamStruct
         mat[:, j] = availability[:, j]
         partials[f"ASC_{lab}"] = mat
 
-    for key, value in partials.items():
-        partials[key] = value * availability
+    for key in list(partials.keys()):
+        partials[key] = partials[key] * availability
 
     return partials
 
@@ -568,14 +714,35 @@ def muc_mul_point(
     c_norm = clip_unit_interval(np.array([consumption / y_ref], dtype=float))[0]
     l_norm = clip_unit_interval(np.array([(T - leisure) / T], dtype=float))[0]
 
-    alpha_c = params["alpha_c"]
-    alpha_l = params["alpha_l"]
-    beta_c = params["beta_c"]
-    beta_l = params["beta_l0"]
-    for key, value in Z.items():
-        name = f"delta_{key}"
-        if name in params:
-            beta_l += params[name] * value
+    def _z_value(key: str) -> float:
+        return float(Z.get(key, Z.get(key.replace("_norm", ""), 0.0)))
+
+    if "alpha_c_f" in params:
+        gender_flag = _z_value("gender")
+        is_female = gender_flag >= 0.5
+        alpha_c = params["alpha_c_f"] if is_female else params["alpha_c_m"]
+        alpha_l = params["alpha_l_f"] if is_female else params["alpha_l_m"]
+        beta_c = params["beta_c_f"] if is_female else params["beta_c_m"]
+        beta_l = params["beta_l0_f"] if is_female else params["beta_l0_m"]
+        if any(name.endswith("_f") for name in params if name.startswith("delta_") and name.endswith(("_f", "_m"))):
+            for base in ("age_norm", "age2_norm", "child_norm", "dch"):
+                name = f"delta_{base}_{'f' if is_female else 'm'}"
+                if name in params:
+                    beta_l += params[name] * _z_value(base)
+        else:
+            for base in ("age", "age2", "child", "dch"):
+                name = f"delta_{base}"
+                if name in params:
+                    beta_l += params[name] * _z_value(base)
+    else:
+        alpha_c = params["alpha_c"]
+        alpha_l = params["alpha_l"]
+        beta_c = params["beta_c"]
+        beta_l = params["beta_l0"]
+        for key, value in Z.items():
+            name = f"delta_{key}"
+            if name in params:
+                beta_l += params[name] * value
 
     muc = beta_c * boxcox_derivative(np.array([c_norm]), alpha_c)[0] / y_ref
     mul = beta_l * boxcox_derivative(np.array([l_norm]), alpha_l)[0] / T
@@ -699,9 +866,24 @@ def estimate(
     log_level: int,
     c_scale_quantile: float,
     variant: str,
+    gender_split: bool = False,
+    z_by_gender: bool = False,
 ) -> None:
+    if gender_key != "pooled":
+        gender_split = False
+        z_by_gender = False
     data = prepare_dataset(df, labels, gender_column=gender_column, c_scale_quantile=c_scale_quantile)
-    structure = build_param_structure(labels, data, include_ascs=include_ascs)
+    if gender_split and not data.has_gender_param:
+        gender_split = False
+        z_by_gender = False
+    structure = build_param_structure(
+        labels,
+        data,
+        include_ascs=include_ascs,
+        pooled=(gender_key == "pooled"),
+        gender_split=gender_split,
+        z_by_gender=z_by_gender,
+    )
 
     # Compute medians/modes for Z shifters (mode for binary, median otherwise)
     def _is_binary01(arr: np.ndarray) -> bool:
@@ -743,7 +925,12 @@ def estimate(
     LOGGER.info("[%s] Parameter vector: %s", gender_key, structure.param_names)
 
     theta0 = initial_theta(structure)
-    bounds = [(-2.0, 2.0), (-2.0, 2.0)] + [(None, None)] * (len(theta0) - 2)
+    bounds: List[Tuple[float | None, float | None]] = []
+    for name in structure.param_names:
+        if name.startswith(("alpha_c", "alpha_l")):
+            bounds.append((-2.0, 2.0))
+        else:
+            bounds.append((None, None))
 
     result = minimize(
         negative_log_likelihood,
@@ -939,6 +1126,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--auto-labels", action="store_true", help="Detect labels from dataset columns.")
     parser.add_argument("--include-ascs", action="store_true", help="Include ASC parameters (base fixed).")
     parser.add_argument("--pooled", action="store_true", help="Estimate pooled model with gender shifter.")
+    parser.add_argument(
+        "--gender-split",
+        action="store_true",
+        help="In --pooled mode, use gender-specific Box–Cox params (alpha/beta).",
+    )
+    parser.add_argument(
+        "--z-by-gender",
+        action="store_true",
+        help="Also split Z shifters (delta_*) by gender when --gender-split is on.",
+    )
     parser.add_argument("--gender-column", default="dgn", help="Gender column name (1=female, 0=male).")
     parser.add_argument("--center-logs", action="store_true", help=argparse.SUPPRESS)  # compatibility placeholder
     parser.add_argument("--y-scale", type=float, default=1.0, help=argparse.SUPPRESS)  # compatibility placeholder
@@ -985,6 +1182,8 @@ def run_for_gender(
         log_level=getattr(logging, args.log_level.upper()),
         c_scale_quantile=args.c_scale_quantile,
         variant=variant,
+        gender_split=bool(args.gender_split and gender_key == "pooled"),
+        z_by_gender=bool(args.z_by_gender and gender_key == "pooled"),
     )
 
 

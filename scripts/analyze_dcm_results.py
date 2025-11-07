@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 from pathlib import Path
 import re
 from typing import Dict, Iterable, List, Mapping, Sequence, Tuple
@@ -33,6 +34,8 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import fsolve
 from scipy.special import logsumexp
+
+LOGGER = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -1136,8 +1139,8 @@ def build_html_report(
     hit_rates_html: str,
     output_path: Path,
     *,
-    logy_hist: Path,
-    logl_hist: Path,
+    cons_hist: Path,
+    leisure_hist: Path,
     gender: str,
     variant: str,
     subgroup_accuracy_html: str | None = None,
@@ -1222,14 +1225,14 @@ def build_html_report(
     {summary_html}
   </section>{utility_section}{mucmul_section}
   <section>
-    <h2>Observed log-level Distributions</h2>
+    <h2>Observed Consumption & Leisure</h2>
     <figure>
-      <figcaption>Distribution of log(y) at actual choice - {gender.capitalize()} ({variant})</figcaption>
-      <img src="{logy_hist.name}" alt="Histogram log(y)">
+      <figcaption>Distribution of consumption at actual choice - {gender.capitalize()} ({variant})</figcaption>
+      <img src="{cons_hist.name}" alt="Histogram consumption">
     </figure>
     <figure>
-      <figcaption>Distribution of log(l) at actual choice - {gender.capitalize()} ({variant})</figcaption>
-      <img src="{logl_hist.name}" alt="Histogram log(l)">
+      <figcaption>Distribution of leisure (80 - lhw) at actual choice - {gender.capitalize()} ({variant})</figcaption>
+      <img src="{leisure_hist.name}" alt="Histogram leisure">
     </figure>
   </section>
   <section>
@@ -1322,23 +1325,23 @@ def _process_gender_boxcox(
     label_to_idx = {lab: idx for idx, lab in enumerate(labels)}
     actual_idx = actual_choice_series.map(label_to_idx).to_numpy(dtype=int)
 
-    logy_hist = out_dir / f"{base_name}_logy_hist.png"
-    logl_hist = out_dir / f"{base_name}_logl_hist.png"
+    cons_hist = out_dir / f"{base_name}_cons_hist.png"
+    leisure_hist = out_dir / f"{base_name}_leisure_hist.png"
     logy_actual, logl_actual = compute_actual_logs(df, labels)
     y_actual = np.exp(logy_actual).clip(lower=1e-3)
-    l_actual = (80.0 - (80.0 - np.exp(logl_actual))).clip(lower=1e-3, upper=T_ENDOW)
+    l_actual = np.exp(logl_actual).clip(lower=1e-3, upper=T_ENDOW)
     _save_hist(
-        logy_actual,
-        f"Distribution of log(y) at actual choice - {gender.capitalize()} ({variant})",
-        logy_hist,
-        xlabel="log(y)",
+        y_actual,
+        f"Distribution of consumption at actual choice - {gender.capitalize()} ({variant})",
+        cons_hist,
+        xlabel="consumption",
         alpha=0.7,
     )
     _save_hist(
-        logl_actual,
-        f"Distribution of log(l) at actual choice - {gender.capitalize()} ({variant})",
-        logl_hist,
-        xlabel="log(l)",
+        l_actual,
+        f"Distribution of leisure (80 - lhw) at actual choice - {gender.capitalize()} ({variant})",
+        leisure_hist,
+        xlabel="leisure hours",
         alpha=0.7,
     )
 
@@ -1520,8 +1523,8 @@ def _process_gender_boxcox(
         confusion_html=confusion_html,
         hit_rates_html=hit_rates_html,
         output_path=report_path,
-        logy_hist=logy_hist,
-        logl_hist=logl_hist,
+        cons_hist=cons_hist,
+        leisure_hist=leisure_hist,
         gender=gender,
         variant=variant,
         utility_table_html=util_html,
@@ -1618,22 +1621,22 @@ def _process_gender_translog(
     y_actual = np.exp(logy_actual).clip(lower=1e-3)
     l_actual = np.exp(logl_actual).clip(lower=1e-3, upper=168)
 
-    logy_hist = out_dir / f"{base_name}_logy_hist.png"
-    logl_hist = out_dir / f"{base_name}_logl_hist.png"
+    cons_hist = out_dir / f"{base_name}_cons_hist.png"
+    leisure_hist = out_dir / f"{base_name}_leisure_hist.png"
     _save_hist(
-      logy_actual,
-      f"Distribution of log(y) at actual choice - {gender.capitalize()} ({variant})",
-      logy_hist,
-      xlabel="log(y)",
-      alpha=0.7,
-  )
+        y_actual,
+        f"Distribution of consumption at actual choice - {gender.capitalize()} ({variant})",
+        cons_hist,
+        xlabel="consumption",
+        alpha=0.7,
+    )
     _save_hist(
-      logl_actual,
-      f"Distribution of log(l) at actual choice - {gender.capitalize()} ({variant})",
-      logl_hist,
-      xlabel="log(l)",
-      alpha=0.7,
-  )
+        l_actual,
+        f"Distribution of leisure (80 - lhw) at actual choice - {gender.capitalize()} ({variant})",
+        leisure_hist,
+        xlabel="leisure hours",
+        alpha=0.7,
+    )
 
     leila_actual = pd.Series(0.0, index=df.index)
     for lab in labels:
@@ -2071,8 +2074,8 @@ def _process_gender_translog(
         confusion_html=confusion_html,
         hit_rates_html=hit_rates_html,
         output_path=report_path,
-        logy_hist=logy_hist,
-        logl_hist=logl_hist,
+        cons_hist=cons_hist,
+        leisure_hist=leisure_hist,
         gender=gender,
         variant=variant,
         subgroup_accuracy_html=subgroup_accuracy_section,

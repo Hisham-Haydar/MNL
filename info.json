@@ -1,0 +1,40 @@
+{
+  "cgroup_version": 0,
+  "cpu_id": "16175246265711459136991769238117",
+  "device_ids": {
+    "1": "36338201",
+    "2": "36365502",
+    "3": "24615603",
+    "4": "32231404",
+    "5": "87429205",
+    "6": "43906306"
+  },
+  "gams_port": 33333,
+  "hostname": "WSS22-CS01",
+  "limited_logical_cpu_cores": 0.0,
+  "limited_memory": 0,
+  "logical_cpu_cores": 64.0,
+  "mac_addresses": [
+    "6c:fe:54:5c:ba:d0",
+    "6c:fe:54:5c:ba:d1",
+    "b8:3f:d2:96:16:a2",
+    "b8:3f:d2:96:16:a3",
+    "ec:2a:72:45:fd:1a",
+    "ec:2a:72:45:fd:1b",
+    "ec:2a:72:47:a6:47"
+  ],
+  "machine_id": "425727b1-2282-48f3-bb4e-1c39489f144d",
+  "operating_system": "Windows (x86_64)",
+  "physical_cpu_cores": 32,
+  "running_in_docker": false,
+  "running_in_kubernetes": false,
+  "total_memory": 768,
+  "transient_id": "1759651215",
+  "username": "hisham",
+  "username_id": "69888600",
+  "version": {
+    "commit_hash": "91cb996b",
+    "gams_version": "51.4.0",
+    "release_date": "Nov 10, 2025"
+  }
+}

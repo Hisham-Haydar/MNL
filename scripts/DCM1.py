@@ -456,6 +456,7 @@ def estimate_model(
     y_scale: float = 1.0,
     gender_column: str = "dgn",
     pooled: bool = False,
+    data_dir: Path | None = None,
 ) -> Path:
     """Estimate the multinomial logit model for the given gender."""
     logy_actual, logl_actual = _actual_choice_logs(df, labels)
@@ -724,7 +725,7 @@ def estimate_model(
         # Best-effort: mapping files are for display only.
         pass
 
-    run_analyzer("biogeme", [gender], variant_tag)
+    run_analyzer("biogeme", [gender], variant_tag, data_dir=data_dir)
     return param_path
 
 
@@ -850,6 +851,7 @@ def main(argv: list[str] | None = None) -> None:
                 y_scale=args.y_scale,
                 gender_column=args.gender_column,
                 pooled=True,
+                data_dir=args.data_dir,
             )
         except Exception as exc:
             LOGGER.error("[pooled] Estimation failed: %s", exc, exc_info=True)
@@ -872,6 +874,7 @@ def main(argv: list[str] | None = None) -> None:
                     center_logs=args.center_logs,
                     y_scale=args.y_scale,
                     gender_column=args.gender_column,
+                    data_dir=args.data_dir,
                 )
             except Exception as exc:  # pragma: no cover - keep running other genders
                 LOGGER.error("[%s] Estimation failed: %s", gender, exc, exc_info=True)

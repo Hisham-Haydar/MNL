@@ -42,7 +42,8 @@ LOGGER = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 # Resolve storage-aware paths for data and reports.
-DATA_DIR = data_root() / "processed" / "scenarios"
+DEFAULT_DATA_DIR = data_root() / "processed" / "scenarios"
+DATA_DIR = DEFAULT_DATA_DIR
 BIOGEME_REPORT_DIR = reports_root() / "biogeme"
 MLE_REPORT_DIR = reports_root() / "mle_dcm"
 
@@ -77,6 +78,15 @@ EFFECT_INTERACTION_PATTERNS: tuple[str, ...] = (
     "{}_dgn",
     "{}:gender",
 )
+
+
+def set_data_dir(path: Path | None) -> None:
+    """Allow callers/CLI to override the dataset directory."""
+    global DATA_DIR
+    if path is None:
+        DATA_DIR = DEFAULT_DATA_DIR
+    else:
+        DATA_DIR = Path(path)
 
 
 def load_dataset_for_gender(gender: str) -> pd.DataFrame:
@@ -224,6 +234,12 @@ def parse_args() -> argparse.Namespace:
         "--annotate-biogeme-html",
         action="store_true",
         help="Annotate Biogeme HTML report by wrapping parameter names with tooltip spans.",
+    )
+    parser.add_argument(
+        "--data-dir",
+        type=Path,
+        default=None,
+        help="Directory containing the wide DCM datasets (default: Data/processed/scenarios).",
     )
     return parser.parse_args()
 
@@ -2142,6 +2158,7 @@ def process_gender(
 
 def main() -> None:
     args = parse_args()
+    set_data_dir(args.data_dir)
     summary: list[dict[str, object]] = []
     for gender in args.genders:
         try:

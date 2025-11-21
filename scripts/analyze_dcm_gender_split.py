@@ -14,7 +14,7 @@ import logging
 from pathlib import Path
 from typing import List
 
-from analyze_dcm_results import process_gender
+from analyze_dcm_results import process_gender, set_data_dir
 from path_helpers import reports_root
 
 DEFAULT_BASE = reports_root() / "mle_dcm" / "boxcox" / "pooled_genderSplit"
@@ -42,6 +42,12 @@ def parse_args() -> argparse.Namespace:
         default="INFO",
         choices=("DEBUG", "INFO", "WARNING", "ERROR"),
         help="Logging verbosity.",
+    )
+    parser.add_argument(
+        "--data-dir",
+        type=Path,
+        default=None,
+        help="Directory containing the wide DCM datasets (default: Data/processed/scenarios).",
     )
     return parser.parse_args()
 
@@ -75,6 +81,7 @@ def analyze_gender(
 def main() -> None:
     args = parse_args()
     logging.basicConfig(level=getattr(logging, args.log_level.upper()), format="%(message)s")
+    set_data_dir(args.data_dir)
 
     summary: List[dict[str, object]] = []
     for gender in args.genders:

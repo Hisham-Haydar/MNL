@@ -27,14 +27,14 @@ Outputs:
 """
 
 from __future__ import annotations
-import argparse, json, sys
+import argparse, json, sys, ast
 from pathlib import Path
 from typing import Dict, Iterable, List
 
 import numpy as np
 import pandas as pd
 
-from path_helpers import data_root, ensure_dir
+from path_helpers import data_root
 try:
     # Optional helpers we added
     from path_helpers import DE_INCOME_YEAR  # type: ignore
@@ -43,6 +43,55 @@ except Exception:
 
 DEFAULT_YEARS = (2014, 2015, 2016)
 BASE_CPI_YEAR = 2015
+
+def _strip_outer_quotes(text: str) -> str:
+    """Remove a single pair of wrapping quotes (PowerShell friendly)."""
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in ("'", '"'):
+        return text[1:-1]
+    return text
+
+def _normalize_cpi_mapping(mapping: dict) -> Dict[int, float]:
+    if not isinstance(mapping, dict):
+        raise TypeError("CPI mapping must be a dict of year:index pairs")
+    return {int(k): float(v) for k, v in mapping.items()}
+
+def _parse_cpi_json_arg(raw: str) -> Dict[int, float]:
+    """
+    Parse --cpi-json argument, tolerating outer quotes and single-quoted dicts.
+    """
+    raw = raw.strip()
+    attempts = (raw, _strip_outer_quotes(raw))
+    last_error: Exception | None = None
+
+    for idx, candidate in enumerate(attempts):
+        if not candidate:
+            continue
+        try:
+            parsed = json.loads(candidate)
+            mapping = _normalize_cpi_mapping(parsed)
+            if idx == 1 and candidate != raw:
+                print("[combine_years_for_dcm] INFO: stripped outer quotes from --cpi-json")
+            return mapping
+        except json.JSONDecodeError as err:
+            last_error = err
+        except TypeError:
+            continue
+        try:
+            parsed = ast.literal_eval(candidate)
+        except Exception:
+            continue
+        else:
+            try:
+                mapping = _normalize_cpi_mapping(parsed)
+            except TypeError:
+                continue
+            if idx == 1 and candidate != raw:
+                print("[combine_years_for_dcm] INFO: stripped outer quotes from --cpi-json")
+            return mapping
+
+    if last_error:
+        raise last_error
+    raise ValueError("Empty --cpi-json argument")
 
 def _load_cpi_from_csv(csv_path: Path) -> Dict[int, float]:
     df = pd.read_csv(csv_path)
@@ -53,8 +102,7 @@ def _load_cpi_from_csv(csv_path: Path) -> Dict[int, float]:
 def _load_cpi(args) -> Dict[int, float]:
     # Priority: --cpi-json > --cpi-file > identity mapping
     if args.cpi_json:
-        j = json.loads(args.cpi_json)
-        return {int(k): float(v) for k, v in j.items()}
+        return _parse_cpi_json_arg(args.cpi_json)
     if args.cpi_file and Path(args.cpi_file).exists():
         return _load_cpi_from_csv(Path(args.cpi_file))
     # Fallback: identity -> no adjustment, but warn

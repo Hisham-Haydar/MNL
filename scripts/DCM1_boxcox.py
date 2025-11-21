@@ -870,6 +870,7 @@ def estimate(
     z_by_gender: bool = False,
     model_prefix: str | None = None,
     analyzer_source: str = "mle",
+    dataset_source_dir: Path | None = None,
 ) -> None:
     if gender_key != "pooled":
         gender_split = False
@@ -1089,7 +1090,10 @@ def estimate(
         "y_ref": data.y_ref,
         "T": T_HOURS,
         "parameters": param_values,
+        "n_obs": n_obs,
     }
+    if dataset_source_dir is not None:
+        meta["data_dir"] = str(dataset_source_dir)
     meta.update({k: float(v) for k, v in muc_summary.items()})
     meta.update({
         "parameters_csv": f"{model_name}_parameters.csv",
@@ -1115,7 +1119,7 @@ def estimate(
     muc_summary_path = output_dir / f"{model_name}_mucmul_summary.json"
     muc_summary_path.write_text(json.dumps(muc_summary, indent=2), encoding="utf-8")
 
-    run_analyzer(analyzer_source, [gender_key], variant)
+    run_analyzer(analyzer_source, [gender_key], variant, data_dir=dataset_source_dir)
 
 
 # ---------------------------------------------------------------------------
@@ -1187,6 +1191,7 @@ def run_for_gender(
         variant=variant,
         gender_split=bool(args.gender_split and gender_key == "pooled"),
         z_by_gender=bool(args.z_by_gender and gender_key == "pooled"),
+        dataset_source_dir=args.data_dir,
     )
 
 

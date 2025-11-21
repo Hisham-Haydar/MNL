@@ -4,7 +4,7 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 
 LOGGER = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -16,7 +16,12 @@ ANALYZER_SCRIPTS = {
 }
 
 
-def run_analyzer(source: str, genders: Iterable[str], variant: str) -> None:
+def run_analyzer(
+    source: str,
+    genders: Iterable[str],
+    variant: str,
+    data_dir: Optional[Path] = None,
+) -> None:
     """Invoke analyze_dcm_results.py for the provided genders/variant."""
     genders = list(genders)
     script_path = ANALYZER_SCRIPTS.get(source, ANALYZER_SCRIPTS["mle"])
@@ -31,6 +36,8 @@ def run_analyzer(source: str, genders: Iterable[str], variant: str) -> None:
         "--variant",
         variant,
     ]
+    if data_dir:
+        base_cmd += ["--data-dir", str(data_dir)]
     for gender in genders:
         cmd = base_cmd + ["--genders", gender]
         try:

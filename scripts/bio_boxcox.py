@@ -146,6 +146,7 @@ def estimate_one(
     include_ascs: bool,
     gender_column: str,
     out_dir: Path,
+    data_dir: Path | None = None,
 ) -> None:
     df = df_src.copy()
     ensure(df, ["actual_choice", "dag", "num_children_total"])
@@ -430,7 +431,10 @@ def estimate_one(
         "model_name": model_name,
         "variant": variant,
         "c_scale_quantile": 0.99,
+        "n_obs": n_obs,
     }
+    if data_dir is not None:
+        meta["data_dir"] = str(data_dir)
     meta.update({
         "Z_medians_or_modes": Z_stats,
         "c_norm_median": c_norm_med,
@@ -453,7 +457,7 @@ def estimate_one(
             except OSError:
                 pass
 
-    run_analyzer("biogeme", [gender_key], variant)
+    run_analyzer("biogeme", [gender_key], variant, data_dir=data_dir)
 
     # Console summary
     print(results.short_summary())
@@ -518,6 +522,7 @@ def main() -> None:
             include_ascs=args.include_ascs,
             gender_column=args.gender_column,
             out_dir=args.output_dir,
+            data_dir=args.data_dir,
         )
         return
 
@@ -532,6 +537,7 @@ def main() -> None:
                 include_ascs=args.include_ascs,
                 gender_column=args.gender_column,
                 out_dir=args.output_dir,
+                data_dir=args.data_dir,
             )
         except Exception as exc:
             LOGGER.error("[%s] Estimation failed: %s", g, exc, exc_info=True)

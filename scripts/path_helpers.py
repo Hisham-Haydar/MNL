@@ -158,3 +158,28 @@ def ensure_dir(path: Path) -> Path:
     """Create the directory if it does not exist and return it."""
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def ensure_local_workdir() -> Path:
+    r"""
+    Ensure the current working directory is not a UNC path (GAMS/GAMSPy limitation).
+
+    If running from a UNC share (e.g., \\server\share\repo), switch to a user-configurable
+    local directory instead. Use MNL_LOCAL_WORKDIR to override the fallback.
+    """
+    cwd = Path.cwd()
+    anchor = cwd.anchor
+    if anchor.startswith("\\\\"):
+        target_raw = os.environ.get("MNL_LOCAL_WORKDIR")
+        if target_raw:
+            target = Path(target_raw).expanduser()
+        else:
+            target = Path.home() / "MNL_LOCAL_WORKDIR"
+        target.mkdir(parents=True, exist_ok=True)
+        os.chdir(target)
+        print(
+            "[path_helpers] INFO: Current directory is a UNC share "
+            f"({cwd}); switched working directory to {target} for solver compatibility."
+        )
+        return target
+    return cwd

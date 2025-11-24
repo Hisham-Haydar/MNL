@@ -12,6 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ANALYZER_SCRIPTS = {
     "biogeme": PROJECT_ROOT / "scripts" / "analyze_dcm_results.py",
     "mle": PROJECT_ROOT / "scripts" / "analyze_dcm_results.py",
+    "gamspy": PROJECT_ROOT / "scripts" / "analyze_dcm_results.py",
     "gender_split": PROJECT_ROOT / "scripts" / "analyze_dcm_gender_split.py",
 }
 

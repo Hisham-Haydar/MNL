@@ -46,6 +46,7 @@ DEFAULT_DATA_DIR = data_root() / "processed" / "scenarios"
 DATA_DIR = DEFAULT_DATA_DIR
 BIOGEME_REPORT_DIR = reports_root() / "biogeme"
 MLE_REPORT_DIR = reports_root() / "mle_dcm"
+GAMSPY_REPORT_DIR = reports_root() / "gamspy" / "boxcox"
 
 LABELS: tuple[str, ...] = ("h0", "h1", "h2", "h3", "h4", "h5", "h6")
 
@@ -227,7 +228,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--source",
         default="biogeme",
-        choices=("biogeme", "mle"),
+        choices=("biogeme", "mle", "gamspy"),
         help="Which estimator output to analyze (default: biogeme).",
     )
     parser.add_argument(
@@ -249,18 +250,35 @@ def _report_base_dir(source: str) -> Path:
         return BIOGEME_REPORT_DIR
     if source == "mle":
         return MLE_REPORT_DIR
+    if source == "gamspy":
+        return GAMSPY_REPORT_DIR
     raise ValueError(f"Unsupported source: {source}")
 
 
 def _candidate_param_dirs(gender: str, variant: str, source: str) -> List[Path]:
     base_dir = _report_base_dir(source)
-    candidates = [base_dir / f"{gender}_{variant}"]
+    candidates: List[Path] = []
+
+    def append_nested(root: Path) -> None:
+        if not root.exists():
+            return
+        for child in root.iterdir():
+            if child.is_dir():
+                candidates.append(child / f"{gender}_{variant}")
+
     sub_map = {
         "biogeme": ("boxcox", "boxcox_biogeme"),
         "mle": ("boxcox",),
     }
     for sub in sub_map.get(source, ()):
-        candidates.append(base_dir / sub / f"{gender}_{variant}")
+        sub_dir = base_dir / sub
+        append_nested(sub_dir)
+        candidates.append(sub_dir / f"{gender}_{variant}")
+
+    if source == "gamspy":
+        append_nested(base_dir)
+
+    candidates.append(base_dir / f"{gender}_{variant}")
     return candidates
 
 
@@ -276,6 +294,11 @@ def param_csv_for(gender: str, variant: str, source: str) -> Path:
         prefixes = [f"dcm_{gender}_{variant}", f"boxcox_{gender}_{variant}"]
     elif source == "mle":
         prefixes = [f"mle_{gender}_{variant}", f"boxcox_{gender}_{variant}"]
+    elif source == "gamspy":
+        prefixes = [
+            f"boxcox_{gender}_gamspy_{variant}",
+            f"boxcox_{gender}_{variant}",
+        ]
     else:
         prefixes = [f"{gender}_{variant}"]
 

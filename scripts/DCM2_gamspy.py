@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Date    : 2025-11-24 11:17:50
+# @Author  : Hisham Haydar (Hisham.Haydar@liser.lu)
+# @Link    : https://hisham-haydar.github.io/
+
 """
 Estimate a pooled multinomial logit with Box–Cox utilities.
 
@@ -22,10 +27,11 @@ from typing import Dict, Iterable, List, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize
 from scipy.special import logsumexp
 from scipy.stats import norm
 
+from gamspy import Container, Model, Variable
+from gamspy.math import exp as gp_exp, log as gp_log
 from analyzer_runner import run_analyzer
 from path_helpers import data_root, reports_root
 
@@ -33,6 +39,13 @@ LOGGER = logging.getLogger(__name__)
 
 T_HOURS: float = 80.0
 EPS: float = 1e-6
+
+SOLVER_MAP = {
+    "knitro": "knitro",
+    "ipopth": "ipopth",
+    "conopt": "conopt",
+}
+
 
 
 # ---------------------------------------------------------------------------
@@ -262,6 +275,7 @@ def prepare_dataset(
         features=features,
         has_gender_param=has_gender_param,
     )
+
 
 
 # ---------------------------------------------------------------------------
@@ -601,6 +615,7 @@ def _make_spd(M: np.ndarray, lam: float = 1e-8) -> np.ndarray:
     vals = np.clip(vals, lam, None)
     return (vecs * vals) @ vecs.T
 
+
 # ---------------------------------------------------------------------------
 # Diagnostics & outputs
 # ---------------------------------------------------------------------------
@@ -851,7 +866,6 @@ def generate_mucmul_draws(
 
     return draws_df, summary
 
-
 # ---------------------------------------------------------------------------
 # Estimation workflow
 # ---------------------------------------------------------------------------
@@ -872,6 +886,7 @@ def estimate(
     model_prefix: str | None = None,
     analyzer_source: str = "mle",
     dataset_source_dir: Path | None = None,
+    solver_name: str = "knitro",
 ) -> None:
     if gender_key != "pooled":
         gender_split = False
@@ -936,25 +951,27 @@ def estimate(
         else:
             bounds.append((None, None))
 
-    t_start = time.perf_counter()
-    result = minimize(
-        negative_log_likelihood,
-        theta0,
-        args=(data, structure),
-        method="L-BFGS-B",
-        bounds=bounds,
-        options={"maxiter": 1000, "disp": log_level <= logging.DEBUG},
-    )
-    solve_time = time.perf_counter() - t_start
-
-    if not result.success:
-        LOGGER.warning("[%s] Optimiser did not converge: %s", gender_key, result.message)
-
-    theta_hat = result.x
-    ll_star = -negative_log_likelihood(theta_hat, data, structure)
     ll_null = compute_null_loglik(data)
 
+    # Solve using GAMSPy model builder
+    start = time.perf_counter()
+    solver_result = build_and_solve_gamspy_model(
+        data=data,
+        structure=structure,
+        solver_key=solver_name
+    )
+    solve_time = time.perf_counter() - start
+
+    theta_hat = solver_result["theta"]
+    ll_star = -negative_log_likelihood(theta_hat, data, structure)
     param_values = flatten_params(theta_hat, structure)
+
+    LOGGER.info("[%s] GAMSPy-%s status: model=%s solver=%s",
+                gender_key,
+                solver_name.upper(),
+                solver_result.get("model_status"),
+                solver_result.get("solver_status"))
+    LOGGER.info("[%s] GAMSPy solver time %.3f seconds", gender_key, solve_time)
 
     # Leisure slope at median Z (scalar)
     beta_l_med = float(param_values.get("beta_l0", 0.0))
@@ -1094,6 +1111,8 @@ def estimate(
         "T": T_HOURS,
         "parameters": param_values,
         "n_obs": n_obs,
+        "solver_name": solver_name,
+        "solver_time": solve_time,
     }
     if dataset_source_dir is not None:
         meta["data_dir"] = str(dataset_source_dir)
@@ -1158,6 +1177,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--data-dir", type=Path, default=data_root() / "processed" / "scenarios", help="Input directory for wide datasets.")
     parser.add_argument("--log-level", default="INFO", choices=("DEBUG", "INFO", "WARNING", "ERROR"), help="Logging verbosity.")
+    parser.add_argument(
+    "--solver",
+    choices=("ipopth", "conopt", "knitro"),
+    default="knitro",
+    help="GAMSPy NLP solver (default: knitro).",
+    )
     return parser.parse_args()
 
 
@@ -1195,6 +1220,7 @@ def run_for_gender(
         gender_split=bool(args.gender_split and gender_key == "pooled"),
         z_by_gender=bool(args.z_by_gender and gender_key == "pooled"),
         dataset_source_dir=args.data_dir,
+        solver_name=args.solver,
     )
 
 

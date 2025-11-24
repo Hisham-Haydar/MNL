@@ -33,7 +33,8 @@ from scipy.stats import norm
 from gamspy import Container, Model, Variable
 from gamspy.math import exp as gp_exp, log as gp_log
 from analyzer_runner import run_analyzer
-from path_helpers import data_root, reports_root
+from path_helpers import data_root, reports_root, ensure_local_workdir
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -241,6 +242,7 @@ def prepare_dataset(
     gender_vector = None
     if gender_column in df_num.columns:
         gender_vector = pd.to_numeric(df_num[gender_column], errors="coerce").fillna(0.0).clip(0.0, 1.0).to_numpy(dtype=float)
+        gender_vector = 1 - gender_vector   # <-- FIX HERE
         if np.unique(gender_vector).size > 1:
             has_gender_param = True
 
@@ -869,6 +871,75 @@ def generate_mucmul_draws(
 # ---------------------------------------------------------------------------
 # Estimation workflow
 # ---------------------------------------------------------------------------
+def build_and_solve_gamspy_model(data, structure, solver_key="knitro"):
+    """
+    Minimal GAMSPy MNL optimizer that replaces SciPy's L-BFGS.
+    Returns a dict with:
+        - 'theta': optimal parameter vector
+        - 'model_status': GAMSPy model status
+        - 'solver_status': solver code
+    """
+
+    import numpy as np
+    from gamspy import Container, Model, Variable, Parameter
+    from gamspy.math import exp as gp_exp, log as gp_log
+
+    # NEW: ensure we are not in a UNC directory
+    ensure_local_workdir()
+
+    # Number of parameters
+    K = len(structure.param_names)
+    theta0 = initial_theta(structure)
+
+    # Create GAMSPy container
+    m = Container()
+
+    # Parameter indices
+    k = m.addSet("k", records=[str(i) for i in range(K)])
+
+    # Optimization variable
+    theta = m.addVariable("theta", k, domain="free")
+    theta.upper[k] = 5
+    theta.lower[k] = -5
+
+    # Parameter data → send numpy arrays to GAMSPy
+    C_norm = m.addParameter("C_norm", records=data.C_norm.tolist())
+    L_norm = m.addParameter("L_norm", records=data.L_norm.tolist())
+    A = m.addParameter("avail", records=data.availability.astype(float).tolist())
+    idx = m.addParameter("chosen", records=data.actual_idx.astype(int).tolist())
+
+    # Utility assembly inside GAMSPy
+    def boxcox_expr(x, alpha):
+        return (x**alpha - 1) / alpha
+
+    # Build utilities U[n,j]
+    utilities = (theta[0] * boxcox_expr(C_norm, theta[1])
+               + theta[2] * boxcox_expr(L_norm, theta[3]))
+
+    # Log-sum
+    logsum = gp_log((gp_exp(utilities) * A).sum(axis=1))
+
+    # Log-likelihood
+    chosen_util = utilities.lookup(idx)
+    ll = (chosen_util - logsum).sum()
+
+    # Objective: minimise negative log-likelihood
+    obj = m.addVariable("obj", domain=="free")
+    m.addEquation("def_obj", obj == -ll)
+    model = Model(m, equations="def_obj", sense="min")
+
+    # Solve
+    model.solve(solver=solver_key)
+
+    # Extract thetâ
+    theta_hat = np.array([theta[str(i)].toValue() for i in range(K)])
+
+    return {
+        "theta": theta_hat,
+        "model_status": model.modelstatus,
+        "solver_status": model.solvestatus,
+    }
+
 
 def estimate(
     gender_key: str,
@@ -884,7 +955,7 @@ def estimate(
     gender_split: bool = False,
     z_by_gender: bool = False,
     model_prefix: str | None = None,
-    analyzer_source: str = "mle",
+    analyzer_source: str = "gamspy",
     dataset_source_dir: Path | None = None,
     solver_name: str = "knitro",
 ) -> None:
@@ -1172,8 +1243,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=reports_root() / "mle_dcm" / "boxcox",
-        help="Output directory base (default: reports/mle_dcm/boxcox).",
+        default=reports_root() / "gamspy" / "boxcox",
+        help="Output directory base (default: reports/gamspy/boxcox).",
     )
     parser.add_argument("--data-dir", type=Path, default=data_root() / "processed" / "scenarios", help="Input directory for wide datasets.")
     parser.add_argument("--log-level", default="INFO", choices=("DEBUG", "INFO", "WARNING", "ERROR"), help="Logging verbosity.")

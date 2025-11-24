@@ -228,6 +228,7 @@ def prepare_dataset(
     gender_vector = None
     if gender_column in df_num.columns:
         gender_vector = pd.to_numeric(df_num[gender_column], errors="coerce").fillna(0.0).clip(0.0, 1.0).to_numpy(dtype=float)
+        gender_vector = 1 - gender_vector   # <-- FIX HERE
         if np.unique(gender_vector).size > 1:
             has_gender_param = True
 

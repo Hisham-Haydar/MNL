@@ -41,6 +41,11 @@ LOGGER = logging.getLogger(__name__)
 T_HOURS: float = 80.0
 EPS: float = 1e-6
 
+# Small stabilisers for Box–Cox in GAMSPy expressions
+EPS_ALPHA: float = 1e-6
+LOG_EPS: float = 1e-12
+
+
 SOLVER_MAP = {
     "knitro": "knitro",
     "ipopth": "ipopth",
@@ -470,10 +475,11 @@ def assemble_utilities(theta: np.ndarray, data: ModelData, structure: ParamStruc
         utilities = params["beta_c"] * terms["bc_c"] + terms["beta_l"][:, None] * terms["bc_l"]
 
     if structure.asc_labels:
-        asc = np.zeros(len(data.labels))
+        asc_vec = np.zeros_like(utilities)
         for lab in structure.asc_labels:
-            asc[data.labels.index(lab)] = params[f"ASC_{lab}"]
-        utilities = utilities + asc
+            j = data.labels.index(lab)
+            asc_vec[:, j] = params[f"ASC_{lab}"] * data.availability[:, j]
+        utilities = utilities + asc_vec
 
     return np.where(data.availability, utilities, -np.inf)
 
@@ -868,78 +874,259 @@ def generate_mucmul_draws(
 
     return draws_df, summary
 
+def boxcox_expr(value: float, alpha_var: Variable):
+    """
+    Box–Cox transform as a GAMSPy expression.
+
+    Uses exp(alpha * log(x)) so that the exponent is always a variable
+    multiplied by a constant (GAMS limitation: no variable in exponent directly).
+    """
+    val = max(value, EPS)
+    log_val = math.log(val)
+    num = gp_exp(alpha_var * log_val) - 1.0
+    den = alpha_var + EPS_ALPHA
+    return num / den
+
+
+def _value_from_var(var: Variable) -> float:
+    """
+    Extract a scalar level from a GAMSPy Variable, whether scalar or indexed.
+    Mirrors the helper used in DCM1_gamspy.py.
+    """
+    records = getattr(var, "records", None)
+    if records is None:
+        return float(getattr(var, "level", 0.0))
+
+    if hasattr(records, "level"):
+        level_series = records.level
+        if hasattr(level_series, "iloc") and len(level_series):
+            return float(level_series.iloc[0])
+
+    if hasattr(records, "iloc") and len(records):
+        last_col = records.columns[-1]
+        return float(records.iloc[0][last_col])
+
+    raise RuntimeError(f"Unable to extract level for variable {var.name}")
+
+
 # ---------------------------------------------------------------------------
 # Estimation workflow
 # ---------------------------------------------------------------------------
-def build_and_solve_gamspy_model(data, structure, solver_key="knitro"):
+def build_and_solve_gamspy_model(
+    data: ModelData,
+    structure: ParamStructure,
+    solver_key: str = "knitro",
+) -> Dict[str, object]:
     """
-    Minimal GAMSPy MNL optimizer that replaces SciPy's L-BFGS.
-    Returns a dict with:
-        - 'theta': optimal parameter vector
-        - 'model_status': GAMSPy model status
-        - 'solver_status': solver code
+    Build the Box–Cox MNL log-likelihood directly as a GAMSPy NLP model
+    and let an NLP solver (KNITRO/IPOPTH/CONOPT) maximise it.
+
+    This mirrors the working implementation in DCM1_gamspy.py, but uses
+    DCM2's ModelData/ParamStructure and feature_from_delta.
     """
 
-    import numpy as np
-    from gamspy import Container, Model, Variable, Parameter
-    from gamspy.math import exp as gp_exp, log as gp_log
+    # Map solver key to GAMSPy solver name
+    solver = SOLVER_MAP.get(solver_key, solver_key)
 
-    # NEW: ensure we are not in a UNC directory
+    # Ensure we are on a local (non-UNC) working directory for GAMS/GAMSPy
     ensure_local_workdir()
 
-    # Number of parameters
-    K = len(structure.param_names)
-    theta0 = initial_theta(structure)
+    container = Container()
+    scalar_vars: Dict[str, Variable] = {}
+    delta_vars: Dict[str, Variable] = {}
+    asc_vars: Dict[str, Variable] = {}
 
-    # Create GAMSPy container
-    m = Container()
+    # 1. Create scalar parameters (alphas, betas, possibly gender-specific)
+    for name in structure.param_names:
+        if name in structure.delta_names or name.startswith("ASC_"):
+            continue
 
-    # Parameter indices
-    k = m.addSet("k", records=[str(i) for i in range(K)])
+        lb, ub = (None, None)
+        if name.startswith("alpha_"):   # Box–Cox powers bounded for stability
+            lb, ub = -2.0, 2.0
 
-    # Optimization variable
-    theta = m.addVariable("theta", k, domain="free")
-    theta.upper[k] = 5
-    theta.lower[k] = -5
+        var = Variable(container, name, type="free")
+        if lb is not None:
+            var.lo = lb
+        if ub is not None:
+            var.up = ub
+        scalar_vars[name] = var
 
-    # Parameter data → send numpy arrays to GAMSPy
-    C_norm = m.addParameter("C_norm", records=data.C_norm.tolist())
-    L_norm = m.addParameter("L_norm", records=data.L_norm.tolist())
-    A = m.addParameter("avail", records=data.availability.astype(float).tolist())
-    idx = m.addParameter("chosen", records=data.actual_idx.astype(int).tolist())
+    # 2. Delta (Z-shifter) parameters
+    for dname in structure.delta_names:
+        delta_vars[dname] = Variable(container, dname, type="free")
 
-    # Utility assembly inside GAMSPy
-    def boxcox_expr(x, alpha):
-        return (x**alpha - 1) / alpha
+    # 3. ASC parameters (one per non-base alternative)
+    for lab in structure.asc_labels:
+        asc_vars[lab] = Variable(container, f"ASC_{lab}", type="free")
 
-    # Build utilities U[n,j]
-    utilities = (theta[0] * boxcox_expr(C_norm, theta[1])
-               + theta[2] * boxcox_expr(L_norm, theta[3]))
+    # 4. Gender features (if present)
+    g_f_vec = data.features.get("gender", np.zeros(len(data.actual_idx), dtype=float))
+    g_f_vec = np.clip(g_f_vec, 0.0, 1.0)
+    g_m_vec = 1.0 - g_f_vec
 
-    # Log-sum
-    logsum = gp_log((gp_exp(utilities) * A).sum(axis=1))
+    # 5. Precompute feature vectors for each delta parameter
+    feature_vectors: Dict[str, np.ndarray] = {}
+    for dname in structure.delta_names:
+        feature_vectors[dname] = feature_from_delta(data, dname)
 
-    # Log-likelihood
-    chosen_util = utilities.lookup(idx)
-    ll = (chosen_util - logsum).sum()
+    alt_labels = list(data.labels)
+    N = len(data.actual_idx)
 
-    # Objective: minimise negative log-likelihood
-    obj = m.addVariable("obj", domain=="free")
-    m.addEquation("def_obj", obj == -ll)
-    model = Model(m, equations="def_obj", sense="min")
+    objective_expr = 0.0
 
-    # Solve
-    model.solve(solver=solver_key)
+    # Detect whether the specification is gender-split
+    gender_split = "alpha_c_f" in scalar_vars  # pooled & gender_split
+    delta_split = any(
+        name.endswith("_f") or name.endswith("_m")
+        for name in structure.delta_names
+)
 
-    # Extract thetâ
-    theta_hat = np.array([theta[str(i)].toValue() for i in range(K)])
+    # --- Helper GAMSPy expressions (per i) ---
+
+    def beta_l_expression(n_idx: int):
+        """
+        Leisure slope β_l(n) as an expression, either fully split by gender
+        or pooled with shared deltas.
+        """
+        if gender_split and delta_split:
+            # β_l_f(n) and β_l_m(n) with gender-specific deltas
+            f_terms = scalar_vars["beta_l0_f"]
+            m_terms = scalar_vars["beta_l0_m"]
+
+            for dname in structure.delta_names:
+                z_n = feature_vectors[dname][n_idx]
+                if dname.endswith("_f"):
+                    f_terms += z_n * delta_vars[dname]
+                elif dname.endswith("_m"):
+                    m_terms += z_n * delta_vars[dname]
+
+            return g_f_vec[n_idx] * f_terms + g_m_vec[n_idx] * m_terms
+
+        if gender_split and not delta_split:
+            # Gender-specific intercepts, but pooled deltas (no _f/_m suffix)
+            f_terms = scalar_vars["beta_l0_f"]
+            m_terms = scalar_vars["beta_l0_m"]
+
+            for dname in structure.delta_names:
+                z_n = feature_vectors[dname][n_idx]
+                f_terms += z_n * delta_vars[dname]
+                m_terms += z_n * delta_vars[dname]
+
+            return g_f_vec[n_idx] * f_terms + g_m_vec[n_idx] * m_terms
+
+        # No gender split: one β_l0 and common deltas
+        beta_terms = scalar_vars["beta_l0"]
+        for dname in structure.delta_names:
+            z_n = feature_vectors[dname][n_idx]
+            beta_terms += z_n * delta_vars[dname]
+        return beta_terms
+
+    def beta_c_expression(n_idx: int):
+        """
+        Consumption slope β_c(n): either gender-specific (pooled+gender_split)
+        or pooled.
+        """
+        if gender_split:
+            return (
+                g_f_vec[n_idx] * scalar_vars["beta_c_f"]
+                + g_m_vec[n_idx] * scalar_vars["beta_c_m"]
+            )
+        return scalar_vars["beta_c"]
+
+    def asc_expression(label: str):
+        """
+        ASC for alternative label (0 for base or if ASCs off).
+        """
+        return asc_vars.get(label, 0.0)
+
+    def bc_c_term(n_idx: int, j_idx: int):
+        """
+        Box–Cox transform for normalised consumption C_norm[n,j],
+        possibly gender-split in the power parameter.
+        """
+        value = data.C_norm[n_idx, j_idx]
+        if gender_split:
+            term_f = boxcox_expr(value, scalar_vars["alpha_c_f"])
+            term_m = boxcox_expr(value, scalar_vars["alpha_c_m"])
+            return g_f_vec[n_idx] * term_f + g_m_vec[n_idx] * term_m
+        return boxcox_expr(value, scalar_vars["alpha_c"])
+
+    def bc_l_term(n_idx: int, j_idx: int):
+        """
+        Box–Cox transform for normalised leisure L_norm[n,j],
+        possibly gender-split in the power parameter.
+        """
+        value = data.L_norm[n_idx, j_idx]
+        if gender_split:
+            term_f = boxcox_expr(value, scalar_vars["alpha_l_f"])
+            term_m = boxcox_expr(value, scalar_vars["alpha_l_m"])
+            return g_f_vec[n_idx] * term_f + g_m_vec[n_idx] * term_m
+        return boxcox_expr(value, scalar_vars["alpha_l"])
+
+    # --- Build the log-likelihood as a GAMSPy expression ---
+
+    for n_idx in range(N):
+        chosen_idx = int(data.actual_idx[n_idx])
+
+        lognum_expr = 0.0
+        denom_expr = 0.0
+
+        beta_l_val = beta_l_expression(n_idx)
+        beta_c_val = beta_c_expression(n_idx)
+
+        for j_idx, label in enumerate(alt_labels):
+            if not data.availability[n_idx, j_idx]:
+                continue
+
+            bc_c_val = bc_c_term(n_idx, j_idx)
+            bc_l_val = bc_l_term(n_idx, j_idx)
+
+            utility = beta_c_val * bc_c_val + beta_l_val * bc_l_val + asc_expression(label)
+
+            if chosen_idx == j_idx:
+                lognum_expr += utility
+
+            denom_expr += gp_exp(utility)
+
+        # Add contribution of head n to overall log-likelihood
+        objective_expr += lognum_expr - gp_log(denom_expr + LOG_EPS)
+
+    # Tell GAMSPy this is an NLP with max log-likelihood
+    model = Model(
+        container,
+        "boxcox_gamspy",
+        problem="NLP",
+        objective=objective_expr,
+        sense="max",
+    )
+
+    t0 = time.perf_counter()
+    model.solve(solver=solver)
+    solve_time = time.perf_counter() - t0
+
+    LOGGER.info("[GAMSPy] Solver=%s runtime=%.3f seconds", solver, solve_time)
+
+    # Collect θ̂ in the same order as structure.param_names
+    theta_values: List[float] = []
+    for name in structure.param_names:
+        if name in scalar_vars:
+            theta_values.append(_value_from_var(scalar_vars[name]))
+        elif name in delta_vars:
+            theta_values.append(_value_from_var(delta_vars[name]))
+        elif name.startswith("ASC_"):
+            lab = name.split("ASC_", 1)[1]
+            theta_values.append(_value_from_var(asc_vars[lab]))
+        else:
+            raise KeyError(f"Unknown parameter '{name}' in GAMSPy solution.")
 
     return {
-        "theta": theta_hat,
-        "model_status": model.modelstatus,
-        "solver_status": model.solvestatus,
+        "theta": np.array(theta_values, dtype=float),
+        "solver": solver,
+        "model_status": getattr(model, "model_status", None),
+        "solver_status": getattr(model, "solver_status", None),
+        "solve_time": solve_time,
     }
-
 
 def estimate(
     gender_key: str,
@@ -1044,16 +1231,54 @@ def estimate(
                 solver_result.get("solver_status"))
     LOGGER.info("[%s] GAMSPy solver time %.3f seconds", gender_key, solve_time)
 
-    # Leisure slope at median Z (scalar)
-    beta_l_med = float(param_values.get("beta_l0", 0.0))
-    for dname in structure.delta_names:
-        base = dname.replace("delta_", "")
-        zval = Z_stats.get(base, 0.0)
-        beta_l_med += float(param_values.get(dname, 0.0)) * float(zval)
+    # Leisure slope and Box–Cox powers at median Z
+    if "alpha_c_f" in structure.param_names:
+        # Gender-split pooled model: pick the representative gender from Z_stats
+        rep_gender = Z_stats.get("gender", 0.5)
+        is_female = rep_gender >= 0.5
 
-    alpha_c = float(param_values.get("alpha_c", 0.0))
-    alpha_l = float(param_values.get("alpha_l", 0.0))
-    beta_c = float(param_values.get("beta_c", 0.0))
+        if is_female:
+            alpha_c = float(param_values.get("alpha_c_f", 0.0))
+            alpha_l = float(param_values.get("alpha_l_f", 0.0))
+            beta_c = float(param_values.get("beta_c_f", 0.0))
+            beta_l_med = float(param_values.get("beta_l0_f", 0.0))
+            gender_suffix = "_f"
+        else:
+            alpha_c = float(param_values.get("alpha_c_m", 0.0))
+            alpha_l = float(param_values.get("alpha_l_m", 0.0))
+            beta_c = float(param_values.get("beta_c_m", 0.0))
+            beta_l_med = float(param_values.get("beta_l0_m", 0.0))
+            gender_suffix = "_m"
+
+        # Add Z shifters
+        if any(name.endswith("_f") or name.endswith("_m") for name in structure.delta_names):
+            # Gender-specific deltas
+            for base in ("age_norm", "age2_norm", "child_norm", "dch"):
+                # Z_stats keys are "age", "age2", "child", "dch"
+                z_key = base.replace("_norm", "")
+                zval = Z_stats.get(z_key, 0.0)
+                dname = f"delta_{base}{gender_suffix}"
+                if dname in param_values:
+                    beta_l_med += float(param_values[dname]) * float(zval)
+        else:
+            # Pooled deltas
+            for dname in structure.delta_names:
+                base = dname.replace("delta_", "")
+                zval = Z_stats.get(base, 0.0)
+                beta_l_med += float(param_values.get(dname, 0.0)) * float(zval)
+
+    else:
+        # Non gender-split model (original code)
+        beta_l_med = float(param_values.get("beta_l0", 0.0))
+        for dname in structure.delta_names:
+            base = dname.replace("delta_", "")
+            zval = Z_stats.get(base, 0.0)
+            beta_l_med += float(param_values.get(dname, 0.0)) * float(zval)
+
+        alpha_c = float(param_values.get("alpha_c", 0.0))
+        alpha_l = float(param_values.get("alpha_l", 0.0))
+        beta_c = float(param_values.get("beta_c", 0.0))
+
 
     # Normalized marginal utilities (NO division by y_ref or T)
     # MUC^norm(c_norm) = beta_c * c_norm^(alpha_c - 1)
@@ -1304,8 +1529,8 @@ def main() -> None:
     if args.pooled:
         male_path = args.data_dir / "heads_wide_single_male_dcm.parquet"
         female_path = args.data_dir / "heads_wide_single_female_dcm.parquet"
-        male_df = maybe_add_gender(load_wide_dataset(male_path), 0.0, args.gender_column)
-        female_df = maybe_add_gender(load_wide_dataset(female_path), 1.0, args.gender_column)
+        male_df = maybe_add_gender(load_wide_dataset(male_path), 1.0, args.gender_column)
+        female_df = maybe_add_gender(load_wide_dataset(female_path), 0.0, args.gender_column)
 
         labels = detect_labels(male_df, labels_arg)
         labels_f = detect_labels(female_df, labels)

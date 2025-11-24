@@ -876,16 +876,18 @@ def generate_mucmul_draws(
 
 def boxcox_expr(value: float, alpha_var: Variable):
     """
-    Box–Cox transform as a GAMSPy expression.
-
-    Uses exp(alpha * log(x)) so that the exponent is always a variable
-    multiplied by a constant (GAMS limitation: no variable in exponent directly).
+    Exact SciPy-style Box–Cox transform for GAMSPy.
+    Uses α in the denominator (not α+EPS), and a smooth
+    log(x) transition near α = 0.
     """
     val = max(value, EPS)
     log_val = math.log(val)
-    num = gp_exp(alpha_var * log_val) - 1.0
-    den = alpha_var + EPS_ALPHA
-    return num / den
+
+    # expression for x^α
+    x_alpha = gp_exp(alpha_var * log_val)
+
+    # smooth transition around α = 0
+    return (x_alpha - 1.0) / (alpha_var + (1e-12))
 
 
 def _value_from_var(var: Variable) -> float:
@@ -943,7 +945,7 @@ def build_and_solve_gamspy_model(
 
         lb, ub = (None, None)
         if name.startswith("alpha_"):   # Box–Cox powers bounded for stability
-            lb, ub = -2.0, 2.0
+            lb, ub = None, None # No bounds; handled in expression
 
         var = Variable(container, name, type="free")
         if lb is not None:
@@ -1090,7 +1092,8 @@ def build_and_solve_gamspy_model(
             denom_expr += gp_exp(utility)
 
         # Add contribution of head n to overall log-likelihood
-        objective_expr += lognum_expr - gp_log(denom_expr + LOG_EPS)
+        objective_expr += lognum_expr - gp_log(denom_expr + 1e-60)
+
 
     # Tell GAMSPy this is an NLP with max log-likelihood
     model = Model(
@@ -1100,6 +1103,19 @@ def build_and_solve_gamspy_model(
         objective=objective_expr,
         sense="max",
     )
+    # Warm start from SciPy-like initial values
+    theta0 = initial_theta(structure)
+
+    for name, var in scalar_vars.items():
+        var.l = theta0[structure.param_names.index(name)]
+
+    for dname, var in delta_vars.items():
+        var.l = theta0[structure.param_names.index(dname)]
+
+    for lab, var in asc_vars.items():
+        pname = f"ASC_{lab}"
+        if pname in structure.param_names:
+            var.l = theta0[structure.param_names.index(pname)]
 
     t0 = time.perf_counter()
     model.solve(solver=solver)

@@ -856,6 +856,9 @@ def generate_mucmul_draws(
 # ---------------------------------------------------------------------------
 # Estimation workflow
 # ---------------------------------------------------------------------------
+def grad_negative_log_likelihood(theta, data, structure):
+    scores = score_matrix(theta, data, structure)  # shape (N, K)
+    return -scores.sum(axis=0)
 
 def estimate(
     gender_key: str,
@@ -932,17 +935,16 @@ def estimate(
     theta0 = initial_theta(structure)
     bounds: List[Tuple[float | None, float | None]] = []
     for name in structure.param_names:
-        if name.startswith(("alpha_c", "alpha_l")):
-            bounds.append((-2.0, 2.0))
-        else:
-            bounds.append((None, None))
+        bounds.append((None, None)) # No box constraints
 
     t_start = time.perf_counter()
+   
     result = minimize(
         negative_log_likelihood,
         theta0,
         args=(data, structure),
         method="L-BFGS-B",
+        jac = grad_negative_log_likelihood,
         bounds=bounds,
         options={"maxiter": 1000, "disp": log_level <= logging.DEBUG},
     )

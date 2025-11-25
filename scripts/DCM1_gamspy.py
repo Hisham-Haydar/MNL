@@ -153,7 +153,7 @@ def build_and_solve_gamspy_model(
             continue
         lb, ub = (None, None)
         if name.startswith("alpha_"):
-            lb, ub = -2.0, 2.0
+            lb, ub = None, None
         var = Variable(container, name, type="free")
         if lb is not None:
             var.lo = lb

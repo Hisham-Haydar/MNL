@@ -1217,14 +1217,6 @@ def estimate(
 
     LOGGER.info("[%s] Parameter vector: %s", gender_key, structure.param_names)
 
-    theta0 = initial_theta(structure)
-    bounds: List[Tuple[float | None, float | None]] = []
-    for name in structure.param_names:
-        if name.startswith(("alpha_c", "alpha_l")):
-            bounds.append((-2.0, 2.0))
-        else:
-            bounds.append((None, None))
-
     ll_null = compute_null_loglik(data)
 
     # Solve using GAMSPy model builder

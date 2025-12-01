@@ -1,0 +1,765 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Date    : 2025-12-01 14:41:57
+# @Author  : Hisham Haydar (Hisham.Haydar@liser.lu)
+# @Link    : https://hisham-haydar.github.io/
+
+
+
+"""
+RURO_draws.py
+
+From singles_RURO_ready / couples_RURO_ready (wide, one row per person),
+construct a long RURO dataset with simulated opportunities:
+
+  - draw = 0: observed job (chosen alternative)
+  - draw >= 1: simulated opportunities from the prior over (hours, wage, loc)
+
+This is the step that creates the (i, draw) structure for RURO_prep_mnl.py.
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+import numpy as np
+import pandas as pd
+
+# Ensure pythonnet uses CoreCLR (align with data_prep2.py)
+os.environ.setdefault("PYTHONNET_RUNTIME", "coreclr")
+
+# ---------------------------------------------------------------------------
+# Minimal path/helpers for EUROMOD integration (self contained)
+# ---------------------------------------------------------------------------
+
+
+def _collect_candidates() -> tuple[Path, ...]:
+    script_dir = Path(__file__).resolve().parent
+    repo_root = script_dir.parent
+    seen: set[Path] = set()
+    candidates: list[Path] = []
+
+    def add(path: Path | str | None) -> None:
+        if not path:
+            return
+        candidate = Path(path).expanduser()
+        resolved = candidate
+        try:
+            resolved = candidate.resolve(strict=False)
+        except OSError:
+            pass
+        if resolved in seen:
+            return
+        seen.add(resolved)
+        candidates.append(resolved)
+
+    add(repo_root)
+    add(repo_root.parent)
+    add(script_dir)
+    add(script_dir.parent)
+
+    for env in ENV_HINTS:
+        raw = os.environ.get(env)
+        if raw:
+            env_path = Path(raw).expanduser()
+            add(env_path)
+            add(env_path.parent)
+
+    add("U:/EUROMOD-STORAGE")
+    add(Path.home() / "EUROMOD-STORAGE")
+
+    return tuple(candidates)
+
+
+def _resolve_storage_root() -> Path:
+    env_candidates: list[Path] = []
+    for env in ENV_HINTS:
+        raw = os.environ.get(env)
+        if raw:
+            env_path = Path(raw).expanduser()
+            env_candidates.append(env_path)
+            env_candidates.append(env_path.parent)
+
+    explicit_candidates = [Path(r"U:/EUROMOD-STORAGE"), Path.home() / "EUROMOD-STORAGE"]
+    repo_candidates = [c for c in _collect_candidates() if c not in env_candidates + explicit_candidates]
+
+    preferred: list[Path] = []
+    for candidate in env_candidates + explicit_candidates + repo_candidates:
+        data_dir = candidate / "Data"
+        if data_dir.exists():
+            if (data_dir / "processed").exists() or (data_dir / "raw").exists():
+                return candidate
+            preferred.append(candidate)
+        if candidate.name.lower() == "data" and candidate.exists():
+            if (candidate / "processed").exists() or (candidate / "raw").exists():
+                return candidate.parent
+            preferred.append(candidate.parent)
+    if preferred:
+        return preferred[0]
+    raise FileNotFoundError("Unable to locate storage root containing 'Data'. Set MNL_DATA_ROOT or MNL_STORAGE_ROOT.")
+
+
+def _euromod_root(explicit: Path | None = None) -> Path:
+    if explicit:
+        return explicit
+    env = os.environ.get("MNL_EUROMOD_ROOT")
+    if env:
+        candidate = Path(env).expanduser()
+        if candidate.exists():
+            return candidate
+    storage = _resolve_storage_root()
+    for rel in (
+        Path("EUROMOD_RELEASES_J1.0+") / "EUROMOD_RELEASES_J1.0+",
+        Path("EUROMOD_RELEASES_J1.0+"),
+        Path("EUROMOD_RELEASES"),
+        Path("euromod_releases"),
+    ):
+        cand = storage / rel
+        if cand.exists():
+            return cand
+    for child in storage.iterdir():
+        if child.is_dir() and "euromod" in child.name.lower():
+            return child
+    raise FileNotFoundError("EUROMOD release directory not found; set MNL_EUROMOD_ROOT.")
+
+
+def _read_microdata_file(path: Path) -> pd.DataFrame:
+    suf = path.suffix.lower()
+    if suf in {".txt", ".dat"}:
+        return pd.read_csv(path, sep="\t")
+    if suf == ".csv":
+        return pd.read_csv(path)
+    if suf == ".parquet":
+        return pd.read_parquet(path)  # type: ignore[arg-type]
+    if suf == ".pkl":
+        return pd.read_pickle(path)
+    raise ValueError(f"Unsupported microdata format for EUROMOD: {path}")
+
+
+class EuromodRunner:
+    """Thin wrapper around the euromod API (imports locally)."""
+
+    def __init__(self, root: Path):
+        try:
+            import euromod as em  # type: ignore
+        except Exception as exc:
+            raise ImportError("euromod package is required for EUROMOD runs.") from exc
+        self.em = em
+        self.model = em.Model(str(root))
+
+    def _resolve_system(self, country: str, system_code: str, dataset_name: str):
+        country_obj = self.model[country.upper()]
+        try:
+            system = country_obj[system_code]
+        except KeyError:
+            systems_iter = getattr(country_obj, "systems", country_obj.values())
+            system = next(iter(systems_iter))
+        dataset = None
+        if hasattr(system, "datasets"):
+            dataset = system.datasets.get(dataset_name)
+        if dataset is None and getattr(system, "bestmatch_datasets", None):
+            dataset = system.bestmatch_datasets[0]
+        if dataset is None:
+            raise KeyError(f"Dataset {dataset_name} not found in EUROMOD system {system_code}")
+        return system, dataset
+
+    def run_on_dataframe(self, df: pd.DataFrame, *, country: str, system_code: str, dataset_name: str) -> pd.DataFrame:
+        system, dataset = self._resolve_system(country, system_code, dataset_name)
+        sim = system.run(df, dataset.name)
+        return sim.outputs[0]
+# ---------------------------------------------------------------------------
+# Defaults (keep in sync with RURO_prep_mnl.py)
+# ---------------------------------------------------------------------------
+
+TOTAL_LEISURE_HOURS = 80.0
+WEEKS_PER_MONTH = 52.0 / 12.0
+
+DCM_MIN_POSITIVE = 1e-6
+
+DEFAULT_PI0_M = 0.10
+DEFAULT_PI0_F = 0.10
+
+DEFAULT_H_MIN = 1.0
+DEFAULT_H_MAX = 70.0
+DEFAULT_W_MIN = 1.0
+DEFAULT_W_MAX = 120.0
+
+DEFAULT_WAGE_SPEC = "vw"       # "fw" or "vw"
+DEFAULT_N_DRAWS = 99
+DEFAULT_RNG_SEED = 13
+
+# EUROMOD defaults/hooks
+ENV_HINTS = ("MNL_STORAGE_ROOT", "MNL_DATA_ROOT", "MNL_ROOT")
+DEFAULT_EUROMOD_HOURS_COL = "lhw"
+DEFAULT_EUROMOD_WAGE_COL = "yivwg"
+
+
+# ---------------------------------------------------------------------------
+# I/O
+# ---------------------------------------------------------------------------
+
+def _read_dataframe(path: Path) -> pd.DataFrame:
+    suf = path.suffix.lower()
+    if suf == ".parquet":
+        return pd.read_parquet(path)  # type: ignore[arg-type]
+    if suf == ".feather":
+        return pd.read_feather(path)  # type: ignore[arg-type]
+    if suf in {".pkl", ".pickle"}:
+        return pd.read_pickle(path)
+    if suf == ".csv":
+        return pd.read_csv(path)
+    if suf == ".txt":
+        return pd.read_csv(path, sep="\t")
+    raise ValueError(f"Unsupported dataset format: {path}")
+
+
+def _write_dataframe(df: pd.DataFrame, base_path: Path, suffix: str = "_draws") -> Dict[str, Path]:
+    out_dir = base_path.parent
+    base = base_path.stem + suffix
+    parquet_path = out_dir / f"{base}.parquet"
+    csv_path = out_dir / f"{base}.csv"
+
+    df.to_parquet(parquet_path, index=False, engine="pyarrow")  # type: ignore[arg-type]
+    df.to_csv(csv_path, index=False)
+    return {"parquet": parquet_path, "csv": csv_path}
+
+
+def _prepare_euromod_dataset(
+    template_df: pd.DataFrame,
+    draw_df: pd.DataFrame,
+    *,
+    id_col: str,
+    hours_col: str,
+    wage_col: str,
+) -> pd.DataFrame:
+    """Merge draw-specific hours/wage into a copy of template microdata."""
+    out = template_df.copy()
+    # Map hours/wage by id
+    hours_map = pd.to_numeric(draw_df[hours_col], errors="coerce")
+    wage_map = pd.to_numeric(draw_df[wage_col], errors="coerce")
+    hours_lookup = dict(zip(draw_df[id_col], hours_map))
+    wage_lookup = dict(zip(draw_df[id_col], wage_map))
+    if hours_lookup:
+        out[hours_col] = out[id_col].map(hours_lookup).fillna(out[hours_col])
+    if wage_lookup:
+        out[wage_col] = out[id_col].map(wage_lookup).fillna(out[wage_col])
+    return out
+
+
+def run_euromod_for_draws(
+    draws_df: pd.DataFrame,
+    micro_template_path: Path,
+    *,
+    country: str,
+    system_code: str,
+    dataset_name: str,
+    em_root: Path,
+    scenario_dir: Path,
+    id_col: str = "idperson",
+    hours_col: str = DEFAULT_EUROMOD_HOURS_COL,
+    wage_col: str = DEFAULT_EUROMOD_WAGE_COL,
+) -> Path:
+    """
+    EUROMOD call:
+
+      * Build ONE big EM input containing ALL draws (singles + couples).
+      * Apply hours/wage/benefit adjustments before EUROMOD:
+          - hours / lhw from RURO draws
+          - wage / yivwg from RURO draws
+          - yem consistency for lma == 1
+          - bun, bsa = 0 when working (lma == 1 and hours > 0)
+          - yemmy = 12, lunmy = 0 when working (if present)
+      * Create draw-specific IDs (idhh, idperson, kin IDs) to avoid clashes.
+      * Run EUROMOD ONCE and save a single combined file.
+    """
+    scenario_dir = scenario_dir.resolve()
+    scenario_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1. EUROMOD baseline microdata 
+    template_df = _read_microdata_file(micro_template_path)
+
+    # 2. Check that we have draw information
+    if "draw" not in draws_df.columns:
+        raise KeyError("`draws_df` must contain a 'draw' column.")
+    if id_col not in draws_df.columns:
+        raise KeyError(f"`draws_df` must contain '{id_col}'.")
+
+    # 3. Keep only what we need from the long RURO draws:
+    #    (id, draw, hours, wage). hours/wage come from generate_draws_long.
+    override_cols = [id_col, "draw"]
+    if "hours" in draws_df.columns:
+        override_cols.append("hours")
+    if "wage" in draws_df.columns:
+        override_cols.append("wage")
+
+    draws_sub = draws_df[override_cols].copy()
+
+    # 4. Merge: one EM row per (idperson, draw)
+    #    template_df has one row per person; draws_sub has one row per (person, draw).
+    #    Inner join replicates the household/person structure across all draws.
+    em_input = template_df.merge(draws_sub, on=id_col, how="inner", suffixes=("", "_draw"))
+
+    if em_input.empty:
+        raise ValueError("EUROMOD input after merging with draws is empty. "
+                         "Check that micro_template and RURO draws share the same idperson.")
+
+    # 5. Store "true" ids for later grouping in RURO_prep_mnl
+    if "idhh" in em_input.columns:
+        em_input["idhh_true"] = em_input["idhh"]
+    em_input[f"{id_col}_true"] = em_input[id_col]
+
+    # 6. Labour-market & hours/wage variables
+    draw = pd.to_numeric(em_input["draw"], errors="coerce").fillna(0).astype(int)
+
+    # labour-market activity flag (lma), fallback 1 if missing
+    if "lma" in em_input.columns:
+        lma_raw = em_input["lma"]
+    else:
+        lma_raw = pd.Series(1, index=em_input.index)
+    lma = pd.to_numeric(lma_raw, errors="coerce").fillna(1).astype(int)
+
+    # hours and wage from the RURO draws
+    if "hours" in em_input.columns:
+        h_raw = em_input["hours"]
+    elif hours_col in em_input.columns:
+        h_raw = em_input[hours_col]
+    else:
+        h_raw = pd.Series(0.0, index=em_input.index)
+    h = pd.to_numeric(h_raw, errors="coerce").fillna(0.0)
+
+    if "wage" in em_input.columns:
+        w_raw = em_input["wage"]
+    elif wage_col in em_input.columns:
+        w_raw = em_input[wage_col]
+    else:
+        w_raw = pd.Series(0.0, index=em_input.index)
+    w = pd.to_numeric(w_raw, errors="coerce").fillna(0.0)
+
+    # -- HOURS / LHW --
+    # overwrite EUROMOD hours column and keep an alias 'hours'
+    em_input[hours_col] = h
+    em_input["hours"] = h
+
+    # -- WAGES / YIVWG --
+    # For active (lma == 1) when hours > 0 we plug in the simulated wage; otherwise keep EM wage.
+    if wage_col in em_input.columns:
+        base_w = pd.to_numeric(em_input[wage_col], errors="coerce").fillna(0.0)
+    else:
+        base_w = w.copy()
+
+    working_mask = (lma == 1) & (h > 0.0)
+    em_input[wage_col] = np.where(working_mask, w, base_w)
+    em_input["wage"] = em_input[wage_col]
+
+    # -- YEM --
+    # For labour-market active persons, ensure yem = hours * wage * weeks_per_month.
+    if "yem" in em_input.columns:
+        yem = pd.to_numeric(em_input["yem"], errors="coerce").fillna(0.0)
+        yem.loc[working_mask] = h[working_mask] * em_input.loc[working_mask, wage_col] * WEEKS_PER_MONTH
+        em_input["yem"] = yem
+
+    # -- BENEFITS: BUN / BSA --
+    if "bun" in em_input.columns:
+        bun = pd.to_numeric(em_input["bun"], errors="coerce").fillna(0.0)
+        bun.loc[working_mask] = 0.0
+        em_input["bun"] = bun
+
+    if "bsa" in em_input.columns:
+        bsa = pd.to_numeric(em_input["bsa"], errors="coerce").fillna(0.0)
+        bsa.loc[working_mask] = 0.0
+        em_input["bsa"] = bsa
+
+    # -- MONTHS IN WORK / UNEMPLOYMENT: YEMMY / LUNMY --
+    if "yemmy" in em_input.columns and "lunmy" in em_input.columns:
+        yemmy = pd.to_numeric(em_input["yemmy"], errors="coerce")
+        lunmy = pd.to_numeric(em_input["lunmy"], errors="coerce")
+        yemmy.loc[working_mask] = 12
+        lunmy.loc[working_mask] = 0
+        em_input["yemmy"] = yemmy
+        em_input["lunmy"] = lunmy
+
+    # 7. Draw-specific IDs (households, persons, kin)
+    if "idhh" in em_input.columns:
+        em_input["idhh"] = em_input["idhh_true"] * 1000 + draw
+
+    base_id = em_input[f"{id_col}_true"]
+    em_input[id_col] = base_id * 1000 + draw
+
+    for kin in ["idfather", "idmother", "idpartner"]:
+        if kin in em_input.columns:
+            kin_old = pd.to_numeric(em_input[kin], errors="coerce").fillna(0).astype(int)
+            kin_new = np.where(kin_old == 0, 0, kin_old * 1000 + draw)
+            em_input[kin] = kin_new
+
+    # 8. Run EUROMOD ONCE on the full dataset
+    runner = EuromodRunner(em_root)
+    sim_df = runner.run_on_dataframe(
+        em_input,
+        country=country,
+        system_code=system_code,
+        dataset_name=dataset_name,
+    )
+
+    # Reattach draw and "true" ids
+    sim_df["draw"] = em_input["draw"].values
+    if "idhh_true" in em_input.columns:
+        sim_df["idhh_true"] = em_input["idhh_true"].values
+    sim_df[f"{id_col}_true"] = em_input[f"{id_col}_true"].values
+
+    # 9. Save a single combined file for all draws
+    combined_path = scenario_dir / "combined_draws_em.parquet"
+    sim_df.to_parquet(combined_path, index=False)  # type: ignore[arg-type]
+
+    return combined_path
+
+# ---------------------------------------------------------------------------
+# Household income helpers
+# ---------------------------------------------------------------------------
+def _attach_other_members_income(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute other_members_income per household (sum of ils_dispy of non-head/partner).
+    Keeps the column for all rows; used later for consumption of heads/partners only.
+    """
+    if "idhh" not in df.columns or "ils_dispy" not in df.columns:
+        return df
+    hh_is_head = pd.to_numeric(df.get("hh_IsHead", 0), errors="coerce").fillna(0).astype(int)
+    hh_is_partner = pd.to_numeric(df.get("hh_IsPartner", 0), errors="coerce").fillna(0).astype(int)
+    is_other = ~(hh_is_head.astype(bool) | hh_is_partner.astype(bool))
+    other_income = df["ils_dispy"].where(is_other, 0.0)
+    other_sum = other_income.groupby(df["idhh"]).sum()
+    df["other_members_income"] = df["idhh"].map(other_sum).fillna(0.0)
+    return df
+
+
+# ---------------------------------------------------------------------------
+# Helpers for loc and pi0
+# ---------------------------------------------------------------------------
+
+def _build_loc_distribution(df: pd.DataFrame) -> Optional[Dict[Any, float]]:
+    """
+    Build an empirical distribution over loc based on working individuals.
+    """
+    if "loc" not in df.columns:
+        return None
+
+    if "hours" in df.columns:
+        hours = pd.to_numeric(df["hours"], errors="coerce").fillna(0.0)
+    elif "lhw" in df.columns:
+        hours = pd.to_numeric(df["lhw"], errors="coerce").fillna(0.0)
+    else:
+        return None
+
+    mask = hours > 0
+    if "lma" in df.columns:
+        lma = pd.to_numeric(df["lma"], errors="coerce").fillna(0).astype(int)
+        mask &= lma == 1
+
+    if not mask.any():
+        return None
+
+    counts = df.loc[mask, "loc"].value_counts(dropna=True)
+    total = counts.sum()
+    if total <= 0:
+        return None
+    return (counts / total).to_dict()
+
+
+def _sample_loc(
+    loc_probs: Optional[Dict[Any, float]],
+    size: int,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    if not loc_probs or size == 0:
+        return np.array([None] * size, dtype=object)
+    keys = np.array(list(loc_probs.keys()))
+    p = np.array(list(loc_probs.values()), dtype=float)
+    p = p / p.sum()
+    idx = rng.choice(len(keys), size=size, p=p)
+    return keys[idx]
+
+
+# ---------------------------------------------------------------------------
+# Core: make long draws
+# ---------------------------------------------------------------------------
+
+def generate_draws_long(
+    df: pd.DataFrame,
+    *,
+    n_draws: int = DEFAULT_N_DRAWS,
+    wage_spec: str = DEFAULT_WAGE_SPEC,
+    pi0_m: float = DEFAULT_PI0_M,
+    pi0_f: float = DEFAULT_PI0_F,
+    h_min: float = DEFAULT_H_MIN,
+    h_max: float = DEFAULT_H_MAX,
+    w_min: float = DEFAULT_W_MIN,
+    w_max: float = DEFAULT_W_MAX,
+    rng_seed: int = DEFAULT_RNG_SEED,
+) -> pd.DataFrame:
+    """
+    Take a RURO_ready dataset (one row per person) and return a long dataset
+    with (idperson, draw) opportunities.
+
+    - draw=0: observed job (copied as is)
+    - draw>=1: simulated from the prior over hours, wage, and loc
+    """
+    if n_draws < 0:
+        raise ValueError("n_draws must be >= 0")
+
+    df = df.copy().reset_index(drop=True)
+
+    # Basic checks
+    if "idperson" not in df.columns:
+        raise KeyError("RURO_ready dataset must contain 'idperson'.")
+
+    # Hours alias
+    if "hours" in df.columns:
+        hours = pd.to_numeric(df["hours"], errors="coerce").fillna(0.0)
+    elif "lhw" in df.columns:
+        hours = pd.to_numeric(df["lhw"], errors="coerce").fillna(0.0)
+        df["hours"] = hours
+    else:
+        raise KeyError("RURO_ready dataset must contain 'hours' or 'lhw'.")
+
+    # Wage alias
+    if "wage" in df.columns:
+        wage = pd.to_numeric(df["wage"], errors="coerce").fillna(0.0)
+    elif "wage_ruro" in df.columns:
+        wage = pd.to_numeric(df["wage_ruro"], errors="coerce").fillna(0.0)
+        df["wage"] = wage
+    elif "yivwg" in df.columns:
+        wage = pd.to_numeric(df["yivwg"], errors="coerce").fillna(0.0)
+        df["wage"] = wage
+    else:
+        raise KeyError("RURO_ready dataset must contain 'wage', 'wage_ruro' or 'yivwg'.")
+
+    # Labour market / gender indicators for pi0 (mass at zero hours)
+    if "lma" in df.columns:
+        lma = pd.to_numeric(df["lma"], errors="coerce").fillna(1).astype(int)
+    else:
+        lma = pd.Series(1, index=df.index, dtype=int)
+    if "dgn" in df.columns:
+        dgn = pd.to_numeric(df["dgn"], errors="coerce").fillna(1).astype(int)
+    else:
+        dgn = pd.Series(1, index=df.index, dtype=int)
+
+    pi0_vec = np.zeros(len(df), dtype=float)
+    mask_m = (lma == 1) & (dgn == 1)  # active men
+    mask_f = (lma == 1) & (dgn == 0)  # active women
+    pi0_vec[mask_m.to_numpy()] = pi0_m
+    pi0_vec[mask_f.to_numpy()] = pi0_f
+    # others (lma != 1) left at 0
+
+    loc_probs = _build_loc_distribution(df)
+    rng = np.random.default_rng(rng_seed)
+
+    records: list[Dict[str, Any]] = []
+
+    for i, row in df.iterrows():
+        base: Dict[str, Any] = row.to_dict()
+
+        # Observed job: draw = 0
+        r0 = base.copy()
+        r0["draw"] = 0
+        r0["is_chosen"] = 1
+        records.append(r0)
+
+        if n_draws == 0:
+            continue
+
+        pi0_i = float(pi0_vec[i])
+
+        for j in range(1, n_draws + 1):
+            rj = base.copy()
+
+            u = rng.random()
+            if u < pi0_i:
+                h = 0.0
+                w = 0.0
+            else:
+                h = float(rng.uniform(h_min, h_max))
+                if wage_spec == "vw":
+                    w = float(rng.uniform(w_min, w_max))
+                else:
+                    # fixed wages: keep person-specific wage
+                    w = float(wage[i])
+
+            # Update labour variables coherently
+            rj["hours"] = h
+            rj["lhw"] = h
+
+            rj["wage"] = w
+            if "wage_ruro" in rj:
+                rj["wage_ruro"] = w
+            if "yivwg" in rj:
+                rj["yivwg"] = w
+            if "yem" in rj:
+                rj["yem"] = w * h * WEEKS_PER_MONTH
+
+            # Draw loc (occupation) only if working; otherwise keep observed loc
+            if "loc" in rj:
+                if (h > 0.0) and loc_probs:
+                    rj["loc"] = _sample_loc(loc_probs, 1, rng)[0]
+                else:
+                    # keep observed loc for non-working opportunities
+                    rj["loc"] = base.get("loc", rj.get("loc"))
+
+            rj["draw"] = j
+            rj["is_chosen"] = 0
+            records.append(rj)
+
+    long_df = pd.DataFrame.from_records(records)
+    return long_df
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+def parse_args() -> argparse.Namespace:
+    ap = argparse.ArgumentParser(
+        description="Generate RURO long datasets with simulated draws from RURO_ready inputs."
+    )
+    ap.add_argument(
+        "--singles-path",
+        type=str,
+        required=True,
+        help="Path to singles_RURO_ready.parquet (or .csv, .pkl, ...).",
+    )
+    ap.add_argument(
+        "--couples-path",
+        type=str,
+        required=False,
+        help="Path to couples_RURO_ready.parquet (if available).",
+    )
+    ap.add_argument(
+        "--n-draws",
+        type=int,
+        default=DEFAULT_N_DRAWS,
+        help="Number of simulated opportunities per person (excluding the observed job).",
+    )
+    ap.add_argument(
+        "--wage-spec",
+        type=str,
+        choices=["fw", "vw"],
+        default=DEFAULT_WAGE_SPEC,
+        help="Wage opportunity specification: 'fw' fixed, 'vw' variable.",
+    )
+    ap.add_argument("--pi0-m", type=float, default=DEFAULT_PI0_M,
+                    help="Mass at zero hours for active men.")
+    ap.add_argument("--pi0-f", type=float, default=DEFAULT_PI0_F,
+                    help="Mass at zero hours for active women.")
+    ap.add_argument("--h-min", type=float, default=DEFAULT_H_MIN,
+                    help="Lower bound of hour support.")
+    ap.add_argument("--h-max", type=float, default=DEFAULT_H_MAX,
+                    help="Upper bound of hour support.")
+    ap.add_argument("--w-min", type=float, default=DEFAULT_W_MIN,
+                    help="Lower bound of wage support.")
+    ap.add_argument("--w-max", type=float, default=DEFAULT_W_MAX,
+                    help="Upper bound of wage support.")
+    ap.add_argument("--rng-seed", type=int, default=DEFAULT_RNG_SEED,
+                    help="Seed for the RNG (reproducible draws).")
+    ap.add_argument("--run-euromod", action="store_true",
+                    help="Run EUROMOD once on all draws ( combined run).")
+    ap.add_argument("--euromod-root", type=str, default=None,
+                    help="Path to EUROMOD release; defaults to env/resolved storage.")
+    ap.add_argument("--euromod-system", type=str, default=None,
+                    help="EUROMOD system code (default: <country>_<year>).")
+    ap.add_argument("--euromod-dataset", type=str, default=None,
+                    help="EUROMOD dataset name (default: raw stem).")
+    ap.add_argument("--microdata-template", type=str, default=None,
+                    help="Baseline microdata file to mutate per draw (required for EUROMOD).")
+    ap.add_argument("--euromod-hours-col", type=str, default=DEFAULT_EUROMOD_HOURS_COL,
+                    help="Column to overwrite for hours in EUROMOD runs.")
+    ap.add_argument("--euromod-wage-col", type=str, default=DEFAULT_EUROMOD_WAGE_COL,
+                    help="Column to overwrite for wages in EUROMOD runs.")
+    ap.add_argument("--scenario-dir", type=str, default=None,
+                    help="Output directory for EUROMOD scenarios (default: storage/interim/ruro/<country>/scenarios).")
+    return ap.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+
+    singles_path = Path(args.singles_path).resolve()
+    if not singles_path.exists():
+        raise FileNotFoundError(f"Singles RURO_ready file not found: {singles_path}")
+    singles_df = _read_dataframe(singles_path)
+    singles_df = _attach_other_members_income(singles_df)
+    singles_long = generate_draws_long(
+        singles_df,
+        n_draws=args.n_draws,
+        wage_spec=args.wage_spec,
+        pi0_m=args.pi0_m,
+        pi0_f=args.pi0_f,
+        h_min=args.h_min,
+        h_max=args.h_max,
+        w_min=args.w_min,
+        w_max=args.w_max,
+        rng_seed=args.rng_seed,
+    )
+    singles_out = _write_dataframe(singles_long, singles_path, suffix="_RURO_draws")
+    print("Singles draws saved to:")
+    for k, v in singles_out.items():
+        print(f"  {k}: {v}")
+
+    combined_draws = [singles_long]
+
+    if args.couples_path:
+        couples_path = Path(args.couples_path).resolve()
+        if not couples_path.exists():
+            raise FileNotFoundError(f"Couples RURO_ready file not found: {couples_path}")
+        couples_df = _read_dataframe(couples_path)
+        couples_df = _attach_other_members_income(couples_df)
+        couples_long = generate_draws_long(
+            couples_df,
+            n_draws=args.n_draws,
+            wage_spec=args.wage_spec,
+            pi0_m=args.pi0_m,
+            pi0_f=args.pi0_f,
+            h_min=args.h_min,
+            h_max=args.h_max,
+            w_min=args.w_min,
+            w_max=args.w_max,
+            rng_seed=args.rng_seed + 1,  # different seed for couples
+        )
+        couples_out = _write_dataframe(couples_long, couples_path, suffix="_RURO_draws")
+        print("Couples draws saved to:")
+        for k, v in couples_out.items():
+            print(f"  {k}: {v}")
+        combined_draws.append(couples_long)
+
+    # Optional EUROMOD simulation (single combined run for all draws)
+    if args.run_euromod:
+        if not args.microdata_template:
+            raise SystemExit("--microdata-template is required when --run-euromod is set.")
+        country = "FR"  # default for path naming; adjust if you run other countries
+        em_root = _euromod_root(Path(args.euromod_root) if args.euromod_root else None)
+        system_code = args.euromod_system or f"{country}_{Path(args.singles_path).stem.split('_')[-1]}"
+        dataset_name = args.euromod_dataset or Path(args.singles_path).stem
+        scenario_dir = (
+            Path(args.scenario_dir).expanduser().resolve()
+            if args.scenario_dir
+            else (_resolve_storage_root() / "interim" / "ruro" / country.lower() / "scenarios").resolve()
+        )
+        combined_df = pd.concat(combined_draws, axis=0, ignore_index=True)
+        combined_df = combined_df.replace([np.inf, -np.inf], np.nan).dropna(subset=["draw", "idperson"])
+
+        combined_path = run_euromod_for_draws(
+            combined_df,
+            Path(args.microdata_template).resolve(),
+            country=country,
+            system_code=system_code,
+            dataset_name=dataset_name,
+            em_root=em_root,
+            scenario_dir=scenario_dir,
+            id_col="idperson",
+            hours_col=args.euromod_hours_col,
+            wage_col=args.euromod_wage_col,
+        )
+        print(f"EUROMOD per-draw simulations combined at: {combined_path}")
+
+if __name__ == "__main__":
+    main()

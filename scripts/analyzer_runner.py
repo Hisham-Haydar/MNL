@@ -22,6 +22,7 @@ def run_analyzer(
     genders: Iterable[str],
     variant: str,
     data_dir: Optional[Path] = None,
+    base_dir: Optional[Path] = None,
 ) -> None:
     """Invoke analyze_dcm_results.py for the provided genders/variant."""
     genders = list(genders)
@@ -39,6 +40,8 @@ def run_analyzer(
     ]
     if data_dir:
         base_cmd += ["--data-dir", str(data_dir)]
+    if base_dir and source == "gender_split":
+        base_cmd += ["--base", str(base_dir)]
     for gender in genders:
         cmd = base_cmd + ["--genders", gender]
         try:

@@ -6,6 +6,11 @@ def stepwise_filter_households(df, household_type="couples", config=None):
     """
     Performs stepwise filtering on couples or singles households, returning filtered df and stats DataFrame.
     Steps: Baseline, Age, Education, Replacement Income, Les, Allowed LES, Other Members, Wage/Labor Time.
+
+    Assumes:
+      - hh_IsHead: 1 for head of household
+      - hh_IsPartner: 1 for partner (0 otherwise)
+      - dgn: gender (0=female, 1=male)
     """
     if config is None:
         config = {
@@ -15,9 +20,12 @@ def stepwise_filter_households(df, household_type="couples", config=None):
             "wage_bounds": (2, 170),
             "hour_bounds": (5, 79),
         }
+
     stats = []
     df_work = df.copy()
     initial_households = df_work["idhh"].nunique()
+
+    # Baseline
     heads = df_work[df_work["hh_IsHead"] == 1]
     total = heads["idhh"].nunique()
     female = heads[heads["dgn"] == 0]["idhh"].nunique()
@@ -63,7 +71,10 @@ def stepwise_filter_households(df, household_type="couples", config=None):
     })
 
     # Step 3: Replacement Income (Head)
-    inc_mask = (df_work["hh_IsHead"] == 1) & (df_work["replacement_income_total"] <= config["replacement_income_cap"])
+    inc_mask = (
+        (df_work["hh_IsHead"] == 1)
+        & (df_work["replacement_income_total"] <= config["replacement_income_cap"])
+    )
     keep_idhh = df_work.loc[inc_mask, "idhh"].unique()
     df_work = df_work[df_work["idhh"].isin(keep_idhh)]
     heads = df_work[df_work["hh_IsHead"] == 1]
@@ -113,7 +124,7 @@ def stepwise_filter_households(df, household_type="couples", config=None):
     # Partner steps (for couples only)
     if household_type == "couples":
         # Step 6: Age (Partner)
-        age_mask = (df_work["tu_hh_de_IsPartner"] == 1) & df_work["dag"].between(*config["age_range"])
+        age_mask = (df_work["hh_IsPartner"] == 1) & df_work["dag"].between(*config["age_range"])
         keep_idhh = df_work.loc[age_mask, "idhh"].unique()
         df_work = df_work[df_work["idhh"].isin(keep_idhh)]
         heads = df_work[df_work["hh_IsHead"] == 1]
@@ -129,7 +140,7 @@ def stepwise_filter_households(df, household_type="couples", config=None):
         })
 
         # Step 7: Education (Partner)
-        edu_mask = (df_work["tu_hh_de_IsPartner"] == 1) & (df_work["dec"] == 0)
+        edu_mask = (df_work["hh_IsPartner"] == 1) & (df_work["dec"] == 0)
         keep_idhh = df_work.loc[edu_mask, "idhh"].unique()
         df_work = df_work[df_work["idhh"].isin(keep_idhh)]
         heads = df_work[df_work["hh_IsHead"] == 1]
@@ -145,7 +156,10 @@ def stepwise_filter_households(df, household_type="couples", config=None):
         })
 
         # Step 8: Replacement Income (Partner)
-        inc_mask = (df_work["tu_hh_de_IsPartner"] == 1) & (df_work["replacement_income_total"] <= config["replacement_income_cap"])
+        inc_mask = (
+            (df_work["hh_IsPartner"] == 1)
+            & (df_work["replacement_income_total"] <= config["replacement_income_cap"])
+        )
         keep_idhh = df_work.loc[inc_mask, "idhh"].unique()
         df_work = df_work[df_work["idhh"].isin(keep_idhh)]
         heads = df_work[df_work["hh_IsHead"] == 1]
@@ -161,7 +175,7 @@ def stepwise_filter_households(df, household_type="couples", config=None):
         })
 
         # Step 9: Les (Partner)
-        les_mask = (df_work["tu_hh_de_IsPartner"] == 1) & (df_work["les"] != 5)
+        les_mask = (df_work["hh_IsPartner"] == 1) & (df_work["les"] != 5)
         keep_idhh = df_work.loc[les_mask, "idhh"].unique()
         df_work = df_work[df_work["idhh"].isin(keep_idhh)]
         heads = df_work[df_work["hh_IsHead"] == 1]
@@ -177,7 +191,7 @@ def stepwise_filter_households(df, household_type="couples", config=None):
         })
 
         # Step 10: Allowed LES (Partner)
-        allowed_mask = (df_work["tu_hh_de_IsPartner"] == 1) & (df_work["les"].isin(config["allowed_les"]))
+        allowed_mask = (df_work["hh_IsPartner"] == 1) & (df_work["les"].isin(config["allowed_les"]))
         keep_idhh = df_work.loc[allowed_mask, "idhh"].unique()
         df_work = df_work[df_work["idhh"].isin(keep_idhh)]
         heads = df_work[df_work["hh_IsHead"] == 1]
@@ -198,7 +212,7 @@ def stepwise_filter_households(df, household_type="couples", config=None):
     #   OR: has yem > 50 or yse > 0.
     cond = (
         (df_work["hh_IsHead"] == 0)
-        & (df_work["tu_hh_de_IsPartner"] == 0)
+        & (df_work["hh_IsPartner"] == 0)
         & (
             (
                 df_work["dag"].between(*config["age_range"])
@@ -222,7 +236,11 @@ def stepwise_filter_households(df, household_type="couples", config=None):
         "% Remaining": round(100 * total / initial_households, 2),
     })
 
-    # Step: Wage & Labor Time (abnormal)
+    # Step: Wage & Labor Time (abnormal) – only heads (and partners for couples)
+    role_mask = (df_work["hh_IsHead"] == 1)
+    if household_type == "couples":
+        role_mask = role_mask | (df_work["hh_IsPartner"] == 1)
+
     abnormal_mask = (
         (df_work["les"] == 3)
         & (
@@ -231,10 +249,7 @@ def stepwise_filter_households(df, household_type="couples", config=None):
             | (df_work["wage_final"] < config["wage_bounds"][0])
             | (df_work["wage_final"] > config["wage_bounds"][1])
         )
-        & (
-            (df_work["hh_IsHead"] == 1)
-            | (df_work["tu_hh_de_IsPartner"] == 1 if household_type == "couples" else False)
-        )
+        & role_mask
     )
     households_to_drop = df_work.loc[abnormal_mask, "idhh"].unique()
     df_work = df_work[~df_work["idhh"].isin(households_to_drop)]
@@ -252,7 +267,6 @@ def stepwise_filter_households(df, household_type="couples", config=None):
 
     stats_df = pd.DataFrame(stats)
     return df_work, stats_df
-
 
 def export_stepwise_stats_latex(stats_df, latex_path, caption, label):
     """
@@ -531,12 +545,17 @@ def sort_and_rename_columns(main_df, filtered_df, specific_columns):
 def filter_households(df_sim, conditions, drop_extra_members=True):
     """
     Filters households based on specified conditions and optionally drops extra members.
+
+    Assumes:
+      - hh_IsHead: 1 for head
+      - hh_IsPartner: 1 for partner
     """
     filtered_df = df_sim.query(conditions)
+
     if drop_extra_members:
         extra_members_condition = (
             (filtered_df["hh_IsHead"] == 0)
-            & (filtered_df["tu_hh_de_IsPartner"] == 0)
+            & (filtered_df["hh_IsPartner"] == 0)
             & (filtered_df["dag"] > 16)
             & (filtered_df["dag"] < 64)
             & (filtered_df["ddi"] == 0)
@@ -545,15 +564,19 @@ def filter_households(df_sim, conditions, drop_extra_members=True):
         )
         households_to_drop = filtered_df.loc[extra_members_condition, "idhh"].unique()
         filtered_df = filtered_df[~filtered_df["idhh"].isin(households_to_drop)]
-    return filtered_df
 
+    return filtered_df
 
 def filter_couples(df_sim, results_dir):
     """
     Filters couples based on specific conditions and saves the result to a CSV file.
+
+    Assumes `hh_IsHead` (and, upstream, `hh_IsPartner`) have already been constructed.
     """
-    df_sim["hh_IsHead"] = (df_sim["tu_hh_de_headid"] == df_sim["idperson"]).astype(int)
-    couples_conditions = "(hh_IsHead == 1 and dag >= 16 and dag <= 64 and ddi == 0 and dec == 0 and les in [3, 5, 7])"
+    couples_conditions = (
+        "(hh_IsHead == 1 and dag >= 16 and dag <= 64 and "
+        "ddi == 0 and dec == 0 and les in [3, 5, 7])"
+    )
     couples_df = filter_households(df_sim, couples_conditions)
     output_path = os.path.join(results_dir, "couples_sample.csv")
     couples_df.to_csv(output_path, index=False)
@@ -682,17 +705,47 @@ def create_income_columns(df):
     Returns:
         pd.DataFrame: The DataFrame with new income aggregate columns added.
     """
+    # Helper to avoid KeyError when some benefits are absent in a country dataset
+    def _ensure_columns(cols: list[str]) -> None:
+        for c in cols:
+            if c not in df.columns:
+                df[c] = 0
 
     # ---------------------------
     # REPLACEMENT INCOME AGGREGATES
     # ---------------------------
 
     # 1. Unemployment Benefits
-    unemployment_vars = ["bun", "bunct", "bunnc", "buntr", "bunot", "bunls"]
-    df["replacement_unemployment"] = df[unemployment_vars].sum(axis=1)
+    # German-style detailed components (DE)
+    de_unemployment_vars = ["bunnc", "buntr", "bunot", "bunls"]
+    # French-style detailed components (FR, DRD)
+    fr_unemployment_vars = ["bunct", "bunmt"]
+
+    unemployment_vars = None
+    # 1) Prefer DE-style components if present (backward compatible)
+    if any(col in df.columns for col in de_unemployment_vars):
+        unemployment_vars = [c for c in de_unemployment_vars if c in df.columns]
+    # 2) Else prefer FR-style components if present
+    elif any(col in df.columns for col in fr_unemployment_vars):
+        unemployment_vars = [c for c in fr_unemployment_vars if c in df.columns]
+    # 3) Else fall back to total unemployment benefit if available
+    elif "bun" in df.columns:
+        unemployment_vars = ["bun"]
+
+    if unemployment_vars:
+        _ensure_columns(unemployment_vars)
+        df["replacement_unemployment"] = df[unemployment_vars].sum(axis=1)
+    else:
+        print(
+            "[create_income_columns] Warning: no known unemployment benefit variables found "
+            f"(expected some of {de_unemployment_vars + fr_unemployment_vars + ['bun']}); "
+            "setting replacement_unemployment = 0."
+        )
+        df["replacement_unemployment"] = 0.0
 
     # 2. Disability Benefits
     disability_vars = ["pdi", "pdi00", "pdica", "pdiss", "pdiwr", "pdiot"]
+    _ensure_columns(disability_vars)
     df["replacement_disability"] = df[disability_vars].sum(axis=1)
 
     # 3. Old Age / Retirement Benefits (including early retirement)
@@ -708,20 +761,25 @@ def create_income_columns(df):
         "poawr",
         "byr",
     ]
+    _ensure_columns(old_age_vars)
     df["replacement_old_age"] = df[old_age_vars].sum(axis=1)
 
     # 4. Survivors' Benefits
     survivors_vars = ["psu", "psuor", "psuwd"]
+    _ensure_columns(survivors_vars)
     df["replacement_survivors"] = df[survivors_vars].sum(axis=1)
 
     # 5. Private Pensions
+    _ensure_columns(["ypp"])
     df["replacement_private_pension"] = df["ypp"]
 
     # 6. Severance Pay
+    _ensure_columns(["ysv"])
     df["replacement_severance"] = df["ysv"]
 
     # 7. Family Leave Benefits (maternity/parental-leave)
     family_leave_vars = ["bmact", "bplct"]
+    _ensure_columns(family_leave_vars)
     df["replacement_family_leave"] = df[family_leave_vars].sum(axis=1)
 
     # Total Replacement Income Aggregate
@@ -741,26 +799,33 @@ def create_income_columns(df):
     # ---------------------------
 
     # Employment Income
+    _ensure_columns(["yem"])
     df["income_employment"] = df["yem"]
 
     # Self-Employment Income
+    _ensure_columns(["yse"])
     df["income_self_employment"] = df["yse"]
 
     # Fringe Benefits
     fringe_vars = ["kfb", "kfbcc"]
+    _ensure_columns(fringe_vars)
     df["income_fringe"] = df[fringe_vars].sum(axis=1)
 
     # Investment Income
+    _ensure_columns(["yiy"])
     df["income_investment"] = df["yiy"]
 
     # Property Income
+    _ensure_columns(["ypr"])
     df["income_property"] = df["ypr"]
 
     # Private Transfers
     transfers_vars = ["ypt", "yptmp"]
+    _ensure_columns(transfers_vars)
     df["income_private_transfers"] = df[transfers_vars].sum(axis=1)
 
     # Other Income
+    _ensure_columns(["yot"])
     df["income_other"] = df["yot"]
 
     # Total Non-Replacement Income Aggregate
@@ -1211,7 +1276,6 @@ def apply_filtering_pipeline(df: pd.DataFrame,
     
     return current_df, stats
 
-
 def apply_other_members_filter(df: pd.DataFrame, config: dict | None = None) -> pd.DataFrame:
     """Apply filter for other household members (non-head/non-partner)."""
     if config is None:
@@ -1221,7 +1285,7 @@ def apply_other_members_filter(df: pd.DataFrame, config: dict | None = None) -> 
     
     condition = (
         (df["hh_IsHead"] == 0)
-        & (df["tu_hh_de_IsPartner"] == 0)
+        & (df["hh_IsPartner"] == 0)
         & (
             (
                 (df["dag"] >= age_min)
@@ -1233,9 +1297,8 @@ def apply_other_members_filter(df: pd.DataFrame, config: dict | None = None) -> 
         )
     )
     
-    households_to_drop = df.loc[condition, "idhh"].unique() # type: ignore
+    households_to_drop = df.loc[condition, "idhh"].unique()  # type: ignore
     return df[~df["idhh"].isin(households_to_drop)]
-
 
 def apply_abnormal_filter(df: pd.DataFrame, households_to_remove: np.ndarray, config: dict | None = None) -> pd.DataFrame:
     """Apply abnormal wage and labor time filter."""
@@ -1248,6 +1311,8 @@ def apply_abnormal_filter(df: pd.DataFrame, households_to_remove: np.ndarray, co
     wage_min, wage_max = config["wage_bounds"]
     hour_min, hour_max = config["hour_bounds"]
     
+    role_mask = (df["hh_IsHead"] == 1) | (df["hh_IsPartner"] == 1)
+
     condition_remove = (
         (df["les"] == 3)
         & (
@@ -1256,10 +1321,10 @@ def apply_abnormal_filter(df: pd.DataFrame, households_to_remove: np.ndarray, co
             | (df["yivwg"] < wage_min)
             | (df["yivwg"] > wage_max)
         )
-        & ((df["hh_IsHead"] == 1) | (df["tu_hh_de_IsPartner"] == 1))
+        & role_mask
     )
     
-    households_to_drop_abnormal = df.loc[condition_remove, "idhh"].unique() # type: ignore
+    households_to_drop_abnormal = df.loc[condition_remove, "idhh"].unique()  # type: ignore
     all_households_to_drop = np.union1d(households_to_drop_abnormal, households_to_remove)
     
     return df[~df["idhh"].isin(all_households_to_drop)]
@@ -1438,35 +1503,44 @@ def identify_extreme_households(df: pd.DataFrame, config: dict | None = None) ->
     return extreme_positive["idhh"].unique()
 
 
+
 def process_couples_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Extract and process couples data."""
-    # Create subset with partners
+    """Extract and process couples data.
+
+    Assumes:
+      - hh_IsHead == 1 for heads
+      - hh_IsPartner == 1 for partners
+      - dgn: gender code
+    """
+    # Households that have at least one partner flagged
     df_couples = df[
         df["idhh"].isin(
-            df[df["tu_hh_de_IsPartner"] == 1]["idhh"].unique()
+            df[df["hh_IsPartner"] == 1]["idhh"].unique()
         )
     ]
     
-    # Filter for opposite-sex couples only
-    same_sex_households = df_couples[
-        (df_couples["tu_hh_de_IsPartner"] == 1) & (df_couples["hh_IsHead"] == 0)
-    ].merge(
-        df_couples[
-            (df_couples["tu_hh_de_IsPartner"] == 0) & (df_couples["hh_IsHead"] == 1)
-        ],
+    # Filter for opposite-sex couples only: compare head vs partner gender
+    partners = df_couples[(df_couples["hh_IsPartner"] == 1) & (df_couples["hh_IsHead"] == 0)]
+    heads = df_couples[df_couples["hh_IsHead"] == 1]
+
+    same_sex_households = partners.merge(
+        heads,
         on="idhh",
-        suffixes=("_1", "_0"),
-    ).query("dgn_1 == dgn_0")["idhh"]
+        suffixes=("_partner", "_head"),
+    ).query("dgn_partner == dgn_head")["idhh"].unique()
     
     return df_couples[~df_couples["idhh"].isin(same_sex_households)]
 
 
-def process_singles_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Extract and process singles data."""
-    return df.groupby("idhh").filter(
-        lambda group: (group["tu_hh_de_IsPartner"] == 0).all()
-    )
 
+def process_singles_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Extract and process singles data.
+
+    Singles households: no partner flagged (hh_IsPartner == 0) in the household.
+    """
+    return df.groupby("idhh").filter(
+        lambda group: (group["hh_IsPartner"] == 0).all()
+    )
 
 
 

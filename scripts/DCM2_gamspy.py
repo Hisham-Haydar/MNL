@@ -1161,6 +1161,7 @@ def estimate(
     analyzer_source: str = "gamspy",
     dataset_source_dir: Path | None = None,
     solver_name: str = "knitro",
+    analyzer_base_dir: Path | None = None,
 ) -> None:
     if gender_key != "pooled":
         gender_split = False
@@ -1445,7 +1446,7 @@ def estimate(
     muc_summary_path = output_dir / f"{model_name}_mucmul_summary.json"
     muc_summary_path.write_text(json.dumps(muc_summary, indent=2), encoding="utf-8")
 
-    run_analyzer(analyzer_source, [gender_key], variant, data_dir=dataset_source_dir)
+    run_analyzer(analyzer_source, [gender_key], variant, data_dir=dataset_source_dir, base_dir=analyzer_base_dir)
 
 
 # ---------------------------------------------------------------------------

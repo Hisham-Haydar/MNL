@@ -9,8 +9,11 @@ _ENV_HINTS = ("MNL_STORAGE_ROOT", "MNL_DATA_ROOT", "MNL_ROOT")
 
 def euromod_raw_root() -> Path:
     """Return the EUROMOD raw micro-data directory, honouring env override."""
-    path = os.environ.get("EUROMOD_RAW", r"U:\EUROMOD-STORAGE\Data\raw")
-    return Path(path)
+    env = os.environ.get("EUROMOD_RAW")
+    if env:
+        return Path(env).expanduser()
+    # fall back to the resolved Data root
+    return data_root() / "raw"
 
 
 # Default mapping: input microdata year -> EUROMOD policy system year
@@ -81,13 +84,33 @@ def resolve_storage_root() -> Path:
     """
     Locate the external storage root that still contains the heavy data.
 
-    Resolution order:
+    Resolution order (prefer external shares before repo):
     1. Environment hints (MNL_STORAGE_ROOT, MNL_DATA_ROOT, MNL_ROOT)
     2. U:/EUROMOD-STORAGE (network stash)
-    3. Repo-adjacent directories
+    3. ~/EUROMOD-STORAGE
+    4. Repo-adjacent directories
     """
     preferred: list[Path] = []
-    for candidate in _collect_candidates():
+
+    # 1) Environment hints first
+    env_candidates: list[Path] = []
+    for env in _ENV_HINTS:
+        raw = os.environ.get(env)
+        if raw:
+            env_path = Path(raw).expanduser()
+            env_candidates.append(env_path)
+            env_candidates.append(env_path.parent)
+
+    # 2) Explicit external locations
+    explicit_candidates = [
+        Path(r"U:/EUROMOD-STORAGE"),
+        Path.home() / "EUROMOD-STORAGE",
+    ]
+
+    # 3) Repo-adjacent candidates (original order from _collect_candidates)
+    repo_candidates = [c for c in _collect_candidates() if c not in env_candidates and c not in explicit_candidates]
+
+    for candidate in env_candidates + explicit_candidates + repo_candidates:
         data_dir = candidate / "Data"
         if data_dir.exists():
             if (data_dir / "processed").exists() or (data_dir / "raw").exists():
@@ -141,13 +164,23 @@ def euromod_root() -> Path:
         if env_path.exists():
             return env_path
     storage = resolve_storage_root()
+    # Common release layouts
     for rel in (
         Path("EUROMOD_RELEASES_J1.0+") / "EUROMOD_RELEASES_J1.0+",
         Path("EUROMOD_RELEASES_J1.0+"),
+        Path("EUROMOD_RELEASES"),
+        Path("euromod_releases"),
     ):
         candidate = storage / rel
         if candidate.exists():
             return candidate
+    # Fallback: scan immediate subdirs of storage (and storage/Data) for anything containing 'euromod'
+    search_roots = [storage, storage / "Data"]
+    for root in search_roots:
+        if root.exists():
+            for child in root.iterdir():
+                if child.is_dir() and "euromod" in child.name.lower():
+                    return child
     raise FileNotFoundError(
         "EUROMOD release directory not found. "
         "Set MNL_EUROMOD_ROOT to the extracted release folder."

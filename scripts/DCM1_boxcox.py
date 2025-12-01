@@ -15,6 +15,8 @@ import argparse
 import json
 import logging
 import math
+import datetime
+import time
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -876,6 +878,7 @@ def estimate(
     model_prefix: str | None = None,
     analyzer_source: str = "mle",
     dataset_source_dir: Path | None = None,
+    analyzer_base_dir: Path | None = None,
 ) -> None:
     if gender_key != "pooled":
         gender_split = False
@@ -939,6 +942,7 @@ def estimate(
 
     t_start = time.perf_counter()
    
+    t_start = time.perf_counter()
     result = minimize(
         negative_log_likelihood,
         theta0,
@@ -946,8 +950,9 @@ def estimate(
         method="L-BFGS-B",
         jac = grad_negative_log_likelihood,
         bounds=bounds,
-        options={"maxiter": 1000, "disp": log_level <= logging.DEBUG},
+        options={"maxiter": 2000, "disp": log_level <= logging.DEBUG},
     )
+    solve_time = time.perf_counter() - t_start
     solve_time = time.perf_counter() - t_start
 
     if not result.success:
@@ -1114,6 +1119,57 @@ def estimate(
         "mul_norm_zero_l_norm": mul_norm_zero_l,
     })
 
+    # --- Standardized run metadata for analyzers ---
+    # Dataset summary
+    n_obs_meta = meta.get("n_obs")
+    try:
+        if n_obs_meta is None and "n_obs" in locals():
+            n_obs_meta = int(n_obs)
+    except Exception:
+        pass
+
+    # Try to infer years in sample if the wide dataset has a 'year' column
+    years = meta.get("years")
+    if years is None:
+        try:
+            df_for_years = df if "df" in locals() else None
+            if df_for_years is not None and "year" in df_for_years.columns:
+                years = sorted(
+                    int(y) for y in df_for_years["year"].dropna().unique().tolist()
+                )
+        except Exception:
+            years = None
+
+    # Gender tag is already known in this loop
+    gender_tag = meta.get("gender", None)
+    if gender_tag is None and "gender_key" in locals():
+        gender_tag = gender_key
+
+    # Timestamp of estimation (local time)
+    run_timestamp = datetime.datetime.now().isoformat(timespec="seconds")
+
+    # Attach run summary to meta
+    meta.update(
+        {
+            "run_timestamp": run_timestamp,
+            "solve_time_sec": float(solve_time) if "solve_time" in locals() else None,
+            "ll_star": float(ll_star) if "ll_star" in locals() else None,
+            "ll_null": float(ll_null) if "ll_null" in locals() else None,
+            "rho2": float(rho2) if "rho2" in locals() else None,
+            "rho2_adj": float(rho2_adj) if "rho2_adj" in locals() else None,
+            "aic": float(aic) if "aic" in locals() else None,
+            "bic": float(bic) if "bic" in locals() else None,
+            "score_norm": float(foc_norm) if "foc_norm" in locals() else None,
+            "hess_min_eig": float(min_eig_H) if "min_eig_H" in locals() else None,
+            "hess_max_eig": float(max_eig_H) if "max_eig_H" in locals() else None,
+            "hess_cond": float(cond_H) if "cond_H" in locals() else None,
+            "accuracy": float(accuracy) if "accuracy" in locals() else None,
+            "n_obs": int(n_obs_meta) if n_obs_meta is not None else None,
+            "years": years,
+            "gender": gender_tag,
+        }
+    )
+
     write_parameter_metadata(output_dir, model_name, param_df, meta)
 
     cm_path = output_dir / f"{model_name}_confusion.csv"
@@ -1125,7 +1181,7 @@ def estimate(
     muc_summary_path = output_dir / f"{model_name}_mucmul_summary.json"
     muc_summary_path.write_text(json.dumps(muc_summary, indent=2), encoding="utf-8")
 
-    run_analyzer(analyzer_source, [gender_key], variant, data_dir=dataset_source_dir)
+    run_analyzer(analyzer_source, [gender_key], variant, data_dir=dataset_source_dir, base_dir=analyzer_base_dir)
 
 
 # ---------------------------------------------------------------------------

@@ -34,6 +34,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import fsolve
 from scipy.special import logsumexp
+import DCM1_boxcox as boxcox_model
 
 LOGGER = logging.getLogger(__name__)
 
@@ -72,6 +73,82 @@ def _unique_path(path: Path) -> Path:
         counter += 1
 
 
+def build_run_summary_html(meta: dict | None, metrics: dict | None) -> str:
+    """
+    Build an HTML <section> summarising the estimation run: time, duration,
+    dataset, log-likelihoods, fit statistics, and first-order/Hessian checks.
+    Returns an empty string if there is nothing to show.
+    """
+    if meta is None:
+        meta = {}
+    if metrics is None:
+        metrics = {}
+
+    def _fmt(x):
+        if x is None:
+            return ""
+        return f"{x}"
+
+    rows = []
+    rows.append(("Estimation time", _fmt(meta.get("run_timestamp"))))
+    rows.append(("Solve time (s)", _fmt(meta.get("solve_time_sec"))))
+
+    n_obs = meta.get("n_obs")
+    years = meta.get("years", meta.get("year"))
+    if isinstance(years, (list, tuple)):
+        years_str = ", ".join(str(y) for y in years)
+    else:
+        years_str = _fmt(years)
+    gender = meta.get("gender", metrics.get("gender"))
+
+    rows.append(("Observations (n)", _fmt(n_obs)))
+    rows.append(("Years in sample", years_str))
+    rows.append(("Gender tag", _fmt(gender)))
+    rows.append(("Variant", _fmt(meta.get("variant", metrics.get("variant")))))
+    rows.append(("Source", _fmt(metrics.get("source", meta.get("source")))))
+
+    rows.append(("LL(null)", _fmt(meta.get("ll_null"))))
+    rows.append(("LL(θ̂)", _fmt(meta.get("ll_star", metrics.get("loglik")))))
+    rows.append(("ρ²", _fmt(meta.get("rho2"))))
+    rows.append(("ρ² (adj.)", _fmt(meta.get("rho2_adj"))))
+    rows.append(("AIC", _fmt(meta.get("aic"))))
+    rows.append(("BIC", _fmt(meta.get("bic"))))
+    rows.append(("Accuracy", _fmt(metrics.get("accuracy", meta.get("accuracy")))))
+
+    rows.append(("FOC norm ‖Σ_i s_i(θ̂)‖", _fmt(meta.get("score_norm"))))
+    if any(k in meta for k in ("hess_min_eig", "hess_max_eig", "hess_cond")):
+        hmin = meta.get("hess_min_eig")
+        hmax = meta.get("hess_max_eig")
+        hcond = meta.get("hess_cond")
+        desc = ", ".join(
+            s
+            for s in [
+                f"min={hmin}" if hmin is not None else "",
+                f"max={hmax}" if hmax is not None else "",
+                f"cond≈{hcond}" if hcond is not None else "",
+            ]
+            if s
+        )
+        rows.append(("Observed Hessian eigs/cond", desc))
+
+    rows = [(k, v) if v is not None else (k, "") for (k, v) in rows]
+    if all(v == "" for (_, v) in rows):
+        return ""
+
+    trs = "\n".join(
+        f"      <tr><th style='text-align:left;'>{k}</th><td>{v}</td></tr>" for (k, v) in rows
+    )
+
+    return f"""
+  <section>
+    <h2>Run summary</h2>
+    <table class="table table-sm">
+{trs}
+    </table>
+  </section>
+"""
+
+
 EFFECT_INTERACTION_PATTERNS: tuple[str, ...] = (
     "{}_m",
     "{}_g",
@@ -103,10 +180,10 @@ def load_dataset_for_gender(gender: str) -> pd.DataFrame:
         male = pd.read_parquet(male_path).copy()
         female = pd.read_parquet(female_path).copy()
 
-        male["dgn"] = pd.to_numeric(male.get("dgn"), errors="coerce").fillna(1.0)
-        female["dgn"] = pd.to_numeric(female.get("dgn"), errors="coerce").fillna(0.0)
-        male["dgn"] = 1.0
-        female["dgn"] = 0.0
+        male["dgn"] = pd.to_numeric(male.get("dgn"), errors="coerce").fillna(0.0)
+        female["dgn"] = pd.to_numeric(female.get("dgn"), errors="coerce").fillna(1.0)
+        male["dgn"] = 0.0
+        female["dgn"] = 1.0
 
         common_columns = sorted(set(male.columns).intersection(female.columns))
         if not common_columns:
@@ -262,7 +339,14 @@ def _candidate_param_dirs(gender: str, variant: str, source: str) -> List[Path]:
     def append_nested(root: Path) -> None:
         if not root.exists():
             return
-        for child in root.iterdir():
+        children = list(root.iterdir())
+        # For GAMSPy runs, prefer gender-split folders (name contains 'genderSplit')
+        if source == "gamspy":
+            children = sorted(
+                children,
+                key=lambda p: (0 if "gendersplit" in p.name.lower() else 1, p.name.lower()),
+            )
+        for child in children:
             if child.is_dir():
                 candidates.append(child / f"{gender}_{variant}")
 
@@ -1188,6 +1272,7 @@ def build_html_report(
     utility_table_html: str | None = None,
     mucmul_summary_html: str | None = None,
     title_suffix: str | None = None,
+    run_summary_html: str | None = None,
 ) -> None:
     """Compose and write the HTML report."""
     param_cols = ["Value"]
@@ -1251,6 +1336,7 @@ def build_html_report(
   </style>
 </head>
 <body>
+  {run_summary_html or ""}
   <h1>DCM Diagnostics - {gender.capitalize()} ({variant}){title_suffix}</h1>
   <section>
     <h2>Parameter Summary</h2>
@@ -1345,6 +1431,16 @@ def _process_gender_boxcox(
     for k, v in params_dict.items():
         raw_k = READABLE_TO_RAW.get(str(k), str(k))
         params_for_calc[raw_k] = float(v)
+    # If we only have gender-split params, seed generic keys for display calculations
+    if "alpha_c" not in params_for_calc and "alpha_c_f" in params_for_calc:
+        params_for_calc["alpha_c"] = params_for_calc.get("alpha_c_f", 0.0)
+        params_for_calc["alpha_l"] = params_for_calc.get("alpha_l_f", 0.0)
+        params_for_calc["beta_c"] = params_for_calc.get("beta_c_f", 0.0)
+        params_for_calc["beta_l0"] = params_for_calc.get("beta_l0_f", 0.0)
+        for base in ("age_norm", "age2_norm", "child_norm", "dch"):
+            key_f = f"delta_{base}_f"
+            if key_f in params_for_calc:
+                params_for_calc[f"delta_{base}"] = params_for_calc[key_f]
 
     y_ref = float(meta.get("y_ref", np.nan)) if meta else np.nan
     T_ENDOW = float(meta.get("T", 80.0)) if meta else 80.0
@@ -1520,24 +1616,59 @@ def _process_gender_boxcox(
         T_endow=T_ENDOW,
     )
     predicted_choice = utils_df.idxmax(axis=1)
-    df_pred = pd.DataFrame({"actual_choice": df["actual_choice"], "predicted_choice": predicted_choice})
-    df_pred["correct"] = (df_pred["actual_choice"] == df_pred["predicted_choice"]).astype(int)
-
-    cm = pd.crosstab(
-        df_pred["actual_choice"],
-        df_pred["predicted_choice"],
-        margins=True,
-        margins_name="Total",
-    )
-    accuracy = float(df_pred["correct"].mean()) if len(df_pred) else float("nan")
-    hit_rates = (
-        df_pred["correct"].groupby(df_pred["actual_choice"]).mean().rename("Hit rate")
-        if len(df_pred)
-        else pd.Series(dtype=float)
-    )
+    # Recompute predictive accuracy using the same utilities as the estimator
+    cm = None
+    hit_rates = pd.Series(dtype=float)
+    accuracy = float("nan")
+    conf_name = (meta or {}).get("confusion_csv")
+    if conf_name:
+        conf_path = model_dir / conf_name
+        if conf_path.exists():
+            try:
+                cm_loaded = pd.read_csv(conf_path, index_col=0)
+                if cm_loaded.shape[0] == cm_loaded.shape[1]:
+                    cm = cm_loaded
+                    total = cm.to_numpy(dtype=float).sum()
+                    if total > 0:
+                        accuracy = float(np.trace(cm.to_numpy(dtype=float)) / total)
+                        hit_rates = pd.Series(
+                            np.divide(np.diag(cm.to_numpy(dtype=float)), cm.to_numpy(dtype=float).sum(axis=1)),
+                            index=cm.index,
+                            name="Hit rate",
+                        )
+            except Exception:
+                cm = None
+    if cm is None:
+        md = boxcox_model.prepare_dataset(df, labels, gender_column="dgn", c_scale_quantile=float(meta.get("c_scale_quantile", 0.99) or 0.99))
+        include_ascs_flag = bool(meta.get("include_ascs", False))
+        gender_split_flag = any(str(k).endswith(("_f", "_m")) for k in params_dict.keys())
+        z_by_gender_flag = any(
+            str(k).startswith("delta_") and str(k).endswith(("_f", "_m")) for k in params_dict.keys()
+        )
+        structure = boxcox_model.build_param_structure(
+            labels,
+            md,
+            include_ascs=include_ascs_flag,
+            pooled=(gender == "pooled"),
+            gender_split=gender_split_flag and (gender == "pooled"),
+            z_by_gender=z_by_gender_flag and (gender == "pooled"),
+        )
+        theta_vec = np.array([params_dict.get(name, 0.0) for name in structure.param_names], dtype=float)
+        predicted_idx = boxcox_model.predict_choices(theta_vec, md, structure)
+        accuracy = float(np.mean(predicted_idx == md.actual_idx)) if len(md.actual_idx) else float("nan")
+        cm = boxcox_model.confusion_matrix(md.actual_choice, predicted_idx, labels)
+        hit_rates = (
+            (predicted_idx == md.actual_idx).astype(float)
+            if len(md.actual_idx)
+            else np.array([], dtype=float)
+        )
+        if len(hit_rates):
+            hit_rates = pd.Series(hit_rates, index=md.actual_choice).groupby(md.actual_choice).mean().rename("Hit rate")
+        else:
+            hit_rates = pd.Series(dtype=float)
 
     confusion_html = dataframe_to_html(cm, caption="Confusion Matrix (Actual vs Predicted)")
-    hit_rates_html = dataframe_to_html(hit_rates.to_frame(), caption="Hit Rates by Actual Scenario")
+    hit_rates_html = dataframe_to_html(hit_rates.to_frame(), caption="Hit Rates by Actual Scenario") if not hit_rates.empty else ""
 
     muc_negative_share = float(muc_summary.get("share_MUC_actual_neg", 0.0))
     mul_negative_share = float(muc_summary.get("share_MUL_actual_neg", 0.0))
@@ -1550,6 +1681,10 @@ def _process_gender_boxcox(
         "MUL zero crossing l": "n/a",
         "Overall accuracy": f"{accuracy:.2%}",
     }
+
+    run_summary_html = build_run_summary_html(
+        meta, {"gender": gender, "variant": variant, "source": source, "accuracy": accuracy}
+    )
 
     # Use normalized MU/contour assets in the report
     report_path = out_dir / f"{base_name}_analysis.html"
@@ -1569,6 +1704,7 @@ def _process_gender_boxcox(
         utility_table_html=util_html,
         mucmul_summary_html=mucmul_html,
         title_suffix="Box-Cox (normalized MUs)",
+        run_summary_html=run_summary_html,
     )
 
     if annotate_biogeme_html_flag and LABEL_MAP:
@@ -2094,6 +2230,10 @@ def _process_gender_translog(
 
     subgroup_plots_html = "".join(subgroup_plot_sections) if subgroup_plot_sections else None
 
+    run_summary_html = build_run_summary_html(
+        meta, {"gender": gender, "variant": variant, "source": source, "accuracy": accuracy}
+    )
+
     summary_stats = {
         "Total observations": f"{total_obs:,}",
         "MUC < 0": f"{neg_muc_count:,} ({muc_negative_share:.2%})",
@@ -2120,6 +2260,7 @@ def _process_gender_translog(
         subgroup_accuracy_html=subgroup_accuracy_section,
         subgroup_mu_html=subgroup_mu_section,
         subgroup_plots_html=subgroup_plots_html,
+        run_summary_html=run_summary_html,
     )
 
     print(f"[{tag}] HTML report saved to: {report_path}")

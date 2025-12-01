@@ -31,7 +31,7 @@ from analyze_dcm_results import (
 )
 from path_helpers import reports_root
 
-DEFAULT_BASE = reports_root() / "mle_dcm" / "boxcox" / "pooled_genderSplit"
+DEFAULT_BASE = reports_root() / "mle_dcm" / "boxcox"
 MODEL_PREFIX = "boxcox_pooled_genderSplit"
 
 
@@ -524,11 +524,20 @@ def analyze_gender(
     if gender != "pooled":
         raise ValueError("Gender-split analyzer only supports the pooled output.")
 
-    out_dir = base_dir / f"{gender}_{variant}"
     model_name = f"{MODEL_PREFIX}_{variant}".replace(".", "_")
-    param_csv = out_dir / f"{model_name}_parameters.csv"
-    if not param_csv.exists():
-        raise FileNotFoundError(f"Parameter file not found: {param_csv}")
+    param_csv = None
+
+    direct = base_dir / f"{gender}_{variant}" / f"{model_name}_parameters.csv"
+    if direct.exists():
+        param_csv = direct
+    else:
+        for candidate in base_dir.rglob(f"{model_name}_parameters.csv"):
+            param_csv = candidate
+            break
+    if param_csv is None or not param_csv.exists():
+        raise FileNotFoundError(f"Parameter file not found under {base_dir} (expected {model_name}_parameters.csv)")
+
+    out_dir = param_csv.parent
 
     metrics = process_gender(
         gender=gender,

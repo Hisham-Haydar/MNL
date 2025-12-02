@@ -159,9 +159,32 @@ class EuromodRunner:
             system = next(iter(systems_iter))
         dataset = None
         if hasattr(system, "datasets"):
-            dataset = system.datasets.get(dataset_name)
+            ds = system.datasets
+            if hasattr(ds, "get"):
+                dataset = ds.get(dataset_name)
+            elif hasattr(ds, "__getitem__"):
+                try:
+                    dataset = ds[dataset_name]
+                except Exception:
+                    dataset = None
+            if dataset is None:
+                # try to match by name attribute
+                try:
+                    dataset = next((d for d in ds if getattr(d, "name", "") == dataset_name))
+                except Exception:
+                    dataset = None
+            if dataset is None:
+                try:
+                    dataset = next(iter(ds))
+                except Exception:
+                    dataset = None
         if dataset is None and getattr(system, "bestmatch_datasets", None):
             dataset = system.bestmatch_datasets[0]
+        if dataset is None and hasattr(system, "values"):
+            try:
+                dataset = next(iter(system.values()))
+            except Exception:
+                dataset = None
         if dataset is None:
             raise KeyError(f"Dataset {dataset_name} not found in EUROMOD system {system_code}")
         return system, dataset
@@ -396,6 +419,14 @@ def run_euromod_for_draws(
 
     # 8. Run EUROMOD ONCE on the full dataset
     runner = EuromodRunner(em_root)
+    # Ensure household/person ordering for EUROMOD stability
+    sort_cols = []
+    if "idhh" in em_input.columns:
+        sort_cols.append("idhh")
+    if id_col in em_input.columns:
+        sort_cols.append(id_col)
+    if sort_cols:
+        em_input = em_input.sort_values(sort_cols).reset_index(drop=True)
     sim_df = runner.run_on_dataframe(
         em_input,
         country=country,
@@ -733,33 +764,10 @@ def main() -> None:
 
     # Optional EUROMOD simulation (single combined run for all draws)
     if args.run_euromod:
-        if not args.microdata_template:
-            raise SystemExit("--microdata-template is required when --run-euromod is set.")
-        country = "FR"  # default for path naming; adjust if you run other countries
-        em_root = _euromod_root(Path(args.euromod_root) if args.euromod_root else None)
-        system_code = args.euromod_system or f"{country}_{Path(args.singles_path).stem.split('_')[-1]}"
-        dataset_name = args.euromod_dataset or Path(args.singles_path).stem
-        scenario_dir = (
-            Path(args.scenario_dir).expanduser().resolve()
-            if args.scenario_dir
-            else (_resolve_storage_root() / "interim" / "ruro" / country.lower() / "scenarios").resolve()
+        print(
+            "[RURO_draws] INFO: EUROMOD stage has been moved to scripts/RURO_euromod.py.\n"
+            "Please run that script with your generated draws to avoid duplicate work."
         )
-        combined_df = pd.concat(combined_draws, axis=0, ignore_index=True)
-        combined_df = combined_df.replace([np.inf, -np.inf], np.nan).dropna(subset=["draw", "idperson"])
-
-        combined_path = run_euromod_for_draws(
-            combined_df,
-            Path(args.microdata_template).resolve(),
-            country=country,
-            system_code=system_code,
-            dataset_name=dataset_name,
-            em_root=em_root,
-            scenario_dir=scenario_dir,
-            id_col="idperson",
-            hours_col=args.euromod_hours_col,
-            wage_col=args.euromod_wage_col,
-        )
-        print(f"EUROMOD per-draw simulations combined at: {combined_path}")
 
 if __name__ == "__main__":
     main()

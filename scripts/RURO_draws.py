@@ -471,30 +471,47 @@ def _attach_other_members_income(df: pd.DataFrame) -> pd.DataFrame:
 
 def _build_loc_distribution(df: pd.DataFrame) -> Optional[Dict[Any, float]]:
     """
-    Build an empirical distribution over loc based on working individuals.
+    Build an empirical distribution over loc based on *working* individuals.
+
+    Preferred definition of working:
+        - if 'is_worker' exists (from RURO_prep.py): use that;
+        - otherwise: hours > 0 (and lma == 1 if available).
     """
     if "loc" not in df.columns:
         return None
 
-    if "hours" in df.columns:
-        hours = pd.to_numeric(df["hours"], errors="coerce").fillna(0.0)
-    elif "lhw" in df.columns:
-        hours = pd.to_numeric(df["lhw"], errors="coerce").fillna(0.0)
+    # --- Working indicator ---
+    if "is_worker" in df.columns:
+        mask = pd.to_numeric(df["is_worker"], errors="coerce").fillna(0).astype(int) == 1
     else:
-        return None
+        # Fallback: hours > 0 (and lma == 1 if available)
+        if "hours" in df.columns:
+            hours = pd.to_numeric(df["hours"], errors="coerce").fillna(0.0)
+        elif "lhw" in df.columns:
+            hours = pd.to_numeric(df["lhw"], errors="coerce").fillna(0.0)
+        else:
+            return None
 
-    mask = hours > 0
-    if "lma" in df.columns:
-        lma = pd.to_numeric(df["lma"], errors="coerce").fillna(0).astype(int)
-        mask &= lma == 1
+        mask = hours > 0
+        if "lma" in df.columns:
+            lma = pd.to_numeric(df["lma"], errors="coerce").fillna(0).astype(int)
+            mask &= lma == 1
 
     if not mask.any():
         return None
 
-    counts = df.loc[mask, "loc"].value_counts(dropna=True)
+    # Exclude "no occupation" code from the empirical distribution
+    loc_series = pd.to_numeric(df.loc[mask, "loc"], errors="coerce")
+    loc_series = loc_series[loc_series != -1]
+
+    if loc_series.empty:
+        return None
+
+    counts = loc_series.value_counts(dropna=True)
     total = counts.sum()
     if total <= 0:
         return None
+
     return (counts / total).to_dict()
 
 
@@ -629,13 +646,21 @@ def generate_draws_long(
             if "yem" in rj:
                 rj["yem"] = w * h * WEEKS_PER_MONTH
 
-            # Draw loc (occupation) only if working; otherwise keep observed loc
+            # --- Occupation (loc) ---
+            # 3D RURO convention:
+            #   - if hours == 0  → loc = -1  (home / not working)
+            #   - if hours > 0   → draw loc from empirical distribution (if available),
+            #                      otherwise keep the person's observed loc.
             if "loc" in rj:
-                if (h > 0.0) and loc_probs:
-                    rj["loc"] = _sample_loc(loc_probs, 1, rng)[0]
+                if h <= 0.0:
+                    # Non-working opportunity: force "no occupation"
+                    rj["loc"] = -1
                 else:
-                    # keep observed loc for non-working opportunities
-                    rj["loc"] = base.get("loc", rj.get("loc"))
+                    if loc_probs:
+                        rj["loc"] = _sample_loc(loc_probs, 1, rng)[0]
+                    else:
+                        # Fallback: keep observed occupation for working opportunities
+                        rj["loc"] = base.get("loc", rj.get("loc"))
 
             rj["draw"] = j
             rj["is_chosen"] = 0

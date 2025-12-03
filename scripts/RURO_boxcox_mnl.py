@@ -1,30 +1,50 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Estimate a simple Box–Cox RURO-style MNL on long (id, draw) data.
+"""
+Estimate a Box–Cox RURO-style MNL on long (idperson, draw) data.
 
-This script is designed for the RURO_MNL long dataset produced by
-`RURO_prep_mnl_basic.py`. It expects one row per individual–alternative
-(draw), with a binary choice indicator.
+Dataset: long format from RURO_prep_mnl_basic.py or similar:
+    one row per (idperson, draw), with:
+      - idperson
+      - draw
+      - is_chosen (1 for chosen alt, 0 otherwise)
+      - consumption (net income / disposable)
+      - hours (weekly hours)
+      - leisure (optional; if missing, computed as T_HOURS - hours)
 
-Utility specification (pooled, no covariates for now):
+Utility specification (baseline, pooled):
 
-    U_ij = beta_c * BC(c_norm_ij; alpha_c) + beta_l * BC(l_norm_ij; alpha_l),
+    U_ij = beta_c * BC(c_norm_ij; alpha_c)
+           + beta_l,ij * BC(l_norm_ij; alpha_l)
+           + sum_r gamma_r * region_r,ij
 
-where
-    c_norm_ij = c_ij / mean(c_i*),
-    l_norm_ij = l_ij / min_{i} { l_i* > 0 },
+with
+    beta_l,ij = beta_l0 + sum_k delta_k * Z_{ik},
 
-c_ij  = consumption of alternative j for individual i,
-l_ij  = leisure of alternative j for individual i.
+where Z_{ik} are individual-level preference shifters (same across j in a given i),
+and region_r,ij are alternative-specific region dummies.
 
-Here c_i* and l_i* denote the consumption and leisure of the chosen
-alternative for individual i. The Box–Cox transform is
+Normalisation:
 
-    BC(x; alpha) = (x^alpha - 1)/alpha                    if alpha != 0
-                 = log x                                  if alpha -> 0.
+  c_norm_ij = c_ij / c_ref,
+  l_norm_ij = l_ij / l_ref,
 
-The likelihood is the usual MNL likelihood over the simulated opportunity
-set for each individual (observed job + simulated jobs).
+where c_ref and l_ref are computed from the chosen alternatives:
+
+  - c_ref:
+      * default: mean positive chosen consumption
+      * --c-ref p99: 99th percentile (p=0.99) of positive chosen consumption
+
+  - l_ref:
+      * default: min positive chosen leisure
+      * --l-ref mean: mean positive chosen leisure
+
+Box–Cox transform:
+
+    BC(x; alpha) = (x^alpha - 1)/alpha           if alpha != 0
+                 = log x                         if alpha -> 0.
+
+Likelihood: MNL over the simulated opportunity set for each individual.
 """
 
 from __future__ import annotations
@@ -35,7 +55,7 @@ import logging
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple
+from typing import List, Tuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -46,7 +66,7 @@ from path_helpers import reports_root
 
 LOGGER = logging.getLogger(__name__)
 
-T_HOURS: float = 80.0      # total weekly leisure endowment
+T_HOURS: float = 80.0       # total weekly leisure endowment
 EPS: float = 1e-8
 
 
@@ -93,17 +113,33 @@ def boxcox_derivative(x: np.ndarray, alpha: float) -> np.ndarray:
 @dataclass
 class RuroData:
     n_groups: int
-    group_start: np.ndarray    # shape (G,)
-    group_end: np.ndarray      # shape (G,)
-    chosen_index: np.ndarray   # shape (G,) absolute row indices
-    weights: np.ndarray        # shape (G,)
-    cons: np.ndarray           # shape (M,)
-    leis: np.ndarray           # shape (M,)
-    c_norm: np.ndarray         # shape (M,)
-    l_norm: np.ndarray         # shape (M,)
-    y_ref: float
-    l_min_pos: float
+    group_start: np.ndarray      # (G,)
+    group_end: np.ndarray        # (G,)
+    chosen_index: np.ndarray     # (G,) absolute row indices
+    weights: np.ndarray          # (G,)
 
+    cons: np.ndarray             # (M,)
+    leis: np.ndarray             # (M,)
+    c_norm: np.ndarray           # (M,)
+    l_norm: np.ndarray           # (M,)
+
+    y_ref: float                 # consumption reference
+    l_ref: float                 # leisure reference
+    c_ref_mode: str
+    l_ref_mode: str
+
+    # Preference shifters (individual-level, repeated across draws)
+    z_per_row: np.ndarray        # (M, K) or (M, 0)
+    z_names: List[str]
+
+    # Region dummies (alternative-specific)
+    region_mat: np.ndarray       # (M, R) or (M, 0)
+    region_names: List[str]
+
+
+# ---------------------------------------------------------------------------
+# I/O helper
+# ---------------------------------------------------------------------------
 
 def _read_dataframe(path: Path) -> pd.DataFrame:
     suf = path.suffix.lower()
@@ -120,21 +156,34 @@ def _read_dataframe(path: Path) -> pd.DataFrame:
     raise ValueError(f"Unsupported dataset format: {path}")
 
 
+# ---------------------------------------------------------------------------
+# Data preparation and normalisation
+# ---------------------------------------------------------------------------
+
 def build_ruro_data(
     df: pd.DataFrame,
     *,
     id_col: str = "idperson",
     choice_col: str = "is_chosen",
     cons_col: str = "consumption",
-    hours_col: str | None = "hours",
-    leisure_col: str | None = None,
-    weight_col: str | None = None,
+    hours_col: Optional[str] = "hours",
+    leisure_col: Optional[str] = None,
+    weight_col: Optional[str] = None,
     t_hours: float = T_HOURS,
+    c_ref_mode: str = "mean",      # "mean" or "p99"
+    l_ref_mode: str = "minpos",    # "minpos" or "mean"
+    z_cols: Optional[List[str]] = None,
+    region_cols: Optional[List[str]] = None,
 ) -> RuroData:
     """Prepare long RURO data for estimation.
 
     Assumes df has one row per (id, draw) and exactly one chosen alt per id.
+
+    Normalisation modes:
+        c_ref_mode ∈ {"mean", "p99"}
+        l_ref_mode ∈ {"minpos", "mean"}
     """
+
     for col in (id_col, choice_col, cons_col):
         if col not in df.columns:
             raise KeyError(f"Dataset missing required column '{col}'")
@@ -144,17 +193,20 @@ def build_ruro_data(
 
     df = df.copy()
 
-    # Ensure numeric types
-    for col in [cons_col, choice_col] + ([hours_col] if hours_col else []) + ([leisure_col] if leisure_col else []):
+    # Ensure numeric types for key columns
+    numeric_cols = [cons_col, choice_col]
+    if hours_col:
+        numeric_cols.append(hours_col)
+    if leisure_col:
+        numeric_cols.append(leisure_col)
+    if weight_col:
+        numeric_cols.append(weight_col)
+
+    for col in numeric_cols:
         if col and col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    if weight_col and weight_col in df.columns:
-        df[weight_col] = pd.to_numeric(df[weight_col], errors="coerce").fillna(1.0)
-    else:
-        weight_col = None
-
-    # Sort by id (and draw if present) to make groups contiguous
+    # Sort by id and draw to build contiguous groups
     sort_cols = [id_col]
     if "draw" in df.columns:
         sort_cols.append("draw")
@@ -165,6 +217,7 @@ def build_ruro_data(
     choice = (df[choice_col] > 0).to_numpy(dtype=bool)
     cons = df[cons_col].to_numpy(dtype=float)
 
+    # Leisure
     if leisure_col and leisure_col in df.columns:
         leis = df[leisure_col].to_numpy(dtype=float)
     else:
@@ -180,7 +233,7 @@ def build_ruro_data(
     group_end[:-1] = group_start[1:]
     group_end[-1] = len(df)
 
-    # Chosen index per group
+    # Chosen alternative index & weights
     chosen_index = np.empty(n_groups, dtype=int)
     weights = np.ones(n_groups, dtype=float)
 
@@ -194,35 +247,72 @@ def build_ruro_data(
             raise ValueError(f"Group {g} (id={unique_ids[g]}) has multiple chosen alternatives.")
         local_idx = np.argmax(ch_g)
         chosen_index[g] = s + local_idx
-        if weight_col:
-            # take weight from chosen row; any row in group should be identical
+        if weight_col and weight_col in df.columns:
             w = float(df.iloc[s][weight_col])
             if not np.isfinite(w) or w <= 0:
                 w = 1.0
             weights[g] = w
 
-    # Normalisations based on chosen alternatives
+    # --- Preference shifters Z (individual-level) ---
+    if z_cols is None:
+        z_cols = []
+    for z in z_cols:
+        if z not in df.columns:
+            raise KeyError(f"Requested shifter column '{z}' not found in dataset.")
+    if z_cols:
+        df[z_cols] = df[z_cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+        z_per_row = df[z_cols].to_numpy(dtype=float)
+    else:
+        z_per_row = np.zeros((len(df), 0), dtype=float)
+
+    # --- Region dummies (alternative-specific) ---
+    if region_cols is None:
+        region_cols = []
+    for r in region_cols:
+        if r not in df.columns:
+            raise KeyError(f"Requested region column '{r}' not found in dataset.")
+    if region_cols:
+        df[region_cols] = df[region_cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+        region_mat = df[region_cols].to_numpy(dtype=float)
+    else:
+        region_mat = np.zeros((len(df), 0), dtype=float)
+
+    # --- Normalisation based on chosen alternatives ---
     cons_chosen = cons[chosen_index]
     leis_chosen = leis[chosen_index]
 
     cons_pos = cons_chosen[np.isfinite(cons_chosen) & (cons_chosen > 0.0)]
     if cons_pos.size == 0:
         raise ValueError("No positive consumption values among chosen alternatives.")
-    y_ref = float(cons_pos.mean())
+
+    if c_ref_mode == "mean":
+        y_ref = float(cons_pos.mean())
+    elif c_ref_mode == "p99":
+        y_ref = float(np.quantile(cons_pos, 0.99))
+        if not np.isfinite(y_ref) or y_ref <= 0:
+            y_ref = float(cons_pos.mean())
+    else:
+        raise ValueError("c_ref_mode must be 'mean' or 'p99'.")
 
     leis_pos = leis_chosen[np.isfinite(leis_chosen) & (leis_chosen > 0.0)]
     if leis_pos.size == 0:
         raise ValueError("No positive leisure values among chosen alternatives.")
-    l_min_pos = float(leis_pos.min())
+
+    if l_ref_mode == "minpos":
+        l_ref = float(leis_pos.min())
+    elif l_ref_mode == "mean":
+        l_ref = float(leis_pos.mean())
+    else:
+        raise ValueError("l_ref_mode must be 'minpos' or 'mean'.")
 
     c_norm = cons / y_ref
-    l_norm = leis / l_min_pos
+    l_norm = leis / l_ref
 
     if np.any(c_norm <= 0) or np.any(l_norm <= 0):
         LOGGER.warning("Some normalised c or l are non-positive; they will be clipped at EPS in Box–Cox.")
 
-    LOGGER.info("y_ref (mean chosen consumption) = %.3f", y_ref)
-    LOGGER.info("l_min_pos (min positive chosen leisure) = %.3f", l_min_pos)
+    LOGGER.info("c_ref_mode = %s, y_ref = %.3f", c_ref_mode, y_ref)
+    LOGGER.info("l_ref_mode = %s, l_ref = %.3f", l_ref_mode, l_ref)
 
     return RuroData(
         n_groups=n_groups,
@@ -235,7 +325,13 @@ def build_ruro_data(
         c_norm=c_norm,
         l_norm=l_norm,
         y_ref=y_ref,
-        l_min_pos=l_min_pos,
+        l_ref=l_ref,
+        c_ref_mode=c_ref_mode,
+        l_ref_mode=l_ref_mode,
+        z_per_row=z_per_row,
+        z_names=list(z_cols),
+        region_mat=region_mat,
+        region_names=list(region_cols),
     )
 
 
@@ -246,77 +342,134 @@ def build_ruro_data(
 def neg_loglik_and_grad(theta: np.ndarray, data: RuroData) -> Tuple[float, np.ndarray]:
     """Return (negative log-likelihood, gradient) for current parameter vector.
 
-    theta = [alpha_c, alpha_l, beta_c, beta_l]
+    Parameter vector:
+        theta = [alpha_c, alpha_l, beta_c, beta_l0,
+                 delta_1, ..., delta_K,
+                 gamma_1, ..., gamma_R]
     """
-    alpha_c, alpha_l, beta_c, beta_l = theta
     M = data.c_norm.shape[0]
-    G = data.n_groups
+    K = data.z_per_row.shape[1]
+    R = data.region_mat.shape[1]
 
-    # Box–Cox terms for all rows at once
-    bc_c = boxcox_transform(data.c_norm, alpha_c)          # shape (M,)
-    bc_l = boxcox_transform(data.l_norm, alpha_l)          # shape (M,)
+    expected_len = 4 + K + R
+    if len(theta) != expected_len:
+        raise ValueError(f"theta length {len(theta)} incompatible with K={K}, R={R} (expected {expected_len}).")
+
+    alpha_c = theta[0]
+    alpha_l = theta[1]
+    beta_c = theta[2]
+    beta_l0 = theta[3]
+
+    if K > 0:
+        delta = theta[4:4 + K]
+    else:
+        delta = np.zeros(0, dtype=float)
+    if R > 0:
+        gamma = theta[4 + K:]
+    else:
+        gamma = np.zeros(0, dtype=float)
+
+    # Leisure slope per row (individual-specific)
+    if K > 0:
+        beta_l_row = beta_l0 + data.z_per_row @ delta
+    else:
+        beta_l_row = np.full(M, beta_l0, dtype=float)
+
+    # Box–Cox terms
+    bc_c = boxcox_transform(data.c_norm, alpha_c)
+    bc_l = boxcox_transform(data.l_norm, alpha_l)
     bc_c_dalpha = d_boxcox_dalpha(data.c_norm, alpha_c)
     bc_l_dalpha = d_boxcox_dalpha(data.l_norm, alpha_l)
 
-    # Utilities
-    util = beta_c * bc_c + beta_l * bc_l                   # shape (M,)
+    # Region term
+    if R > 0:
+        region_term = data.region_mat @ gamma
+    else:
+        region_term = np.zeros(M, dtype=float)
+
+    # Utility index
+    util = beta_c * bc_c + beta_l_row * bc_l + region_term
+
+    # Derivatives of V_ij w.r.t parameters (row-level)
+    dV_dalpha_c_full = beta_c * bc_c_dalpha
+    dV_dalpha_l_full = beta_l_row * bc_l_dalpha
+    dV_dbeta_c_full = bc_c
+    dV_dbeta_l0_full = bc_l
+
+    if K > 0:
+        dV_ddelta_full = data.z_per_row * bc_l[:, None]    # (M, K)
+    else:
+        dV_ddelta_full = np.zeros((M, 0), dtype=float)
+
+    if R > 0:
+        dV_dgamma_full = data.region_mat                    # (M, R)
+    else:
+        dV_dgamma_full = np.zeros((M, 0), dtype=float)
 
     nll = 0.0
-    grad = np.zeros(4, dtype=float)   # [alpha_c, alpha_l, beta_c, beta_l]
+    grad = np.zeros_like(theta)
 
+    G = data.n_groups
     for g in range(G):
         s = data.group_start[g]
         e = data.group_end[g]
         idx = slice(s, e)
 
         u_g = util[idx]
-        bc_c_g = bc_c[idx]
-        bc_l_g = bc_l[idx]
-        bc_c_da_g = bc_c_dalpha[idx]
-        bc_l_da_g = bc_l_dalpha[idx]
-
-        # stabilised softmax
         u_max = float(np.max(u_g))
         exp_u = np.exp(u_g - u_max)
         denom = float(exp_u.sum())
         if denom <= 0.0 or not np.isfinite(denom):
-            return 1e12, np.zeros_like(grad)
+            return 1e12, np.zeros_like(theta)
         p_g = exp_u / denom
 
-        # locate chosen alternative within group
+        # Index of chosen alternative within group
         j_star_abs = data.chosen_index[g]
         j_star_loc = j_star_abs - s
 
         w = data.weights[g]
 
-        # contribution to log-likelihood
         p_star = float(p_g[j_star_loc])
         if p_star <= 0.0 or not np.isfinite(p_star):
-            return 1e12, np.zeros_like(grad)
+            return 1e12, np.zeros_like(theta)
         nll -= w * math.log(p_star)
 
-        # derivatives of utility for each alternative in group
-        dV_dalpha_c = beta_c * bc_c_da_g
-        dV_dalpha_l = beta_l * bc_l_da_g
-        dV_dbeta_c = bc_c_g
-        dV_dbeta_l = bc_l_g
+        # Slice derivatives for this group
+        dV_dalpha_c = dV_dalpha_c_full[s:e]
+        dV_dalpha_l = dV_dalpha_l_full[s:e]
+        dV_dbeta_c = dV_dbeta_c_full[s:e]
+        dV_dbeta_l0 = dV_dbeta_l0_full[s:e]
 
-        # expected derivatives under choice probabilities
+        # Expectations
         EV_alpha_c = float(np.dot(p_g, dV_dalpha_c))
         EV_alpha_l = float(np.dot(p_g, dV_dalpha_l))
         EV_beta_c = float(np.dot(p_g, dV_dbeta_c))
-        EV_beta_l = float(np.dot(p_g, dV_dbeta_l))
+        EV_beta_l0 = float(np.dot(p_g, dV_dbeta_l0))
 
-        # chosen derivatives
+        # Chosen derivatives
         dV_star_alpha_c = float(dV_dalpha_c[j_star_loc])
         dV_star_alpha_l = float(dV_dalpha_l[j_star_loc])
         dV_star_beta_c = float(dV_dbeta_c[j_star_loc])
-        dV_star_beta_l = float(dV_dbeta_l[j_star_loc])
+        dV_star_beta_l0 = float(dV_dbeta_l0[j_star_loc])
 
         grad[0] -= w * (dV_star_alpha_c - EV_alpha_c)
         grad[1] -= w * (dV_star_alpha_l - EV_alpha_l)
         grad[2] -= w * (dV_star_beta_c - EV_beta_c)
-        grad[3] -= w * (dV_star_beta_l - EV_beta_l)
+        grad[3] -= w * (dV_star_beta_l0 - EV_beta_l0)
+
+        # Delta_k (preference shifters in leisure slope)
+        if K > 0:
+            dV_ddelta_g = dV_ddelta_full[s:e, :]    # (J_g, K)
+            EV_delta = p_g @ dV_ddelta_g            # (K,)
+            dV_star_delta = dV_ddelta_g[j_star_loc, :]  # (K,)
+            grad[4:4 + K] -= w * (dV_star_delta - EV_delta)
+
+        # Gamma_r (region dummies)
+        if R > 0:
+            dV_dgamma_g = dV_dgamma_full[s:e, :]    # (J_g, R)
+            EV_gamma = p_g @ dV_dgamma_g            # (R,)
+            dV_star_gamma = dV_dgamma_g[j_star_loc, :]  # (R,)
+            grad[4 + K:] -= w * (dV_star_gamma - EV_gamma)
 
     return nll, grad
 
@@ -380,10 +533,18 @@ def compute_null_loglik(data: RuroData) -> float:
 def run_estimation(data: RuroData, output_dir: Path, model_name: str = "ruro_boxcox") -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Initial parameters: [alpha_c, alpha_l, beta_c, beta_l]
-    theta0 = np.array([0.10, 0.10, 1.0, 1.0], dtype=float)
+    K = data.z_per_row.shape[1]
+    R = data.region_mat.shape[1]
 
-    LOGGER.info("Initial theta: %s", theta0)
+    # Initial parameters: [alpha_c, alpha_l, beta_c, beta_l0, delta..., gamma...]
+    theta0 = np.zeros(4 + K + R, dtype=float)
+    theta0[0] = 0.10    # alpha_c
+    theta0[1] = 0.10    # alpha_l
+    theta0[2] = 1.00    # beta_c
+    theta0[3] = 1.00    # beta_l0
+    # delta_k and gamma_r initialised at 0
+
+    LOGGER.info("Initial theta (len=%d): %s", len(theta0), theta0)
 
     result = minimize(
         neg_loglik,
@@ -398,17 +559,12 @@ def run_estimation(data: RuroData, output_dir: Path, model_name: str = "ruro_box
         LOGGER.warning("Optimiser did not fully converge: %s", result.message)
 
     theta_hat = result.x
-    nll_star = neg_loglik(theta_hat, data)
+    nll_star, _ = neg_loglik_and_grad(theta_hat, data)
     ll_star = -nll_star
     ll_null = compute_null_loglik(data)
 
-    alpha_c, alpha_l, beta_c, beta_l = theta_hat
-    LOGGER.info(
-        "theta_hat = [alpha_c=%.4f, alpha_l=%.4f, beta_c=%.4f, beta_l=%.4f]",
-        alpha_c, alpha_l, beta_c, beta_l,
-    )
+    LOGGER.info("theta_hat = %s", theta_hat)
 
-    # Diagnostics
     k = len(theta_hat)
     rho2 = 1.0 - ll_star / ll_null if ll_null != 0 else float("nan")
     rho2_adj = 1.0 - (ll_star - k) / ll_null if ll_null != 0 else float("nan")
@@ -422,31 +578,58 @@ def run_estimation(data: RuroData, output_dir: Path, model_name: str = "ruro_box
         LOGGER.warning("Hessian not invertible; falling back to pseudo-inverse.")
         cov = np.linalg.pinv(H)
 
-    se = np.sqrt(np.maximum(np.diag(cov), 0.0))
-    t_vals = theta_hat / se
-    p_vals = 2.0 * (1.0 - norm.cdf(np.abs(t_vals)))
+    diag_cov = np.diag(cov)
+    se = np.sqrt(np.maximum(diag_cov, 0.0))
 
-    # Print summary to log
-    names = ["alpha_c", "alpha_l", "beta_c", "beta_l"]
+    t_vals = np.empty_like(theta_hat)
+    p_vals = np.empty_like(theta_hat)
+    for i in range(k):
+        if se[i] > 0:
+            t_vals[i] = theta_hat[i] / se[i]
+            p_vals[i] = 2.0 * (1.0 - norm.cdf(abs(t_vals[i])))
+        else:
+            t_vals[i] = np.nan
+            p_vals[i] = np.nan
+
     LOGGER.info("Log-likelihood at optimum: %.4f", ll_star)
     LOGGER.info("LL(null): %.4f  rho²=%.4f  rho²_adj=%.4f", ll_null, rho2, rho2_adj)
-    LOGGER.info("Parameter estimates:")
-    for name, val, s, t, p in zip(names, theta_hat, se, t_vals, p_vals):
-        LOGGER.info("  %-8s  %10.6f  (se=%10.6f, t=%8.3f, p=%6.4f)", name, val, s, t, p)
 
-    # Save to JSON
+    # AIC / BIC using number of groups as 'observations'
+    n_obs = data.n_groups
+    aic = 2 * k - 2 * ll_star
+    bic = math.log(n_obs) * k - 2 * ll_star
+    LOGGER.info("AIC=%.2f  BIC=%.2f  (n_groups=%d)", aic, bic, n_obs)
+
+    # Assemble parameter names
+    names: List[str] = ["alpha_c", "alpha_l", "beta_c", "beta_l0"]
+    names.extend([f"delta_{z}" for z in data.z_names])
+    names.extend([f"gamma_{r}" for r in data.region_names])
+
+    param_dict = {n: float(v) for n, v in zip(names, theta_hat)}
+    se_dict = {n: float(s) for n, s in zip(names, se)}
+    t_dict = {n: float(t) if np.isfinite(t) else float("nan") for n, t in zip(names, t_vals)}
+    p_dict = {n: float(p) if np.isfinite(p) else float("nan") for n, p in zip(names, p_vals)}
+
+    # Save results to JSON
     meta = {
         "model": model_name,
-        "theta_hat": {n: float(v) for n, v in zip(names, theta_hat)},
-        "se": {n: float(s) for n, s in zip(names, se)},
-        "t_values": {n: float(t) for n, t in zip(names, t_vals)},
-        "p_values": {n: float(p) for n, p in zip(names, p_vals)},
+        "theta_hat": param_dict,
+        "se": se_dict,
+        "t_values": t_dict,
+        "p_values": p_dict,
         "ll_star": float(ll_star),
         "ll_null": float(ll_null),
         "rho2": float(rho2),
         "rho2_adj": float(rho2_adj),
+        "aic": float(aic),
+        "bic": float(bic),
+        "n_groups": int(n_obs),
         "y_ref": float(data.y_ref),
-        "l_min_pos": float(data.l_min_pos),
+        "l_ref": float(data.l_ref),
+        "c_ref_mode": data.c_ref_mode,
+        "l_ref_mode": data.l_ref_mode,
+        "z_names": data.z_names,
+        "region_names": data.region_names,
     }
 
     out_path = output_dir / f"{model_name}_results.json"
@@ -473,6 +656,36 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--leisure-col", default=None, help="Leisure column name (optional, overrides hours).")
     parser.add_argument("--weight-col", default=None, help="Sampling weight column (optional).")
     parser.add_argument("--t-hours", type=float, default=T_HOURS, help="Total time endowment for leisure (default 80).")
+
+    parser.add_argument(
+        "--c-ref",
+        choices=("mean", "p99"),
+        default="mean",
+        help="Reference for consumption normalisation: mean (default) or 99th percentile of chosen consumption.",
+    )
+    parser.add_argument(
+        "--l-ref",
+        choices=("minpos", "mean"),
+        default="minpos",
+        help="Reference for leisure normalisation: min positive chosen leisure (default) or mean chosen leisure.",
+    )
+
+    parser.add_argument(
+        "--z-cols",
+        nargs="*",
+        default=None,
+        help="Columns used as individual-level preference shifters in the leisure slope (beta_l).",
+    )
+    parser.add_argument(
+        "--region-cols",
+        nargs="*",
+        default=None,
+        help=(
+            "Columns used as alternative-specific region dummies in utility. "
+            "Omit the base region (e.g. Ile-de-France FR10) so it becomes the reference."
+        ),
+    )
+
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -505,6 +718,10 @@ def main() -> None:
         leisure_col=args.leisure_col,
         weight_col=args.weight_col,
         t_hours=args.t_hours,
+        c_ref_mode=args.c_ref,
+        l_ref_mode=args.l_ref,
+        z_cols=args.z_cols,
+        region_cols=args.region_cols,
     )
 
     run_estimation(data, args.output_dir, model_name=args.model_name)

@@ -217,6 +217,41 @@ def _infer_year_series(df: pd.DataFrame, default_year: int) -> pd.Series:
     year = cast(pd.Series, year).fillna(default_year).astype(int)
     return year
 
+def _enforce_loc_for_nonworkers(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ensure that occupation 'loc' is set to -1 for non-workers in the EUROMOD input.
+
+    We use the RURO convention:
+        - workers are (les == 3) AND (lhw > 0)
+        - everyone else is treated as non-working and gets loc = -1.
+
+    This assumes that 'loc' has already been constructed upstream
+    (from SILC / pl051a etc.) in the EUROMOD input data.
+    """
+    if "loc" not in df.columns:
+        # Nothing to do if occupation is not available
+        return df
+
+    df = df.copy()
+
+    loc = pd.to_numeric(df["loc"], errors="coerce")
+    les = pd.to_numeric(df["les"], errors="coerce")
+    lhw = pd.to_numeric(df["lhw"], errors="coerce").fillna(0.0)
+
+    # Worker definition consistent with is_worker in RURO_prep:
+    is_worker = les.eq(3) & (lhw > 0.0)
+
+    # Everyone else is non-working → loc = -1
+    nonworker_mask = ~is_worker
+    loc.loc[nonworker_mask] = -1
+
+    # If all loc are missing, we keep as float; otherwise cast to int
+    if loc.notna().any():
+        df["loc"] = loc.astype(int)
+    else:
+        df["loc"] = loc
+
+    return df
 
 def _add_ruro_variables_basic(
     df: pd.DataFrame,
@@ -346,6 +381,9 @@ def _add_ruro_variables_basic(
     # Provide aliases if they don't exist, to smooth later porting.
     _maybe_add_column(df, "hours", lhw)
     _maybe_add_column(df, "wage", wage_ruro)
+
+    # --- Enforce RURO convention on occupation: loc = -1 for non-workers ---
+    df = _enforce_loc_for_nonworkers(df)
 
     return df
 

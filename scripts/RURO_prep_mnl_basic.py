@@ -137,6 +137,394 @@ def _build_mnl_block(df: pd.DataFrame, sample_group: str) -> pd.DataFrame:
     return df
 
 
+def _transform_couples_to_wide(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Transform couples data from long format (one row per person) to wide format
+    (one row per household with _m and _f suffixes).
+    
+    This follows Stijn Van Houtven's approach in f_preparedata_est():
+    - Common household variables stay as single columns
+    - Person-specific variables get _m (male) and _f (female) suffixes
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Long-format couples data with columns: idhh, draw, dgn, hours, wage, etc.
+        Each household has 2 rows per draw (one for male, one for female partner).
+    
+    Returns
+    -------
+    pd.DataFrame
+        Wide-format data with one row per (household, draw) combination.
+        Columns like hours_m, hours_f, wage_m, wage_f, etc.
+    """
+    if df.empty:
+        return df
+    
+    df = df.copy()
+    
+    # -------------------------------------------------------------------------
+    # Step 1: Filter to only decider couples (exclude children, other HH members)
+    # -------------------------------------------------------------------------
+    if "ruro_decider" in df.columns:
+        n_before = len(df)
+        df = df[df["ruro_decider"] == 1].copy()
+        n_after = len(df)
+        if n_before != n_after:
+            LOGGER.info(f"  Filtered to ruro_decider==1: {n_before} -> {n_after} rows")
+    
+    # Ensure dgn exists
+    if "dgn" not in df.columns:
+        raise KeyError("Couples data must contain 'dgn' (gender) column for wide transformation.")
+    
+    dgn = pd.to_numeric(df["dgn"], errors="coerce").fillna(1).astype(int)
+    df["_gender"] = np.where(dgn == 1, "m", "f")
+    
+    # -------------------------------------------------------------------------
+    # Step 2: Identify and exclude same-sex couples
+    # -------------------------------------------------------------------------
+    index_cols = ["idhh", "draw"]
+    if "idhh_true" in df.columns:
+        index_cols = ["idhh", "idhh_true", "draw"]
+    
+    gender_counts = df.groupby(index_cols)["_gender"].nunique()
+    same_sex_mask = gender_counts == 1
+    different_sex_mask = gender_counts == 2
+    
+    n_same_sex = same_sex_mask.sum()
+    n_different_sex = different_sex_mask.sum()
+    
+    if n_same_sex > 0:
+        # Get unique households with same-sex couples
+        same_sex_hh = same_sex_mask[same_sex_mask].index.get_level_values("idhh").unique()
+        LOGGER.warning(f"  Excluding {len(same_sex_hh)} same-sex couple households "
+                      f"({n_same_sex} household-draw combinations). "
+                      f"These require separate handling with different column naming.")
+        
+        # Keep only different-sex couples
+        complete_idx = different_sex_mask[different_sex_mask].index
+        df = df.set_index(index_cols).loc[complete_idx].reset_index()
+    
+    LOGGER.info(f"Transforming couples to wide format...")
+    LOGGER.info(f"  {n_different_sex} different-sex couple household-draw combinations")
+    
+    # -------------------------------------------------------------------------
+    # Step 3: Verify exactly 2 persons per household-draw
+    # -------------------------------------------------------------------------
+    person_counts = df.groupby(index_cols).size()
+    not_two = person_counts[person_counts != 2]
+    if len(not_two) > 0:
+        LOGGER.warning(f"  {len(not_two)} (household, draw) combinations don't have exactly 2 persons.")
+        # Keep only pairs with exactly 2 persons
+        valid_idx = person_counts[person_counts == 2].index
+        df = df.set_index(index_cols).loc[valid_idx].reset_index()
+    
+    # Define common (household-level) variables that should NOT be pivoted
+    # These stay as single columns in the wide format
+    common_vars = [
+        # IDs
+        "idhh", "idhh_true", "idorighh",
+        # Draw and choice info
+        "draw", "is_chosen",
+        # Group identifiers
+        "ruro_group", "group", "groupy", "sample_group",
+        # Household characteristics (same for both partners)
+        "children0_3", "children4_6", "children7_9", "children",
+        "hh_size", "hhlma",
+        # Region (household-level)
+        "drgn1", "drgn2", "regW", "regB", "reg2", "reg3",
+        # Year dummies
+        "year", "yd1", "yd2", "yd3",
+        # Weights
+        "dwt",
+        # Prior (will be recomputed for wide format)
+        "prior",
+        # Other household-level
+        "other_members_income",
+    ]
+    
+    # Get all columns in the dataframe
+    all_cols = list(df.columns)
+    
+    # Determine which columns to pivot (person-specific)
+    # Exclude common vars and the gender column we just created
+    exclude_cols = set(common_vars + ["_gender", "dgn", "ruro_decider"])
+    pivot_cols = [c for c in all_cols if c not in exclude_cols]
+    
+    # Keep only common vars that actually exist in the data
+    existing_common = [c for c in common_vars if c in all_cols]
+    
+    LOGGER.info(f"  Common (household) vars: {len(existing_common)}")
+    LOGGER.info(f"  Person-specific vars to pivot: {len(pivot_cols)}")
+    
+    # -------------------------------------------------------------------------
+    # Step 4: Pivot the data
+    # -------------------------------------------------------------------------
+    # First, get the common vars from the male partner (arbitrary choice, should be same)
+    common_df = df[df["_gender"] == "m"][index_cols + [c for c in existing_common if c not in index_cols]].copy()
+    
+    # Now pivot the person-specific columns
+    pivot_df = df.pivot(
+        index=index_cols,
+        columns="_gender",
+        values=pivot_cols
+    )
+    
+    # Flatten multi-level column names: (hours, m) -> hours_m
+    pivot_df.columns = [f"{col}_{gender}" for col, gender in pivot_df.columns]
+    pivot_df = pivot_df.reset_index()
+    
+    # Merge common vars back
+    wide_df = pivot_df.merge(common_df, on=index_cols, how="left")
+    
+    LOGGER.info(f"  Result: {len(wide_df)} rows, {len(wide_df.columns)} columns")
+    
+    return wide_df
+
+
+def _build_couples_mnl_block(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Build MNL block for couples after wide transformation.
+    
+    This computes couple-specific utility variables:
+    - leisure_m, leisure_f: leisure for each partner
+    - consumption: household total disposable income
+    - working_m, working_f: employment indicators
+    - working_pt1_m, working_pt2_m, working_ft_m: hours category dummies
+    - etc.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Wide-format couples data from _transform_couples_to_wide()
+    
+    Returns
+    -------
+    pd.DataFrame
+        MNL-ready couples dataset with all required variables
+    """
+    if df.empty:
+        return df
+    
+    df = df.copy()
+    
+    # -------------------------------------------------------------------------
+    # Hours and leisure for each partner
+    # -------------------------------------------------------------------------
+    hours_m = pd.to_numeric(df.get("hours_m", df.get("lhw_m", 0)), errors="coerce").fillna(0.0)
+    hours_f = pd.to_numeric(df.get("hours_f", df.get("lhw_f", 0)), errors="coerce").fillna(0.0)
+    
+    df["hours_m"] = hours_m
+    df["hours_f"] = hours_f
+    
+    df["leisure_m"] = (TOTAL_LEISURE_HOURS - hours_m).clip(lower=DCM_MIN_POSITIVE)
+    df["leisure_f"] = (TOTAL_LEISURE_HOURS - hours_f).clip(lower=DCM_MIN_POSITIVE)
+    
+    # Normalized leisure (following Stijn: (168-hours)/(168-mean_lhw))
+    # Using 35 as mean hours (approx full-time)
+    MEAN_LHW = 35.0
+    df["leis_util_m"] = (168 - hours_m) / (168 - MEAN_LHW)
+    df["leis_util_f"] = (168 - hours_f) / (168 - MEAN_LHW)
+    
+    # -------------------------------------------------------------------------
+    # Consumption (household total disposable income)
+    # -------------------------------------------------------------------------
+    # Sum of both partners' ils_dispy
+    ils_m = pd.to_numeric(df.get("ils_dispy_m", 0), errors="coerce").fillna(0.0)
+    ils_f = pd.to_numeric(df.get("ils_dispy_f", 0), errors="coerce").fillna(0.0)
+    
+    consumption = (ils_m + ils_f).clip(lower=DCM_MIN_POSITIVE)
+    df["consumption"] = consumption
+    
+    # Normalized consumption (following Stijn)
+    MEAN_DISPY = 2500.0  # approximate monthly household disposable income
+    df["dispy_util_m"] = ils_m / MEAN_DISPY
+    df["dispy_util_f"] = ils_f / MEAN_DISPY
+    df["c_norm"] = consumption / MEAN_DISPY
+    
+    df["log_c"] = np.log(consumption)
+    df["log_l_m"] = np.log(df["leisure_m"])
+    df["log_l_f"] = np.log(df["leisure_f"])
+    
+    # -------------------------------------------------------------------------
+    # Working indicators
+    # -------------------------------------------------------------------------
+    df["working_m"] = (hours_m > 0).astype(int)
+    df["working_f"] = (hours_f > 0).astype(int)
+    
+    # Part-time and full-time dummies (following Stijn's thresholds)
+    df["working_pt1_m"] = ((hours_m >= 18.5) & (hours_m <= 20.5)).astype(int)
+    df["working_pt2_m"] = ((hours_m >= 29.5) & (hours_m <= 30.5)).astype(int)
+    df["working_ft_m"] = ((hours_m >= 37.5) & (hours_m <= 40.5)).astype(int)
+    
+    df["working_pt1_f"] = ((hours_f >= 18.5) & (hours_f <= 20.5)).astype(int)
+    df["working_pt2_f"] = ((hours_f >= 29.5) & (hours_f <= 30.5)).astype(int)
+    df["working_ft_f"] = ((hours_f >= 37.5) & (hours_f <= 40.5)).astype(int)
+    
+    # -------------------------------------------------------------------------
+    # Wages
+    # -------------------------------------------------------------------------
+    wage_m = pd.to_numeric(df.get("wage_m", df.get("yivwg_m", 0)), errors="coerce").fillna(0.0)
+    wage_f = pd.to_numeric(df.get("wage_f", df.get("yivwg_f", 0)), errors="coerce").fillna(0.0)
+    df["wage_m"] = wage_m
+    df["wage_f"] = wage_f
+    
+    # -------------------------------------------------------------------------
+    # Age variables
+    # -------------------------------------------------------------------------
+    dag_m = pd.to_numeric(df.get("dag_m", 40), errors="coerce").fillna(40)
+    dag_f = pd.to_numeric(df.get("dag_f", 40), errors="coerce").fillna(40)
+    df["dag_m"] = dag_m
+    df["dag_f"] = dag_f
+    df["log_age_m"] = np.log(dag_m.clip(lower=18))
+    df["log_age_f"] = np.log(dag_f.clip(lower=18))
+    
+    # -------------------------------------------------------------------------
+    # Education variables
+    # -------------------------------------------------------------------------
+    if "deh_m" in df.columns:
+        deh_m = pd.to_numeric(df["deh_m"], errors="coerce").fillna(3)
+        df["educL_m"] = deh_m.isin([0, 1, 2]).astype(int)
+        df["educH_m"] = (deh_m == 5).astype(int)
+    else:
+        # Try to get from existing educL/educH if already computed
+        df["educL_m"] = pd.to_numeric(df.get("educL_m", 0), errors="coerce").fillna(0).astype(int)
+        df["educH_m"] = pd.to_numeric(df.get("educH_m", 0), errors="coerce").fillna(0).astype(int)
+    
+    if "deh_f" in df.columns:
+        deh_f = pd.to_numeric(df["deh_f"], errors="coerce").fillna(3)
+        df["educL_f"] = deh_f.isin([0, 1, 2]).astype(int)
+        df["educH_f"] = (deh_f == 5).astype(int)
+    else:
+        df["educL_f"] = pd.to_numeric(df.get("educL_f", 0), errors="coerce").fillna(0).astype(int)
+        df["educH_f"] = pd.to_numeric(df.get("educH_f", 0), errors="coerce").fillna(0).astype(int)
+    
+    # -------------------------------------------------------------------------
+    # Experience (potential experience based on age and education)
+    # -------------------------------------------------------------------------
+    if "pexp_m" not in df.columns:
+        deh_m = pd.to_numeric(df.get("deh_m", 3), errors="coerce").fillna(3)
+        pexp_m = np.maximum(0, np.where(
+            deh_m.isin([0, 1, 2]), dag_m - 15,
+            np.where(deh_m.isin([3, 4]), dag_m - 19, dag_m - 23)
+        )) / 100.0
+        df["pexp_m"] = pexp_m
+    
+    if "pexp_f" not in df.columns:
+        deh_f = pd.to_numeric(df.get("deh_f", 3), errors="coerce").fillna(3)
+        pexp_f = np.maximum(0, np.where(
+            deh_f.isin([0, 1, 2]), dag_f - 15,
+            np.where(deh_f.isin([3, 4]), dag_f - 19, dag_f - 23)
+        )) / 100.0
+        df["pexp_f"] = pexp_f
+    
+    # -------------------------------------------------------------------------
+    # Region dummies (use household-level region)
+    # -------------------------------------------------------------------------
+    if "drgn1" in df.columns:
+        drgn1 = pd.to_numeric(df["drgn1"], errors="coerce").fillna(1)
+        df["reg2"] = (drgn1 == 2).astype(int)
+        df["reg3"] = (drgn1 == 3).astype(int)
+    
+    # -------------------------------------------------------------------------
+    # GSUR for both partners (if available)
+    # -------------------------------------------------------------------------
+    if "gsur_m" not in df.columns and "gsur" in df.columns:
+        df["gsur_m"] = df["gsur"]
+        df["gsur_f"] = df["gsur"]
+    
+    df["sample_group"] = "couples"
+    
+    return df
+
+
+def _compute_prior_couples(
+    df: pd.DataFrame,
+    *,
+    wage_spec: str = DEFAULT_WAGE_SPEC,
+    pi0_m: float = DEFAULT_PI0_M,
+    pi0_f: float = DEFAULT_PI0_F,
+    h_min: float = DEFAULT_H_MIN,
+    h_max: float = DEFAULT_H_MAX,
+    w_min: float = DEFAULT_W_MIN,
+    w_max: float = DEFAULT_W_MAX,
+) -> pd.DataFrame:
+    """
+    Compute prior (proposal density) for couples in wide format.
+    
+    For couples, the prior is the PRODUCT of both partners' priors
+    (since draws are independent for male and female):
+    
+        prior = p(h_m, w_m) * p(h_f, w_f)
+    
+    Following Stijn's R code:
+        prior = log(ifelse(hours_m==0, pi0_m, (1-pi0_m)*(1/(h_max-h_min)))
+                    *ifelse(wage_m==0, 1, 1/(w_max-w_min))
+                    *ifelse(hours_f==0, pi0_f, (1-pi0_f)*(1/(h_max-h_min)))
+                    *ifelse(wage_f==0, 1, 1/(w_max-w_min)))
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Wide-format couples data with hours_m, hours_f, wage_m, wage_f columns.
+    wage_spec : str
+        'fw' for fixed wages, 'vw' for variable wages.
+    pi0_m, pi0_f : float
+        Mass at zero hours for active men/women.
+    h_min, h_max, w_min, w_max : float
+        Support bounds for hours and wages.
+    
+    Returns
+    -------
+    pd.DataFrame
+        Input dataframe with 'prior' column added (log prior density).
+    """
+    df = df.copy()
+    
+    # Get hours for both partners
+    hours_m = pd.to_numeric(df.get("hours_m", 0), errors="coerce").fillna(0.0).to_numpy()
+    hours_f = pd.to_numeric(df.get("hours_f", 0), errors="coerce").fillna(0.0).to_numpy()
+    
+    h_support = max(h_max - h_min, DCM_MIN_POSITIVE)
+    w_support = max(w_max - w_min, DCM_MIN_POSITIVE)
+    
+    # Male partner prior
+    prior_m = np.where(
+        hours_m <= 0,
+        pi0_m,  # Zero hours
+        (1.0 - pi0_m) * (1.0 / h_support)  # Positive hours
+    )
+    
+    # Female partner prior
+    prior_f = np.where(
+        hours_f <= 0,
+        pi0_f,  # Zero hours
+        (1.0 - pi0_f) * (1.0 / h_support)  # Positive hours
+    )
+    
+    if wage_spec == "vw":
+        # Variable wages: multiply by wage density for working partners
+        wage_m = pd.to_numeric(df.get("wage_m", 0), errors="coerce").fillna(0.0).to_numpy()
+        wage_f = pd.to_numeric(df.get("wage_f", 0), errors="coerce").fillna(0.0).to_numpy()
+        
+        # Wage density is 1/(w_max - w_min) for positive wages, 1 for zero wages
+        wage_dens_m = np.where(wage_m > 0, 1.0 / w_support, 1.0)
+        wage_dens_f = np.where(wage_f > 0, 1.0 / w_support, 1.0)
+        
+        prior_m = prior_m * wage_dens_m
+        prior_f = prior_f * wage_dens_f
+    
+    # Joint prior is product of both partners' priors
+    prior_density = prior_m * prior_f
+    prior_density = np.clip(prior_density, 1e-16, None)
+    
+    df["prior"] = np.log(prior_density)
+    
+    LOGGER.info(f"Couples prior computed: mean={df['prior'].mean():.4f}, range=[{df['prior'].min():.4f}, {df['prior'].max():.4f}]")
+    
+    return df
+
+
 def _compute_prior(
     df: pd.DataFrame,
     *,
@@ -462,31 +850,7 @@ def main() -> None:
         raise FileNotFoundError(f"EUROMOD combined file not found: {em_path}")
     em_df = _read_df(em_path)
 
-    singles_path = Path(args.singles_draws).resolve()
-    if not singles_path.exists():
-        raise FileNotFoundError(f"Singles draws file not found: {singles_path}")
-    singles_long = _read_df(singles_path)
-    singles_long = _merge_euromod_outputs(singles_long, em_df)
-    singles_mnl = _build_mnl_block(singles_long, sample_group="singles")
-
-    frames = [singles_mnl]
-
-    if args.couples_draws:
-        couples_path = Path(args.couples_draws).resolve()
-        if not couples_path.exists():
-            raise FileNotFoundError(f"Couples draws file not found: {couples_path}")
-        couples_long = _read_df(couples_path)
-        couples_long = _merge_euromod_outputs(couples_long, em_df)
-        couples_mnl = _build_mnl_block(couples_long, sample_group="couples")
-        frames.append(couples_mnl)
-
-    full_mnl = pd.concat(frames, axis=0, ignore_index=True)
-
-    if full_mnl[["idperson", "draw"]].isna().any().any():
-        raise ValueError("Found NaNs in idperson/draw after merge; check EUROMOD alignment.")
-
-    full_mnl = _compute_prior(
-        full_mnl,
+    prior_kwargs = dict(
         wage_spec=args.wage_spec,
         pi0_m=args.pi0_m,
         pi0_f=args.pi0_f,
@@ -496,11 +860,77 @@ def main() -> None:
         w_max=args.w_max,
     )
 
+    # -------------------------------------------------------------------------
+    # Process singles (long format)
+    # -------------------------------------------------------------------------
+    singles_path = Path(args.singles_draws).resolve()
+    if not singles_path.exists():
+        raise FileNotFoundError(f"Singles draws file not found: {singles_path}")
+    singles_long = _read_df(singles_path)
+    singles_long = _merge_euromod_outputs(singles_long, em_df)
+    singles_mnl = _build_mnl_block(singles_long, sample_group="singles")
+    
+    # Compute prior for singles (long format with dgn, lma, hours, loc columns)
+    LOGGER.info("Computing prior for singles...")
+    singles_mnl = _compute_prior(singles_mnl, **prior_kwargs)
+
+    frames = [singles_mnl]
+
+    # -------------------------------------------------------------------------
+    # Process couples (transform to wide format)
+    # -------------------------------------------------------------------------
+    if args.couples_draws:
+        couples_path = Path(args.couples_draws).resolve()
+        if not couples_path.exists():
+            raise FileNotFoundError(f"Couples draws file not found: {couples_path}")
+        couples_long = _read_df(couples_path)
+        couples_long = _merge_euromod_outputs(couples_long, em_df)
+        
+        # Transform to wide format (one row per household-draw)
+        couples_wide = _transform_couples_to_wide(couples_long)
+        couples_mnl = _build_couples_mnl_block(couples_wide)
+        
+        # Compute prior for couples (wide format with hours_m, hours_f columns)
+        LOGGER.info("Computing prior for couples...")
+        couples_mnl = _compute_prior_couples(couples_mnl, **prior_kwargs)
+        
+        frames.append(couples_mnl)
+
+    full_mnl = pd.concat(frames, axis=0, ignore_index=True)
+
+    # Check for NaN in key columns - handle separately for singles vs couples
+    # Singles have 'idperson', couples have 'idperson_m' and 'idperson_f'
+    singles_mask = full_mnl["sample_group"] == "singles"
+    if singles_mask.any():
+        singles_df = full_mnl[singles_mask]
+        if singles_df[["idperson", "draw"]].isna().any().any():
+            raise ValueError("Found NaNs in singles idperson/draw after merge; check EUROMOD alignment.")
+    
+    couples_mask = full_mnl["sample_group"] == "couples"
+    if couples_mask.any():
+        couples_df = full_mnl[couples_mask]
+        # Couples may have idperson_m, idperson_f instead of idperson
+        if "idperson_m" in couples_df.columns:
+            if couples_df[["idperson_m", "idperson_f", "draw"]].isna().any().any():
+                raise ValueError("Found NaNs in couples idperson_m/idperson_f/draw after merge.")
+        elif "idhh" in couples_df.columns:
+            if couples_df[["idhh", "draw"]].isna().any().any():
+                raise ValueError("Found NaNs in couples idhh/draw after merge.")
+
     # Merge GSUR (group-specific unemployment rate) for estimation
     # GSUR is used as a regressor in hours opportunity density, NOT in draws/prior
+    # Note: For couples in wide format, we need GSUR for both partners
     if not args.no_gsur:
         gsur_path = Path(args.gsur_file) if args.gsur_file else None
-        full_mnl = merge_gsur(full_mnl, gsur_path=gsur_path, year=args.year)
+        # Merge GSUR only for singles (long format) - couples need separate handling
+        if singles_mask.any():
+            singles_with_gsur = merge_gsur(full_mnl[singles_mask].copy(), gsur_path=gsur_path, year=args.year)
+            full_mnl.loc[singles_mask, "gsur"] = singles_with_gsur["gsur"].values
+        # For couples, set gsur to 0 for now (would need gsur_m and gsur_f columns)
+        if couples_mask.any():
+            if "gsur_m" not in full_mnl.columns:
+                full_mnl.loc[couples_mask, "gsur"] = 0.0
+                LOGGER.info("Couples gsur set to 0 (would need separate gsur_m/gsur_f columns).")
     else:
         full_mnl["gsur"] = 0.0
         LOGGER.info("GSUR merge skipped (--no-gsur flag); gsur set to 0.")

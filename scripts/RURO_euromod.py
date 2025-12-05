@@ -15,19 +15,23 @@ Key Design Decisions
    into one dataframe and passed to EUROMOD in a single call. This ensures
    consistent tax-benefit treatment across all hypothetical job scenarios.
 
-2. **Deciders only for hours/wage mutation**: Only household decision makers
-   (head and partner, flagged by `hh_IsHead` and `hh_IsPartner`) have their
-   hours and wages overwritten according to the RURO draws. Children and other
-   household members retain their original baseline hours/wages even for draw > 0,
-   so that EUROMOD can correctly compute household-level outcomes.
+2. **Deciders identified from draws file**: Deciders (head/partner) are identified
+   by having draws > 0 in the draws file. Non-deciders (children, elderly) only
+   have draw=0 and are replicated for each draw scenario so EUROMOD can correctly
+   compute household-level tax-benefit outcomes.
 
-3. **Draw-specific IDs**: To avoid ID clashes across draws, we create:
+3. **Deciders only for hours/wage mutation**: Only household decision makers
+   have their hours and wages overwritten according to the RURO draws. Children
+   and other household members retain their original baseline hours/wages even
+   for draw > 0, so that EUROMOD can correctly compute household-level outcomes.
+
+4. **Draw-specific IDs**: To avoid ID clashes across draws, we create:
    - idhh = idhh_true * 1000 + draw
    - idperson = idperson_true * 1000 + draw
    - Kin IDs (idfather, idmother, idpartner) follow the same convention.
    The original IDs are preserved in `*_true` columns for later grouping.
 
-4. **EUROMOD consistency fixes**: For working deciders (lma==1 and hours>0):
+5. **EUROMOD consistency fixes**: For working deciders (lma==1 and hours>0):
    - yem = hours * wage * weeks_per_month
    - bun = 0 (no unemployment benefits when working)
    - bsa = 0 (no social assistance when working)
@@ -324,14 +328,73 @@ def run_euromod_for_draws(
     draws_sub = draws_df[override_cols].copy()
     
     # -------------------------------------------------------------------------
-    # 3. Merge: one EM row per (idperson, draw)
+    # 3. Identify deciders vs non-deciders from the draws dataframe
+    #    
+    #    The draws file comes from RURO_draws.py which:
+    #    - Gives deciders (head/partner) draws 0, 1, 2, ..., N
+    #    - Gives non-deciders (children, etc.) draw=0 ONLY
+    #    
+    #    We identify deciders as those who have draw > 0.
+    #    Non-deciders need to be replicated for each draw scenario so EUROMOD
+    #    can compute household-level outcomes correctly.
     # -------------------------------------------------------------------------
-    merged = em_input.merge(draws_sub, on=id_col, how="inner", suffixes=("", "_draw"))
+    all_draws = sorted(draws_df["draw"].unique())
+    max_draw = max(all_draws)
+    
+    # Deciders: have at least one draw > 0
+    person_max_draw = draws_df.groupby(id_col)["draw"].max()
+    decider_ids = set(person_max_draw[person_max_draw > 0].index)
+    nondecider_ids = set(person_max_draw[person_max_draw == 0].index)
+    
+    logging.info(f"RURO_euromod: {len(decider_ids)} deciders (draw > 0), "
+                 f"{len(nondecider_ids)} non-deciders (draw=0 only) in draws file.")
+    
+    # -------------------------------------------------------------------------
+    # 4. Build full dataset: deciders + replicated non-deciders for each draw
+    #    
+    #    For EUROMOD household calculations:
+    #    - Deciders: merge with draws to get (idperson, draw, hours, wage)
+    #    - Non-deciders: replicate baseline for each draw 0..N
+    # -------------------------------------------------------------------------
+    
+    # 4a. Deciders: merge with draws
+    decider_draws = draws_sub[draws_sub[id_col].isin(decider_ids)]
+    decider_merged = em_input.merge(decider_draws, on=id_col, how="inner", suffixes=("", "_draw"))
+    
+    # 4b. Non-deciders: replicate baseline for each draw
+    nondecider_baseline = em_input[em_input[id_col].isin(nondecider_ids)].copy()
+    if len(nondecider_baseline) > 0 and max_draw > 0:
+        # Replicate for each draw
+        nondecider_records = []
+        for d in all_draws:
+            nd_copy = nondecider_baseline.copy()
+            nd_copy["draw"] = d
+            # Non-deciders keep baseline hours/wage
+            if "hours" not in nd_copy.columns and hours_col in nd_copy.columns:
+                nd_copy["hours"] = nd_copy[hours_col]
+            if "wage" not in nd_copy.columns and wage_col in nd_copy.columns:
+                nd_copy["wage"] = nd_copy[wage_col]
+            nondecider_records.append(nd_copy)
+        nondecider_merged = pd.concat(nondecider_records, axis=0, ignore_index=True)
+        logging.info(f"RURO_euromod: Replicated {len(nondecider_baseline)} non-deciders "
+                     f"across {len(all_draws)} draws = {len(nondecider_merged)} rows.")
+    else:
+        nondecider_merged = pd.DataFrame()
+    
+    # 4c. Combine deciders and non-deciders
+    if len(nondecider_merged) > 0:
+        merged = pd.concat([decider_merged, nondecider_merged], axis=0, ignore_index=True)
+    else:
+        merged = decider_merged
+    
     if merged.empty:
         raise ValueError("EUROMOD input after merging with draws is empty. Check id alignment.")
+    
+    logging.info(f"RURO_euromod: Combined dataset has {len(merged)} rows "
+                 f"({len(decider_merged)} decider rows + {len(nondecider_merged) if len(nondecider_merged) > 0 else 0} non-decider rows).")
 
     # -------------------------------------------------------------------------
-    # 4. Store "true" IDs for later grouping in RURO_prep_mnl
+    # 5. Store "true" IDs for later grouping in RURO_prep_mnl
     #    These allow us to reconstruct the individual and household across draws.
     # -------------------------------------------------------------------------
     if "idhh" in merged.columns:
@@ -341,26 +404,15 @@ def run_euromod_for_draws(
     draw = pd.to_numeric(merged["draw"], errors="coerce").fillna(0).astype(int)
 
     # -------------------------------------------------------------------------
-    # 5. Decider mask: only heads/partners have hours/wages mutated
-    #    Children and other members keep their baseline values for EUROMOD.
+    # 6. Decider mask for hours/wage mutation
+    #    Deciders get hours/wage from draws; non-deciders keep baseline.
     # -------------------------------------------------------------------------
-    has_decider_flags = "hh_IsHead" in merged.columns
-    if has_decider_flags:
-        hh_is_head = pd.to_numeric(merged["hh_IsHead"], errors="coerce").fillna(0).astype(int)
-        hh_is_partner = pd.to_numeric(merged.get("hh_IsPartner", 0), errors="coerce").fillna(0).astype(int)
-        is_decider = (hh_is_head == 1) | (hh_is_partner == 1)
-        logging.info(f"RURO_euromod: Applying hours/wage overrides only to {is_decider.sum()} deciders.")
-    else:
-        # No decider flags: apply overrides to all (backwards-compatible)
-        logging.warning(
-            "RURO_euromod: hh_IsHead/hh_IsPartner columns not found in EUROMOD template. "
-            "Assuming all persons are decision makers. "
-            "This is a strong assumption; hours/wages will be overwritten for everyone."
-        )
-        is_decider = pd.Series(True, index=merged.index)
+    is_decider = merged[id_col].isin(decider_ids)
+    logging.info(f"RURO_euromod: {is_decider.sum()} rows are deciders, "
+                 f"{(~is_decider).sum()} rows are non-deciders.")
 
     # -------------------------------------------------------------------------
-    # 6. Labour-market activity flag (lma)
+    # 7. Labour-market activity flag (lma)
     #    Fallback to lma=1 if missing, but document this as a strong assumption.
     # -------------------------------------------------------------------------
     if "lma" in merged.columns:
@@ -376,7 +428,7 @@ def run_euromod_for_draws(
     lma = pd.to_numeric(lma_raw, errors="coerce").fillna(1).astype(int)
 
     # -------------------------------------------------------------------------
-    # 7. Hours and wage from RURO draws
+    # 8. Hours and wage from RURO draws
     # -------------------------------------------------------------------------
     if "hours" in merged.columns:
         h_raw = merged["hours"]
@@ -395,7 +447,7 @@ def run_euromod_for_draws(
     w = pd.to_numeric(w_raw, errors="coerce").fillna(0.0)
 
     # -------------------------------------------------------------------------
-    # 8. Apply hours/wage overrides for DECIDERS ONLY
+    # 9. Apply hours/wage overrides for DECIDERS ONLY
     #    Non-deciders keep their baseline EUROMOD values.
     # -------------------------------------------------------------------------
     # Store baseline values
@@ -416,9 +468,9 @@ def run_euromod_for_draws(
     merged["wage"] = final_w
 
     # -------------------------------------------------------------------------
-    # 9. EUROMOD consistency fixes for RURO hypothetical jobs
-    #    These adjustments ensure that EUROMOD treats hypothetical working
-    #    scenarios correctly (transition from UB/SA to employment).
+    # 10. EUROMOD consistency fixes for RURO hypothetical jobs
+    #     These adjustments ensure that EUROMOD treats hypothetical working
+    #     scenarios correctly (transition from UB/SA to employment).
     # -------------------------------------------------------------------------
     
     # YEM: Employment income = hours * wage * weeks_per_month
@@ -453,7 +505,7 @@ def run_euromod_for_draws(
         merged["lunmy"] = lunmy
 
     # -------------------------------------------------------------------------
-    # 10. Draw-specific IDs (panel-like structure for EUROMOD)
+    # 11. Draw-specific IDs (panel-like structure for EUROMOD)
     #     This allows EUROMOD to treat each draw as a separate "household" while
     #     we can still reconstruct original groupings via *_true columns.
     # -------------------------------------------------------------------------
@@ -471,7 +523,7 @@ def run_euromod_for_draws(
             merged[kin] = kin_new
 
     # -------------------------------------------------------------------------
-    # 11. Sort for EUROMOD stability and run
+    # 12. Sort for EUROMOD stability and run
     # -------------------------------------------------------------------------
     sort_cols = []
     if "idhh" in merged.columns:
@@ -485,7 +537,7 @@ def run_euromod_for_draws(
     sim_df = runner.run_on_dataframe(merged, country=country, system_code=system_code, dataset_name=dataset_name)
 
     # -------------------------------------------------------------------------
-    # 12. Reattach draw and "true" IDs to output
+    # 13. Reattach draw and "true" IDs to output
     # -------------------------------------------------------------------------
     sim_df["draw"] = merged["draw"].values
     if "idhh_true" in merged.columns:
@@ -493,7 +545,7 @@ def run_euromod_for_draws(
     sim_df[f"{id_col}_true"] = merged[f"{id_col}_true"].values
 
     # -------------------------------------------------------------------------
-    # 13. Save combined output
+    # 14. Save combined output
     # -------------------------------------------------------------------------
     combined_path = scenario_dir / "combined_draws_em.parquet"
     sim_df.to_parquet(combined_path, index=False)  # type: ignore[arg-type]

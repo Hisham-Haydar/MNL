@@ -4,16 +4,45 @@
 # @Author  : Hisham Haydar (Hisham.Haydar@liser.lu)
 # @Link    : https://hisham-haydar.github.io/
 
-
-
 """
 RURO_draws.py
+=============
+
+Implements the opportunity set generation for a Random Utility Random Opportunity
+(RURO) labour supply model à la Aaberge & Colombino (1998) and Capeau & Decoster (2014).
+
+This script follows the structure of Stijn Van Houtven's Belgian RURO implementation.
+
+Key Design Decisions
+--------------------
+1. **Deciders only**: The choice set is defined only for household decision makers
+   (head and partner, flagged by `hh_IsHead` and `hh_IsPartner`). Children and other
+   household members are *not* given simulated opportunities; they appear only with
+   draw=0 and their observed hours/wage, so that EUROMOD can correctly compute
+   household-level tax-benefit outcomes.
+
+2. **RURO opportunity density** (hours and wages only, following Stijn's implementation):
+   For each decider i:
+   - With probability π₀,g(i) (gender-specific: pi0_m for men, pi0_f for women),
+     the opportunity is **non-employment**: hours=0, wage=0, loc=-1.
+   - With probability 1 - π₀,g(i), the opportunity is a **working job**:
+       * hours ~ Uniform[h_min, h_max]
+       * wage  ~ Uniform[w_min, w_max] if wage_spec="vw" (variable wage), else
+                 fixed to observed wage if wage_spec="fw" (fixed wage)
+   
+   **Note**: Occupation (`loc`) does NOT enter the opportunity density. For working
+   draws, `loc` is set to the baseline (observed) occupation; for non-employment
+   draws, `loc` is set to -1. This matches Stijn's `f_choicesets_est()` where the
+   prior is only over hours and wages.
+
+3. **Observed job**: draw=0 preserves the observed hours, wage, and occupation
+   exactly as in the RURO_ready input. No perturbation.
 
 From singles_RURO_ready / couples_RURO_ready (wide, one row per person),
 construct a long RURO dataset with simulated opportunities:
 
   - draw = 0: observed job (chosen alternative)
-  - draw >= 1: simulated opportunities from the prior over (hours, wage, loc)
+  - draw >= 1: simulated opportunities from the RURO prior over (hours, wage)
 
 This is the step that creates the (i, draw) structure for RURO_prep_mnl.py.
 """
@@ -212,7 +241,7 @@ DEFAULT_W_MAX = 120.0
 
 DEFAULT_WAGE_SPEC = "vw"       # "fw" or "vw"
 DEFAULT_N_DRAWS = 99
-DEFAULT_RNG_SEED = 13
+DEFAULT_RNG_SEED = 17  # Lucky number for reproducibility
 
 # EUROMOD defaults/hooks
 ENV_HINTS = ("MNL_STORAGE_ROOT", "MNL_DATA_ROOT", "MNL_ROOT")
@@ -246,8 +275,9 @@ def _write_dataframe(df: pd.DataFrame, base_path: Path, suffix: str = "_draws") 
     csv_path = out_dir / f"{base}.csv"
 
     df.to_parquet(parquet_path, index=False, engine="pyarrow")  # type: ignore[arg-type]
-    df.to_csv(csv_path, index=False)
-    return {"parquet": parquet_path, "csv": csv_path}
+    # CSV export temporarily disabled because it is unused and costly.
+    # df.to_csv(csv_path, index=False)
+    return {"parquet": parquet_path}
 
 
 def _prepare_euromod_dataset(
@@ -452,7 +482,14 @@ def run_euromod_for_draws(
 def _attach_other_members_income(df: pd.DataFrame) -> pd.DataFrame:
     """
     Compute other_members_income per household (sum of ils_dispy of non-head/partner).
-    Keeps the column for all rows; used later for consumption of heads/partners only.
+    
+    This aggregates the disposable income of children and other household members
+    who are NOT decision makers (hh_IsHead==0 and hh_IsPartner==0).
+    
+    The resulting `other_members_income` column is used later in RURO_prep_mnl.py
+    when computing total consumption for heads/partners only. It ensures that
+    the utility specification correctly accounts for all household income sources
+    even though only deciders have a choice set.
     """
     if "idhh" not in df.columns or "ils_dispy" not in df.columns:
         return df
@@ -529,6 +566,19 @@ def _sample_loc(
     return keys[idx]
 
 
+def _draw_loc(loc_probs: Optional[Dict[Any, float]], rng: np.random.Generator, fallback: Any) -> Any:
+    """
+    Draw a single loc from a discrete distribution; fallback to observed loc if probs unavailable.
+    """
+    if not loc_probs:
+        return fallback
+    keys = np.array(list(loc_probs.keys()))
+    p = np.array(list(loc_probs.values()), dtype=float)
+    p = p / p.sum()
+    idx = rng.choice(len(keys), p=p)
+    return keys[idx]
+
+
 # ---------------------------------------------------------------------------
 # Core: make long draws
 # ---------------------------------------------------------------------------
@@ -550,19 +600,73 @@ def generate_draws_long(
     Take a RURO_ready dataset (one row per person) and return a long dataset
     with (idperson, draw) opportunities.
 
-    - draw=0: observed job (copied as is)
-    - draw>=1: simulated from the prior over hours, wage, and loc
+    RURO Opportunity Density (Aaberge–Colombino style)
+    --------------------------------------------------
+    For each decision maker i (head or partner):
+    
+    - With probability π₀,g(i):
+        * Non-employment opportunity: hours=0, wage=0, loc=-1
+        * π₀ is gender-specific: pi0_m for active men (lma==1, dgn==1),
+          pi0_f for active women (lma==1, dgn==0).
+        * For inactive persons (lma != 1), π₀ = 0 (no extra mass at zero).
+      - With probability 1 - π₀,g(i):
+        * Working job opportunity:
+            - hours ~ Uniform[h_min, h_max]
+            - wage  ~ Uniform[w_min, w_max] if wage_spec="vw",
+                      or fixed to observed wage if wage_spec="fw"
+            - loc is NOT drawn; working draws keep the baseline occupation
+
+    Decider-Only Logic
+    ------------------
+    Following Stijn's RURO implementation:
+    - If hh_IsHead and hh_IsPartner columns exist, only those individuals
+      (heads and partners) get simulated draws (draw >= 1).
+    - Non-deciders (children, other adults) appear only with draw=0 and
+      their observed hours/wage/loc, for EUROMOD tax-benefit calculations.
+    - If decider flags are missing, all persons are treated as deciders
+      (with a warning).
+
+    Output Structure
+    ----------------
+    - draw=0: observed job (exactly as in RURO_ready, is_chosen=1)
+    - draw>=1: simulated opportunities (is_chosen=0)
     """
+    import logging
+    
     if n_draws < 0:
         raise ValueError("n_draws must be >= 0")
 
     df = df.copy().reset_index(drop=True)
 
-    # Basic checks
+    # -------------------------------------------------------------------------
+    # Basic checks: idperson is required
+    # -------------------------------------------------------------------------
     if "idperson" not in df.columns:
         raise KeyError("RURO_ready dataset must contain 'idperson'.")
 
+    # -------------------------------------------------------------------------
+    # Decider mask: only heads and partners get simulated opportunities
+    # -------------------------------------------------------------------------
+    has_decider_flags = "hh_IsHead" in df.columns
+    if has_decider_flags:
+        hh_is_head = pd.to_numeric(df["hh_IsHead"], errors="coerce").fillna(0).astype(int)
+        hh_is_partner = pd.to_numeric(df.get("hh_IsPartner", 0), errors="coerce").fillna(0).astype(int)
+        is_decider = (hh_is_head == 1) | (hh_is_partner == 1)
+        n_deciders = is_decider.sum()
+        n_nondeciders = (~is_decider).sum()
+        logging.info(f"RURO_draws: {n_deciders} deciders, {n_nondeciders} non-deciders in input.")
+    else:
+        # No decider flags: assume all persons are deciders (backwards-compatible)
+        logging.warning(
+            "RURO_draws: hh_IsHead/hh_IsPartner columns not found. "
+            "Assuming all persons in input are decision makers (heads/partners). "
+            "If this is incorrect, ensure upstream filtering or add decider flags."
+        )
+        is_decider = pd.Series(True, index=df.index)
+
+    # -------------------------------------------------------------------------
     # Hours alias
+    # -------------------------------------------------------------------------
     if "hours" in df.columns:
         hours = pd.to_numeric(df["hours"], errors="coerce").fillna(0.0)
     elif "lhw" in df.columns:
@@ -571,7 +675,9 @@ def generate_draws_long(
     else:
         raise KeyError("RURO_ready dataset must contain 'hours' or 'lhw'.")
 
+    # -------------------------------------------------------------------------
     # Wage alias
+    # -------------------------------------------------------------------------
     if "wage" in df.columns:
         wage = pd.to_numeric(df["wage"], errors="coerce").fillna(0.0)
     elif "wage_ruro" in df.columns:
@@ -583,7 +689,11 @@ def generate_draws_long(
     else:
         raise KeyError("RURO_ready dataset must contain 'wage', 'wage_ruro' or 'yivwg'.")
 
-    # Labour market / gender indicators for pi0 (mass at zero hours)
+    # -------------------------------------------------------------------------
+    # Labour market / gender indicators for π₀ (mass at zero hours)
+    # -------------------------------------------------------------------------
+    # lma: labour market activity flag (1 = active)
+    # dgn: gender (1 = male, 0 = female in EUROMOD convention)
     if "lma" in df.columns:
         lma = pd.to_numeric(df["lma"], errors="coerce").fillna(1).astype(int)
     else:
@@ -593,48 +703,80 @@ def generate_draws_long(
     else:
         dgn = pd.Series(1, index=df.index, dtype=int)
 
+    # π₀ vector: probability of non-employment opportunity
+    #   - pi0_m for active men (lma == 1 and dgn == 1)
+    #   - pi0_f for active women (lma == 1 and dgn == 0)
+    #   - 0 for inactive persons (lma != 1)
     pi0_vec = np.zeros(len(df), dtype=float)
     mask_m = (lma == 1) & (dgn == 1)  # active men
     mask_f = (lma == 1) & (dgn == 0)  # active women
     pi0_vec[mask_m.to_numpy()] = pi0_m
-    pi0_vec[mask_f.to_numpy()] = pi0_f
-    # others (lma != 1) left at 0
+    pi0_vec[mask_f.to_numpy()] = pi0_f    # Inactive persons (lma != 1) have pi0 = 0 by default
 
-    loc_probs = _build_loc_distribution(df)
+    # -------------------------------------------------------------------------
+    # Random generator for hours/wages only
+    # -------------------------------------------------------------------------
+    # We no longer draw occupations (loc). The opportunity density
+    # is over hours and wages only, as in Stijn's RURO implementation.
     rng = np.random.default_rng(rng_seed)
 
     records: list[Dict[str, Any]] = []
 
+    # -------------------------------------------------------------------------
+    # Build long dataset
+    # -------------------------------------------------------------------------
     for i, row in df.iterrows():
         base: Dict[str, Any] = row.to_dict()
+        person_is_decider = bool(is_decider.iloc[i])
 
-        # Observed job: draw = 0
+        # ---------------------------------------------------------------------
+        # Observed job: draw = 0 for ALL persons (deciders and non-deciders)
+        # This preserves exact observed hours/wage/loc from RURO_ready.
+        # Non-deciders will only have this record (no simulated opportunities).
+        # ---------------------------------------------------------------------
         r0 = base.copy()
         r0["draw"] = 0
         r0["is_chosen"] = 1
         records.append(r0)
 
-        if n_draws == 0:
+        # ---------------------------------------------------------------------
+        # Simulated opportunities: draw >= 1 for DECIDERS ONLY
+        # Non-deciders (children, other members) do NOT get draws.
+        # ---------------------------------------------------------------------
+        if n_draws == 0 or not person_is_decider:
             continue
 
         pi0_i = float(pi0_vec[i])
 
         for j in range(1, n_draws + 1):
-            rj = base.copy()
-
+            rj = base.copy()            # -----------------------------------------------------------------
+            # Sample from RURO opportunity density
+            # -----------------------------------------------------------------
             u = rng.random()
             if u < pi0_i:
+                # Non-employment opportunity (mass at zero)
                 h = 0.0
                 w = 0.0
+                # Non-employment: occupation is -1 (no job)
+                loc_draw = -1
             else:
+                # Working opportunity
                 h = float(rng.uniform(h_min, h_max))
                 if wage_spec == "vw":
+                    # Variable wage: draw from [w_min, w_max]
                     w = float(rng.uniform(w_min, w_max))
                 else:
-                    # fixed wages: keep person-specific wage
-                    w = float(wage[i])
+                    # Fixed wage: use observed wage
+                    w = float(wage.iloc[i])
+                # For working draws, keep the baseline occupation.
+                # Occupation does NOT enter the RURO opportunity density;
+                # it is deterministic (baseline for working, -1 for non-employment).
+                base_loc = base.get("loc", rj.get("loc", -1))
+                loc_draw = base_loc
 
+            # -----------------------------------------------------------------
             # Update labour variables coherently
+            # -----------------------------------------------------------------
             rj["hours"] = h
             rj["lhw"] = h
 
@@ -646,21 +788,9 @@ def generate_draws_long(
             if "yem" in rj:
                 rj["yem"] = w * h * WEEKS_PER_MONTH
 
-            # --- Occupation (loc) ---
-            # 3D RURO convention:
-            #   - if hours == 0  → loc = -1  (home / not working)
-            #   - if hours > 0   → draw loc from empirical distribution (if available),
-            #                      otherwise keep the person's observed loc.
+            # Occupation (loc)
             if "loc" in rj:
-                if h <= 0.0:
-                    # Non-working opportunity: force "no occupation"
-                    rj["loc"] = -1
-                else:
-                    if loc_probs:
-                        rj["loc"] = _sample_loc(loc_probs, 1, rng)[0]
-                    else:
-                        # Fallback: keep observed occupation for working opportunities
-                        rj["loc"] = base.get("loc", rj.get("loc"))
+                rj["loc"] = loc_draw
 
             rj["draw"] = j
             rj["is_chosen"] = 0

@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -28,6 +28,10 @@ DEFAULT_H_MAX = 70.0
 DEFAULT_W_MIN = 1.0
 DEFAULT_W_MAX = 120.0
 DEFAULT_WAGE_SPEC = "vw"
+
+# ---- GSUR (Group-Specific Unemployment Rate) --------------------------------
+# Default path to GSUR lookup table (France)
+DEFAULT_GSUR_PATH = Path(__file__).resolve().parent.parent / "Data" / "external" / "FR_gsur_ruro.parquet"
 
 
 def _read_df(path: Path) -> pd.DataFrame:
@@ -214,6 +218,149 @@ def _compute_prior(
     return df
 
 
+def merge_gsur(
+    df: pd.DataFrame,
+    gsur_path: Optional[Path] = None,
+    year: Optional[int] = None,
+) -> pd.DataFrame:
+    """
+    Merge group-specific unemployment rate (GSUR) onto individuals.
+    
+    GSUR is used as a regressor in the hours opportunity density to capture
+    labor market conditions for each demographic group. It does NOT affect draws.
+    
+    Matching is done on: (year, drgn1, dgn, education_level)
+    
+    Following Stijn Van Houtven's approach:
+    - GSUR varies by sex (dgn), age group, education level, region, and year
+    - In the hours opportunity: hopp = ... + β_gsur * working * gsur + ...
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        MNL dataset with columns: dgn, deh (or educL/educH), drgn1, year (optional)
+    gsur_path : Path, optional
+        Path to GSUR lookup table (parquet). Defaults to FR_gsur_ruro.parquet.
+    year : int, optional
+        Data year for filtering GSUR. If None, tries to extract from df['year'].
+    
+    Returns
+    -------
+    pd.DataFrame
+        Input dataframe with added 'gsur' column (unemployment rate as proportion).
+    """
+    if gsur_path is None:
+        gsur_path = DEFAULT_GSUR_PATH
+    
+    gsur_path = Path(gsur_path)
+    if not gsur_path.exists():
+        LOGGER.warning(f"GSUR file not found at {gsur_path}; gsur will be set to 0.")
+        df = df.copy()
+        df["gsur"] = 0.0
+        return df
+    
+    # Load GSUR lookup
+    gsur_df = pd.read_parquet(gsur_path)
+    LOGGER.info(f"Loaded GSUR lookup with {len(gsur_df)} rows from {gsur_path.name}")
+    
+    # Determine year
+    if year is None:
+        if "year" in df.columns:
+            year = int(df["year"].mode().iloc[0])
+        else:
+            # Default to most recent year in GSUR data
+            year = int(gsur_df["year"].max())
+            LOGGER.warning(f"No year specified; using most recent GSUR year: {year}")
+    
+    # Filter GSUR to relevant year
+    gsur_year = gsur_df[gsur_df["year"] == year].copy()
+    if gsur_year.empty:
+        # Try closest year
+        available_years = sorted(gsur_df["year"].unique())
+        closest_year = min(available_years, key=lambda y: abs(y - year))
+        LOGGER.warning(f"No GSUR data for year {year}; using {closest_year}")
+        gsur_year = gsur_df[gsur_df["year"] == closest_year].copy()
+    
+    df = df.copy()
+    
+    # Create education category in main df
+    # educL = ED0-2 (low), educM = ED3_4 (medium), educH = ED5-8 (high)
+    if "educL" in df.columns and "educH" in df.columns:
+        educL = pd.to_numeric(df["educL"], errors="coerce").fillna(0)
+        educH = pd.to_numeric(df["educH"], errors="coerce").fillna(0)
+        df["_educ_cat"] = np.where(
+            educL == 1, "ED0-2",
+            np.where(educH == 1, "ED5-8", "ED3_4")
+        )
+    elif "deh" in df.columns:
+        deh = pd.to_numeric(df["deh"], errors="coerce").fillna(3)
+        df["_educ_cat"] = np.where(
+            deh.isin([0, 1, 2]), "ED0-2",
+            np.where(deh == 5, "ED5-8", "ED3_4")
+        )
+    else:
+        LOGGER.warning("No education variable (educL/educH or deh); using TOTAL gsur.")
+        df["_educ_cat"] = "TOTAL"
+    
+    # Ensure dgn exists
+    if "dgn" not in df.columns:
+        LOGGER.warning("No 'dgn' column; assuming all males (dgn=1).")
+        df["dgn"] = 1
+    
+    # Ensure drgn1 exists (region)
+    if "drgn1" not in df.columns:
+        LOGGER.warning("No 'drgn1' column; using national average (drgn1=0).")
+        df["drgn1"] = 0
+    
+    dgn = pd.to_numeric(df["dgn"], errors="coerce").fillna(1).astype(int)
+    drgn1 = pd.to_numeric(df["drgn1"], errors="coerce").fillna(0).astype(int)
+    
+    # Prepare GSUR for merging (exclude TOTAL education for now)
+    gsur_merge = gsur_year[gsur_year["education"] != "TOTAL"][
+        ["drgn1", "dgn", "education", "gsur"]
+    ].copy()
+    
+    # Merge GSUR onto df
+    n_before = len(df)
+    df = df.merge(
+        gsur_merge,
+        left_on=["drgn1", "dgn", "_educ_cat"],
+        right_on=["drgn1", "dgn", "education"],
+        how="left",
+        suffixes=("", "_gsur")
+    )
+    
+    # Fill missing gsur with national average for same sex/education
+    missing_mask = df["gsur"].isna()
+    if missing_mask.any():
+        n_missing = missing_mask.sum()
+        LOGGER.info(f"Filling {n_missing} missing gsur values with national average...")
+        
+        # Get national averages (drgn1 == 0)
+        national_gsur = gsur_year[
+            (gsur_year["drgn1"] == 0) & (gsur_year["education"] != "TOTAL")
+        ].set_index(["dgn", "education"])["gsur"].to_dict()
+        
+        # Fill missing values
+        for idx in df[missing_mask].index:
+            key = (int(df.loc[idx, "dgn"]), df.loc[idx, "_educ_cat"])
+            if key in national_gsur:
+                df.loc[idx, "gsur"] = national_gsur[key]
+            else:
+                # Ultimate fallback: overall average
+                df.loc[idx, "gsur"] = gsur_year["gsur"].mean()
+    
+    # Clean up temporary columns
+    df = df.drop(columns=["_educ_cat", "education"], errors="ignore")
+    
+    # Ensure gsur is float and fill any remaining NaN
+    df["gsur"] = pd.to_numeric(df["gsur"], errors="coerce").fillna(0.0)
+    
+    LOGGER.info(f"GSUR merged: mean={df['gsur'].mean():.4f}, range=[{df['gsur'].min():.4f}, {df['gsur'].max():.4f}]")
+    
+    return df
+
+
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description="Prepare RURO MNL estimation dataset by merging draws with EUROMOD outputs."
@@ -285,6 +432,23 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_W_MAX,
         help="Upper bound of wage support for opportunities.",
     )
+    ap.add_argument(
+        "--gsur-file",
+        type=str,
+        default=None,
+        help="Path to GSUR lookup table (parquet). If not provided, uses default FR_gsur_ruro.parquet.",
+    )
+    ap.add_argument(
+        "--year",
+        type=int,
+        default=None,
+        help="Data year for GSUR lookup. If not provided, extracted from data or uses most recent.",
+    )
+    ap.add_argument(
+        "--no-gsur",
+        action="store_true",
+        help="Skip GSUR merge (gsur column will be 0).",
+    )
     return ap.parse_args()
 
 
@@ -331,6 +495,15 @@ def main() -> None:
         w_min=args.w_min,
         w_max=args.w_max,
     )
+
+    # Merge GSUR (group-specific unemployment rate) for estimation
+    # GSUR is used as a regressor in hours opportunity density, NOT in draws/prior
+    if not args.no_gsur:
+        gsur_path = Path(args.gsur_file) if args.gsur_file else None
+        full_mnl = merge_gsur(full_mnl, gsur_path=gsur_path, year=args.year)
+    else:
+        full_mnl["gsur"] = 0.0
+        LOGGER.info("GSUR merge skipped (--no-gsur flag); gsur set to 0.")
 
     out_base = Path(args.out_base).resolve()
     outputs = _write_df(full_mnl, out_base)

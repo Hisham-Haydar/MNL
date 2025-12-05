@@ -67,7 +67,7 @@ from path_helpers import reports_root
 LOGGER = logging.getLogger(__name__)
 
 T_HOURS: float = 80.0       # total weekly leisure endowment
-EPS: float = 1e-8
+EPS_BOXCOX: float = 1e-6  # epsilon for Box–Cox to avoid extreme derivatives
 
 
 # ---------------------------------------------------------------------------
@@ -77,9 +77,9 @@ EPS: float = 1e-8
 def boxcox_transform(x: np.ndarray, alpha: float) -> np.ndarray:
     """Box–Cox transform with smooth limit at alpha→0.
 
-    x is assumed strictly positive; we clip at EPS for safety.
+    x is assumed strictly positive; we clip at EPS_BOXCOX for safety.
     """
-    x = np.clip(x, EPS, None)
+    x = np.clip(x, EPS_BOXCOX, None)
     if abs(alpha) < 1e-8:
         return np.log(x)
     return (np.power(x, alpha) - 1.0) / alpha
@@ -87,7 +87,7 @@ def boxcox_transform(x: np.ndarray, alpha: float) -> np.ndarray:
 
 def d_boxcox_dalpha(x: np.ndarray, alpha: float) -> np.ndarray:
     """Derivative of Box–Cox transform w.r.t. alpha."""
-    x = np.clip(x, EPS, None)
+    x = np.clip(x, EPS_BOXCOX, None)
     ln_x = np.log(x)
     if abs(alpha) < 1e-8:
         # limit alpha -> 0: 1/2 (ln x)^2
@@ -100,7 +100,7 @@ def d_boxcox_dalpha(x: np.ndarray, alpha: float) -> np.ndarray:
 
 def boxcox_derivative(x: np.ndarray, alpha: float) -> np.ndarray:
     """Derivative of Box–Cox transform w.r.t. its argument x."""
-    x = np.clip(x, EPS, None)
+    x = np.clip(x, EPS_BOXCOX, None)
     if abs(alpha) < 1e-8:
         return 1.0 / x
     return np.power(x, alpha - 1.0)
@@ -219,12 +219,27 @@ def build_ruro_data(
 
     # Leisure
     if leisure_col and leisure_col in df.columns:
-        leis = df[leisure_col].to_numpy(dtype=float)
+        leis_input = df[leisure_col].to_numpy(dtype=float)
+        if hours_col and hours_col in df.columns:
+            hours = df[hours_col].to_numpy(dtype=float)
+        else:
+            hours = t_hours - leis_input
     else:
         if hours_col not in df.columns:
             raise KeyError(f"hours_col='{hours_col}' not found in dataset.")
         hours = df[hours_col].to_numpy(dtype=float)
-        leis = t_hours - hours
+        leis_input = t_hours - hours
+    leis_hours = np.clip(t_hours - hours, 0.0, t_hours)
+    leis = leis_hours / t_hours
+    total_obs = leis_hours.size
+    if LOGGER.isEnabledFor(logging.INFO):
+        share_zero = float((leis_hours == 0.0).sum()) / total_obs
+        share_full = float((leis_hours == t_hours).sum()) / total_obs
+        LOGGER.info(
+            "Leisure clipping stats: share_zero=%.4f, share_full=%.4f",
+            share_zero,
+            share_full,
+        )
 
     # Group structure
     unique_ids, group_start = np.unique(ids, return_index=True)
@@ -308,8 +323,18 @@ def build_ruro_data(
     c_norm = cons / y_ref
     l_norm = leis / l_ref
 
-    if np.any(c_norm <= 0) or np.any(l_norm <= 0):
-        LOGGER.warning("Some normalised c or l are non-positive; they will be clipped at EPS in Box–Cox.")
+    n_c_nonpos = int((c_norm <= 0).sum())
+    n_l_nonpos = int((l_norm <= 0).sum())
+    if (n_c_nonpos or n_l_nonpos) and LOGGER.isEnabledFor(logging.WARNING):
+        LOGGER.warning(
+            "Some normalised c or l are non-positive before Box–Cox: "
+            "n_c_nonpos=%d, n_l_nonpos=%d. Values will be clipped at EPS_BOXCOX=%.1e.",
+            n_c_nonpos,
+            n_l_nonpos,
+            EPS_BOXCOX,
+        )
+    c_norm = np.maximum(c_norm, EPS_BOXCOX)
+    l_norm = np.maximum(l_norm, EPS_BOXCOX)
 
     LOGGER.info("c_ref_mode = %s, y_ref = %.3f", c_ref_mode, y_ref)
     LOGGER.info("l_ref_mode = %s, l_ref = %.3f", l_ref_mode, l_ref)
@@ -546,6 +571,15 @@ def run_estimation(data: RuroData, output_dir: Path, model_name: str = "ruro_box
 
     LOGGER.info("Initial theta (len=%d): %s", len(theta0), theta0)
 
+    bounds = []
+    for idx in range(len(theta0)):
+        if idx == 0:
+            bounds.append((0.10, 3.00))       # alpha_c bounds
+        elif idx == 1:
+            bounds.append((-2.50, -0.20))     # alpha_l bounds
+        else:
+            bounds.append((None, None))
+
     result = minimize(
         neg_loglik,
         theta0,
@@ -553,6 +587,7 @@ def run_estimation(data: RuroData, output_dir: Path, model_name: str = "ruro_box
         method="L-BFGS-B",
         jac=grad_neg_loglik,
         options={"maxiter": 2000, "disp": True},
+        bounds=bounds,
     )
 
     if not result.success:

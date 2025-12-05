@@ -3,9 +3,6 @@
 # @Date    : 2025-10-22 11:10:48
 # @Author  : Hisham Haydar (Hisham.Haydar@liser.lu)
 # @Link    : https://hisham-haydar.github.io/
-# %%
-# @Version : 1.0.0
-#%%
 # %% Bootstrap (Interactive Window friendly paths and helpers)
 import os
 import sys
@@ -96,7 +93,7 @@ CONFIG = {
     "allowed_les": [3, 5, 7],
     "extreme_wage_diff": 500,        # monthly absolute gap for extremes
     "wage_bounds": (2, 170),
-    "hour_bounds": (5, 79),
+    "hour_bounds": (10, 70),
     "target_country": "DE",
     "target_system": "DE_2014",
     "target_dataset": "DE_2015_a1",
@@ -312,7 +309,7 @@ def clean_harmonize_de(df: pd.DataFrame) -> pd.DataFrame:
         atol=5,
     )
 
-    valid_emp = final_df_sim1["les_enforced"].eq(3) & final_df_sim1["lhw"].ge(10)
+    valid_emp = final_df_sim1["les_enforced"].eq(3) & final_df_sim1["lhw"].ge(CONFIG["hour_bounds"][0])
     final_df_sim1["flag_periodicity"] = valid_emp & (m_div12 | m_liwmy)
 
     # (Enhancement) Describe which rule triggered the fix (purely informational)
@@ -960,7 +957,7 @@ def clean_harmonize_fr(df: pd.DataFrame) -> pd.DataFrame:
         atol=5,
     )
 
-    valid_emp = final_df_sim1["les_enforced"].eq(3) & final_df_sim1["lhw"].ge(10)
+    valid_emp = final_df_sim1["les_enforced"].eq(3) & final_df_sim1["lhw"].ge(CONFIG["hour_bounds"][0])
     final_df_sim1["flag_periodicity"] = valid_emp & (m_div12 | m_liwmy)
 
     # (Enhancement) Describe which rule triggered the fix (purely informational)

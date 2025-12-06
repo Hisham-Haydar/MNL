@@ -3474,6 +3474,9 @@ def run_joint_post_estimation(
     se: np.ndarray = None,
     varcov: np.ndarray = None,
     n_alternatives_per_individual: Optional[int] = None,
+    theta0: np.ndarray = None,
+    bounds: List[Tuple] = None,
+    estimation_time_seconds: float = None,
 ) -> Dict[str, Any]:
     """
     Run comprehensive post-estimation analysis for joint estimation results.
@@ -3484,7 +3487,7 @@ def run_joint_post_estimation(
     3. Utility contour plots for all 4 groups at 10%, 25%, 50%, 75%, 99% levels
     4. Labor supply elasticities table (Hicksian, Marshallian, participation, intensive)
     5. Fit diagnostics plots (predicted vs observed)
-    6. Comprehensive HTML report
+    6. Comprehensive HTML report with bounds, initial values, and color coding
     
     Parameters
     ----------
@@ -3509,6 +3512,12 @@ def run_joint_post_estimation(
     n_alternatives_per_individual : int, optional
         Number of alternatives per individual. If None, computed from data
         or defaults to 100 (99 draws + 1 observed).
+    theta0 : np.ndarray, optional
+        Initial parameter values
+    bounds : List[Tuple], optional
+        Parameter bounds as list of (lower, upper) tuples
+    estimation_time_seconds : float, optional
+        Time taken for estimation in seconds
     
     Returns
     -------
@@ -3619,23 +3628,69 @@ def run_joint_post_estimation(
                 LOGGER.info(f"  {group}: participation={fit.get('participation_rate_observed', 'N/A'):.2%}")
             except Exception as e:
                 LOGGER.warning(f"  {group}: fit diagnostics failed - {e}")
-    
-    # Generate fit plots
+      # Generate fit plots
     fit_plot_paths = {}
     if fit_results:
         fit_plot_paths = plot_fit_diagnostics(fit_results, out_dir, wage_spec)
     
     # =========================================================================
-    # 7. Create parameter summary table
+    # 7. Create parameter summary table with bounds and status info
     # =========================================================================
     LOGGER.info("\n7. Creating parameter summary...")
+    
+    # Build columns for bounds and status
+    n_params_total = len(theta)
+    lower_bounds = []
+    upper_bounds = []
+    is_bounded = []
+    hit_lower = []
+    hit_upper = []
+    initial_values = []
+    
+    for i in range(n_params_total):
+        # Get bounds for this parameter
+        if bounds is not None and i < len(bounds):
+            lb, ub = bounds[i]
+        else:
+            lb, ub = None, None
+        
+        lower_bounds.append(lb)
+        upper_bounds.append(ub)
+        is_bounded.append("Yes" if lb is not None or ub is not None else "No")
+        
+        # Check if parameter hit bounds (within 1e-6 tolerance)
+        val = theta[i]
+        hit_lower.append(lb is not None and abs(val - lb) < 1e-6)
+        hit_upper.append(ub is not None and abs(val - ub) < 1e-6)
+        
+        # Get initial value
+        if theta0 is not None and i < len(theta0):
+            initial_values.append(theta0[i])
+        else:
+            initial_values.append(np.nan)
+    
+    # Determine if parameter was estimated (i.e., changed from initial)
+    is_estimated = []
+    for i in range(n_params_total):
+        if theta0 is not None and i < len(theta0):
+            # Estimated if value differs from initial by more than 1e-8
+            is_estimated.append("Yes" if abs(theta[i] - theta0[i]) > 1e-8 else "No")
+        else:
+            is_estimated.append("Unknown")
     
     param_table = pd.DataFrame({
         "parameter": param_names,
         "estimate": theta,
-        "std_error": se if se is not None else [np.nan] * len(theta),
-        "t_value": theta / se if se is not None else [np.nan] * len(theta),
-        "p_value": [np.nan] * len(theta),  # Would need to compute from t-values
+        "std_error": se if se is not None else [np.nan] * n_params_total,
+        "t_value": theta / se if se is not None else [np.nan] * n_params_total,
+        "p_value": [np.nan] * n_params_total,
+        "lower_bound": lower_bounds,
+        "upper_bound": upper_bounds,
+        "bounded": is_bounded,
+        "hit_lower": hit_lower,
+        "hit_upper": hit_upper,
+        "initial_value": initial_values,
+        "estimated": is_estimated,
     })
     
     # Compute p-values if we have SE
@@ -3646,7 +3701,8 @@ def run_joint_post_estimation(
     # Save parameter table
     params_csv_path = out_dir / f"{wage_spec}_joint_params.csv"
     param_table.to_csv(params_csv_path, index=False)
-      # =========================================================================
+    
+    # =========================================================================
     # 8. Model fit statistics
     # =========================================================================
     n_params = len(theta)
@@ -3674,6 +3730,27 @@ def run_joint_post_estimation(
     
     ll_null = n_individuals * np.log(1.0 / n_alts)
     
+    # Format estimation time
+    est_time_str = "N/A"
+    if estimation_time_seconds is not None:
+        if estimation_time_seconds >= 3600:
+            hours = int(estimation_time_seconds // 3600)
+            mins = int((estimation_time_seconds % 3600) // 60)
+            secs = estimation_time_seconds % 60
+            est_time_str = f"{hours}h {mins}m {secs:.1f}s"
+        elif estimation_time_seconds >= 60:
+            mins = int(estimation_time_seconds // 60)
+            secs = estimation_time_seconds % 60
+            est_time_str = f"{mins}m {secs:.1f}s"
+        else:
+            est_time_str = f"{estimation_time_seconds:.1f}s"
+    
+    # Count parameters hitting bounds
+    n_bounded = sum(1 for b in is_bounded if b == "Yes")
+    n_hit_lower = sum(hit_lower)
+    n_hit_upper = sum(hit_upper)
+    n_not_estimated = sum(1 for e in is_estimated if e == "No")
+    
     fit_stats = {
         "log_likelihood": log_likelihood,
         "ll_null": ll_null,
@@ -3685,6 +3762,12 @@ def run_joint_post_estimation(
         "aic": 2 * n_params - 2 * log_likelihood if log_likelihood else np.nan,
         "bic": n_params * np.log(n_individuals) - 2 * log_likelihood if log_likelihood else np.nan,
         "pseudo_r2_mcfadden": 1 - (log_likelihood / ll_null) if ll_null != 0 and log_likelihood else np.nan,
+        "estimation_time": est_time_str,
+        "estimation_time_seconds": estimation_time_seconds if estimation_time_seconds else np.nan,
+        "n_bounded_params": n_bounded,
+        "n_hit_lower_bound": n_hit_lower,
+        "n_hit_upper_bound": n_hit_upper,
+        "n_not_estimated": n_not_estimated,
     }
     
     # =========================================================================
@@ -3743,7 +3826,7 @@ def _build_joint_html_report(
     output_path: Path,
     wage_spec: str = "fw",
 ) -> Path:
-    """Build comprehensive HTML report for joint estimation."""
+    """Build comprehensive HTML report for joint estimation with enhanced parameter table."""
     from datetime import datetime
     
     def _img_tag(path: Path, alt: str) -> str:
@@ -3760,14 +3843,111 @@ def _build_joint_html_report(
             return f"{v:.4f}"
         return str(v)
     
+    def _format_bound(v):
+        """Format bound value for display."""
+        if v is None:
+            return "—"
+        if isinstance(v, float):
+            if abs(v) < 0.001:
+                return f"{v:.4e}"
+            return f"{v:.4f}"
+        return str(v)
+    
+    def _get_pvalue_class(p):
+        """Get CSS class for p-value coloring."""
+        if not np.isfinite(p):
+            return ""
+        if p <= 0.05:
+            return "pval-sig"  # Significant (no special color, default)
+        elif p <= 0.1:
+            return "pval-marginal"  # Green (0.05-0.1)
+        elif p <= 0.25:
+            return "pval-weak"  # Yellow (0.1-0.25)
+        else:
+            return "pval-insig"  # Red (>0.25)
+    
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    # Parameter table HTML
-    param_html = param_table.to_html(
-        classes="table table-striped table-sm",
-        float_format=lambda x: f"{x:.4f}" if np.isfinite(x) else "N/A",
-        border=0, index=False,
-    )
+    # Build enhanced parameter table HTML with color coding
+    param_rows = []
+    for idx, row in param_table.iterrows():
+        param_name = row["parameter"]
+        estimate = row["estimate"]
+        se = row["std_error"]
+        t_val = row["t_value"]
+        p_val = row["p_value"]
+        lb = row.get("lower_bound")
+        ub = row.get("upper_bound")
+        bounded = row.get("bounded", "No")
+        hit_lower = row.get("hit_lower", False)
+        hit_upper = row.get("hit_upper", False)
+        init_val = row.get("initial_value", np.nan)
+        estimated = row.get("estimated", "Unknown")
+        
+        # Row classes
+        row_classes = []
+        if bounded == "Yes":
+            row_classes.append("bounded-param")
+        if estimated == "No":
+            row_classes.append("not-estimated")
+        
+        row_class_str = ' class="' + ' '.join(row_classes) + '"' if row_classes else ""
+        
+        # Cell classes for bound hits
+        lb_class = ' class="bound-hit"' if hit_lower else ""
+        ub_class = ' class="bound-hit"' if hit_upper else ""
+        
+        # P-value coloring
+        pval_class = _get_pvalue_class(p_val) if np.isfinite(p_val) else ""
+        pval_class_str = f' class="{pval_class}"' if pval_class else ""
+        
+        # Format significance stars
+        sig = ""
+        if np.isfinite(p_val):
+            if p_val < 0.001:
+                sig = "***"
+            elif p_val < 0.01:
+                sig = "**"
+            elif p_val < 0.05:
+                sig = "*"
+        
+        # Build row
+        param_rows.append(f"""
+        <tr{row_class_str}>
+            <td>{param_name}</td>
+            <td>{_format_value(estimate)}</td>
+            <td>{_format_value(se)}</td>
+            <td>{_format_value(t_val)}</td>
+            <td{pval_class_str}>{_format_value(p_val)} {sig}</td>
+            <td{lb_class}>{_format_bound(lb)}</td>
+            <td{ub_class}>{_format_bound(ub)}</td>
+            <td>{bounded}</td>
+            <td>{_format_value(init_val)}</td>
+            <td>{estimated}</td>
+        </tr>
+        """)
+    
+    param_html = f"""
+    <table class="table table-striped table-sm param-table">
+        <thead>
+            <tr>
+                <th>Parameter</th>
+                <th>Estimate</th>
+                <th>Std Error</th>
+                <th>t-value</th>
+                <th>p-value</th>
+                <th>Lower Bound</th>
+                <th>Upper Bound</th>
+                <th>Bounded</th>
+                <th>Initial Value</th>
+                <th>Estimated</th>
+            </tr>
+        </thead>
+        <tbody>
+            {''.join(param_rows)}
+        </tbody>
+    </table>
+    """
     
     # Elasticities table HTML
     elast_html = elasticities_df.to_html(
@@ -3834,8 +4014,14 @@ def _build_joint_html_report(
       --sf-color: #ff7f0e;
       --cm-color: #2ca02c;
       --cf-color: #d62728;
+      --bound-hit-color: #ffcccc;
+      --bounded-row-color: #fff3cd;
+      --not-estimated-color: #f8d7da;
+      --pval-marginal: #d4edda;
+      --pval-weak: #fff3cd;
+      --pval-insig: #f8d7da;
     }}
-    body {{ 
+    body {{
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
       margin: 0; padding: 2em; max-width: 1600px; margin: 0 auto;
       line-height: 1.6; color: #333;
@@ -3864,6 +4050,20 @@ def _build_joint_html_report(
     .group-legend {{ display: flex; gap: 2em; margin: 1em 0; flex-wrap: wrap; }}
     .legend-item {{ display: flex; align-items: center; gap: 0.5em; }}
     .legend-color {{ width: 20px; height: 4px; border-radius: 2px; }}
+    
+    /* Parameter table color coding */
+    .param-table .bounded-param {{ background-color: var(--bounded-row-color) !important; }}
+    .param-table .not-estimated {{ background-color: var(--not-estimated-color) !important; }}
+    .param-table .bound-hit {{ background-color: var(--bound-hit-color) !important; font-weight: bold; }}
+    .param-table .pval-marginal {{ background-color: var(--pval-marginal); }}
+    .param-table .pval-weak {{ background-color: var(--pval-weak); }}
+    .param-table .pval-insig {{ background-color: var(--pval-insig); }}
+    
+    /* Color legend for parameter table */
+    .color-legend {{ display: flex; flex-wrap: wrap; gap: 1em; margin: 1em 0; padding: 0.5em; background: #f0f0f0; border-radius: 4px; }}
+    .color-legend-item {{ display: flex; align-items: center; gap: 0.5em; font-size: 0.85em; }}
+    .color-box {{ width: 16px; height: 16px; border: 1px solid #999; border-radius: 2px; }}
+    
     @media (max-width: 768px) {{ .two-col, .four-col, .contour-grid {{ grid-template-columns: 1fr; }} }}
   </style>
 </head>
@@ -3937,10 +4137,17 @@ def _build_joint_html_report(
       {group_params_html}
     </div>
   </section>
-  
-  <section>
+    <section>
     <h2>📋 Full Parameter Estimates</h2>
     <p><em>Significance: *** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05</em></p>
+    <div class="color-legend">
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--bounded-row-color);"></div>Bounded parameter</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--bound-hit-color);"></div>Hit bound</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--not-estimated-color);"></div>Not estimated</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-marginal);"></div>p-value 0.05-0.1</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-weak);"></div>p-value 0.1-0.25</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-insig);"></div>p-value &gt; 0.25</div>
+    </div>
     <div style="max-height:600px; overflow-y:auto;">
       {param_html}
     </div>

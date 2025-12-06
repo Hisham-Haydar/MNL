@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Date    : 2025-12-05
+# @Date    : 2025-12-06 16:52:34
 # @Author  : Hisham Haydar (Hisham.Haydar@liser.lu)
 # @Link    : https://hisham-haydar.github.io/
+
+
 
 """
 RURO_estimate_FR.py
@@ -10,9 +12,6 @@ RURO_estimate_FR.py
 
 Estimation script for a **RURO (Random Utility, Random Opportunity)** labor supply
 model for France, based on an already prepared RURO-MNL long dataset.
-
-This follows Stijn Van Houtven's Belgian RURO code and the Aaberge–Colombino
-methodology (Aaberge & Colombino, 1998; Capeau & Decoster, 2014).
 
 RURO METHODOLOGY
 ----------------
@@ -155,8 +154,8 @@ N_JOBS = int(os.environ.get("RURO_N_JOBS", min(32, os.cpu_count() or 1)))
 # =============================================================================
 
 TOTAL_LEISURE_HOURS = 80.0
-MEAN_DISPY_NORM = 2500.0  # normalization constant for consumption (Stijn uses 2500)
-MEAN_LHW_NORM = 35.0      # normalization constant for leisure (Stijn uses 35)
+MEAN_DISPY_NORM = 2500.0  # normalization constant for consumption
+MEAN_LHW_NORM = 35.0      # normalization constant for leisure
 
 
 # =============================================================================
@@ -784,7 +783,7 @@ class PrefParamsSingles:
     """
     Preference parameters for single men or single women.
     
-    Box-Cox utility structure (Stijn's `ff_calc_util` for singles):
+    Box-Cox utility structure:
         u = (β_leisure_terms) * (l^θ_l - 1)/θ_l + β_c * (c^θ_c - 1)/θ_c
     
     where β_leisure_terms = β_l0 + β_l_age*log(age) + β_l_age2*log(age)^2
@@ -796,7 +795,7 @@ class PrefParamsSingles:
     beta_l0: float = 1.0          # intercept for leisure term
     beta_l_log_age: float = 0.0   # coefficient on log(age)
     beta_l_log_age2: float = 0.0  # coefficient on log(age)^2
-    beta_l_ch0_3: float = 0.0     # children 0-3 (females only in Stijn)
+    beta_l_ch0_3: float = 0.0     # children 0-3
     beta_l_ch4_6: float = 0.0     # children 4-6
     beta_l_ch7_9: float = 0.0     # children 7-9
     beta_l_educL: float = 0.0     # low education
@@ -818,7 +817,7 @@ class PrefParamsCouples:
     """
     Preference parameters for couples (joint utility over male and female leisure).
     
-    Box-Cox utility structure (Stijn's `ff_calc_util` for couples):
+    Box-Cox utility structure:
         u = (male leisure terms) * (l_m^θ_lm - 1)/θ_lm
           + (female leisure terms) * (l_f^θ_lf - 1)/θ_lf
           + β_c * ((c_m + c_f)^θ_c - 1)/θ_c
@@ -861,7 +860,7 @@ class PrefParamsCouples:
 @dataclass
 class HoursOppParams:
     """
-    Hours opportunity density parameters (Stijn's `ff_calc_hopp`).
+    Hours opportunity density parameters.
     
     This captures the probability that a job offer with certain hours is available
     to an individual with characteristics X. Key features:
@@ -903,8 +902,7 @@ class HoursOppParams:
     beta_work_educH: float = 0.0  # high education × working
     
     # Region interactions with working (France drgn1: 1=Île-de-France as baseline)
-    # Stijn uses regW, regB for Belgium (Wallonia, Brussels)
-    # For France we use drgn1 regions (10 total, 1 baseline → 9 dummies)
+        # For France we use drgn1 regions (10 total, 1 baseline → 9 dummies)
     beta_work_reg2: float = 0.0   # Region 2 (placeholder - expand as needed)
     beta_work_reg3: float = 0.0   # Region 3
     # TODO: Add remaining France regions (drgn1 = 4..10)
@@ -913,7 +911,7 @@ class HoursOppParams:
 @dataclass
 class WageOppParams:
     """
-    Wage opportunity density parameters (Stijn's `ff_calc_wopp`).
+    Wage opportunity density parameters
     
     This captures the distribution of wage offers conditional on working.
     Wages are modeled as log-normal with mean depending on individual characteristics.
@@ -933,9 +931,6 @@ class WageOppParams:
     
     Note: The -log(w) term comes from the Jacobian of the log transformation.
     The constant -0.5*log(2π) cancels in the likelihood ratio and is omitted.
-    
-    In Stijn's R code:
-        wopp = ifelse(working==0, 0, -0.5*((log(wage)-lw)/sigma)^2 - log(sigma*wage*sqrt(2*pi)))
     """
     # Intercept (baseline log wage for someone with educM, no experience, baseline region/year)
     beta0: float = 2.5        # log hourly wage ≈ exp(2.5) ≈ 12€/h
@@ -945,7 +940,6 @@ class WageOppParams:
     beta_educH: float = 0.2   # high education premium (positive)
     
     # Experience effects (Mincer equation: concave in experience)
-    # Note: Stijn uses pexp in "hundreds of years" (pexp = years/100)
     beta_pexp: float = 0.02   # linear experience term
     beta_pexp2: float = -0.001  # quadratic experience term (negative for concavity)
       # Region effects on log wage (France drgn1: 1=Île-de-France as baseline)
@@ -1149,7 +1143,6 @@ def get_initial_theta_singles(is_male: bool = True) -> np.ndarray:
     """
     Get reasonable initial parameter values for singles estimation.
     
-    Based loosely on Stijn's estimates for Belgium.
     """
     pref = PrefParamsSingles(
         beta_l0=1.0,
@@ -1200,7 +1193,6 @@ def get_param_names_singles() -> List[str]:
     """
     Return list of parameter names for singles, aligned with pack_theta_singles order.
     
-    This mirrors Stijn's parameter naming convention and is used for output display.
     """
     return [
         # Preference parameters (12)
@@ -1458,8 +1450,7 @@ def ff_calc_util_singles(
     """
     Compute systematic utility u_ij for each alternative j of each single individual i.
     
-    Stijn's structure for singles:
-        u = (β_l0 + β_l_log_age*log(age) + β_l_log_age2*log(age)^2
+       u = (β_l0 + β_l_log_age*log(age) + β_l_log_age2*log(age)^2
              + β_l_ch4_6*children4_6 + β_l_ch7_9*children7_9
              + β_l_educL*educL + β_l_educH*educH + region terms)
             * (l^θ_l - 1)/θ_l
@@ -1473,7 +1464,7 @@ def ff_calc_util_singles(
         Preference parameters.
     is_male : bool
         If True, this is single males; if False, single females.
-        (Affects which child variables matter, following Stijn.)
+        (Affects which child variables matter.)
     
     Returns
     -------
@@ -1559,7 +1550,7 @@ def ff_calc_util_singles(
         + pref.beta_l_reg2 * reg2
     )
     
-    # For females, also include children 0-3 (Stijn does this)
+    # For females, also include children 0-3
     if not is_male:
         beta_leisure = beta_leisure + pref.beta_l_ch0_3 * children0_3
     
@@ -1583,8 +1574,8 @@ def ff_calc_util_couples(
 ) -> np.ndarray:
     """
     Compute systematic utility u_ij for each alternative j of each couple.
-    
-    Following Stijn's structure for couples (ff_calc_util with type=="cou"):
+
+    The utility function is specified as:   
         u = (β_l0_m + β_l_log_age_m*log(dag_m) + β_l_log_age2_m*log(dag_m)^2
              + β_l_ch0_3_m*children0_3 + β_l_ch4_6_m*children4_6 + β_l_ch7_9_m*children7_9
              + β_l_reg2_m*regW + β_l_reg3_m*regB + β_l_educL_m*educL_m + β_l_educH_m*educH_m)
@@ -1768,8 +1759,8 @@ def ff_calc_hopp(
     2. **Hours focal points**: Institutional peaks at 20h, 30h, 40h (contracts)
     3. **Regional labor markets**: Different regions have different employment rates
     4. **Cyclical conditions**: Group-specific unemployment rate (gsur)
-    
-    Stijn's structure (log density):
+
+    The structure (log density):
         log h(h|X) = β_work * 1{h>0}
                    + β_pt1 * 1{h ∈ [18.5, 21.5]}   (20h peak)
                    + β_pt2 * 1{h ∈ [29.5, 30.5]}   (30h peak)
@@ -1893,11 +1884,7 @@ def ff_calc_wopp(
     
     For non-working alternatives (h = 0), we set w_opp = 0 because wage is
     structurally zero and there's no wage density contribution.
-    
-    Stijn's R code:
-        lw = β0 + β_educL*educL + β_educH*educH + β_pexp*pexp + β_pexp2*pexp² + β_yd1*yd1 + β_yd2*yd2
-        wopp = ifelse(working==0, 0, -0.5*((log(wage)-lw)/σ)² - log(σ*wage*sqrt(2*π)))
-    
+
     Parameters
     ----------
     df : pd.DataFrame
@@ -1905,7 +1892,7 @@ def ff_calc_wopp(
     wopp : WageOppParams
         Wage opportunity parameters.
     is_male : bool
-        Gender indicator (wage equation may differ by gender; Stijn estimates separate σ).
+        Gender indicator (wage equation may differ by gender).
     
     Returns
     -------
@@ -1943,7 +1930,6 @@ def ff_calc_wopp(
     # -------------------------------------------------------------------------
     # Potential experience (Mincer equation)
     # -------------------------------------------------------------------------
-    # Stijn uses pexp in "hundreds of years" (pexp = years/100) for numerical stability
     if "pexp" in df.columns:
         pexp = pd.to_numeric(df["pexp"], errors="coerce").fillna(0).to_numpy()
     elif "pexp_years" in df.columns:
@@ -2033,8 +2019,6 @@ def ff_calc_hopp_couples(
     
     For couples, the opportunity density is the sum of male and female components:
         log h(h_m, h_f | X) = log h_m(h_m | X_m) + log h_f(h_f | X_f)
-    
-    Following Stijn's structure:
         hopp = (hopp_male_terms using working_m, educL_m, gsur_m, etc.)
              + (hopp_female_terms using working_f, educL_f, gsur_f, etc.)
     
@@ -2346,7 +2330,7 @@ def log_likelihood_singles(
     # Aggregate log-likelihood across decision units
     # -------------------------------------------------------------------------
     # Group by decision unit (idhh_true for singles, idhh for couples)
-    # Stijn uses idhh_true for all groups
+    
     if "idhh_true" in df.columns:
         ids = df["idhh_true"].to_numpy()
     elif "idhh" in df.columns:
@@ -2360,7 +2344,7 @@ def log_likelihood_singles(
     
     draws = df["draw"].to_numpy()
     
-    # Identify observed alternative: draw == 0 (Stijn's convention)
+    # Identify observed alternative: draw == 0
     # Also support is_chosen == 1 as fallback
     if "is_chosen" in df.columns:
         is_chosen = pd.to_numeric(df["is_chosen"], errors="coerce").fillna(0).to_numpy()
@@ -4547,8 +4531,6 @@ def fast_neg_ll_with_grad_numba(
 # JOINT ESTIMATION (all groups with shared opportunity parameters)
 # =============================================================================
 """
-Joint estimation matches Stijn's approach where:
-
 1. PREFERENCES are GROUP-SPECIFIC:
    - Single males: 12 preference parameters
    - Single females: 12 preference parameters (13 with children0_3)
@@ -4569,7 +4551,6 @@ class PrefParamsCouples:
     """
     Preference parameters for couples (joint household utility).
     
-    Following Stijn's structure:
     U = β_l_m(X_m) * BC(l_m; θ_l_m) + β_l_f(X_f) * BC(l_f; θ_l_f) 
         + β_c * BC(c_total; θ_c) + β_int * BC(l_m) * BC(l_f)
     
@@ -4582,8 +4563,8 @@ class PrefParamsCouples:
     beta_l_ch0_3_m: float = 0.0     # children 0-3 (relevant for males too in couples)
     beta_l_ch4_6_m: float = 0.0
     beta_l_ch7_9_m: float = 0.0
-    beta_l_reg2_m: float = 0.0      # region (regW in Stijn)
-    beta_l_reg3_m: float = 0.0      # region (regB in Stijn)
+    beta_l_reg2_m: float = 0.0      # region
+    beta_l_reg3_m: float = 0.0      # region
     beta_l_educL_m: float = 0.0
     beta_l_educH_m: float = 0.0
     
@@ -6017,7 +5998,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help=(
             "Joint estimation of all groups (single males, single females, couples) "
-            "with SHARED opportunity parameters by gender. This matches Stijn's approach "
+            "with SHARED opportunity parameters by gender "
             "where hours/wage opportunity densities are the same for single males and "
             "male partners in couples (and similarly for females)."
         ),
@@ -6047,7 +6028,6 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Run post-estimation analysis (standard errors, t-values, model fit). "
             "Computes Hessian, variance-covariance matrix, and saves to Excel. "
-            "Following Stijn Van Houtven's R approach."
         ),
     )
     parser.add_argument(
@@ -6231,23 +6211,23 @@ def main() -> None:
                     theta, data_sm, data_sf, data_cou, wage_spec=args.wage_spec
                 )
                 iteration_times.append(time_module.perf_counter() - t_start)
-                return result
-              # Bounds for Box-Cox parameters (loosened: 0.001 to 5.0 for Box-Cox, 0.01 to 10.0 for sigma)
+                return result              # Bounds for Box-Cox parameters (loosened further to avoid singular Hessian)
+            # Box-Cox: (0.0001, 20.0), Sigma: (0.001, 50.0)
             bounds = [(None, None)] * len(theta0)
             # SM Box-Cox: indices 9, 10
-            bounds[9] = (0.001, 5.0)   # theta_l (SM leisure)
-            bounds[10] = (0.001, 5.0)  # theta_c (SM consumption)
+            bounds[9] = (-10, 20.0)   # theta_l (SM leisure)
+            bounds[10] = (-10, 20.0)  # theta_c (SM consumption)
             # SF Box-Cox: indices 21, 22
-            bounds[21] = (0.001, 5.0)  # theta_l (SF leisure)
-            bounds[22] = (0.001, 5.0)  # theta_c (SF consumption)
+            bounds[21] = (-10, 20.0)  # theta_l (SF leisure)
+            bounds[22] = (-10, 20.0)  # theta_c (SF consumption)
             # Couples Box-Cox: indices 45, 46, 47
-            bounds[45] = (0.001, 5.0)  # theta_lm (couples male leisure)
-            bounds[46] = (0.001, 5.0)  # theta_lf (couples female leisure)
-            bounds[47] = (0.001, 5.0)  # theta_c (couples consumption)
+            bounds[45] = (-10, 20.0)  # theta_lm (couples male leisure)
+            bounds[46] = (-10, 20.0)  # theta_lf (couples female leisure)
+            bounds[47] = (-10, 20.0)  # theta_c (couples consumption)
             # Sigma bounds (if vw)
             if args.wage_spec == "vw":
-                bounds[83] = (0.01, 10.0)   # sigma_m (male wage error SD)
-                bounds[99] = (0.01, 10.0)   # sigma_f (female wage error SD)
+                bounds[83] = (-10, 50.0)   # sigma_m (male wage error SD)
+                bounds[99] = (-10, 50.0)   # sigma_f (female wage error SD)
             
             result = minimize(
                 objective_and_grad,
@@ -6305,7 +6285,16 @@ def main() -> None:
         for i, (name, val) in enumerate(zip(param_names, result.x)):
             LOGGER.info(f"{i:<6} {name:<40} {val:>12.4f}")
         LOGGER.info("")
-          # Save results
+        
+        # Convert bounds to serializable format
+        bounds_serializable = []
+        for b in bounds:
+            if b == (None, None):
+                bounds_serializable.append([None, None])
+            else:
+                bounds_serializable.append([b[0], b[1]])
+        
+        # Save results
         if args.out_file:
             import json
             results_dict = {
@@ -6316,12 +6305,15 @@ def main() -> None:
                 "n_iterations": int(result.nit),
                 "n_fev": int(result.nfev),
                 "theta": result.x.tolist(),
+                "theta0": theta0.tolist(),  # Initial values
+                "bounds": bounds_serializable,  # Bounds for each parameter
                 "param_names": param_names,
                 "wage_spec": args.wage_spec,
                 "n_sm": int(n_sm),
                 "n_sf": int(n_sf),
                 "n_cou": int(n_cou),
                 "n_individuals": int(n_sm + n_sf + n_cou),  # Total individuals for post-estimation
+                "estimation_time_seconds": total_time_joint,  # Estimation time
             }
             
             out_path = Path(args.out_file)
@@ -6412,6 +6404,9 @@ def main() -> None:
                     out_dir=out_dir,
                     se=se,
                     varcov=varcov,
+                    theta0=theta0,
+                    bounds=bounds,
+                    estimation_time_seconds=total_time_joint,
                 )
                 
                 LOGGER.info("Joint post-estimation analysis complete.")
@@ -6622,10 +6617,10 @@ def main() -> None:
             iteration_times.append(time.perf_counter() - t_start)
             return result        # Set up bounds for Box-Cox parameters (loosened: 0.001 to 5.0)
         bounds = [(None, None)] * len(theta0)
-        bounds[9] = (0.001, 5.0)   # theta_l (Box-Cox leisure)
-        bounds[10] = (0.001, 5.0)  # theta_c (Box-Cox consumption)
+        bounds[9] = (-5, 20)   # theta_l (Box-Cox leisure)
+        bounds[10] = (-5, 20)  # theta_c (Box-Cox consumption)
         if args.wage_spec == "vw":
-            bounds[36] = (0.01, 10.0)  # sigma (wage error SD)
+            bounds[36] = (-10, 30.0)  # sigma (wage error SD)
         
         LOGGER.info("-" * 40)
         result = minimize(
@@ -6649,12 +6644,12 @@ def main() -> None:
             return neg_ll, neg_grad
           # Set up bounds for Box-Cox parameters (loosened: 0.001 to 5.0 for Box-Cox, 0.01 to 10.0 for sigma)
         bounds = [(None, None)] * len(theta0)
-        bounds[22] = (0.001, 5.0)  # theta_lm (Box-Cox male leisure)
-        bounds[23] = (0.001, 5.0)  # theta_lf (Box-Cox female leisure)
-        bounds[24] = (0.001, 5.0)  # theta_c (Box-Cox consumption)
+        bounds[22] = (-10, 20.0)  # theta_lm (Box-Cox male leisure)
+        bounds[23] = (-10, 20.0)  # theta_lf (Box-Cox female leisure)
+        bounds[24] = (-10, 20.0)  # theta_c (Box-Cox consumption)
         if args.wage_spec == "vw":
-            bounds[59] = (0.01, 10.0)  # sigma_m (male wage error SD)
-            bounds[75] = (0.01, 10.0)  # sigma_f (female wage error SD)
+            bounds[59] = (-10, 30.0)  # sigma_m (male wage error SD)
+            bounds[75] = (-10, 30.0)  # sigma_f (female wage error SD)
         
         LOGGER.info("-" * 40)
         result = minimize(

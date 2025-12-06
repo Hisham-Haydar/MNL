@@ -407,21 +407,24 @@ def run_euromod_for_draws(
     # -- HOURS / LHW --
     # overwrite EUROMOD hours column and keep an alias 'hours'
     em_input[hours_col] = h
-    em_input["hours"] = h
-
-    # -- WAGES / YIVWG --
-    # For active (lma == 1) when hours > 0 we plug in the simulated wage; otherwise keep EM wage.
+    em_input["hours"] = h    # -- WAGES / YIVWG --
+    # -------------------------------------------------------------------------
+    # CRITICAL FIX: For RURO, we should NOT require lma==1 for working_mask.
+    # The RURO model offers hypothetical jobs to people who may be unemployed (les=5),
+    # inactive (les=7), etc. If a person has hours > 0 in their draw, they should
+    # be treated as "working" for that hypothetical scenario.
+    # -------------------------------------------------------------------------
     if wage_col in em_input.columns:
         base_w = pd.to_numeric(em_input[wage_col], errors="coerce").fillna(0.0)
     else:
         base_w = w.copy()
 
-    working_mask = (lma == 1) & (h > 0.0)
+    working_mask = (h > 0.0)  # Removed lma==1 requirement for RURO
     em_input[wage_col] = np.where(working_mask, w, base_w)
     em_input["wage"] = em_input[wage_col]
 
     # -- YEM --
-    # For labour-market active persons, ensure yem = hours * wage * weeks_per_month.
+    # For working scenarios (hours > 0), ensure yem = hours * wage * weeks_per_month.
     if "yem" in em_input.columns:
         yem = pd.to_numeric(em_input["yem"], errors="coerce").fillna(0.0)
         yem.loc[working_mask] = h[working_mask] * em_input.loc[working_mask, wage_col] * WEEKS_PER_MONTH

@@ -324,6 +324,15 @@ def run_euromod_for_draws(
         override_cols.append("hours")
     if "wage" in draws_df.columns:
         override_cols.append("wage")
+    # CRITICAL: Include yem and yivwg from draws to ensure EUROMOD uses
+    # the correct employment income for each hypothetical scenario.
+    # The draws file computes yem = lhw * wage * WEEKS_PER_MONTH for each draw.
+    if "yem" in draws_df.columns:
+        override_cols.append("yem")
+    if "yivwg" in draws_df.columns:
+        override_cols.append("yivwg")
+    if "lhw" in draws_df.columns:
+        override_cols.append("lhw")
 
     draws_sub = draws_df[override_cols].copy()
     
@@ -429,8 +438,13 @@ def run_euromod_for_draws(
 
     # -------------------------------------------------------------------------
     # 8. Hours and wage from RURO draws
+    #    For deciders, these come from the draws file (merged with _draw suffix).
+    #    For non-deciders, they keep baseline values.
     # -------------------------------------------------------------------------
-    if "hours" in merged.columns:
+    # Hours: prefer draws value (_draw suffix) over template value
+    if "hours_draw" in merged.columns:
+        h_raw = merged["hours_draw"]
+    elif "hours" in merged.columns:
         h_raw = merged["hours"]
     elif hours_col in merged.columns:
         h_raw = merged[hours_col]
@@ -438,21 +452,50 @@ def run_euromod_for_draws(
         h_raw = pd.Series(0.0, index=merged.index)
     h = pd.to_numeric(h_raw, errors="coerce").fillna(0.0)
 
-    if "wage" in merged.columns:
+    # Wage: prefer draws value (_draw suffix) over template value
+    if "wage_draw" in merged.columns:
+        w_raw = merged["wage_draw"]
+    elif "wage" in merged.columns:
         w_raw = merged["wage"]
     elif wage_col in merged.columns:
         w_raw = merged[wage_col]
     else:
         w_raw = pd.Series(0.0, index=merged.index)
     w = pd.to_numeric(w_raw, errors="coerce").fillna(0.0)
+    
+    # yem: prefer draws value (_draw suffix) - this is the computed yem = lhw * wage * WEEKS_PER_MONTH
+    if "yem_draw" in merged.columns:
+        yem_from_draws = pd.to_numeric(merged["yem_draw"], errors="coerce").fillna(0.0)
+    elif "yem" in merged.columns:
+        yem_from_draws = pd.to_numeric(merged["yem"], errors="coerce").fillna(0.0)
+    else:
+        yem_from_draws = pd.Series(0.0, index=merged.index)
+    
+    # yivwg: prefer draws value (_draw suffix) - hourly wage
+    if "yivwg_draw" in merged.columns:
+        yivwg_from_draws = pd.to_numeric(merged["yivwg_draw"], errors="coerce").fillna(0.0)
+    elif "yivwg" in merged.columns:
+        yivwg_from_draws = pd.to_numeric(merged["yivwg"], errors="coerce").fillna(0.0)
+    else:
+        yivwg_from_draws = w.copy()  # Fall back to wage
+    
+    # lhw: prefer draws value (_draw suffix) - weekly hours
+    if "lhw_draw" in merged.columns:
+        lhw_from_draws = pd.to_numeric(merged["lhw_draw"], errors="coerce").fillna(0.0)
+    elif "lhw" in merged.columns:
+        lhw_from_draws = pd.to_numeric(merged["lhw"], errors="coerce").fillna(0.0)
+    else:
+        lhw_from_draws = h.copy()  # Fall back to hours
 
     # -------------------------------------------------------------------------
-    # 9. Apply hours/wage overrides for DECIDERS ONLY
+    # 9. Apply hours/wage/yem/yivwg overrides for DECIDERS ONLY
     #    Non-deciders keep their baseline EUROMOD values.
     # -------------------------------------------------------------------------
-    # Store baseline values
+    # Store baseline values (from EUROMOD template)
     baseline_h = pd.to_numeric(merged[hours_col], errors="coerce").fillna(0.0) if hours_col in merged.columns else h.copy()
     baseline_w = pd.to_numeric(merged[wage_col], errors="coerce").fillna(0.0) if wage_col in merged.columns else w.copy()
+    baseline_yem = pd.to_numeric(merged["yem"], errors="coerce").fillna(0.0) if "yem" in merged.columns else pd.Series(0.0, index=merged.index)
+    baseline_yivwg = pd.to_numeric(merged[wage_col], errors="coerce").fillna(0.0) if wage_col in merged.columns else pd.Series(0.0, index=merged.index)
     
     # For deciders: use draw-specific hours; for non-deciders: keep baseline
     final_h = np.where(is_decider, h, baseline_h)
@@ -460,28 +503,52 @@ def run_euromod_for_draws(
     merged["hours"] = final_h
 
     # For deciders: use draw-specific wage (if working); for non-deciders: keep baseline
-    # Working mask applies only to deciders who are labour-market active with positive hours
-    working_mask = is_decider & (lma == 1) & (pd.Series(final_h, index=merged.index) > 0.0)
+    # -------------------------------------------------------------------------
+    # CRITICAL FIX: For RURO, we should NOT require lma==1 for working_mask.
+    # The RURO model offers hypothetical jobs to people who may be unemployed (les=5),
+    # inactive (les=7), etc. If a decider has hours > 0 in their draw, they should
+    # be treated as "working" for that hypothetical scenario.
+    # 
+    # The lma variable is NOT a standard SILC variable (not in DRD) and may be
+    # incorrectly set to 0 for labor force participants. Using hours > 0 alone
+    # is the correct criterion for RURO hypothetical scenarios.
+    # -------------------------------------------------------------------------
+    working_mask = is_decider & (pd.Series(final_h, index=merged.index) > 0.0)
+    not_working_decider = is_decider & (pd.Series(final_h, index=merged.index) <= 0.0)
     
+    # Log how many deciders are affected
+    n_working = working_mask.sum()
+    n_not_working = not_working_decider.sum()
+    n_deciders_total = is_decider.sum()
+    logging.info(f"RURO_euromod: {n_working} decider-rows have hours > 0 (working), "
+                 f"{n_not_working} have hours = 0 (not working)")
+    
+    # Apply wage for working deciders; baseline for non-working deciders and non-deciders
     final_w = np.where(working_mask, w, baseline_w)
     merged[wage_col] = final_w
     merged["wage"] = final_w
 
     # -------------------------------------------------------------------------
     # 10. EUROMOD consistency fixes for RURO hypothetical jobs
-    #     These adjustments ensure that EUROMOD treats hypothetical working
-    #     scenarios correctly (transition from UB/SA to employment).
+    #     Use yem, yivwg, lhw from draws file (already computed correctly).
+    #     For non-working deciders, set yem=0.
     # -------------------------------------------------------------------------
     
-    # YEM: Employment income = hours * wage * weeks_per_month
-    if "yem" in merged.columns:
-        yem = pd.to_numeric(merged["yem"], errors="coerce").fillna(0.0)
-        yem.loc[working_mask] = (
-            pd.Series(final_h, index=merged.index)[working_mask] 
-            * merged.loc[working_mask, wage_col] 
-            * WEEKS_PER_MONTH
-        )
-        merged["yem"] = yem
+    # YEM: Use draws value for working deciders, 0 for non-working deciders, baseline for non-deciders
+    if "yem" in merged.columns or "yem_draw" in merged.columns:
+        final_yem = np.where(working_mask, yem_from_draws, 
+                            np.where(not_working_decider, 0.0, baseline_yem))
+        merged["yem"] = final_yem
+        logging.info(f"RURO_euromod: yem updated - working deciders use draws value, "
+                    f"mean yem for working: {yem_from_draws[working_mask].mean():.2f}")
+    
+    # YIVWG: Use draws value for working deciders, 0 for non-working deciders, baseline for non-deciders
+    final_yivwg = np.where(working_mask, yivwg_from_draws,
+                          np.where(not_working_decider, 0.0, baseline_yivwg))
+    merged[wage_col] = final_yivwg
+    
+    # LHW: Already set above via hours_col, but ensure consistency
+    # (lhw and hours should be the same for RURO)
 
     # BUN: Unemployment benefits = 0 when working
     if "bun" in merged.columns:
@@ -533,8 +600,24 @@ def run_euromod_for_draws(
     if sort_cols:
         merged = merged.sort_values(sort_cols).reset_index(drop=True)
 
+    # DEBUG: Verify yem values before EUROMOD
+    if "yem" in merged.columns:
+        logging.info(f"RURO_euromod DEBUG: yem before EUROMOD - min={merged['yem'].min():.2f}, "
+                    f"max={merged['yem'].max():.2f}, mean={merged['yem'].mean():.2f}, "
+                    f"nunique={merged['yem'].nunique()}")
+        # Sample one person to verify varying yem
+        sample_person = merged[f"{id_col}_true"].iloc[0]
+        sample_data = merged[merged[f"{id_col}_true"] == sample_person][['draw', 'yem', 'lhw', 'yivwg']].head(5)
+        logging.info(f"RURO_euromod DEBUG: Sample person {sample_person} yem values:\n{sample_data.to_string()}")
+
     runner = EuromodRunner(em_root)
     sim_df = runner.run_on_dataframe(merged, country=country, system_code=system_code, dataset_name=dataset_name)
+
+    # DEBUG: Verify yem values after EUROMOD
+    if "yem" in sim_df.columns:
+        logging.info(f"RURO_euromod DEBUG: yem after EUROMOD - min={sim_df['yem'].min():.2f}, "
+                    f"max={sim_df['yem'].max():.2f}, mean={sim_df['yem'].mean():.2f}, "
+                    f"nunique={sim_df['yem'].nunique()}")
 
     # -------------------------------------------------------------------------
     # 13. Reattach draw and "true" IDs to output

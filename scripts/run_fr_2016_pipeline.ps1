@@ -339,8 +339,8 @@ if (-not (Test-Path $GSUR_FILE)) {
 # =====================================================================
 Write-Step "STEP 6/7: BUILD MNL DATASET (RURO_prep_mnl_basic.py)"
 
-# Build command
-$cmd = "python `"$SCRIPTS\RURO_prep_mnl_basic.py`" --singles-draws `"$SINGLES_DRAWS`" --euromod-combined `"$EM_COMBINED`" --out-base `"$MNL_BASE`" --wage-spec $WAGE_SPEC --year $YEAR"
+# Build command (--skip-csv for faster output, parquet is sufficient)
+$cmd = "python `"$SCRIPTS\RURO_prep_mnl_basic.py`" --singles-draws `"$SINGLES_DRAWS`" --euromod-combined `"$EM_COMBINED`" --out-base `"$MNL_BASE`" --wage-spec $WAGE_SPEC --year $YEAR --skip-csv"
 
 if (Test-Path $COUPLES_DRAWS) {
     $cmd += " --couples-draws `"$COUPLES_DRAWS`""

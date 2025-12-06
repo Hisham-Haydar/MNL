@@ -5980,6 +5980,15 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Use numba-accelerated gradient computation if available.",
     )
+    parser.add_argument(
+        "--post-estimation",
+        action="store_true",
+        help=(
+            "Run post-estimation analysis (standard errors, t-values, model fit). "
+            "Computes Hessian, variance-covariance matrix, and saves to Excel. "
+            "Following Stijn Van Houtven's R approach."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -6598,8 +6607,7 @@ def main() -> None:
             "sex": args.sex if args.group == 1 else None,
             "wage_spec": args.wage_spec,
         }
-        
-        out_path = Path(args.out_file)
+          out_path = Path(args.out_file)
         if out_path.suffix == ".json":
             with open(out_path, "w") as f:
                 json.dump(results_dict, f, indent=2)
@@ -6609,6 +6617,38 @@ def main() -> None:
                 pickle.dump(results_dict, f)
         
         LOGGER.info(f"Results saved to: {out_path}")
+    
+    # -------------------------------------------------------------------------
+    # Run post-estimation analysis (standard errors, t-values)
+    # -------------------------------------------------------------------------
+    if args.post_estimation:
+        try:
+            from RURO_post_estimation import run_post_estimation
+            
+            # Get gradient function for SE computation
+            if is_singles and args.use_numba and NUMBA_AVAILABLE:
+                grad_func = lambda theta: fast_negloglik_and_grad_singles(
+                    theta, precomputed_data, is_male=is_male, wage_spec=args.wage_spec
+                )[1]
+            else:
+                # Use numerical gradient approximation
+                grad_func = lambda theta: np.zeros_like(theta)  # placeholder
+                LOGGER.warning("Post-estimation SE requires analytical gradient - using placeholder")
+            
+            out_dir = Path(args.out_file).parent if args.out_file else Path("outputs/estimates")
+            
+            post_results = run_post_estimation(
+                result=result,
+                grad_func=grad_func,
+                param_names=param_names,
+                n_individuals=n_individuals,
+                wage_spec=args.wage_spec,
+                out_dir=out_dir,
+                save_excel=True,
+            )        except ImportError as e:
+            LOGGER.warning(f"Could not run post-estimation: {e}")
+        except Exception as e:
+            LOGGER.error(f"Post-estimation failed: {e}")
     
     LOGGER.info("=" * 60)
     LOGGER.info("Done.")

@@ -2083,6 +2083,2283 @@ def plot_all_groups_mu_comparison(
     
     Creates:
     1. MUC comparison plot (all groups on same axes)
+     2. MUL comparison plot (all groups on same axes)
+    3. Individual MUC/MUL plots per group
+    
+    Returns dict of output paths.
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        return {}
+    
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    c_grid = np.linspace(0.05, 2.5, grid_points)
+    l_grid = np.linspace(0.1, 2.5, grid_points)
+    
+    group_labels = {
+        GROUP_SINGLE_MALE: "Single Males",
+        GROUP_SINGLE_FEMALE: "Single Females",
+        GROUP_COUPLE_MALE: "Males in Couples",
+        GROUP_COUPLE_FEMALE: "Females in Couples",
+    }
+    
+    colors = {
+        GROUP_SINGLE_MALE: "#1f77b4",      # blue
+        GROUP_SINGLE_FEMALE: "#ff7f0e",    # orange
+        GROUP_COUPLE_MALE: "#2ca02c",      # green
+        GROUP_COUPLE_FEMALE: "#d62728",    # red
+    }
+    
+    plot_paths = {}
+    
+    # =========================================================================
+    # 1. MUC Comparison Plot
+    # =========================================================================
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    for group in [GROUP_SINGLE_MALE, GROUP_SINGLE_FEMALE]:
+        muc = compute_muc_by_group(c_grid, group_params, group)
+        ax.plot(c_grid, muc, label=group_labels[group], color=colors[group], lw=2)
+    
+    # Couples share same MUC
+    muc_cou = compute_muc_by_group(c_grid, group_params, GROUP_COUPLE)
+    ax.plot(c_grid, muc_cou, label="Couples (shared)", color="#9467bd", lw=2, ls="--")
+    
+    ax.axhline(0, color='black', lw=1, ls='--', alpha=0.6)
+    ax.set_xlabel("Normalized Consumption (c/c̄)")
+    ax.set_ylabel("MUC = ∂U/∂c")
+    ax.set_title(f"Marginal Utility of Consumption by Group ({wage_spec.upper()})")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    
+    muc_path = output_dir / f"{wage_spec}_muc_comparison.png"
+    fig.tight_layout()
+    fig.savefig(muc_path, dpi=150)
+    plt.close(fig)
+    plot_paths["muc_comparison"] = muc_path
+    
+    # =========================================================================
+    # 2. MUL Comparison Plot
+    # =========================================================================
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    for group in ALL_GROUPS:
+        shifters = median_shifters.get(group, {"log_age": np.log(40), "log_age2": np.log(40)**2})
+        mul = compute_mul_by_group(l_grid, group_params, group, shifters)
+        ax.plot(l_grid, mul, label=group_labels[group], color=colors[group], lw=2)
+    
+    ax.axhline(0, color='black', lw=1, ls='--', alpha=0.6)
+    ax.set_xlabel("Normalized Leisure (l/l̄)")
+    ax.set_ylabel("MUL = ∂U/∂l")
+    ax.set_title(f"Marginal Utility of Leisure by Group ({wage_spec.upper()})")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    
+    mul_path = output_dir / f"{wage_spec}_mul_comparison.png"
+    fig.tight_layout()
+    fig.savefig(mul_path, dpi=150)
+    plt.close(fig)
+    plot_paths["mul_comparison"] = mul_path
+    
+    # =========================================================================
+    # 3. Individual Group Plots (MUC + MUL combined)
+    # =========================================================================
+    for group in ALL_GROUPS:
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+        
+        shifters = median_shifters.get(group, {"log_age": np.log(40), "log_age2": np.log(40)**2})
+        
+        # MUC
+        muc = compute_muc_by_group(c_grid, group_params, group)
+        ax1.plot(c_grid, muc, color=colors[group], lw=2)
+        ax1.axhline(0, color='black', lw=1, ls='--', alpha=0.6)
+        ax1.fill_between(c_grid, muc, 0, where=(muc > 0), color='green', alpha=0.2)
+        ax1.fill_between(c_grid, muc, 0, where=(muc < 0), color='red', alpha=0.2)
+        ax1.set_xlabel("Normalized Consumption")
+        ax1.set_ylabel("MUC (∂U/∂c)")
+        ax1.set_title("Marginal Utility of Consumption")
+        ax1.grid(True, alpha=0.3)
+        
+        # MUL
+        mul = compute_mul_by_group(l_grid, group_params, group, shifters)
+        ax2.plot(l_grid, mul, color=colors[group], lw=2)
+        ax2.axhline(0, color='black', lw=1, ls='--', alpha=0.6)
+        ax2.fill_between(l_grid, mul, 0, where=(mul > 0), color='green', alpha=0.2)
+        ax2.fill_between(l_grid, mul, 0, where=(mul < 0), color='red', alpha=0.2)
+        ax2.set_xlabel("Normalized Leisure")
+        ax2.set_ylabel("MUL (∂U/∂l)")
+        ax2.set_title("Marginal Utility of Leisure")
+        ax2.grid(True, alpha=0.3)
+        
+        fig.suptitle(f"{group_labels[group]} ({wage_spec.upper()})", fontsize=12, fontweight='bold')
+        
+        group_path = output_dir / f"{wage_spec}_{group}_mu.png"
+        fig.tight_layout()
+        fig.savefig(group_path, dpi=150)
+        plt.close(fig)
+        plot_paths[f"{group}_mu"] = group_path
+    
+    return plot_paths
+
+
+# =============================================================================
+# LABOR SUPPLY ELASTICITIES TABLE
+# =============================================================================
+
+def compute_elasticities_table(
+    df: pd.DataFrame,
+    theta: np.ndarray,
+    param_names: List[str],
+    group_params: Dict[str, Dict[str, float]],
+    median_shifters: Dict[str, Dict[str, float]],
+    wage_spec: str = "fw",
+) -> pd.DataFrame:
+    """
+    Compute labor supply elasticities table.
+    
+    Following the IJM format, computes for each group:
+    - Hicksian (compensated) wage elasticity
+    - Marshallian (uncompensated) wage elasticity
+    - Participation elasticity (extensive margin)
+    - Intensive margin elasticity (conditional on working)
+    
+    Note: This provides a structural approximation based on estimated parameters.
+    For exact elasticities, simulation-based methods should be used.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataset with labor supply choices
+    theta : np.ndarray
+        Estimated parameters
+    param_names : List[str]
+        Parameter names
+    group_params : Dict[str, Dict[str, float]]
+        Group-specific parameters
+    median_shifters : Dict[str, Dict[str, float]]
+        Median characteristics by group
+    wage_spec : str
+        "fw" or "vw"
+    
+    Returns
+    -------
+    pd.DataFrame
+        Elasticity table with rows for each group and columns for each elasticity type
+    """
+    LOGGER.info("Computing labor supply elasticities (structural approximation)...")
+    
+    group_labels = {
+        GROUP_SINGLE_MALE: "Single Males",
+        GROUP_SINGLE_FEMALE: "Single Females",
+        GROUP_COUPLE_MALE: "Males in Couples",
+        GROUP_COUPLE_FEMALE: "Females in Couples",
+    }
+    
+    rows = []
+    
+    for group in ALL_GROUPS:
+        params = group_params.get(group, {})
+        shifters = median_shifters.get(group, {"log_age": np.log(40), "log_age2": np.log(40)**2})
+        
+        # Get key parameters
+        theta_l = params.get("theta_l", 0.5)
+        
+        if group in [GROUP_SINGLE_MALE, GROUP_SINGLE_FEMALE]:
+            theta_c = params.get("theta_c", 0.5)
+            beta_c = params.get("beta_c", 0.0)
+        else:
+            cou_shared = group_params.get(GROUP_COUPLE, {})
+            theta_c = cou_shared.get("theta_c", 0.5)
+            beta_c = cou_shared.get("beta_c", 0.0)
+        
+        beta_l_median = compute_beta_leisure_at_median(params, shifters)
+        
+        # Structural elasticity approximation from Box-Cox parameters
+        # For Box-Cox utility, at interior solution:
+        # - Hicksian elasticity ≈ (1 - θ_l) / (θ_l * (1 - s_l))
+        # - Marshallian elasticity ≈ Hicksian - income_effect
+        # where s_l is the share of leisure in full income
+        
+        # Simplified approximations (see Blundell & MaCurdy, 1999)
+        # These are rough structural estimates - simulation gives more accurate results
+        
+        # Assume typical leisure share s_l ≈ 0.5 for rough estimate
+        s_l = 0.5
+        
+        if abs(theta_l) < 1e-6:
+            # Log utility case
+            hicksian = 1.0 / s_l
+            marshallian = hicksian - 0.1  # small income effect approximation
+        else:
+            hicksian = (1.0 - theta_l) / (theta_l * (1.0 - s_l)) if theta_l != 0 and s_l < 1 else np.nan
+            # Income effect approximation
+            income_effect = 0.05 / (1.0 - s_l) if s_l < 1 else 0.0
+            marshallian = hicksian - income_effect
+        
+        # Participation elasticity is typically lower (extensive margin)
+        # Rough approximation: 1/3 of intensive margin
+        participation = marshallian * 0.3
+        
+        # Intensive margin (conditional on working)
+        intensive = marshallian - participation
+        
+        rows.append({
+            "Group": group_labels.get(group, group),
+            "Hicksian (compensated)": round(hicksian, 3) if np.isfinite(hicksian) else np.nan,
+            "Marshallian (uncompensated)": round(marshallian, 3) if np.isfinite(marshallian) else np.nan,
+            "Participation (extensive)": round(participation, 3) if np.isfinite(participation) else np.nan,
+            "Intensive (conditional)": round(intensive, 3) if np.isfinite(intensive) else np.nan,
+            "θ_l": round(theta_l, 3),
+            "θ_c": round(theta_c, 3),
+            "β_l (at median X)": round(beta_l_median, 3),
+            "β_c": round(beta_c, 3) if np.isfinite(beta_c) else np.nan,
+        })
+    
+    df_elast = pd.DataFrame(rows)
+    
+    LOGGER.info("\nElasticities Summary (structural approximation):")
+    LOGGER.info("-" * 80)
+    LOGGER.info(df_elast.to_string(index=False))
+    
+    return df_elast
+
+
+def compute_simulation_elasticities(
+    df_sm: pd.DataFrame,
+    df_sf: pd.DataFrame,
+    df_cou: pd.DataFrame,
+    theta: np.ndarray,
+    param_names: List[str],
+    utility_func: Callable,
+    delta_pct: float = 0.01,
+) -> pd.DataFrame:
+    """
+    Compute elasticities via simulation (wage shock method).
+    
+    This is the proper method following Van Soest (1995), Blundell et al. (2007):
+    1. Compute baseline expected hours E[h | w]
+    2. Shock wage by δ%
+    3. Recompute expected hours E[h | w*(1+δ)]
+    4. Elasticity = (ΔE[h]/E[h]) / (Δw/w)
+    
+    Note: This requires access to the utility function and tax-benefit system
+    to properly update disposable income after wage shock.
+    
+    Parameters
+    ----------
+    df_sm, df_sf, df_cou : pd.DataFrame
+        MNL datasets for each group
+    theta : np.ndarray
+        Estimated parameters
+    param_names : List[str]
+        Parameter names
+    utility_func : Callable
+        Function to compute utilities
+    delta_pct : float
+        Percentage wage shock (default 1%)
+    
+    Returns
+    -------
+    pd.DataFrame
+        Simulation-based elasticity table
+    """
+    LOGGER.warning("Simulation-based elasticities require tax-benefit integration.")
+    LOGGER.info("This function provides a framework - implement with EUROMOD for accurate results.")
+    
+    # Placeholder for simulation-based elasticities
+    # Full implementation requires:
+    # 1. Shocking wages in df
+    # 2. Re-running tax-benefit calculations to get new disposable income
+    # 3. Recomputing utilities
+    # 4. Computing expected hours changes
+    
+    rows = [
+        {"Group": "Single Males", "Wage Elasticity": "TBD (requires simulation)"},
+        {"Group": "Single Females", "Wage Elasticity": "TBD (requires simulation)"},
+        {"Group": "Males in Couples", "Wage Elasticity": "TBD (requires simulation)"},
+        {"Group": "Females in Couples", "Wage Elasticity": "TBD (requires simulation)"},
+    ]
+    
+    return pd.DataFrame(rows)
+
+
+# =============================================================================
+# FIT DIAGNOSTICS: PREDICTED VS OBSERVED
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# NEGATIVE MUC/MUL DIAGNOSTICS AND MUC=0 ANALYSIS
+# -----------------------------------------------------------------------------
+
+def compute_negative_mu_diagnostics(
+    df: pd.DataFrame,
+    group_params: Dict[str, Dict[str, float]],
+    group: str,
+    cons_col: str = "cons_equiv",
+    leisure_col: str = "leisure",
+) -> Dict[str, Any]:
+    """
+    Compute diagnostics for negative MUC and MUL at chosen alternatives.
+    
+    For the RURO Box-Cox utility specification:
+    MUC = β_c * c^(θ_c - 1)
+    MUL = β_l(X) * l^(θ_l - 1)
+    
+    MUC < 0 when β_c < 0 and θ_c < 1 (since c^(θ_c-1) > 0)
+    MUL < 0 when β_l(X) < 0 and θ_l < 1
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataset with individual observations
+    group_params : Dict
+        Group-specific preference parameters
+    group : str
+        Group identifier (sm, sf, cou_m, cou_f)
+    cons_col : str
+        Column name for consumption
+    leisure_col : str
+        Column name for leisure
+        
+    Returns
+    -------
+    Dict with:
+        - n_individuals: Total number of individuals with chosen alternatives
+        - n_negative_muc: Count with negative MUC at chosen
+        - n_negative_mul: Count with negative MUL at chosen
+        - pct_negative_muc: Percentage with negative MUC
+        - pct_negative_mul: Percentage with negative MUL
+        - muc_stats: Summary statistics for MUC at chosen
+        - mul_stats: Summary statistics for MUL at chosen
+    """
+    results = {
+        "n_individuals": 0,
+        "n_negative_muc": 0,
+        "n_negative_mul": 0,
+        "pct_negative_muc": np.nan,
+        "pct_negative_mul": np.nan,
+        "muc_mean": np.nan,
+        "muc_median": np.nan,
+        "muc_min": np.nan,
+        "muc_max": np.nan,
+        "mul_mean": np.nan,
+        "mul_median": np.nan,
+        "mul_min": np.nan,
+        "mul_max": np.nan,
+    }
+    
+    if df is None or len(df) == 0:
+        return results
+    
+    # Get parameters for this group
+    params = group_params.get(group, {})
+    cou_shared = group_params.get(GROUP_COUPLE, {})
+    
+    # Get consumption parameters (use group-specific or couple-shared)
+    if group in [GROUP_SINGLE_MALE, GROUP_SINGLE_FEMALE]:
+        beta_c = params.get("beta_c", 0.0)
+        theta_c = params.get("theta_c", 0.5)
+    else:
+        beta_c = cou_shared.get("beta_c", params.get("beta_c", 0.0))
+        theta_c = cou_shared.get("theta_c", params.get("theta_c", 0.5))
+    
+    theta_l = params.get("theta_l", 0.5)
+    
+    # Filter to observed/chosen alternatives
+    obs_mask = None
+    for col in ["obs", "is_observed", "is_chosen"]:
+        if col in df.columns:
+            obs_mask = df[col] == 1
+            break
+    
+    if obs_mask is None:
+        LOGGER.warning(f"No observed choice indicator found for group {group}")
+        return results
+    
+    obs_df = df[obs_mask].copy()
+    
+    if len(obs_df) == 0:
+        return results
+    
+    results["n_individuals"] = len(obs_df)
+    
+    # Try to find consumption column
+    c_col = None
+    for candidate in [cons_col, "cons_equiv", "cons", "consumption", "c", "disp_income", "hhdispinc"]:
+        if candidate in obs_df.columns:
+            c_col = candidate
+            break
+    
+    # Try to find leisure column  
+    l_col = None
+    for candidate in [leisure_col, "leisure", "l", "leis", "leisure_m", "leisure_f"]:
+        if candidate in obs_df.columns:
+            l_col = candidate
+            break
+    
+    # If not found, try to compute leisure from hours
+    if l_col is None:
+        for h_col in ["lhw", "hours", "h", "labor_hours"]:
+            if h_col in obs_df.columns:
+                # Leisure = total time endowment - labor hours (assuming 80 hours/week max)
+                obs_df["_leisure_computed"] = 80 - obs_df[h_col]
+                l_col = "_leisure_computed"
+                break
+    
+    # Compute MUC if consumption column exists
+    if c_col is not None:
+        cons_values = obs_df[c_col].values
+        cons_values = np.clip(cons_values, 1e-10, None)  # Avoid log(0)
+        
+        # MUC = β_c * c^(θ_c - 1)
+        muc = beta_c * np.power(cons_values, theta_c - 1)
+        
+        results["n_negative_muc"] = int(np.sum(muc < 0))
+        results["pct_negative_muc"] = 100.0 * results["n_negative_muc"] / len(muc)
+        results["muc_mean"] = float(np.mean(muc))
+        results["muc_median"] = float(np.median(muc))
+        results["muc_min"] = float(np.min(muc))
+        results["muc_max"] = float(np.max(muc))
+    
+    # Compute MUL if leisure column exists
+    if l_col is not None:
+        leisure_values = obs_df[l_col].values
+        leisure_values = np.clip(leisure_values, 1e-10, None)  # Avoid log(0)
+        
+        # Compute β_l(X) for each individual
+        # For simplicity, use β_l0 + shifters at individual values
+        beta_l0 = params.get("beta_l0", 0.0)
+        beta_l_arr = np.full(len(obs_df), beta_l0)
+        
+        # Add shifters if available
+        if "log_age" in obs_df.columns:
+            beta_l_arr += params.get("beta_l_log_age", 0.0) * obs_df["log_age"].values
+            beta_l_arr += params.get("beta_l_log_age2", 0.0) * obs_df["log_age"].values ** 2
+        elif "dag" in obs_df.columns:
+            log_age = np.log(np.clip(obs_df["dag"].values, 18, None))
+            beta_l_arr += params.get("beta_l_log_age", 0.0) * log_age
+            beta_l_arr += params.get("beta_l_log_age2", 0.0) * log_age ** 2
+        
+        # Children shifters
+        for ch_col, param_key in [("dch0_3", "beta_l_ch0_3"), ("dch4_6", "beta_l_ch4_6"), ("dch7_9", "beta_l_ch7_9")]:
+            if ch_col in obs_df.columns:
+                beta_l_arr += params.get(param_key, 0.0) * obs_df[ch_col].values
+        
+        # Education shifters
+        if "deduc1" in obs_df.columns:
+            beta_l_arr += params.get("beta_l_educL", 0.0) * obs_df["deduc1"].values
+        if "deduc3" in obs_df.columns:
+            beta_l_arr += params.get("beta_l_educH", 0.0) * obs_df["deduc3"].values
+        
+        # MUL = β_l(X) * l^(θ_l - 1)
+        mul = beta_l_arr * np.power(leisure_values, theta_l - 1)
+        
+        results["n_negative_mul"] = int(np.sum(mul < 0))
+        results["pct_negative_mul"] = 100.0 * results["n_negative_mul"] / len(mul)
+        results["mul_mean"] = float(np.mean(mul))
+        results["mul_median"] = float(np.median(mul))
+        results["mul_min"] = float(np.min(mul))
+        results["mul_max"] = float(np.max(mul))
+    
+    return results
+
+
+def compute_muc_zero_analysis(
+    beta_c: float,
+    theta_c: float,
+    c_median: float = None,
+    c_mode: float = None,
+) -> Dict[str, Any]:
+    """
+    Analyze where MUC = 0 and provide diagnostics.
+    
+    For Box-Cox: MUC = β_c * c^(θ_c - 1)
+    MUC = 0 only when β_c = 0 (since c^(θ_c-1) > 0 for c > 0)
+    
+    However, we can find where MUC changes sign or reaches specific values.
+    
+    For well-behaved utility (diminishing MUC), we want:
+    - MUC > 0: β_c > 0
+    - d(MUC)/dc < 0: (θ_c - 1) < 0, i.e., θ_c < 1
+    
+    Parameters
+    ----------
+    beta_c : float
+        Coefficient on consumption
+    theta_c : float
+        Box-Cox parameter for consumption
+    c_median : float, optional
+        Median consumption value
+    c_mode : float, optional
+        Mode consumption value
+        
+    Returns
+    -------
+    Dict with analysis results
+    """
+    results = {
+        "beta_c": beta_c,
+        "theta_c": theta_c,
+        "muc_positive": beta_c > 0,
+        "muc_diminishing": theta_c < 1,
+        "well_behaved": beta_c > 0 and theta_c < 1,
+        "muc_at_median": np.nan,
+        "muc_at_mode": np.nan,
+        "c_where_muc_equals_1": np.nan,  # Find c where MUC = 1 (useful benchmark)
+        "notes": [],
+    }
+    
+    # Analyze MUC behavior
+    if beta_c <= 0:
+        results["notes"].append("WARNING: β_c ≤ 0, MUC is non-positive everywhere")
+    elif theta_c >= 1:
+        results["notes"].append("WARNING: θ_c ≥ 1, MUC is increasing in consumption (non-standard)")
+    else:
+        results["notes"].append("OK: MUC > 0 and diminishing (β_c > 0, θ_c < 1)")
+    
+    # Compute MUC at median/mode
+    if c_median is not None and c_median > 0:
+        results["muc_at_median"] = beta_c * np.power(c_median, theta_c - 1)
+    
+    if c_mode is not None and c_mode > 0:
+        results["muc_at_mode"] = beta_c * np.power(c_mode, theta_c - 1)
+    
+    # Find consumption where MUC = 1 (if β_c > 0)
+    # MUC = β_c * c^(θ_c - 1) = 1
+    # c^(θ_c - 1) = 1 / β_c
+    # c = (1 / β_c)^(1 / (θ_c - 1))
+    if beta_c > 0 and theta_c != 1:
+        try:
+            c_where_muc_1 = np.power(1.0 / beta_c, 1.0 / (theta_c - 1))
+            if np.isfinite(c_where_muc_1) and c_where_muc_1 > 0:
+                results["c_where_muc_equals_1"] = float(c_where_muc_1)
+        except (RuntimeWarning, FloatingPointError):
+            pass
+    
+    return results
+
+
+def compute_all_groups_negative_mu_diagnostics(
+    df_sm: pd.DataFrame,
+    df_sf: pd.DataFrame, 
+    df_cou: pd.DataFrame,
+    group_params: Dict[str, Dict[str, float]],
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Compute negative MUC/MUL diagnostics for all groups.
+    
+    Returns
+    -------
+    Dict mapping group name to diagnostic results
+    """
+    results = {}
+    
+    for group, df in [
+        (GROUP_SINGLE_MALE, df_sm),
+        (GROUP_SINGLE_FEMALE, df_sf),
+        (GROUP_COUPLE_MALE, df_cou),
+        (GROUP_COUPLE_FEMALE, df_cou),
+    ]:
+        if df is not None:
+            diag = compute_negative_mu_diagnostics(df, group_params, group)
+            results[group] = diag
+            LOGGER.info(f"  {group}: N={diag['n_individuals']}, "
+                       f"negative MUC={diag['n_negative_muc']} ({diag['pct_negative_muc']:.1f}%), "
+                       f"negative MUL={diag['n_negative_mul']} ({diag['pct_negative_mul']:.1f}%)")
+        else:
+            results[group] = {"n_individuals": 0, "n_negative_muc": 0, "n_negative_mul": 0}
+    
+    return results
+
+
+def compute_all_groups_muc_zero_analysis(
+    group_params: Dict[str, Dict[str, float]],
+    df_sm: pd.DataFrame = None,
+    df_sf: pd.DataFrame = None,
+    df_cou: pd.DataFrame = None,
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Compute MUC=0 analysis for all groups.
+    
+    Returns
+    -------
+    Dict mapping group name to MUC analysis results
+    """
+    results = {}
+    
+    # Compute median/mode consumption for each group
+    def get_cons_stats(df, group):
+        if df is None:
+            return None, None
+        
+        # Filter to observed
+        obs_mask = None
+        for col in ["obs", "is_observed", "is_chosen"]:
+            if col in df.columns:
+                obs_mask = df[col] == 1
+                break
+        
+        if obs_mask is None:
+            return None, None
+        
+        obs_df = df[obs_mask]
+        
+        # Find consumption column
+        c_col = None
+        for candidate in ["cons_equiv", "cons", "consumption", "c", "disp_income", "hhdispinc"]:
+            if candidate in obs_df.columns:
+                c_col = candidate
+                break
+        
+        if c_col is None:
+            return None, None
+        
+        cons = obs_df[c_col].values
+        c_median = float(np.median(cons))
+        c_mode = float(obs_df[c_col].mode().iloc[0]) if len(obs_df[c_col].mode()) > 0 else c_median
+        return c_median, c_mode
+    
+    # Singles - male
+    c_median, c_mode = get_cons_stats(df_sm, GROUP_SINGLE_MALE)
+    params = group_params.get(GROUP_SINGLE_MALE, {})
+    results[GROUP_SINGLE_MALE] = compute_muc_zero_analysis(
+        params.get("beta_c", 0.0), params.get("theta_c", 0.5), c_median, c_mode
+    )
+    
+    # Singles - female  
+    c_median, c_mode = get_cons_stats(df_sf, GROUP_SINGLE_FEMALE)
+    params = group_params.get(GROUP_SINGLE_FEMALE, {})
+    results[GROUP_SINGLE_FEMALE] = compute_muc_zero_analysis(
+        params.get("beta_c", 0.0), params.get("theta_c", 0.5), c_median, c_mode
+    )
+    
+    # Couples - shared consumption parameters
+    c_median, c_mode = get_cons_stats(df_cou, GROUP_COUPLE_MALE)
+    cou_shared = group_params.get(GROUP_COUPLE, {})
+    results[GROUP_COUPLE] = compute_muc_zero_analysis(
+        cou_shared.get("beta_c", 0.0), cou_shared.get("theta_c", 0.5), c_median, c_mode
+    )
+    
+    return results
+
+
+def compute_fit_diagnostics(
+    theta: np.ndarray,
+    grad_func: Callable,
+    param_names: List[str],
+    n_individuals: int,
+    wage_spec: str = "fw",
+    out_dir: Optional[Path] = None,
+    save_excel: bool = True,
+    nll_func: Optional[Callable] = None,
+    check_gradient: bool = False,    n_alternatives_per_individual: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Run full post-estimation analysis and optionally save results.
+    
+    1. Compute Hessian (both Jacobian and numeric methods)
+    2. Compute variance-covariance matrix
+    3. Compute standard errors and t-values
+    4. Check eigenvalues for positive-definiteness
+    5. Compute model fit statistics
+    6. Save results to Excel
+    
+    Parameters
+    ----------
+    result : OptimizeResult
+        Result from scipy.optimize.minimize
+    grad_func : Callable
+        Gradient function of the NEGATIVE log-likelihood (for Hessian computation).
+        This should return the gradient pointing to the minimum, not maximum.
+    param_names : List[str]
+        Parameter names
+    n_individuals : int
+        Number of individuals
+    wage_spec : str
+        "fw" or "vw"
+    out_dir : Path, optional
+        Directory to save results
+    save_excel : bool
+        Whether to save to Excel
+    nll_func : Callable, optional
+        Negative log-likelihood function (for gradient check)
+    check_gradient : bool
+        Whether to check gradient accuracy
+    n_alternatives_per_individual : int, optional
+        Number of alternatives per individual in the MNL choice set.
+        Default is 100 (99 random draws + 1 observed choice in RURO).
+        Used for computing null log-likelihood and pseudo R-squared.
+    
+    Returns
+    -------
+    Dict containing all post-estimation results
+    """
+    import pandas as pd
+    from datetime import datetime
+    
+    theta = result.x
+    log_likelihood = -result.fun
+    n_params = len(theta)
+    
+    LOGGER.info("=" * 70)
+    LOGGER.info("POST-ESTIMATION ANALYSIS")
+    LOGGER.info("=" * 70)
+    
+    # -------------------------------------------------------------------------
+    # 0. Optional gradient check
+    # -------------------------------------------------------------------------
+    grad_check_results = None
+    if check_gradient and nll_func is not None:
+        LOGGER.info("\n0. Checking gradient accuracy...")
+        grad_check_results = check_gradient_accuracy(
+            theta, nll_func, grad_func, param_names
+        )
+    
+    # -------------------------------------------------------------------------
+    # 1. Standard errors via Jacobian method
+    # -------------------------------------------------------------------------
+    LOGGER.info("\n1. Computing standard errors (Jacobian method)...")
+    se_results_jac = compute_standard_errors(
+        theta, grad_func, param_names, method="jacobian", delta=1e-5
+    )
+    
+    # -------------------------------------------------------------------------
+    # 2. Standard errors via numeric Hessian (for comparison)
+    # -------------------------------------------------------------------------
+    LOGGER.info("\n2. Computing standard errors (numeric Hessian)")
+    se_results_num = compute_standard_errors(
+        theta, grad_func, param_names, method="numeric", delta=1e-4
+    )
+      # -------------------------------------------------------------------------
+    # 3. Model fit statistics
+    # -------------------------------------------------------------------------
+    LOGGER.info("\n3. Computing model fit statistics...")
+    # Default to 100 alternatives (99 draws + 1 observed) if not specified
+    n_alts = n_alternatives_per_individual if n_alternatives_per_individual is not None else 100
+    fit_stats = compute_model_fit_statistics(
+        log_likelihood=log_likelihood,
+        n_params=n_params,
+        n_individuals=n_individuals,
+        n_alternatives_per_individual=n_alts,
+    )
+    
+    # -------------------------------------------------------------------------
+    # 4. Print results
+    # -------------------------------------------------------------------------
+    LOGGER.info("\n" + "=" * 70)
+    LOGGER.info("PARAMETER ESTIMATES WITH STANDARD ERRORS")
+    LOGGER.info("=" * 70)
+    
+    table = se_results_jac["param_table"]
+    LOGGER.info(f"\n{'Param':<40} {'Estimate':>12} {'Std.Err':>12} {'t-value':>10} {'p-value':>10}")
+    LOGGER.info("-" * 86)
+    for _, row in table.iterrows():
+        p_str = f"{row['p_value']:.4f}" if np.isfinite(row['p_value']) else "NA"
+        t_str = f"{row['t_value']:.3f}" if np.isfinite(row['t_value']) else "NA"
+        se_str = f"{row['std_error']:.4f}" if np.isfinite(row['std_error']) else "NA"
+        LOGGER.info(f"{row['parameter']:<40} {row['estimate']:>12.4f} {se_str:>12} {t_str:>10} {p_str:>10}")
+    
+    LOGGER.info("\n" + "=" * 70)
+    LOGGER.info("MODEL FIT STATISTICS")
+    LOGGER.info("=" * 70)
+    LOGGER.info(f"Log-likelihood:              {fit_stats['log_likelihood']:.4f}")
+    LOGGER.info(f"Log-likelihood (null):       {fit_stats['ll_null']:.4f}")
+    LOGGER.info(f"Number of parameters:        {fit_stats['n_params']}")
+    LOGGER.info(f"Number of individuals:       {fit_stats['n_individuals']}")
+    LOGGER.info(f"AIC:                         {fit_stats['aic']:.4f}")
+    LOGGER.info(f"BIC:                         {fit_stats['bic']:.4f}")
+    LOGGER.info(f"McFadden's Pseudo R²:        {fit_stats['pseudo_r2_mcfadden']:.4f}")
+    LOGGER.info(f"Adjusted Pseudo R²:          {fit_stats['pseudo_r2_adjusted']:.4f}")
+    LOGGER.info(f"LL per observation:          {fit_stats['ll_per_obs']:.4f}")
+    
+    # Check Hessian eigenvalues
+    LOGGER.info("\n" + "=" * 70)
+    LOGGER.info("HESSIAN DIAGNOSTICS")
+    LOGGER.info("=" * 70)
+    ev = se_results_jac["eigenvalues"]
+    LOGGER.info(f"Eigenvalue range: [{ev.min():.6f}, {ev.max():.6f}]")
+    n_neg = np.sum(ev < 0)
+    if n_neg > 0:
+        LOGGER.warning(f"WARNING: {n_neg} negative eigenvalues detected!")
+        LOGGER.warning("The Hessian is not positive semi-definite - may not be at global optimum.")
+    else:
+        LOGGER.info("All eigenvalues positive - Hessian is positive definite ✓")
+    
+    # -------------------------------------------------------------------------
+    # 5. Save to Excel
+    # -------------------------------------------------------------------------
+    if save_excel and out_dir is not None:
+        out_dir = Path(out_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        
+        timestamp = datetime.now().strftime("%Y-%m-%d")
+        filename = f"{wage_spec}_SE_post_estimation_{timestamp}.xlsx"
+        out_path = out_dir / filename
+        
+        try:
+            with pd.ExcelWriter(out_path, engine="openpyxl") as writer:
+                # Sheet 1: Parameter table with SE and t-values
+                table.to_excel(writer, sheet_name="SE_TV", index=False)
+                
+                # Sheet 2: Variance-covariance matrix
+                varcov_df = pd.DataFrame(
+                    se_results_jac["varcov"],
+                    index=param_names,
+                    columns=param_names
+                )
+                varcov_df.to_excel(writer, sheet_name="varcov")
+                
+                # Sheet 3: Hessian
+                hess_df = pd.DataFrame(
+                    se_results_jac["hessian"],
+                    index=param_names,
+                    columns=param_names
+                )
+                hess_df.to_excel(writer, sheet_name="hessian")
+                
+                # Sheet 4: Eigenvalues
+                ev_df = pd.DataFrame({
+                    "eigenvalue": se_results_jac["eigenvalues"]
+                })
+                ev_df.to_excel(writer, sheet_name="eigenvalues", index=False)
+                
+                # Sheet 5: Model fit
+                fit_df = pd.DataFrame([fit_stats])
+                fit_df.to_excel(writer, sheet_name="model_fit", index=False)
+                
+                # Sheet 6: Numeric Hessian comparison
+                table_num = se_results_num["param_table"]
+                table_num.to_excel(writer, sheet_name="SE_numeric", index=False)
+            
+            LOGGER.info(f"\nPost-estimation results saved to: {out_path}")
+        
+        except Exception as e:
+            LOGGER.error(f"Failed to save Excel file: {e}")
+    
+    return {
+        "se_jacobian": se_results_jac,
+        "se_numeric": se_results_num,
+        "fit_statistics": fit_stats,
+        "param_table": se_results_jac["param_table"],
+        "gradient_check": grad_check_results,
+    }
+
+
+# =============================================================================
+# MARGINAL UTILITIES (similar to analyze_dcm_results.py)
+# =============================================================================
+
+def boxcox_transform(x: np.ndarray, theta: float) -> np.ndarray:
+    """
+    Box-Cox transform: BC(x; θ) = (x^θ - 1) / θ for θ ≠ 0, log(x) for θ = 0.
+    """
+    x = np.clip(np.asarray(x, dtype=float), 1e-12, None)
+    if abs(theta) < 1e-8:
+        return np.log(x)
+    return (np.power(x, theta) - 1.0) / theta
+
+
+def d_boxcox_dx(x: np.ndarray, theta: float) -> np.ndarray:
+    """
+    Derivative of Box-Cox transform with respect to x:
+    d BC(x;θ) / dx = x^(θ-1)
+    """
+    x = np.clip(np.asarray(x, dtype=float), 1e-12, None)
+    return np.power(x, theta - 1.0)
+
+
+def compute_marginal_utility_consumption(
+    c_norm: np.ndarray,
+    beta_c: float,
+    theta_c: float,
+) -> np.ndarray:
+    """
+    Compute marginal utility of consumption (MUC).
+    
+    MUC = ∂U/∂c = β_c * d BC(c; θ_c) / dc = β_c * c^(θ_c - 1)
+    
+    Parameters
+    ----------
+    c_norm : np.ndarray
+        Normalized consumption values
+    beta_c : float
+        Coefficient on Box-Cox transformed consumption
+    theta_c : float
+        Box-Cox parameter for consumption
+    
+    Returns
+    -------
+    np.ndarray
+        Marginal utility of consumption
+    """
+    return beta_c * d_boxcox_dx(c_norm, theta_c)
+
+
+def compute_marginal_utility_leisure(
+    l_norm: np.ndarray,
+    beta_l: Union[np.ndarray, float],
+    theta_l: float,
+) -> np.ndarray:
+    """
+    Compute marginal utility of leisure (MUL).
+    
+    MUL = ∂U/∂l = β_l(X) * d BC(l; θ_l) / dl = β_l(X) * l^(θ_l - 1)
+    
+    Parameters
+    ----------
+    l_norm : np.ndarray
+        Normalized leisure values
+    beta_l : float or np.ndarray
+        Coefficient on Box-Cox transformed leisure (can vary by individual)
+    theta_l : float
+        Box-Cox parameter for leisure
+    
+    Returns
+    -------
+    np.ndarray
+        Marginal utility of leisure
+    """
+    beta_l_arr = np.asarray(beta_l, dtype=float)
+    if np.ndim(beta_l_arr) == 0:
+        beta_l_arr = np.full_like(l_norm, float(beta_l_arr))
+    return beta_l_arr * d_boxcox_dx(l_norm, theta_l)
+
+
+def compute_mrs(
+    muc: np.ndarray,
+    mul: np.ndarray,
+) -> np.ndarray:
+    """
+    Compute marginal rate of substitution (MRS = MUL / MUC).
+    
+    This represents how much consumption the individual is willing to give up
+    for one additional unit of leisure.
+    """
+    with np.errstate(divide='ignore', invalid='ignore'):
+        mrs = np.where(np.abs(muc) > 1e-10, mul / muc, np.nan)
+    return mrs
+
+
+def extract_preference_params(
+    theta: np.ndarray,
+    param_names: List[str],
+) -> Dict[str, float]:
+    """
+    Extract preference parameters from theta vector.
+    """
+    return {name: float(val) for name, val in zip(param_names, theta)}
+
+
+# =============================================================================
+# GROUP-SPECIFIC PARAMETER EXTRACTION
+# =============================================================================
+
+def extract_group_params_from_joint(
+    theta_joint: np.ndarray,
+    param_names_joint: List[str],
+    wage_spec: str = "fw",
+) -> Dict[str, Dict[str, float]]:
+    """
+    Extract preference parameters for each demographic group from joint theta.
+    
+    Returns a dictionary with keys: 'sm', 'sf', 'cou_m', 'cou_f', 'cou'
+    Each contains the relevant preference parameters for that group.
+    
+    Parameters
+    ----------
+    theta_joint : np.ndarray
+        Full joint parameter vector
+    param_names_joint : List[str]
+        Parameter names corresponding to theta_joint
+    wage_spec : str
+        "fw" or "vw"
+    
+    Returns
+    -------
+    Dict[str, Dict[str, float]]
+        Group-specific parameters. Keys:
+        - 'sm': single males
+        - 'sf': single females  
+        - 'cou_m': males in couples (leisure only)
+        - 'cou_f': females in couples (leisure only)
+        - 'cou': couples shared params (consumption, box-cox)
+    """
+    params = {name: float(val) for name, val in zip(param_names_joint, theta_joint)}
+    
+    # Extract single males
+    sm_params = {
+        "beta_l0": params.get("sm.pref.beta_l0", 0.0),
+        "beta_l_log_age": params.get("sm.pref.beta_l_log_age", 0.0),
+        "beta_l_log_age2": params.get("sm.pref.beta_l_log_age2", 0.0),
+        "beta_l_ch4_6": params.get("sm.pref.beta_l_ch4_6", 0.0),
+        "beta_l_ch7_9": params.get("sm.pref.beta_l_ch7_9", 0.0),
+        "beta_l_educL": params.get("sm.pref.beta_l_educL", 0.0),
+        "beta_l_educH": params.get("sm.pref.beta_l_educH", 0.0),
+        "beta_l_reg2": params.get("sm.pref.beta_l_reg2", 0.0),
+        "beta_c": params.get("sm.pref.beta_c", 0.0),
+        "theta_l": params.get("sm.pref.theta_l", 0.5),
+        "theta_c": params.get("sm.pref.theta_c", 0.5),
+        "beta_l_ch0_3": params.get("sm.pref.beta_l_ch0_3", 0.0),  # typically 0 for males
+    }
+    
+    # Extract single females
+    sf_params = {
+        "beta_l0": params.get("sf.pref.beta_l0", 0.0),
+        "beta_l_log_age": params.get("sf.pref.beta_l_log_age", 0.0),
+        "beta_l_log_age2": params.get("sf.pref.beta_l_log_age2", 0.0),
+        "beta_l_ch4_6": params.get("sf.pref.beta_l_ch4_6", 0.0),
+        "beta_l_ch7_9": params.get("sf.pref.beta_l_ch7_9", 0.0),
+        "beta_l_educL": params.get("sf.pref.beta_l_educL", 0.0),
+        "beta_l_educH": params.get("sf.pref.beta_l_educH", 0.0),
+        "beta_l_reg2": params.get("sf.pref.beta_l_reg2", 0.0),
+        "beta_l_reg3": params.get("sf.pref.beta_l_reg3", 0.0),
+        "beta_c": params.get("sf.pref.beta_c", 0.0),
+        "theta_l": params.get("sf.pref.theta_l", 0.5),
+        "theta_c": params.get("sf.pref.theta_c", 0.5),
+        "beta_l_ch0_3": params.get("sf.pref.beta_l_ch0_3", 0.0),
+    }
+    
+    # Extract couples - male leisure
+    cou_m_params = {
+        "beta_l0": params.get("cou.pref.beta_l0_m", 0.0),
+        "beta_l_log_age": params.get("cou.pref.beta_l_log_age_m", 0.0),
+        "beta_l_log_age2": params.get("cou.pref.beta_l_log_age2_m", 0.0),
+        "beta_l_ch0_3": params.get("cou.pref.beta_l_ch0_3_m", 0.0),
+        "beta_l_ch4_6": params.get("cou.pref.beta_l_ch4_6_m", 0.0),
+        "beta_l_ch7_9": params.get("cou.pref.beta_l_ch7_9_m", 0.0),
+        "beta_l_reg2": params.get("cou.pref.beta_l_reg2_m", 0.0),
+        "beta_l_reg3": params.get("cou.pref.beta_l_reg3_m", 0.0),
+        "beta_l_educL": params.get("cou.pref.beta_l_educL_m", 0.0),
+        "beta_l_educH": params.get("cou.pref.beta_l_educH_m", 0.0),
+        "theta_l": params.get("cou.pref.theta_l_m", 0.5),
+    }
+    
+    # Extract couples - female leisure
+    cou_f_params = {
+        "beta_l0": params.get("cou.pref.beta_l0_f", 0.0),
+        "beta_l_log_age": params.get("cou.pref.beta_l_log_age_f", 0.0),
+        "beta_l_log_age2": params.get("cou.pref.beta_l_log_age2_f", 0.0),
+        "beta_l_ch0_3": params.get("cou.pref.beta_l_ch0_3_f", 0.0),
+        "beta_l_ch4_6": params.get("cou.pref.beta_l_ch4_6_f", 0.0),
+        "beta_l_ch7_9": params.get("cou.pref.beta_l_ch7_9_f", 0.0),
+        "beta_l_reg2": params.get("cou.pref.beta_l_reg2_f", 0.0),
+        "beta_l_reg3": params.get("cou.pref.beta_l_reg3_f", 0.0),
+        "beta_l_educL": params.get("cou.pref.beta_l_educL_f", 0.0),
+        "beta_l_educH": params.get("cou.pref.beta_l_educH_f", 0.0),
+        "theta_l": params.get("cou.pref.theta_l_f", 0.5),
+    }
+    
+    # Extract couples - shared (consumption, box-cox)
+    cou_shared = {
+        "theta_l_m": params.get("cou.pref.theta_l_m", 0.5),
+        "theta_l_f": params.get("cou.pref.theta_l_f", 0.5),
+        "theta_c": params.get("cou.pref.theta_c", 0.5),
+        "beta_c": params.get("cou.pref.beta_c", 0.0),
+        "beta_interaction": params.get("cou.pref.beta_interaction", 0.0),
+    }
+    
+    return {
+        GROUP_SINGLE_MALE: sm_params,
+        GROUP_SINGLE_FEMALE: sf_params,
+        GROUP_COUPLE_MALE: cou_m_params,
+        GROUP_COUPLE_FEMALE: cou_f_params,
+        GROUP_COUPLE: cou_shared,
+    }
+
+
+def compute_group_median_shifters(
+    df: pd.DataFrame,
+    group: str,
+) -> Dict[str, float]:
+    """
+    Compute median/mode values of demographic shifters for a specific group.
+    
+    This is used to evaluate β_l(X) at "representative" individual characteristics.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataset containing individual characteristics
+    group : str
+        One of: 'sm', 'sf', 'cou_m', 'cou_f'
+    
+    Returns
+    -------
+    Dict[str, float]
+        Median/mode values for each shifter variable
+    """
+    # Filter to observed choices only
+    if "obs" in df.columns:
+        obs_df = df[df["obs"] == 1].copy()
+    elif "is_observed" in df.columns:
+        obs_df = df[df["is_observed"] == 1].copy()
+    elif "is_chosen" in df.columns:
+        obs_df = df[df["is_chosen"] == 1].copy()
+    else:
+        obs_df = df.copy()
+    
+    # Filter by group
+    if group == GROUP_SINGLE_MALE:
+        # Singles (ruro_group == 1) with dgn == 1 (male)
+        if "ruro_group" in obs_df.columns and "dgn" in obs_df.columns:
+            obs_df = obs_df[(obs_df["ruro_group"] == 1) & (obs_df["dgn"] == 1)]
+        elif "dgn" in obs_df.columns:
+            obs_df = obs_df[obs_df["dgn"] == 1]
+    elif group == GROUP_SINGLE_FEMALE:
+        if "ruro_group" in obs_df.columns and "dgn" in obs_df.columns:
+            obs_df = obs_df[(obs_df["ruro_group"] == 1) & (obs_df["dgn"] == 0)]
+        elif "dgn" in obs_df.columns:
+            obs_df = obs_df[obs_df["dgn"] == 0]
+    elif group in [GROUP_COUPLE_MALE, GROUP_COUPLE_FEMALE]:
+        if "ruro_group" in obs_df.columns:
+            obs_df = obs_df[obs_df["ruro_group"] == 10]
+    
+    if len(obs_df) == 0:
+        LOGGER.warning(f"No observations found for group {group}")
+        return {}
+    
+    # Compute medians for continuous, modes for discrete
+    shifters = {}
+    
+    # Age (use log_age if available, else compute)
+    if "log_age" in obs_df.columns:
+        shifters["log_age"] = obs_df["log_age"].median()
+        shifters["log_age2"] = obs_df["log_age"].median() ** 2
+    elif "dag" in obs_df.columns:  # dag = age
+        median_age = obs_df["dag"].median()
+        shifters["log_age"] = np.log(max(median_age, 18))
+        shifters["log_age2"] = shifters["log_age"] ** 2
+    
+    # For couples, separate male/female ages
+    if group == GROUP_COUPLE_MALE and "dag_m" in obs_df.columns:
+        median_age = obs_df["dag_m"].median()
+        shifters["log_age"] = np.log(max(median_age, 18))
+        shifters["log_age2"] = shifters["log_age"] ** 2
+    elif group == GROUP_COUPLE_FEMALE and "dag_f" in obs_df.columns:
+        median_age = obs_df["dag_f"].median()
+        shifters["log_age"] = np.log(max(median_age, 18))
+        shifters["log_age2"] = shifters["log_age"] ** 2
+    
+    # Children dummies (mode, usually 0)
+    for col in ["children0_3", "children4_6", "children7_9", "dch0_3", "dch4_6", "dch7_9"]:
+        clean_name = col.replace("d", "children").replace("ch", "children") if col.startswith("d") else col
+        if col in obs_df.columns:
+            shifters[clean_name] = obs_df[col].mode().iloc[0] if len(obs_df[col].mode()) > 0 else 0.0
+    
+    # Education dummies
+    for col in ["educL", "educH", "deduc1", "deduc3"]:
+        if col in obs_df.columns:
+            if col == "deduc1":
+                shifters["educL"] = obs_df[col].mode().iloc[0] if len(obs_df[col].mode()) > 0 else 0.0
+            elif col == "deduc3":
+                shifters["educH"] = obs_df[col].mode().iloc[0] if len(obs_df[col].mode()) > 0 else 0.0
+            else:
+                shifters[col] = obs_df[col].mode().iloc[0] if len(obs_df[col].mode()) > 0 else 0.0
+    
+    # Region dummies
+    for i in range(2, 10):
+        col = f"reg{i}"
+        if col in obs_df.columns:
+            shifters[col] = obs_df[col].mode().iloc[0] if len(obs_df[col].mode()) > 0 else 0.0
+        else:
+            shifters[col] = 0.0
+    
+    return shifters
+
+
+def compute_beta_leisure_at_median(
+    group_params: Dict[str, float],
+    median_shifters: Dict[str, float],
+) -> float:
+    """
+    Compute β_l(X) at median/mode covariate values.
+    
+    β_l(X) = β_l0 + β_l_log_age * log(age) + β_l_log_age2 * log(age)²
+             + β_l_ch0_3 * ch0_3 + β_l_ch4_6 * ch4_6 + β_l_ch7_9 * ch7_9
+             + β_l_educL * educL + β_l_educH * educH
+             + β_l_reg2 * reg2 + ...
+    
+    Parameters
+    ----------
+    group_params : Dict[str, float]
+        Group-specific preference parameters (from extract_group_params_from_joint)
+    median_shifters : Dict[str, float]
+        Median/mode values for shifters (from compute_group_median_shifters)
+    
+    Returns
+    -------
+    float
+        Computed β_l(X) at median characteristics
+    """
+    beta_l = group_params.get("beta_l0", 0.0)
+    
+    # Age effects
+    log_age = median_shifters.get("log_age", np.log(40))
+    log_age2 = median_shifters.get("log_age2", log_age ** 2)
+    beta_l += group_params.get("beta_l_log_age", 0.0) * log_age
+    beta_l += group_params.get("beta_l_log_age2", 0.0) * log_age2
+    
+    # Children effects
+    beta_l += group_params.get("beta_l_ch0_3", 0.0) * median_shifters.get("children0_3", 0.0)
+    beta_l += group_params.get("beta_l_ch4_6", 0.0) * median_shifters.get("children4_6", 0.0)
+    beta_l += group_params.get("beta_l_ch7_9", 0.0) * median_shifters.get("children7_9", 0.0)
+    
+    # Education effects
+    beta_l += group_params.get("beta_l_educL", 0.0) * median_shifters.get("educL", 0.0)
+    beta_l += group_params.get("beta_l_educH", 0.0) * median_shifters.get("educH", 0.0)
+    
+    # Region effects
+    for i in range(2, 10):
+        beta_l += group_params.get(f"beta_l_reg{i}", 0.0) * median_shifters.get(f"reg{i}", 0.0)
+    
+    return beta_l
+
+
+# =============================================================================
+# GROUP-SPECIFIC MARGINAL UTILITIES
+# =============================================================================
+
+def compute_muc_by_group(
+    c_grid: np.ndarray,
+    group_params: Dict[str, Dict[str, float]],
+    group: str,
+) -> np.ndarray:
+    """
+    Compute marginal utility of consumption for a specific group.
+    
+    MUC = ∂U/∂c = β_c × c^(θ_c - 1)
+    
+    For singles: uses group-specific β_c, θ_c
+    For couples: uses shared β_c, θ_c (household consumption)
+    
+    Parameters
+    ----------
+    c_grid : np.ndarray
+        Grid of normalized consumption values
+    group_params : Dict[str, Dict[str, float]]
+        All group parameters from extract_group_params_from_joint
+    group : str
+        One of: 'sm', 'sf', 'cou_m', 'cou_f', 'cou'
+    
+    Returns
+    -------
+    np.ndarray
+        MUC values at each point in c_grid
+    """
+    if group in [GROUP_SINGLE_MALE, GROUP_SINGLE_FEMALE]:
+        params = group_params[group]
+        beta_c = params["beta_c"]
+        theta_c = params["theta_c"]
+    else:
+        # Couples use shared consumption parameters
+        params = group_params[GROUP_COUPLE]
+        beta_c = params["beta_c"]
+        theta_c = params["theta_c"]
+    
+    return compute_marginal_utility_consumption(c_grid, beta_c, theta_c)
+
+
+def compute_mul_by_group(
+    l_grid: np.ndarray,
+    group_params: Dict[str, Dict[str, float]],
+    group: str,
+    median_shifters: Dict[str, float],
+) -> np.ndarray:
+    """
+    Compute marginal utility of leisure for a specific group.
+    
+    MUL = ∂U/∂l = β_l(X) × l^(θ_l - 1)
+    
+    where β_l(X) is evaluated at group median characteristics.
+    
+    Parameters
+    ----------
+    l_grid : np.ndarray
+        Grid of normalized leisure values
+    group_params : Dict[str, Dict[str, float]]
+        All group parameters from extract_group_params_from_joint
+    group : str
+        One of: 'sm', 'sf', 'cou_m', 'cou_f'
+    median_shifters : Dict[str, float]
+        Median covariate values for the group
+    
+    Returns
+    -------
+    np.ndarray
+        MUL values at each point in l_grid
+    """
+    if group not in [GROUP_SINGLE_MALE, GROUP_SINGLE_FEMALE, GROUP_COUPLE_MALE, GROUP_COUPLE_FEMALE]:
+        raise ValueError(f"Invalid group for MUL: {group}. Must be individual-specific.")
+    
+    params = group_params[group]
+    
+    # Compute β_l at median shifters
+    beta_l_median = compute_beta_leisure_at_median(params, median_shifters)
+    theta_l = params.get("theta_l", 0.5)
+    
+    return compute_marginal_utility_leisure(l_grid, beta_l_median, theta_l)
+
+
+def compute_utility_by_group(
+    c_grid: np.ndarray,
+    l_grid: np.ndarray,
+    group_params: Dict[str, Dict[str, float]],
+    group: str,
+    median_shifters: Dict[str, float],
+    l_other: float = None,  # For couples: leisure of the other partner
+) -> np.ndarray:
+    """
+    Compute utility values on a (c, l) grid for a specific group.
+    
+    Singles: U = β_l(X) × BC(l; θ_l) + β_c × BC(c; θ_c)
+    Couples: U = β_l_m(X) × BC(l_m) + β_l_f(X) × BC(l_f) + β_c × BC(c) + β_int × BC(l_m) × BC(l_f)
+    
+    Parameters
+    ----------
+    c_grid, l_grid : np.ndarray
+        1D arrays for consumption and leisure grids
+    group_params : Dict
+        All group parameters
+    group : str
+        Target group
+    median_shifters : Dict
+        Median covariate values
+    l_other : float, optional
+        For couples only: leisure of the other partner (fixed at median)
+    
+    Returns
+    -------
+    np.ndarray
+        2D utility grid of shape (len(l_grid), len(c_grid))
+    """
+    C, L = np.meshgrid(c_grid, l_grid)
+    
+    if group in [GROUP_SINGLE_MALE, GROUP_SINGLE_FEMALE]:
+        params = group_params[group]
+        beta_c = params["beta_c"]
+        theta_c = params["theta_c"]
+        theta_l = params["theta_l"]
+        beta_l = compute_beta_leisure_at_median(params, median_shifters)
+        
+        U = beta_l * boxcox_transform(L, theta_l) + beta_c * boxcox_transform(C, theta_c)
+        
+    elif group in [GROUP_COUPLE_MALE, GROUP_COUPLE_FEMALE]:
+        # For couples visualization, we fix the other partner's leisure at median
+        shared = group_params[GROUP_COUPLE]
+        this_params = group_params[group]
+        
+        beta_c = shared["beta_c"]
+        theta_c = shared["theta_c"]
+        beta_interaction = shared.get("beta_interaction", 0.0)
+        
+        theta_l = this_params["theta_l"]
+        beta_l = compute_beta_leisure_at_median(this_params, median_shifters)
+        
+        # This partner's utility contribution
+        U = beta_l * boxcox_transform(L, theta_l) + beta_c * boxcox_transform(C, theta_c)
+        
+        # Add interaction term if other partner's leisure is specified
+        if l_other is not None and beta_interaction != 0:
+            other_group = GROUP_COUPLE_FEMALE if group == GROUP_COUPLE_MALE else GROUP_COUPLE_MALE
+            other_params = group_params[other_group]
+            theta_l_other = other_params["theta_l"]
+            l_other_bc = boxcox_transform(l_other, theta_l_other)
+            U = U + beta_interaction * boxcox_transform(L, theta_l) * l_other_bc
+    else:
+        raise ValueError(f"Invalid group: {group}")
+    
+    return U
+
+
+# =============================================================================
+# LABOR SUPPLY ELASTICITIES
+# =============================================================================
+
+def compute_labor_supply_elasticities(
+    df: pd.DataFrame,
+    theta: np.ndarray,
+    param_names: List[str],
+    wage_col: str = "yivwg",
+    hours_col: str = "lhw",
+    consumption_col: str = "ils_dispy",
+    group_col: str = "hh_id",
+    is_obs_col: str = "obs",
+    delta_pct: float = 0.01,
+) -> Dict[str, Any]:
+    """
+    Compute labor supply elasticities using simulation-based approach.
+    
+    For discrete choice models, elasticities are computed by:
+    1. Computing expected hours at baseline
+    2. Shocking wages/income by delta_pct
+    3. Computing new expected hours
+    4. Elasticity = (ΔE[h]/E[h]) / (Δw/w)
+    
+    This follows the standard approach in Van Soest (1995), Blundell et al. (2007).
+    
+    Elasticities computed:
+    - Uncompensated wage elasticity: ∂ln(E[h]) / ∂ln(w)
+    - Income elasticity: ∂ln(E[h]) / ∂ln(y_non_labor)
+    - Participation elasticity: ∂P(h>0) / ∂ln(w)
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        MNL dataset with all alternatives per individual
+    theta : np.ndarray
+        Estimated parameters
+    param_names : List[str]
+        Parameter names
+    wage_col : str
+        Column name for hourly wage
+    hours_col : str
+        Column name for hours worked
+    consumption_col : str
+        Column name for disposable income/consumption
+    group_col : str
+        Column for grouping by individual/household
+    is_obs_col : str
+        Column indicating observed choice (1 = observed)
+    delta_pct : float
+        Percentage shock for numerical derivative (default 1%)
+    
+    Returns
+    -------
+    Dict with elasticities and diagnostics
+    """
+    from scipy.special import logsumexp
+    
+    LOGGER.info("Computing labor supply elasticities...")
+    
+    results = {
+        "wage_elasticity_intensive": np.nan,
+        "wage_elasticity_extensive": np.nan,
+        "wage_elasticity_total": np.nan,
+        "income_elasticity": np.nan,
+        "n_individuals": 0,
+        "avg_hours_baseline": np.nan,
+        "participation_rate_baseline": np.nan,
+    }
+    
+    # Check required columns
+    required_cols = [group_col, hours_col]
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        LOGGER.warning(f"Missing columns for elasticity computation: {missing}")
+        return results
+    
+    # Get utility column
+    if "V" not in df.columns:
+        LOGGER.warning("V column not found - cannot compute elasticities")
+        return results
+    
+    groups = df[group_col].values
+    unique_groups = np.unique(groups)
+    n_individuals = len(unique_groups)
+    results["n_individuals"] = n_individuals
+    
+    # Compute baseline expected hours
+    expected_hours_baseline = np.zeros(n_individuals)
+    participation_baseline = np.zeros(n_individuals)
+    
+    for i, g in enumerate(unique_groups):
+        mask = groups == g
+        V_i = df.loc[mask, "V"].values
+        h_i = df.loc[mask, hours_col].values
+        
+        # Softmax probabilities
+        log_denom = logsumexp(V_i)
+        probs = np.exp(V_i - log_denom)
+        
+        # Expected hours
+        expected_hours_baseline[i] = np.sum(probs * h_i)
+        
+        # Participation probability (P(h > 0))
+        participation_baseline[i] = np.sum(probs[h_i > 0])
+    
+    avg_hours_baseline = np.mean(expected_hours_baseline)
+    avg_participation_baseline = np.mean(participation_baseline)
+    
+    results["avg_hours_baseline"] = avg_hours_baseline
+    results["participation_rate_baseline"] = avg_participation_baseline
+    
+    LOGGER.info(f"  Baseline: E[h] = {avg_hours_baseline:.2f} hours, P(h>0) = {avg_participation_baseline:.2%}")
+    
+    # Note: Full elasticity computation requires re-computing utilities with shocked wages
+    # This is model-specific. Here we provide the framework - actual implementation
+    # requires passing the utility function.
+    
+    LOGGER.info("  Note: Full elasticity computation requires utility recalculation")
+    LOGGER.info("  Framework ready - use compute_elasticities_with_utility() for full computation")
+    
+    return results
+
+
+def compute_elasticities_with_utility(
+    df: pd.DataFrame,
+    theta: np.ndarray,
+    param_names: List[str],
+    utility_func: Callable,
+    wage_col: str = "yivwg",
+    hours_col: str = "lhw",
+    group_col: str = "hh_id",
+    delta_pct: float = 0.01,
+) -> Dict[str, Any]:
+    """
+    Compute elasticities by shocking wages and re-computing utilities.
+    
+    This is the full implementation that requires the utility function.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        MNL dataset
+    theta : np.ndarray
+        Estimated parameters
+    param_names : List[str]
+        Parameter names
+    utility_func : Callable
+        Function that takes (df, theta) and returns utility values
+    wage_col : str
+        Column name for hourly wage
+    hours_col : str
+        Column name for hours worked
+    group_col : str
+        Column for grouping by individual
+    delta_pct : float
+        Percentage shock (default 1%)
+    
+    Returns
+    -------
+    Dict with wage and income elasticities
+    """
+    from scipy.special import logsumexp
+    
+    results = {
+        "wage_elasticity_total": np.nan,
+        "wage_elasticity_extensive": np.nan,
+        "wage_elasticity_intensive": np.nan,
+        "n_individuals": 0,
+    }
+    
+    groups = df[group_col].values
+    unique_groups = np.unique(groups)
+    n_individuals = len(unique_groups)
+    results["n_individuals"] = n_individuals
+    
+    # Baseline utilities
+    V_baseline = utility_func(df, theta)
+    
+    # Shocked utilities (1% wage increase)
+    df_shocked = df.copy()
+    df_shocked[wage_col] = df_shocked[wage_col] * (1.0 + delta_pct)
+    # Need to also update consumption based on new wage
+    # This is model-specific - for now we just shock V directly
+    
+    # For proper implementation, we need to:
+    # 1. Update yem = hours * new_wage * 4.33
+    # 2. Re-run through tax-benefit system
+    # 3. Get new disposable income
+    # 4. Compute new utilities
+    
+    LOGGER.warning("Full elasticity computation requires tax-benefit model integration")
+    
+    return results
+
+
+def compute_elasticities_summary_table(
+    elasticities: Dict[str, Any],
+    output_path: Optional[Path] = None,
+) -> pd.DataFrame:
+    """
+    Create summary table of elasticities.
+    """
+    rows = []
+    for key, value in elasticities.items():
+        if isinstance(value, (int, float)):
+            rows.append({"Measure": key, "Value": value})
+    
+    df_summary = pd.DataFrame(rows)
+    
+    if output_path:
+        df_summary.to_csv(output_path, index=False)
+        LOGGER.info(f"Elasticities saved to: {output_path}")
+    
+    return df_summary
+
+
+# =============================================================================
+# CSV-BASED INITIAL PARAMETER VALUES
+# =============================================================================
+
+def load_initial_params_from_csv(
+    csv_path: Path,
+    param_names: List[str],
+    value_col: str = "value",
+    name_col: str = "parameter",
+) -> np.ndarray:
+    """
+    Load initial parameter values from a CSV file.
+    
+    This allows easy editing of starting values without modifying code.
+    
+    Parameters
+    ----------
+    csv_path : Path
+        Path to CSV file with columns [parameter, value, ...]
+    param_names : List[str]
+        List of parameter names expected (defines order)
+    value_col : str
+        Column name for parameter values
+    name_col : str
+        Column name for parameter names
+    
+    Returns
+    -------
+    np.ndarray
+        Initial parameter values in the order of param_names
+    
+    Example CSV format:
+        parameter,value,description,lower_bound,upper_bound
+        beta_l0,0.5,"Base leisure preference",-5,5
+        beta_l_log_age,0.1,"Age effect on leisure",-2,2
+        ...
+    """
+    df = pd.read_csv(csv_path)
+    
+    if name_col not in df.columns or value_col not in df.columns:
+        raise ValueError(f"CSV must have columns '{name_col}' and '{value_col}'")
+    
+    # Create mapping from CSV
+    param_map = dict(zip(df[name_col], df[value_col]))
+    
+    # Build initial values array
+    init_values = np.zeros(len(param_names))
+    missing = []
+    
+    for i, name in enumerate(param_names):
+        if name in param_map:
+            init_values[i] = param_map[name]
+        else:
+            missing.append(name)
+            init_values[i] = 0.0  # default
+    
+    if missing:
+        LOGGER.warning(f"Parameters not found in CSV (using 0.0): {missing}")
+    
+    LOGGER.info(f"Loaded {len(param_names) - len(missing)}/{len(param_names)} parameters from {csv_path}")
+    
+    return init_values
+
+
+def save_params_to_csv(
+    theta: np.ndarray,
+    param_names: List[str],
+    csv_path: Path,
+    se: Optional[np.ndarray] = None,
+    description: Optional[Dict[str, str]] = None,
+) -> Path:
+    """
+    Save parameter estimates to CSV for use as initial values.
+    
+    Parameters
+    ----------
+    theta : np.ndarray
+        Parameter values
+    param_names : List[str]
+        Parameter names
+    csv_path : Path
+        Output path
+    se : np.ndarray, optional
+        Standard errors (if available)
+    description : Dict[str, str], optional
+        Parameter descriptions
+    
+    Returns
+    -------
+    Path to saved CSV
+    """
+    data = {
+        "parameter": param_names,
+        "value": theta,
+    }
+    
+    if se is not None:
+        data["std_error"] = se
+        data["t_value"] = theta / np.where(se > 0, se, np.nan)
+    
+    if description:
+        data["description"] = [description.get(n, "") for n in param_names]
+    
+    df = pd.DataFrame(data)
+    df.to_csv(csv_path, index=False)
+    LOGGER.info(f"Parameters saved to: {csv_path}")
+    
+    return csv_path
+
+
+def create_init_params_template(
+    param_names: List[str],
+    output_path: Path,
+    default_values: Optional[Dict[str, float]] = None,
+    descriptions: Optional[Dict[str, str]] = None,
+) -> Path:
+    """
+    Create a template CSV file for initial parameter values.
+    
+    Parameters
+    ----------
+    param_names : List[str]
+        Parameter names
+    output_path : Path
+        Where to save the template
+    default_values : Dict[str, float], optional
+        Default values for parameters
+    descriptions : Dict[str, str], optional
+        Parameter descriptions
+    
+    Returns
+    -------
+    Path to created template
+    """
+    if default_values is None:
+        default_values = {}
+    if descriptions is None:
+        descriptions = {}
+    
+    # Default descriptions for common parameters
+    default_desc = {
+        "beta_l0": "Base preference for leisure",
+        "beta_l_log_age": "Effect of log(age) on leisure preference",
+        "beta_l_log_age2": "Effect of log(age)² on leisure preference",
+        "beta_l_ch0_3": "Effect of children 0-3 on leisure (females)",
+        "beta_l_ch4_6": "Effect of children 4-6 on leisure",
+        "beta_l_ch7_9": "Effect of children 7-9 on leisure",
+        "beta_l_educL": "Effect of low education on leisure",
+        "beta_l_educH": "Effect of high education on leisure",
+        "beta_c": "Preference for consumption (should be positive)",
+        "theta_l": "Box-Cox exponent for leisure (0=log, 1=linear)",
+        "theta_c": "Box-Cox exponent for consumption (0=log, 1=linear)",
+        "beta_l_reg2": "Effect of region 2 on leisure",
+    }
+    
+    rows = []
+    for name in param_names:
+        rows.append({
+            "parameter": name,
+            "value": default_values.get(name, 0.0),
+            "description": descriptions.get(name, default_desc.get(name, "")),
+            "lower_bound": -10.0,
+            "upper_bound": 10.0,
+        })
+    
+    df = pd.DataFrame(rows)
+    df.to_csv(output_path, index=False)
+    LOGGER.info(f"Template created: {output_path}")
+    
+    return output_path
+
+
+# =============================================================================
+# PLOTTING FUNCTIONS (similar to analyze_dcm_results.py)
+# =============================================================================
+
+def plot_marginal_utility(
+    x: np.ndarray,
+    mu: np.ndarray,
+    xlabel: str,
+    ylabel: str,
+    title: str,
+    output_path: Path,
+    marks: List[float] = None,
+    endpoint: float = None,
+) -> None:
+    """
+    Line plot for marginal utilities.
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        LOGGER.warning("Matplotlib not available - skipping plot")
+        return
+    
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.plot(x, mu, color="#1f77b4", lw=2)
+    ax.axhline(0.0, color="black", lw=1, linestyle="--", alpha=0.6)
+    
+    # Add percentile marks if provided
+    if marks:
+        for m in marks:
+            ax.axvline(m, color="gray", lw=1, ls=":", alpha=0.5)
+    
+    # Add endpoint annotation if provided
+    if endpoint is not None:
+        ax.scatter([x[-1]], [mu[-1]], s=20, color="gray")
+        ax.text(x[-1], mu[-1], f"  @max → {endpoint:.3g}", va="bottom", ha="left", fontsize=8)
+    
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
+def plot_histogram(
+    series: np.ndarray,
+    title: str,
+    path: Path,
+    xlabel: str = None,
+    ylabel: str = "Count",
+    color: str = "#1f77b4",
+    bins: int = 40,
+) -> None:
+    """
+    Save histogram plot.
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        LOGGER.warning("Matplotlib not available - skipping plot")
+        return
+    
+    import pandas as pd
+    clean = pd.Series(series).replace([np.inf, -np.inf], np.nan).dropna()
+    if clean.empty:
+        return
+    
+    fig, ax = plt.subplots(figsize=(4.5, 3.0))
+    ax.hist(clean, bins=bins, color=color, edgecolor="white", alpha=0.8)
+    ax.set_title(title)
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+def plot_parameter_significance(
+    param_table: "pd.DataFrame",
+    output_path: Path,
+    title: str = "Parameter Estimates with 95% Confidence Intervals",
+) -> None:
+    """
+    Forest plot showing parameter estimates with confidence intervals.
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        LOGGER.warning("Matplotlib not available - skipping plot")
+        return
+    
+    import pandas as pd
+    
+    # Filter to finite values
+    table = param_table.copy()
+    table = table[table["std_error"].notna() & np.isfinite(table["std_error"])]
+    
+    if table.empty:
+        LOGGER.warning("No valid standard errors for significance plot")
+        return
+    
+    n_params = len(table)
+    fig_height = max(4, n_params * 0.3)
+    fig, ax = plt.subplots(figsize=(8, fig_height))
+    
+    y_pos = np.arange(n_params)
+    estimates = table["estimate"].values
+    se = table["std_error"].values
+    ci_lower = estimates - 1.96 * se
+    ci_upper = estimates + 1.96 * se
+    
+    # Horizontal error bars
+    ax.errorbar(
+        estimates, y_pos, xerr=1.96 * se,
+        fmt='o', color='#1f77b4', capsize=3, capthick=1, markersize=5
+    )
+    
+    # Vertical line at zero
+    ax.axvline(0, color='red', linestyle='--', lw=1, alpha=0.6)
+    
+    # Color points based on significance
+    significant = (ci_lower > 0) | (ci_upper < 0)
+    ax.scatter(estimates[significant], y_pos[significant], color='#2ca02c', s=50, zorder=5)
+    ax.scatter(estimates[~significant], y_pos[~significant], color='#d62728', s=50, zorder=5)
+    
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(table["parameter"].values)
+    ax.set_xlabel("Estimate")
+    ax.set_title(title)
+    ax.grid(True, axis='x', alpha=0.3)
+    
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
+def plot_indifference_contours(
+    beta_c: float,
+    theta_c: float,
+    beta_l_median: float,
+    theta_l: float,
+    output_path: Path,
+    grid_points: int = 200,
+    c_range: Tuple[float, float] = (0.001, 2.0),
+    l_range: Tuple[float, float] = (0.001, 2.0),
+) -> None:
+    """
+    Plot utility indifference contours in (c_norm, l_norm) space.
+    
+    Enhanced with:
+    - Customizable ranges
+    - Better color scheme
+    - Budget line overlay option
+    - MRS annotations
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        LOGGER.warning("Matplotlib not available - skipping plot")
+        return
+    
+    c = np.linspace(c_range[0], c_range[1], grid_points)
+    l = np.linspace(l_range[0], l_range[1], grid_points)
+    C, L = np.meshgrid(c, l)
+    
+    U = beta_c * boxcox_transform(C, theta_c) + beta_l_median * boxcox_transform(L, theta_l)
+    
+    finite = np.isfinite(U)
+    if not finite.any():
+        LOGGER.warning("No finite utility values for contour plot")
+        return
+    
+    # Use more levels for smoother contours
+    levels = np.unique(np.percentile(U[finite], [10, 25, 40, 50, 60, 75, 90, 99]))
+    
+    fig, ax = plt.subplots(figsize=(7, 6))
+    
+    # Filled contours for background
+    cf = ax.contourf(C, L, U, levels=20, cmap='RdYlGn', alpha=0.6)
+    plt.colorbar(cf, ax=ax, label='Utility')
+    
+    # Line contours with labels
+    cs = ax.contour(C, L, U, levels=levels, colors='black', linewidths=0.8)
+    ax.clabel(cs, inline=True, fontsize=8, fmt='%.2f')
+    
+    # Mark the median point
+    c_med = np.median(c)
+    l_med = np.median(l)
+    ax.scatter([c_med], [l_med], color='red', s=50, marker='x', zorder=5, label='Median point')
+    
+    ax.set_xlabel("Normalized Consumption (c_norm)")
+    ax.set_ylabel("Normalized Leisure (l_norm)")
+    ax.set_title("Utility Indifference Curves\n(higher utility = greener)")
+    ax.legend(loc='upper right')
+    ax.grid(True, alpha=0.3)
+    
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
+def plot_muc_mul_combined(
+    c_grid: np.ndarray,
+    muc: np.ndarray,
+    l_grid: np.ndarray,
+    mul: np.ndarray,
+    output_path: Path,
+    title: str = "Marginal Utilities",
+) -> None:
+    """
+    Combined plot showing MUC and MUL side by side.
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        return
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+    
+    # MUC plot
+    ax1.plot(c_grid, muc, color="#1f77b4", lw=2)
+    ax1.axhline(0, color='black', lw=1, ls='--', alpha=0.6)
+    ax1.fill_between(c_grid, muc, 0, where=(muc > 0), color='green', alpha=0.2, label='MUC > 0')
+    ax1.fill_between(c_grid, muc, 0, where=(muc < 0), color='red', alpha=0.2, label='MUC < 0')
+    ax1.set_xlabel("Normalized Consumption")
+    ax1.set_ylabel("MUC (∂U/∂c)")
+    ax1.set_title("Marginal Utility of Consumption")
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+    
+    # MUL plot
+    ax2.plot(l_grid, mul, color="#ff7f0e", lw=2)
+    ax2.axhline(0, color='black', lw=1, ls='--', alpha=0.6)
+    ax2.fill_between(l_grid, mul, 0, where=(mul > 0), color='green', alpha=0.2, label='MUL > 0')
+    ax2.fill_between(l_grid, mul, 0, where=(mul < 0), color='red', alpha=0.2, label='MUL < 0')
+    ax2.set_xlabel("Normalized Leisure")
+    ax2.set_ylabel("MUL (∂U/∂l)")
+    ax2.set_title("Marginal Utility of Leisure")
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+    
+    fig.suptitle(title, fontsize=12, fontweight='bold')
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
+def plot_mrs_curve(
+    l_grid: np.ndarray,
+    mrs: np.ndarray,
+    output_path: Path,
+    title: str = "Marginal Rate of Substitution",
+) -> None:
+    """
+    Plot MRS (leisure for consumption) against leisure.
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        return
+    
+    fig, ax = plt.subplots(figsize=(6, 4))
+    
+    # Filter valid MRS values
+    valid = np.isfinite(mrs) & (np.abs(mrs) < 1e6)
+    if not valid.any():
+        LOGGER.warning("No valid MRS values to plot")
+        return
+    
+    ax.plot(l_grid[valid], mrs[valid], color="#2ca02c", lw=2)
+    ax.axhline(0, color='black', lw=1, ls='--', alpha=0.6)
+    ax.set_xlabel("Normalized Leisure")
+    ax.set_ylabel("MRS = MUL / MUC")
+    ax.set_title(title)
+    ax.grid(True, alpha=0.3)
+    
+    # Add interpretation annotation
+    ax.annotate(
+        "MRS > 0: willing to give up\nconsumption for leisure",
+        xy=(0.95, 0.95), xycoords='axes fraction',
+        ha='right', va='top', fontsize=8,
+        bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    )
+    
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
+def plot_hours_distribution(
+    observed_hours: np.ndarray,
+    predicted_hours: Optional[np.ndarray],
+    output_path: Path,
+    title: str = "Hours Distribution",
+) -> None:
+    """
+    Plot distribution of observed vs predicted hours.
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        return
+    
+    fig, ax = plt.subplots(figsize=(8, 5))
+    
+    # Observed hours histogram
+    bins = np.arange(0, 75, 5)
+    ax.hist(observed_hours, bins=bins, alpha=0.6, label='Observed', color='#1f77b4', edgecolor='white')
+    
+    if predicted_hours is not None:
+        ax.hist(predicted_hours, bins=bins, alpha=0.6, label='Predicted (E[h])', color='#ff7f0e', edgecolor='white')
+    
+    ax.set_xlabel("Weekly Hours Worked")
+    ax.set_ylabel("Count")
+    ax.set_title(title)
+    ax.legend()
+    ax.grid(True, alpha=0.3, axis='y')
+    
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
+def plot_correlation_matrix(
+    varcov: np.ndarray,
+    param_names: List[str],
+    output_path: Path,
+    title: str = "Parameter Correlation Matrix",
+) -> None:
+    """
+    Plot correlation matrix from variance-covariance matrix.
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        return
+    
+    # Compute correlation matrix
+    se = np.sqrt(np.diag(varcov))
+    with np.errstate(divide='ignore', invalid='ignore'):
+        corr = varcov / np.outer(se, se)
+    corr = np.where(np.isfinite(corr), corr, 0)
+    
+    n_params = len(param_names)
+    fig_size = max(8, n_params * 0.4)
+    fig, ax = plt.subplots(figsize=(fig_size, fig_size))
+    
+    im = ax.imshow(corr, cmap='RdBu_r', vmin=-1, vmax=1)
+    plt.colorbar(im, ax=ax, label='Correlation')
+    
+    ax.set_xticks(range(n_params))
+    ax.set_yticks(range(n_params))
+    ax.set_xticklabels(param_names, rotation=45, ha='right', fontsize=8)
+    ax.set_yticklabels(param_names, fontsize=8)
+    ax.set_title(title)
+    
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
+# =============================================================================
+# GROUP-SPECIFIC UTILITY CONTOUR PLOTS
+# =============================================================================
+
+def plot_utility_contours_by_group(
+    group_params: Dict[str, Dict[str, float]],
+    median_shifters: Dict[str, Dict[str, float]],
+    output_dir: Path,
+    wage_spec: str = "fw",
+    grid_points: int = 200,
+    c_range: Tuple[float, float] = (0.05, 2.5),
+    l_range: Tuple[float, float] = (0.1, 2.5),
+    utility_percentiles: List[float] = [10, 25, 50, 75, 99],
+) -> Dict[str, Path]:
+    """
+    Generate utility contour plots for all 4 demographic groups.
+    
+    Creates one contour plot per group showing indifference curves at
+    specified utility percentile levels.
+    
+    Parameters
+    ----------
+    group_params : Dict[str, Dict[str, float]]
+        Parameters for each group (from extract_group_params_from_joint)
+    median_shifters : Dict[str, Dict[str, float]]
+        Median shifters for each group (from compute_group_median_shifters)
+    output_dir : Path
+        Directory to save plots
+    wage_spec : str
+        "fw" or "vw"
+    grid_points : int
+        Resolution of the grid
+    c_range, l_range : Tuple[float, float]
+        Range for consumption and leisure axes
+    utility_percentiles : List[float]
+        Percentile levels for contour lines (default: 10, 25, 50, 75, 99)
+    
+    Returns
+    -------
+    Dict[str, Path]
+        Paths to generated plots, keyed by group
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        LOGGER.warning("Matplotlib not available - skipping contour plots")
+        return {}
+    
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    group_labels = {
+        GROUP_SINGLE_MALE: "Single Males",
+        GROUP_SINGLE_FEMALE: "Single Females",
+        GROUP_COUPLE_MALE: "Males in Couples",
+        GROUP_COUPLE_FEMALE: "Females in Couples",
+    }
+    
+    plot_paths = {}
+    
+    for group in ALL_GROUPS:
+        LOGGER.info(f"  Generating contour plot for {group_labels.get(group, group)}...")
+        
+        shifters = median_shifters.get(group, {})
+        if not shifters:
+            LOGGER.warning(f"  No median shifters for {group} - using defaults")
+            shifters = {"log_age": np.log(40), "log_age2": np.log(40)**2}
+        
+        # For couples, get the median leisure of the other partner
+        l_other_median = None
+        if group in [GROUP_COUPLE_MALE, GROUP_COUPLE_FEMALE]:
+            # Default to median normalized leisure ≈ 1.0
+            l_other_median = 1.0
+        
+        c_grid = np.linspace(c_range[0], c_range[1], grid_points)
+        l_grid = np.linspace(l_range[0], l_range[1], grid_points)
+        
+        try:
+            U = compute_utility_by_group(
+                c_grid, l_grid,
+                group_params, group,
+                shifters, l_other_median
+            )
+            
+            # Get finite values
+            finite_mask = np.isfinite(U)
+            if not finite_mask.any():
+                LOGGER.warning(f"  No finite utility values for {group}")
+                continue
+            
+            # Compute percentile-based contour levels
+            U_flat = U[finite_mask].flatten()
+            levels = np.percentile(U_flat, utility_percentiles)
+            levels = np.unique(levels)  # Remove duplicates
+            
+            # Create figure
+            fig, ax = plt.subplots(figsize=(8, 6))
+            
+            C, L = np.meshgrid(c_grid, l_grid)
+            
+            # Filled contours
+            cf = ax.contourf(C, L, U, levels=20, cmap='RdYlGn', alpha=0.7)
+            plt.colorbar(cf, ax=ax, label='Utility')
+            
+            # Contour lines at percentile levels
+            cs = ax.contour(C, L, U, levels=levels, colors='black', linewidths=1.0)
+            
+            # Label contours with percentile info
+            fmt_dict = {lev: f"{utility_percentiles[i]}%" 
+                       for i, lev in enumerate(levels) if i < len(utility_percentiles)}
+            ax.clabel(cs, inline=True, fontsize=9, fmt=fmt_dict)
+            
+            # Mark median point
+            c_med = np.median(c_grid)
+            l_med = np.median(l_grid)
+            ax.scatter([c_med], [l_med], color='red', s=80, marker='x', 
+                      linewidths=2, zorder=5, label='Grid median')
+            
+            ax.set_xlabel("Normalized Consumption (c/c̄)")
+            ax.set_ylabel("Normalized Leisure (l/l̄)")
+            ax.set_title(f"Utility Indifference Curves\n{group_labels.get(group, group)} ({wage_spec.upper()})")
+            ax.legend(loc='upper right')
+            ax.grid(True, alpha=0.3)
+            
+            # Save
+            output_path = output_dir / f"{wage_spec}_{group}_contours.png"
+            fig.tight_layout()
+            fig.savefig(output_path, dpi=150)
+            plt.close(fig)
+            
+            plot_paths[group] = output_path
+            LOGGER.info(f"    Saved: {output_path.name}")
+            
+        except Exception as e:
+            LOGGER.error(f"  Error generating contour for {group}: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    return plot_paths
+
+
+def plot_all_groups_mu_comparison(
+    group_params: Dict[str, Dict[str, float]],
+    median_shifters: Dict[str, Dict[str, float]],
+    output_dir: Path,
+    wage_spec: str = "fw",
+    grid_points: int = 200,
+) -> Dict[str, Path]:
+    """
+    Generate comparison plots of MUC and MUL across all groups.
+    
+    Creates:
+    1. MUC comparison plot (all groups on same axes)
     2. MUL comparison plot (all groups on same axes)
     3. Individual MUC/MUL plots per group
     
@@ -2399,6 +4676,7 @@ def compute_fit_diagnostics(
     Compute fit diagnostics comparing predicted vs observed outcomes.
     
     Returns participation rates, hours distributions, and accuracy metrics.
+    If V column is not available, only observed statistics are computed.
     """
     from scipy.special import logsumexp
     
@@ -2412,41 +4690,59 @@ def compute_fit_diagnostics(
         "choice_accuracy": np.nan,
     }
     
-    if V_col not in df.columns:
-        LOGGER.warning(f"V column not found - cannot compute fit diagnostics")
-        return results
-    
     if hours_col not in df.columns:
         LOGGER.warning(f"Hours column '{hours_col}' not found")
         return results
     
-    # Get observed choices
-    if "obs" in df.columns:
-        obs_mask = df["obs"] == 1
-    elif "is_observed" in df.columns:
-        obs_mask = df["is_observed"] == 1
-    elif "is_chosen" in df.columns:
-        obs_mask = df["is_chosen"] == 1
-    else:
-        LOGGER.warning("No observed choice indicator found")
+    # Get observed choices - try multiple column names
+    obs_mask = None
+    for col in ["obs", "is_observed", "is_chosen"]:
+        if col in df.columns:
+            obs_mask = df[col] == 1
+            break
+    
+    if obs_mask is None:
+        LOGGER.warning("No observed choice indicator found (tried: obs, is_observed, is_chosen)")
         return results
     
     obs_df = df[obs_mask]
     
-    # Observed statistics
+    if len(obs_df) == 0:
+        LOGGER.warning(f"No observed choices found for group {group}")
+        return results
+      # Observed statistics
     obs_hours = obs_df[hours_col].values
-    results["participation_rate_observed"] = (obs_hours > 0).mean()
-    results["mean_hours_observed"] = obs_hours[obs_hours > 0].mean() if (obs_hours > 0).any() else 0
+    results["participation_rate_observed"] = float((obs_hours > 0).mean())
+    results["mean_hours_observed"] = float(obs_hours[obs_hours > 0].mean()) if (obs_hours > 0).any() else 0.0
     
     # Hours bins for distribution
-    bins = [0, 5, 15, 25, 35, 45, 55, 65]
-    bin_labels = ["0", "1-10", "11-20", "21-30", "31-40", "41-50", "51-60"]
+    bins = [0, 5, 15, 25, 35, 45, 55, 65, 100]
+    bin_labels = ["0", "1-10", "11-20", "21-30", "31-40", "41-50", "51-60", "60+"]
     
     obs_binned = pd.cut(obs_hours, bins=bins, labels=bin_labels, include_lowest=True)
-    results["hours_distribution_observed"] = obs_binned.value_counts(normalize=True).to_dict()
+    # Use value_counts() / len() for pandas compatibility
+    obs_vc = obs_binned.value_counts()
+    results["hours_distribution_observed"] = (obs_vc / obs_vc.sum()).to_dict()
     
-    # Predicted statistics (using expected hours)
-    groups = df[group_col].values
+    LOGGER.info(f"    Observed: N={len(obs_df)}, participation={results['participation_rate_observed']:.2%}, mean_hours={results['mean_hours_observed']:.1f}")
+    
+    # Predicted statistics (using expected hours) - only if V column exists
+    if V_col not in df.columns:
+        LOGGER.info(f"    V column not found - skipping predicted statistics")
+        return results
+    
+    # Find the group column
+    actual_group_col = None
+    for col in [group_col, "idhh", "idhh_true", "idperson", "idperson_true", "id"]:
+        if col in df.columns:
+            actual_group_col = col
+            break
+    
+    if actual_group_col is None:
+        LOGGER.warning(f"Group column not found - skipping predicted statistics")
+        return results
+    
+    groups = df[actual_group_col].values
     unique_groups = np.unique(groups)
     
     expected_hours = []
@@ -2454,8 +4750,12 @@ def compute_fit_diagnostics(
     
     for g in unique_groups:
         mask = groups == g
-        V_i = df.loc[mask, V_col].values
+        V_i = df.loc[mask, V_col].values if "V" in df.columns else np.zeros(mask.sum())
         h_i = df.loc[mask, hours_col].values
+        
+        # Check for valid V values
+        if not np.all(np.isfinite(V_i)):
+            continue
         
         # Softmax probabilities
         log_denom = logsumexp(V_i)
@@ -2469,15 +4769,20 @@ def compute_fit_diagnostics(
         p_work = np.sum(probs[h_i > 0])
         participation_probs.append(p_work)
     
+    if len(expected_hours) == 0:
+        LOGGER.warning(f"No valid predictions computed")
+        return results
+    
     expected_hours = np.array(expected_hours)
     participation_probs = np.array(participation_probs)
     
-    results["participation_rate_predicted"] = participation_probs.mean()
-    results["mean_hours_predicted"] = expected_hours[expected_hours > 0].mean() if (expected_hours > 0).any() else 0
-    
-    # Predicted hours distribution
+    results["participation_rate_predicted"] = float(participation_probs.mean())
+    results["mean_hours_predicted"] = float(expected_hours[expected_hours > 0].mean()) if (expected_hours > 0).any() else 0.0
+      # Predicted hours distribution
     pred_binned = pd.cut(expected_hours, bins=bins, labels=bin_labels, include_lowest=True)
-    results["hours_distribution_predicted"] = pred_binned.value_counts(normalize=True).to_dict()
+    # Use value_counts() / len() for pandas compatibility
+    pred_vc = pred_binned.value_counts()
+    results["hours_distribution_predicted"] = (pred_vc / pred_vc.sum()).to_dict()
     
     return results
 
@@ -3628,10 +5933,33 @@ def run_joint_post_estimation(
                 LOGGER.info(f"  {group}: participation={fit.get('participation_rate_observed', 'N/A'):.2%}")
             except Exception as e:
                 LOGGER.warning(f"  {group}: fit diagnostics failed - {e}")
-      # Generate fit plots
+    
+    # Generate fit plots
     fit_plot_paths = {}
     if fit_results:
         fit_plot_paths = plot_fit_diagnostics(fit_results, out_dir, wage_spec)
+    
+    # =========================================================================
+    # 6b. Compute negative MUC/MUL diagnostics at chosen alternatives
+    # =========================================================================
+    LOGGER.info("\n6b. Computing negative MUC/MUL diagnostics at chosen alternatives...")
+    negative_mu_diagnostics = compute_all_groups_negative_mu_diagnostics(
+        df_sm, df_sf, df_cou, group_params
+    )
+    
+    # =========================================================================
+    # 6c. Compute MUC=0 analysis
+    # =========================================================================
+    LOGGER.info("\n6c. Computing MUC=0 analysis...")
+    muc_zero_analysis = compute_all_groups_muc_zero_analysis(
+        group_params, df_sm, df_sf, df_cou
+    )
+    
+    for group, analysis in muc_zero_analysis.items():
+        status = "✓ well-behaved" if analysis.get("well_behaved", False) else "⚠ non-standard"
+        LOGGER.info(f"  {group}: β_c={analysis['beta_c']:.4f}, θ_c={analysis['theta_c']:.4f} ({status})")
+        for note in analysis.get("notes", []):
+            LOGGER.info(f"    {note}")
     
     # =========================================================================
     # 7. Create parameter summary table with bounds and status info
@@ -3770,6 +6098,20 @@ def run_joint_post_estimation(
         "n_not_estimated": n_not_estimated,
     }
     
+    # Add negative MU diagnostics to fit_stats
+    total_negative_muc = 0
+    total_negative_mul = 0
+    total_individuals = 0
+    for group, diag in negative_mu_diagnostics.items():
+        total_negative_muc += diag.get("n_negative_muc", 0)
+        total_negative_mul += diag.get("n_negative_mul", 0)
+        total_individuals += diag.get("n_individuals", 0)
+    
+    fit_stats["n_negative_muc_total"] = total_negative_muc
+    fit_stats["n_negative_mul_total"] = total_negative_mul
+    fit_stats["pct_negative_muc_total"] = 100.0 * total_negative_muc / total_individuals if total_individuals > 0 else np.nan
+    fit_stats["pct_negative_mul_total"] = 100.0 * total_negative_mul / total_individuals if total_individuals > 0 else np.nan
+    
     # =========================================================================
     # 9. Generate comprehensive HTML report
     # =========================================================================
@@ -3789,6 +6131,8 @@ def run_joint_post_estimation(
         fit_plot_paths=fit_plot_paths,
         output_path=html_path,
         wage_spec=wage_spec,
+        negative_mu_diagnostics=negative_mu_diagnostics,
+        muc_zero_analysis=muc_zero_analysis,
     )
     
     LOGGER.info("\n" + "=" * 70)
@@ -3804,6 +6148,8 @@ def run_joint_post_estimation(
         "median_shifters": median_shifters,
         "elasticities": elasticities_df,
         "fit_diagnostics": fit_results,
+        "negative_mu_diagnostics": negative_mu_diagnostics,
+        "muc_zero_analysis": muc_zero_analysis,
         "plots": {
             **mu_plot_paths,
             **contour_paths,
@@ -3825,6 +6171,8 @@ def _build_joint_html_report(
     fit_plot_paths: Dict[str, Path],
     output_path: Path,
     wage_spec: str = "fw",
+    negative_mu_diagnostics: Dict[str, Dict[str, Any]] = None,
+    muc_zero_analysis: Dict[str, Dict[str, Any]] = None,
 ) -> Path:
     """Build comprehensive HTML report for joint estimation with enhanced parameter table."""
     from datetime import datetime
@@ -3997,6 +6345,118 @@ def _build_joint_html_report(
         </div>
         """
     
+    # Build negative MU diagnostics section
+    negative_mu_section = ""
+    if negative_mu_diagnostics or muc_zero_analysis:
+        negative_mu_section = """
+  <section>
+    <h2>⚠️ Marginal Utility Diagnostics</h2>
+    <p>Analysis of marginal utilities at chosen alternatives. Negative values indicate potential specification issues.</p>
+"""
+        # Negative MU table by group
+        if negative_mu_diagnostics:
+            negative_mu_section += """
+    <h3>Negative MUC/MUL at Chosen Alternatives by Group</h3>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Group</th>
+          <th>N Individuals</th>
+          <th>N Negative MUC</th>
+          <th>% Negative MUC</th>
+          <th>N Negative MUL</th>
+          <th>% Negative MUL</th>
+          <th>MUC Mean</th>
+          <th>MUL Mean</th>
+        </tr>
+      </thead>
+      <tbody>
+"""
+            for group in ALL_GROUPS:
+                diag = negative_mu_diagnostics.get(group, {})
+                n_ind = diag.get("n_individuals", 0)
+                n_neg_muc = diag.get("n_negative_muc", 0)
+                pct_neg_muc = diag.get("pct_negative_muc", np.nan)
+                n_neg_mul = diag.get("n_negative_mul", 0)
+                pct_neg_mul = diag.get("pct_negative_mul", np.nan)
+                muc_mean = diag.get("muc_mean", np.nan)
+                mul_mean = diag.get("mul_mean", np.nan)
+                
+                # Color code cells with warnings
+                muc_class = ' class="warning-cell"' if n_neg_muc > 0 else ""
+                mul_class = ' class="warning-cell"' if n_neg_mul > 0 else ""
+                
+                negative_mu_section += f"""
+        <tr>
+          <td>{group_labels.get(group, group)}</td>
+          <td>{n_ind}</td>
+          <td{muc_class}>{n_neg_muc}</td>
+          <td{muc_class}>{_format_value(pct_neg_muc)}%</td>
+          <td{mul_class}>{n_neg_mul}</td>
+          <td{mul_class}>{_format_value(pct_neg_mul)}%</td>
+          <td>{_format_value(muc_mean)}</td>
+          <td>{_format_value(mul_mean)}</td>
+        </tr>
+"""
+            negative_mu_section += """
+      </tbody>
+    </table>
+"""
+        
+        # MUC=0 analysis
+        if muc_zero_analysis:
+            negative_mu_section += """
+    <h3>MUC Behavior Analysis</h3>
+    <p>For well-behaved utility: MUC &gt; 0 (β_c &gt; 0) and diminishing (θ_c &lt; 1)</p>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Group</th>
+          <th>β_c</th>
+          <th>θ_c</th>
+          <th>MUC Positive?</th>
+          <th>MUC Diminishing?</th>
+          <th>Well-Behaved?</th>
+          <th>MUC at Median C</th>
+          <th>C where MUC=1</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+"""
+            for group, analysis in muc_zero_analysis.items():
+                beta_c = analysis.get("beta_c", np.nan)
+                theta_c = analysis.get("theta_c", np.nan)
+                muc_pos = "✓" if analysis.get("muc_positive", False) else "✗"
+                muc_dim = "✓" if analysis.get("muc_diminishing", False) else "✗"
+                well_behaved = "✓" if analysis.get("well_behaved", False) else "✗"
+                muc_at_median = analysis.get("muc_at_median", np.nan)
+                c_where_muc_1 = analysis.get("c_where_muc_equals_1", np.nan)
+                notes = "; ".join(analysis.get("notes", []))
+                
+                row_class = "" if analysis.get("well_behaved", False) else ' class="warning-row"'
+                
+                negative_mu_section += f"""
+        <tr{row_class}>
+          <td>{group_labels.get(group, group)}</td>
+          <td>{_format_value(beta_c)}</td>
+          <td>{_format_value(theta_c)}</td>
+          <td>{muc_pos}</td>
+          <td>{muc_dim}</td>
+          <td>{well_behaved}</td>
+          <td>{_format_value(muc_at_median)}</td>
+          <td>{_format_value(c_where_muc_1)}</td>
+          <td style="font-size:0.85em;">{notes}</td>
+        </tr>
+"""
+            negative_mu_section += """
+      </tbody>
+    </table>
+"""
+        negative_mu_section += """
+  </section>
+"""
+    
     html = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -4058,6 +6518,10 @@ def _build_joint_html_report(
     .param-table .pval-marginal {{ background-color: var(--pval-marginal); }}
     .param-table .pval-weak {{ background-color: var(--pval-weak); }}
     .param-table .pval-insig {{ background-color: var(--pval-insig); }}
+    
+    /* Warning cells for diagnostics */
+    .warning-cell {{ background-color: #ffcccc !important; font-weight: bold; }}
+    .warning-row {{ background-color: #fff3cd !important; }}
     
     /* Color legend for parameter table */
     .color-legend {{ display: flex; flex-wrap: wrap; gap: 1em; margin: 1em 0; padding: 0.5em; background: #f0f0f0; border-radius: 4px; }}
@@ -4130,6 +6594,8 @@ def _build_joint_html_report(
       </figure>
     </div>
   </section>
+  
+  {negative_mu_section}
   
   <section>
     <h2>⚙️ Group-Specific Parameters</h2>

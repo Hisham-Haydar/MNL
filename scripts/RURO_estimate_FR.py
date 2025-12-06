@@ -334,22 +334,108 @@ def precompute_data_singles(df: pd.DataFrame, is_male: bool = True) -> Precomput
             arr = pd.to_numeric(df[col], errors="coerce").fillna(default).to_numpy()
         else:
             arr = np.full(n, default)
-        return np.ascontiguousarray(arr, dtype=np.float64)
-      # -------------------------------------------------------------------------
+        return np.ascontiguousarray(arr, dtype=np.float64)      # -------------------------------------------------------------------------
     # Consumption and leisure (normalized)
     # -------------------------------------------------------------------------
-    # Check c_norm first, but only use if it has non-NaN values
+    # CRITICAL FIX: Check if consumption varies within choice sets.
+    # If ils_dispy is constant (EUROMOD not run for each draw), we need to
+    # compute a synthetic consumption that varies with earnings.
+    #
+    # The standard approach is: c = non_labor_income + (1 - avg_tax_rate) * earnings
+    # We approximate this as: c = base_dispy + 0.6 * (yem - base_yem)
+    # where 0.6 approximates (1 - marginal_tax_rate) for typical workers
+    
     c = None
+    
+    # First try normalized columns
     if "c_norm" in df.columns and not df["c_norm"].isna().all():
         c = df["c_norm"].to_numpy(dtype=np.float64)
     if c is None and "dispy_util" in df.columns and not df["dispy_util"].isna().all():
         c = df["dispy_util"].to_numpy(dtype=np.float64)
-    if c is None and "consumption" in df.columns:
-        c = df["consumption"].to_numpy(dtype=np.float64) / MEAN_DISPY_NORM
-    if c is None and "ils_dispy" in df.columns:
-        c = df["ils_dispy"].to_numpy(dtype=np.float64) / MEAN_DISPY_NORM
+    
+    # Check if consumption varies within choice sets
+    if c is not None:
+        # Group by person and check variation
+        if "idperson_true" in df.columns:
+            ids = df["idperson_true"].to_numpy()
+        elif "idperson" in df.columns:
+            ids = df["idperson"].to_numpy()
+        else:
+            ids = None
+        
+        if ids is not None:
+            # Check variance within first 100 individuals
+            unique_ids = np.unique(ids)[:100]
+            c_varies = False
+            for uid in unique_ids:
+                mask = ids == uid
+                if mask.sum() > 1 and np.std(c[mask]) > 1e-6:
+                    c_varies = True
+                    break
+            
+            if not c_varies:
+                LOGGER.warning("Consumption does NOT vary within choice sets - will compute synthetic consumption")
+                c = None  # Force recomputation
+    
+    # If no valid consumption, try to compute from ils_dispy + yem
     if c is None:
-        c = np.ones(n, dtype=np.float64)
+        ils_dispy = None
+        yem = None
+        
+        if "ils_dispy" in df.columns:
+            ils_dispy = pd.to_numeric(df["ils_dispy"], errors="coerce").fillna(0).to_numpy(dtype=np.float64)
+        if "yem" in df.columns:
+            yem = pd.to_numeric(df["yem"], errors="coerce").fillna(0).to_numpy(dtype=np.float64)
+        
+        if ils_dispy is not None and yem is not None:
+            # Compute synthetic consumption that varies with earnings
+            # c = base_non_labor_income + net_earnings
+            # Approximate: c = ils_dispy_observed - 0.6*yem_observed + 0.6*yem_hypothetical
+            # For each person, base = ils_dispy[draw=0] - 0.6*yem[draw=0]
+            
+            if "idperson_true" in df.columns:
+                ids = df["idperson_true"].to_numpy()
+            elif "idperson" in df.columns:
+                ids = df["idperson"].to_numpy()
+            else:
+                ids = np.arange(n)
+            
+            draws = df["draw"].to_numpy() if "draw" in df.columns else np.zeros(n)
+            
+            # Get base (observed) values per person
+            unique_ids, inverse = np.unique(ids, return_inverse=True)
+            base_ils = np.zeros(len(unique_ids), dtype=np.float64)
+            base_yem = np.zeros(len(unique_ids), dtype=np.float64)
+            
+            for i, uid in enumerate(unique_ids):
+                mask = (ids == uid) & (draws == 0)
+                if mask.any():
+                    base_ils[i] = ils_dispy[mask][0]
+                    base_yem[i] = yem[mask][0]
+                else:
+                    # Fallback: use first observation for this person
+                    mask = ids == uid
+                    base_ils[i] = ils_dispy[mask][0]
+                    base_yem[i] = yem[mask][0]
+            
+            # Compute: c = base_non_labor + 0.6 * yem_hypothetical
+            # where base_non_labor = base_ils - 0.6 * base_yem
+            IMPLICIT_TAX_RATE = 0.40  # Approximate average marginal tax rate
+            NET_OF_TAX = 1.0 - IMPLICIT_TAX_RATE
+            
+            base_non_labor = base_ils - NET_OF_TAX * base_yem
+            c = base_non_labor[inverse] + NET_OF_TAX * yem
+            c = c / MEAN_DISPY_NORM  # Normalize
+            
+            LOGGER.info(f"Computed synthetic consumption: mean={c.mean():.3f}, std={c.std():.3f}")
+        
+        elif "consumption" in df.columns:
+            c = df["consumption"].to_numpy(dtype=np.float64) / MEAN_DISPY_NORM
+        elif ils_dispy is not None:
+            c = ils_dispy / MEAN_DISPY_NORM
+        else:
+            c = np.ones(n, dtype=np.float64)
+            LOGGER.warning("No consumption data found - using constant consumption (β_c won't be identified)")
       # Check l_norm first, but only use if it has non-NaN values
     l = None
     if "l_norm" in df.columns and not df["l_norm"].isna().all():
@@ -532,8 +618,7 @@ def precompute_data_couples(df: pd.DataFrame) -> PrecomputedDataCouples:
         Wide-format RURO-MNL dataset for couples (columns have _m and _f suffixes)
     
     Returns
-    -------
-    PrecomputedDataCouples
+    -------    PrecomputedDataCouples
         All arrays needed for estimation, pre-extracted and contiguous
     """
     n = len(df)
@@ -545,16 +630,85 @@ def precompute_data_couples(df: pd.DataFrame) -> PrecomputedDataCouples:
             arr = np.full(n, default)
         return np.ascontiguousarray(arr, dtype=np.float64)
     
+    # -------------------------------------------------------------------------
     # Consumption (household-level, normalized)
+    # CRITICAL FIX: Check if consumption varies within choice sets.
+    # If not, compute synthetic consumption from earnings.
+    # -------------------------------------------------------------------------
     c = None
+    
     if "c_norm" in df.columns and not df["c_norm"].isna().all():
         c = df["c_norm"].to_numpy(dtype=np.float64)
-    if c is None and "consumption" in df.columns:
-        c = df["consumption"].to_numpy(dtype=np.float64) / MEAN_DISPY_NORM
+    
+    # Check if consumption varies within choice sets
+    if c is not None:
+        if "idhh_true" in df.columns:
+            ids = df["idhh_true"].to_numpy()
+        elif "idhh" in df.columns:
+            ids = df["idhh"].to_numpy()
+        else:
+            ids = None
+        
+        if ids is not None:
+            unique_ids = np.unique(ids)[:100]
+            c_varies = False
+            for uid in unique_ids:
+                mask = ids == uid
+                if mask.sum() > 1 and np.std(c[mask]) > 1e-6:
+                    c_varies = True
+                    break
+            
+            if not c_varies:
+                LOGGER.warning("Couples consumption does NOT vary within choice sets - will compute synthetic")
+                c = None
+    
+    # If no valid consumption, compute from earnings
     if c is None:
         ils_m = pd.to_numeric(df.get("ils_dispy_m", 0), errors="coerce").fillna(0).to_numpy()
         ils_f = pd.to_numeric(df.get("ils_dispy_f", 0), errors="coerce").fillna(0).to_numpy()
-        c = (ils_m + ils_f) / MEAN_DISPY_NORM
+        yem_m = pd.to_numeric(df.get("yem_m", 0), errors="coerce").fillna(0).to_numpy()
+        yem_f = pd.to_numeric(df.get("yem_f", 0), errors="coerce").fillna(0).to_numpy()
+        
+        # Check if we have earnings data
+        if np.any(yem_m > 0) or np.any(yem_f > 0):
+            # Get base values per household
+            if "idhh_true" in df.columns:
+                ids = df["idhh_true"].to_numpy()
+            elif "idhh" in df.columns:
+                ids = df["idhh"].to_numpy()
+            else:
+                ids = np.arange(n)
+            
+            draws = df["draw"].to_numpy() if "draw" in df.columns else np.zeros(n)
+            
+            unique_ids, inverse = np.unique(ids, return_inverse=True)
+            base_ils_m = np.zeros(len(unique_ids), dtype=np.float64)
+            base_ils_f = np.zeros(len(unique_ids), dtype=np.float64)
+            base_yem_m = np.zeros(len(unique_ids), dtype=np.float64)
+            base_yem_f = np.zeros(len(unique_ids), dtype=np.float64)
+            
+            for i, uid in enumerate(unique_ids):
+                mask = (ids == uid) & (draws == 0)
+                if not mask.any():
+                    mask = ids == uid
+                base_ils_m[i] = ils_m[mask][0]
+                base_ils_f[i] = ils_f[mask][0]
+                base_yem_m[i] = yem_m[mask][0]
+                base_yem_f[i] = yem_f[mask][0]
+            
+            NET_OF_TAX = 0.60
+            base_non_labor = (base_ils_m + base_ils_f) - NET_OF_TAX * (base_yem_m + base_yem_f)
+            c = base_non_labor[inverse] + NET_OF_TAX * (yem_m + yem_f)
+            c = c / MEAN_DISPY_NORM
+            
+            LOGGER.info(f"Computed synthetic couples consumption: mean={c.mean():.3f}, std={c.std():.3f}")
+        else:
+            # Fallback to original ils_dispy
+            c = (ils_m + ils_f) / MEAN_DISPY_NORM
+            LOGGER.warning("No earnings data for couples - consumption won't vary")
+    elif "consumption" in df.columns and c is None:
+        c = df["consumption"].to_numpy(dtype=np.float64) / MEAN_DISPY_NORM
+    
     c = np.ascontiguousarray(np.clip(c, 1e-6, None), dtype=np.float64)
     
     # Leisure - male

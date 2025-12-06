@@ -45,8 +45,13 @@ $LOG_FILE = "$LOG_DIR\fr_${YEAR}_joint_only_$TIMESTAMP.md"
 # ---------------------------------------------------------------------
 # PERFORMANCE OPTIMIZATIONS
 # ---------------------------------------------------------------------
-# Detect available CPU cores
-$CPU_CORES = (Get-WmiObject -Class Win32_Processor).NumberOfLogicalProcessors
+# Detect available CPU cores (take first value if multiple processors)
+$CPU_CORES_RAW = (Get-WmiObject -Class Win32_Processor).NumberOfLogicalProcessors
+if ($CPU_CORES_RAW -is [array]) {
+    $CPU_CORES = $CPU_CORES_RAW[0]
+} else {
+    $CPU_CORES = $CPU_CORES_RAW
+}
 Write-Host "Detected CPU cores: $CPU_CORES" -ForegroundColor Cyan
 
 # Set thread environment variables for optimal performance

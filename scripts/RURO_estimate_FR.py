@@ -6341,11 +6341,17 @@ def main() -> None:
         if args.post_estimation:
             try:
                 from RURO_post_estimation import run_joint_post_estimation, compute_standard_errors
+                import sys
+                
+                # Flush output to ensure previous messages are captured
+                sys.stdout.flush()
+                sys.stderr.flush()
                 
                 LOGGER.info("")
                 LOGGER.info("=" * 60)
                 LOGGER.info("JOINT POST-ESTIMATION ANALYSIS")
                 LOGGER.info("=" * 60)
+                sys.stdout.flush()
                 
                 out_dir = Path(args.out_file).parent if args.out_file else Path("outputs/estimates/fr")
                 
@@ -6371,8 +6377,25 @@ def main() -> None:
                 
                 if se is not None:
                     LOGGER.info(f"SE computed successfully for {len(se)} parameters")
+                    # Update JSON file with SE if it exists
+                    if args.out_file:
+                        out_path = Path(args.out_file)
+                        if out_path.suffix == ".json" and out_path.exists():
+                            import json
+                            with open(out_path, "r") as f:
+                                results_dict = json.load(f)
+                            results_dict["std_errors"] = se.tolist()
+                            results_dict["t_values"] = (result.x / se).tolist()
+                            with open(out_path, "w") as f:
+                                json.dump(results_dict, f, indent=2)
+                            LOGGER.info(f"SE added to: {out_path}")
                 else:
                     LOGGER.warning("Could not compute SE (Hessian may be singular)")
+                
+                # Flush output to ensure capture
+                import sys
+                sys.stdout.flush()
+                sys.stderr.flush()
                 
                 # Run full joint post-estimation
                 post_results = run_joint_post_estimation(

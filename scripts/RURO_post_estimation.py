@@ -6,7 +6,7 @@ RURO_post_estimation.py
 
 Comprehensive post-estimation analysis for RURO labor supply models.
 
-Features (following Stijn Van Houtven's R code and analyze_dcm_results.py):
+Features:
 - Variance-covariance matrix and standard errors
 - Hessian diagnostics (eigenvalues, positive-definiteness check)
 - Model fit statistics (AIC, BIC, McFadden's pseudo R²)
@@ -127,20 +127,7 @@ def compute_numeric_hessian(
 ) -> np.ndarray:
     """
     Compute numeric Hessian matrix from gradient function (forward differences).
-    
-    Following Stijn's R code:
-    ```r
-    f_numeric_hessian <- function(param, start_gradient, delta){
-      sd_mat <- matrix(rep(0, length(param)^2), length(param))
-      for (i in 1:length(param)){
-        param_t <- param
-        param_t[i] <- param[i]*(1+delta)
-        sd_mat[,i] <- (f_gradient_optim(param_t)-start_gradient)/(param[i]*delta)
-      }
-      return(sd_mat)
-    }
-    ```
-    
+        
     Parameters
     ----------
     theta : np.ndarray
@@ -148,7 +135,7 @@ def compute_numeric_hessian(
     grad_func : Callable
         Gradient function that takes theta and returns gradient vector
     delta : float
-        Relative perturbation size (default 1e-4, as in Stijn's code)
+        Relative perturbation size (default 1e-4)
     
     Returns
     -------
@@ -161,7 +148,7 @@ def compute_numeric_hessian(
     
     for i in range(K):
         theta_perturbed = theta.copy()
-        # Use relative perturbation like Stijn's code: param[i]*(1+delta)
+        # Use relative perturbation : param[i]*(1+delta)
         if abs(theta[i]) > 1e-8:
             theta_perturbed[i] = theta[i] * (1.0 + delta)
             h = theta[i] * delta
@@ -186,11 +173,6 @@ def compute_jacobian_hessian(
 ) -> np.ndarray:
     """
     Compute Hessian using numerical Jacobian of the gradient (central differences).
-    
-    This is Stijn's "Jacobian" method:
-    ```r
-    hessian <- jacobian(f_gradient_optim, param)
-    ```
     
     Uses central differences for better accuracy.
     
@@ -255,14 +237,6 @@ def compute_standard_errors(
     """
     Compute standard errors, t-values, and variance-covariance matrix.
     
-    Following Stijn's R code (Section 2.3):
-    ```r
-    hessian <- jacobian(f_gradient_optim, param)
-    varcov <- solve(hessian)
-    SE <- sqrt(diag(solve(hessian)))
-    TV <- param/SE
-    ```
-    
     Parameters
     ----------
     theta : np.ndarray
@@ -272,7 +246,7 @@ def compute_standard_errors(
     param_names : List[str]
         Parameter names
     method : str
-        "jacobian" (central diff, more accurate) or "numeric" (forward diff, Stijn's method)
+        "jacobian" (central diff, more accurate) or "numeric" (forward diff)
     delta : float
         Step size for finite differences
     
@@ -410,14 +384,6 @@ def check_gradient_accuracy(
     """
     Check analytical gradient against numerical gradient.
     
-    Following Stijn's R code:
-    ```r
-    check_gradient <- check.derivatives(.x = param, 
-                                        func = f_likelihood_optim, 
-                                        func_grad = f_gradient_optim, 
-                                        check_derivatives_print = "all")
-    ```
-    
     Parameters
     ----------
     theta : np.ndarray
@@ -515,7 +481,6 @@ def run_post_estimation(
     """
     Run full post-estimation analysis and optionally save results.
     
-    Following Stijn's R workflow (Section 2.3):
     1. Compute Hessian (both Jacobian and numeric methods)
     2. Compute variance-covariance matrix
     3. Compute standard errors and t-values
@@ -585,7 +550,7 @@ def run_post_estimation(
     # -------------------------------------------------------------------------
     # 2. Standard errors via numeric Hessian (for comparison)
     # -------------------------------------------------------------------------
-    LOGGER.info("\n2. Computing standard errors (numeric Hessian - Stijn's method)...")
+    LOGGER.info("\n2. Computing standard errors (numeric Hessian)")
     se_results_num = compute_standard_errors(
         theta, grad_func, param_names, method="numeric", delta=1e-4
     )
@@ -645,7 +610,7 @@ def run_post_estimation(
         LOGGER.info("All eigenvalues positive - Hessian is positive definite ✓")
     
     # -------------------------------------------------------------------------
-    # 5. Save to Excel (like Stijn's code)
+    # 5. Save to Excel
     # -------------------------------------------------------------------------
     if save_excel and out_dir is not None:
         out_dir = Path(out_dir)
@@ -686,7 +651,7 @@ def run_post_estimation(
                 fit_df = pd.DataFrame([fit_stats])
                 fit_df.to_excel(writer, sheet_name="model_fit", index=False)
                 
-                # Sheet 6: Numeric Hessian comparison (Stijn's method)
+                # Sheet 6: Numeric Hessian comparison
                 table_num = se_results_num["param_table"]
                 table_num.to_excel(writer, sheet_name="SE_numeric", index=False)
             
@@ -2239,7 +2204,7 @@ def plot_all_groups_mu_comparison(
 
 
 # =============================================================================
-# LABOR SUPPLY ELASTICITIES TABLE (Aaberge & Colombino style)
+# LABOR SUPPLY ELASTICITIES TABLE
 # =============================================================================
 
 def compute_elasticities_table(
@@ -2251,7 +2216,7 @@ def compute_elasticities_table(
     wage_spec: str = "fw",
 ) -> pd.DataFrame:
     """
-    Compute labor supply elasticities table in the format of Aaberge & Colombino (2011).
+    Compute labor supply elasticities table.
     
     Following the IJM format, computes for each group:
     - Hicksian (compensated) wage elasticity
@@ -3947,7 +3912,7 @@ def _build_joint_html_report(
   
   <section>
     <h2>📈 Labor Supply Elasticities</h2>
-    <p>Structural approximations based on estimated preference parameters (Aaberge & Colombino style).</p>
+    <p>Structural approximations based on estimated preference parameters.</p>
     {elast_html}
     <p><small><em>Note: For exact elasticities, use simulation-based methods with tax-benefit integration.</em></small></p>
   </section>

@@ -69,15 +69,23 @@ $LOG_FILE = "$LOG_DIR\fr_${YEAR}_pipeline_$TIMESTAMP.md"
 # ---------------------------------------------------------------------
 # PERFORMANCE OPTIMIZATIONS
 # ---------------------------------------------------------------------
+# Detect available CPU cores
+$CPU_CORES = (Get-WmiObject -Class Win32_Processor).NumberOfLogicalProcessors
+Write-Host "Detected CPU cores: $CPU_CORES" -ForegroundColor Cyan
+
 # Set thread environment variables for optimal NumPy/MKL performance
 # These apply to ALL steps (data prep uses vectorized pandas/numpy)
-$env:OMP_NUM_THREADS = "32"
-$env:MKL_NUM_THREADS = "32"
-$env:NUMEXPR_NUM_THREADS = "32"
-$env:OPENBLAS_NUM_THREADS = "32"
+$env:OMP_NUM_THREADS = "$CPU_CORES"
+$env:MKL_NUM_THREADS = "$CPU_CORES"
+$env:NUMEXPR_NUM_THREADS = "$CPU_CORES"
+$env:OPENBLAS_NUM_THREADS = "$CPU_CORES"
 
 # For Numba parallelization (used in estimation step)
-$env:NUMBA_NUM_THREADS = "32"
+$env:NUMBA_NUM_THREADS = "$CPU_CORES"
+
+# Set process priority to high for better CPU allocation
+$process = Get-Process -Id $PID
+$process.PriorityClass = "High"
 
 # Disable Python output buffering for real-time logging
 $env:PYTHONUNBUFFERED = "1"
@@ -156,47 +164,29 @@ function Run-PythonScript {
     $Command | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
     "``````" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
     "" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
-    "``````" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
     
     $startTime = Get-Date
     
-    # Run command and capture output - use Start-Process to avoid encoding issues
-    # Capture stdout and stderr separately, then combine
-    $pinfo = New-Object System.Diagnostics.ProcessStartInfo
-    $pinfo.FileName = "python"
-    # Extract arguments from command (remove "python " prefix)
-    $args = $Command -replace '^python\s+', ''
-    $pinfo.Arguments = $args
-    $pinfo.RedirectStandardOutput = $true
-    $pinfo.RedirectStandardError = $true
-    $pinfo.UseShellExecute = $false
-    $pinfo.CreateNoWindow = $true
-    $pinfo.StandardOutputEncoding = [System.Text.Encoding]::UTF8
-    $pinfo.StandardErrorEncoding = [System.Text.Encoding]::UTF8
+    # Use Invoke-Expression which is simpler and more reliable
+    try {
+        $output = Invoke-Expression $Command 2>&1
+        $exitCode = $LASTEXITCODE
+    } catch {
+        $output = $_.Exception.Message
+        $exitCode = 1
+    }
     
-    $process = New-Object System.Diagnostics.Process
-    $process.StartInfo = $pinfo
-    $process.Start() | Out-Null
-    
-    # Read output asynchronously to avoid deadlocks
-    $stdout = $process.StandardOutput.ReadToEnd()
-    $stderr = $process.StandardError.ReadToEnd()
-    $process.WaitForExit()
-    
-    $exitCode = $process.ExitCode
     $duration = (Get-Date) - $startTime
     
     # Display and log output
-    if ($stdout) {
-        Write-Host $stdout
-        $stdout | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
-    }
-    if ($stderr) {
-        Write-Host $stderr -ForegroundColor Yellow
-        $stderr | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
+    if ($output) {
+        $outputStr = $output | Out-String
+        Write-Host $outputStr
+        "``````" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
+        $outputStr | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
+        "``````" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
     }
     
-    "``````" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
     "" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
     
     if ($exitCode -ne 0) {
@@ -417,7 +407,7 @@ if (-not (Run-PythonScript $cmd "Estimate couples")) {
 # 7d. JOINT ESTIMATION (all groups with shared opportunity parameters)
 Write-Host ""
 Write-Host "--- 7d. Joint Estimation (all groups) ---" -ForegroundColor Magenta
-$cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" --mnl-file `"$MNL_FILE`" --joint --wage-spec $WAGE_SPEC --optimizer L-BFGS-B --maxiter 500 --use-numba --n-jobs 32 --out-file `"$RESULTS_DIR\fr_${YEAR}_joint.json`""
+$cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" --mnl-file `"$MNL_FILE`" --joint --wage-spec $WAGE_SPEC --optimizer L-BFGS-B --maxiter 500 --use-numba --n-jobs $CPU_CORES --out-file `"$RESULTS_DIR\fr_${YEAR}_joint.json`""
 if ($INIT_PARAMS_JOINT -and (Test-Path $INIT_PARAMS_JOINT)) {
     $cmd += " --init-params `"$INIT_PARAMS_JOINT`""
     Write-Host "  Using initial params: $INIT_PARAMS_JOINT" -ForegroundColor Cyan
@@ -426,6 +416,40 @@ if ($INIT_PARAMS_JOINT -and (Test-Path $INIT_PARAMS_JOINT)) {
 if (-not (Run-PythonScript $cmd "Joint estimation (shared opportunity parameters)")) {
     Write-Host "WARNING: Joint estimation failed" -ForegroundColor Yellow
 }
+
+# =====================================================================
+# STEP 8: POST-ESTIMATION ANALYSIS (OPTIONAL)
+# =====================================================================
+Write-Step "STEP 8/8: POST-ESTIMATION ANALYSIS (RURO_post_estimation.py)"
+
+$POST_EST_DIR = "$PROJ_ROOT\outputs\post_estimation\fr\$YEAR"
+New-Item -ItemType Directory -Force -Path $POST_EST_DIR | Out-Null
+
+# Helper function for post-estimation
+function Run-PostEstimation {
+    param([string]$Name, [string]$EstFile, [string]$Group, [string]$Sex = "")
+    
+    if (-not (Test-Path $EstFile)) {
+        Write-Host "Skipping $Name (estimation file not found)" -ForegroundColor Yellow
+        return
+    }
+    
+    Write-Host ""
+    Write-Host "--- Post-Estimation: $Name ---" -ForegroundColor Magenta
+    
+    $outDir = "$POST_EST_DIR\$($Name.Replace(' ', '_').ToLower())"
+    New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+      $cmd = "python `"$SCRIPTS\RURO_post_estimation.py`" --results `"$EstFile`" --mnl-file `"$MNL_FILE`" --out-dir `"$outDir`" --wage-spec $WAGE_SPEC"
+    if ($Sex) { $cmd += " --sex $Sex" }
+    
+    Run-PythonScript $cmd "Post-estimation analysis for $Name"
+}
+
+# Run post-estimation for each successful estimation
+Run-PostEstimation -Name "Single Males" -EstFile "$RESULTS_DIR\fr_${YEAR}_single_males.json" -Group "1" -Sex "m"
+Run-PostEstimation -Name "Single Females" -EstFile "$RESULTS_DIR\fr_${YEAR}_single_females.json" -Group "1" -Sex "f"
+Run-PostEstimation -Name "Couples" -EstFile "$RESULTS_DIR\fr_${YEAR}_couples.json" -Group "10"
+Run-PostEstimation -Name "Joint" -EstFile "$RESULTS_DIR\fr_${YEAR}_joint.json" -Group "1"
 
 # =====================================================================
 # PIPELINE COMPLETE

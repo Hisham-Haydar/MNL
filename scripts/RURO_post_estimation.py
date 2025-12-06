@@ -2408,14 +2408,26 @@ def main():
     )
     
     args = parser.parse_args()
-    
-    # Load results
+      # Load results
     with open(args.results, "r") as f:
         results = json.load(f)
     
     theta = np.array(results["theta"])
     param_names = results.get("param_names", [f"theta_{i}" for i in range(len(theta))])
-    n_individuals = results.get("n_individuals", 1000)
+    
+    # Handle n_individuals for different estimation modes
+    if "n_individuals" in results:
+        n_individuals = results["n_individuals"]
+    elif "mode" in results and results["mode"] == "joint":
+        # Joint estimation: sum individuals from all groups
+        n_individuals = results.get("n_sm", 0) + results.get("n_sf", 0) + results.get("n_cou", 0)
+        if n_individuals == 0:
+            LOGGER.warning("Joint estimation but no individual counts found, defaulting to 1000")
+            n_individuals = 1000
+    else:
+        LOGGER.warning("n_individuals not found in results, defaulting to 1000")
+        n_individuals = 1000
+    
     log_likelihood = results.get("log_likelihood", None)
     
     LOGGER.info(f"Loaded {len(theta)} parameters from {args.results}")
@@ -2456,8 +2468,7 @@ def main():
     print("-" * 54)
     for name, val in zip(param_names, theta):
         print(f"  {name:<38}: {val:>10.4f}")
-    
-    # If we have data, generate marginal utility plots
+      # If we have data, generate marginal utility plots and analysis
     if df is not None and not args.no_plots:
         out_dir = Path(args.out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -2468,9 +2479,13 @@ def main():
         theta_l = params.get("theta_l", 1.0)
         beta_l0 = params.get("beta_l0", 0.0)
         
-        LOGGER.info("\nGenerating plots...")
+        LOGGER.info("\nGenerating comprehensive analysis and plots...")
         
-        # Simple MUC/MUL curves
+        # =====================================================================
+        # GENERATE COMPREHENSIVE MARGINAL UTILITY ANALYSIS
+        # =====================================================================
+        
+        # 1. Basic MUC/MUL curves
         c_grid = np.linspace(0.1, 2.0, 200)
         l_grid = np.linspace(0.1, 2.0, 200)
         
@@ -2496,7 +2511,125 @@ def main():
             output_path=mul_path,
         )
         
+        # 2. Contour plot (if we have utility function)
+        contour_path = out_dir / f"{args.wage_spec}_{args.sex}_contours.png"
+        try:
+            plot_utility_contours(
+                beta_c=beta_c,
+                beta_l=beta_l0,
+                theta_c=theta_c,
+                theta_l=theta_l,
+                output_path=contour_path,
+                title=f"Utility Contours - {args.sex.capitalize()} ({args.wage_spec})",
+            )
+        except Exception as e:
+            LOGGER.warning(f"Could not generate contour plot: {e}")
+            contour_path = None
+        
+        # 3. Combined MUC/MUL plot
+        combined_path = out_dir / f"{args.wage_spec}_{args.sex}_mu_combined.png"
+        try:
+            plot_muc_mul_combined(
+                c_grid, muc_curve, l_grid, mul_curve,
+                output_path=combined_path,
+                title=f"Marginal Utilities - {args.sex.capitalize()} ({args.wage_spec})",
+            )
+        except Exception as e:
+            LOGGER.warning(f"Could not generate combined plot: {e}")
+            combined_path = None
+        
+        # 4. MRS plot
+        mrs_path = out_dir / f"{args.wage_spec}_{args.sex}_mrs.png"
+        try:
+            mrs_values = compute_mrs(muc_curve, mul_curve)
+            plot_mrs_curve(
+                l_grid, mrs_values,
+                output_path=mrs_path,
+                title=f"MRS - {args.sex.capitalize()} ({args.wage_spec})",
+            )
+        except Exception as e:
+            LOGGER.warning(f"Could not generate MRS plot: {e}")
+            mrs_path = None
+        
+        # 5. Parameter significance plot
+        # Create a simple parameter table (without SE since we don't have gradient)
+        param_sig_path = out_dir / f"{args.wage_spec}_{args.sex}_param_significance.png"
+        try:
+            param_df = pd.DataFrame({
+                "parameter": param_names,
+                "estimate": theta,
+                "std_error": [np.nan] * len(theta),  # Not available in CLI mode
+                "t_value": [np.nan] * len(theta),
+                "p_value": [np.nan] * len(theta),
+            })
+            plot_parameter_significance(
+                param_df,
+                param_sig_path,
+                title=f"Parameter Estimates - {args.sex.capitalize()} ({args.wage_spec})",
+            )
+        except Exception as e:
+            LOGGER.warning(f"Could not generate parameter significance plot: {e}")
+            param_sig_path = None
+        
+        # 6. Generate simplified HTML report (without SE/Hessian)
+        if not args.no_html:
+            html_path = out_dir / f"{args.wage_spec}_{args.sex}_post_estimation_report.html"
+            try:
+                # Create simplified parameter table
+                param_df = pd.DataFrame({
+                    "parameter": param_names,
+                    "estimate": theta,
+                    "std_error": [np.nan] * len(theta),
+                    "t_value": [np.nan] * len(theta),
+                    "p_value": [np.nan] * len(theta),
+                })
+                
+                # Create fit stats
+                n_params = len(theta)
+                ll_null = n_individuals * np.log(1.0 / 100)  # Assuming 100 alternatives
+                fit_stats = {
+                    "log_likelihood": log_likelihood,
+                    "ll_null": ll_null,
+                    "n_params": n_params,
+                    "n_individuals": n_individuals,
+                    "aic": 2 * n_params - 2 * log_likelihood,
+                    "bic": n_params * np.log(n_individuals) - 2 * log_likelihood,
+                    "pseudo_r2_mcfadden": 1 - (log_likelihood / ll_null) if ll_null != 0 else 0,
+                    "pseudo_r2_adjusted": 1 - ((log_likelihood - n_params) / ll_null) if ll_null != 0 else 0,
+                    "ll_per_obs": log_likelihood / n_individuals if n_individuals > 0 else 0,
+                }
+                
+                build_html_report(
+                    param_table=param_df,
+                    fit_stats=fit_stats,
+                    output_path=html_path,
+                    gender=args.sex,
+                    variant=args.wage_spec,
+                    muc_plot=muc_path,
+                    mul_plot=mul_path,
+                    contour_plot=contour_path,
+                    param_sig_plot=param_sig_path,
+                    muc_mul_combined_plot=combined_path,
+                    mrs_plot=mrs_path,
+                    model_description="Post-estimation analysis (CLI mode - standard errors not available)",
+                )
+                LOGGER.info(f"HTML report saved to: {html_path}")
+            except Exception as e:
+                LOGGER.error(f"Could not generate HTML report: {e}")
+                import traceback
+                traceback.print_exc()
+        
         LOGGER.info(f"Plots saved to: {out_dir}")
+        LOGGER.info(f"  - MUC plot: {muc_path.name}")
+        LOGGER.info(f"  - MUL plot: {mul_path.name}")
+        if contour_path:
+            LOGGER.info(f"  - Contour plot: {contour_path.name}")
+        if combined_path:
+            LOGGER.info(f"  - Combined MU plot: {combined_path.name}")
+        if mrs_path:
+            LOGGER.info(f"  - MRS plot: {mrs_path.name}")
+        if param_sig_path:
+            LOGGER.info(f"  - Parameter significance: {param_sig_path.name}")
     
     print("\nDone.")
 

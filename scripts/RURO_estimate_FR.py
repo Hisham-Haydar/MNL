@@ -3347,19 +3347,18 @@ def fast_log_likelihood_couples(
     )
     
     h_opp = h_opp_m + h_opp_f
-    
-    # -------------------------------------------------------------------------
+      # -------------------------------------------------------------------------
     # Wage opportunity density (only for vw)
     # -------------------------------------------------------------------------
-    if wage_spec == "vw" and len(theta) > 46:
-        # Male wage params [46:62]
-        w_beta0_m = theta[46]
-        w_educL_m, w_educH_m = theta[47], theta[48]
-        w_pexp_m, w_pexp2_m = theta[49], theta[50]
-        w_reg2_m, w_reg3_m, w_reg4_m, w_reg5_m = theta[51], theta[52], theta[53], theta[54]
-        w_reg6_m, w_reg7_m, w_reg8_m, w_reg9_m = theta[55], theta[56], theta[57], theta[58]
-        w_yd1_m, w_yd2_m = theta[59], theta[60]
-        sigma_m = abs(theta[61]) + 1e-6
+    if wage_spec == "vw" and len(theta) > 44:
+        # Male wage params [44:60]
+        w_beta0_m = theta[44]
+        w_educL_m, w_educH_m = theta[45], theta[46]
+        w_pexp_m, w_pexp2_m = theta[47], theta[48]
+        w_reg2_m, w_reg3_m, w_reg4_m, w_reg5_m = theta[49], theta[50], theta[51], theta[52]
+        w_reg6_m, w_reg7_m, w_reg8_m, w_reg9_m = theta[53], theta[54], theta[55], theta[56]
+        w_yd1_m, w_yd2_m = theta[57], theta[58]
+        sigma_m = abs(theta[59]) + 1e-6
         
         mean_logw_m = (
             w_beta0_m
@@ -3368,21 +3367,20 @@ def fast_log_likelihood_couples(
             + w_reg2_m * data.reg2 + w_reg3_m * data.reg3
             + w_reg4_m * data.reg4 + w_reg5_m * data.reg5
             + w_reg6_m * data.reg6 + w_reg7_m * data.reg7
-            + w_reg8_m * data.reg8 + w_reg9_m * data.reg9
-            + w_yd1_m * data.yd1 + w_yd2_m * data.yd2
+            + w_reg8_m * data.reg8 + w_reg9_m * data.reg9            + w_yd1_m * data.yd1 + w_yd2_m * data.yd2
         )
         z_m = (data.log_wage_m - mean_logw_m) / sigma_m
         w_opp_m = np.where(data.working_m > 0, 
                           -0.5 * z_m * z_m - np.log(sigma_m) - data.log_wage_m, 0.0)
         
-        # Female wage params [62:78]
-        w_beta0_f = theta[62]
-        w_educL_f, w_educH_f = theta[63], theta[64]
-        w_pexp_f, w_pexp2_f = theta[65], theta[66]
-        w_reg2_f, w_reg3_f, w_reg4_f, w_reg5_f = theta[67], theta[68], theta[69], theta[70]
-        w_reg6_f, w_reg7_f, w_reg8_f, w_reg9_f = theta[71], theta[72], theta[73], theta[74]
-        w_yd1_f, w_yd2_f = theta[75], theta[76]
-        sigma_f = abs(theta[77]) + 1e-6
+        # Female wage params [60:76]
+        w_beta0_f = theta[60]
+        w_educL_f, w_educH_f = theta[61], theta[62]
+        w_pexp_f, w_pexp2_f = theta[63], theta[64]
+        w_reg2_f, w_reg3_f, w_reg4_f, w_reg5_f = theta[65], theta[66], theta[67], theta[68]
+        w_reg6_f, w_reg7_f, w_reg8_f, w_reg9_f = theta[69], theta[70], theta[71], theta[72]
+        w_yd1_f, w_yd2_f = theta[73], theta[74]
+        sigma_f = abs(theta[75]) + 1e-6
         
         mean_logw_f = (
             w_beta0_f
@@ -6234,23 +6232,22 @@ def main() -> None:
                 )
                 iteration_times.append(time_module.perf_counter() - t_start)
                 return result
-            
-            # Bounds for Box-Cox parameters
+              # Bounds for Box-Cox parameters (loosened: 0.001 to 5.0 for Box-Cox, 0.01 to 10.0 for sigma)
             bounds = [(None, None)] * len(theta0)
             # SM Box-Cox: indices 9, 10
-            bounds[9] = (0.01, 2.0)
-            bounds[10] = (0.01, 2.0)
+            bounds[9] = (0.001, 5.0)   # theta_l (SM leisure)
+            bounds[10] = (0.001, 5.0)  # theta_c (SM consumption)
             # SF Box-Cox: indices 21, 22
-            bounds[21] = (0.01, 2.0)
-            bounds[22] = (0.01, 2.0)
+            bounds[21] = (0.001, 5.0)  # theta_l (SF leisure)
+            bounds[22] = (0.001, 5.0)  # theta_c (SF consumption)
             # Couples Box-Cox: indices 45, 46, 47
-            bounds[45] = (0.01, 2.0)
-            bounds[46] = (0.01, 2.0)
-            bounds[47] = (0.01, 2.0)
+            bounds[45] = (0.001, 5.0)  # theta_lm (couples male leisure)
+            bounds[46] = (0.001, 5.0)  # theta_lf (couples female leisure)
+            bounds[47] = (0.001, 5.0)  # theta_c (couples consumption)
             # Sigma bounds (if vw)
             if args.wage_spec == "vw":
-                bounds[83] = (0.01, 2.0)   # sigma_m
-                bounds[99] = (0.01, 2.0)   # sigma_f
+                bounds[83] = (0.01, 10.0)   # sigma_m (male wage error SD)
+                bounds[99] = (0.01, 10.0)   # sigma_f (female wage error SD)
             
             result = minimize(
                 objective_and_grad,
@@ -6308,8 +6305,7 @@ def main() -> None:
         for i, (name, val) in enumerate(zip(param_names, result.x)):
             LOGGER.info(f"{i:<6} {name:<40} {val:>12.4f}")
         LOGGER.info("")
-        
-        # Save results
+          # Save results
         if args.out_file:
             import json
             results_dict = {
@@ -6325,6 +6321,7 @@ def main() -> None:
                 "n_sm": int(n_sm),
                 "n_sf": int(n_sf),
                 "n_cou": int(n_cou),
+                "n_individuals": int(n_sm + n_sf + n_cou),  # Total individuals for post-estimation
             }
             
             out_path = Path(args.out_file)
@@ -6535,14 +6532,12 @@ def main() -> None:
             t_start = time.perf_counter()
             result = obj_func(theta, precomputed_data, is_male=is_male, wage_spec=args.wage_spec)
             iteration_times.append(time.perf_counter() - t_start)
-            return result
-        
-        # Set up bounds for Box-Cox parameters
+            return result        # Set up bounds for Box-Cox parameters (loosened: 0.001 to 5.0)
         bounds = [(None, None)] * len(theta0)
-        bounds[9] = (0.01, 2.0)   # theta_l
-        bounds[10] = (0.01, 2.0)  # theta_c
+        bounds[9] = (0.001, 5.0)   # theta_l (Box-Cox leisure)
+        bounds[10] = (0.001, 5.0)  # theta_c (Box-Cox consumption)
         if args.wage_spec == "vw":
-            bounds[36] = (0.01, 2.0)  # sigma
+            bounds[36] = (0.01, 10.0)  # sigma (wage error SD)
         
         LOGGER.info("-" * 40)
         result = minimize(
@@ -6554,29 +6549,31 @@ def main() -> None:
             options={"disp": True, "maxiter": args.maxiter, "ftol": 1e-9, "gtol": 1e-5},
         )
     elif not is_singles:
-        # Couples - use numerical gradient (analytical not implemented)
-        LOGGER.info("Using numerical gradient (analytical not yet implemented for couples)")
+        # Couples - USE ANALYTICAL GRADIENT (available via fast_neg_ll_with_grad_couples)
+        LOGGER.info("Using FAST analytical gradient for couples (single-pass LL+grad)")
         
-        def objective(theta):
+        def objective_and_grad(theta):
             t_start = time.perf_counter()
-            ll = fast_log_likelihood_couples(theta, precomputed_data, wage_spec=args.wage_spec)
+            neg_ll, neg_grad = fast_neg_ll_with_grad_couples(
+                theta, precomputed_data, wage_spec=args.wage_spec
+            )
             iteration_times.append(time.perf_counter() - t_start)
-            return -ll
-        
-        # Set up bounds for Box-Cox parameters (couples have different indices)
+            return neg_ll, neg_grad
+          # Set up bounds for Box-Cox parameters (loosened: 0.001 to 5.0 for Box-Cox, 0.01 to 10.0 for sigma)
         bounds = [(None, None)] * len(theta0)
-        bounds[22] = (0.01, 2.0)  # theta_lm
-        bounds[23] = (0.01, 2.0)  # theta_lf
-        bounds[24] = (0.01, 2.0)  # theta_c
+        bounds[22] = (0.001, 5.0)  # theta_lm (Box-Cox male leisure)
+        bounds[23] = (0.001, 5.0)  # theta_lf (Box-Cox female leisure)
+        bounds[24] = (0.001, 5.0)  # theta_c (Box-Cox consumption)
         if args.wage_spec == "vw":
-            bounds[61] = (0.01, 2.0)  # sigma_m
-            bounds[77] = (0.01, 2.0)  # sigma_f
+            bounds[59] = (0.01, 10.0)  # sigma_m (male wage error SD)
+            bounds[75] = (0.01, 10.0)  # sigma_f (female wage error SD)
         
         LOGGER.info("-" * 40)
         result = minimize(
-            objective,
+            objective_and_grad,
             theta0,
             method="L-BFGS-B",
+            jac=True,  # CRITICAL: Tell optimizer we're providing gradient
             bounds=bounds,
             options={"disp": True, "maxiter": args.maxiter, "ftol": 1e-9, "gtol": 1e-5},
         )
@@ -6678,8 +6675,7 @@ def main() -> None:
         LOGGER.info(f"  Male work coefficient:                 {result.x[26]:.4f}")
         LOGGER.info(f"  Female work coefficient:               {result.x[35]:.4f}")
         LOGGER.info("")
-    
-    # -------------------------------------------------------------------------
+      # -------------------------------------------------------------------------
     # Save results (optional)
     # -------------------------------------------------------------------------
     if args.out_file:
@@ -6687,13 +6683,15 @@ def main() -> None:
         results_dict = {
             "success": result.success,
             "message": result.message,
-            "log_likelihood": float(-result.fun),            "n_iterations": int(result.nit),
+            "log_likelihood": float(-result.fun),
+            "n_iterations": int(result.nit),
             "n_fev": int(result.nfev),
             "theta": result.x.tolist(),
             "param_names": param_names,
             "group": args.group,
             "sex": args.sex if args.group == 1 else None,
             "wage_spec": args.wage_spec,
+            "n_individuals": int(precomputed_data.n_groups),  # Number of individuals/households
         }
         out_path = Path(args.out_file)
         if out_path.suffix == ".json":

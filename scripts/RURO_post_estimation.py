@@ -950,6 +950,10 @@ def compute_group_median_shifters(
     # Filter to observed choices only
     if "obs" in df.columns:
         obs_df = df[df["obs"] == 1].copy()
+    elif "is_observed" in df.columns:
+        obs_df = df[df["is_observed"] == 1].copy()
+    elif "is_chosen" in df.columns:
+        obs_df = df[df["is_chosen"] == 1].copy()
     else:
         obs_df = df.copy()
     
@@ -2456,6 +2460,8 @@ def compute_fit_diagnostics(
         obs_mask = df["obs"] == 1
     elif "is_observed" in df.columns:
         obs_mask = df["is_observed"] == 1
+    elif "is_chosen" in df.columns:
+        obs_mask = df["is_chosen"] == 1
     else:
         LOGGER.warning("No observed choice indicator found")
         return results
@@ -2633,7 +2639,7 @@ def compute_predicted_probabilities(
     
     V = df["V"].values
     groups = df[group_col].values if group_col in df.columns else df.grouper.groups
-    is_obs = df["obs"].values if "obs" in df.columns else (df["is_observed"].values if "is_observed" in df.columns else None)
+    is_obs = df["obs"].values if "obs" in df.columns else (df["is_observed"].values if "is_observed" in df.columns else (df["is_chosen"].values if "is_chosen" in df.columns else None))
     
     if is_obs is None:
         LOGGER.warning("Observed choice indicator not found")
@@ -3142,7 +3148,7 @@ def run_full_post_estimation(
     if n_alts is None and df is not None:
         # Try to compute from data: count rows per individual
         id_col = None
-        for col in ["idhh", "idhh_true", "id"]:
+        for col in ["idhh", "idhh_true", "idperson", "idperson_true", "id"]:
             if col in df.columns:
                 id_col = col
                 break
@@ -3180,6 +3186,26 @@ def run_full_post_estimation(
     # Extract preference parameters
     params = extract_preference_params(theta, param_names)
     
+    # Detect if these are joint estimation params (prefixed with sm., sf., cou.)
+    is_joint_params = any(name.startswith(("sm.", "sf.", "cou.")) for name in param_names)
+    
+    # For joint params, extract group-specific params and pick appropriate group based on sex
+    if is_joint_params:
+        group_params = extract_group_params_from_joint(theta, param_names, wage_spec)
+        # Choose group based on sex parameter
+        if sex == "male" or sex == "m":
+            mu_params = group_params.get(GROUP_SINGLE_MALE, {})
+        elif sex == "female" or sex == "f":
+            mu_params = group_params.get(GROUP_SINGLE_FEMALE, {})
+        else:
+            # For pooled or couples, use couple shared params with couple male leisure
+            cou_shared = group_params.get(GROUP_COUPLE, {})
+            cou_m = group_params.get(GROUP_COUPLE_MALE, {})
+            mu_params = {**cou_m, **cou_shared}
+        LOGGER.info(f"Using joint params for group '{sex}': beta_c={mu_params.get('beta_c', 0.0):.4f}, theta_c={mu_params.get('theta_c', 1.0):.4f}")
+    else:
+        mu_params = params
+    
     # -------------------------------------------------------------------------
     # 2. Marginal Utilities (if dataset provided)
     # -------------------------------------------------------------------------
@@ -3193,11 +3219,11 @@ def run_full_post_estimation(
     if df is not None and save_plots and out_dir is not None:
         LOGGER.info("\n2. Computing marginal utilities and generating plots...")
         
-        # Get key parameters
-        beta_c = params.get("beta_c", 0.0)
-        theta_c = params.get("theta_c", 1.0)
-        theta_l = params.get("theta_l", 1.0)
-        beta_l0 = params.get("beta_l0", 0.0)
+        # Get key parameters (use mu_params which handles joint vs single-group)
+        beta_c = mu_params.get("beta_c", 0.0)
+        theta_c = mu_params.get("theta_c", 1.0)
+        theta_l = mu_params.get("theta_l", 1.0)
+        beta_l0 = mu_params.get("beta_l0", 0.0)
         
         # Extract consumption and leisure from data
         c_col = None
@@ -3218,6 +3244,8 @@ def run_full_post_estimation(
                 obs_df = df[df["obs"] == 1].copy()
             elif "is_observed" in df.columns:
                 obs_df = df[df["is_observed"] == 1].copy()
+            elif "is_chosen" in df.columns:
+                obs_df = df[df["is_chosen"] == 1].copy()
             else:
                 obs_df = df.copy()
             
@@ -3230,7 +3258,7 @@ def run_full_post_estimation(
             
             # Compute median beta_l (accounting for covariates)
             beta_l_median = beta_l0
-            for key, val in params.items():
+            for key, val in mu_params.items():
                 if key.startswith("beta_l_") and key != "beta_l0":
                     # Use median of covariate
                     cov_name = key.replace("beta_l_", "")
@@ -3666,7 +3694,7 @@ def run_joint_post_estimation(
         for df_check, name in [(df_sm, "sm"), (df_sf, "sf"), (df_cou, "cou")]:
             if df_check is not None and len(df_check) > 0:
                 id_col = None
-                for col in ["idhh", "idhh_true", "id"]:
+                for col in ["idhh", "idhh_true", "idperson", "idperson_true", "id"]:
                     if col in df_check.columns:
                         id_col = col
                         break

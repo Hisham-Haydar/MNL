@@ -130,6 +130,7 @@ $cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" " +
        "--maxiter $MAX_ITER " +
        "--use-numba " +
        "--n-jobs $CPU_CORES " +
+       "--post-estimation " +
        "--out-file `"$RESULTS_DIR\fr_${YEAR}_joint.json`""
 
 if ($INIT_PARAMS_JOINT -and (Test-Path $INIT_PARAMS_JOINT)) {

@@ -6335,6 +6335,71 @@ def main() -> None:
             
             LOGGER.info(f"Results saved to: {out_path}")
         
+        # -------------------------------------------------------------------------
+        # Run joint post-estimation analysis (SE, t-values, plots)
+        # -------------------------------------------------------------------------
+        if args.post_estimation:
+            try:
+                from RURO_post_estimation import run_joint_post_estimation, compute_standard_errors
+                
+                LOGGER.info("")
+                LOGGER.info("=" * 60)
+                LOGGER.info("JOINT POST-ESTIMATION ANALYSIS")
+                LOGGER.info("=" * 60)
+                
+                out_dir = Path(args.out_file).parent if args.out_file else Path("outputs/estimates/fr")
+                
+                # Compute standard errors using the joint gradient function
+                # We need to build a gradient function that returns gradient of NLL
+                def joint_grad_func(theta):
+                    _, neg_grad = fast_neg_ll_with_grad_joint(
+                        theta,
+                        data_sm, data_sf, data_cou,
+                        args.wage_spec
+                    )
+                    return neg_grad  # Already gradient of NLL
+                
+                LOGGER.info("Computing standard errors via numerical Hessian...")
+                se_result = compute_standard_errors(
+                    theta=result.x,
+                    grad_func=joint_grad_func,
+                    param_names=param_names,
+                )
+                
+                se = se_result.get("se")
+                varcov = se_result.get("varcov")
+                
+                if se is not None:
+                    LOGGER.info(f"SE computed successfully for {len(se)} parameters")
+                else:
+                    LOGGER.warning("Could not compute SE (Hessian may be singular)")
+                
+                # Run full joint post-estimation
+                post_results = run_joint_post_estimation(
+                    theta=result.x,
+                    param_names=param_names,
+                    log_likelihood=float(-result.fun),
+                    n_sm=n_sm,
+                    n_sf=n_sf,
+                    n_cou=n_cou,
+                    df_sm=df_sm,
+                    df_sf=df_sf,
+                    df_cou=df_cou,
+                    wage_spec=args.wage_spec,
+                    out_dir=out_dir,
+                    se=se,
+                    varcov=varcov,
+                )
+                
+                LOGGER.info("Joint post-estimation analysis complete.")
+                
+            except ImportError as e:
+                LOGGER.warning(f"Could not run post-estimation: {e}")
+            except Exception as e:
+                LOGGER.error(f"Joint post-estimation failed: {e}")
+                import traceback
+                traceback.print_exc()
+        
         LOGGER.info("=" * 60)
         LOGGER.info("Done (joint estimation).")
         return

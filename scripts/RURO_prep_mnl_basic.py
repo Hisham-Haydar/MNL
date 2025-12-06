@@ -242,20 +242,39 @@ def _transform_couples_to_wide(df: pd.DataFrame) -> pd.DataFrame:
         # Other household-level
         "other_members_income",
     ]
+      # -------------------------------------------------------------------------
+    # Define ONLY the essential person-specific columns needed for estimation
+    # This dramatically reduces the output size and speeds up processing
+    # -------------------------------------------------------------------------
+    essential_pivot_cols = [
+        # Person ID
+        "idperson",
+        # Hours and income (core for utility)
+        "hours", "lhw", "wage", "wage_ruro", "yivwg",
+        "ils_dispy",
+        # Demographics for utility coefficients
+        "dag", "deh",
+        # Labor market status
+        "lma", "les", "loc",
+        # Education dummies (if pre-computed)
+        "educL", "educH", "educM",
+        # Experience
+        "pexp", "pexp_years", "pexp_years2",
+        # Other person-specific income
+        "yem", "yse", "bun", "bsa",
+    ]
     
     # Get all columns in the dataframe
     all_cols = list(df.columns)
     
-    # Determine which columns to pivot (person-specific)
-    # Exclude common vars and the gender column we just created
-    exclude_cols = set(common_vars + ["_gender", "dgn", "ruro_decider"])
-    pivot_cols = [c for c in all_cols if c not in exclude_cols]
+    # Only pivot columns that exist AND are in our essential list
+    pivot_cols = [c for c in essential_pivot_cols if c in all_cols]
     
     # Keep only common vars that actually exist in the data
     existing_common = [c for c in common_vars if c in all_cols]
     
     LOGGER.info(f"  Common (household) vars: {len(existing_common)}")
-    LOGGER.info(f"  Person-specific vars to pivot: {len(pivot_cols)}")
+    LOGGER.info(f"  Person-specific vars to pivot: {len(pivot_cols)} (limited to essential columns)")
     
     # -------------------------------------------------------------------------
     # Step 4: Pivot the data
@@ -749,6 +768,173 @@ def merge_gsur(
     return df
 
 
+def merge_gsur_couples(
+    df: pd.DataFrame,
+    gsur_path: Optional[Path] = None,
+    year: Optional[int] = None,
+) -> pd.DataFrame:
+    """
+    Merge group-specific unemployment rate (GSUR) onto couples (wide format).
+    
+    For couples in wide format, we need to merge GSUR twice:
+    - gsur_m: GSUR for males (dgn=1) in that region/education
+    - gsur_f: GSUR for females (dgn=0) in that region/education
+    
+    Note: Both partners share the same region (drgn1), but GSUR differs by sex
+    because unemployment rates differ between men and women even in the same region.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Wide-format couples data with columns: drgn1, educL_m, educH_m, educL_f, educH_f
+    gsur_path : Path, optional
+        Path to GSUR lookup table (parquet). Defaults to FR_gsur_ruro.parquet.
+    year : int, optional
+        Data year for filtering GSUR. If None, tries to extract from df['year'].
+    
+    Returns
+    -------
+    pd.DataFrame
+        Input dataframe with added 'gsur_m' and 'gsur_f' columns.
+    """
+    if gsur_path is None:
+        gsur_path = DEFAULT_GSUR_PATH
+    
+    gsur_path = Path(gsur_path)
+    if not gsur_path.exists():
+        LOGGER.warning(f"GSUR file not found at {gsur_path}; gsur_m/gsur_f will be set to 0.")
+        df = df.copy()
+        df["gsur_m"] = 0.0
+        df["gsur_f"] = 0.0
+        return df
+    
+    # Load GSUR lookup
+    gsur_df = pd.read_parquet(gsur_path)
+    LOGGER.info(f"Loaded GSUR lookup for couples with {len(gsur_df)} rows")
+    
+    # Determine year
+    if year is None:
+        if "year" in df.columns:
+            year = int(df["year"].mode().iloc[0])
+        else:
+            year = int(gsur_df["year"].max())
+            LOGGER.warning(f"No year specified; using most recent GSUR year: {year}")
+    
+    # Filter GSUR to relevant year
+    gsur_year = gsur_df[gsur_df["year"] == year].copy()
+    if gsur_year.empty:
+        available_years = sorted(gsur_df["year"].unique())
+        closest_year = min(available_years, key=lambda y: abs(y - year))
+        LOGGER.warning(f"No GSUR data for year {year}; using {closest_year}")
+        gsur_year = gsur_df[gsur_df["year"] == closest_year].copy()
+    
+    df = df.copy()
+    
+    # Create education categories for male and female
+    # educL = ED0-2 (low), educM = ED3_4 (medium), educH = ED5-8 (high)
+    if "educL_m" in df.columns and "educH_m" in df.columns:
+        educL_m = pd.to_numeric(df["educL_m"], errors="coerce").fillna(0)
+        educH_m = pd.to_numeric(df["educH_m"], errors="coerce").fillna(0)
+        df["_educ_cat_m"] = np.where(
+            educL_m == 1, "ED0-2",
+            np.where(educH_m == 1, "ED5-8", "ED3_4")
+        )
+    elif "deh_m" in df.columns:
+        deh_m = pd.to_numeric(df["deh_m"], errors="coerce").fillna(3)
+        df["_educ_cat_m"] = np.where(
+            deh_m.isin([0, 1, 2]), "ED0-2",
+            np.where(deh_m == 5, "ED5-8", "ED3_4")
+        )
+    else:
+        df["_educ_cat_m"] = "ED3_4"  # Default to medium
+    
+    if "educL_f" in df.columns and "educH_f" in df.columns:
+        educL_f = pd.to_numeric(df["educL_f"], errors="coerce").fillna(0)
+        educH_f = pd.to_numeric(df["educH_f"], errors="coerce").fillna(0)
+        df["_educ_cat_f"] = np.where(
+            educL_f == 1, "ED0-2",
+            np.where(educH_f == 1, "ED5-8", "ED3_4")
+        )
+    elif "deh_f" in df.columns:
+        deh_f = pd.to_numeric(df["deh_f"], errors="coerce").fillna(3)
+        df["_educ_cat_f"] = np.where(
+            deh_f.isin([0, 1, 2]), "ED0-2",
+            np.where(deh_f == 5, "ED5-8", "ED3_4")
+        )
+    else:
+        df["_educ_cat_f"] = "ED3_4"
+    
+    # Ensure drgn1 exists (region - same for both partners)
+    if "drgn1" not in df.columns:
+        LOGGER.warning("No 'drgn1' column; using national average (drgn1=0).")
+        df["drgn1"] = 0
+    
+    drgn1 = pd.to_numeric(df["drgn1"], errors="coerce").fillna(0).astype(int)
+    
+    # Prepare GSUR lookups for males (dgn=1) and females (dgn=0)
+    gsur_male = gsur_year[
+        (gsur_year["dgn"] == 1) & (gsur_year["education"] != "TOTAL")
+    ][["drgn1", "education", "gsur"]].copy()
+    gsur_male = gsur_male.rename(columns={"gsur": "gsur_m"})
+    
+    gsur_female = gsur_year[
+        (gsur_year["dgn"] == 0) & (gsur_year["education"] != "TOTAL")
+    ][["drgn1", "education", "gsur"]].copy()
+    gsur_female = gsur_female.rename(columns={"gsur": "gsur_f"})
+    
+    # Merge male GSUR
+    df = df.merge(
+        gsur_male,
+        left_on=["drgn1", "_educ_cat_m"],
+        right_on=["drgn1", "education"],
+        how="left"
+    )
+    df = df.drop(columns=["education"], errors="ignore")
+    
+    # Merge female GSUR
+    df = df.merge(
+        gsur_female,
+        left_on=["drgn1", "_educ_cat_f"],
+        right_on=["drgn1", "education"],
+        how="left"
+    )
+    df = df.drop(columns=["education"], errors="ignore")
+    
+    # Fill missing with national averages
+    national_gsur = gsur_year[
+        (gsur_year["drgn1"] == 0) & (gsur_year["education"] != "TOTAL")
+    ].set_index(["dgn", "education"])["gsur"].to_dict()
+    
+    # Fill missing male GSUR
+    missing_m = df["gsur_m"].isna()
+    if missing_m.any():
+        for idx in df[missing_m].index:
+            key = (1, df.loc[idx, "_educ_cat_m"])  # dgn=1 for males
+            if key in national_gsur:
+                df.loc[idx, "gsur_m"] = national_gsur[key]
+            else:
+                df.loc[idx, "gsur_m"] = gsur_year[gsur_year["dgn"] == 1]["gsur"].mean()
+    
+    # Fill missing female GSUR
+    missing_f = df["gsur_f"].isna()
+    if missing_f.any():
+        for idx in df[missing_f].index:
+            key = (0, df.loc[idx, "_educ_cat_f"])  # dgn=0 for females
+            if key in national_gsur:
+                df.loc[idx, "gsur_f"] = national_gsur[key]
+            else:
+                df.loc[idx, "gsur_f"] = gsur_year[gsur_year["dgn"] == 0]["gsur"].mean()
+    
+    # Clean up
+    df = df.drop(columns=["_educ_cat_m", "_educ_cat_f"], errors="ignore")
+    df["gsur_m"] = pd.to_numeric(df["gsur_m"], errors="coerce").fillna(0.0)
+    df["gsur_f"] = pd.to_numeric(df["gsur_f"], errors="coerce").fillna(0.0)
+    
+    LOGGER.info(f"GSUR merged for couples: gsur_m mean={df['gsur_m'].mean():.4f}, gsur_f mean={df['gsur_f'].mean():.4f}")
+    
+    return df
+
+
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description="Prepare RURO MNL estimation dataset by merging draws with EUROMOD outputs."
@@ -915,24 +1101,30 @@ def main() -> None:
                 raise ValueError("Found NaNs in couples idperson_m/idperson_f/draw after merge.")
         elif "idhh" in couples_df.columns:
             if couples_df[["idhh", "draw"]].isna().any().any():
-                raise ValueError("Found NaNs in couples idhh/draw after merge.")
-
-    # Merge GSUR (group-specific unemployment rate) for estimation
+                raise ValueError("Found NaNs in couples idhh/draw after merge.")    # Merge GSUR (group-specific unemployment rate) for estimation
     # GSUR is used as a regressor in hours opportunity density, NOT in draws/prior
-    # Note: For couples in wide format, we need GSUR for both partners
+    # Note: For couples in wide format, we need gsur_m and gsur_f (can differ by sex)
     if not args.no_gsur:
         gsur_path = Path(args.gsur_file) if args.gsur_file else None
-        # Merge GSUR only for singles (long format) - couples need separate handling
+        
+        # Merge GSUR for singles (long format with single dgn column)
         if singles_mask.any():
             singles_with_gsur = merge_gsur(full_mnl[singles_mask].copy(), gsur_path=gsur_path, year=args.year)
             full_mnl.loc[singles_mask, "gsur"] = singles_with_gsur["gsur"].values
-        # For couples, set gsur to 0 for now (would need gsur_m and gsur_f columns)
+        
+        # Merge GSUR for couples (wide format - need gsur_m and gsur_f)
+        # Note: Both partners share the same region (drgn1) but GSUR differs by sex
         if couples_mask.any():
-            if "gsur_m" not in full_mnl.columns:
-                full_mnl.loc[couples_mask, "gsur"] = 0.0
-                LOGGER.info("Couples gsur set to 0 (would need separate gsur_m/gsur_f columns).")
+            couples_with_gsur = merge_gsur_couples(full_mnl[couples_mask].copy(), gsur_path=gsur_path, year=args.year)
+            full_mnl.loc[couples_mask, "gsur_m"] = couples_with_gsur["gsur_m"].values
+            full_mnl.loc[couples_mask, "gsur_f"] = couples_with_gsur["gsur_f"].values
+            # Also set a common gsur column (average of m and f) for compatibility
+            full_mnl.loc[couples_mask, "gsur"] = (couples_with_gsur["gsur_m"].values + couples_with_gsur["gsur_f"].values) / 2
     else:
         full_mnl["gsur"] = 0.0
+        if couples_mask.any():
+            full_mnl.loc[couples_mask, "gsur_m"] = 0.0
+            full_mnl.loc[couples_mask, "gsur_f"] = 0.0
         LOGGER.info("GSUR merge skipped (--no-gsur flag); gsur set to 0.")
 
     out_base = Path(args.out_base).resolve()

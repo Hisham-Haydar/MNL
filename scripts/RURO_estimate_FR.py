@@ -225,6 +225,89 @@ class PrecomputedDataSingles:
     obs_indices: np.ndarray     # observed choice index per group
 
 
+@dataclass
+class PrecomputedDataCouples:
+    """
+    Pre-extracted numpy arrays for fast couples estimation.
+    
+    All arrays are contiguous float64 for optimal vectorization.
+    This structure is created ONCE before optimization starts.
+    
+    Couples data is in wide format with _m and _f suffixes.
+    Each row is a (household, draw) combination.
+    """
+    # Core utility variables (household-level)
+    c: np.ndarray               # normalized household consumption, shape (n,)
+    
+    # Male partner leisure and demographics
+    l_m: np.ndarray             # normalized leisure for male
+    log_age_m: np.ndarray       # log(age) male
+    log_age2_m: np.ndarray      # log(age)^2 male
+    educL_m: np.ndarray         # low education male
+    educH_m: np.ndarray         # high education male
+    
+    # Female partner leisure and demographics
+    l_f: np.ndarray             # normalized leisure for female
+    log_age_f: np.ndarray       # log(age) female
+    log_age2_f: np.ndarray      # log(age)^2 female
+    educL_f: np.ndarray         # low education female
+    educH_f: np.ndarray         # high education female
+    
+    # Children dummies (household-level)
+    children0_3: np.ndarray
+    children4_6: np.ndarray
+    children7_9: np.ndarray
+    
+    # Region dummies (household-level, NUTS1: 1=baseline, 2-9 estimated)
+    reg2: np.ndarray
+    reg3: np.ndarray
+    reg4: np.ndarray
+    reg5: np.ndarray
+    reg6: np.ndarray
+    reg7: np.ndarray
+    reg8: np.ndarray
+    reg9: np.ndarray
+    
+    # Hours indicators - male
+    working_m: np.ndarray
+    working_pt1_m: np.ndarray
+    working_pt2_m: np.ndarray
+    working_ft_m: np.ndarray
+    gsur_m: np.ndarray
+    
+    # Hours indicators - female
+    working_f: np.ndarray
+    working_pt1_f: np.ndarray
+    working_pt2_f: np.ndarray
+    working_ft_f: np.ndarray
+    gsur_f: np.ndarray
+    
+    # Wage-related - male
+    log_wage_m: np.ndarray
+    pexp_m: np.ndarray
+    pexp2_m: np.ndarray         # pre-computed pexp^2
+    
+    # Wage-related - female
+    log_wage_f: np.ndarray
+    pexp_f: np.ndarray
+    pexp2_f: np.ndarray         # pre-computed pexp^2
+    
+    # Year dummies (if needed for wage equation)
+    yd1: np.ndarray
+    yd2: np.ndarray
+    
+    # Prior and grouping
+    log_prior: np.ndarray
+    group_idx: np.ndarray       # maps each row to group index
+    n_groups: int               # number of households
+    is_obs: np.ndarray          # boolean mask for observed choices
+    
+    # Group boundaries (for vectorized softmax)
+    group_starts: np.ndarray    # start index per group
+    group_ends: np.ndarray      # end index per group
+    obs_indices: np.ndarray     # observed choice index per group
+
+
 def precompute_data_singles(df: pd.DataFrame, is_male: bool = True) -> PrecomputedDataSingles:
     """
     Pre-extract all required arrays from DataFrame for singles estimation.
@@ -253,31 +336,33 @@ def precompute_data_singles(df: pd.DataFrame, is_male: bool = True) -> Precomput
         else:
             arr = np.full(n, default)
         return np.ascontiguousarray(arr, dtype=np.float64)
-    
-    # -------------------------------------------------------------------------
+      # -------------------------------------------------------------------------
     # Consumption and leisure (normalized)
     # -------------------------------------------------------------------------
-    if "c_norm" in df.columns:
+    # Check c_norm first, but only use if it has non-NaN values
+    c = None
+    if "c_norm" in df.columns and not df["c_norm"].isna().all():
         c = df["c_norm"].to_numpy(dtype=np.float64)
-    elif "dispy_util" in df.columns:
+    if c is None and "dispy_util" in df.columns and not df["dispy_util"].isna().all():
         c = df["dispy_util"].to_numpy(dtype=np.float64)
-    elif "consumption" in df.columns:
+    if c is None and "consumption" in df.columns:
         c = df["consumption"].to_numpy(dtype=np.float64) / MEAN_DISPY_NORM
-    elif "ils_dispy" in df.columns:
+    if c is None and "ils_dispy" in df.columns:
         c = df["ils_dispy"].to_numpy(dtype=np.float64) / MEAN_DISPY_NORM
-    else:
+    if c is None:
         c = np.ones(n, dtype=np.float64)
-    
-    if "l_norm" in df.columns:
+      # Check l_norm first, but only use if it has non-NaN values
+    l = None
+    if "l_norm" in df.columns and not df["l_norm"].isna().all():
         l = df["l_norm"].to_numpy(dtype=np.float64)
-    elif "leis_util" in df.columns:
+    if l is None and "leis_util" in df.columns and not df["leis_util"].isna().all():
         l = df["leis_util"].to_numpy(dtype=np.float64)
-    elif "leisure" in df.columns:
+    if l is None and "leisure" in df.columns:
         l = df["leisure"].to_numpy(dtype=np.float64) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
-    elif "hours" in df.columns:
+    if l is None and "hours" in df.columns:
         hours = df["hours"].to_numpy(dtype=np.float64)
         l = (TOTAL_LEISURE_HOURS - hours) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
-    else:
+    if l is None:
         l = np.ones(n, dtype=np.float64)
     
     c = np.ascontiguousarray(np.clip(c, 1e-6, None), dtype=np.float64)
@@ -347,14 +432,16 @@ def precompute_data_singles(df: pd.DataFrame, is_male: bool = True) -> Precomput
         working_ft = np.ascontiguousarray(((hours >= 37.5) & (hours <= 40.5)).astype(np.float64))
     
     gsur = safe_get("gsur")
-    
-    # -------------------------------------------------------------------------
+      # -------------------------------------------------------------------------
     # Wage-related (pre-compute pexp^2 for speed)
     # -------------------------------------------------------------------------
-    if "wage" in df.columns:
-        wage = pd.to_numeric(df["wage"], errors="coerce").fillna(1).to_numpy(dtype=np.float64)
+    # Priority: wage_final > yivwg > wage (wage may be 0 for observed choices)
+    if "wage_final" in df.columns:
+        wage = pd.to_numeric(df["wage_final"], errors="coerce").fillna(1).to_numpy(dtype=np.float64)
     elif "yivwg" in df.columns:
         wage = pd.to_numeric(df["yivwg"], errors="coerce").fillna(1).to_numpy(dtype=np.float64)
+    elif "wage" in df.columns:
+        wage = pd.to_numeric(df["wage"], errors="coerce").fillna(1).to_numpy(dtype=np.float64)
     else:
         wage = np.ones(n, dtype=np.float64)
     wage = np.clip(wage, 1e-6, None)
@@ -380,20 +467,21 @@ def precompute_data_singles(df: pd.DataFrame, is_male: bool = True) -> Precomput
     else:
         log_prior = np.zeros(n, dtype=np.float64)
     log_prior = np.ascontiguousarray(log_prior)
-    
-    # -------------------------------------------------------------------------
+      # -------------------------------------------------------------------------
     # Group structure (assumes data sorted by id!)
+    # For SINGLES, we must group by PERSON (idperson), not household (idhh),
+    # because multiple single persons can share a household.
     # -------------------------------------------------------------------------
-    if "idhh_true" in df.columns:
-        ids = df["idhh_true"].to_numpy()
-    elif "idhh" in df.columns:
-        ids = df["idhh"].to_numpy()
-    elif "idperson_true" in df.columns:
+    if "idperson_true" in df.columns:
         ids = df["idperson_true"].to_numpy()
     elif "idperson" in df.columns:
         ids = df["idperson"].to_numpy()
+    elif "idhh_true" in df.columns:
+        ids = df["idhh_true"].to_numpy()
+    elif "idhh" in df.columns:
+        ids = df["idhh"].to_numpy()
     else:
-        raise KeyError("Need 'idhh_true', 'idhh', 'idperson_true', or 'idperson'")
+        raise KeyError("Need 'idperson_true', 'idperson', 'idhh_true', or 'idhh'")
     
     unique_ids, group_idx = np.unique(ids, return_inverse=True)
     n_groups = len(unique_ids)
@@ -432,9 +520,247 @@ def precompute_data_singles(df: pd.DataFrame, is_male: bool = True) -> Precomput
     )
 
 
-# =============================================================================
-# Helper functions
-# =============================================================================
+def precompute_data_couples(df: pd.DataFrame) -> PrecomputedDataCouples:
+    """
+    Pre-extract all required arrays from DataFrame for couples estimation.
+    
+    Called ONCE before optimization. Returns PrecomputedDataCouples that is
+    passed to all likelihood/gradient calls, avoiding DataFrame overhead.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Wide-format RURO-MNL dataset for couples (columns have _m and _f suffixes)
+    
+    Returns
+    -------
+    PrecomputedDataCouples
+        All arrays needed for estimation, pre-extracted and contiguous
+    """
+    n = len(df)
+    
+    def safe_get(col: str, default: float = 0.0) -> np.ndarray:
+        if col in df.columns:
+            arr = pd.to_numeric(df[col], errors="coerce").fillna(default).to_numpy()
+        else:
+            arr = np.full(n, default)
+        return np.ascontiguousarray(arr, dtype=np.float64)
+    
+    # Consumption (household-level, normalized)
+    c = None
+    if "c_norm" in df.columns and not df["c_norm"].isna().all():
+        c = df["c_norm"].to_numpy(dtype=np.float64)
+    if c is None and "consumption" in df.columns:
+        c = df["consumption"].to_numpy(dtype=np.float64) / MEAN_DISPY_NORM
+    if c is None:
+        ils_m = pd.to_numeric(df.get("ils_dispy_m", 0), errors="coerce").fillna(0).to_numpy()
+        ils_f = pd.to_numeric(df.get("ils_dispy_f", 0), errors="coerce").fillna(0).to_numpy()
+        c = (ils_m + ils_f) / MEAN_DISPY_NORM
+    c = np.ascontiguousarray(np.clip(c, 1e-6, None), dtype=np.float64)
+    
+    # Leisure - male
+    l_m = None
+    if "leis_util_m" in df.columns and not df["leis_util_m"].isna().all():
+        l_m = df["leis_util_m"].to_numpy(dtype=np.float64)
+    if l_m is None and "leisure_m" in df.columns:
+        l_m = df["leisure_m"].to_numpy(dtype=np.float64) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+    if l_m is None and "hours_m" in df.columns:
+        hours_m = df["hours_m"].to_numpy(dtype=np.float64)
+        l_m = (TOTAL_LEISURE_HOURS - hours_m) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+    if l_m is None:
+        l_m = np.ones(n, dtype=np.float64)
+    l_m = np.ascontiguousarray(np.clip(l_m, 1e-6, None), dtype=np.float64)
+    
+    # Leisure - female
+    l_f = None
+    if "leis_util_f" in df.columns and not df["leis_util_f"].isna().all():
+        l_f = df["leis_util_f"].to_numpy(dtype=np.float64)
+    if l_f is None and "leisure_f" in df.columns:
+        l_f = df["leisure_f"].to_numpy(dtype=np.float64) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+    if l_f is None and "hours_f" in df.columns:
+        hours_f = df["hours_f"].to_numpy(dtype=np.float64)
+        l_f = (TOTAL_LEISURE_HOURS - hours_f) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+    if l_f is None:
+        l_f = np.ones(n, dtype=np.float64)
+    l_f = np.ascontiguousarray(np.clip(l_f, 1e-6, None), dtype=np.float64)
+    
+    # Age - male
+    if "dag_m" in df.columns:
+        age_m = pd.to_numeric(df["dag_m"], errors="coerce").fillna(40).to_numpy(dtype=np.float64)
+        log_age_m = np.log(np.clip(age_m, 18, 65))
+        log_age2_m = log_age_m ** 2
+    else:
+        log_age_m = np.zeros(n, dtype=np.float64)
+        log_age2_m = np.zeros(n, dtype=np.float64)
+    log_age_m = np.ascontiguousarray(log_age_m)
+    log_age2_m = np.ascontiguousarray(log_age2_m)
+    
+    # Age - female
+    if "dag_f" in df.columns:
+        age_f = pd.to_numeric(df["dag_f"], errors="coerce").fillna(40).to_numpy(dtype=np.float64)
+        log_age_f = np.log(np.clip(age_f, 18, 65))
+        log_age2_f = log_age_f ** 2
+    else:
+        log_age_f = np.zeros(n, dtype=np.float64)
+        log_age2_f = np.zeros(n, dtype=np.float64)
+    log_age_f = np.ascontiguousarray(log_age_f)
+    log_age2_f = np.ascontiguousarray(log_age2_f)
+    
+    # Education
+    educL_m = safe_get("educL_m")
+    educH_m = safe_get("educH_m")
+    educL_f = safe_get("educL_f")
+    educH_f = safe_get("educH_f")
+    
+    # Children (household-level)
+    children0_3 = safe_get("children0_3")
+    children4_6 = safe_get("children4_6")
+    children7_9 = safe_get("children7_9")
+    
+    # Region dummies
+    if "drgn1" in df.columns:
+        drgn1 = pd.to_numeric(df["drgn1"], errors="coerce").fillna(1).to_numpy()
+        reg2 = np.ascontiguousarray((drgn1 == 2).astype(np.float64))
+        reg3 = np.ascontiguousarray((drgn1 == 3).astype(np.float64))
+        reg4 = np.ascontiguousarray((drgn1 == 4).astype(np.float64))
+        reg5 = np.ascontiguousarray((drgn1 == 5).astype(np.float64))
+        reg6 = np.ascontiguousarray((drgn1 == 6).astype(np.float64))
+        reg7 = np.ascontiguousarray((drgn1 == 7).astype(np.float64))
+        reg8 = np.ascontiguousarray((drgn1 == 8).astype(np.float64))
+        reg9 = np.ascontiguousarray((drgn1 == 9).astype(np.float64))
+    else:
+        reg2 = safe_get("reg2")
+        reg3 = safe_get("reg3")
+        reg4 = safe_get("reg4")
+        reg5 = safe_get("reg5")
+        reg6 = safe_get("reg6")
+        reg7 = safe_get("reg7")
+        reg8 = safe_get("reg8")
+        reg9 = safe_get("reg9")
+    
+    # Hours indicators - male
+    working_m = safe_get("working_m")
+    if working_m.sum() == 0 and "hours_m" in df.columns:
+        hours_m = pd.to_numeric(df["hours_m"], errors="coerce").fillna(0).to_numpy()
+        working_m = np.ascontiguousarray((hours_m > 0).astype(np.float64))
+    working_pt1_m = safe_get("working_pt1_m")
+    working_pt2_m = safe_get("working_pt2_m")
+    working_ft_m = safe_get("working_ft_m")
+    if working_pt1_m.sum() == 0 and "hours_m" in df.columns:
+        hours_m = pd.to_numeric(df["hours_m"], errors="coerce").fillna(0).to_numpy()
+        working_pt1_m = np.ascontiguousarray(((hours_m >= 18.5) & (hours_m <= 21.5)).astype(np.float64))
+        working_pt2_m = np.ascontiguousarray(((hours_m >= 29.5) & (hours_m <= 30.5)).astype(np.float64))
+        working_ft_m = np.ascontiguousarray(((hours_m >= 37.5) & (hours_m <= 40.5)).astype(np.float64))
+    gsur_m = safe_get("gsur_m")
+    if gsur_m.sum() == 0:
+        gsur_m = safe_get("gsur")
+    
+    # Hours indicators - female
+    working_f = safe_get("working_f")
+    if working_f.sum() == 0 and "hours_f" in df.columns:
+        hours_f = pd.to_numeric(df["hours_f"], errors="coerce").fillna(0).to_numpy()
+        working_f = np.ascontiguousarray((hours_f > 0).astype(np.float64))
+    working_pt1_f = safe_get("working_pt1_f")
+    working_pt2_f = safe_get("working_pt2_f")
+    working_ft_f = safe_get("working_ft_f")
+    if working_pt1_f.sum() == 0 and "hours_f" in df.columns:
+        hours_f = pd.to_numeric(df["hours_f"], errors="coerce").fillna(0).to_numpy()
+        working_pt1_f = np.ascontiguousarray(((hours_f >= 18.5) & (hours_f <= 21.5)).astype(np.float64))
+        working_pt2_f = np.ascontiguousarray(((hours_f >= 29.5) & (hours_f <= 30.5)).astype(np.float64))
+        working_ft_f = np.ascontiguousarray(((hours_f >= 37.5) & (hours_f <= 40.5)).astype(np.float64))
+    gsur_f = safe_get("gsur_f")
+    if gsur_f.sum() == 0:
+        gsur_f = safe_get("gsur")
+    
+    # Wages - male
+    if "wage_m" in df.columns:
+        wage_m = pd.to_numeric(df["wage_m"], errors="coerce").fillna(1).to_numpy(dtype=np.float64)
+    elif "yivwg_m" in df.columns:
+        wage_m = pd.to_numeric(df["yivwg_m"], errors="coerce").fillna(1).to_numpy(dtype=np.float64)
+    else:
+        wage_m = np.ones(n, dtype=np.float64)
+    wage_m = np.clip(wage_m, 1e-6, None)
+    log_wage_m = np.ascontiguousarray(np.log(wage_m))
+    
+    if "pexp_m" in df.columns:
+        pexp_m = pd.to_numeric(df["pexp_m"], errors="coerce").fillna(0).to_numpy(dtype=np.float64)
+    else:
+        pexp_m = np.zeros(n, dtype=np.float64)
+    pexp_m = np.ascontiguousarray(pexp_m)
+    pexp2_m = np.ascontiguousarray(pexp_m ** 2)
+    
+    # Wages - female
+    if "wage_f" in df.columns:
+        wage_f = pd.to_numeric(df["wage_f"], errors="coerce").fillna(1).to_numpy(dtype=np.float64)
+    elif "yivwg_f" in df.columns:
+        wage_f = pd.to_numeric(df["yivwg_f"], errors="coerce").fillna(1).to_numpy(dtype=np.float64)
+    else:
+        wage_f = np.ones(n, dtype=np.float64)
+    wage_f = np.clip(wage_f, 1e-6, None)
+    log_wage_f = np.ascontiguousarray(np.log(wage_f))
+    
+    if "pexp_f" in df.columns:
+        pexp_f = pd.to_numeric(df["pexp_f"], errors="coerce").fillna(0).to_numpy(dtype=np.float64)
+    else:
+        pexp_f = np.zeros(n, dtype=np.float64)
+    pexp_f = np.ascontiguousarray(pexp_f)
+    pexp2_f = np.ascontiguousarray(pexp_f ** 2)
+    
+    # Year dummies
+    yd1 = safe_get("yd1")
+    yd2 = safe_get("yd2")
+    
+    # Prior
+    if "prior" in df.columns:
+        log_prior = pd.to_numeric(df["prior"], errors="coerce").fillna(0).to_numpy(dtype=np.float64)
+    else:
+        log_prior = np.zeros(n, dtype=np.float64)
+    log_prior = np.ascontiguousarray(log_prior)
+    
+    # Group structure (by household ID)
+    if "idhh" in df.columns:
+        ids = df["idhh"].to_numpy()
+    else:
+        raise KeyError("Couples data must have 'idhh' column")
+    
+    unique_ids, group_idx = np.unique(ids, return_inverse=True)
+    n_groups = len(unique_ids)
+    group_idx = np.ascontiguousarray(group_idx.astype(np.int64))
+    
+    # Observed choices (draw == 0)
+    draws = df["draw"].to_numpy()
+    is_obs = np.ascontiguousarray((draws == 0).astype(bool))
+    
+    # Group boundaries
+    id_changes = np.where(np.diff(ids) != 0)[0] + 1
+    group_starts = np.ascontiguousarray(np.concatenate([[0], id_changes]).astype(np.int64))
+    group_ends = np.ascontiguousarray(np.concatenate([id_changes, [n]]).astype(np.int64))
+    
+    # Observed index per group
+    obs_indices = np.zeros(n_groups, dtype=np.int64)
+    for g in range(n_groups):
+        s, e = group_starts[g], group_ends[g]
+        obs_in_group = np.where(is_obs[s:e])[0]
+        obs_indices[g] = s + obs_in_group[0] if len(obs_in_group) > 0 else s
+    obs_indices = np.ascontiguousarray(obs_indices)
+    
+    return PrecomputedDataCouples(
+        c=c, l_m=l_m, log_age_m=log_age_m, log_age2_m=log_age2_m,
+        educL_m=educL_m, educH_m=educH_m,
+        l_f=l_f, log_age_f=log_age_f, log_age2_f=log_age2_f,
+        educL_f=educL_f, educH_f=educH_f,
+        children0_3=children0_3, children4_6=children4_6, children7_9=children7_9,
+        reg2=reg2, reg3=reg3, reg4=reg4, reg5=reg5, reg6=reg6, reg7=reg7, reg8=reg8, reg9=reg9,
+        working_m=working_m, working_pt1_m=working_pt1_m, working_pt2_m=working_pt2_m,
+        working_ft_m=working_ft_m, gsur_m=gsur_m,
+        working_f=working_f, working_pt1_f=working_pt1_f, working_pt2_f=working_pt2_f,
+        working_ft_f=working_ft_f, gsur_f=gsur_f,
+        log_wage_m=log_wage_m, pexp_m=pexp_m, pexp2_m=pexp2_m,
+        log_wage_f=log_wage_f, pexp_f=pexp_f, pexp2_f=pexp2_f,
+        yd1=yd1, yd2=yd2, log_prior=log_prior, group_idx=group_idx, n_groups=n_groups,
+        is_obs=is_obs, group_starts=group_starts, group_ends=group_ends, obs_indices=obs_indices,
+    )
+
 
 def _get_col(df: pd.DataFrame, col: str, default: float = 0.0) -> np.ndarray:
     """
@@ -752,9 +1078,21 @@ def pack_theta_singles(
     return theta
 
 
-def unpack_theta_singles(theta: np.ndarray) -> Tuple[PrefParamsSingles, HoursOppParams, WageOppParams]:
+def unpack_theta_singles(theta: np.ndarray, wage_spec: str = "vw") -> Tuple[PrefParamsSingles, HoursOppParams, WageOppParams]:
     """
     Unpack flat parameter array into dataclasses.
+    
+    Parameters
+    ----------
+    theta : np.ndarray
+        Parameter vector. Length 21 for fw (pref+hopp), 37 for vw (pref+hopp+wopp).
+    wage_spec : str
+        "fw" (fixed wages, 21 params) or "vw" (variable wages, 37 params)
+    
+    Returns
+    -------
+    pref, hopp, wopp : tuple of dataclasses
+        For fw mode, wopp will have default values (not used).
     """
     pref = PrefParamsSingles(
         beta_l0=theta[0],
@@ -775,29 +1113,35 @@ def unpack_theta_singles(theta: np.ndarray) -> Tuple[PrefParamsSingles, HoursOpp
         beta_pt1=theta[13],
         beta_pt2=theta[14],
         beta_ft=theta[15],
-        beta_gsur=theta[16],        beta_work_educL=theta[17],
+        beta_gsur=theta[16],
+        beta_work_educL=theta[17],
         beta_work_educH=theta[18],
         beta_work_reg2=theta[19],
         beta_work_reg3=theta[20],
     )
-    wopp = WageOppParams(
-        beta0=theta[21],
-        beta_educL=theta[22],
-        beta_educH=theta[23],
-        beta_pexp=theta[24],
-        beta_pexp2=theta[25],
-        beta_reg2=theta[26],
-        beta_reg3=theta[27],
-        beta_reg4=theta[28],
-        beta_reg5=theta[29],
-        beta_reg6=theta[30],
-        beta_reg7=theta[31],
-        beta_reg8=theta[32],
-        beta_reg9=theta[33],
-        beta_yd1=theta[34],
-        beta_yd2=theta[35],
-        sigma=theta[36],
-    )
+    
+    # For fw mode, wage opp params are not used - return defaults
+    if wage_spec == "fw" or len(theta) <= 21:
+        wopp = WageOppParams()
+    else:
+        wopp = WageOppParams(
+            beta0=theta[21],
+            beta_educL=theta[22],
+            beta_educH=theta[23],
+            beta_pexp=theta[24],
+            beta_pexp2=theta[25],
+            beta_reg2=theta[26],
+            beta_reg3=theta[27],
+            beta_reg4=theta[28],
+            beta_reg5=theta[29],
+            beta_reg6=theta[30],
+            beta_reg7=theta[31],
+            beta_reg8=theta[32],
+            beta_reg9=theta[33],
+            beta_yd1=theta[34],
+            beta_yd2=theta[35],
+            sigma=theta[36],
+        )
     return pref, hopp, wopp
 
 
@@ -1142,31 +1486,34 @@ def ff_calc_util_singles(
     # Normalized consumption and leisure
     # -------------------------------------------------------------------------
     # Try different column names that might be in the dataset
-    if "c_norm" in df.columns:
+    # IMPORTANT: Check not just existence but also that values are valid (not all NaN)
+    c = None
+    if "c_norm" in df.columns and not df["c_norm"].isna().all():
         c = df["c_norm"].to_numpy()
-    elif "dispy_util" in df.columns:
+    if c is None and "dispy_util" in df.columns and not df["dispy_util"].isna().all():
         c = df["dispy_util"].to_numpy()
-    elif "consumption" in df.columns:
+    if c is None and "consumption" in df.columns and not df["consumption"].isna().all():
         # Normalize consumption by MEAN_DISPY_NORM
         c = df["consumption"].to_numpy() / MEAN_DISPY_NORM
-    elif "ils_dispy" in df.columns:
+    if c is None and "ils_dispy" in df.columns and not df["ils_dispy"].isna().all():
         c = df["ils_dispy"].to_numpy() / MEAN_DISPY_NORM
-    else:
-        LOGGER.warning("No consumption column found; using 1.0 as placeholder.")
+    if c is None:
+        LOGGER.warning("No valid consumption column found; using 1.0 as placeholder.")
         c = np.ones(n)
     
-    if "l_norm" in df.columns:
+    l = None
+    if "l_norm" in df.columns and not df["l_norm"].isna().all():
         l = df["l_norm"].to_numpy()
-    elif "leis_util" in df.columns:
+    if l is None and "leis_util" in df.columns and not df["leis_util"].isna().all():
         l = df["leis_util"].to_numpy()
-    elif "leisure" in df.columns:
+    if l is None and "leisure" in df.columns and not df["leisure"].isna().all():
         # Normalize leisure: (TOTAL_LEISURE - hours) / (TOTAL_LEISURE - MEAN_LHW)
         l = df["leisure"].to_numpy() / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
-    elif "hours" in df.columns:
+    if l is None and "hours" in df.columns:
         hours = df["hours"].to_numpy()
         l = (TOTAL_LEISURE_HOURS - hours) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
-    else:
-        LOGGER.warning("No leisure column found; using 1.0 as placeholder.")
+    if l is None:
+        LOGGER.warning("No valid leisure column found; using 1.0 as placeholder.")
         l = np.ones(n)
     
     # Clip to avoid numerical issues
@@ -1662,7 +2009,7 @@ def ff_calc_wopp(
     sigma = np.abs(wopp.sigma) + 1e-6  # enforce positivity
     z = (log_wage - mean_logw) / sigma
     
-    # log f(w|X) = -0.5*z² - log(σ) - log(w) - 0.5*log(2π)
+    # log f(w|X) = -0.5*z² - log(σ) - log(w)
     # We omit -0.5*log(2π) as it cancels in the likelihood ratio
     w_opp = -0.5 * z**2 - np.log(sigma) - log_wage
     
@@ -1973,7 +2320,7 @@ def log_likelihood_singles(
         Total log-likelihood.
     """
     # Unpack parameters
-    pref, hopp, wopp = unpack_theta_singles(theta)
+    pref, hopp, wopp = unpack_theta_singles(theta, wage_spec=wage_spec)
     
     # Building blocks
     u = ff_calc_util_singles(df, pref, is_male=is_male)
@@ -2111,18 +2458,23 @@ def _compute_utility_derivatives_singles(
     pref, _, _ = unpack_theta_singles(theta)
     
     # Get normalized consumption and leisure (same as ff_calc_util_singles)
-    if "c_norm" in df.columns:
+    # Check not just existence but also that values are valid (not all NaN)
+    c = None
+    if "c_norm" in df.columns and not df["c_norm"].isna().all():
         c = df["c_norm"].to_numpy()
-    elif "consumption" in df.columns:
+    if c is None and "consumption" in df.columns and not df["consumption"].isna().all():
         c = df["consumption"].to_numpy() / MEAN_DISPY_NORM
-    else:
+    if c is None and "ils_dispy" in df.columns and not df["ils_dispy"].isna().all():
+        c = df["ils_dispy"].to_numpy() / MEAN_DISPY_NORM
+    if c is None:
         c = np.ones(n)
     
-    if "l_norm" in df.columns:
+    l = None
+    if "l_norm" in df.columns and not df["l_norm"].isna().all():
         l = df["l_norm"].to_numpy()
-    elif "leisure" in df.columns:
+    if l is None and "leisure" in df.columns and not df["leisure"].isna().all():
         l = df["leisure"].to_numpy() / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
-    elif "hours" in df.columns:
+    if l is None and "hours" in df.columns:
         hours = df["hours"].to_numpy()
         l = (TOTAL_LEISURE_HOURS - hours) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
     else:
@@ -2389,7 +2741,7 @@ def _compute_wopp_derivatives(
     
     # -------------------------------------------------------------------------
     # Derivatives of w_opp w.r.t. wopp parameters
-    # w_opp = -0.5 * ((log_wage - μ)/σ)² - log(σ) - log(wage)
+    # w_opp = -0.5 * ((log_wage - μ)/σ)² - log(σ) - log(w)
     # 
     # For mean parameters (β0, β_educL, etc.): ∂w_opp/∂β_k = z/σ * (∂μ/∂β_k)
     # For σ: ∂w_opp/∂σ = z²/σ - 1/σ = (z² - 1)/σ
@@ -2824,12 +3176,423 @@ def fast_log_likelihood_singles(
     exp_V_shifted = np.exp(V - V_max)
     sum_exp_per_group = np.bincount(data.group_idx, weights=exp_V_shifted, minlength=data.n_groups)
     log_sum_exp_per_group = V_max_per_group + np.log(sum_exp_per_group)
+      # LL = sum over observed of (V_obs - log_sum_exp)
+    V_obs = V[data.obs_indices]
+    ll = np.sum(V_obs - log_sum_exp_per_group)
+    
+    return ll
+
+
+def fast_log_likelihood_couples(
+    theta: np.ndarray,
+    data: PrecomputedDataCouples,
+    wage_spec: str = "fw",
+) -> float:
+    """
+    FAST log-likelihood for couples using precomputed data arrays.
+    
+    Couples utility structure:
+        U = β_lm(X_m) * BC(l_m; θ_lm) + β_lf(X_f) * BC(l_f; θ_lf) + β_c * BC(c; θ_c)
+    
+    where β_lm(X_m) and β_lf(X_f) are linear combinations of demographics.
+    
+    Parameters
+    ----------
+    theta : np.ndarray
+        Parameter vector for couples (see below for layout)
+    data : PrecomputedDataCouples  
+        Pre-extracted arrays from precompute_data_couples()
+    wage_spec : str
+        "fw" (fixed wages) or "vw" (variable wages)
+    
+    Parameter layout (fw = 46 params, vw = 78 params):
+    [0:11]   - Male leisure preferences (11 params)
+    [11:22]  - Female leisure preferences (11 params)
+    [22:25]  - Shared params: theta_lm, theta_lf, theta_c
+    [25:26]  - beta_c (consumption)
+    [26:35]  - Male hours opportunity (9 params)
+    [35:44]  - Female hours opportunity (9 params)
+    [44:46]  - Year dummies (if needed)
+    [46:62]  - Male wage opportunity (16 params, vw only)
+    [62:78]  - Female wage opportunity (16 params, vw only)
+    
+    Returns
+    -------
+    float
+        Total log-likelihood
+    """
+    # -------------------------------------------------------------------------
+    # Unpack theta - Male leisure preferences [0:11]
+    # -------------------------------------------------------------------------
+    beta_lm0 = theta[0]
+    beta_lm_log_age = theta[1]
+    beta_lm_log_age2 = theta[2]
+    beta_lm_ch0_3 = theta[3]
+    beta_lm_ch4_6 = theta[4]
+    beta_lm_ch7_9 = theta[5]
+    beta_lm_educL = theta[6]
+    beta_lm_educH = theta[7]
+    beta_lm_reg2 = theta[8]
+    beta_lm_reg3 = theta[9]
+    beta_lm_reg4 = theta[10]
+    
+    # Female leisure preferences [11:22]
+    beta_lf0 = theta[11]
+    beta_lf_log_age = theta[12]
+    beta_lf_log_age2 = theta[13]
+    beta_lf_ch0_3 = theta[14]
+    beta_lf_ch4_6 = theta[15]
+    beta_lf_ch7_9 = theta[16]
+    beta_lf_educL = theta[17]
+    beta_lf_educH = theta[18]
+    beta_lf_reg2 = theta[19]
+    beta_lf_reg3 = theta[20]
+    beta_lf_reg4 = theta[21]
+    
+    # Shared Box-Cox and consumption [22:26]
+    theta_lm = theta[22]
+    theta_lf = theta[23]
+    theta_c = theta[24]
+    beta_c = theta[25]
+    
+    # Male hours opportunity [26:35]
+    beta_work_m = theta[26]
+    beta_pt1_m = theta[27]
+    beta_pt2_m = theta[28]
+    beta_ft_m = theta[29]
+    beta_gsur_m = theta[30]
+    beta_work_educL_m = theta[31]
+    beta_work_educH_m = theta[32]
+    beta_work_reg2_m = theta[33]
+    beta_work_reg3_m = theta[34]
+    
+    # Female hours opportunity [35:44]
+    beta_work_f = theta[35]
+    beta_pt1_f = theta[36]
+    beta_pt2_f = theta[37]
+    beta_ft_f = theta[38]
+    beta_gsur_f = theta[39]
+    beta_work_educL_f = theta[40]
+    beta_work_educH_f = theta[41]
+    beta_work_reg2_f = theta[42]
+    beta_work_reg3_f = theta[43]
+    
+    # -------------------------------------------------------------------------
+    # Utility computation (vectorized)
+    # -------------------------------------------------------------------------
+    # Box-Cox transforms
+    lm_bc = _fast_boxcox(data.l_m, theta_lm)
+    lf_bc = _fast_boxcox(data.l_f, theta_lf)
+    c_bc = _fast_boxcox(data.c, theta_c)
+    
+    # Male leisure coefficient
+    beta_leisure_m = (
+        beta_lm0
+        + beta_lm_log_age * data.log_age_m
+        + beta_lm_log_age2 * data.log_age2_m
+        + beta_lm_ch0_3 * data.children0_3
+        + beta_lm_ch4_6 * data.children4_6
+        + beta_lm_ch7_9 * data.children7_9
+        + beta_lm_educL * data.educL_m
+        + beta_lm_educH * data.educH_m
+        + beta_lm_reg2 * data.reg2
+        + beta_lm_reg3 * data.reg3
+        + beta_lm_reg4 * data.reg4
+    )
+    
+    # Female leisure coefficient
+    beta_leisure_f = (
+        beta_lf0
+        + beta_lf_log_age * data.log_age_f
+        + beta_lf_log_age2 * data.log_age2_f
+        + beta_lf_ch0_3 * data.children0_3
+        + beta_lf_ch4_6 * data.children4_6
+        + beta_lf_ch7_9 * data.children7_9
+        + beta_lf_educL * data.educL_f
+        + beta_lf_educH * data.educH_f
+        + beta_lf_reg2 * data.reg2
+        + beta_lf_reg3 * data.reg3
+        + beta_lf_reg4 * data.reg4
+    )
+    
+    # Total utility
+    u = beta_leisure_m * lm_bc + beta_leisure_f * lf_bc + beta_c * c_bc
+    
+    # -------------------------------------------------------------------------
+    # Hours opportunity density - male
+    # -------------------------------------------------------------------------
+    h_opp_m = (
+        beta_work_m * data.working_m
+        + beta_pt1_m * data.working_pt1_m
+        + beta_pt2_m * data.working_pt2_m
+        + beta_ft_m * data.working_ft_m
+        + beta_gsur_m * data.working_m * data.gsur_m
+        + beta_work_educL_m * data.working_m * data.educL_m
+        + beta_work_educH_m * data.working_m * data.educH_m
+        + beta_work_reg2_m * data.working_m * data.reg2
+        + beta_work_reg3_m * data.working_m * data.reg3
+    )
+    
+    # Hours opportunity density - female
+    h_opp_f = (
+        beta_work_f * data.working_f
+        + beta_pt1_f * data.working_pt1_f
+        + beta_pt2_f * data.working_pt2_f
+        + beta_ft_f * data.working_ft_f
+        + beta_gsur_f * data.working_f * data.gsur_f
+        + beta_work_educL_f * data.working_f * data.educL_f
+        + beta_work_educH_f * data.working_f * data.educH_f
+        + beta_work_reg2_f * data.working_f * data.reg2
+        + beta_work_reg3_f * data.working_f * data.reg3
+    )
+    
+    h_opp = h_opp_m + h_opp_f
+    
+    # -------------------------------------------------------------------------
+    # Wage opportunity density (only for vw)
+    # -------------------------------------------------------------------------
+    if wage_spec == "vw" and len(theta) > 46:
+        # Male wage params [46:62]
+        w_beta0_m = theta[46]
+        w_educL_m, w_educH_m = theta[47], theta[48]
+        w_pexp_m, w_pexp2_m = theta[49], theta[50]
+        w_reg2_m, w_reg3_m, w_reg4_m, w_reg5_m = theta[51], theta[52], theta[53], theta[54]
+        w_reg6_m, w_reg7_m, w_reg8_m, w_reg9_m = theta[55], theta[56], theta[57], theta[58]
+        w_yd1_m, w_yd2_m = theta[59], theta[60]
+        sigma_m = abs(theta[61]) + 1e-6
+        
+        mean_logw_m = (
+            w_beta0_m
+            + w_educL_m * data.educL_m + w_educH_m * data.educH_m
+            + w_pexp_m * data.pexp_m + w_pexp2_m * data.pexp2_m
+            + w_reg2_m * data.reg2 + w_reg3_m * data.reg3
+            + w_reg4_m * data.reg4 + w_reg5_m * data.reg5
+            + w_reg6_m * data.reg6 + w_reg7_m * data.reg7
+            + w_reg8_m * data.reg8 + w_reg9_m * data.reg9
+            + w_yd1_m * data.yd1 + w_yd2_m * data.yd2
+        )
+        z_m = (data.log_wage_m - mean_logw_m) / sigma_m
+        w_opp_m = np.where(data.working_m > 0, 
+                          -0.5 * z_m * z_m - np.log(sigma_m) - data.log_wage_m, 0.0)
+        
+        # Female wage params [62:78]
+        w_beta0_f = theta[62]
+        w_educL_f, w_educH_f = theta[63], theta[64]
+        w_pexp_f, w_pexp2_f = theta[65], theta[66]
+        w_reg2_f, w_reg3_f, w_reg4_f, w_reg5_f = theta[67], theta[68], theta[69], theta[70]
+        w_reg6_f, w_reg7_f, w_reg8_f, w_reg9_f = theta[71], theta[72], theta[73], theta[74]
+        w_yd1_f, w_yd2_f = theta[75], theta[76]
+        sigma_f = abs(theta[77]) + 1e-6
+        
+        mean_logw_f = (
+            w_beta0_f
+            + w_educL_f * data.educL_f + w_educH_f * data.educH_f
+            + w_pexp_f * data.pexp_f + w_pexp2_f * data.pexp2_f
+            + w_reg2_f * data.reg2 + w_reg3_f * data.reg3
+            + w_reg4_f * data.reg4 + w_reg5_f * data.reg5
+            + w_reg6_f * data.reg6 + w_reg7_f * data.reg7
+            + w_reg8_f * data.reg8 + w_reg9_f * data.reg9
+            + w_yd1_f * data.yd1 + w_yd2_f * data.yd2
+        )
+        z_f = (data.log_wage_f - mean_logw_f) / sigma_f
+        w_opp_f = np.where(data.working_f > 0,
+                          -0.5 * z_f * z_f - np.log(sigma_f) - data.log_wage_f, 0.0)
+        
+        w_opp = w_opp_m + w_opp_f
+    else:
+        w_opp = 0.0
+    
+    # -------------------------------------------------------------------------
+    # Composite utility V
+    # -------------------------------------------------------------------------
+    V = u + h_opp + w_opp - data.log_prior
+    
+    # -------------------------------------------------------------------------
+    # Log-likelihood (vectorized log-sum-exp)
+    # -------------------------------------------------------------------------
+    V_max_per_group = np.maximum.reduceat(V, data.group_starts)
+    V_max = V_max_per_group[data.group_idx]
+    
+    exp_V_shifted = np.exp(V - V_max)
+    sum_exp_per_group = np.bincount(data.group_idx, weights=exp_V_shifted, minlength=data.n_groups)
+    log_sum_exp_per_group = V_max_per_group + np.log(sum_exp_per_group)
     
     # LL = sum over observed of (V_obs - log_sum_exp)
     V_obs = V[data.obs_indices]
     ll = np.sum(V_obs - log_sum_exp_per_group)
     
     return ll
+
+
+def get_initial_theta_couples(wage_spec: str = "fw") -> np.ndarray:
+    """
+    Get initial parameter values for couples estimation.
+    
+    Parameter layout (44 for fw, 76 for vw):
+    [0:11]   - Male leisure preferences
+    [11:22]  - Female leisure preferences
+    [22:25]  - Box-Cox exponents (theta_lm, theta_lf, theta_c)
+    [25:26]  - beta_c (consumption)
+    [26:35]  - Male hours opportunity (9 params)
+    [35:44]  - Female hours opportunity (9 params)
+    [44:60]  - Male wage opportunity (16 params, vw only)
+    [60:76]  - Female wage opportunity (16 params, vw only)
+    """
+    theta = []
+    
+    # Male leisure preferences [0:11]
+    theta += [
+        1.0,   # beta_lm0
+        0.0,   # beta_lm_log_age
+        0.0,   # beta_lm_log_age2
+        0.0,   # beta_lm_ch0_3 (may be zero for males)
+        0.0,   # beta_lm_ch4_6
+        0.0,   # beta_lm_ch7_9
+        0.0,   # beta_lm_educL
+        0.0,   # beta_lm_educH
+        0.0,   # beta_lm_reg2
+        0.0,   # beta_lm_reg3
+        0.0,   # beta_lm_reg4
+    ]
+    
+    # Female leisure preferences [11:22]
+    theta += [
+        1.0,   # beta_lf0
+        0.0,   # beta_lf_log_age
+        0.0,   # beta_lf_log_age2
+        0.2,   # beta_lf_ch0_3 (positive for females - more leisure when young kids)
+        0.1,   # beta_lf_ch4_6
+        0.0,   # beta_lf_ch7_9
+        0.0,   # beta_lf_educL
+        0.0,   # beta_lf_educH
+        0.0,   # beta_lf_reg2
+        0.0,   # beta_lf_reg3
+        0.0,   # beta_lf_reg4
+    ]
+    
+    # Box-Cox exponents and consumption [22:26]
+    theta += [
+        0.5,   # theta_lm
+        0.5,   # theta_lf
+        0.5,   # theta_c
+        1.0,   # beta_c
+    ]
+    
+    # Male hours opportunity [26:35]
+    theta += [
+        0.5,   # beta_work_m
+        0.0,   # beta_pt1_m
+        0.0,   # beta_pt2_m
+        0.0,   # beta_ft_m
+        0.0,   # beta_gsur_m
+        0.0,   # beta_work_educL_m
+        0.0,   # beta_work_educH_m
+        0.0,   # beta_work_reg2_m
+        0.0,   # beta_work_reg3_m
+    ]
+    
+    # Female hours opportunity [35:44]
+    theta += [
+        0.5,   # beta_work_f
+        0.0,   # beta_pt1_f
+        0.0,   # beta_pt2_f
+        0.0,   # beta_ft_f
+        0.0,   # beta_gsur_f
+        0.0,   # beta_work_educL_f
+        0.0,   # beta_work_educH_f
+        0.0,   # beta_work_reg2_f
+        0.0,   # beta_work_reg3_f
+    ]
+    
+    if wage_spec == "vw":
+        # Male wage opportunity [44:60]
+        theta += [
+            2.5,    # beta0
+            -0.1,   # beta_educL
+            0.2,    # beta_educH
+            0.02,   # beta_pexp
+            -0.001, # beta_pexp2
+            -0.05, -0.05, -0.05, -0.05,  # reg2-5
+            -0.05, -0.05, -0.05, -0.10,  # reg6-9
+            0.0, 0.0,  # yd1, yd2
+            0.4,    # sigma
+        ]
+        
+        # Female wage opportunity [60:76]
+        theta += [
+            2.3,    # beta0 (typically lower)
+            -0.1,   # beta_educL
+            0.2,    # beta_educH
+            0.02,   # beta_pexp
+            -0.001, # beta_pexp2
+            -0.05, -0.05, -0.05, -0.05,  # reg2-5
+            -0.05, -0.05, -0.05, -0.10,  # reg6-9
+            0.0, 0.0,  # yd1, yd2
+            0.4,    # sigma
+        ]
+    
+    return np.array(theta)
+
+
+def get_param_names_couples(wage_spec: str = "fw") -> List[str]:
+    """Return parameter names for couples, aligned with get_initial_theta_couples order."""
+    names = []
+    
+    # Male leisure [0:11]
+    names += [
+        "cou.pref.beta_lm0", "cou.pref.beta_lm_log_age", "cou.pref.beta_lm_log_age2",
+        "cou.pref.beta_lm_ch0_3", "cou.pref.beta_lm_ch4_6", "cou.pref.beta_lm_ch7_9",
+        "cou.pref.beta_lm_educL", "cou.pref.beta_lm_educH",
+        "cou.pref.beta_lm_reg2", "cou.pref.beta_lm_reg3", "cou.pref.beta_lm_reg4",
+    ]
+    
+    # Female leisure [11:22]
+    names += [
+        "cou.pref.beta_lf0", "cou.pref.beta_lf_log_age", "cou.pref.beta_lf_log_age2",
+        "cou.pref.beta_lf_ch0_3", "cou.pref.beta_lf_ch4_6", "cou.pref.beta_lf_ch7_9",
+        "cou.pref.beta_lf_educL", "cou.pref.beta_lf_educH",
+        "cou.pref.beta_lf_reg2", "cou.pref.beta_lf_reg3", "cou.pref.beta_lf_reg4",
+    ]
+    
+    # Box-Cox and consumption [22:26]
+    names += ["cou.pref.theta_lm", "cou.pref.theta_lf", "cou.pref.theta_c", "cou.pref.beta_c"]
+    
+    # Male hours opportunity [26:35]
+    names += [
+        "cou.hopp_m.beta_work", "cou.hopp_m.beta_pt1", "cou.hopp_m.beta_pt2",
+        "cou.hopp_m.beta_ft", "cou.hopp_m.beta_gsur",
+        "cou.hopp_m.beta_work_educL", "cou.hopp_m.beta_work_educH",
+        "cou.hopp_m.beta_work_reg2", "cou.hopp_m.beta_work_reg3",
+    ]
+    
+    # Female hours opportunity [35:44]
+    names += [
+        "cou.hopp_f.beta_work", "cou.hopp_f.beta_pt1", "cou.hopp_f.beta_pt2",
+        "cou.hopp_f.beta_ft", "cou.hopp_f.beta_gsur",
+        "cou.hopp_f.beta_work_educL", "cou.hopp_f.beta_work_educH",
+        "cou.hopp_f.beta_work_reg2", "cou.hopp_f.beta_work_reg3",
+    ]
+    
+    if wage_spec == "vw":
+        # Male wage opportunity [44:60]
+        names += [
+            "cou.wopp_m.beta0", "cou.wopp_m.beta_educL", "cou.wopp_m.beta_educH",
+            "cou.wopp_m.beta_pexp", "cou.wopp_m.beta_pexp2",
+            "cou.wopp_m.beta_reg2", "cou.wopp_m.beta_reg3", "cou.wopp_m.beta_reg4", "cou.wopp_m.beta_reg5",
+            "cou.wopp_m.beta_reg6", "cou.wopp_m.beta_reg7", "cou.wopp_m.beta_reg8", "cou.wopp_m.beta_reg9",
+            "cou.wopp_m.beta_yd1", "cou.wopp_m.beta_yd2", "cou.wopp_m.sigma",
+        ]
+        
+        # Female wage opportunity [60:76]
+        names += [
+            "cou.wopp_f.beta0", "cou.wopp_f.beta_educL", "cou.wopp_f.beta_educH",
+            "cou.wopp_f.beta_pexp", "cou.wopp_f.beta_pexp2",
+            "cou.wopp_f.beta_reg2", "cou.wopp_f.beta_reg3", "cou.wopp_f.beta_reg4", "cou.wopp_f.beta_reg5",
+            "cou.wopp_f.beta_reg6", "cou.wopp_f.beta_reg7", "cou.wopp_f.beta_reg8", "cou.wopp_f.beta_reg9",
+            "cou.wopp_f.beta_yd1", "cou.wopp_f.beta_yd2", "cou.wopp_f.sigma",
+        ]
+    
+    return names
 
 
 def fast_analytical_gradient_singles(
@@ -2965,27 +3728,26 @@ def fast_analytical_gradient_singles(
         )
         
         z = (data.log_wage - mean_logw) / sigma
-        w_opp = -0.5 * z * z - np.log(sigma) - data.log_wage
-        w_opp = np.where(data.working > 0, w_opp, 0.0)
+        w_opp = np.where(data.working > 0, -0.5 * z * z - np.log(sigma) - data.log_wage, 0.0)
         
         z_over_sigma = z / sigma
         dw_dtheta = np.zeros((n, 16), dtype=np.float64)
-        dw_dtheta[:, 0] = z_over_sigma * 1.0        # beta0
-        dw_dtheta[:, 1] = z_over_sigma * data.educL # beta_educL
-        dw_dtheta[:, 2] = z_over_sigma * data.educH # beta_educH
-        dw_dtheta[:, 3] = z_over_sigma * data.pexp  # beta_pexp
-        dw_dtheta[:, 4] = z_over_sigma * data.pexp2 # beta_pexp2
-        dw_dtheta[:, 5] = z_over_sigma * data.reg2  # beta_reg2
-        dw_dtheta[:, 6] = z_over_sigma * data.reg3  # beta_reg3
-        dw_dtheta[:, 7] = z_over_sigma * data.reg4  # beta_reg4
-        dw_dtheta[:, 8] = z_over_sigma * data.reg5  # beta_reg5
-        dw_dtheta[:, 9] = z_over_sigma * data.reg6  # beta_reg6
-        dw_dtheta[:, 10] = z_over_sigma * data.reg7 # beta_reg7
-        dw_dtheta[:, 11] = z_over_sigma * data.reg8 # beta_reg8
-        dw_dtheta[:, 12] = z_over_sigma * data.reg9 # beta_reg9
-        dw_dtheta[:, 13] = z_over_sigma * data.yd1  # beta_yd1
-        dw_dtheta[:, 14] = z_over_sigma * data.yd2  # beta_yd2
-        dw_dtheta[:, 15] = (z * z - 1.0) / sigma    # sigma
+        dw_dtheta[:, 0] = z_over_sigma
+        dw_dtheta[:, 1] = z_over_sigma * data.educL
+        dw_dtheta[:, 2] = z_over_sigma * data.educH
+        dw_dtheta[:, 3] = z_over_sigma * data.pexp
+        dw_dtheta[:, 4] = z_over_sigma * data.pexp2
+        dw_dtheta[:, 5] = z_over_sigma * data.reg2
+        dw_dtheta[:, 6] = z_over_sigma * data.reg3
+        dw_dtheta[:, 7] = z_over_sigma * data.reg4
+        dw_dtheta[:, 8] = z_over_sigma * data.reg5
+        dw_dtheta[:, 9] = z_over_sigma * data.reg6
+        dw_dtheta[:, 10] = z_over_sigma * data.reg7
+        dw_dtheta[:, 11] = z_over_sigma * data.reg8
+        dw_dtheta[:, 12] = z_over_sigma * data.reg9
+        dw_dtheta[:, 13] = z_over_sigma * data.yd1
+        dw_dtheta[:, 14] = z_over_sigma * data.yd2
+        dw_dtheta[:, 15] = (z * z - 1.0) / sigma
         dw_dtheta = np.where(data.working[:, None] > 0, dw_dtheta, 0.0)
     else:
         w_opp = 0.0
@@ -3021,8 +3783,7 @@ def fast_analytical_gradient_singles(
         E_dV_per_group[:, k] = np.bincount(data.group_idx, weights=P_weighted_dV[:, k], minlength=data.n_groups)
     
     E_dV = E_dV_per_group[data.group_idx, :]
-    
-    # Gradient = sum over observed of (dV_obs - E[dV])
+      # Gradient = sum over observed of (dV_obs - E[dV])
     grad = (dV_dtheta[data.is_obs, :] - E_dV[data.is_obs, :]).sum(axis=0)
     
     return grad
@@ -3035,12 +3796,493 @@ def fast_neg_ll_with_grad_singles(
     wage_spec: str = "fw",
 ) -> Tuple[float, np.ndarray]:
     """
-    FAST negative log-likelihood and gradient using precomputed data.
+    OPTIMIZED: Compute LL and gradient in single pass for singles.
+    
+    This is ~30-50% faster than calling LL and grad separately because:
+    1. Box-Cox transforms computed once (not twice)
+    2. V and softmax probabilities computed once (not twice)
+    3. Better cache locality
     
     Use this with L-BFGS-B for maximum speed.
     """
-    ll = fast_log_likelihood_singles(theta, data, is_male, wage_spec)
-    grad = fast_analytical_gradient_singles(theta, data, is_male, wage_spec)
+    n = len(data.c)
+    n_params = 37 if wage_spec == "vw" else 21
+    
+    # Unpack theta
+    beta_l0, beta_l_log_age, beta_l_log_age2 = theta[0], theta[1], theta[2]
+    beta_l_ch4_6, beta_l_ch7_9 = theta[3], theta[4]
+    beta_l_educL, beta_l_educH, beta_l_reg2 = theta[5], theta[6], theta[7]
+    beta_c, theta_l, theta_c = theta[8], theta[9], theta[10]
+    beta_l_ch0_3 = theta[11]
+    
+    beta_work, beta_pt1, beta_pt2, beta_ft = theta[12], theta[13], theta[14], theta[15]
+    beta_gsur = theta[16]
+    beta_work_educL, beta_work_educH = theta[17], theta[18]
+    beta_work_reg2, beta_work_reg3 = theta[19], theta[20]
+    
+    # Box-Cox transforms (computed ONCE)
+    l_bc = _fast_boxcox(data.l, theta_l)
+    c_bc = _fast_boxcox(data.c, theta_c)
+    dl_bc_dtheta_l = _fast_d_boxcox_dtheta(data.l, theta_l)
+    dc_bc_dtheta_c = _fast_d_boxcox_dtheta(data.c, theta_c)
+    
+    # Utility
+    beta_leisure = (beta_l0 + beta_l_log_age * data.log_age + beta_l_log_age2 * data.log_age2
+        + beta_l_ch4_6 * data.children4_6 + beta_l_ch7_9 * data.children7_9
+        + beta_l_educL * data.educL + beta_l_educH * data.educH + beta_l_reg2 * data.reg2)
+    if not is_male:
+        beta_leisure = beta_leisure + beta_l_ch0_3 * data.children0_3
+    
+    u = beta_leisure * l_bc + beta_c * c_bc
+    
+    # Hours opportunity
+    h_opp = (beta_work * data.working + beta_pt1 * data.working_pt1
+        + beta_pt2 * data.working_pt2 + beta_ft * data.working_ft
+        + beta_gsur * data.working * data.gsur
+        + beta_work_educL * data.working * data.educL + beta_work_educH * data.working * data.educH
+        + beta_work_reg2 * data.working * data.reg2 + beta_work_reg3 * data.working * data.reg3)
+    
+    # Wage opportunity (vw only)
+    if wage_spec == "vw":
+        sigma = abs(theta[36]) + 1e-6
+        mean_logw = (theta[21] + theta[22] * data.educL + theta[23] * data.educH
+            + theta[24] * data.pexp + theta[25] * data.pexp2
+            + theta[26] * data.reg2 + theta[27] * data.reg3 + theta[28] * data.reg4 + theta[29] * data.reg5
+            + theta[30] * data.reg6 + theta[31] * data.reg7 + theta[32] * data.reg8 + theta[33] * data.reg9
+            + theta[34] * data.yd1 + theta[35] * data.yd2)
+        z = (data.log_wage - mean_logw) / sigma
+        w_opp = np.where(data.working > 0, -0.5*z*z - np.log(sigma) - data.log_wage, 0.0)
+    else:
+        w_opp = 0.0
+        z = sigma = None
+    
+    # V and softmax (computed ONCE)
+    V = u + h_opp + w_opp - data.log_prior
+    V_max_per_group = np.maximum.reduceat(V, data.group_starts)
+    V_max = V_max_per_group[data.group_idx]
+    exp_V = np.exp(V - V_max)
+    sum_exp = np.bincount(data.group_idx, weights=exp_V, minlength=data.n_groups)
+    
+    # LL
+    ll = np.sum(V[data.obs_indices] - V_max_per_group - np.log(sum_exp))
+    
+    # Build dV/dtheta
+    dV = np.zeros((n, n_params), dtype=np.float64)
+    
+    # Preference derivatives [0:12]
+    dV[:, 0] = l_bc
+    dV[:, 1] = data.log_age * l_bc
+    dV[:, 2] = data.log_age2 * l_bc
+    dV[:, 3] = data.children4_6 * l_bc
+    dV[:, 4] = data.children7_9 * l_bc
+    dV[:, 5] = data.educL * l_bc
+    dV[:, 6] = data.educH * l_bc
+    dV[:, 7] = data.reg2 * l_bc
+    dV[:, 8] = c_bc
+    dV[:, 9] = beta_leisure * dl_bc_dtheta_l
+    dV[:, 10] = beta_c * dc_bc_dtheta_c
+    dV[:, 11] = data.children0_3 * l_bc if not is_male else 0.0
+    
+    # Hours opp derivatives [12:21]
+    dV[:, 12] = data.working
+    dV[:, 13] = data.working_pt1
+    dV[:, 14] = data.working_pt2
+    dV[:, 15] = data.working_ft
+    dV[:, 16] = data.working * data.gsur
+    dV[:, 17] = data.working * data.educL
+    dV[:, 18] = data.working * data.educH
+    dV[:, 19] = data.working * data.reg2
+    dV[:, 20] = data.working * data.reg3
+    
+    # Wage derivatives (vw only)
+    if wage_spec == "vw" and z is not None:
+        z_s = z / sigma
+        dV[:, 21] = np.where(data.working > 0, z_s, 0.0)
+        dV[:, 22] = np.where(data.working > 0, z_s * data.educL, 0.0)
+        dV[:, 23] = np.where(data.working > 0, z_s * data.educH, 0.0)
+        dV[:, 24] = np.where(data.working > 0, z_s * data.pexp, 0.0)
+        dV[:, 25] = np.where(data.working > 0, z_s * data.pexp2, 0.0)
+        for i, r in enumerate([data.reg2, data.reg3, data.reg4, data.reg5, data.reg6, data.reg7, data.reg8, data.reg9]):
+            dV[:, 26+i] = np.where(data.working > 0, z_s * r, 0.0)
+        dV[:, 34] = np.where(data.working > 0, z_s * data.yd1, 0.0)
+        dV[:, 35] = np.where(data.working > 0, z_s * data.yd2, 0.0)
+        dV[:, 36] = np.where(data.working > 0, (z*z - 1.0)/sigma, 0.0)
+    
+    # Softmax gradient
+    P = exp_V / sum_exp[data.group_idx]
+    P_dV = P[:, None] * dV
+    E_dV = np.zeros((data.n_groups, n_params), dtype=np.float64)
+    for k in range(n_params):
+        E_dV[:, k] = np.bincount(data.group_idx, weights=P_dV[:, k], minlength=data.n_groups)
+    
+    grad = (dV[data.is_obs, :] - E_dV[data.group_idx[data.is_obs], :]).sum(axis=0)
+    
+    return -ll, -grad
+
+
+def fast_neg_ll_with_grad_couples(
+    theta: np.ndarray,
+    data: PrecomputedDataCouples,
+    wage_spec: str = "fw",
+) -> Tuple[float, np.ndarray]:
+    """
+    OPTIMIZED: Compute LL and gradient for couples in single pass.
+    
+    This is ~30-50% faster than calling LL and grad separately because:
+    1. Box-Cox transforms computed once (not twice)
+    2. V and softmax probabilities computed once (not twice)
+    3. Better cache locality
+    
+    Use this with L-BFGS-B for maximum speed.
+    
+    Parameters
+    ----------
+    theta : np.ndarray
+        Parameter vector (44 for fw, 76 for vw)
+    data : PrecomputedDataCouples
+        Pre-extracted arrays from precompute_data_couples()
+    wage_spec : str
+        "fw" (fixed wages) or "vw" (variable wages)
+    
+    Returns
+    -------
+    Tuple[float, np.ndarray]
+        (-LL, -gradient) for minimization
+    """
+    n = len(data.c)
+    n_params = 76 if wage_spec == "vw" else 44
+    
+    # -------------------------------------------------------------------------
+    # Unpack theta once
+    # -------------------------------------------------------------------------
+    # Male leisure preferences [0:11]
+    beta_lm0 = theta[0]
+    beta_lm_log_age = theta[1]
+    beta_lm_log_age2 = theta[2]
+    beta_lm_ch0_3 = theta[3]
+    beta_lm_ch4_6 = theta[4]
+    beta_lm_ch7_9 = theta[5]
+    beta_lm_educL = theta[6]
+    beta_lm_educH = theta[7]
+    beta_lm_reg2 = theta[8]
+    beta_lm_reg3 = theta[9]
+    beta_lm_reg4 = theta[10]
+    
+    # Female leisure preferences [11:22]
+    beta_lf0 = theta[11]
+    beta_lf_log_age = theta[12]
+    beta_lf_log_age2 = theta[13]
+    beta_lf_ch0_3 = theta[14]
+    beta_lf_ch4_6 = theta[15]
+    beta_lf_ch7_9 = theta[16]
+    beta_lf_educL = theta[17]
+    beta_lf_educH = theta[18]
+    beta_lf_reg2 = theta[19]
+    beta_lf_reg3 = theta[20]
+    beta_lf_reg4 = theta[21]
+    
+    # Shared Box-Cox and consumption [22:26]
+    theta_lm = theta[22]
+    theta_lf = theta[23]
+    theta_c = theta[24]
+    beta_c = theta[25]
+    
+    # Male hours opportunity [26:35]
+    beta_work_m = theta[26]
+    beta_pt1_m = theta[27]
+    beta_pt2_m = theta[28]
+    beta_ft_m = theta[29]
+    beta_gsur_m = theta[30]
+    beta_work_educL_m = theta[31]
+    beta_work_educH_m = theta[32]
+    beta_work_reg2_m = theta[33]
+    beta_work_reg3_m = theta[34]
+    
+    # Female hours opportunity [35:44]
+    beta_work_f = theta[35]
+    beta_pt1_f = theta[36]
+    beta_pt2_f = theta[37]
+    beta_ft_f = theta[38]
+    beta_gsur_f = theta[39]
+    beta_work_educL_f = theta[40]
+    beta_work_educH_f = theta[41]
+    beta_work_reg2_f = theta[42]
+    beta_work_reg3_f = theta[43]
+    
+    # -------------------------------------------------------------------------
+    # Box-Cox transforms (computed ONCE, used for both LL and gradient)
+    # -------------------------------------------------------------------------
+    lm_bc = _fast_boxcox(data.l_m, theta_lm)
+    lf_bc = _fast_boxcox(data.l_f, theta_lf)
+    c_bc = _fast_boxcox(data.c, theta_c)
+    dlm_bc_dtheta = _fast_d_boxcox_dtheta(data.l_m, theta_lm)
+    dlf_bc_dtheta = _fast_d_boxcox_dtheta(data.l_f, theta_lf)
+    dc_bc_dtheta = _fast_d_boxcox_dtheta(data.c, theta_c)
+    
+    # -------------------------------------------------------------------------
+    # Utility computation
+    # -------------------------------------------------------------------------
+    # Male leisure coefficient
+    beta_leisure_m = (
+        beta_lm0
+        + beta_lm_log_age * data.log_age_m
+        + beta_lm_log_age2 * data.log_age2_m
+        + beta_lm_ch0_3 * data.children0_3
+        + beta_lm_ch4_6 * data.children4_6
+        + beta_lm_ch7_9 * data.children7_9
+        + beta_lm_educL * data.educL_m
+        + beta_lm_educH * data.educH_m
+        + beta_lm_reg2 * data.reg2
+        + beta_lm_reg3 * data.reg3
+        + beta_lm_reg4 * data.reg4
+    )
+    
+    # Female leisure coefficient
+    beta_leisure_f = (
+        beta_lf0
+        + beta_lf_log_age * data.log_age_f
+        + beta_lf_log_age2 * data.log_age2_f
+        + beta_lf_ch0_3 * data.children0_3
+        + beta_lf_ch4_6 * data.children4_6
+        + beta_lf_ch7_9 * data.children7_9
+        + beta_lf_educL * data.educL_f
+        + beta_lf_educH * data.educH_f
+        + beta_lf_reg2 * data.reg2
+        + beta_lf_reg3 * data.reg3
+        + beta_lf_reg4 * data.reg4
+    )
+    
+    # Total utility
+    u = beta_leisure_m * lm_bc + beta_leisure_f * lf_bc + beta_c * c_bc
+    
+    # -------------------------------------------------------------------------
+    # Utility derivatives (26 params: male leisure 11 + female leisure 11 + shared 4)
+    # -------------------------------------------------------------------------
+    du_dtheta = np.empty((n, 26), dtype=np.float64)
+    
+    # Male leisure params [0:11]
+    du_dtheta[:, 0] = lm_bc                                  # beta_lm0
+    du_dtheta[:, 1] = data.log_age_m * lm_bc                 # beta_lm_log_age
+    du_dtheta[:, 2] = data.log_age2_m * lm_bc                # beta_lm_log_age2
+    du_dtheta[:, 3] = data.children0_3 * lm_bc               # beta_lm_ch0_3
+    du_dtheta[:, 4] = data.children4_6 * lm_bc               # beta_lm_ch4_6
+    du_dtheta[:, 5] = data.children7_9 * lm_bc               # beta_lm_ch7_9
+    du_dtheta[:, 6] = data.educL_m * lm_bc                   # beta_lm_educL
+    du_dtheta[:, 7] = data.educH_m * lm_bc                   # beta_lm_educH
+    du_dtheta[:, 8] = data.reg2 * lm_bc                      # beta_lm_reg2
+    du_dtheta[:, 9] = data.reg3 * lm_bc                      # beta_lm_reg3
+    du_dtheta[:, 10] = data.reg4 * lm_bc                     # beta_lm_reg4
+    
+    # Female leisure params [11:22]
+    du_dtheta[:, 11] = lf_bc                                 # beta_lf0
+    du_dtheta[:, 12] = data.log_age_f * lf_bc                # beta_lf_log_age
+    du_dtheta[:, 13] = data.log_age2_f * lf_bc               # beta_lf_log_age2
+    du_dtheta[:, 14] = data.children0_3 * lf_bc              # beta_lf_ch0_3
+    du_dtheta[:, 15] = data.children4_6 * lf_bc              # beta_lf_ch4_6
+    du_dtheta[:, 16] = data.children7_9 * lf_bc              # beta_lf_ch7_9
+    du_dtheta[:, 17] = data.educL_f * lf_bc                  # beta_lf_educL
+    du_dtheta[:, 18] = data.educH_f * lf_bc                  # beta_lf_educH
+    du_dtheta[:, 19] = data.reg2 * lf_bc                     # beta_lf_reg2
+    du_dtheta[:, 20] = data.reg3 * lf_bc                     # beta_lf_reg3
+    du_dtheta[:, 21] = data.reg4 * lf_bc                     # beta_lf_reg4
+    
+    # Box-Cox and consumption [22:26]
+    du_dtheta[:, 22] = beta_leisure_m * dlm_bc_dtheta        # theta_lm
+    du_dtheta[:, 23] = beta_leisure_f * dlf_bc_dtheta        # theta_lf
+    du_dtheta[:, 24] = beta_c * dc_bc_dtheta                 # theta_c
+    du_dtheta[:, 25] = c_bc                                  # beta_c
+    
+    # -------------------------------------------------------------------------
+    # Hours opportunity density - male
+    # -------------------------------------------------------------------------
+    h_opp_m = (
+        beta_work_m * data.working_m
+        + beta_pt1_m * data.working_pt1_m
+        + beta_pt2_m * data.working_pt2_m
+        + beta_ft_m * data.working_ft_m
+        + beta_gsur_m * data.working_m * data.gsur_m
+        + beta_work_educL_m * data.working_m * data.educL_m
+        + beta_work_educH_m * data.working_m * data.educH_m
+        + beta_work_reg2_m * data.working_m * data.reg2
+        + beta_work_reg3_m * data.working_m * data.reg3
+    )
+    
+    # Hours opportunity density - female
+    h_opp_f = (
+        beta_work_f * data.working_f
+        + beta_pt1_f * data.working_pt1_f
+        + beta_pt2_f * data.working_pt2_f
+        + beta_ft_f * data.working_ft_f
+        + beta_gsur_f * data.working_f * data.gsur_f
+        + beta_work_educL_f * data.working_f * data.educL_f
+        + beta_work_educH_f * data.working_f * data.educH_f
+        + beta_work_reg2_f * data.working_f * data.reg2
+        + beta_work_reg3_f * data.working_f * data.reg3
+    )
+    
+    h_opp = h_opp_m + h_opp_f
+    
+    # Hours opp derivatives (18 params: 9 male + 9 female)
+    dh_dtheta = np.empty((n, 18), dtype=np.float64)
+    # Male hopp [0:9]
+    dh_dtheta[:, 0] = data.working_m
+    dh_dtheta[:, 1] = data.working_pt1_m
+    dh_dtheta[:, 2] = data.working_pt2_m
+    dh_dtheta[:, 3] = data.working_ft_m
+    dh_dtheta[:, 4] = data.working_m * data.gsur_m
+    dh_dtheta[:, 5] = data.working_m * data.educL_m
+    dh_dtheta[:, 6] = data.working_m * data.educH_m
+    dh_dtheta[:, 7] = data.working_m * data.reg2
+    dh_dtheta[:, 8] = data.working_m * data.reg3
+    # Female hopp [9:18]
+    dh_dtheta[:, 9] = data.working_f
+    dh_dtheta[:, 10] = data.working_pt1_f
+    dh_dtheta[:, 11] = data.working_pt2_f
+    dh_dtheta[:, 12] = data.working_ft_f
+    dh_dtheta[:, 13] = data.working_f * data.gsur_f
+    dh_dtheta[:, 14] = data.working_f * data.educL_f
+    dh_dtheta[:, 15] = data.working_f * data.educH_f
+    dh_dtheta[:, 16] = data.working_f * data.reg2
+    dh_dtheta[:, 17] = data.working_f * data.reg3
+    
+    # -------------------------------------------------------------------------
+    # Wage opportunity density (only for vw)
+    # -------------------------------------------------------------------------
+    if wage_spec == "vw" and len(theta) > 44:
+        # Male wage params [44:60]
+        w_beta0_m = theta[44]
+        w_educL_m, w_educH_m = theta[45], theta[46]
+        w_pexp_m, w_pexp2_m = theta[47], theta[48]
+        w_reg2_m, w_reg3_m, w_reg4_m, w_reg5_m = theta[49], theta[50], theta[51], theta[52]
+        w_reg6_m, w_reg7_m, w_reg8_m, w_reg9_m = theta[53], theta[54], theta[55], theta[56]
+        w_yd1_m, w_yd2_m = theta[57], theta[58]
+        sigma_m = abs(theta[59]) + 1e-6
+        
+        mean_logw_m = (
+            w_beta0_m
+            + w_educL_m * data.educL_m + w_educH_m * data.educH_m
+            + w_pexp_m * data.pexp_m + w_pexp2_m * data.pexp2_m
+            + w_reg2_m * data.reg2 + w_reg3_m * data.reg3
+            + w_reg4_m * data.reg4 + w_reg5_m * data.reg5
+            + w_reg6_m * data.reg6 + w_reg7_m * data.reg7
+            + w_reg8_m * data.reg8 + w_reg9_m * data.reg9
+            + w_yd1_m * data.yd1 + w_yd2_m * data.yd2
+        )
+        z_m = (data.log_wage_m - mean_logw_m) / sigma_m
+        w_opp_m = np.where(data.working_m > 0, 
+                          -0.5 * z_m * z_m - np.log(sigma_m) - data.log_wage_m, 0.0)
+        
+        # Female wage params [60:76]
+        w_beta0_f = theta[60]
+        w_educL_f, w_educH_f = theta[61], theta[62]
+        w_pexp_f, w_pexp2_f = theta[63], theta[64]
+        w_reg2_f, w_reg3_f, w_reg4_f, w_reg5_f = theta[65], theta[66], theta[67], theta[68]
+        w_reg6_f, w_reg7_f, w_reg8_f, w_reg9_f = theta[69], theta[70], theta[71], theta[72]
+        w_yd1_f, w_yd2_f = theta[73], theta[74]
+        sigma_f = abs(theta[75]) + 1e-6
+        
+        mean_logw_f = (
+            w_beta0_f
+            + w_educL_f * data.educL_f + w_educH_f * data.educH_f
+            + w_pexp_f * data.pexp_f + w_pexp2_f * data.pexp2_f
+            + w_reg2_f * data.reg2 + w_reg3_f * data.reg3
+            + w_reg4_f * data.reg4 + w_reg5_f * data.reg5
+            + w_reg6_f * data.reg6 + w_reg7_f * data.reg7
+            + w_reg8_f * data.reg8 + w_reg9_f * data.reg9
+            + w_yd1_f * data.yd1 + w_yd2_f * data.yd2
+        )
+        z_f = (data.log_wage_f - mean_logw_f) / sigma_f
+        w_opp_f = np.where(data.working_f > 0,
+                          -0.5 * z_f * z_f - np.log(sigma_f) - data.log_wage_f, 0.0)
+        
+        w_opp = w_opp_m + w_opp_f
+          # Wage derivatives (32 params: 16 male + 16 female)
+        z_over_sigma_m = z_m / sigma_m
+        z_over_sigma_f = z_f / sigma_f
+        
+        dw_dtheta = np.empty((n, 32), dtype=np.float64)
+        # Male wopp [0:16]
+        dw_dtheta[:, 0] = np.where(data.working_m > 0, z_over_sigma_m, 0.0)
+        dw_dtheta[:, 1] = np.where(data.working_m > 0, z_over_sigma_m * data.educL_m, 0.0)
+        dw_dtheta[:, 2] = np.where(data.working_m > 0, z_over_sigma_m * data.educH_m, 0.0)
+        dw_dtheta[:, 3] = np.where(data.working_m > 0, z_over_sigma_m * data.pexp_m, 0.0)
+        dw_dtheta[:, 4] = np.where(data.working_m > 0, z_over_sigma_m * data.pexp2_m, 0.0)
+        dw_dtheta[:, 5] = np.where(data.working_m > 0, z_over_sigma_m * data.reg2, 0.0)
+        dw_dtheta[:, 6] = np.where(data.working_m > 0, z_over_sigma_m * data.reg3, 0.0)
+        dw_dtheta[:, 7] = np.where(data.working_m > 0, z_over_sigma_m * data.reg4, 0.0)
+        dw_dtheta[:, 8] = np.where(data.working_m > 0, z_over_sigma_m * data.reg5, 0.0)
+        dw_dtheta[:, 9] = np.where(data.working_m > 0, z_over_sigma_m * data.reg6, 0.0)
+        dw_dtheta[:, 10] = np.where(data.working_m > 0, z_over_sigma_m * data.reg7, 0.0)
+        dw_dtheta[:, 11] = np.where(data.working_m > 0, z_over_sigma_m * data.reg8, 0.0)
+        dw_dtheta[:, 12] = np.where(data.working_m > 0, z_over_sigma_m * data.reg9, 0.0)
+        dw_dtheta[:, 13] = np.where(data.working_m > 0, z_over_sigma_m * data.yd1, 0.0)
+        dw_dtheta[:, 14] = np.where(data.working_m > 0, z_over_sigma_m * data.yd2, 0.0)
+        dw_dtheta[:, 15] = np.where(data.working_m > 0, (z_m * z_m - 1.0) / sigma_m, 0.0)
+        
+        # Female wopp [16:32]
+        dw_dtheta[:, 16] = np.where(data.working_f > 0, z_over_sigma_f, 0.0)
+        dw_dtheta[:, 17] = np.where(data.working_f > 0, z_over_sigma_f * data.educL_f, 0.0)
+        dw_dtheta[:, 18] = np.where(data.working_f > 0, z_over_sigma_f * data.educH_f, 0.0)
+        dw_dtheta[:, 19] = np.where(data.working_f > 0, z_over_sigma_f * data.pexp_f, 0.0)
+        dw_dtheta[:, 20] = np.where(data.working_f > 0, z_over_sigma_f * data.pexp2_f, 0.0)
+        dw_dtheta[:, 21] = np.where(data.working_f > 0, z_over_sigma_f * data.reg2, 0.0)
+        dw_dtheta[:, 22] = np.where(data.working_f > 0, z_over_sigma_f * data.reg3, 0.0)
+        dw_dtheta[:, 23] = np.where(data.working_f > 0, z_over_sigma_f * data.reg4, 0.0)
+        dw_dtheta[:, 24] = np.where(data.working_f > 0, z_over_sigma_f * data.reg5, 0.0)
+        dw_dtheta[:, 25] = np.where(data.working_f > 0, z_over_sigma_f * data.reg6, 0.0)
+        dw_dtheta[:, 26] = np.where(data.working_f > 0, z_over_sigma_f * data.reg7, 0.0)
+        dw_dtheta[:, 27] = np.where(data.working_f > 0, z_over_sigma_f * data.reg8, 0.0)
+        dw_dtheta[:, 28] = np.where(data.working_f > 0, z_over_sigma_f * data.reg9, 0.0)
+        dw_dtheta[:, 29] = np.where(data.working_f > 0, z_over_sigma_f * data.yd1, 0.0)
+        dw_dtheta[:, 30] = np.where(data.working_f > 0, z_over_sigma_f * data.yd2, 0.0)
+        dw_dtheta[:, 31] = np.where(data.working_f > 0, (z_f * z_f - 1.0) / sigma_f, 0.0)
+    else:
+        w_opp = 0.0
+        dw_dtheta = None
+        z_m = z_f = sigma_m = sigma_f = None
+    
+    # -------------------------------------------------------------------------
+    # Composite V and dV/dtheta
+    # -------------------------------------------------------------------------
+    V = u + h_opp + w_opp - data.log_prior
+    
+    dV_dtheta = np.empty((n, n_params), dtype=np.float64)
+    dV_dtheta[:, 0:26] = du_dtheta
+    dV_dtheta[:, 26:44] = dh_dtheta
+    if wage_spec == "vw" and dw_dtheta is not None:
+        dV_dtheta[:, 44:76] = dw_dtheta
+    
+    # -------------------------------------------------------------------------
+    # Softmax computation (ONCE for both LL and gradient)
+    # -------------------------------------------------------------------------
+    V_max_per_group = np.maximum.reduceat(V, data.group_starts)
+    V_max = V_max_per_group[data.group_idx]
+    
+    exp_V_shifted = np.exp(V - V_max)
+    sum_exp_per_group = np.bincount(data.group_idx, weights=exp_V_shifted, minlength=data.n_groups)
+    
+    # -------------------------------------------------------------------------
+    # Log-likelihood
+    # -------------------------------------------------------------------------
+    log_sum_exp_per_group = V_max_per_group + np.log(sum_exp_per_group)
+    V_obs = V[data.obs_indices]
+    ll = np.sum(V_obs - log_sum_exp_per_group)
+    
+    # -------------------------------------------------------------------------
+    # Gradient (reuses exp_V_shifted and sum_exp_per_group)
+    # -------------------------------------------------------------------------
+    sum_exp = sum_exp_per_group[data.group_idx]
+    P = exp_V_shifted / sum_exp
+    P_weighted_dV = P[:, None] * dV_dtheta
+    
+    # Bincount for E[dV] - this loop is the remaining bottleneck
+    E_dV_per_group = np.zeros((data.n_groups, n_params), dtype=np.float64)
+    for k in range(n_params):
+        E_dV_per_group[:, k] = np.bincount(data.group_idx, weights=P_weighted_dV[:, k], minlength=data.n_groups)
+    E_dV = E_dV_per_group[data.group_idx, :]
+    
+    grad = (dV_dtheta[data.is_obs, :] - E_dV[data.is_obs, :]).sum(axis=0)
+    
     return -ll, -grad
 
 
@@ -4444,6 +5686,199 @@ def neg_log_likelihood_with_grad_joint(
     return -ll, -grad
 
 
+def fast_neg_ll_with_grad_joint(
+    theta: np.ndarray,
+    data_sm: Optional[PrecomputedDataSingles],
+    data_sf: Optional[PrecomputedDataSingles],
+    data_cou: Optional[PrecomputedDataCouples],
+    wage_spec: str = "fw",
+) -> Tuple[float, np.ndarray]:
+    """
+    FAST joint estimation using precomputed data.
+    
+    This is 2-5x faster than neg_log_likelihood_with_grad_joint because:
+    1. Uses precomputed numpy arrays instead of DataFrames
+    2. Computes LL and gradient in single pass for each group
+    3. Avoids repeated DataFrame column access
+    
+    Parameters
+    ----------
+    theta : np.ndarray
+        Joint parameter vector (68 for fw, 100 for vw)
+    data_sm : PrecomputedDataSingles or None
+        Precomputed data for single males
+    data_sf : PrecomputedDataSingles or None
+        Precomputed data for single females
+    data_cou : PrecomputedDataCouples or None
+        Precomputed data for couples
+    wage_spec : str
+        "fw" or "vw"
+    
+    Returns
+    -------
+    Tuple[float, np.ndarray]
+        (-LL, -gradient) for minimization
+    """
+    counts = get_n_params_joint(wage_spec)
+    n_params = counts["total"]
+    
+    ll_total = 0.0
+    grad = np.zeros(n_params, dtype=np.float64)
+    
+    # Index boundaries
+    idx_pref_sm = (0, 12)
+    idx_pref_sf = (12, 25)
+    idx_pref_cou = (25, 50)
+    idx_hopp_m = (50, 59)
+    idx_hopp_f = (59, 68)
+    
+    if wage_spec == "vw":
+        idx_wopp_m = (68, 84)
+        idx_wopp_f = (84, 100)
+    
+    # Single males
+    if data_sm is not None:
+        # Extract theta for single males: pref_sm(12) + hopp_m(9) + wopp_m(16 if vw)
+        theta_sm = np.concatenate([
+            theta[idx_pref_sm[0]:idx_pref_sm[1]],
+            theta[idx_hopp_m[0]:idx_hopp_m[1]],
+        ])
+        if wage_spec == "vw":
+            theta_sm = np.concatenate([theta_sm, theta[idx_wopp_m[0]:idx_wopp_m[1]]])
+        
+        neg_ll_sm, neg_grad_sm = fast_neg_ll_with_grad_singles(
+            theta_sm, data_sm, is_male=True, wage_spec=wage_spec
+        )
+        ll_total -= neg_ll_sm  # Convert back to LL
+        
+        # Map gradient to joint theta
+        grad[idx_pref_sm[0]:idx_pref_sm[1]] -= neg_grad_sm[0:12]
+        grad[idx_hopp_m[0]:idx_hopp_m[1]] -= neg_grad_sm[12:21]
+        if wage_spec == "vw":
+            grad[idx_wopp_m[0]:idx_wopp_m[1]] -= neg_grad_sm[21:37]
+    
+    # Single females
+    if data_sf is not None:
+        # Extract theta for single females: pref_sf(12) + hopp_f(9) + wopp_f(16 if vw)
+        # Note: pref_sf has 13 params in joint but singles expects 12
+        theta_sf = np.concatenate([
+            theta[idx_pref_sf[0]:idx_pref_sf[0]+12],  # First 12 params only
+            theta[idx_hopp_f[0]:idx_hopp_f[1]],
+        ])
+        if wage_spec == "vw":
+            theta_sf = np.concatenate([theta_sf, theta[idx_wopp_f[0]:idx_wopp_f[1]]])
+        
+        neg_ll_sf, neg_grad_sf = fast_neg_ll_with_grad_singles(
+            theta_sf, data_sf, is_male=False, wage_spec=wage_spec
+        )
+        ll_total -= neg_ll_sf
+        
+        # Map gradient
+        grad[idx_pref_sf[0]:idx_pref_sf[0]+12] -= neg_grad_sf[0:12]
+        grad[idx_hopp_f[0]:idx_hopp_f[1]] -= neg_grad_sf[12:21]
+        if wage_spec == "vw":
+            grad[idx_wopp_f[0]:idx_wopp_f[1]] -= neg_grad_sf[21:37]    # Couples
+    if data_cou is not None:
+        # The standalone fast_neg_ll_with_grad_couples expects 44 params (fw) or 76 params (vw):
+        # [0:11]  Male leisure: beta_lm0, log_age, log_age2, ch0_3, ch4_6, ch7_9, educL, educH, reg2, reg3, reg4
+        # [11:22] Female leisure: same order
+        # [22:26] Box-Cox: theta_lm, theta_lf, theta_c, beta_c (4)
+        # [26:35] Male hopp (9)
+        # [35:44] Female hopp (9)
+        # [44:60] Male wopp (16, vw only)
+        # [60:76] Female wopp (16, vw only)
+        #
+        # The joint theta has couples pref at [25:50] = 25 params with layout:
+        # Male leisure (10): beta_l0, log_age, log_age2, ch0_3, ch4_6, ch7_9, reg2, reg3, educL, educH
+        # Female leisure (10): same order
+        # Box-Cox (3): theta_lm, theta_lf, theta_c
+        # Consumption + interaction (2): beta_c, beta_interaction
+        #
+        # Key difference: Joint has reg2,reg3 at indices 6,7 and educL,educH at 8,9
+        #                Standalone has educL,educH at indices 6,7 and reg2,reg3 at 8,9, plus reg4 at 10
+        joint_cou_pref = theta[idx_pref_cou[0]:idx_pref_cou[1]]  # 25 params
+        
+        # Build standalone-compatible theta_cou (44 for fw)
+        theta_cou = np.zeros(44 if wage_spec == "fw" else 76, dtype=np.float64)
+        
+        # Male leisure [0:11] with reordering
+        # Joint order: [0]=beta_l0, [1]=log_age, [2]=log_age2, [3]=ch0_3, [4]=ch4_6, [5]=ch7_9, 
+        #              [6]=reg2, [7]=reg3, [8]=educL, [9]=educH
+        # Standalone order: [0]=beta_lm0, [1]=log_age, [2]=log_age2, [3]=ch0_3, [4]=ch4_6, [5]=ch7_9,
+        #                   [6]=educL, [7]=educH, [8]=reg2, [9]=reg3, [10]=reg4
+        theta_cou[0:6] = joint_cou_pref[0:6]   # first 6 same
+        theta_cou[6] = joint_cou_pref[8]       # educL
+        theta_cou[7] = joint_cou_pref[9]       # educH
+        theta_cou[8] = joint_cou_pref[6]       # reg2
+        theta_cou[9] = joint_cou_pref[7]       # reg3
+        theta_cou[10] = 0.0                    # reg4 (not in joint)
+        
+        # Female leisure [11:22] with same reordering
+        theta_cou[11:17] = joint_cou_pref[10:16]  # first 6 same
+        theta_cou[17] = joint_cou_pref[18]        # educL
+        theta_cou[18] = joint_cou_pref[19]        # educH
+        theta_cou[19] = joint_cou_pref[16]        # reg2
+        theta_cou[20] = joint_cou_pref[17]        # reg3
+        theta_cou[21] = 0.0                       # reg4 (not in joint)
+        
+        # Box-Cox [22:25] - joint has 3 at [20:23]
+        theta_cou[22:25] = joint_cou_pref[20:23]
+        
+        # beta_c [25] - joint has at [23]
+        theta_cou[25] = joint_cou_pref[23]
+        
+        # Hours opportunity
+        theta_cou[26:35] = theta[idx_hopp_m[0]:idx_hopp_m[1]]
+        theta_cou[35:44] = theta[idx_hopp_f[0]:idx_hopp_f[1]]
+        
+        if wage_spec == "vw":
+            theta_cou[44:60] = theta[idx_wopp_m[0]:idx_wopp_m[1]]
+            theta_cou[60:76] = theta[idx_wopp_f[0]:idx_wopp_f[1]]
+        
+        neg_ll_cou, neg_grad_cou = fast_neg_ll_with_grad_couples(
+            theta_cou, data_cou, wage_spec=wage_spec
+        )
+        ll_total -= neg_ll_cou
+        
+        # Map gradient back - reverse the parameter mapping (with reordering)
+        # Male leisure: standalone -> joint with inverse reordering
+        # Joint [0:6] <- standalone [0:6]
+        grad[idx_pref_cou[0]:idx_pref_cou[0]+6] -= neg_grad_cou[0:6]
+        # Joint [6] (reg2) <- standalone [8]
+        grad[idx_pref_cou[0]+6] -= neg_grad_cou[8]
+        # Joint [7] (reg3) <- standalone [9]
+        grad[idx_pref_cou[0]+7] -= neg_grad_cou[9]
+        # Joint [8] (educL) <- standalone [6]
+        grad[idx_pref_cou[0]+8] -= neg_grad_cou[6]
+        # Joint [9] (educH) <- standalone [7]
+        grad[idx_pref_cou[0]+9] -= neg_grad_cou[7]
+        # standalone [10] (reg4) is not mapped back (not in joint)
+        
+        # Female leisure: same inverse reordering
+        grad[idx_pref_cou[0]+10:idx_pref_cou[0]+16] -= neg_grad_cou[11:17]
+        grad[idx_pref_cou[0]+16] -= neg_grad_cou[19]  # reg2
+        grad[idx_pref_cou[0]+17] -= neg_grad_cou[20]  # reg3
+        grad[idx_pref_cou[0]+18] -= neg_grad_cou[17]  # educL
+        grad[idx_pref_cou[0]+19] -= neg_grad_cou[18]  # educH
+        # standalone [21] (reg4) is not mapped back
+        
+        # Box-Cox grad [22:25] -> joint [45:48]
+        grad[idx_pref_cou[0]+20:idx_pref_cou[0]+23] -= neg_grad_cou[22:25]
+        # beta_c grad [25] -> joint [48]
+        grad[idx_pref_cou[0]+23] -= neg_grad_cou[25]
+        # (skip joint interaction param [49] - no gradient from standalone)
+        
+        # Hours opportunity
+        grad[idx_hopp_m[0]:idx_hopp_m[1]] -= neg_grad_cou[26:35]
+        grad[idx_hopp_f[0]:idx_hopp_f[1]] -= neg_grad_cou[35:44]
+        
+        if wage_spec == "vw":
+            grad[idx_wopp_m[0]:idx_wopp_m[1]] -= neg_grad_cou[44:60]
+            grad[idx_wopp_f[0]:idx_wopp_f[1]] -= neg_grad_cou[60:76]
+    
+    return -ll_total, -grad
+
+
 # =============================================================================
 # CLI and main
 # =============================================================================
@@ -4616,6 +6051,17 @@ def main() -> None:
         LOGGER.info(f"Unique individuals: SM={n_sm}, SF={n_sf}, COU={n_cou}")
         LOGGER.info("")
         
+        # Precompute data for fast optimization
+        LOGGER.info("Pre-computing data arrays for fast optimization...")
+        import time
+        t0 = time.perf_counter()
+        data_sm = precompute_data_singles(df_sm, is_male=True) if len(df_sm) > 0 else None
+        data_sf = precompute_data_singles(df_sf, is_male=False) if len(df_sf) > 0 else None
+        data_cou = precompute_data_couples(df_cou) if len(df_cou) > 0 else None
+        t1 = time.perf_counter()
+        LOGGER.info(f"Pre-computation done in {t1-t0:.3f}s")
+        LOGGER.info("")
+        
         # Initial parameters for joint estimation
         theta0 = get_initial_theta_joint(wage_spec=args.wage_spec)
         param_names = get_param_names_joint(wage_spec=args.wage_spec)
@@ -4640,16 +6086,71 @@ def main() -> None:
         LOGGER.info(f"Initial log-likelihood: {ll0:.4f}")
         LOGGER.info("")
         
+        # Validate gradient (optional)
+        if args.validate_gradient:
+            LOGGER.info("Validating analytical gradient against numerical gradient...")
+            LOGGER.info("(This may take a minute for joint estimation)")
+            
+            # Get analytical gradient from fast function
+            _, neg_grad_analytical = fast_neg_ll_with_grad_joint(
+                theta0, data_sm, data_sf, data_cou, wage_spec=args.wage_spec
+            )
+            
+            # Numerical gradient (central differences)
+            def neg_ll_only(theta):
+                neg_ll, _ = fast_neg_ll_with_grad_joint(
+                    theta, data_sm, data_sf, data_cou, wage_spec=args.wage_spec
+                )
+                return neg_ll
+            
+            grad_numerical = numerical_gradient(neg_ll_only, theta0, eps=1e-5)
+            
+            # Compare
+            grad_diff = np.abs(neg_grad_analytical - grad_numerical)
+            rel_diff = np.abs(grad_diff / (np.abs(grad_numerical) + 1e-10))
+            max_diff = np.max(grad_diff)
+            max_rel_diff = np.max(rel_diff)
+            mean_diff = np.mean(grad_diff)
+            
+            LOGGER.info(f"Max absolute gradient difference: {max_diff:.8f}")
+            LOGGER.info(f"Max relative gradient difference: {max_rel_diff:.8f}")
+            LOGGER.info(f"Mean absolute gradient difference: {mean_diff:.8f}")
+            
+            if max_rel_diff > 0.01:  # 1% relative tolerance
+                LOGGER.warning("Large gradient discrepancy detected!")
+                # Show worst parameters
+                worst_idx = np.argsort(rel_diff)[-10:][::-1]
+                LOGGER.warning("Top 10 parameters with largest relative gradient difference:")
+                for idx in worst_idx:
+                    LOGGER.warning(f"  [{idx}] {param_names[idx]}: "
+                                 f"analytical={neg_grad_analytical[idx]:.6f}, "
+                                 f"numerical={grad_numerical[idx]:.6f}, "
+                                 f"rel_diff={rel_diff[idx]:.4f}")
+            else:
+                LOGGER.info("Gradient validation passed!")
+            LOGGER.info("")
+        
         # Optimization
         LOGGER.info("Starting joint optimization...")
         LOGGER.info(f"Optimizer: {args.optimizer}")
         LOGGER.info("-" * 40)
         
+        # Track timing
+        iteration_times = []
+        import time as time_module
+        start_time_joint = time_module.perf_counter()
+        
         if args.optimizer == "L-BFGS-B":
+            # Use FAST precomputed-data function (2-5x faster)
+            LOGGER.info("Using FAST precomputed-data objective function")
+            
             def objective_and_grad(theta):
-                return neg_log_likelihood_with_grad_joint(
-                    theta, df_sm, df_sf, df_cou, wage_spec=args.wage_spec
+                t_start = time_module.perf_counter()
+                result = fast_neg_ll_with_grad_joint(
+                    theta, data_sm, data_sf, data_cou, wage_spec=args.wage_spec
                 )
+                iteration_times.append(time_module.perf_counter() - t_start)
+                return result
             
             # Bounds for Box-Cox parameters
             bounds = [(None, None)] * len(theta0)
@@ -4677,10 +6178,16 @@ def main() -> None:
                 options={"disp": True, "maxiter": args.maxiter, "ftol": 1e-9, "gtol": 1e-5},
             )
         else:
+            # Use FAST precomputed-data function for BFGS too
+            LOGGER.info("Using FAST precomputed-data objective function")
+            
             def objective(theta):
-                return neg_log_likelihood_joint(
-                    theta, df_sm, df_sf, df_cou, wage_spec=args.wage_spec
+                t_start = time_module.perf_counter()
+                neg_ll, _ = fast_neg_ll_with_grad_joint(
+                    theta, data_sm, data_sf, data_cou, wage_spec=args.wage_spec
                 )
+                iteration_times.append(time_module.perf_counter() - t_start)
+                return neg_ll
             
             result = minimize(
                 objective,
@@ -4689,6 +6196,8 @@ def main() -> None:
                 options={"disp": True, "maxiter": args.maxiter},
             )
         
+        total_time_joint = time_module.perf_counter() - start_time_joint
+        
         # Results
         LOGGER.info("-" * 40)
         LOGGER.info("Joint optimization completed.")
@@ -4696,6 +6205,13 @@ def main() -> None:
         LOGGER.info(f"Message: {result.message}")
         LOGGER.info(f"Final log-likelihood: {-result.fun:.4f}")
         LOGGER.info(f"Number of iterations: {result.nit}")
+        LOGGER.info(f"Number of function evaluations: {result.nfev}")
+        LOGGER.info("")
+        LOGGER.info(f"Performance:")
+        LOGGER.info(f"  Total optimization time: {total_time_joint:.2f}s")
+        if iteration_times:
+            LOGGER.info(f"  Avg time per evaluation: {np.mean(iteration_times)*1000:.2f}ms")
+            LOGGER.info(f"  Min/Max per evaluation: {np.min(iteration_times)*1000:.2f}ms / {np.max(iteration_times)*1000:.2f}ms")
         LOGGER.info("")
         
         # Display parameters by group
@@ -4765,8 +6281,7 @@ def main() -> None:
     
     # -------------------------------------------------------------------------
     # For singles, optionally filter by sex (dgn: 1=male, 0=female)
-    # -------------------------------------------------------------------------
-    is_male = True  # default for singles
+    # -------------------------------------------------------------------------    is_male = True  # default for singles
     
     if args.group == 1:
         if args.sex == "m":
@@ -4790,42 +6305,83 @@ def main() -> None:
         
         if len(df) == 0:
             raise ValueError(f"No data for singles with sex={args.sex}.")
+        
+        # Get initial parameters and precompute data for singles
+        theta0 = get_initial_theta_singles(is_male=is_male)
+        # For fixed wages, only use first 21 parameters (no wage equation)
+        if args.wage_spec == "fw":
+            theta0 = theta0[:21]
+        LOGGER.info(f"Number of parameters: {len(theta0)}")
+        LOGGER.info(f"Initial theta: {theta0[:5]}... (truncated)")
+        
+        LOGGER.info("")
+        LOGGER.info("Pre-computing data arrays for fast optimization...")
+        import time
+        t0 = time.perf_counter()
+        precomputed_data = precompute_data_singles(df, is_male=is_male)
+        t1 = time.perf_counter()
+        LOGGER.info(f"Pre-computation done in {t1-t0:.3f}s")
+        LOGGER.info(f"  - {precomputed_data.n_groups} individuals")
+        LOGGER.info(f"  - {len(precomputed_data.c)} rows")
+        LOGGER.info("")
+        
+        # Initial log-likelihood
+        ll0 = fast_log_likelihood_singles(theta0, precomputed_data, is_male=is_male, wage_spec=args.wage_spec)
+        LOGGER.info(f"Initial log-likelihood: {ll0:.4f}")
+        
+        # Set up estimation functions
+        param_names = get_param_names_singles()
+        ll_func = lambda t: fast_log_likelihood_singles(t, precomputed_data, is_male=is_male, wage_spec=args.wage_spec)
+        grad_func = lambda t: fast_analytical_gradient_singles(t, precomputed_data, is_male=is_male, wage_spec=args.wage_spec)
+        
     else:
-        # Couples
-        is_male = True  # placeholder for couples
-        LOGGER.info("Estimating couples (skeleton only).")
+        # =====================================================================
+        # COUPLES ESTIMATION
+        # =====================================================================
+        LOGGER.info("=" * 60)
+        LOGGER.info("COUPLES ESTIMATION")
+        LOGGER.info("=" * 60)
+        
+        # Verify couples data has wide format columns
+        required_cols = ["hours_m", "hours_f", "idhh", "draw"]
+        missing = [c for c in required_cols if c not in df.columns]
+        if missing:
+            raise ValueError(f"Couples data missing required columns: {missing}. "
+                           "Ensure RURO_prep_mnl_basic.py created wide-format data.")
+        
+        LOGGER.info(f"Couples data: {len(df)} rows, {df['idhh'].nunique()} households")
+        
+        # Get initial parameters and precompute data for couples
+        theta0 = get_initial_theta_couples(wage_spec=args.wage_spec)
+        LOGGER.info(f"Number of parameters: {len(theta0)}")
+        LOGGER.info(f"Initial theta: {theta0[:5]}... (truncated)")
+        
+        LOGGER.info("")
+        LOGGER.info("Pre-computing data arrays for fast optimization...")
+        import time
+        t0 = time.perf_counter()
+        precomputed_data = precompute_data_couples(df)
+        t1 = time.perf_counter()
+        LOGGER.info(f"Pre-computation done in {t1-t0:.3f}s")
+        LOGGER.info(f"  - {precomputed_data.n_groups} households")
+        LOGGER.info(f"  - {len(precomputed_data.c)} rows")
+        LOGGER.info("")
+        
+        # Initial log-likelihood
+        ll0 = fast_log_likelihood_couples(theta0, precomputed_data, wage_spec=args.wage_spec)
+        LOGGER.info(f"Initial log-likelihood: {ll0:.4f}")
+        
+        # Set up estimation functions
+        param_names = get_param_names_couples(wage_spec=args.wage_spec)
+        ll_func = lambda t: fast_log_likelihood_couples(t, precomputed_data, wage_spec=args.wage_spec)
+        # Note: analytical gradient for couples not yet implemented, use numerical
+        grad_func = None
+        is_male = None  # Not applicable for couples
     
     # -------------------------------------------------------------------------
-    # Initial parameters
+    # Validate gradient (optional) - only for singles with analytical gradient
     # -------------------------------------------------------------------------
-    theta0 = get_initial_theta_singles(is_male=is_male)
-    LOGGER.info(f"Number of parameters: {len(theta0)}")
-    LOGGER.info(f"Initial theta: {theta0[:5]}... (truncated)")
-    
-    # -------------------------------------------------------------------------
-    # PRE-COMPUTE DATA for fast optimization (2-5x speedup)
-    # -------------------------------------------------------------------------
-    LOGGER.info("")
-    LOGGER.info("Pre-computing data arrays for fast optimization...")
-    import time
-    t0 = time.perf_counter()
-    precomputed_data = precompute_data_singles(df, is_male=is_male)
-    t1 = time.perf_counter()
-    LOGGER.info(f"Pre-computation done in {t1-t0:.3f}s")
-    LOGGER.info(f"  - {precomputed_data.n_groups} individuals")
-    LOGGER.info(f"  - {len(precomputed_data.c)} rows")
-    LOGGER.info("")
-    
-    # -------------------------------------------------------------------------
-    # Check initial log-likelihood (use fast version)
-    # -------------------------------------------------------------------------
-    ll0 = fast_log_likelihood_singles(theta0, precomputed_data, is_male=is_male, wage_spec=args.wage_spec)
-    LOGGER.info(f"Initial log-likelihood: {ll0:.4f}")
-    
-    # -------------------------------------------------------------------------
-    # Validate gradient (optional)
-    # -------------------------------------------------------------------------
-    if args.validate_gradient:
+    if args.validate_gradient and grad_func is not None:
         LOGGER.info("")
         LOGGER.info("Validating analytical gradient against numerical gradient...")
         grad_analytical = fast_analytical_gradient_singles(theta0, precomputed_data, is_male=is_male, wage_spec=args.wage_spec)
@@ -4853,59 +6409,90 @@ def main() -> None:
         else:
             LOGGER.info("Gradient validation passed!")
         LOGGER.info("")
-    
-    # -------------------------------------------------------------------------
+      # -------------------------------------------------------------------------
     # Optimization (using FAST functions with precomputed data)
-    # -------------------------------------------------------------------------    LOGGER.info("")
+    # -------------------------------------------------------------------------
+    LOGGER.info("")
     LOGGER.info("Starting optimization (using FAST precomputed-data functions)...")
     LOGGER.info(f"Optimizer: {args.optimizer}")
-    
-    # Choose objective function based on --use-numba flag
-    use_numba_opt = args.use_numba and NUMBA_AVAILABLE and _compute_log_likelihood_numba is not None
-    if use_numba_opt:
-        LOGGER.info("Using Numba-accelerated objective function")
-        obj_func = fast_neg_ll_with_grad_numba
-    else:
-        LOGGER.info("Using NumPy-based objective function")
-        obj_func = fast_neg_ll_with_grad_singles
-    
-    LOGGER.info("-" * 40)
     
     # Track timing
     iteration_times = []
     start_time = time.perf_counter()
     
-    if args.optimizer == "L-BFGS-B":
-        # Use FAST analytical gradient with L-BFGS-B
+    # Determine if we're doing singles or couples
+    is_singles = args.group == 1
+    
+    if is_singles and args.optimizer == "L-BFGS-B":
+        # Singles with analytical gradient - use fast objective with gradient
+        use_numba_opt = args.use_numba and NUMBA_AVAILABLE and _compute_log_likelihood_numba is not None
+        if use_numba_opt:
+            LOGGER.info("Using Numba-accelerated objective function")
+            obj_func = fast_neg_ll_with_grad_numba
+        else:
+            LOGGER.info("Using NumPy-based objective function")
+            obj_func = fast_neg_ll_with_grad_singles
+        
         def objective_and_grad(theta):
             t_start = time.perf_counter()
             result = obj_func(theta, precomputed_data, is_male=is_male, wage_spec=args.wage_spec)
             iteration_times.append(time.perf_counter() - t_start)
             return result
         
-        # Set up bounds for Box-Cox parameters (theta_l, theta_c should be bounded)
+        # Set up bounds for Box-Cox parameters
         bounds = [(None, None)] * len(theta0)
-        bounds[9] = (0.01, 2.0)   # theta_l: avoid extreme values
-        bounds[10] = (0.01, 2.0)  # theta_c: avoid extreme values
+        bounds[9] = (0.01, 2.0)   # theta_l
+        bounds[10] = (0.01, 2.0)  # theta_c
         if args.wage_spec == "vw":
-            bounds[36] = (0.01, 2.0)  # sigma: must be positive
+            bounds[36] = (0.01, 2.0)  # sigma
         
+        LOGGER.info("-" * 40)
         result = minimize(
             objective_and_grad,
             theta0,
             method="L-BFGS-B",
-            jac=True,  # objective_and_grad returns (f, grad)
+            jac=True,
+            bounds=bounds,
+            options={"disp": True, "maxiter": args.maxiter, "ftol": 1e-9, "gtol": 1e-5},
+        )
+    elif not is_singles:
+        # Couples - use numerical gradient (analytical not implemented)
+        LOGGER.info("Using numerical gradient (analytical not yet implemented for couples)")
+        
+        def objective(theta):
+            t_start = time.perf_counter()
+            ll = fast_log_likelihood_couples(theta, precomputed_data, wage_spec=args.wage_spec)
+            iteration_times.append(time.perf_counter() - t_start)
+            return -ll
+        
+        # Set up bounds for Box-Cox parameters (couples have different indices)
+        bounds = [(None, None)] * len(theta0)
+        bounds[22] = (0.01, 2.0)  # theta_lm
+        bounds[23] = (0.01, 2.0)  # theta_lf
+        bounds[24] = (0.01, 2.0)  # theta_c
+        if args.wage_spec == "vw":
+            bounds[61] = (0.01, 2.0)  # sigma_m
+            bounds[77] = (0.01, 2.0)  # sigma_f
+        
+        LOGGER.info("-" * 40)
+        result = minimize(
+            objective,
+            theta0,
+            method="L-BFGS-B",
             bounds=bounds,
             options={"disp": True, "maxiter": args.maxiter, "ftol": 1e-9, "gtol": 1e-5},
         )
     else:
-        # Use BFGS with numerical gradient (slower)
+        # Singles with BFGS (numerical gradient)
+        LOGGER.info("Using NumPy-based objective function with numerical gradient")
+        
         def objective(theta):
             t_start = time.perf_counter()
-            result = -fast_log_likelihood_singles(theta, precomputed_data, is_male=is_male, wage_spec=args.wage_spec)
+            ll = fast_log_likelihood_singles(theta, precomputed_data, is_male=is_male, wage_spec=args.wage_spec)
             iteration_times.append(time.perf_counter() - t_start)
-            return result
+            return -ll
         
+        LOGGER.info("-" * 40)
         result = minimize(
             objective,
             theta0,
@@ -4933,59 +6520,65 @@ def main() -> None:
         LOGGER.info(f"  Min/Max per evaluation: {np.min(iteration_times)*1000:.2f}ms / {np.max(iteration_times)*1000:.2f}ms")
     LOGGER.info("")
     
-    # Unpack and display estimated parameters
-    pref, hopp, wopp = unpack_theta_singles(result.x)
-      # Parameter names table (aligned with Stijn's structure)
-    param_names = get_param_names_singles()
-    
+    # Display estimated parameters
     LOGGER.info("=" * 70)
     LOGGER.info("ESTIMATED PARAMETERS")
     LOGGER.info("=" * 70)
-    LOGGER.info(f"{'Index':<6} {'Name':<35} {'Value':>12}")
-    LOGGER.info("-" * 55)
+    LOGGER.info(f"{'Index':<6} {'Name':<40} {'Value':>12}")
+    LOGGER.info("-" * 60)
+    
+    n_params_to_show = len(result.x)
+    if args.wage_spec == "fw":
+        # Don't show wage params if fixed wages
+        n_params_to_show = 21 if is_singles else 44
+    
     for i, (name, val) in enumerate(zip(param_names, result.x)):
-        # Only show wage params if wage_spec == "vw"
-        if args.wage_spec == "fw" and i >= 21:
-            continue
-        LOGGER.info(f"{i:<6} {name:<35} {val:>12.4f}")
+        if i >= n_params_to_show:
+            break
+        LOGGER.info(f"{i:<6} {name:<40} {val:>12.4f}")
     LOGGER.info("")
-    
-    # Legacy display (for backwards compatibility)
-    LOGGER.info("Estimated preference parameters:")
-    LOGGER.info(f"  beta_l0:        {pref.beta_l0:.4f}")
-    LOGGER.info(f"  beta_l_log_age: {pref.beta_l_log_age:.4f}")
-    LOGGER.info(f"  beta_l_educL:   {pref.beta_l_educL:.4f}")
-    LOGGER.info(f"  beta_l_educH:   {pref.beta_l_educH:.4f}")
-    LOGGER.info(f"  beta_c:         {pref.beta_c:.4f}")
-    LOGGER.info(f"  theta_l:        {pref.theta_l:.4f}")
-    LOGGER.info(f"  theta_c:        {pref.theta_c:.4f}")
-    LOGGER.info("")
-    
-    LOGGER.info("Estimated hours opportunity parameters:")
-    LOGGER.info(f"  beta_work:      {hopp.beta_work:.4f}")
-    LOGGER.info(f"  beta_pt1:       {hopp.beta_pt1:.4f}")
-    LOGGER.info(f"  beta_pt2:       {hopp.beta_pt2:.4f}")
-    LOGGER.info(f"  beta_ft:        {hopp.beta_ft:.4f}")
-    LOGGER.info("")
-    
-    if args.wage_spec == "vw":
-        LOGGER.info("Estimated wage opportunity parameters:")
-        LOGGER.info(f"  beta0:          {wopp.beta0:.4f}")
-        LOGGER.info(f"  beta_educL:     {wopp.beta_educL:.4f}")
-        LOGGER.info(f"  beta_educH:     {wopp.beta_educH:.4f}")
-        LOGGER.info(f"  beta_pexp:      {wopp.beta_pexp:.4f}")
-        LOGGER.info(f"  beta_pexp2:     {wopp.beta_pexp2:.6f}")
-        LOGGER.info(f"  sigma:          {wopp.sigma:.4f}")
+      # Legacy display for singles (for backwards compatibility)
+    if is_singles:
+        # Pad theta to 37 params if fw mode (needed by unpack_theta_singles)
+        theta_full = result.x if len(result.x) == 37 else np.concatenate([result.x, np.zeros(16)])
+        pref, hopp, wopp = unpack_theta_singles(theta_full)
+        LOGGER.info("Estimated preference parameters:")
+        LOGGER.info(f"  beta_l0:        {pref.beta_l0:.4f}")
+        LOGGER.info(f"  beta_l_log_age: {pref.beta_l_log_age:.4f}")
+        LOGGER.info(f"  beta_l_educL:   {pref.beta_l_educL:.4f}")
+        LOGGER.info(f"  beta_l_educH:   {pref.beta_l_educH:.4f}")
+        LOGGER.info(f"  beta_c:         {pref.beta_c:.4f}")
+        LOGGER.info(f"  theta_l:        {pref.theta_l:.4f}")
+        LOGGER.info(f"  theta_c:        {pref.theta_c:.4f}")
         LOGGER.info("")
-        LOGGER.info("  Regional wage effects (vs Île-de-France baseline):")
-        LOGGER.info(f"    reg2 (Bassin Parisien):   {wopp.beta_reg2:.4f}")
-        LOGGER.info(f"    reg3 (Nord-Pas-de-Calais):{wopp.beta_reg3:.4f}")
-        LOGGER.info(f"    reg4 (Est):               {wopp.beta_reg4:.4f}")
-        LOGGER.info(f"    reg5 (Ouest):             {wopp.beta_reg5:.4f}")
-        LOGGER.info(f"    reg6 (Sud-Ouest):         {wopp.beta_reg6:.4f}")
-        LOGGER.info(f"    reg7 (Centre-Est):        {wopp.beta_reg7:.4f}")
-        LOGGER.info(f"    reg8 (Méditerranée):      {wopp.beta_reg8:.4f}")
-        LOGGER.info(f"    reg9 (DOM):               {wopp.beta_reg9:.4f}")
+        
+        LOGGER.info("Estimated hours opportunity parameters:")
+        LOGGER.info(f"  beta_work:      {hopp.beta_work:.4f}")
+        LOGGER.info(f"  beta_pt1:       {hopp.beta_pt1:.4f}")
+        LOGGER.info(f"  beta_pt2:       {hopp.beta_pt2:.4f}")
+        LOGGER.info(f"  beta_ft:        {hopp.beta_ft:.4f}")
+        LOGGER.info("")
+        
+        if args.wage_spec == "vw":
+            LOGGER.info("Estimated wage opportunity parameters:")
+            LOGGER.info(f"  beta0:          {wopp.beta0:.4f}")
+            LOGGER.info(f"  beta_educL:     {wopp.beta_educL:.4f}")
+            LOGGER.info(f"  beta_educH:     {wopp.beta_educH:.4f}")
+            LOGGER.info(f"  beta_pexp:      {wopp.beta_pexp:.4f}")
+            LOGGER.info(f"  beta_pexp2:     {wopp.beta_pexp2:.6f}")
+            LOGGER.info(f"  sigma:          {wopp.sigma:.4f}")
+            LOGGER.info("")
+    else:
+        # Couples summary
+        LOGGER.info("Couples model - key parameters:")
+        LOGGER.info(f"  Male leisure intercept (beta_lm0):     {result.x[0]:.4f}")
+        LOGGER.info(f"  Female leisure intercept (beta_lf0):   {result.x[11]:.4f}")
+        LOGGER.info(f"  Consumption coefficient (beta_c):      {result.x[25]:.4f}")
+        LOGGER.info(f"  Male Box-Cox leisure (theta_lm):       {result.x[22]:.4f}")
+        LOGGER.info(f"  Female Box-Cox leisure (theta_lf):     {result.x[23]:.4f}")
+        LOGGER.info(f"  Box-Cox consumption (theta_c):         {result.x[24]:.4f}")
+        LOGGER.info(f"  Male work coefficient:                 {result.x[26]:.4f}")
+        LOGGER.info(f"  Female work coefficient:               {result.x[35]:.4f}")
         LOGGER.info("")
     
     # -------------------------------------------------------------------------

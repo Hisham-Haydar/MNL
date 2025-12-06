@@ -6712,21 +6712,24 @@ def main() -> None:
             
             # Get the number of individuals from precomputed data
             n_individuals = precomputed_data.n_groups
-            
-            # Get gradient function for SE computation
+              # Get gradient function for SE computation
+            # IMPORTANT: compute_standard_errors expects gradient of NEGATIVE log-likelihood
+            # (i.e., gradient pointing to minimum, not maximum). This ensures the Hessian
+            # is positive definite and varcov = inv(Hessian) has positive diagonal.
             if is_singles:
-                # Singles: use fast analytical gradient
+                # Singles: return NEGATIVE of analytical gradient (grad of NLL)
                 def grad_func(theta):
-                    return fast_analytical_gradient_singles(
+                    grad_ll = fast_analytical_gradient_singles(
                         theta, precomputed_data, is_male=is_male, wage_spec=args.wage_spec
                     )
+                    return -grad_ll  # Convert to gradient of NLL
             else:
-                # Couples: use fast analytical gradient (available!)
+                # Couples: fast_neg_ll_with_grad_couples already returns gradient of NLL
                 def grad_func(theta):
                     _, neg_grad = fast_neg_ll_with_grad_couples(
                         theta, precomputed_data, wage_spec=args.wage_spec
                     )
-                    return -neg_grad  # Convert back to gradient of LL (not -LL)
+                    return neg_grad  # Already gradient of NLL (don't negate!)
             
             out_dir = Path(args.out_file).parent if args.out_file else Path("outputs/estimates/fr")
             

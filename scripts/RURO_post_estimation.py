@@ -510,7 +510,7 @@ def run_post_estimation(
     out_dir: Optional[Path] = None,
     save_excel: bool = True,
     nll_func: Optional[Callable] = None,
-    check_gradient: bool = False,
+    check_gradient: bool = False,    n_alternatives_per_individual: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Run full post-estimation analysis and optionally save results.
@@ -528,7 +528,8 @@ def run_post_estimation(
     result : OptimizeResult
         Result from scipy.optimize.minimize
     grad_func : Callable
-        Gradient function
+        Gradient function of the NEGATIVE log-likelihood (for Hessian computation).
+        This should return the gradient pointing to the minimum, not maximum.
     param_names : List[str]
         Parameter names
     n_individuals : int
@@ -543,6 +544,10 @@ def run_post_estimation(
         Negative log-likelihood function (for gradient check)
     check_gradient : bool
         Whether to check gradient accuracy
+    n_alternatives_per_individual : int, optional
+        Number of alternatives per individual in the MNL choice set.
+        Default is 100 (99 random draws + 1 observed choice in RURO).
+        Used for computing null log-likelihood and pseudo R-squared.
     
     Returns
     -------
@@ -584,16 +589,17 @@ def run_post_estimation(
     se_results_num = compute_standard_errors(
         theta, grad_func, param_names, method="numeric", delta=1e-4
     )
-    
-    # -------------------------------------------------------------------------
+      # -------------------------------------------------------------------------
     # 3. Model fit statistics
     # -------------------------------------------------------------------------
     LOGGER.info("\n3. Computing model fit statistics...")
+    # Default to 100 alternatives (99 draws + 1 observed) if not specified
+    n_alts = n_alternatives_per_individual if n_alternatives_per_individual is not None else 100
     fit_stats = compute_model_fit_statistics(
         log_likelihood=log_likelihood,
         n_params=n_params,
         n_individuals=n_individuals,
-        n_alternatives_per_individual=100,  # RURO default
+        n_alternatives_per_individual=n_alts,
     )
     
     # -------------------------------------------------------------------------
@@ -3064,6 +3070,7 @@ def run_full_post_estimation(
     save_html: bool = True,
     nll_func: Optional[Callable] = None,
     check_gradient: bool = False,
+    n_alternatives_per_individual: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Run comprehensive post-estimation analysis with plots and HTML report.
@@ -3080,13 +3087,15 @@ def run_full_post_estimation(
     result : OptimizeResult
         Result from scipy.optimize.minimize
     grad_func : Callable
-        Gradient function
+        Gradient function of the NEGATIVE log-likelihood (for Hessian computation).
+        This should return the gradient pointing to the minimum, not maximum.
     param_names : List[str]
         Parameter names
     n_individuals : int
         Number of individuals
     df : pd.DataFrame, optional
-        MNL dataset for computing marginal utilities and distributions
+        MNL dataset for computing marginal utilities and distributions.
+        If provided, used to compute n_alternatives_per_individual if not specified.
     wage_spec : str
         "fw" (fixed wage) or "vw" (variable wage)
     sex : str
@@ -3103,8 +3112,11 @@ def run_full_post_estimation(
         Negative log-likelihood function (for gradient check)
     check_gradient : bool
         Whether to check gradient accuracy
-    
-    Returns
+    n_alternatives_per_individual : int, optional
+        Number of alternatives per individual in the MNL choice set.
+        If None and df is provided, will be computed from the data.
+        Default is 100 (99 random draws + 1 observed choice in RURO).
+      Returns
     -------
     Dict containing all post-estimation results
     """
@@ -3124,6 +3136,29 @@ def run_full_post_estimation(
         out_dir.mkdir(parents=True, exist_ok=True)
     
     # -------------------------------------------------------------------------
+    # Compute n_alternatives_per_individual from data if not provided
+    # -------------------------------------------------------------------------
+    n_alts = n_alternatives_per_individual
+    if n_alts is None and df is not None:
+        # Try to compute from data: count rows per individual
+        id_col = None
+        for col in ["idhh", "idhh_true", "id"]:
+            if col in df.columns:
+                id_col = col
+                break
+        if id_col is not None:
+            # Count alternatives per individual (should be constant)
+            alts_per_ind = df.groupby(id_col).size()
+            n_alts = int(alts_per_ind.mode().iloc[0]) if len(alts_per_ind) > 0 else 100
+            LOGGER.info(f"Computed n_alternatives_per_individual from data: {n_alts}")
+        else:
+            n_alts = 100  # Default for RURO (99 draws + 1 observed)
+            LOGGER.info(f"Using default n_alternatives_per_individual: {n_alts}")
+    elif n_alts is None:
+        n_alts = 100  # Default
+        LOGGER.info(f"Using default n_alternatives_per_individual: {n_alts}")
+    
+    # -------------------------------------------------------------------------
     # 1. Base post-estimation (SE, t-values, fit stats)
     # -------------------------------------------------------------------------
     base_results = run_post_estimation(
@@ -3136,6 +3171,7 @@ def run_full_post_estimation(
         save_excel=save_excel,
         nll_func=nll_func,
         check_gradient=check_gradient,
+        n_alternatives_per_individual=n_alts,
     )
     
     param_table = base_results["param_table"]
@@ -3444,6 +3480,7 @@ def run_joint_post_estimation(
     out_dir: Optional[Path] = None,
     se: np.ndarray = None,
     varcov: np.ndarray = None,
+    n_alternatives_per_individual: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Run comprehensive post-estimation analysis for joint estimation results.
@@ -3476,6 +3513,9 @@ def run_joint_post_estimation(
         Standard errors (if available)
     varcov : np.ndarray, optional
         Variance-covariance matrix (if available)
+    n_alternatives_per_individual : int, optional
+        Number of alternatives per individual. If None, computed from data
+        or defaults to 100 (99 draws + 1 observed).
     
     Returns
     -------
@@ -3613,12 +3653,33 @@ def run_joint_post_estimation(
     # Save parameter table
     params_csv_path = out_dir / f"{wage_spec}_joint_params.csv"
     param_table.to_csv(params_csv_path, index=False)
-    
-    # =========================================================================
+      # =========================================================================
     # 8. Model fit statistics
     # =========================================================================
     n_params = len(theta)
-    ll_null = n_individuals * np.log(1.0 / 100)  # 100 alternatives
+    n_individuals = n_sm + n_sf + n_cou
+    
+    # Determine n_alternatives_per_individual
+    n_alts = n_alternatives_per_individual
+    if n_alts is None:
+        # Try to compute from data
+        for df_check, name in [(df_sm, "sm"), (df_sf, "sf"), (df_cou, "cou")]:
+            if df_check is not None and len(df_check) > 0:
+                id_col = None
+                for col in ["idhh", "idhh_true", "id"]:
+                    if col in df_check.columns:
+                        id_col = col
+                        break
+                if id_col is not None:
+                    alts_per_ind = df_check.groupby(id_col).size()
+                    n_alts = int(alts_per_ind.mode().iloc[0]) if len(alts_per_ind) > 0 else 100
+                    LOGGER.info(f"Computed n_alternatives_per_individual from {name} data: {n_alts}")
+                    break
+        if n_alts is None:
+            n_alts = 100  # Default for RURO (99 draws + 1 observed)
+            LOGGER.info(f"Using default n_alternatives_per_individual: {n_alts}")
+    
+    ll_null = n_individuals * np.log(1.0 / n_alts)
     
     fit_stats = {
         "log_likelihood": log_likelihood,
@@ -4149,15 +4210,28 @@ def main():
                     "t_value": [np.nan] * len(theta),
                     "p_value": [np.nan] * len(theta),
                 })
-                
-                # Create fit stats
+                  # Create fit stats
                 n_params = len(theta)
-                ll_null = n_individuals * np.log(1.0 / 100)  # Assuming 100 alternatives
+                
+                # Compute n_alternatives from data if available
+                n_alts = 100  # Default
+                if df is not None:
+                    id_col = None
+                    for col in ["idhh", "idhh_true", "id"]:
+                        if col in df.columns:
+                            id_col = col
+                            break
+                    if id_col is not None:
+                        alts_per_ind = df.groupby(id_col).size()
+                        n_alts = int(alts_per_ind.mode().iloc[0]) if len(alts_per_ind) > 0 else 100
+                
+                ll_null = n_individuals * np.log(1.0 / n_alts)
                 fit_stats = {
                     "log_likelihood": log_likelihood,
                     "ll_null": ll_null,
                     "n_params": n_params,
                     "n_individuals": n_individuals,
+                    "n_alternatives": n_alts,
                     "aic": 2 * n_params - 2 * log_likelihood,
                     "bic": n_params * np.log(n_individuals) - 2 * log_likelihood,
                     "pseudo_r2_mcfadden": 1 - (log_likelihood / ll_null) if ll_null != 0 else 0,

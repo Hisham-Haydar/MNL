@@ -4710,7 +4710,8 @@ def compute_fit_diagnostics(
     if len(obs_df) == 0:
         LOGGER.warning(f"No observed choices found for group {group}")
         return results
-      # Observed statistics
+    
+    # Observed statistics
     obs_hours = obs_df[hours_col].values
     results["participation_rate_observed"] = float((obs_hours > 0).mean())
     results["mean_hours_observed"] = float(obs_hours[obs_hours > 0].mean()) if (obs_hours > 0).any() else 0.0

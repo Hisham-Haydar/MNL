@@ -5867,8 +5867,7 @@ def fast_neg_ll_with_grad_joint(
         # beta_c grad [25] -> joint [48]
         grad[idx_pref_cou[0]+23] -= neg_grad_cou[25]
         # (skip joint interaction param [49] - no gradient from standalone)
-        
-        # Hours opportunity
+          # Hours opportunity
         grad[idx_hopp_m[0]:idx_hopp_m[1]] -= neg_grad_cou[26:35]
         grad[idx_hopp_f[0]:idx_hopp_f[1]] -= neg_grad_cou[35:44]
         
@@ -5877,6 +5876,69 @@ def fast_neg_ll_with_grad_joint(
             grad[idx_wopp_f[0]:idx_wopp_f[1]] -= neg_grad_cou[60:76]
     
     return -ll_total, -grad
+
+
+# =============================================================================
+# CSV Initial Parameters Loader
+# =============================================================================
+
+def _load_init_params_from_csv(
+    csv_path: Path,
+    param_names: List[str],
+    default_theta: np.ndarray,
+) -> np.ndarray:
+    """
+    Load initial parameter values from a CSV file.
+    
+    Parameters
+    ----------
+    csv_path : Path
+        Path to CSV file with columns 'parameter' and 'value'
+    param_names : List[str]
+        List of parameter names (defines order)
+    default_theta : np.ndarray
+        Default values to use for parameters not found in CSV
+    
+    Returns
+    -------
+    np.ndarray
+        Initial parameter values
+    """
+    import pandas as pd
+    
+    LOGGER.info(f"Loading initial parameters from: {csv_path}")
+    
+    if not csv_path.exists():
+        LOGGER.warning(f"CSV file not found: {csv_path}. Using defaults.")
+        return default_theta
+    
+    df = pd.read_csv(csv_path)
+    
+    # Check required columns
+    if "parameter" not in df.columns or "value" not in df.columns:
+        LOGGER.warning("CSV must have 'parameter' and 'value' columns. Using defaults.")
+        return default_theta
+    
+    # Create mapping from CSV
+    param_map = dict(zip(df["parameter"], df["value"]))
+    
+    # Build initial values array
+    theta0 = default_theta.copy()
+    loaded = 0
+    missing = []
+    
+    for i, name in enumerate(param_names):
+        if name in param_map:
+            theta0[i] = float(param_map[name])
+            loaded += 1
+        else:
+            missing.append(name)
+    
+    LOGGER.info(f"  Loaded {loaded}/{len(param_names)} parameters from CSV")
+    if missing:
+        LOGGER.info(f"  Using defaults for: {missing[:5]}{'...' if len(missing) > 5 else ''}")
+    
+    return theta0
 
 
 # =============================================================================
@@ -5914,7 +5976,8 @@ def parse_args() -> argparse.Namespace:
         "--sex",
         type=str,
         default="pooled",
-        choices=["m", "f", "pooled"],        help=(
+        choices=["m", "f", "pooled"],
+        help=(
             "For singles (group=1): filter by sex. "
             "'m'=males only (dgn==1), 'f'=females only (dgn==0), "
             "'pooled'=both sexes (default). Ignored for couples."
@@ -5987,6 +6050,17 @@ def parse_args() -> argparse.Namespace:
             "Run post-estimation analysis (standard errors, t-values, model fit). "
             "Computes Hessian, variance-covariance matrix, and saves to Excel. "
             "Following Stijn Van Houtven's R approach."
+        ),
+    )
+    parser.add_argument(
+        "--init-params",
+        type=Path,
+        default=None,
+        help=(
+            "Path to CSV file with initial parameter values. "
+            "CSV should have columns 'parameter' and 'value'. "
+            "Use this to start from previous estimates or custom values. "
+            "Parameters not found in CSV will use defaults."
         ),
     )
     return parser.parse_args()
@@ -6313,13 +6387,22 @@ def main() -> None:
             is_male = True
         
         if len(df) == 0:
-            raise ValueError(f"No data for singles with sex={args.sex}.")
-        
-        # Get initial parameters and precompute data for singles
+            raise ValueError(f"No data for singles with sex={args.sex}.")        # Get initial parameters and precompute data for singles
+        param_names = get_param_names_singles()
         theta0 = get_initial_theta_singles(is_male=is_male)
         # For fixed wages, only use first 21 parameters (no wage equation)
         if args.wage_spec == "fw":
             theta0 = theta0[:21]
+            param_names = param_names[:21]
+        
+        # Load initial parameters from CSV if provided
+        if args.init_params is not None:
+            theta0 = _load_init_params_from_csv(
+                csv_path=args.init_params,
+                param_names=param_names,
+                default_theta=theta0,
+            )
+        
         LOGGER.info(f"Number of parameters: {len(theta0)}")
         LOGGER.info(f"Initial theta: {theta0[:5]}... (truncated)")
         
@@ -6333,13 +6416,11 @@ def main() -> None:
         LOGGER.info(f"  - {precomputed_data.n_groups} individuals")
         LOGGER.info(f"  - {len(precomputed_data.c)} rows")
         LOGGER.info("")
-        
-        # Initial log-likelihood
+          # Initial log-likelihood
         ll0 = fast_log_likelihood_singles(theta0, precomputed_data, is_male=is_male, wage_spec=args.wage_spec)
         LOGGER.info(f"Initial log-likelihood: {ll0:.4f}")
         
         # Set up estimation functions
-        param_names = get_param_names_singles()
         ll_func = lambda t: fast_log_likelihood_singles(t, precomputed_data, is_male=is_male, wage_spec=args.wage_spec)
         grad_func = lambda t: fast_analytical_gradient_singles(t, precomputed_data, is_male=is_male, wage_spec=args.wage_spec)
         
@@ -6359,9 +6440,18 @@ def main() -> None:
                            "Ensure RURO_prep_mnl_basic.py created wide-format data.")
         
         LOGGER.info(f"Couples data: {len(df)} rows, {df['idhh'].nunique()} households")
-        
-        # Get initial parameters and precompute data for couples
+          # Get initial parameters and precompute data for couples
+        param_names = get_param_names_couples(wage_spec=args.wage_spec)
         theta0 = get_initial_theta_couples(wage_spec=args.wage_spec)
+        
+        # Load initial parameters from CSV if provided
+        if args.init_params is not None:
+            theta0 = _load_init_params_from_csv(
+                csv_path=args.init_params,
+                param_names=param_names,
+                default_theta=theta0,
+            )
+        
         LOGGER.info(f"Number of parameters: {len(theta0)}")
         LOGGER.info(f"Initial theta: {theta0[:5]}... (truncated)")
         
@@ -6381,7 +6471,6 @@ def main() -> None:
         LOGGER.info(f"Initial log-likelihood: {ll0:.4f}")
         
         # Set up estimation functions
-        param_names = get_param_names_couples(wage_spec=args.wage_spec)
         ll_func = lambda t: fast_log_likelihood_couples(t, precomputed_data, wage_spec=args.wage_spec)
         # Note: analytical gradient for couples not yet implemented, use numerical
         grad_func = None
@@ -6598,8 +6687,7 @@ def main() -> None:
         results_dict = {
             "success": result.success,
             "message": result.message,
-            "log_likelihood": float(-result.fun),
-            "n_iterations": int(result.nit),
+            "log_likelihood": float(-result.fun),            "n_iterations": int(result.nit),
             "n_fev": int(result.nfev),
             "theta": result.x.tolist(),
             "param_names": param_names,
@@ -6607,7 +6695,7 @@ def main() -> None:
             "sex": args.sex if args.group == 1 else None,
             "wage_spec": args.wage_spec,
         }
-          out_path = Path(args.out_file)
+        out_path = Path(args.out_file)
         if out_path.suffix == ".json":
             with open(out_path, "w") as f:
                 json.dump(results_dict, f, indent=2)

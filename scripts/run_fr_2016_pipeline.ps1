@@ -54,6 +54,13 @@ $MNL_FILE = "$MNL_BASE.parquet"
 # Results output directory
 $RESULTS_DIR = "$PROJ_ROOT\outputs\estimates\fr\$YEAR"
 
+# Initial parameter files (optional - set to $null to use defaults)
+# These CSV files should have columns: parameter, value
+$INIT_PARAMS_SM = "$SCRIPTS\init_params_singles_template.csv"  # Single males
+$INIT_PARAMS_SF = $null  # Single females (set path or $null for defaults)
+$INIT_PARAMS_COU = $null  # Couples (set path or $null for defaults)
+$INIT_PARAMS_JOINT = $null  # Joint estimation (set path or $null for defaults)
+
 # Log file for pipeline output
 $LOG_DIR = "$PROJ_ROOT\outputs\logs"
 $TIMESTAMP = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
@@ -372,6 +379,10 @@ Write-Step "STEP 7/7: RURO ESTIMATION (RURO_estimate_FR.py)"
 Write-Host ""
 Write-Host "--- 7a. Single Males ---" -ForegroundColor Magenta
 $cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" --mnl-file `"$MNL_FILE`" --group 1 --sex m --wage-spec $WAGE_SPEC --optimizer L-BFGS-B --maxiter 500 --use-numba --out-file `"$RESULTS_DIR\fr_${YEAR}_single_males.json`""
+if ($INIT_PARAMS_SM -and (Test-Path $INIT_PARAMS_SM)) {
+    $cmd += " --init-params `"$INIT_PARAMS_SM`""
+    Write-Host "  Using initial params: $INIT_PARAMS_SM" -ForegroundColor Cyan
+}
 
 if (-not (Run-PythonScript $cmd "Estimate single males")) {
     Write-Host "WARNING: Single males estimation failed" -ForegroundColor Yellow
@@ -381,6 +392,10 @@ if (-not (Run-PythonScript $cmd "Estimate single males")) {
 Write-Host ""
 Write-Host "--- 7b. Single Females ---" -ForegroundColor Magenta
 $cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" --mnl-file `"$MNL_FILE`" --group 1 --sex f --wage-spec $WAGE_SPEC --optimizer L-BFGS-B --maxiter 500 --use-numba --out-file `"$RESULTS_DIR\fr_${YEAR}_single_females.json`""
+if ($INIT_PARAMS_SF -and (Test-Path $INIT_PARAMS_SF)) {
+    $cmd += " --init-params `"$INIT_PARAMS_SF`""
+    Write-Host "  Using initial params: $INIT_PARAMS_SF" -ForegroundColor Cyan
+}
 
 if (-not (Run-PythonScript $cmd "Estimate single females")) {
     Write-Host "WARNING: Single females estimation failed" -ForegroundColor Yellow
@@ -390,6 +405,10 @@ if (-not (Run-PythonScript $cmd "Estimate single females")) {
 Write-Host ""
 Write-Host "--- 7c. Couples ---" -ForegroundColor Magenta
 $cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" --mnl-file `"$MNL_FILE`" --group 10 --wage-spec $WAGE_SPEC --optimizer L-BFGS-B --maxiter 500 --use-numba --out-file `"$RESULTS_DIR\fr_${YEAR}_couples.json`""
+if ($INIT_PARAMS_COU -and (Test-Path $INIT_PARAMS_COU)) {
+    $cmd += " --init-params `"$INIT_PARAMS_COU`""
+    Write-Host "  Using initial params: $INIT_PARAMS_COU" -ForegroundColor Cyan
+}
 
 if (-not (Run-PythonScript $cmd "Estimate couples")) {
     Write-Host "WARNING: Couples estimation failed (may not have couple data)" -ForegroundColor Yellow
@@ -399,6 +418,10 @@ if (-not (Run-PythonScript $cmd "Estimate couples")) {
 Write-Host ""
 Write-Host "--- 7d. Joint Estimation (all groups) ---" -ForegroundColor Magenta
 $cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" --mnl-file `"$MNL_FILE`" --joint --wage-spec $WAGE_SPEC --optimizer L-BFGS-B --maxiter 500 --use-numba --n-jobs 32 --out-file `"$RESULTS_DIR\fr_${YEAR}_joint.json`""
+if ($INIT_PARAMS_JOINT -and (Test-Path $INIT_PARAMS_JOINT)) {
+    $cmd += " --init-params `"$INIT_PARAMS_JOINT`""
+    Write-Host "  Using initial params: $INIT_PARAMS_JOINT" -ForegroundColor Cyan
+}
 
 if (-not (Run-PythonScript $cmd "Joint estimation (shared opportunity parameters)")) {
     Write-Host "WARNING: Joint estimation failed" -ForegroundColor Yellow

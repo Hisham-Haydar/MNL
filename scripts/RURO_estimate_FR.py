@@ -6703,30 +6703,30 @@ def main() -> None:
                 pickle.dump(results_dict, f)
         
         LOGGER.info(f"Results saved to: {out_path}")
-    
-    # -------------------------------------------------------------------------
+      # -------------------------------------------------------------------------
     # Run post-estimation analysis (standard errors, t-values, plots)
     # -------------------------------------------------------------------------
     if args.post_estimation:
         try:
             from RURO_post_estimation import run_full_post_estimation
             
+            # Get the number of individuals from precomputed data
+            n_individuals = precomputed_data.n_groups
+            
             # Get gradient function for SE computation
-            if is_singles and args.use_numba and NUMBA_AVAILABLE:
-                grad_func = lambda theta: fast_negloglik_and_grad_singles(
-                    theta, precomputed_data, is_male=is_male, wage_spec=args.wage_spec
-                )[1]
-            elif is_singles:
-                # Create gradient function for non-numba case
+            if is_singles:
+                # Singles: use fast analytical gradient
                 def grad_func(theta):
-                    _, grad = negloglik_and_grad_singles(
-                        theta, df_singles, param_names, is_male=is_male, wage_spec=args.wage_spec
+                    return fast_analytical_gradient_singles(
+                        theta, precomputed_data, is_male=is_male, wage_spec=args.wage_spec
                     )
-                    return grad
             else:
-                # Couples - use numerical gradient approximation
-                grad_func = lambda theta: np.zeros_like(theta)
-                LOGGER.warning("Post-estimation SE for couples requires analytical gradient - using placeholder")
+                # Couples: use fast analytical gradient (available!)
+                def grad_func(theta):
+                    _, neg_grad = fast_neg_ll_with_grad_couples(
+                        theta, precomputed_data, wage_spec=args.wage_spec
+                    )
+                    return -neg_grad  # Convert back to gradient of LL (not -LL)
             
             out_dir = Path(args.out_file).parent if args.out_file else Path("outputs/estimates/fr")
             
@@ -6742,7 +6742,7 @@ def main() -> None:
                 grad_func=grad_func,
                 param_names=param_names,
                 n_individuals=n_individuals,
-                df=df_singles if is_singles else df_couples,
+                df=df,  # Use df which is the filtered DataFrame in scope
                 wage_spec=args.wage_spec,
                 sex=sex_label,
                 out_dir=out_dir,

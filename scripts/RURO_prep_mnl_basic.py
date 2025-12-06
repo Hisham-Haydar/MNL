@@ -736,26 +736,33 @@ def merge_gsur(
         how="left",
         suffixes=("", "_gsur")
     )
-    
-    # Fill missing gsur with national average for same sex/education
+      # Fill missing gsur with national average for same sex/education (VECTORIZED)
     missing_mask = df["gsur"].isna()
     if missing_mask.any():
         n_missing = missing_mask.sum()
         LOGGER.info(f"Filling {n_missing} missing gsur values with national average...")
         
-        # Get national averages (drgn1 == 0)
-        national_gsur = gsur_year[
+        # Get national averages (drgn1 == 0) as a DataFrame for vectorized merge
+        national_gsur_df = gsur_year[
             (gsur_year["drgn1"] == 0) & (gsur_year["education"] != "TOTAL")
-        ].set_index(["dgn", "education"])["gsur"].to_dict()
+        ][["dgn", "education", "gsur"]].copy()
+        national_gsur_df = national_gsur_df.rename(columns={"gsur": "gsur_national"})
         
-        # Fill missing values
-        for idx in df[missing_mask].index:
-            key = (int(df.loc[idx, "dgn"]), df.loc[idx, "_educ_cat"])
-            if key in national_gsur:
-                df.loc[idx, "gsur"] = national_gsur[key]
-            else:
-                # Ultimate fallback: overall average
-                df.loc[idx, "gsur"] = gsur_year["gsur"].mean()
+        # Merge national averages for missing rows
+        df = df.merge(
+            national_gsur_df,
+            left_on=["dgn", "_educ_cat"],
+            right_on=["dgn", "education"],
+            how="left",
+            suffixes=("", "_nat")
+        )
+        
+        # Fill missing with national average, then overall average as fallback
+        overall_avg = gsur_year["gsur"].mean()
+        df["gsur"] = df["gsur"].fillna(df["gsur_national"]).fillna(overall_avg)
+        
+        # Clean up temporary columns
+        df = df.drop(columns=["gsur_national", "education_nat"], errors="ignore")
     
     # Clean up temporary columns
     df = df.drop(columns=["_educ_cat", "education"], errors="ignore")
@@ -899,31 +906,30 @@ def merge_gsur_couples(
         how="left"
     )
     df = df.drop(columns=["education"], errors="ignore")
-    
-    # Fill missing with national averages
-    national_gsur = gsur_year[
+      # Fill missing with national averages (vectorized approach)
+    national_gsur_df = gsur_year[
         (gsur_year["drgn1"] == 0) & (gsur_year["education"] != "TOTAL")
-    ].set_index(["dgn", "education"])["gsur"].to_dict()
+    ][["dgn", "education", "gsur"]].copy()
     
-    # Fill missing male GSUR
-    missing_m = df["gsur_m"].isna()
-    if missing_m.any():
-        for idx in df[missing_m].index:
-            key = (1, df.loc[idx, "_educ_cat_m"])  # dgn=1 for males
-            if key in national_gsur:
-                df.loc[idx, "gsur_m"] = national_gsur[key]
-            else:
-                df.loc[idx, "gsur_m"] = gsur_year[gsur_year["dgn"] == 1]["gsur"].mean()
+    # Compute overall averages by gender for fallback
+    overall_avg_m = gsur_year[gsur_year["dgn"] == 1]["gsur"].mean()
+    overall_avg_f = gsur_year[gsur_year["dgn"] == 0]["gsur"].mean()
     
-    # Fill missing female GSUR
-    missing_f = df["gsur_f"].isna()
-    if missing_f.any():
-        for idx in df[missing_f].index:
-            key = (0, df.loc[idx, "_educ_cat_f"])  # dgn=0 for females
-            if key in national_gsur:
-                df.loc[idx, "gsur_f"] = national_gsur[key]
-            else:
-                df.loc[idx, "gsur_f"] = gsur_year[gsur_year["dgn"] == 0]["gsur"].mean()
+    # Fill missing male GSUR using vectorized merge
+    national_gsur_m = national_gsur_df[national_gsur_df["dgn"] == 1][["education", "gsur"]].copy()
+    national_gsur_m = national_gsur_m.rename(columns={"gsur": "gsur_m_national"})
+    df = df.merge(national_gsur_m, left_on="_educ_cat_m", right_on="education", how="left")
+    df = df.drop(columns=["education"], errors="ignore")
+    df["gsur_m"] = df["gsur_m"].fillna(df["gsur_m_national"]).fillna(overall_avg_m)
+    df = df.drop(columns=["gsur_m_national"], errors="ignore")
+    
+    # Fill missing female GSUR using vectorized merge
+    national_gsur_f = national_gsur_df[national_gsur_df["dgn"] == 0][["education", "gsur"]].copy()
+    national_gsur_f = national_gsur_f.rename(columns={"gsur": "gsur_f_national"})
+    df = df.merge(national_gsur_f, left_on="_educ_cat_f", right_on="education", how="left")
+    df = df.drop(columns=["education"], errors="ignore")
+    df["gsur_f"] = df["gsur_f"].fillna(df["gsur_f_national"]).fillna(overall_avg_f)
+    df = df.drop(columns=["gsur_f_national"], errors="ignore")
     
     # Clean up
     df = df.drop(columns=["_educ_cat_m", "_educ_cat_f"], errors="ignore")

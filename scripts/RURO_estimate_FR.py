@@ -6619,36 +6619,60 @@ def main() -> None:
         LOGGER.info(f"Results saved to: {out_path}")
     
     # -------------------------------------------------------------------------
-    # Run post-estimation analysis (standard errors, t-values)
+    # Run post-estimation analysis (standard errors, t-values, plots)
     # -------------------------------------------------------------------------
     if args.post_estimation:
         try:
-            from RURO_post_estimation import run_post_estimation
+            from RURO_post_estimation import run_full_post_estimation
             
             # Get gradient function for SE computation
             if is_singles and args.use_numba and NUMBA_AVAILABLE:
                 grad_func = lambda theta: fast_negloglik_and_grad_singles(
                     theta, precomputed_data, is_male=is_male, wage_spec=args.wage_spec
                 )[1]
+            elif is_singles:
+                # Create gradient function for non-numba case
+                def grad_func(theta):
+                    _, grad = negloglik_and_grad_singles(
+                        theta, df_singles, param_names, is_male=is_male, wage_spec=args.wage_spec
+                    )
+                    return grad
             else:
-                # Use numerical gradient approximation
-                grad_func = lambda theta: np.zeros_like(theta)  # placeholder
-                LOGGER.warning("Post-estimation SE requires analytical gradient - using placeholder")
+                # Couples - use numerical gradient approximation
+                grad_func = lambda theta: np.zeros_like(theta)
+                LOGGER.warning("Post-estimation SE for couples requires analytical gradient - using placeholder")
             
-            out_dir = Path(args.out_file).parent if args.out_file else Path("outputs/estimates")
+            out_dir = Path(args.out_file).parent if args.out_file else Path("outputs/estimates/fr")
             
-            post_results = run_post_estimation(
+            # Determine sex label
+            sex_label = "pooled"
+            if args.sex == "m":
+                sex_label = "male"
+            elif args.sex == "f":
+                sex_label = "female"
+            
+            post_results = run_full_post_estimation(
                 result=result,
                 grad_func=grad_func,
                 param_names=param_names,
                 n_individuals=n_individuals,
+                df=df_singles if is_singles else df_couples,
                 wage_spec=args.wage_spec,
+                sex=sex_label,
                 out_dir=out_dir,
                 save_excel=True,
-            )        except ImportError as e:
+                save_plots=True,
+                save_html=True,
+            )
+            
+            LOGGER.info("Post-estimation analysis complete.")
+            
+        except ImportError as e:
             LOGGER.warning(f"Could not run post-estimation: {e}")
         except Exception as e:
             LOGGER.error(f"Post-estimation failed: {e}")
+            import traceback
+            traceback.print_exc()
     
     LOGGER.info("=" * 60)
     LOGGER.info("Done.")

@@ -169,13 +169,14 @@ def compute_numeric_hessian(
 def compute_jacobian_hessian(
     theta: np.ndarray,
     grad_func: Callable,
-    delta: float = 1e-5,
+    delta: float = 1e-4,
 ) -> np.ndarray:
     """
     Compute Hessian using numerical Jacobian of the gradient (central differences).
-    
+
     Uses central differences for better accuracy.
-    
+    Uses adaptive step sizing for better numerical stability with near-zero parameters.
+
     Parameters
     ----------
     theta : np.ndarray
@@ -183,8 +184,8 @@ def compute_jacobian_hessian(
     grad_func : Callable
         Gradient function
     delta : float
-        Step size for finite differences
-    
+        Relative step size for finite differences (default 1e-4)
+
     Returns
     -------
     np.ndarray
@@ -192,24 +193,32 @@ def compute_jacobian_hessian(
     """
     K = len(theta)
     hessian = np.zeros((K, K), dtype=np.float64)
-    
+
     for i in range(K):
         theta_plus = theta.copy()
         theta_minus = theta.copy()
-        
-        h = max(abs(theta[i]) * delta, delta)
+
+        # Adaptive step size: use larger absolute step for near-zero parameters
+        # This improves numerical stability
+        if abs(theta[i]) < 1e-3:
+            # For near-zero parameters, use fixed absolute step
+            h = delta * 10.0  # Larger step for stability
+        else:
+            # For other parameters, use relative step
+            h = max(abs(theta[i]) * delta, delta)
+
         theta_plus[i] += h
         theta_minus[i] -= h
-        
+
         grad_plus = grad_func(theta_plus)
         grad_minus = grad_func(theta_minus)
-        
+
         # Central difference
         hessian[:, i] = (grad_plus - grad_minus) / (2.0 * h)
-    
+
     # Symmetrize
     hessian = 0.5 * (hessian + hessian.T)
-    
+
     return hessian
 
 
@@ -232,7 +241,7 @@ def compute_standard_errors(
     grad_func: Callable,
     param_names: List[str],
     method: str = "jacobian",
-    delta: float = 1e-5,
+    delta: float = 1e-4,
 ) -> Dict[str, Any]:
     """
     Compute standard errors, t-values, and variance-covariance matrix.
@@ -263,27 +272,45 @@ def compute_standard_errors(
     import pandas as pd
     
     LOGGER.info(f"Computing Hessian matrix using {method} method...")
-    
+
     if method == "jacobian":
         hessian = compute_jacobian_hessian(theta, grad_func, delta)
     else:
         hessian = compute_numeric_hessian(theta, grad_func, delta)
-    
+
     # Check eigenvalues (positive semi-definiteness)
     eigenvalues = np.linalg.eigvalsh(hessian)
     n_negative = np.sum(eigenvalues < 0)
+    n_near_zero = np.sum(np.abs(eigenvalues) < 1e-8)
+
     if n_negative > 0:
         LOGGER.warning(f"Hessian has {n_negative} negative eigenvalues - may not be at true optimum!")
-    
+    if n_near_zero > 0:
+        LOGGER.warning(f"Hessian has {n_near_zero} eigenvalues near zero - matrix is near-singular")
+
     # Invert Hessian to get variance-covariance
+    # Use pseudo-inverse for robustness + regularization for near-singular matrices
     try:
+        # Try direct inversion first
         varcov = np.linalg.inv(hessian)
+        LOGGER.info("Hessian inverted successfully using direct inversion")
         se = np.sqrt(np.diag(varcov))
         se = np.where(np.isfinite(se) & (se > 0), se, np.nan)
     except np.linalg.LinAlgError:
-        LOGGER.error("Hessian is singular - cannot compute standard errors")
-        varcov = np.full((len(theta), len(theta)), np.nan)
-        se = np.full(len(theta), np.nan)
+        # Direct inversion failed - try Moore-Penrose pseudo-inverse
+        LOGGER.warning("Direct inversion failed - using pseudo-inverse (may indicate weak identification)")
+        try:
+            varcov = np.linalg.pinv(hessian, rcond=1e-10)
+            se = np.sqrt(np.diag(varcov))
+            se = np.where(np.isfinite(se) & (se > 0), se, np.nan)
+
+            # Count how many SEs are valid
+            n_valid = np.sum(np.isfinite(se))
+            LOGGER.warning(f"Pseudo-inverse computed {n_valid}/{len(se)} finite standard errors")
+        except Exception as e:
+            LOGGER.error(f"Pseudo-inverse also failed: {e}")
+            varcov = np.full((len(theta), len(theta)), np.nan)
+            se = np.full(len(theta), np.nan)
     
     # t-values
     t_values = theta / se
@@ -6550,6 +6577,16 @@ def _build_joint_html_report(
     <table class="table" style="width:auto;">
       {fit_stats_html}
     </table>
+
+    <div class="stats-box" style="margin-top:1.5em; border-left-color: var(--success-color);">
+      <h4 style="margin-top:0;">📝 Understanding Bounded Parameters</h4>
+      <ul style="margin-bottom:0; line-height:1.8;">
+        <li><strong>n_bounded_params ({fit_stats.get('n_bounded_params', 0)})</strong>: Number of parameters with constraints defined (lower and/or upper bounds). These bounds guide the optimization search space.</li>
+        <li><strong>n_hit_lower_bound ({fit_stats.get('n_hit_lower_bound', 0)})</strong>: Number of parameters stuck at their lower bound. <span style="color:var(--success-color); font-weight:bold;">✓ Zero is good!</span> Indicates interior solution.</li>
+        <li><strong>n_hit_upper_bound ({fit_stats.get('n_hit_upper_bound', 0)})</strong>: Number of parameters stuck at their upper bound. <span style="color:var(--success-color); font-weight:bold;">✓ Zero is good!</span> Indicates unconstrained optimum.</li>
+        <li><strong>Interpretation</strong>: Having bounded parameters with zero hits means the optimizer found a solution <em>inside</em> the constraint region, not artificially restricted by the bounds. This suggests a well-specified model with appropriate constraints.</li>
+      </ul>
+    </div>
   </section>
   
   <section>
@@ -6608,13 +6645,18 @@ def _build_joint_html_report(
     <h2>📋 Full Parameter Estimates</h2>
     <p><em>Significance: *** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05</em></p>
     <div class="color-legend">
-      <div class="color-legend-item"><div class="color-box" style="background-color: var(--bounded-row-color);"></div>Bounded parameter</div>
-      <div class="color-legend-item"><div class="color-box" style="background-color: var(--bound-hit-color);"></div>Hit bound</div>
-      <div class="color-legend-item"><div class="color-box" style="background-color: var(--not-estimated-color);"></div>Not estimated</div>
-      <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-marginal);"></div>p-value 0.05-0.1</div>
-      <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-weak);"></div>p-value 0.1-0.25</div>
-      <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-insig);"></div>p-value &gt; 0.25</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--bounded-row-color);"></div>Bounded (has constraints defined)</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--bound-hit-color);"></div>⚠️ Hit bound (stuck at constraint)</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--not-estimated-color);"></div>Not estimated (fixed)</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-marginal);"></div>p ∈ [0.05, 0.1) Marginal</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-weak);"></div>p ∈ [0.1, 0.25) Weak</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-insig);"></div>p ≥ 0.25 Insignificant</div>
     </div>
+    <p style="font-size:0.9em; color:#666; margin-top:0.5em;">
+      <strong>Note:</strong> <span style="background-color: var(--bounded-row-color); padding:2px 4px;">Yellow rows</span> have bounds defined to guide search space.
+      <span style="background-color: var(--bound-hit-color); padding:2px 4px;">Red cells</span> indicate parameter values at their constraint (potential issue).
+      No red cells = interior solution ✓
+    </p>
     <div style="max-height:600px; overflow-y:auto;">
       {param_html}
     </div>

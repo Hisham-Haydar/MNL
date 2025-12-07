@@ -365,49 +365,52 @@ if (-not (Test-FileExists $MNL_FILE "MNL dataset")) { exit 1 }
 # =====================================================================
 Write-Step "STEP 7/7: RURO ESTIMATION (RURO_estimate_FR.py)"
 
-# 7a. Estimate SINGLE MALES
-Write-Host ""
-Write-Host "--- 7a. Single Males ---" -ForegroundColor Magenta
-$cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" --mnl-file `"$MNL_FILE`" --group 1 --sex m --wage-spec $WAGE_SPEC --optimizer L-BFGS-B --maxiter 500 --use-numba --out-file `"$RESULTS_DIR\fr_${YEAR}_single_males.json`""
-if ($INIT_PARAMS_SM -and (Test-Path $INIT_PARAMS_SM)) {
-    $cmd += " --init-params `"$INIT_PARAMS_SM`""
-    Write-Host "  Using initial params: $INIT_PARAMS_SM" -ForegroundColor Cyan
-}
+# 7a. Estimate SINGLE MALES (SKIPPED - running joint only)
+# Write-Host ""
+# Write-Host "--- 7a. Single Males ---" -ForegroundColor Magenta
+# $cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" --mnl-file `"$MNL_FILE`" --group 1 --sex m --wage-spec $WAGE_SPEC --optimizer L-BFGS-B --maxiter 2000 --use-numba --post-estimation --out-file `"$RESULTS_DIR\fr_${YEAR}_single_males.json`""
+# if ($INIT_PARAMS_SM -and (Test-Path $INIT_PARAMS_SM)) {
+#     $cmd += " --init-params `"$INIT_PARAMS_SM`""
+#     Write-Host "  Using initial params: $INIT_PARAMS_SM" -ForegroundColor Cyan
+# }
+#
+# if (-not (Run-PythonScript $cmd "Estimate single males")) {
+#     Write-Host "WARNING: Single males estimation failed" -ForegroundColor Yellow
+# }
+Write-Host "SKIPPED: Single males estimation (running joint only)" -ForegroundColor Yellow
 
-if (-not (Run-PythonScript $cmd "Estimate single males")) {
-    Write-Host "WARNING: Single males estimation failed" -ForegroundColor Yellow
-}
+# 7b. Estimate SINGLE FEMALES (SKIPPED - running joint only)
+# Write-Host ""
+# Write-Host "--- 7b. Single Females ---" -ForegroundColor Magenta
+# $cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" --mnl-file `"$MNL_FILE`" --group 1 --sex f --wage-spec $WAGE_SPEC --optimizer L-BFGS-B --maxiter 2000 --use-numba --post-estimation --out-file `"$RESULTS_DIR\fr_${YEAR}_single_females.json`""
+# if ($INIT_PARAMS_SF -and (Test-Path $INIT_PARAMS_SF)) {
+#     $cmd += " --init-params `"$INIT_PARAMS_SF`""
+#     Write-Host "  Using initial params: $INIT_PARAMS_SF" -ForegroundColor Cyan
+# }
+#
+# if (-not (Run-PythonScript $cmd "Estimate single females")) {
+#     Write-Host "WARNING: Single females estimation failed" -ForegroundColor Yellow
+# }
+Write-Host "SKIPPED: Single females estimation (running joint only)" -ForegroundColor Yellow
 
-# 7b. Estimate SINGLE FEMALES
-Write-Host ""
-Write-Host "--- 7b. Single Females ---" -ForegroundColor Magenta
-$cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" --mnl-file `"$MNL_FILE`" --group 1 --sex f --wage-spec $WAGE_SPEC --optimizer L-BFGS-B --maxiter 500 --use-numba --out-file `"$RESULTS_DIR\fr_${YEAR}_single_females.json`""
-if ($INIT_PARAMS_SF -and (Test-Path $INIT_PARAMS_SF)) {
-    $cmd += " --init-params `"$INIT_PARAMS_SF`""
-    Write-Host "  Using initial params: $INIT_PARAMS_SF" -ForegroundColor Cyan
-}
-
-if (-not (Run-PythonScript $cmd "Estimate single females")) {
-    Write-Host "WARNING: Single females estimation failed" -ForegroundColor Yellow
-}
-
-# 7c. Estimate COUPLES (if data exists)
-Write-Host ""
-Write-Host "--- 7c. Couples ---" -ForegroundColor Magenta
-$cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" --mnl-file `"$MNL_FILE`" --group 10 --wage-spec $WAGE_SPEC --optimizer L-BFGS-B --maxiter 500 --use-numba --out-file `"$RESULTS_DIR\fr_${YEAR}_couples.json`""
-if ($INIT_PARAMS_COU -and (Test-Path $INIT_PARAMS_COU)) {
-    $cmd += " --init-params `"$INIT_PARAMS_COU`""
-    Write-Host "  Using initial params: $INIT_PARAMS_COU" -ForegroundColor Cyan
-}
-
-if (-not (Run-PythonScript $cmd "Estimate couples")) {
-    Write-Host "WARNING: Couples estimation failed (may not have couple data)" -ForegroundColor Yellow
-}
+# 7c. Estimate COUPLES (SKIPPED - running joint only)
+# Write-Host ""
+# Write-Host "--- 7c. Couples ---" -ForegroundColor Magenta
+# $cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" --mnl-file `"$MNL_FILE`" --group 10 --wage-spec $WAGE_SPEC --optimizer L-BFGS-B --maxiter 2000 --use-numba --post-estimation --out-file `"$RESULTS_DIR\fr_${YEAR}_couples.json`""
+# if ($INIT_PARAMS_COU -and (Test-Path $INIT_PARAMS_COU)) {
+#     $cmd += " --init-params `"$INIT_PARAMS_COU`""
+#     Write-Host "  Using initial params: $INIT_PARAMS_COU" -ForegroundColor Cyan
+# }
+#
+# if (-not (Run-PythonScript $cmd "Estimate couples")) {
+#     Write-Host "WARNING: Couples estimation failed (may not have couple data)" -ForegroundColor Yellow
+# }
+Write-Host "SKIPPED: Couples estimation (running joint only)" -ForegroundColor Yellow
 
 # 7d. JOINT ESTIMATION (all groups with shared opportunity parameters)
 Write-Host ""
 Write-Host "--- 7d. Joint Estimation (all groups) ---" -ForegroundColor Magenta
-$cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" --mnl-file `"$MNL_FILE`" --joint --wage-spec $WAGE_SPEC --optimizer L-BFGS-B --maxiter 500 --use-numba --n-jobs $CPU_CORES --out-file `"$RESULTS_DIR\fr_${YEAR}_joint.json`""
+$cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" --mnl-file `"$MNL_FILE`" --joint --wage-spec $WAGE_SPEC --optimizer L-BFGS-B --maxiter 2000 --use-numba --post-estimation --n-jobs $CPU_CORES --out-file `"$RESULTS_DIR\fr_${YEAR}_joint.json`""
 if ($INIT_PARAMS_JOINT -and (Test-Path $INIT_PARAMS_JOINT)) {
     $cmd += " --init-params `"$INIT_PARAMS_JOINT`""
     Write-Host "  Using initial params: $INIT_PARAMS_JOINT" -ForegroundColor Cyan
@@ -418,38 +421,50 @@ if (-not (Run-PythonScript $cmd "Joint estimation (shared opportunity parameters
 }
 
 # =====================================================================
-# STEP 8: POST-ESTIMATION ANALYSIS (OPTIONAL)
+# STEP 8: POST-ESTIMATION ANALYSIS (DISABLED - ALREADY DONE BY --post-estimation FLAG)
 # =====================================================================
-Write-Step "STEP 8/8: POST-ESTIMATION ANALYSIS (RURO_post_estimation.py)"
+# NOTE: Post-estimation is now handled automatically by the --post-estimation flag
+# in the estimation commands above (e.g., line 413 for joint, lines 371/385/399 for individuals).
+# This generates the "good" HTML output in outputs/estimates/fr/2016/ with proper standard
+# errors (has gradient function access for Hessian computation).
+#
+# The standalone RURO_post_estimation.py script below was creating duplicate "old/ugly"
+# output in outputs/post_estimation/fr/2016/ (CLI mode, limited functionality).
+#
+# ONLY uncomment this section if you need to re-run post-estimation on OLD results
+# that were generated WITHOUT the --post-estimation flag.
+# =====================================================================
 
-$POST_EST_DIR = "$PROJ_ROOT\outputs\post_estimation\fr\$YEAR"
-New-Item -ItemType Directory -Force -Path $POST_EST_DIR | Out-Null
-
-# Helper function for post-estimation
-function Run-PostEstimation {
-    param([string]$Name, [string]$EstFile, [string]$Group, [string]$Sex = "")
-    
-    if (-not (Test-Path $EstFile)) {
-        Write-Host "Skipping $Name (estimation file not found)" -ForegroundColor Yellow
-        return
-    }
-    
-    Write-Host ""
-    Write-Host "--- Post-Estimation: $Name ---" -ForegroundColor Magenta
-    
-    $outDir = "$POST_EST_DIR\$($Name.Replace(' ', '_').ToLower())"
-    New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-      $cmd = "python `"$SCRIPTS\RURO_post_estimation.py`" --results `"$EstFile`" --mnl-file `"$MNL_FILE`" --out-dir `"$outDir`" --wage-spec $WAGE_SPEC"
-    if ($Sex) { $cmd += " --sex $Sex" }
-    
-    Run-PythonScript $cmd "Post-estimation analysis for $Name"
-}
-
-# Run post-estimation for each successful estimation
-Run-PostEstimation -Name "Single Males" -EstFile "$RESULTS_DIR\fr_${YEAR}_single_males.json" -Group "1" -Sex "m"
-Run-PostEstimation -Name "Single Females" -EstFile "$RESULTS_DIR\fr_${YEAR}_single_females.json" -Group "1" -Sex "f"
-Run-PostEstimation -Name "Couples" -EstFile "$RESULTS_DIR\fr_${YEAR}_couples.json" -Group "10"
-Run-PostEstimation -Name "Joint" -EstFile "$RESULTS_DIR\fr_${YEAR}_joint.json" -Group "1"
+# Write-Step "STEP 8/8: POST-ESTIMATION ANALYSIS (RURO_post_estimation.py)"
+#
+# $POST_EST_DIR = "$PROJ_ROOT\outputs\post_estimation\fr\$YEAR"
+# New-Item -ItemType Directory -Force -Path $POST_EST_DIR | Out-Null
+#
+# # Helper function for post-estimation
+# function Run-PostEstimation {
+#     param([string]$Name, [string]$EstFile, [string]$Group, [string]$Sex = "")
+#
+#     if (-not (Test-Path $EstFile)) {
+#         Write-Host "Skipping $Name (estimation file not found)" -ForegroundColor Yellow
+#         return
+#     }
+#
+#     Write-Host ""
+#     Write-Host "--- Post-Estimation: $Name ---" -ForegroundColor Magenta
+#
+#     $outDir = "$POST_EST_DIR\$($Name.Replace(' ', '_').ToLower())"
+#     New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+#       $cmd = "python `"$SCRIPTS\RURO_post_estimation.py`" --results `"$EstFile`" --mnl-file `"$MNL_FILE`" --out-dir `"$outDir`" --wage-spec $WAGE_SPEC"
+#     if ($Sex) { $cmd += " --sex $Sex" }
+#
+#     Run-PythonScript $cmd "Post-estimation analysis for $Name"
+# }
+#
+# # Run post-estimation for each successful estimation
+# Run-PostEstimation -Name "Single Males" -EstFile "$RESULTS_DIR\fr_${YEAR}_single_males.json" -Group "1" -Sex "m"
+# Run-PostEstimation -Name "Single Females" -EstFile "$RESULTS_DIR\fr_${YEAR}_single_females.json" -Group "1" -Sex "f"
+# Run-PostEstimation -Name "Couples" -EstFile "$RESULTS_DIR\fr_${YEAR}_couples.json" -Group "10"
+# Run-PostEstimation -Name "Joint" -EstFile "$RESULTS_DIR\fr_${YEAR}_joint.json" -Group "1"
 
 # =====================================================================
 # PIPELINE COMPLETE

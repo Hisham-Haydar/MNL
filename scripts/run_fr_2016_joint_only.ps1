@@ -21,7 +21,7 @@
 $YEAR = 2016
 $COUNTRY = "FR"
 $WAGE_SPEC = "vw"    # "fw" = fixed wages, "vw" = variable wages
-$MAX_ITER = 500      # Maximum optimizer iterations
+$MAX_ITER = 2000     # Maximum optimizer iterations (increased for convergence)
 
 # Paths
 $PROJ_ROOT = "U:\Desktop\Nizam_Hisham\MNL"
@@ -35,6 +35,8 @@ $RESULTS_DIR = "$PROJ_ROOT\outputs\estimates\fr\$YEAR"
 $POST_EST_DIR = "$PROJ_ROOT\outputs\post_estimation\fr\$YEAR"
 
 # Initial parameter file (optional - set to $null to use defaults)
+# TIP: If you have previous estimates, use them as starting values for faster convergence:
+# $INIT_PARAMS_JOINT = "$RESULTS_DIR\fr_${YEAR}_joint_params_previous.csv"
 $INIT_PARAMS_JOINT = $null
 
 # Log file
@@ -183,71 +185,82 @@ Write-Host "Duration: $($duration.ToString('hh\:mm\:ss'))" -ForegroundColor Gree
 "" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
 
 # =====================================================================
-# POST-ESTIMATION ANALYSIS
+# POST-ESTIMATION ANALYSIS (DISABLED - ALREADY DONE BY --post-estimation FLAG)
 # =====================================================================
-Write-Host ""
-Write-Host "======================================================================" -ForegroundColor Magenta
-Write-Host "POST-ESTIMATION ANALYSIS" -ForegroundColor Magenta
-Write-Host "======================================================================" -ForegroundColor Magenta
-Write-Host ""
+# NOTE: Post-estimation is now handled automatically by the --post-estimation flag
+# in the estimation command above (line 140). This generates the "good" HTML output
+# in outputs/estimates/fr/2016/ with proper standard errors (has gradient function access).
+#
+# The standalone RURO_post_estimation.py script below was creating duplicate "old/ugly"
+# output in outputs/post_estimation/fr/2016/joint/ (CLI mode, limited functionality).
+#
+# ONLY uncomment this section if you need to re-run post-estimation on OLD results
+# that were generated WITHOUT the --post-estimation flag.
+# =====================================================================
 
-$EST_FILE = "$RESULTS_DIR\fr_${YEAR}_joint.json"
-if (-not (Test-Path $EST_FILE)) {
-    Write-Host "WARNING: Estimation file not found, skipping post-estimation" -ForegroundColor Yellow
-} else {
-    $outDir = "$POST_EST_DIR\joint"
-    New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-    
-    # NOTE: Post-estimation for joint model runs in CLI mode
-    # This generates:
-    # - Parameter estimates table
-    # - Model fit statistics (AIC, BIC, pseudo R²)
-    # - Marginal utility plots (MUC, MUL, MRS)
-    # - Parameter significance plot
-    # - HTML report with all diagnostics
-    #
-    # Full standard errors require running from within estimation script
-    # because gradient function is needed for Hessian computation
-    
-    $cmd = "python `"$SCRIPTS\RURO_post_estimation.py`" " +
-           "--results `"$EST_FILE`" " +
-           "--mnl-file `"$MNL_FILE`" " +
-           "--out-dir `"$outDir`" " +
-           "--wage-spec $WAGE_SPEC " +
-           "--sex pooled"
-    
-    Write-Host "Command:" -ForegroundColor Yellow
-    Write-Host $cmd -ForegroundColor DarkGray
-    Write-Host ""
-    
-    "## Post-Estimation Analysis" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
-    "``````bash" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
-    $cmd | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
-    "``````" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
-    "" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
-    
-    $startTime = Get-Date
-    $output = Invoke-Expression $cmd 2>&1
-    $exitCode = $LASTEXITCODE
-    $duration = (Get-Date) - $startTime
-    
-    if ($output) {
-        $outputStr = $output | Out-String
-        Write-Host $outputStr
-        "``````" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
-        $outputStr | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
-        "``````" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
-    }
-    
-    Write-Host ""
-    if ($exitCode -ne 0) {
-        Write-Host "WARNING: Post-estimation had errors (exit code: $exitCode)" -ForegroundColor Yellow
-    } else {
-        Write-Host "SUCCESS: Post-estimation analysis" -ForegroundColor Green
-    }
-    Write-Host "Duration: $($duration.ToString('hh\:mm\:ss'))" -ForegroundColor Green
-    "Duration: ``$($duration.ToString('hh\:mm\:ss'))``" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
-}
+# Write-Host ""
+# Write-Host "======================================================================" -ForegroundColor Magenta
+# Write-Host "POST-ESTIMATION ANALYSIS" -ForegroundColor Magenta
+# Write-Host "======================================================================" -ForegroundColor Magenta
+# Write-Host ""
+#
+# $EST_FILE = "$RESULTS_DIR\fr_${YEAR}_joint.json"
+# if (-not (Test-Path $EST_FILE)) {
+#     Write-Host "WARNING: Estimation file not found, skipping post-estimation" -ForegroundColor Yellow
+# } else {
+#     $outDir = "$POST_EST_DIR\joint"
+#     New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+#
+#     # NOTE: Post-estimation for joint model runs in CLI mode
+#     # This generates:
+#     # - Parameter estimates table
+#     # - Model fit statistics (AIC, BIC, pseudo R²)
+#     # - Marginal utility plots (MUC, MUL, MRS)
+#     # - Parameter significance plot
+#     # - HTML report with all diagnostics
+#     #
+#     # Full standard errors require running from within estimation script
+#     # because gradient function is needed for Hessian computation
+#
+#     $cmd = "python `"$SCRIPTS\RURO_post_estimation.py`" " +
+#            "--results `"$EST_FILE`" " +
+#            "--mnl-file `"$MNL_FILE`" " +
+#            "--out-dir `"$outDir`" " +
+#            "--wage-spec $WAGE_SPEC " +
+#            "--sex pooled"
+#
+#     Write-Host "Command:" -ForegroundColor Yellow
+#     Write-Host $cmd -ForegroundColor DarkGray
+#     Write-Host ""
+#
+#     "## Post-Estimation Analysis" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
+#     "``````bash" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
+#     $cmd | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
+#     "``````" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
+#     "" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
+#
+#     $startTime = Get-Date
+#     $output = Invoke-Expression $cmd 2>&1
+#     $exitCode = $LASTEXITCODE
+#     $duration = (Get-Date) - $startTime
+#
+#     if ($output) {
+#         $outputStr = $output | Out-String
+#         Write-Host $outputStr
+#         "``````" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
+#         $outputStr | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
+#         "``````" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
+#     }
+#
+#     Write-Host ""
+#     if ($exitCode -ne 0) {
+#         Write-Host "WARNING: Post-estimation had errors (exit code: $exitCode)" -ForegroundColor Yellow
+#     } else {
+#         Write-Host "SUCCESS: Post-estimation analysis" -ForegroundColor Green
+#     }
+#     Write-Host "Duration: $($duration.ToString('hh\:mm\:ss'))" -ForegroundColor Green
+#     "Duration: ``$($duration.ToString('hh\:mm\:ss'))``" | Out-File -FilePath $LOG_FILE -Append -Encoding utf8
+# }
 
 # =====================================================================
 # SUMMARY

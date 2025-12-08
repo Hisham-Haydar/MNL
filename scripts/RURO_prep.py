@@ -83,7 +83,19 @@ SCRATCH_DIR = PROJECT_ROOT / "scratch"
 if SCRATCH_DIR.exists():
     sys.path.insert(0, str(SCRATCH_DIR))
 
-from scratch.my_functions import setup_logging  # type: ignore
+try:
+    from scratch.my_functions import setup_logging  # type: ignore
+except Exception:
+    import logging
+
+    def setup_logging(level: str = "INFO") -> None:
+        """Fallback logging configuration when scratch.my_functions is unavailable."""
+        numeric_level = getattr(logging, level.upper(), logging.INFO)
+        logging.basicConfig(
+            level=numeric_level,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
 
 
 
@@ -143,16 +155,28 @@ def _resolve_processed_dir(
         for candidate in options:
             if not candidate.exists():
                 continue
-            # Prefer a path that actually contains the expected singles file
-            singles_candidate = candidate / f"singles_filtering_final.{export_format}"
-            if singles_candidate.exists():
+            # Prefer a path that actually contains the expected files
+            primary_singles = candidate / f"singles_filtering_final.{export_format}"
+            primary_couples = candidate / f"couples_filtering_final.{export_format}"
+            alt_singles = candidate / f"fr_{base_year}_singles.{export_format}"
+            alt_couples = candidate / f"fr_{base_year}_couples.{export_format}"
+
+            has_primary = primary_singles.exists() and primary_couples.exists()
+            has_alt = alt_singles.exists() and alt_couples.exists()
+
+            if has_primary or has_alt:
                 return candidate.resolve()
             chosen = chosen or candidate
 
-    # Fall back to first existing candidate or data_root-based path
     if chosen:
-        return chosen.resolve()
-    return (data_root() / rel).resolve()
+        raise FileNotFoundError(
+            f"Found candidate processed dir {chosen} but expected RURO files "
+            f"were missing (singles/couples in either filtering_final.* or fr_{base_year}_*.{export_format})."
+        )
+    raise FileNotFoundError(
+        "Could not locate a processed directory containing singles/couples RURO inputs. "
+        "Please run france_data_prep.py first or pass --processed-dir explicitly."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -333,13 +357,22 @@ def _add_france_nuts1_region_dummies(df: pd.DataFrame) -> pd.DataFrame:
                                 23: 9, 24: 9, 25: 9, 26: 9,
                 27: 10,
             }
-            df["drgn1"] = drgn2.map(drgn2_to_drgn1).fillna(1).astype(int)
+            mapped_drgn1 = drgn2.map(drgn2_to_drgn1)
+            if mapped_drgn1.isna().any():
+                unmapped = sorted(drgn2.loc[mapped_drgn1.isna()].dropna().unique())
+                import logging
+
+                logging.warning(
+                    "RURO_prep: drgn2 contained values with no NUTS1 mapping; leaving drgn1 as NaN. "
+                    f"Unmapped drgn2 values: {unmapped}"
+                )
+            df["drgn1"] = mapped_drgn1.astype("Int64")
         else:
             # No region info available, skip
             return df
 
     # Now create dummies from drgn1
-    drgn1 = pd.to_numeric(df["drgn1"], errors="coerce").fillna(1).astype(int)
+    drgn1 = pd.to_numeric(df["drgn1"], errors="coerce")
 
     # Validate drgn1 values are in expected range (protects against DRD mapping changes)
     valid_regions = set(range(1, 11))
@@ -374,7 +407,7 @@ def _add_france_nuts1_region_dummies(df: pd.DataFrame) -> pd.DataFrame:
 
     # Store drgn1 back if it was computed
     if "drgn1" not in df.columns or df["drgn1"].isna().all():
-        df["drgn1"] = drgn1
+        df["drgn1"] = drgn1.astype("Int64")
 
     return df
 

@@ -837,65 +837,50 @@ def extract_group_params_from_joint(
     """
     params = {name: float(val) for name, val in zip(param_names_joint, theta_joint)}
     
-    # Extract single males
+    # Extract single males - SIMPLIFIED MODEL (age_norm, n_children)
     sm_params = {
         "beta_l0": params.get("sm.pref.beta_l0", 0.0),
-        "beta_l_log_age": params.get("sm.pref.beta_l_log_age", 0.0),
-        "beta_l_log_age2": params.get("sm.pref.beta_l_log_age2", 0.0),
-        "beta_l_ch4_6": params.get("sm.pref.beta_l_ch4_6", 0.0),
-        "beta_l_ch7_9": params.get("sm.pref.beta_l_ch7_9", 0.0),
-        "beta_l_educL": params.get("sm.pref.beta_l_educL", 0.0),
+        "beta_l_age_norm": params.get("sm.pref.beta_l_age_norm", 0.0),
+        "beta_l_age_norm2": params.get("sm.pref.beta_l_age_norm2", 0.0),
+        "beta_l_n_children": params.get("sm.pref.beta_l_n_children", 0.0),
+                "beta_l_educL": params.get("sm.pref.beta_l_educL", 0.0),
         "beta_l_educH": params.get("sm.pref.beta_l_educH", 0.0),
-        "beta_l_reg2": params.get("sm.pref.beta_l_reg2", 0.0),
-        "beta_c": params.get("sm.pref.beta_c", 0.0),
+                "beta_c": params.get("sm.pref.beta_c", 0.0),
         "theta_l": params.get("sm.pref.theta_l", 0.5),
         "theta_c": params.get("sm.pref.theta_c", 0.5),
-        "beta_l_ch0_3": params.get("sm.pref.beta_l_ch0_3", 0.0),  # typically 0 for males
-    }
+            }
     
-    # Extract single females
+    # Extract single females - SIMPLIFIED MODEL (age_norm, n_children)
     sf_params = {
         "beta_l0": params.get("sf.pref.beta_l0", 0.0),
-        "beta_l_log_age": params.get("sf.pref.beta_l_log_age", 0.0),
-        "beta_l_log_age2": params.get("sf.pref.beta_l_log_age2", 0.0),
-        "beta_l_ch4_6": params.get("sf.pref.beta_l_ch4_6", 0.0),
-        "beta_l_ch7_9": params.get("sf.pref.beta_l_ch7_9", 0.0),
-        "beta_l_educL": params.get("sf.pref.beta_l_educL", 0.0),
+        "beta_l_age_norm": params.get("sf.pref.beta_l_age_norm", 0.0),
+        "beta_l_age_norm2": params.get("sf.pref.beta_l_age_norm2", 0.0),
+        "beta_l_n_children": params.get("sf.pref.beta_l_n_children", 0.0),
+                "beta_l_educL": params.get("sf.pref.beta_l_educL", 0.0),
         "beta_l_educH": params.get("sf.pref.beta_l_educH", 0.0),
-        "beta_l_reg2": params.get("sf.pref.beta_l_reg2", 0.0),
-        "beta_l_reg3": params.get("sf.pref.beta_l_reg3", 0.0),
-        "beta_c": params.get("sf.pref.beta_c", 0.0),
+                        "beta_c": params.get("sf.pref.beta_c", 0.0),
         "theta_l": params.get("sf.pref.theta_l", 0.5),
         "theta_c": params.get("sf.pref.theta_c", 0.5),
-        "beta_l_ch0_3": params.get("sf.pref.beta_l_ch0_3", 0.0),
-    }
+            }
     
-    # Extract couples - male leisure
+    # Extract couples - male leisure - SIMPLIFIED MODEL
     cou_m_params = {
         "beta_l0": params.get("cou.pref.beta_l0_m", 0.0),
-        "beta_l_log_age": params.get("cou.pref.beta_l_log_age_m", 0.0),
-        "beta_l_log_age2": params.get("cou.pref.beta_l_log_age2_m", 0.0),
-        "beta_l_ch0_3": params.get("cou.pref.beta_l_ch0_3_m", 0.0),
-        "beta_l_ch4_6": params.get("cou.pref.beta_l_ch4_6_m", 0.0),
-        "beta_l_ch7_9": params.get("cou.pref.beta_l_ch7_9_m", 0.0),
-        "beta_l_reg2": params.get("cou.pref.beta_l_reg2_m", 0.0),
-        "beta_l_reg3": params.get("cou.pref.beta_l_reg3_m", 0.0),
-        "beta_l_educL": params.get("cou.pref.beta_l_educL_m", 0.0),
+        "beta_l_age_norm": params.get("cou.pref.beta_l_age_norm_m", 0.0),
+        "beta_l_age_norm2": params.get("cou.pref.beta_l_age_norm2_m", 0.0),
+        "beta_l_n_children": params.get("cou.pref.beta_l_n_children_m", 0.0),
+                                        "beta_l_educL": params.get("cou.pref.beta_l_educL_m", 0.0),
         "beta_l_educH": params.get("cou.pref.beta_l_educH_m", 0.0),
         "theta_l": params.get("cou.pref.theta_l_m", 0.5),
     }
     
-    # Extract couples - female leisure
+    # Extract couples - female leisure - SIMPLIFIED MODEL
     cou_f_params = {
         "beta_l0": params.get("cou.pref.beta_l0_f", 0.0),
-        "beta_l_log_age": params.get("cou.pref.beta_l_log_age_f", 0.0),
-        "beta_l_log_age2": params.get("cou.pref.beta_l_log_age2_f", 0.0),
-        "beta_l_ch0_3": params.get("cou.pref.beta_l_ch0_3_f", 0.0),
-        "beta_l_ch4_6": params.get("cou.pref.beta_l_ch4_6_f", 0.0),
-        "beta_l_ch7_9": params.get("cou.pref.beta_l_ch7_9_f", 0.0),
-        "beta_l_reg2": params.get("cou.pref.beta_l_reg2_f", 0.0),
-        "beta_l_reg3": params.get("cou.pref.beta_l_reg3_f", 0.0),
-        "beta_l_educL": params.get("cou.pref.beta_l_educL_f", 0.0),
+        "beta_l_age_norm": params.get("cou.pref.beta_l_age_norm_f", 0.0),
+        "beta_l_age_norm2": params.get("cou.pref.beta_l_age_norm2_f", 0.0),
+        "beta_l_n_children": params.get("cou.pref.beta_l_n_children_f", 0.0),
+                                        "beta_l_educL": params.get("cou.pref.beta_l_educL_f", 0.0),
         "beta_l_educH": params.get("cou.pref.beta_l_educH_f", 0.0),
         "theta_l": params.get("cou.pref.theta_l_f", 0.5),
     }
@@ -906,8 +891,7 @@ def extract_group_params_from_joint(
         "theta_l_f": params.get("cou.pref.theta_l_f", 0.5),
         "theta_c": params.get("cou.pref.theta_c", 0.5),
         "beta_c": params.get("cou.pref.beta_c", 0.0),
-        "beta_interaction": params.get("cou.pref.beta_interaction", 0.0),
-    }
+            }
     
     return {
         GROUP_SINGLE_MALE: sm_params,
@@ -1025,10 +1009,9 @@ def compute_beta_leisure_at_median(
     """
     Compute β_l(X) at median/mode covariate values.
     
-    β_l(X) = β_l0 + β_l_log_age * log(age) + β_l_log_age2 * log(age)²
-             + β_l_ch0_3 * ch0_3 + β_l_ch4_6 * ch4_6 + β_l_ch7_9 * ch7_9
-             + β_l_educL * educL + β_l_educH * educH
-             + β_l_reg2 * reg2 + ...
+    β_l(X) = β_l0 + β_l_age_norm * age_norm + β_l_age_norm2 * age_norm²
+             + β_l_n_children * n_children
+             (or legacy: β_l_log_age, β_l_ch0_3, etc.)
     
     Parameters
     ----------
@@ -1044,13 +1027,22 @@ def compute_beta_leisure_at_median(
     """
     beta_l = group_params.get("beta_l0", 0.0)
     
-    # Age effects
+    # Age effects (simplified model uses normalized age)
+    age_norm = median_shifters.get("age_norm", 0.0)
+    age_norm2 = median_shifters.get("age_norm2", age_norm ** 2)
+    beta_l += group_params.get("beta_l_age_norm", 0.0) * age_norm
+    beta_l += group_params.get("beta_l_age_norm2", 0.0) * age_norm2
+    
+    # Legacy age effects (for backward compatibility)
     log_age = median_shifters.get("log_age", np.log(40))
     log_age2 = median_shifters.get("log_age2", log_age ** 2)
     beta_l += group_params.get("beta_l_log_age", 0.0) * log_age
     beta_l += group_params.get("beta_l_log_age2", 0.0) * log_age2
     
-    # Children effects
+    # Children effects (simplified model uses n_children)
+    beta_l += group_params.get("beta_l_n_children", 0.0) * median_shifters.get("n_children", 0.0)
+    
+    # Legacy children effects (for backward compatibility)
     beta_l += group_params.get("beta_l_ch0_3", 0.0) * median_shifters.get("children0_3", 0.0)
     beta_l += group_params.get("beta_l_ch4_6", 0.0) * median_shifters.get("children4_6", 0.0)
     beta_l += group_params.get("beta_l_ch7_9", 0.0) * median_shifters.get("children7_9", 0.0)
@@ -1473,7 +1465,7 @@ def load_initial_params_from_csv(
     Example CSV format:
         parameter,value,description,lower_bound,upper_bound
         beta_l0,0.5,"Base leisure preference",-5,5
-        beta_l_log_age,0.1,"Age effect on leisure",-2,2
+        beta_l_age_norm,0.1,"Normalized age effect on leisure",-2,2
         ...
     """
     df = pd.read_csv(csv_path)
@@ -1581,6 +1573,10 @@ def create_init_params_template(
     # Default descriptions for common parameters
     default_desc = {
         "beta_l0": "Base preference for leisure",
+        "beta_l_age_norm": "Effect of normalized age on leisure preference",
+        "beta_l_age_norm2": "Effect of normalized age² on leisure preference",
+        "beta_l_n_children": "Effect of number of children on leisure",
+        # Legacy parameters (for backward compatibility)
         "beta_l_log_age": "Effect of log(age) on leisure preference",
         "beta_l_log_age2": "Effect of log(age)² on leisure preference",
         "beta_l_ch0_3": "Effect of children 0-3 on leisure (females)",
@@ -2415,6 +2411,125 @@ def compute_simulation_elasticities(
 # FIT DIAGNOSTICS: PREDICTED VS OBSERVED
 # =============================================================================
 
+# Constants for normalization (matching RURO_estimate_FR.py)
+MEAN_DISPY_NORM = 25000.0  # Mean disposable income for normalization
+TOTAL_LEISURE_HOURS = 80.0  # Total available leisure hours per week
+MEAN_LHW_NORM = 35.0  # Mean labor hours for normalization
+
+def compute_utilities_from_params(
+    df: pd.DataFrame,
+    group_params: Dict[str, float],
+    group: str,
+    hours_col: str = "lhw",
+) -> np.ndarray:
+    """
+    Compute systematic utility V for each row using estimated parameters.
+    
+    This function replicates the utility computation from RURO_estimate_FR.py
+    for use in post-estimation fit diagnostics.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        MNL dataset with consumption, leisure, and covariate columns
+    group_params : Dict[str, float]
+        Estimated parameters for this group (e.g., beta_l0, beta_c, theta_l, etc.)
+    group : str
+        Group identifier ('sm', 'sf', 'cou_m', 'cou_f')
+    hours_col : str
+        Column name for hours worked
+        
+    Returns
+    -------
+    np.ndarray
+        Utility values for each row
+    """
+    n = len(df)
+    
+    # Get parameters
+    beta_l0 = group_params.get("beta_l0", 0.0)
+    beta_l_age_norm = group_params.get("beta_l_age_norm", 0.0)
+    beta_l_age_norm2 = group_params.get("beta_l_age_norm2", 0.0)
+    beta_l_n_children = group_params.get("beta_l_n_children", 0.0)
+    beta_l_educL = group_params.get("beta_l_educL", 0.0)
+    beta_l_educH = group_params.get("beta_l_educH", 0.0)
+    beta_c = group_params.get("beta_c", 0.0)
+    theta_l = group_params.get("theta_l", 0.5)
+    theta_c = group_params.get("theta_c", 0.5)
+    
+    # Get consumption - try various column names
+    c = None
+    if "c_norm" in df.columns and not df["c_norm"].isna().all():
+        c = df["c_norm"].values
+    elif "consumption" in df.columns and not df["consumption"].isna().all():
+        c = df["consumption"].values / MEAN_DISPY_NORM
+    elif "ils_dispy" in df.columns and not df["ils_dispy"].isna().all():
+        c = df["ils_dispy"].values / MEAN_DISPY_NORM
+    if c is None:
+        c = np.ones(n)
+    
+    # Get leisure - try various column names
+    l = None
+    # For couples, use hours_m or hours_f
+    if group in [GROUP_COUPLE_MALE, GROUP_COUPLE_FEMALE]:
+        if hours_col in df.columns:
+            hours = df[hours_col].values
+            l = (TOTAL_LEISURE_HOURS - hours) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+    else:
+        # Singles
+        if "leisure" in df.columns and not df["leisure"].isna().all():
+            l = df["leisure"].values / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+        elif hours_col in df.columns:
+            hours = df[hours_col].values
+            l = (TOTAL_LEISURE_HOURS - hours) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+    
+    if l is None:
+        l = np.ones(n)
+    
+    # Clip to avoid numerical issues
+    c = np.clip(c, 1e-6, None)
+    l = np.clip(l, 1e-6, None)
+    
+    # Get covariates - handle suffix for couples
+    suffix = ""
+    if group == GROUP_COUPLE_MALE:
+        suffix = "_m"
+    elif group == GROUP_COUPLE_FEMALE:
+        suffix = "_f"
+    
+    def get_col(name, default=0.0):
+        for col in [f"{name}{suffix}", name]:
+            if col in df.columns:
+                return df[col].values
+        return np.full(n, default)
+    
+    age_norm = get_col("age_norm", 0.0)
+    age_norm2 = get_col("age_norm2", 0.0)
+    if np.sum(age_norm2) == 0:
+        age_norm2 = age_norm ** 2
+    n_children = get_col("n_children", 0.0)
+    educL = get_col("educL", 0.0)
+    educH = get_col("educH", 0.0)
+    
+    # Build leisure coefficient
+    beta_leisure = (
+        beta_l0
+        + beta_l_age_norm * age_norm
+        + beta_l_age_norm2 * age_norm2
+        + beta_l_n_children * n_children
+        + beta_l_educL * educL
+        + beta_l_educH * educH
+    )
+    
+    # Box-Cox transforms
+    l_bc = boxcox_transform(l, theta_l)
+    c_bc = boxcox_transform(c, theta_c)
+    
+    # Utility
+    V = beta_leisure * l_bc + beta_c * c_bc
+    
+    return V
+
 # -----------------------------------------------------------------------------
 # NEGATIVE MUC/MUL DIAGNOSTICS AND MUC=0 ANALYSIS
 # -----------------------------------------------------------------------------
@@ -2560,6 +2675,11 @@ def compute_negative_mu_diagnostics(
         beta_l_arr = np.full(len(obs_df), beta_l0)
         
         # Add shifters if available
+        # Simplified model uses age_norm, n_children
+        if "age_norm" in obs_df.columns:
+            beta_l_arr += params.get("beta_l_age_norm", 0.0) * obs_df["age_norm"].values
+            beta_l_arr += params.get("beta_l_age_norm2", 0.0) * obs_df["age_norm"].values ** 2
+        # Legacy: log_age
         if "log_age" in obs_df.columns:
             beta_l_arr += params.get("beta_l_log_age", 0.0) * obs_df["log_age"].values
             beta_l_arr += params.get("beta_l_log_age2", 0.0) * obs_df["log_age"].values ** 2
@@ -2568,7 +2688,11 @@ def compute_negative_mu_diagnostics(
             beta_l_arr += params.get("beta_l_log_age", 0.0) * log_age
             beta_l_arr += params.get("beta_l_log_age2", 0.0) * log_age ** 2
         
-        # Children shifters
+        # Children shifters (simplified model)
+        if "n_children" in obs_df.columns:
+            beta_l_arr += params.get("beta_l_n_children", 0.0) * obs_df["n_children"].values
+        
+        # Legacy children shifters
         for ch_col, param_key in [("dch0_3", "beta_l_ch0_3"), ("dch4_6", "beta_l_ch4_6"), ("dch7_9", "beta_l_ch7_9")]:
             if ch_col in obs_df.columns:
                 beta_l_arr += params.get(param_key, 0.0) * obs_df[ch_col].values
@@ -3114,65 +3238,50 @@ def extract_group_params_from_joint(
     """
     params = {name: float(val) for name, val in zip(param_names_joint, theta_joint)}
     
-    # Extract single males
+    # Extract single males - SIMPLIFIED MODEL (age_norm, n_children)
     sm_params = {
         "beta_l0": params.get("sm.pref.beta_l0", 0.0),
-        "beta_l_log_age": params.get("sm.pref.beta_l_log_age", 0.0),
-        "beta_l_log_age2": params.get("sm.pref.beta_l_log_age2", 0.0),
-        "beta_l_ch4_6": params.get("sm.pref.beta_l_ch4_6", 0.0),
-        "beta_l_ch7_9": params.get("sm.pref.beta_l_ch7_9", 0.0),
-        "beta_l_educL": params.get("sm.pref.beta_l_educL", 0.0),
+        "beta_l_age_norm": params.get("sm.pref.beta_l_age_norm", 0.0),
+        "beta_l_age_norm2": params.get("sm.pref.beta_l_age_norm2", 0.0),
+        "beta_l_n_children": params.get("sm.pref.beta_l_n_children", 0.0),
+                "beta_l_educL": params.get("sm.pref.beta_l_educL", 0.0),
         "beta_l_educH": params.get("sm.pref.beta_l_educH", 0.0),
-        "beta_l_reg2": params.get("sm.pref.beta_l_reg2", 0.0),
-        "beta_c": params.get("sm.pref.beta_c", 0.0),
+                "beta_c": params.get("sm.pref.beta_c", 0.0),
         "theta_l": params.get("sm.pref.theta_l", 0.5),
         "theta_c": params.get("sm.pref.theta_c", 0.5),
-        "beta_l_ch0_3": params.get("sm.pref.beta_l_ch0_3", 0.0),  # typically 0 for males
-    }
+            }
     
-    # Extract single females
+    # Extract single females - SIMPLIFIED MODEL (age_norm, n_children)
     sf_params = {
         "beta_l0": params.get("sf.pref.beta_l0", 0.0),
-        "beta_l_log_age": params.get("sf.pref.beta_l_log_age", 0.0),
-        "beta_l_log_age2": params.get("sf.pref.beta_l_log_age2", 0.0),
-        "beta_l_ch4_6": params.get("sf.pref.beta_l_ch4_6", 0.0),
-        "beta_l_ch7_9": params.get("sf.pref.beta_l_ch7_9", 0.0),
-        "beta_l_educL": params.get("sf.pref.beta_l_educL", 0.0),
+        "beta_l_age_norm": params.get("sf.pref.beta_l_age_norm", 0.0),
+        "beta_l_age_norm2": params.get("sf.pref.beta_l_age_norm2", 0.0),
+        "beta_l_n_children": params.get("sf.pref.beta_l_n_children", 0.0),
+                "beta_l_educL": params.get("sf.pref.beta_l_educL", 0.0),
         "beta_l_educH": params.get("sf.pref.beta_l_educH", 0.0),
-        "beta_l_reg2": params.get("sf.pref.beta_l_reg2", 0.0),
-        "beta_l_reg3": params.get("sf.pref.beta_l_reg3", 0.0),
-        "beta_c": params.get("sf.pref.beta_c", 0.0),
+                        "beta_c": params.get("sf.pref.beta_c", 0.0),
         "theta_l": params.get("sf.pref.theta_l", 0.5),
         "theta_c": params.get("sf.pref.theta_c", 0.5),
-        "beta_l_ch0_3": params.get("sf.pref.beta_l_ch0_3", 0.0),
-    }
+            }
     
-    # Extract couples - male leisure
+    # Extract couples - male leisure - SIMPLIFIED MODEL
     cou_m_params = {
         "beta_l0": params.get("cou.pref.beta_l0_m", 0.0),
-        "beta_l_log_age": params.get("cou.pref.beta_l_log_age_m", 0.0),
-        "beta_l_log_age2": params.get("cou.pref.beta_l_log_age2_m", 0.0),
-        "beta_l_ch0_3": params.get("cou.pref.beta_l_ch0_3_m", 0.0),
-        "beta_l_ch4_6": params.get("cou.pref.beta_l_ch4_6_m", 0.0),
-        "beta_l_ch7_9": params.get("cou.pref.beta_l_ch7_9_m", 0.0),
-        "beta_l_reg2": params.get("cou.pref.beta_l_reg2_m", 0.0),
-        "beta_l_reg3": params.get("cou.pref.beta_l_reg3_m", 0.0),
-        "beta_l_educL": params.get("cou.pref.beta_l_educL_m", 0.0),
+        "beta_l_age_norm": params.get("cou.pref.beta_l_age_norm_m", 0.0),
+        "beta_l_age_norm2": params.get("cou.pref.beta_l_age_norm2_m", 0.0),
+        "beta_l_n_children": params.get("cou.pref.beta_l_n_children_m", 0.0),
+                                        "beta_l_educL": params.get("cou.pref.beta_l_educL_m", 0.0),
         "beta_l_educH": params.get("cou.pref.beta_l_educH_m", 0.0),
         "theta_l": params.get("cou.pref.theta_l_m", 0.5),
     }
     
-    # Extract couples - female leisure
+    # Extract couples - female leisure - SIMPLIFIED MODEL
     cou_f_params = {
         "beta_l0": params.get("cou.pref.beta_l0_f", 0.0),
-        "beta_l_log_age": params.get("cou.pref.beta_l_log_age_f", 0.0),
-        "beta_l_log_age2": params.get("cou.pref.beta_l_log_age2_f", 0.0),
-        "beta_l_ch0_3": params.get("cou.pref.beta_l_ch0_3_f", 0.0),
-        "beta_l_ch4_6": params.get("cou.pref.beta_l_ch4_6_f", 0.0),
-        "beta_l_ch7_9": params.get("cou.pref.beta_l_ch7_9_f", 0.0),
-        "beta_l_reg2": params.get("cou.pref.beta_l_reg2_f", 0.0),
-        "beta_l_reg3": params.get("cou.pref.beta_l_reg3_f", 0.0),
-        "beta_l_educL": params.get("cou.pref.beta_l_educL_f", 0.0),
+        "beta_l_age_norm": params.get("cou.pref.beta_l_age_norm_f", 0.0),
+        "beta_l_age_norm2": params.get("cou.pref.beta_l_age_norm2_f", 0.0),
+        "beta_l_n_children": params.get("cou.pref.beta_l_n_children_f", 0.0),
+                                        "beta_l_educL": params.get("cou.pref.beta_l_educL_f", 0.0),
         "beta_l_educH": params.get("cou.pref.beta_l_educH_f", 0.0),
         "theta_l": params.get("cou.pref.theta_l_f", 0.5),
     }
@@ -3183,8 +3292,7 @@ def extract_group_params_from_joint(
         "theta_l_f": params.get("cou.pref.theta_l_f", 0.5),
         "theta_c": params.get("cou.pref.theta_c", 0.5),
         "beta_c": params.get("cou.pref.beta_c", 0.0),
-        "beta_interaction": params.get("cou.pref.beta_interaction", 0.0),
-    }
+            }
     
     return {
         GROUP_SINGLE_MALE: sm_params,
@@ -3302,10 +3410,9 @@ def compute_beta_leisure_at_median(
     """
     Compute β_l(X) at median/mode covariate values.
     
-    β_l(X) = β_l0 + β_l_log_age * log(age) + β_l_log_age2 * log(age)²
-             + β_l_ch0_3 * ch0_3 + β_l_ch4_6 * ch4_6 + β_l_ch7_9 * ch7_9
-             + β_l_educL * educL + β_l_educH * educH
-             + β_l_reg2 * reg2 + ...
+    β_l(X) = β_l0 + β_l_age_norm * age_norm + β_l_age_norm2 * age_norm²
+             + β_l_n_children * n_children
+             (or legacy: β_l_log_age, β_l_ch0_3, etc.)
     
     Parameters
     ----------
@@ -3321,13 +3428,22 @@ def compute_beta_leisure_at_median(
     """
     beta_l = group_params.get("beta_l0", 0.0)
     
-    # Age effects
+    # Age effects (simplified model uses normalized age)
+    age_norm = median_shifters.get("age_norm", 0.0)
+    age_norm2 = median_shifters.get("age_norm2", age_norm ** 2)
+    beta_l += group_params.get("beta_l_age_norm", 0.0) * age_norm
+    beta_l += group_params.get("beta_l_age_norm2", 0.0) * age_norm2
+    
+    # Legacy age effects (for backward compatibility)
     log_age = median_shifters.get("log_age", np.log(40))
     log_age2 = median_shifters.get("log_age2", log_age ** 2)
     beta_l += group_params.get("beta_l_log_age", 0.0) * log_age
     beta_l += group_params.get("beta_l_log_age2", 0.0) * log_age2
     
-    # Children effects
+    # Children effects (simplified model uses n_children)
+    beta_l += group_params.get("beta_l_n_children", 0.0) * median_shifters.get("n_children", 0.0)
+    
+    # Legacy children effects (for backward compatibility)
     beta_l += group_params.get("beta_l_ch0_3", 0.0) * median_shifters.get("children0_3", 0.0)
     beta_l += group_params.get("beta_l_ch4_6", 0.0) * median_shifters.get("children4_6", 0.0)
     beta_l += group_params.get("beta_l_ch7_9", 0.0) * median_shifters.get("children7_9", 0.0)
@@ -3750,7 +3866,7 @@ def load_initial_params_from_csv(
     Example CSV format:
         parameter,value,description,lower_bound,upper_bound
         beta_l0,0.5,"Base leisure preference",-5,5
-        beta_l_log_age,0.1,"Age effect on leisure",-2,2
+        beta_l_age_norm,0.1,"Normalized age effect on leisure",-2,2
         ...
     """
     df = pd.read_csv(csv_path)
@@ -3858,6 +3974,10 @@ def create_init_params_template(
     # Default descriptions for common parameters
     default_desc = {
         "beta_l0": "Base preference for leisure",
+        "beta_l_age_norm": "Effect of normalized age on leisure preference",
+        "beta_l_age_norm2": "Effect of normalized age² on leisure preference",
+        "beta_l_n_children": "Effect of number of children on leisure",
+        # Legacy parameters (for backward compatibility)
         "beta_l_log_age": "Effect of log(age) on leisure preference",
         "beta_l_log_age2": "Effect of log(age)² on leisure preference",
         "beta_l_ch0_3": "Effect of children 0-3 on leisure (females)",
@@ -5941,26 +6061,49 @@ def run_joint_post_estimation(
     elast_csv_path = out_dir / f"{wage_spec}_joint_elasticities.csv"
     elasticities_df.to_csv(elast_csv_path, index=False)
     LOGGER.info(f"  Elasticities saved to: {elast_csv_path.name}")
-    
-    # =========================================================================
+      # =========================================================================
     # 6. Compute fit diagnostics
     # =========================================================================
     LOGGER.info("\n6. Computing fit diagnostics...")
     fit_results = {}
     
-    for group, df in [
-        (GROUP_SINGLE_MALE, df_sm),
-        (GROUP_SINGLE_FEMALE, df_sf),
-        (GROUP_COUPLE_MALE, df_cou),
-        (GROUP_COUPLE_FEMALE, df_cou),
-    ]:
+    # Define groups with their corresponding hours columns
+    # For singles: use "lhw" (labor hours worked)
+    # For couples: use "hours_m" for males, "hours_f" for females
+    group_configs = [
+        (GROUP_SINGLE_MALE, df_sm, "lhw"),
+        (GROUP_SINGLE_FEMALE, df_sf, "lhw"),
+        (GROUP_COUPLE_MALE, df_cou, "hours_m"),
+        (GROUP_COUPLE_FEMALE, df_cou, "hours_f"),
+    ]
+    
+    for group, df, hours_col in group_configs:
         if df is not None:
             try:
-                fit = compute_fit_diagnostics(df, group)
+                # Compute utility values from estimated parameters
+                params_for_group = group_params.get(group, {})
+                # For couples, also need shared params (beta_c, theta_c)
+                if group in [GROUP_COUPLE_MALE, GROUP_COUPLE_FEMALE]:
+                    shared = group_params.get(GROUP_COUPLE, {})
+                    params_for_group = {**params_for_group, **shared}
+                
+                # Add V column to dataframe
+                df_with_v = df.copy()
+                V = compute_utilities_from_params(df_with_v, params_for_group, group, hours_col)
+                df_with_v["V"] = V
+                
+                fit = compute_fit_diagnostics(df_with_v, group, hours_col=hours_col, V_col="V")
                 fit_results[group] = fit
-                LOGGER.info(f"  {group}: participation={fit.get('participation_rate_observed', 'N/A'):.2%}")
+                obs_part = fit.get('participation_rate_observed', np.nan)
+                pred_part = fit.get('participation_rate_predicted', np.nan)
+                if not np.isnan(pred_part):
+                    LOGGER.info(f"  {group}: observed={obs_part:.2%}, predicted={pred_part:.2%}")
+                else:
+                    LOGGER.info(f"  {group}: observed={obs_part:.2%}, predicted=N/A")
             except Exception as e:
                 LOGGER.warning(f"  {group}: fit diagnostics failed - {e}")
+                import traceback
+                traceback.print_exc()
     
     # Generate fit plots
     fit_plot_paths = {}
@@ -6618,9 +6761,25 @@ def _build_joint_html_report(
     {elast_html}
     <p><small><em>Note: For exact elasticities, use simulation-based methods with tax-benefit integration.</em></small></p>
   </section>
-  
-  <section>
+    <section>
     <h2>🎯 Fit Diagnostics</h2>
+    
+    <h3>Observed vs Predicted</h3>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Group</th>
+          <th>Obs. Participation</th>
+          <th>Pred. Participation</th>
+          <th>Obs. Mean Hours</th>
+          <th>Pred. Mean Hours</th>
+        </tr>
+      </thead>
+      <tbody>
+        {_build_fit_results_rows(fit_results)}
+      </tbody>
+    </table>
+    
     <div class="two-col">
       <figure>
         <figcaption>Participation Rates</figcaption>
@@ -6680,6 +6839,47 @@ def _build_joint_html_report(
 # =============================================================================
 # COMMAND-LINE INTERFACE
 # =============================================================================
+
+def _format_value(v):
+    if isinstance(v, float):
+        if not np.isfinite(v):
+            return "N/A"
+        if abs(v) < 0.001 or abs(v) > 10000:
+            return f"{v:.4e}"
+        return f"{v:.4f}"
+    return str(v)
+
+def _build_fit_results_rows(fit_res):
+    """Build HTML rows for fit results table."""
+    if not fit_res:
+        return "<tr><td colspan='5'>No fit results available</td></tr>"
+    
+    group_labels = {
+        GROUP_SINGLE_MALE: "Single Males",
+        GROUP_SINGLE_FEMALE: "Single Females",
+        GROUP_COUPLE_MALE: "Males in Couples",
+        GROUP_COUPLE_FEMALE: "Females in Couples",
+    }
+    
+    rows = []
+    for group in [GROUP_SINGLE_MALE, GROUP_SINGLE_FEMALE, GROUP_COUPLE_MALE, GROUP_COUPLE_FEMALE]:
+        if group in fit_res:
+            r = fit_res[group]
+            obs_part = r.get("participation_rate_observed", np.nan)
+            pred_part = r.get("participation_rate_predicted", np.nan)
+            obs_hours = r.get("mean_hours_observed", np.nan)
+            pred_hours = r.get("mean_hours_predicted", np.nan)
+            
+            rows.append(f"""
+            <tr>
+                <td>{group_labels.get(group, group)}</td>
+                <td>{obs_part*100:.1f}%</td>
+                <td>{pred_part*100:.1f}% {'' if np.isnan(pred_part) else ''}</td>
+                <td>{obs_hours:.1f}</td>                <td>{pred_hours:.1f}</td>
+            </tr>
+            """)
+        return ''.join(rows)
+
 
 def main():
     """
@@ -6984,4 +7184,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    sys.exit(
+        "RURO_post_estimation CLI is disabled. "
+        "Use RURO_estimate_FR.py with --post-estimation to generate reports."
+    )

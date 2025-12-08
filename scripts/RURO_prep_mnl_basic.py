@@ -422,8 +422,7 @@ def _transform_couples_to_wide(df: pd.DataFrame) -> pd.DataFrame:
         # Keep only pairs with exactly 2 persons
         valid_idx = person_counts[person_counts == 2].index
         df = df.set_index(index_cols).loc[valid_idx].reset_index()
-    
-    # Define common (household-level) variables that should NOT be pivoted
+      # Define common (household-level) variables that should NOT be pivoted
     # These stay as single columns in the wide format
     common_vars = [
         # IDs
@@ -433,7 +432,10 @@ def _transform_couples_to_wide(df: pd.DataFrame) -> pd.DataFrame:
         # Group identifiers
         "ruro_group", "group", "groupy", "sample_group",
         # Household characteristics (same for both partners)
+        # Include both old naming (children0_3) and new naming (num_children_*)
         "children0_3", "children4_6", "children7_9", "children",
+        "num_children_total", "num_children_0_3", "num_children_3_6", 
+        "num_children_6_11", "num_children_11_17",
         "hh_size", "hhlma",
         # Region (household-level)
         "drgn1", "drgn2", "regW", "regB", "reg2", "reg3",
@@ -499,7 +501,52 @@ def _transform_couples_to_wide(df: pd.DataFrame) -> pd.DataFrame:
     pivot_df = pivot_df.reset_index()
     
     # Merge common vars back
-    wide_df = pivot_df.merge(common_df, on=index_cols, how="left")
+    wide_df = pivot_df.merge(common_df, on=index_cols, how="left")    # ------------------------------------------------------------------
+    # Age normalization: DEMEAN (dag - mean) instead of ratio
+    # This gives age_norm centered at 0, with age_norm2 = age_norm^2
+    # ------------------------------------------------------------------
+    dag_cols = []
+    for col in ["dag_m", "dag_f"]:
+        if col in wide_df.columns:
+            dag_cols.append(pd.to_numeric(wide_df[col], errors="coerce"))
+    mean_dag = pd.concat(dag_cols, axis=0).mean(skipna=True) if dag_cols else np.nan
+    if mean_dag and not np.isnan(mean_dag):
+        if "dag_m" in wide_df.columns:
+            wide_df["age_norm_m"] = pd.to_numeric(wide_df["dag_m"], errors="coerce") - mean_dag
+            wide_df["age_norm2_m"] = wide_df["age_norm_m"] ** 2
+        if "dag_f" in wide_df.columns:
+            wide_df["age_norm_f"] = pd.to_numeric(wide_df["dag_f"], errors="coerce") - mean_dag
+            wide_df["age_norm2_f"] = wide_df["age_norm_f"] ** 2
+        LOGGER.info(f"  Age normalization: mean_dag={mean_dag:.2f} (demeaned)")
+    else:
+        if "dag_m" in wide_df.columns:
+            wide_df["age_norm_m"] = np.nan
+            wide_df["age_norm2_m"] = np.nan
+        if "dag_f" in wide_df.columns:
+            wide_df["age_norm_f"] = np.nan
+            wide_df["age_norm2_f"] = np.nan    # Use actual column names from data_prep: num_children_total, num_children_0_3, etc.
+    # If num_children_total exists, use it directly; otherwise sum the age-band columns
+    if "num_children_total" in wide_df.columns:
+        wide_df["n_children"] = pd.to_numeric(wide_df["num_children_total"], errors="coerce").fillna(0).astype(int)
+        LOGGER.info(f"  n_children: using num_children_total column")
+    else:
+        # Try both old naming (children0_3) and new naming (num_children_0_3)
+        child_cols = [c for c in [
+            "children0_3", "children4_6", "children7_9", "children",  # old names
+            "num_children_0_3", "num_children_3_6", "num_children_6_11", "num_children_11_17"  # new names
+        ] if c in wide_df.columns]
+        if child_cols:
+            wide_df["n_children"] = (
+                wide_df[child_cols]
+                .apply(pd.to_numeric, errors="coerce")
+                .fillna(0)
+                .sum(axis=1)
+                .astype(int)
+            )
+            LOGGER.info(f"  n_children: summed from columns {child_cols}")
+        else:
+            wide_df["n_children"] = 0
+            LOGGER.warning("  n_children: no children columns found, set to 0")
     
     LOGGER.info(f"  Result: {len(wide_df)} rows, {len(wide_df.columns)} columns")
     
@@ -1284,7 +1331,40 @@ def main() -> None:
     
     # Compute alternative-specific other_members_income from EUROMOD output
     LOGGER.info("Computing alternative-specific other_members_income for singles...")
-    singles_long = _compute_alternative_specific_other_members_income(singles_long)
+    singles_long = _compute_alternative_specific_other_members_income(singles_long)    # ------------------------------------------------------------------
+    # Age normalization: DEMEAN (dag - mean) for singles
+    # This gives age_norm centered at 0, with age_norm2 = age_norm^2
+    # ------------------------------------------------------------------
+    dag_series = pd.to_numeric(singles_long.get("dag"), errors="coerce")
+    mean_dag = dag_series.mean(skipna=True)
+    if mean_dag and not np.isnan(mean_dag):
+        singles_long["age_norm"] = dag_series - mean_dag
+        LOGGER.info(f"  Singles age normalization: mean_dag={mean_dag:.2f} (demeaned)")
+    else:
+        singles_long["age_norm"] = np.nan
+    singles_long["age_norm2"] = singles_long["age_norm"] ** 2    # Use actual column names from data_prep: num_children_total, num_children_0_3, etc.
+    # If num_children_total exists, use it directly; otherwise sum the age-band columns
+    if "num_children_total" in singles_long.columns:
+        singles_long["n_children"] = pd.to_numeric(singles_long["num_children_total"], errors="coerce").fillna(0).astype(int)
+        LOGGER.info(f"  n_children: using num_children_total column")
+    else:
+        # Try both old naming (children0_3) and new naming (num_children_0_3)
+        child_cols = [c for c in [
+            "children0_3", "children4_6", "children7_9", "children",  # old names
+            "num_children_0_3", "num_children_3_6", "num_children_6_11", "num_children_11_17"  # new names
+        ] if c in singles_long.columns]
+        if child_cols:
+            singles_long["n_children"] = (
+                singles_long[child_cols]
+                .apply(pd.to_numeric, errors="coerce")
+                .fillna(0)
+                .sum(axis=1)
+                .astype(int)
+            )
+            LOGGER.info(f"  n_children: summed from columns {child_cols}")
+        else:
+            singles_long["n_children"] = 0
+            LOGGER.warning("  n_children: no children columns found, set to 0")
     
     singles_mnl = _build_mnl_block(singles_long, sample_group="singles")
     

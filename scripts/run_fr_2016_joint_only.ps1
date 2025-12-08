@@ -388,6 +388,7 @@ $cmd = "python `"$SCRIPTS\RURO_estimate_FR.py`" " +
        "--n-jobs $CPU_CORES " +
        "--post-estimation " +
        "--out-file `"$EST_FILE`""
+# Post-estimation now uses the refactored v2 version with dynamic parameter parsing
 
 if ($INIT_PARAMS_JOINT -and (Test-Path $INIT_PARAMS_JOINT)) {
     $cmd += " --init-params `"$INIT_PARAMS_JOINT`""

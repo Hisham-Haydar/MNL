@@ -5506,14 +5506,15 @@ def main() -> None:
         if args.optimizer == "L-BFGS-B":
             # Use FAST precomputed-data function (2-5x faster)
             LOGGER.info("Using FAST precomputed-data objective function")
-            
-            def objective_and_grad(theta):
+              def objective_and_grad(theta):
                 t_start = time_module.perf_counter()
                 result = fast_neg_ll_with_grad_joint(
                     theta, data_sm, data_sf, data_cou, wage_spec=args.wage_spec
                 )
                 iteration_times.append(time_module.perf_counter() - t_start)
-                return result            # Bounds for Box-Cox parameters (loosened further to avoid singular Hessian)
+                return result
+            
+            # Bounds for Box-Cox parameters (loosened further to avoid singular Hessian)
             # Box-Cox: (-10, 20.0), Sigma: (-10, 50.0)
             # SIMPLIFIED Parameter layout (60 params for vw, 48 for fw):
             # [0:9]   SM prefs: theta_l=7, theta_c=8

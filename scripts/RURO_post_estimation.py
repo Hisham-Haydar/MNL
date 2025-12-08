@@ -335,19 +335,87 @@ def run_joint_post_estimation(
     theta: np.ndarray,
     param_names: List[str],
     log_likelihood: float,
+    n_sm: int = 0,
+    n_sf: int = 0,
+    n_cou: int = 0,
     df_sm: pd.DataFrame = None,
     df_sf: pd.DataFrame = None,
     df_cou: pd.DataFrame = None,
+    wage_spec: str = "fw",
     out_dir: Path = None,
+    se: np.ndarray = None,
     std_errors: np.ndarray = None,
     varcov: np.ndarray = None,
+    theta0: np.ndarray = None,
+    bounds: List = None,
+    estimation_time_seconds: float = None,
     **kwargs
 ) -> Dict[str, Any]:
     """
     Backward-compatible wrapper for run_post_estimation.
     
-    This function signature matches the old API.
+    This function signature matches the old API from RURO_estimate_FR.py.
+    
+    Parameters
+    ----------
+    theta : np.ndarray
+        Estimated parameter values
+    param_names : List[str]
+        Parameter names
+    log_likelihood : float
+        Log-likelihood at optimum
+    n_sm, n_sf, n_cou : int
+        Number of individuals in each group
+    df_sm, df_sf, df_cou : pd.DataFrame
+        MNL datasets for each group
+    wage_spec : str
+        "fw" or "vw" - affects output prefix
+    out_dir : Path
+        Output directory
+    se : np.ndarray
+        Standard errors (old API name)
+    std_errors : np.ndarray
+        Standard errors (new API name)
+    varcov : np.ndarray
+        Variance-covariance matrix
+    theta0 : np.ndarray
+        Initial parameter values (for reporting)
+    bounds : List
+        Parameter bounds (for reporting)
+    estimation_time_seconds : float
+        Time taken for estimation
     """
+    # Handle se vs std_errors naming
+    if std_errors is None and se is not None:
+        std_errors = se
+    
+    # Compute n_individuals
+    n_individuals = n_sm + n_sf + n_cou
+    if n_individuals == 0:
+        # Try to compute from dataframes
+        n_individuals = sum([
+            len(df_sm['idhh'].unique()) if df_sm is not None and 'idhh' in df_sm.columns else 0,
+            len(df_sf['idhh'].unique()) if df_sf is not None and 'idhh' in df_sf.columns else 0,
+            len(df_cou['idhh'].unique()) if df_cou is not None and 'idhh' in df_cou.columns else 0,
+        ])
+    
+    # Set prefix based on wage_spec
+    prefix = f"{wage_spec}_joint_" if wage_spec else ""
+    
+    # Build param_bounds dict for HTML report
+    param_bounds = {}
+    if bounds is not None:
+        for i, name in enumerate(param_names):
+            if i < len(bounds):
+                param_bounds[name] = bounds[i]
+    
+    # Build initial_values dict for HTML report  
+    initial_values = {}
+    if theta0 is not None:
+        for i, name in enumerate(param_names):
+            if i < len(theta0):
+                initial_values[name] = theta0[i]
+    
     return run_post_estimation(
         theta=theta,
         param_names=param_names,
@@ -357,6 +425,10 @@ def run_joint_post_estimation(
         df_cou=df_cou,
         out_dir=out_dir,
         std_errors=std_errors,
+        prefix=prefix,
+        n_individuals=n_individuals,
+        param_bounds=param_bounds,
+        initial_values=initial_values,
         **kwargs
     )
 
@@ -2466,6 +2538,9 @@ def run_post_estimation(
     out_dir: Path = None,
     std_errors: np.ndarray = None,
     prefix: str = '',
+    n_individuals: int = None,
+    param_bounds: Dict[str, Tuple[float, float]] = None,
+    initial_values: Dict[str, float] = None,
     **kwargs
 ) -> Dict[str, Any]:
     """
@@ -2490,6 +2565,12 @@ def run_post_estimation(
         Standard errors (optional)
     prefix : str
         Prefix for output filenames (e.g., 'vw_' for variable wage spec)
+    n_individuals : int
+        Total number of individuals (for BIC computation)
+    param_bounds : Dict[str, Tuple[float, float]]
+        Parameter bounds for HTML report
+    initial_values : Dict[str, float]
+        Initial parameter values for HTML report
     
     Returns
     -------
@@ -2555,13 +2636,16 @@ def run_post_estimation(
         )
         LOGGER.info(f"      Obs: {fit_results['cou_f']['participation_rate_observed']:.1%}, "
                    f"Pred: {fit_results['cou_f']['participation_rate_predicted']:.1%}")
+      # Model fit statistics
+    if n_individuals is None:
+        n_individuals = kwargs.get('n_individuals', 1000)
     
-    # Model fit statistics
     fit_stats = {
         'log_likelihood': log_likelihood,
         'n_parameters': len(theta),
+        'n_individuals': n_individuals,
         'AIC': -2 * log_likelihood + 2 * len(theta),
-        'BIC': -2 * log_likelihood + np.log(kwargs.get('n_individuals', 1000)) * len(theta),
+        'BIC': -2 * log_likelihood + np.log(n_individuals) * len(theta),
     }
       # Compute MU diagnostics
     LOGGER.info("\n3. Computing marginal utility diagnostics...")
@@ -2592,8 +2676,7 @@ def run_post_estimation(
     # Additional MU diagnostic and marginal utility plots
     plot_paths.update(plot_marginal_utilities(parsed, out_dir))
     plot_paths.update(plot_mu_diagnostics(mu_results, out_dir))
-    
-    # Generate HTML report
+      # Generate HTML report
     LOGGER.info("\n6. Generating HTML report...")
     html_path = out_dir / f'{prefix}post_estimation_report.html'
     generate_html_report(
@@ -2604,6 +2687,8 @@ def run_post_estimation(
         plot_paths=plot_paths,
         mu_results=mu_results,
         elasticities_df=elasticities_df,
+        param_bounds=param_bounds,
+        initial_values=initial_values,
     )
     
     # Save parameter CSV

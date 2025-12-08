@@ -2157,24 +2157,10 @@ def log_likelihood_singles(
     
     # Log probability of observed choice: V_obs - log_sum_exp
     tmp["log_prob"] = tmp["V"] - tmp["log_sum_exp"]
-    
-    # Filter to observed alternatives and sum
+      # Filter to observed alternatives and sum
     ll = tmp.loc[tmp["is_obs"], "log_prob"].sum()
     
     return ll
-
-
-def neg_log_likelihood_singles(
-    theta: np.ndarray,
-    df: pd.DataFrame,
-    is_male: bool = True,
-    wage_spec: str = "fw",
-) -> float:
-    """
-    Negative log-likelihood for minimization.
-    """
-    ll = log_likelihood_singles(theta, df, is_male=is_male, wage_spec=wage_spec)
-    return -ll
 
 
 # =============================================================================
@@ -2572,121 +2558,11 @@ def analytical_gradient_singles(
     
     # Broadcast E[dV] back to each row
     E_dV = E_dV_per_group[group_idx, :]
-    
-    # ----- Step 4: Gradient = sum over observed of (dV_obs - E[dV]) -----
+      # ----- Step 4: Gradient = sum over observed of (dV_obs - E[dV]) -----
     obs_mask = is_obs.astype(bool)
     grad = (dV_dtheta[obs_mask, :] - E_dV[obs_mask, :]).sum(axis=0)
     
     return grad
-
-
-def analytical_gradient_singles_numba(
-    theta: np.ndarray,
-    df: pd.DataFrame,
-    is_male: bool = True,
-    wage_spec: str = "fw",
-) -> np.ndarray:
-    """
-    Compute analytical gradient using numba-accelerated core computation.
-    
-    This version uses the numba JIT-compiled _compute_softmax_gradient_numba
-    function for the inner loop, which can provide significant speedup
-    on multi-core systems.
-    
-    Falls back to regular analytical_gradient_singles if numba is not available.
-    """
-    if not NUMBA_AVAILABLE or _compute_softmax_gradient_numba is None:
-        return analytical_gradient_singles(theta, df, is_male, wage_spec)
-    
-    n = len(df)
-    n_params = 37 if wage_spec == "vw" else 21
-    
-    # Compute utilities and derivatives (same as regular version)
-    u, du_dtheta_pref = _compute_utility_derivatives_singles(df, theta, is_male)
-    h_opp, dh_dtheta = _compute_hopp_derivatives(df, theta, is_male)
-    
-    if wage_spec == "vw":
-        w_opp, dw_dtheta = _compute_wopp_derivatives(df, theta, is_male)
-    else:
-        w_opp = np.zeros(n)
-        dw_dtheta = np.zeros((n, 16))
-    
-    # Prior
-    prior_col = df.get("prior", None)
-    if prior_col is not None:
-        log_prior = pd.to_numeric(prior_col, errors="coerce").fillna(0).to_numpy()
-    else:
-        log_prior = np.zeros(n)
-    
-    # Total utility V
-    V = u + h_opp + w_opp - log_prior
-    
-    # Stack derivatives
-    dV_dtheta = np.zeros((n, n_params), dtype=np.float64)
-    dV_dtheta[:, 0:12] = du_dtheta_pref
-    dV_dtheta[:, 12:21] = dh_dtheta
-    if wage_spec == "vw":
-        dV_dtheta[:, 21:37] = dw_dtheta
-    
-    # Get IDs and choice indicators
-    if "idhh_true" in df.columns:
-        ids = df["idhh_true"].to_numpy()
-    elif "idhh" in df.columns:
-        ids = df["idhh"].to_numpy()
-    elif "idperson_true" in df.columns:
-        ids = df["idperson_true"].to_numpy()
-    else:
-        ids = df["idperson"].to_numpy()
-    
-    draws = df["draw"].to_numpy()
-    if "is_chosen" in df.columns:
-        is_chosen = pd.to_numeric(df["is_chosen"], errors="coerce").fillna(0).to_numpy()
-        is_obs = (is_chosen == 1) | (draws == 0)
-    else:
-        is_obs = (draws == 0)
-    
-    # Prepare data for numba function
-    # Find group boundaries and observed indices
-    id_changes = np.where(np.diff(ids) != 0)[0] + 1
-    group_starts = np.concatenate([[0], id_changes]).astype(np.int64)
-    group_ends = np.concatenate([id_changes, [n]]).astype(np.int64)
-    
-    # Find observed index for each group
-    obs_indices = np.zeros(len(group_starts), dtype=np.int64)
-    for g in range(len(group_starts)):
-        s, e = group_starts[g], group_ends[g]
-        obs_in_group = np.where(is_obs[s:e])[0]
-        if len(obs_in_group) > 0:
-            obs_indices[g] = s + obs_in_group[0]
-        else:
-            obs_indices[g] = s  # fallback
-    
-    # Call numba function
-    grad = _compute_softmax_gradient_numba(
-        V.astype(np.float64),
-        dV_dtheta.astype(np.float64),
-        group_starts,
-        group_ends,
-        obs_indices,
-    )
-    
-    return grad
-
-
-def neg_log_likelihood_with_grad_singles(
-    theta: np.ndarray,
-    df: pd.DataFrame,
-    is_male: bool = True,
-    wage_spec: str = "fw",
-) -> Tuple[float, np.ndarray]:
-    """
-    Compute negative log-likelihood and its gradient simultaneously.
-    
-    This is more efficient when both are needed (e.g., L-BFGS-B optimization).
-    """
-    ll = log_likelihood_singles(theta, df, is_male=is_male, wage_spec=wage_spec)
-    grad = analytical_gradient_singles(theta, df, is_male=is_male, wage_spec=wage_spec)
-    return -ll, -grad
 
 
 # =============================================================================
@@ -3233,8 +3109,7 @@ def get_param_names_couples(wage_spec: str = "fw") -> List[str]:
         "cou.hopp_f.beta_ft", "cou.hopp_f.beta_gsur",
         "cou.hopp_f.beta_work_educL", "cou.hopp_f.beta_work_educH",
     ]
-    
-    if wage_spec == "vw":
+      if wage_spec == "vw":
         # Male wage opportunity [30:36]
         names += [
             "cou.wopp_m.beta0", "cou.wopp_m.beta_educL", "cou.wopp_m.beta_educH",
@@ -3247,56 +3122,6 @@ def get_param_names_couples(wage_spec: str = "fw") -> List[str]:
         ]
     
     return names
-
-
-def pack_theta_couples(
-    pref: PrefParamsCouples,
-    hopp_m: HoursOppParams,
-    hopp_f: HoursOppParams,
-    wopp_m: WageOppParams = None,
-    wopp_f: WageOppParams = None,
-) -> np.ndarray:
-    """
-    Pack couples parameter dataclasses into flat vector.
-    
-    SIMPLIFIED Parameter layout (30 for fw, 42 for vw):
-    [0:6]    - Male leisure preferences (6 params)
-    [6:12]   - Female leisure preferences (6 params)
-    [12:16]  - Shared: beta_c, theta_lm, theta_lf, theta_c
-    [16:23]  - Male hours opportunity (7 params)
-    [23:30]  - Female hours opportunity (7 params)
-    [30:36]  - Male wage opportunity (6 params, vw only)
-    [36:42]  - Female wage opportunity (6 params, vw only)
-    """
-    theta = [
-        # Male leisure preferences [0:6]
-        pref.beta_lm0, pref.beta_lm_age_norm, pref.beta_lm_age_norm2,
-        pref.beta_lm_n_children, pref.beta_lm_educL, pref.beta_lm_educH,
-        # Female leisure preferences [6:12]
-        pref.beta_lf0, pref.beta_lf_age_norm, pref.beta_lf_age_norm2,
-        pref.beta_lf_n_children, pref.beta_lf_educL, pref.beta_lf_educH,
-        # Shared params [12:16]
-        pref.beta_c, pref.theta_lm, pref.theta_lf, pref.theta_c,
-        # Male hours opportunity [16:23]
-        hopp_m.beta_work, hopp_m.beta_pt1, hopp_m.beta_pt2, hopp_m.beta_ft,
-        hopp_m.beta_gsur, hopp_m.beta_work_educL, hopp_m.beta_work_educH,
-        # Female hours opportunity [23:30]
-        hopp_f.beta_work, hopp_f.beta_pt1, hopp_f.beta_pt2, hopp_f.beta_ft,
-        hopp_f.beta_gsur, hopp_f.beta_work_educL, hopp_f.beta_work_educH,
-    ]
-    
-    # Add wage opportunity params if provided
-    if wopp_m is not None and wopp_f is not None:
-        theta += [
-            # Male wage opportunity [30:36]
-            wopp_m.beta0, wopp_m.beta_educL, wopp_m.beta_educH,
-            wopp_m.beta_pexp, wopp_m.beta_pexp2, wopp_m.sigma,
-            # Female wage opportunity [36:42]
-            wopp_f.beta0, wopp_f.beta_educL, wopp_f.beta_educH,
-            wopp_f.beta_pexp, wopp_f.beta_pexp2, wopp_f.sigma,
-        ]
-    
-    return np.array(theta)
 
 
 def fast_analytical_gradient_singles(
@@ -4757,22 +4582,10 @@ def log_likelihood_joint(
         theta_cou = _extract_group_params_from_joint(theta, "cou", wage_spec)
         ll_cou = log_likelihood_couples(theta_cou, df_cou, wage_spec=wage_spec)
         ll_total += ll_cou
-    
-    return ll_total
+      return ll_total
 
 
-def neg_log_likelihood_joint(
-    theta: np.ndarray,
-    df_sm: pd.DataFrame,
-    df_sf: pd.DataFrame,
-    df_cou: pd.DataFrame,
-    wage_spec: str = "fw",
-) -> float:
-    """Negative log-likelihood for joint estimation (for minimization)."""
-    return -log_likelihood_joint(theta, df_sm, df_sf, df_cou, wage_spec)
-
-
-def analytical_gradient_joint(
+def fast_neg_ll_with_grad_joint(
     theta: np.ndarray,
     df_sm: pd.DataFrame,
     df_sf: pd.DataFrame,

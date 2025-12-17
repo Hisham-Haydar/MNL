@@ -124,6 +124,13 @@ def main():
     LOGGER.info(f"  Single females: {len(df_sf) if df_sf is not None else 0:,} rows")
     LOGGER.info(f"  Couples: {len(df_cou) if df_cou is not None else 0:,} rows")
 
+    # Sanity: replace NaN hours with 0 for couples to avoid NaN utilities
+    if df_cou is not None:
+        hour_cols = ['hours_male', 'hours_female', 'lhw_male', 'lhw_female', 'hours_m', 'hours_f', 'lhw_m', 'lhw_f']
+        for col in hour_cols:
+            if col in df_cou.columns:
+                df_cou[col] = pd.to_numeric(df_cou[col], errors='coerce').fillna(0)
+
     # Note: Standard errors not available - will show as NaN
     std_errors = np.array(results.get('std_errors', [np.nan] * len(theta)))
     if np.all(np.isnan(std_errors)):

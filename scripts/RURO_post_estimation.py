@@ -677,10 +677,31 @@ class DynamicUtilityComputer:
             return np.clip(df[col].values / normalize if normalize > 0 else df[col].values, 1e-6, None)
         
         # Try computing from hours
-        hours_cols = [f'hours{suffix}', f'lhw{suffix}', 'hours', 'lhw']
+        hours_cols = [
+            f'hours{suffix}',
+            f'lhw{suffix}',
+            # common wide-format couple columns
+            f'hours_male{suffix}',
+            f'hours_female{suffix}',
+            f'lhw_male{suffix}',
+            f'lhw_female{suffix}',
+            # generic fallbacks
+            'hours_male',
+            'hours_female',
+            'lhw_male',
+            'lhw_female',
+            'hours_m',
+            'hours_f',
+            'lhw_m',
+            'lhw_f',
+            'hours',
+            'lhw',
+        ]
         for hcol in hours_cols:
             if hcol in df.columns:
                 hours = df[hcol].values
+                # Replace NaN/inf with zeros to avoid propagating NaNs into utilities
+                hours = np.nan_to_num(hours, nan=0.0, posinf=0.0, neginf=0.0)
                 leisure = 80.0 - hours  # Assume 80 hours total available
                 return np.clip(leisure / normalize if normalize > 0 else leisure, 1e-6, None)
         
@@ -1159,6 +1180,9 @@ def compute_fit_diagnostics(
         LOGGER.warning("No ID column found")
         return results
     
+    if hours_col not in df.columns:
+        LOGGER.warning(f"Hours column '{hours_col}' not found for group '{group}', predictions may be zero/NaN")
+    
     # Get observed choices
     obs_mask = df[obs_col] == 1
     obs_df = df[obs_mask]
@@ -1192,21 +1216,37 @@ def compute_fit_diagnostics(
         
         for uid in unique_ids:
             mask = df[id_col] == uid
-            V_i = V[mask]
-            h_i = df.loc[mask, hours_col].values if hours_col in df.columns else np.zeros(mask.sum())
+            V_i = np.asarray(V[mask], dtype=float)
+            h_raw = df.loc[mask, hours_col].values if hours_col in df.columns else np.zeros(mask.sum())
+            # Coerce hours to float and replace non-finite with zero
+            try:
+                h_i = pd.to_numeric(h_raw, errors='coerce').to_numpy()
+            except Exception:
+                h_i = np.array(h_raw, dtype=float)
+            h_i = np.nan_to_num(h_i, nan=0.0, posinf=0.0, neginf=0.0)
             
-            if not np.all(np.isfinite(V_i)):
-                continue
+            # Drop non-finite utilities; if none left, fall back to zeros
+            finite_mask = np.isfinite(V_i)
+            if not finite_mask.any():
+                V_i = np.zeros_like(h_i, dtype=float)
+            else:
+                V_i = V_i[finite_mask]
+            h_i = h_i[finite_mask]
             
             # Softmax probabilities
             if SCIPY_AVAILABLE:
                 log_denom = logsumexp(V_i)
+                probs = np.exp(V_i - log_denom)
             else:
                 max_V = np.max(V_i)
-                log_denom = max_V + np.log(np.sum(np.exp(V_i - max_V)))
+                exp_shift = np.exp(V_i - max_V)
+                sum_exp = np.sum(exp_shift)
+                if sum_exp == 0 or not np.isfinite(sum_exp):
+                    probs = np.full_like(V_i, 1.0 / len(V_i))
+                else:
+                    probs = exp_shift / sum_exp
             
-            probs = np.exp(V_i - log_denom)
-              # Expected hours
+            # Expected hours
             e_h = np.sum(probs * h_i)
             expected_hours.append(e_h)
             

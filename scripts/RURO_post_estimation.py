@@ -2639,13 +2639,36 @@ def run_post_estimation(
       # Model fit statistics
     if n_individuals is None:
         n_individuals = kwargs.get('n_individuals', 1000)
-    
+
+    # Compute null log-likelihood for rho-squared
+    # Try multiple ID column names
+    id_col = None
+    for candidate in ['ruro_id', 'idhh', 'idperson', 'id']:
+        if candidate in df.columns:
+            id_col = candidate
+            break
+
+    if id_col is not None:
+        n_alts = df.groupby(id_col).size()
+        ll_null = -np.sum(np.log(n_alts))
+        rho_squared = 1 - (log_likelihood / ll_null)
+        rho_squared_adj = 1 - ((log_likelihood - len(theta)) / ll_null)
+    else:
+        LOGGER.warning("Could not compute rho-squared: ID column not found")
+        ll_null = None
+        rho_squared = None
+        rho_squared_adj = None
+
     fit_stats = {
         'log_likelihood': log_likelihood,
+        'll_null': ll_null,
         'n_parameters': len(theta),
         'n_individuals': n_individuals,
+        'rho_squared': rho_squared,
+        'rho_squared_adj': rho_squared_adj,
         'AIC': -2 * log_likelihood + 2 * len(theta),
         'BIC': -2 * log_likelihood + np.log(n_individuals) * len(theta),
+        'AIC_per_obs': (-2 * log_likelihood + 2 * len(theta)) / len(df) if len(df) > 0 else None,
     }
       # Compute MU diagnostics
     LOGGER.info("\n3. Computing marginal utility diagnostics...")

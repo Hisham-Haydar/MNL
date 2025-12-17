@@ -238,45 +238,45 @@ class PrecomputedDataCouples:
     c: np.ndarray               # normalized household consumption, shape (n,)
     
     # Male partner leisure and demographics
-    l_male: np.ndarray             # normalized leisure for male
-    age_norm_male: np.ndarray      # demeaned age male
-    age_norm2_male: np.ndarray     # demeaned age² male
-    educL_male: np.ndarray         # low education male
-    educH_male: np.ndarray         # high education male
+    l_m: np.ndarray             # normalized leisure for male
+    age_norm_m: np.ndarray      # demeaned age male
+    age_norm2_m: np.ndarray     # demeaned age² male
+    educL_m: np.ndarray         # low education male
+    educH_m: np.ndarray         # high education male
     
     # Female partner leisure and demographics
-    l_female: np.ndarray             # normalized leisure for female
-    age_norm_female: np.ndarray      # demeaned age female
-    age_norm2_female: np.ndarray     # demeaned age² female
-    educL_female: np.ndarray         # low education female
-    educH_female: np.ndarray         # high education female
+    l_f: np.ndarray             # normalized leisure for female
+    age_norm_f: np.ndarray      # demeaned age female
+    age_norm2_f: np.ndarray     # demeaned age² female
+    educL_f: np.ndarray         # low education female
+    educH_f: np.ndarray         # high education female
     
     # Children (household-level, single variable)
     n_children: np.ndarray
     
     # Hours indicators - male
-    working_male: np.ndarray
-    working_pt1_male: np.ndarray
-    working_pt2_male: np.ndarray
-    working_ft_male: np.ndarray
-    gsur_male: np.ndarray
+    working_m: np.ndarray
+    working_pt1_m: np.ndarray
+    working_pt2_m: np.ndarray
+    working_ft_m: np.ndarray
+    gsur_m: np.ndarray
     
     # Hours indicators - female
-    working_female: np.ndarray
-    working_pt1_female: np.ndarray
-    working_pt2_female: np.ndarray
-    working_ft_female: np.ndarray
-    gsur_female: np.ndarray
+    working_f: np.ndarray
+    working_pt1_f: np.ndarray
+    working_pt2_f: np.ndarray
+    working_ft_f: np.ndarray
+    gsur_f: np.ndarray
     
     # Wage-related - male
     log_wage_m: np.ndarray
-    pexp_male: np.ndarray
-    pexp2_male: np.ndarray         # pre-computed pexp^2
+    pexp_m: np.ndarray
+    pexp2_m: np.ndarray         # pre-computed pexp^2
     
     # Wage-related - female
     log_wage_f: np.ndarray
-    pexp_female: np.ndarray
-    pexp2_female: np.ndarray         # pre-computed pexp^2
+    pexp_f: np.ndarray
+    pexp2_f: np.ndarray         # pre-computed pexp^2
     
     # Prior and grouping
     log_prior: np.ndarray
@@ -608,112 +608,129 @@ def precompute_data_couples(df: pd.DataFrame) -> PrecomputedDataCouples:
             if not c_varies:
                 LOGGER.warning("Couples consumption does NOT vary within choice sets - will compute synthetic")
                 c = None
-      # If no valid consumption, use ils_dispy_em from EUROMOD
+      # If no valid consumption, compute from earnings
     if c is None:
-        # For couples, use ils_dispy_em directly (household aggregate from EUROMOD)
-        # This is the disposable income for the household (coupM + coupF)
-        # User specification: c_ij = ils_dispy_coupM + ils_dispy_coupF
-        # The column ils_dispy_em already contains this household aggregate
-
-        # DIAGNOSTIC: Check if column exists
-        if "ils_dispy_em" in df.columns:
-            LOGGER.info("✓ ils_dispy_em column FOUND in couples DataFrame")
-            c_raw = df["ils_dispy_em"].to_numpy(dtype=np.float64)
-            LOGGER.info(f"  Raw values: mean={c_raw.mean():.3f}, std={c_raw.std():.3f}, n_unique={len(np.unique(c_raw))}, min={c_raw.min():.3f}, max={c_raw.max():.3f}")
-            c = c_raw
+        ils_m = safe_get("ils_dispy_m", 0.0)
+        ils_f = safe_get("ils_dispy_f", 0.0)
+        yem_m = safe_get("yem_m", 0.0)
+        yem_f = safe_get("yem_f", 0.0)
+        
+        # Check if we have earnings data
+        if np.any(yem_m > 0) or np.any(yem_f > 0):
+            # Get base values per household
+            if "idhh_true" in df.columns:
+                ids = df["idhh_true"].to_numpy()
+            elif "idhh" in df.columns:
+                ids = df["idhh"].to_numpy()
+            else:
+                ids = np.arange(n)
+            
+            draws = df["draw"].to_numpy() if "draw" in df.columns else np.zeros(n)
+            
+            unique_ids, inverse = np.unique(ids, return_inverse=True)
+            base_ils_m = np.zeros(len(unique_ids), dtype=np.float64)
+            base_ils_f = np.zeros(len(unique_ids), dtype=np.float64)
+            base_yem_m = np.zeros(len(unique_ids), dtype=np.float64)
+            base_yem_f = np.zeros(len(unique_ids), dtype=np.float64)
+            
+            for i, uid in enumerate(unique_ids):
+                mask = (ids == uid) & (draws == 0)
+                if not mask.any():
+                    mask = ids == uid
+                base_ils_m[i] = ils_m[mask][0]
+                base_ils_f[i] = ils_f[mask][0]
+                base_yem_m[i] = yem_m[mask][0]
+                base_yem_f[i] = yem_f[mask][0]
+            
+            NET_OF_TAX = 0.60
+            base_non_labor = (base_ils_m + base_ils_f) - NET_OF_TAX * (base_yem_m + base_yem_f)
+            c = base_non_labor[inverse] + NET_OF_TAX * (yem_m + yem_f)
+            c = c / MEAN_DISPY_NORM
+            
+            LOGGER.info(f"Computed synthetic couples consumption: mean={c.mean():.3f}, std={c.std():.3f}")
         else:
-            LOGGER.error("❌ ils_dispy_em column NOT FOUND in couples DataFrame!")
-            LOGGER.error(f"  Available columns ({len(df.columns)}): {df.columns.tolist()[:20]}...")
-            c = safe_get("ruro_consumption", 0.0)
-            LOGGER.warning(f"  Using ruro_consumption fallback: mean={c.mean():.3f}")
-
-        if np.all(c == 0):
-            LOGGER.warning("Consumption is all zeros! Trying alternate columns...")
-            c = safe_get("consumption", 0.0)
-
-        # Normalize by mean disposable income from observed jobs
-        c = c / MEAN_DISPY_NORM
-
-        LOGGER.info(f"Final couples consumption (normalized): mean={c.mean():.3f}, std={c.std():.3f}, n_unique={len(np.unique(c))}")
+            # Fallback to original ils_dispy
+            c = (ils_m + ils_f) / MEAN_DISPY_NORM
+            LOGGER.warning("No earnings data for couples - consumption won't vary")
     elif "consumption" in df.columns and c is None:
         c = df["consumption"].to_numpy(dtype=np.float64) / MEAN_DISPY_NORM
     
     c = np.ascontiguousarray(np.clip(c, 1e-6, None), dtype=np.float64)
     
     # Leisure - male
-    l_male = None
-    if "leis_util_male" in df.columns and not df["leis_util_male"].isna().all():
-        l_male = df["leis_util_male"].to_numpy(dtype=np.float64)
-    if l_male is None and "leisure_male" in df.columns:
-        l_male = df["leisure_male"].to_numpy(dtype=np.float64) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
-    if l_male is None and "hours_male" in df.columns:
-        hours_male = df["hours_male"].to_numpy(dtype=np.float64)
-        l_male = (TOTAL_LEISURE_HOURS - hours_male) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
-    if l_male is None:
-        l_male = np.ones(n, dtype=np.float64)
-    l_male = np.ascontiguousarray(np.clip(l_male, 1e-6, None), dtype=np.float64)
+    l_m = None
+    if "leis_util_m" in df.columns and not df["leis_util_m"].isna().all():
+        l_m = df["leis_util_m"].to_numpy(dtype=np.float64)
+    if l_m is None and "leisure_m" in df.columns:
+        l_m = df["leisure_m"].to_numpy(dtype=np.float64) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+    if l_m is None and "hours_m" in df.columns:
+        hours_m = df["hours_m"].to_numpy(dtype=np.float64)
+        l_m = (TOTAL_LEISURE_HOURS - hours_m) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+    if l_m is None:
+        l_m = np.ones(n, dtype=np.float64)
+    l_m = np.ascontiguousarray(np.clip(l_m, 1e-6, None), dtype=np.float64)
     
     # Leisure - female
-    l_female = None
-    if "leis_util_female" in df.columns and not df["leis_util_female"].isna().all():
-        l_female = df["leis_util_female"].to_numpy(dtype=np.float64)
-    if l_female is None and "leisure_female" in df.columns:
-        l_female = df["leisure_female"].to_numpy(dtype=np.float64) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
-    if l_female is None and "hours_female" in df.columns:
-        hours_female = df["hours_female"].to_numpy(dtype=np.float64)
-        l_female = (TOTAL_LEISURE_HOURS - hours_female) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
-    if l_female is None:
-        l_female = np.ones(n, dtype=np.float64)
-    l_female = np.ascontiguousarray(np.clip(l_female, 1e-6, None), dtype=np.float64)
+    l_f = None
+    if "leis_util_f" in df.columns and not df["leis_util_f"].isna().all():
+        l_f = df["leis_util_f"].to_numpy(dtype=np.float64)
+    if l_f is None and "leisure_f" in df.columns:
+        l_f = df["leisure_f"].to_numpy(dtype=np.float64) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+    if l_f is None and "hours_f" in df.columns:
+        hours_f = df["hours_f"].to_numpy(dtype=np.float64)
+        l_f = (TOTAL_LEISURE_HOURS - hours_f) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+    if l_f is None:
+        l_f = np.ones(n, dtype=np.float64)
+    l_f = np.ascontiguousarray(np.clip(l_f, 1e-6, None), dtype=np.float64)
       # Age (normalized) - male/female
-    age_norm_male = safe_get("age_norm_male")
-    age_norm2_male = safe_get("age_norm2_male")
+    age_norm_m = safe_get("age_norm_m")
+    age_norm2_m = safe_get("age_norm2_m")
     
-    age_norm_female = safe_get("age_norm_female")
-    age_norm2_female = safe_get("age_norm2_female")
+    age_norm_f = safe_get("age_norm_f")
+    age_norm2_f = safe_get("age_norm2_f")
     
     # Education
-    educL_male = safe_get("educL_male")
-    educH_male = safe_get("educH_male")
-    educL_female = safe_get("educL_female")
-    educH_female = safe_get("educH_female")
+    educL_m = safe_get("educL_m")
+    educH_m = safe_get("educH_m")
+    educL_f = safe_get("educL_f")
+    educH_f = safe_get("educH_f")
     
     # Children (household-level, use total n_children)
     n_children = safe_get("n_children")
     
     # Hours indicators - male
-    working_male = safe_get("working_male")
-    if working_male.sum() == 0 and "hours_male" in df.columns:
-        hours_male = pd.to_numeric(df["hours_male"], errors="coerce").fillna(0).to_numpy()
-        working_male = np.ascontiguousarray((hours_male > 0).astype(np.float64))
-    working_pt1_male = safe_get("working_pt1_male")
-    working_pt2_male = safe_get("working_pt2_male")
-    working_ft_male = safe_get("working_ft_male")
-    if working_pt1_male.sum() == 0 and "hours_male" in df.columns:
-        hours_male = pd.to_numeric(df["hours_male"], errors="coerce").fillna(0).to_numpy()
-        working_pt1_male = np.ascontiguousarray(((hours_male >= 18.5) & (hours_male <= 21.5)).astype(np.float64))
-        working_pt2_male = np.ascontiguousarray(((hours_male >= 29.5) & (hours_male <= 30.5)).astype(np.float64))
-        working_ft_male = np.ascontiguousarray(((hours_male >= 37.5) & (hours_male <= 40.5)).astype(np.float64))
-    gsur_male = safe_get("gsur_male")
-    if gsur_male.sum() == 0:
-        gsur_male = safe_get("gsur")
+    working_m = safe_get("working_m")
+    if working_m.sum() == 0 and "hours_m" in df.columns:
+        hours_m = pd.to_numeric(df["hours_m"], errors="coerce").fillna(0).to_numpy()
+        working_m = np.ascontiguousarray((hours_m > 0).astype(np.float64))
+    working_pt1_m = safe_get("working_pt1_m")
+    working_pt2_m = safe_get("working_pt2_m")
+    working_ft_m = safe_get("working_ft_m")
+    if working_pt1_m.sum() == 0 and "hours_m" in df.columns:
+        hours_m = pd.to_numeric(df["hours_m"], errors="coerce").fillna(0).to_numpy()
+        working_pt1_m = np.ascontiguousarray(((hours_m >= 18.5) & (hours_m <= 21.5)).astype(np.float64))
+        working_pt2_m = np.ascontiguousarray(((hours_m >= 29.5) & (hours_m <= 30.5)).astype(np.float64))
+        working_ft_m = np.ascontiguousarray(((hours_m >= 37.5) & (hours_m <= 40.5)).astype(np.float64))
+    gsur_m = safe_get("gsur_m")
+    if gsur_m.sum() == 0:
+        gsur_m = safe_get("gsur")
     
     # Hours indicators - female
-    working_female = safe_get("working_female")
-    if working_female.sum() == 0 and "hours_female" in df.columns:
-        hours_female = pd.to_numeric(df["hours_female"], errors="coerce").fillna(0).to_numpy()
-        working_female = np.ascontiguousarray((hours_female > 0).astype(np.float64))
-    working_pt1_female = safe_get("working_pt1_female")
-    working_pt2_female = safe_get("working_pt2_female")
-    working_ft_female = safe_get("working_ft_female")
-    if working_pt1_female.sum() == 0 and "hours_female" in df.columns:
-        hours_female = pd.to_numeric(df["hours_female"], errors="coerce").fillna(0).to_numpy()
-        working_pt1_female = np.ascontiguousarray(((hours_female >= 18.5) & (hours_female <= 21.5)).astype(np.float64))
-        working_pt2_female = np.ascontiguousarray(((hours_female >= 29.5) & (hours_female <= 30.5)).astype(np.float64))
-        working_ft_female = np.ascontiguousarray(((hours_female >= 37.5) & (hours_female <= 40.5)).astype(np.float64))
-    gsur_female = safe_get("gsur_female")
-    if gsur_female.sum() == 0:
-        gsur_female = safe_get("gsur")
+    working_f = safe_get("working_f")
+    if working_f.sum() == 0 and "hours_f" in df.columns:
+        hours_f = pd.to_numeric(df["hours_f"], errors="coerce").fillna(0).to_numpy()
+        working_f = np.ascontiguousarray((hours_f > 0).astype(np.float64))
+    working_pt1_f = safe_get("working_pt1_f")
+    working_pt2_f = safe_get("working_pt2_f")
+    working_ft_f = safe_get("working_ft_f")
+    if working_pt1_f.sum() == 0 and "hours_f" in df.columns:
+        hours_f = pd.to_numeric(df["hours_f"], errors="coerce").fillna(0).to_numpy()
+        working_pt1_f = np.ascontiguousarray(((hours_f >= 18.5) & (hours_f <= 21.5)).astype(np.float64))
+        working_pt2_f = np.ascontiguousarray(((hours_f >= 29.5) & (hours_f <= 30.5)).astype(np.float64))
+        working_ft_f = np.ascontiguousarray(((hours_f >= 37.5) & (hours_f <= 40.5)).astype(np.float64))
+    gsur_f = safe_get("gsur_f")
+    if gsur_f.sum() == 0:
+        gsur_f = safe_get("gsur")
     
     # Wages - male
     if "wage_m" in df.columns:
@@ -725,12 +742,12 @@ def precompute_data_couples(df: pd.DataFrame) -> PrecomputedDataCouples:
     wage_m = np.clip(wage_m, 1e-6, None)
     log_wage_m = np.ascontiguousarray(np.log(wage_m))
     
-    if "pexp_male" in df.columns:
-        pexp_male = pd.to_numeric(df["pexp_male"], errors="coerce").fillna(0).to_numpy(dtype=np.float64)
+    if "pexp_m" in df.columns:
+        pexp_m = pd.to_numeric(df["pexp_m"], errors="coerce").fillna(0).to_numpy(dtype=np.float64)
     else:
-        pexp_male = np.zeros(n, dtype=np.float64)
-    pexp_male = np.ascontiguousarray(pexp_male)
-    pexp2_male = np.ascontiguousarray(pexp_male ** 2)
+        pexp_m = np.zeros(n, dtype=np.float64)
+    pexp_m = np.ascontiguousarray(pexp_m)
+    pexp2_m = np.ascontiguousarray(pexp_m ** 2)
     
     # Wages - female
     if "wage_f" in df.columns:
@@ -742,12 +759,12 @@ def precompute_data_couples(df: pd.DataFrame) -> PrecomputedDataCouples:
     wage_f = np.clip(wage_f, 1e-6, None)
     log_wage_f = np.ascontiguousarray(np.log(wage_f))
     
-    if "pexp_female" in df.columns:
-        pexp_female = pd.to_numeric(df["pexp_female"], errors="coerce").fillna(0).to_numpy(dtype=np.float64)
+    if "pexp_f" in df.columns:
+        pexp_f = pd.to_numeric(df["pexp_f"], errors="coerce").fillna(0).to_numpy(dtype=np.float64)
     else:
-        pexp_female = np.zeros(n, dtype=np.float64)
-    pexp_female = np.ascontiguousarray(pexp_female)
-    pexp2_female = np.ascontiguousarray(pexp_female ** 2)
+        pexp_f = np.zeros(n, dtype=np.float64)
+    pexp_f = np.ascontiguousarray(pexp_f)
+    pexp2_f = np.ascontiguousarray(pexp_f ** 2)
     
     # Prior
     if "prior" in df.columns:
@@ -784,17 +801,17 @@ def precompute_data_couples(df: pd.DataFrame) -> PrecomputedDataCouples:
     obs_indices = np.ascontiguousarray(obs_indices)
     
     return PrecomputedDataCouples(
-        c=c, l_male=l_male, age_norm_male=age_norm_male, age_norm2_male=age_norm2_male,
-        educL_male=educL_male, educH_male=educH_male,
-        l_female=l_female, age_norm_female=age_norm_female, age_norm2_female=age_norm2_female,
-        educL_female=educL_female, educH_female=educH_female,
+        c=c, l_m=l_m, age_norm_m=age_norm_m, age_norm2_m=age_norm2_m,
+        educL_m=educL_m, educH_m=educH_m,
+        l_f=l_f, age_norm_f=age_norm_f, age_norm2_f=age_norm2_f,
+        educL_f=educL_f, educH_f=educH_f,
         n_children=n_children,
-        working_male=working_male, working_pt1_male=working_pt1_male, working_pt2_male=working_pt2_male,
-        working_ft_male=working_ft_male, gsur_male=gsur_male,
-        working_female=working_female, working_pt1_female=working_pt1_female, working_pt2_female=working_pt2_female,
-        working_ft_female=working_ft_female, gsur_female=gsur_female,
-        log_wage_m=log_wage_m, pexp_male=pexp_male, pexp2_male=pexp2_male,
-        log_wage_f=log_wage_f, pexp_female=pexp_female, pexp2_female=pexp2_female,
+        working_m=working_m, working_pt1_m=working_pt1_m, working_pt2_m=working_pt2_m,
+        working_ft_m=working_ft_m, gsur_m=gsur_m,
+        working_f=working_f, working_pt1_f=working_pt1_f, working_pt2_f=working_pt2_f,
+        working_ft_f=working_ft_f, gsur_f=gsur_f,
+        log_wage_m=log_wage_m, pexp_m=pexp_m, pexp2_m=pexp2_m,
+        log_wage_f=log_wage_f, pexp_f=pexp_f, pexp2_f=pexp2_f,
         log_prior=log_prior, group_idx=group_idx, n_groups=n_groups,
         is_obs=is_obs, group_starts=group_starts, group_ends=group_ends, obs_indices=obs_indices,
     )
@@ -856,22 +873,22 @@ class PrefParamsCouples:
     """
     Preference parameters for couples (joint utility over male and female leisure).
     
-    CORRECTED SPECIFICATION (male=5 + female=6 + shared=5 params):
+    SIMPLIFIED SPECIFICATION:
     - age_norm = dag - mean(dag) (demeaned, not log)
-    - Single n_children replaces ch0_3, ch4_6, ch7_9 (ONLY for females!)
+    - Single n_children replaces ch0_3, ch4_6, ch7_9
     - No region effects on preferences
-    - Includes cross-leisure interaction (beta_interact * l_male * l_female)
-
+    - No cross-leisure interaction (unidentified)
+    
     Box-Cox utility structure:
-        u = (male leisure terms) * (l_male^θ_lm - 1)/θ_lm
-          + (female leisure terms) * (l_female^θ_lf - 1)/θ_lf
+        u = (male leisure terms) * (l_m^θ_lm - 1)/θ_lm
+          + (female leisure terms) * (l_f^θ_lf - 1)/θ_lf
           + β_c * ((c_m + c_f)^θ_c - 1)/θ_c
-          + β_interact * l_male * l_female
     """
-    # Male leisure coefficients (5 params - NO n_children!)
+    # Male leisure coefficients
     beta_lm0: float = 1.0
     beta_lm_age_norm: float = 0.0
     beta_lm_age_norm2: float = 0.0
+    beta_lm_n_children: float = 0.0
     beta_lm_educL: float = 0.0
     beta_lm_educH: float = 0.0
     
@@ -890,9 +907,6 @@ class PrefParamsCouples:
     theta_lm: float = 0.5   # male leisure
     theta_lf: float = 0.5   # female leisure
     theta_c: float = 0.5    # consumption
-
-    # Leisure-leisure interaction term
-    beta_interact: float = 0.0  # interaction between male and female leisure
 
 
 @dataclass
@@ -1489,12 +1503,12 @@ def ff_calc_util_couples(
     Compute systematic utility u_ij for each alternative j of each couple.
 
     SIMPLIFIED SPECIFICATION:
-        u = (β_lm0 + β_lm_age_norm*age_norm_male + β_lm_age_norm2*age_norm²_m
+        u = (β_lm0 + β_lm_age_norm*age_norm_m + β_lm_age_norm2*age_norm²_m
              + β_lm_n_children*n_children
-             + β_lm_educL*educL_male + β_lm_educH*educH_male)
-            * (l_male^θ_lm - 1)/θ_lm
+             + β_lm_educL*educL_m + β_lm_educH*educH_m)
+            * (l_m^θ_lm - 1)/θ_lm
           + (β_lf0 + ... female terms ...)
-            * (l_female^θ_lf - 1)/θ_lf
+            * (l_f^θ_lf - 1)/θ_lf
           + β_c * ((c_m + c_f)^θ_c - 1)/θ_c
     
     The dataset should have _m and _f suffixes for male and female partner variables.
@@ -1518,26 +1532,26 @@ def ff_calc_util_couples(
     # Normalized consumption and leisure for both partners
     # -------------------------------------------------------------------------
     # Male partner leisure
-    if "leis_util_male" in df.columns:
-        l_male = df["leis_util_male"].to_numpy()
+    if "leis_util_m" in df.columns:
+        l_m = df["leis_util_m"].to_numpy()
     elif "l_norm_m" in df.columns:
-        l_male = df["l_norm_m"].to_numpy()
-    elif "hours_male" in df.columns:
-        hours_male = pd.to_numeric(df["hours_male"], errors="coerce").fillna(0).to_numpy()
-        l_male = (TOTAL_LEISURE_HOURS - hours_male) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+        l_m = df["l_norm_m"].to_numpy()
+    elif "hours_m" in df.columns:
+        hours_m = pd.to_numeric(df["hours_m"], errors="coerce").fillna(0).to_numpy()
+        l_m = (TOTAL_LEISURE_HOURS - hours_m) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
     else:
-        l_male = np.ones(n)
+        l_m = np.ones(n)
     
     # Female partner leisure
-    if "leis_util_female" in df.columns:
-        l_female = df["leis_util_female"].to_numpy()
+    if "leis_util_f" in df.columns:
+        l_f = df["leis_util_f"].to_numpy()
     elif "l_norm_f" in df.columns:
-        l_female = df["l_norm_f"].to_numpy()
-    elif "hours_female" in df.columns:
-        hours_female = pd.to_numeric(df["hours_female"], errors="coerce").fillna(0).to_numpy()
-        l_female = (TOTAL_LEISURE_HOURS - hours_female) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+        l_f = df["l_norm_f"].to_numpy()
+    elif "hours_f" in df.columns:
+        hours_f = pd.to_numeric(df["hours_f"], errors="coerce").fillna(0).to_numpy()
+        l_f = (TOTAL_LEISURE_HOURS - hours_f) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
     else:
-        l_female = np.ones(n)
+        l_f = np.ones(n)
     
     # Joint household consumption (sum of individual consumption)
     if "dispy_util_m" in df.columns and "dispy_util_f" in df.columns:
@@ -1552,31 +1566,31 @@ def ff_calc_util_couples(
         c_total = np.ones(n)
     
     # Clip for numerical stability
-    l_male = np.clip(l_male, 1e-6, None)
-    l_female = np.clip(l_female, 1e-6, None)
+    l_m = np.clip(l_m, 1e-6, None)
+    l_f = np.clip(l_f, 1e-6, None)
     c_total = np.clip(c_total, 1e-6, None)
     
     # -------------------------------------------------------------------------
     # Covariates for male partner (simplified: demeaned age)
     # -------------------------------------------------------------------------
-    age_norm_male = _get_col(df, "age_norm_male", 0.0)
-    age_norm2_male = _get_col(df, "age_norm2_male", 0.0)
-    if age_norm2_male.sum() == 0:
-        age_norm2_male = age_norm_male ** 2
+    age_norm_m = _get_col(df, "age_norm_m", 0.0)
+    age_norm2_m = _get_col(df, "age_norm2_m", 0.0)
+    if age_norm2_m.sum() == 0:
+        age_norm2_m = age_norm_m ** 2
     
-    educL_male = _get_col(df, "educL_male", 0.0)
-    educH_male = _get_col(df, "educH_male", 0.0)
+    educL_m = _get_col(df, "educL_m", 0.0)
+    educH_m = _get_col(df, "educH_m", 0.0)
     
     # -------------------------------------------------------------------------
     # Covariates for female partner (simplified: demeaned age)
     # -------------------------------------------------------------------------
-    age_norm_female = _get_col(df, "age_norm_female", 0.0)
-    age_norm2_female = _get_col(df, "age_norm2_female", 0.0)
-    if age_norm2_female.sum() == 0:
-        age_norm2_female = age_norm_female ** 2
+    age_norm_f = _get_col(df, "age_norm_f", 0.0)
+    age_norm2_f = _get_col(df, "age_norm2_f", 0.0)
+    if age_norm2_f.sum() == 0:
+        age_norm2_f = age_norm_f ** 2
     
-    educL_female = _get_col(df, "educL_female", 0.0)
-    educH_female = _get_col(df, "educH_female", 0.0)
+    educL_f = _get_col(df, "educL_f", 0.0)
+    educH_f = _get_col(df, "educH_f", 0.0)
     
     # -------------------------------------------------------------------------
     # Household-level covariates (single n_children variable)
@@ -1584,45 +1598,44 @@ def ff_calc_util_couples(
     n_children = _get_col(df, "n_children", 0.0)
     
     # -------------------------------------------------------------------------
-    # Build male leisure coefficient (CORRECTED - NO n_children!)
+    # Build male leisure coefficient (simplified)
     # -------------------------------------------------------------------------
     beta_leisure_m = (
         pref.beta_lm0
-        + pref.beta_lm_age_norm * age_norm_male
-        + pref.beta_lm_age_norm2 * age_norm2_male
-        # NO n_children for males!
-        + pref.beta_lm_educL * educL_male
-        + pref.beta_lm_educH * educH_male
+        + pref.beta_lm_age_norm * age_norm_m
+        + pref.beta_lm_age_norm2 * age_norm2_m
+        + pref.beta_lm_n_children * n_children
+        + pref.beta_lm_educL * educL_m
+        + pref.beta_lm_educH * educH_m
     )
-
+    
     # -------------------------------------------------------------------------
-    # Build female leisure coefficient (WITH n_children)
+    # Build female leisure coefficient (simplified)
     # -------------------------------------------------------------------------
     beta_leisure_f = (
         pref.beta_lf0
-        + pref.beta_lf_age_norm * age_norm_female
-        + pref.beta_lf_age_norm2 * age_norm2_female
-        + pref.beta_lf_n_children * n_children  # n_children only for females
-        + pref.beta_lf_educL * educL_female
-        + pref.beta_lf_educH * educH_female
+        + pref.beta_lf_age_norm * age_norm_f
+        + pref.beta_lf_age_norm2 * age_norm2_f
+        + pref.beta_lf_n_children * n_children
+        + pref.beta_lf_educL * educL_f
+        + pref.beta_lf_educH * educH_f
     )
     
     # -------------------------------------------------------------------------
     # Box-Cox transforms
     # -------------------------------------------------------------------------
-    l_m_bc = boxcox_transform(l_male, pref.theta_lm)
-    l_f_bc = boxcox_transform(l_female, pref.theta_lf)
+    l_m_bc = boxcox_transform(l_m, pref.theta_lm)
+    l_f_bc = boxcox_transform(l_f, pref.theta_lf)
     c_bc = boxcox_transform(c_total, pref.theta_c)
       # -------------------------------------------------------------------------
-    # Utility: male leisure + female leisure + consumption + interaction
+    # Utility: male leisure + female leisure + consumption (no interaction)
     # -------------------------------------------------------------------------
     u = (
         beta_leisure_m * l_m_bc          # Male leisure utility
         + beta_leisure_f * l_f_bc        # Female leisure utility
         + pref.beta_c * c_bc             # Joint consumption utility
-        + pref.beta_interact * l_male * l_female # Leisure-leisure interaction term
     )
-
+    
     return u
 
 
@@ -1847,8 +1860,8 @@ def ff_calc_hopp_couples(
     
     For couples, the opportunity density is the sum of male and female components:
         log h(h_m, h_f | X) = log h_m(h_m | X_m) + log h_f(h_f | X_f)
-        hopp = (hopp_male_terms using working_male, educL_male, gsur_male, etc.)
-             + (hopp_female_terms using working_female, educL_female, gsur_female, etc.)
+        hopp = (hopp_male_terms using working_m, educL_m, gsur_m, etc.)
+             + (hopp_female_terms using working_f, educL_f, gsur_f, etc.)
     
     Parameters
     ----------
@@ -1869,68 +1882,68 @@ def ff_calc_hopp_couples(
     # -------------------------------------------------------------------------
     # Male partner working indicators
     # -------------------------------------------------------------------------
-    working_male = _get_col(df, "working_male", 0.0)
-    working_pt1_male = _get_col(df, "working_pt1_male", 0.0)
-    working_pt2_male = _get_col(df, "working_pt2_male", 0.0)
-    working_ft_male = _get_col(df, "working_ft_male", 0.0)
+    working_m = _get_col(df, "working_m", 0.0)
+    working_pt1_m = _get_col(df, "working_pt1_m", 0.0)
+    working_pt2_m = _get_col(df, "working_pt2_m", 0.0)
+    working_ft_m = _get_col(df, "working_ft_m", 0.0)
     
-    # If not present, derive from hours_male
-    if "working_male" not in df.columns and "hours_male" in df.columns:
-        hours_male = pd.to_numeric(df["hours_male"], errors="coerce").fillna(0).to_numpy()
-        working_male = (hours_male > 0).astype(float)
-        working_pt1_male = ((hours_male >= 18.5) & (hours_male <= 21.5)).astype(float)
-        working_pt2_male = ((hours_male >= 29.5) & (hours_male <= 30.5)).astype(float)
-        working_ft_male = ((hours_male >= 37.5) & (hours_male <= 40.5)).astype(float)
+    # If not present, derive from hours_m
+    if "working_m" not in df.columns and "hours_m" in df.columns:
+        hours_m = pd.to_numeric(df["hours_m"], errors="coerce").fillna(0).to_numpy()
+        working_m = (hours_m > 0).astype(float)
+        working_pt1_m = ((hours_m >= 18.5) & (hours_m <= 21.5)).astype(float)
+        working_pt2_m = ((hours_m >= 29.5) & (hours_m <= 30.5)).astype(float)
+        working_ft_m = ((hours_m >= 37.5) & (hours_m <= 40.5)).astype(float)
     
-    gsur_male = _get_col(df, "gsur_male", 0.0)
-    if gsur_male.sum() == 0:
-        gsur_male = _get_col(df, "gsur", 0.0)  # Fallback to household gsur
-    educL_male = _get_col(df, "educL_male", 0.0)
-    educH_male = _get_col(df, "educH_male", 0.0)
+    gsur_m = _get_col(df, "gsur_m", 0.0)
+    if gsur_m.sum() == 0:
+        gsur_m = _get_col(df, "gsur", 0.0)  # Fallback to household gsur
+    educL_m = _get_col(df, "educL_m", 0.0)
+    educH_m = _get_col(df, "educH_m", 0.0)
     
     # -------------------------------------------------------------------------
     # Female partner working indicators
     # -------------------------------------------------------------------------
-    working_female = _get_col(df, "working_female", 0.0)
-    working_pt1_female = _get_col(df, "working_pt1_female", 0.0)
-    working_pt2_female = _get_col(df, "working_pt2_female", 0.0)
-    working_ft_female = _get_col(df, "working_ft_female", 0.0)
+    working_f = _get_col(df, "working_f", 0.0)
+    working_pt1_f = _get_col(df, "working_pt1_f", 0.0)
+    working_pt2_f = _get_col(df, "working_pt2_f", 0.0)
+    working_ft_f = _get_col(df, "working_ft_f", 0.0)
     
-    if "working_female" not in df.columns and "hours_female" in df.columns:
-        hours_female = pd.to_numeric(df["hours_female"], errors="coerce").fillna(0).to_numpy()
-        working_female = (hours_female > 0).astype(float)
-        working_pt1_female = ((hours_female >= 18.5) & (hours_female <= 21.5)).astype(float)
-        working_pt2_female = ((hours_female >= 29.5) & (hours_female <= 30.5)).astype(float)
-        working_ft_female = ((hours_female >= 37.5) & (hours_female <= 40.5)).astype(float)
+    if "working_f" not in df.columns and "hours_f" in df.columns:
+        hours_f = pd.to_numeric(df["hours_f"], errors="coerce").fillna(0).to_numpy()
+        working_f = (hours_f > 0).astype(float)
+        working_pt1_f = ((hours_f >= 18.5) & (hours_f <= 21.5)).astype(float)
+        working_pt2_f = ((hours_f >= 29.5) & (hours_f <= 30.5)).astype(float)
+        working_ft_f = ((hours_f >= 37.5) & (hours_f <= 40.5)).astype(float)
     
-    gsur_female = _get_col(df, "gsur_female", 0.0)
-    if gsur_female.sum() == 0:
-        gsur_female = _get_col(df, "gsur", 0.0)
-    educL_female = _get_col(df, "educL_female", 0.0)
-    educH_female = _get_col(df, "educH_female", 0.0)
+    gsur_f = _get_col(df, "gsur_f", 0.0)
+    if gsur_f.sum() == 0:
+        gsur_f = _get_col(df, "gsur", 0.0)
+    educL_f = _get_col(df, "educL_f", 0.0)
+    educH_f = _get_col(df, "educH_f", 0.0)
     
     # -------------------------------------------------------------------------
     # Hours opportunity: sum of male and female components
     # SIMPLIFIED: No region interactions (removed for identification)
     # -------------------------------------------------------------------------
     h_opp_m = (
-        hopp_m.beta_work * working_male
-        + hopp_m.beta_pt1 * working_pt1_male
-        + hopp_m.beta_pt2 * working_pt2_male
-        + hopp_m.beta_ft * working_ft_male
-        + hopp_m.beta_gsur * working_male * gsur_male
-        + hopp_m.beta_work_educL * working_male * educL_male
-        + hopp_m.beta_work_educH * working_male * educH_male
+        hopp_m.beta_work * working_m
+        + hopp_m.beta_pt1 * working_pt1_m
+        + hopp_m.beta_pt2 * working_pt2_m
+        + hopp_m.beta_ft * working_ft_m
+        + hopp_m.beta_gsur * working_m * gsur_m
+        + hopp_m.beta_work_educL * working_m * educL_m
+        + hopp_m.beta_work_educH * working_m * educH_m
     )
     
     h_opp_f = (
-        hopp_f.beta_work * working_female
-        + hopp_f.beta_pt1 * working_pt1_female
-        + hopp_f.beta_pt2 * working_pt2_female
-        + hopp_f.beta_ft * working_ft_female
-        + hopp_f.beta_gsur * working_female * gsur_female
-        + hopp_f.beta_work_educL * working_female * educL_female
-        + hopp_f.beta_work_educH * working_female * educH_female
+        hopp_f.beta_work * working_f
+        + hopp_f.beta_pt1 * working_pt1_f
+        + hopp_f.beta_pt2 * working_pt2_f
+        + hopp_f.beta_ft * working_ft_f
+        + hopp_f.beta_gsur * working_f * gsur_f
+        + hopp_f.beta_work_educL * working_f * educL_f
+        + hopp_f.beta_work_educH * working_f * educH_f
     )
     
     return h_opp_m + h_opp_f
@@ -1968,10 +1981,10 @@ def ff_calc_wopp_couples(
     # -------------------------------------------------------------------------
     # Male partner wage equation
     # -------------------------------------------------------------------------
-    working_male = _get_col(df, "working_male", 0.0)
-    if "working_male" not in df.columns and "hours_male" in df.columns:
-        hours_male = pd.to_numeric(df["hours_male"], errors="coerce").fillna(0).to_numpy()
-        working_male = (hours_male > 0).astype(float)
+    working_m = _get_col(df, "working_m", 0.0)
+    if "working_m" not in df.columns and "hours_m" in df.columns:
+        hours_m = pd.to_numeric(df["hours_m"], errors="coerce").fillna(0).to_numpy()
+        working_m = (hours_m > 0).astype(float)
     
     if "wage_m" in df.columns:
         wage_m = pd.to_numeric(df["wage_m"], errors="coerce").fillna(1).to_numpy()
@@ -1982,17 +1995,17 @@ def ff_calc_wopp_couples(
     wage_m = np.clip(wage_m, 1e-6, None)
     log_wage_m = np.log(wage_m)
     
-    educL_male = _get_col(df, "educL_male", 0.0)
-    educH_male = _get_col(df, "educH_male", 0.0)
-    pexp_male = _get_col(df, "pexp_male", 0.0)
+    educL_m = _get_col(df, "educL_m", 0.0)
+    educH_m = _get_col(df, "educH_m", 0.0)
+    pexp_m = _get_col(df, "pexp_m", 0.0)
     
     # -------------------------------------------------------------------------
     # Female partner wage equation
     # -------------------------------------------------------------------------
-    working_female = _get_col(df, "working_female", 0.0)
-    if "working_female" not in df.columns and "hours_female" in df.columns:
-        hours_female = pd.to_numeric(df["hours_female"], errors="coerce").fillna(0).to_numpy()
-        working_female = (hours_female > 0).astype(float)
+    working_f = _get_col(df, "working_f", 0.0)
+    if "working_f" not in df.columns and "hours_f" in df.columns:
+        hours_f = pd.to_numeric(df["hours_f"], errors="coerce").fillna(0).to_numpy()
+        working_f = (hours_f > 0).astype(float)
     
     if "wage_f" in df.columns:
         wage_f = pd.to_numeric(df["wage_f"], errors="coerce").fillna(1).to_numpy()
@@ -2003,9 +2016,9 @@ def ff_calc_wopp_couples(
     wage_f = np.clip(wage_f, 1e-6, None)
     log_wage_f = np.log(wage_f)
     
-    educL_female = _get_col(df, "educL_female", 0.0)
-    educH_female = _get_col(df, "educH_female", 0.0)
-    pexp_female = _get_col(df, "pexp_female", 0.0)
+    educL_f = _get_col(df, "educL_f", 0.0)
+    educH_f = _get_col(df, "educH_f", 0.0)
+    pexp_f = _get_col(df, "pexp_f", 0.0)
     
     # -------------------------------------------------------------------------
     # Mean log-wage for male (Mincer equation - simplified)
@@ -2013,32 +2026,32 @@ def ff_calc_wopp_couples(
     # -------------------------------------------------------------------------
     mean_logw_m = (
         wopp_m.beta0
-        + wopp_m.beta_educL * educL_male
-        + wopp_m.beta_educH * educH_male
-        + wopp_m.beta_pexp * pexp_male
-        + wopp_m.beta_pexp2 * (pexp_male ** 2)
+        + wopp_m.beta_educL * educL_m
+        + wopp_m.beta_educH * educH_m
+        + wopp_m.beta_pexp * pexp_m
+        + wopp_m.beta_pexp2 * (pexp_m ** 2)
     )
     
     sigma_m = np.abs(wopp_m.sigma) + 1e-6
     z_m = (log_wage_m - mean_logw_m) / sigma_m
     w_opp_m = -0.5 * z_m**2 - np.log(sigma_m) - log_wage_m
-    w_opp_m = np.where(working_male > 0, w_opp_m, 0.0)
+    w_opp_m = np.where(working_m > 0, w_opp_m, 0.0)
     
     # -------------------------------------------------------------------------
     # Mean log-wage for female (Mincer equation - simplified)
     # -------------------------------------------------------------------------
     mean_logw_f = (
         wopp_f.beta0
-        + wopp_f.beta_educL * educL_female
-        + wopp_f.beta_educH * educH_female
-        + wopp_f.beta_pexp * pexp_female
-        + wopp_f.beta_pexp2 * (pexp_female ** 2)
+        + wopp_f.beta_educL * educL_f
+        + wopp_f.beta_educH * educH_f
+        + wopp_f.beta_pexp * pexp_f
+        + wopp_f.beta_pexp2 * (pexp_f ** 2)
     )
     
     sigma_f = np.abs(wopp_f.sigma) + 1e-6
     z_f = (log_wage_f - mean_logw_f) / sigma_f
     w_opp_f = -0.5 * z_f**2 - np.log(sigma_f) - log_wage_f
-    w_opp_f = np.where(working_female > 0, w_opp_f, 0.0)
+    w_opp_f = np.where(working_f > 0, w_opp_f, 0.0)
     
     return w_opp_m + w_opp_f
 
@@ -2811,29 +2824,28 @@ def fast_log_likelihood_couples(
         Total log-likelihood
     """
     # -------------------------------------------------------------------------
-    # Unpack theta - CORRECTED STRUCTURE
+    # Unpack theta - Male leisure preferences [0:6]
     # -------------------------------------------------------------------------
-    # Male leisure preferences [0:5] - NO n_children!
     beta_lm0 = theta[0]
     beta_lm_age_norm = theta[1]
     beta_lm_age_norm2 = theta[2]
-    beta_lm_educL = theta[3]
-    beta_lm_educH = theta[4]
-
-    # Female leisure preferences [5:11] - WITH n_children
-    beta_lf0 = theta[5]
-    beta_lf_age_norm = theta[6]
-    beta_lf_age_norm2 = theta[7]
-    beta_lf_n_children = theta[8]
-    beta_lf_educL = theta[9]
-    beta_lf_educH = theta[10]
-
-    # Shared params [11:16] - WITH interaction
-    beta_c = theta[11]
-    theta_lm = theta[12]
-    theta_lf = theta[13]
-    theta_c = theta[14]
-    beta_interact = theta[15]
+    beta_lm_n_children = theta[3]
+    beta_lm_educL = theta[4]
+    beta_lm_educH = theta[5]
+    
+    # Female leisure preferences [6:12]
+    beta_lf0 = theta[6]
+    beta_lf_age_norm = theta[7]
+    beta_lf_age_norm2 = theta[8]
+    beta_lf_n_children = theta[9]
+    beta_lf_educL = theta[10]
+    beta_lf_educH = theta[11]
+    
+    # Shared params [12:16]
+    beta_c = theta[12]
+    theta_lm = theta[13]
+    theta_lf = theta[14]
+    theta_c = theta[15]
     
     # Male hours opportunity [16:23]
     beta_work_m = theta[16]
@@ -2857,56 +2869,55 @@ def fast_log_likelihood_couples(
     # Utility computation (vectorized)
     # -------------------------------------------------------------------------
     # Box-Cox transforms
-    lm_bc = _fast_boxcox(data.l_male, theta_lm)
-    lf_bc = _fast_boxcox(data.l_female, theta_lf)
+    lm_bc = _fast_boxcox(data.l_m, theta_lm)
+    lf_bc = _fast_boxcox(data.l_f, theta_lf)
     c_bc = _fast_boxcox(data.c, theta_c)
     
-    # Male leisure coefficient (CORRECTED - NO n_children!)
+    # Male leisure coefficient (simplified)
     beta_leisure_m = (
         beta_lm0
-        + beta_lm_age_norm * data.age_norm_male
-        + beta_lm_age_norm2 * data.age_norm2_male
-        # NO n_children for males!
-        + beta_lm_educL * data.educL_male
-        + beta_lm_educH * data.educH_male
+        + beta_lm_age_norm * data.age_norm_m
+        + beta_lm_age_norm2 * data.age_norm2_m
+        + beta_lm_n_children * data.n_children
+        + beta_lm_educL * data.educL_m
+        + beta_lm_educH * data.educH_m
     )
-
-    # Female leisure coefficient (WITH n_children)
+    
+    # Female leisure coefficient (simplified)
     beta_leisure_f = (
         beta_lf0
-        + beta_lf_age_norm * data.age_norm_female
-        + beta_lf_age_norm2 * data.age_norm2_female
-        + beta_lf_n_children * data.n_children  # n_children only for females
-        + beta_lf_educL * data.educL_female
-        + beta_lf_educH * data.educH_female
+        + beta_lf_age_norm * data.age_norm_f
+        + beta_lf_age_norm2 * data.age_norm2_f
+        + beta_lf_n_children * data.n_children
+        + beta_lf_educL * data.educL_f
+        + beta_lf_educH * data.educH_f
     )
-
-    # Total utility (WITH interaction term!)
-    u = (beta_leisure_m * lm_bc + beta_leisure_f * lf_bc + beta_c * c_bc +
-         beta_interact * data.l_male * data.l_female)
+    
+    # Total utility
+    u = beta_leisure_m * lm_bc + beta_leisure_f * lf_bc + beta_c * c_bc
     
     # -------------------------------------------------------------------------
     # Hours opportunity density - male (simplified: no region)
     # -------------------------------------------------------------------------
     h_opp_m = (
-        beta_work_m * data.working_male
-        + beta_pt1_m * data.working_pt1_male
-        + beta_pt2_m * data.working_pt2_male
-        + beta_ft_m * data.working_ft_male
-        + beta_gsur_m * data.working_male * data.gsur_male
-        + beta_work_educL_m * data.working_male * data.educL_male
-        + beta_work_educH_m * data.working_male * data.educH_male
+        beta_work_m * data.working_m
+        + beta_pt1_m * data.working_pt1_m
+        + beta_pt2_m * data.working_pt2_m
+        + beta_ft_m * data.working_ft_m
+        + beta_gsur_m * data.working_m * data.gsur_m
+        + beta_work_educL_m * data.working_m * data.educL_m
+        + beta_work_educH_m * data.working_m * data.educH_m
     )
     
     # Hours opportunity density - female (simplified: no region)
     h_opp_f = (
-        beta_work_f * data.working_female
-        + beta_pt1_f * data.working_pt1_female
-        + beta_pt2_f * data.working_pt2_female
-        + beta_ft_f * data.working_ft_female
-        + beta_gsur_f * data.working_female * data.gsur_female
-        + beta_work_educL_f * data.working_female * data.educL_female
-        + beta_work_educH_f * data.working_female * data.educH_female
+        beta_work_f * data.working_f
+        + beta_pt1_f * data.working_pt1_f
+        + beta_pt2_f * data.working_pt2_f
+        + beta_ft_f * data.working_ft_f
+        + beta_gsur_f * data.working_f * data.gsur_f
+        + beta_work_educL_f * data.working_f * data.educL_f
+        + beta_work_educH_f * data.working_f * data.educH_f
     )
     
     h_opp = h_opp_m + h_opp_f
@@ -2925,11 +2936,11 @@ def fast_log_likelihood_couples(
         
         mean_logw_m = (
             w_beta0_m
-            + w_educL_m * data.educL_male + w_educH_m * data.educH_male
-            + w_pexp_m * data.pexp_male + w_pexp2_m * data.pexp2_male
+            + w_educL_m * data.educL_m + w_educH_m * data.educH_m
+            + w_pexp_m * data.pexp_m + w_pexp2_m * data.pexp2_m
         )
         z_m = (data.log_wage_m - mean_logw_m) / sigma_m
-        w_opp_m = np.where(data.working_male > 0, 
+        w_opp_m = np.where(data.working_m > 0, 
                           -0.5 * z_m * z_m - np.log(sigma_m) - data.log_wage_m, 0.0)
         
         # Female wage params [36:42]
@@ -2942,11 +2953,11 @@ def fast_log_likelihood_couples(
         
         mean_logw_f = (
             w_beta0_f
-            + w_educL_f * data.educL_female + w_educH_f * data.educH_female
-            + w_pexp_f * data.pexp_female + w_pexp2_f * data.pexp2_female
+            + w_educL_f * data.educL_f + w_educH_f * data.educH_f
+            + w_pexp_f * data.pexp_f + w_pexp2_f * data.pexp2_f
         )
         z_f = (data.log_wage_f - mean_logw_f) / sigma_f
-        w_opp_f = np.where(data.working_female > 0,
+        w_opp_f = np.where(data.working_f > 0,
                           -0.5 * z_f * z_f - np.log(sigma_f) - data.log_wage_f, 0.0)
         
         w_opp = w_opp_m + w_opp_f
@@ -3454,17 +3465,16 @@ def fast_neg_ll_with_grad_couples(
     """
     OPTIMIZED: Compute LL and gradient for couples in single pass.
     
-    CORRECTED SPECIFICATION (matching fast_log_likelihood_couples):
+    SIMPLIFIED SPECIFICATION (matching fast_log_likelihood_couples):
     - Uses demeaned age (age_norm) instead of log(age)
-    - Single n_children variable ONLY for females (NOT males!)
+    - Single n_children variable instead of ch0_3, ch4_6, ch7_9
     - No region effects on preferences or hours opportunity
     - No year dummies on wages
-    - Includes leisure-leisure interaction term
-
+    
     Parameter layout (30 for fw, 42 for vw):
-    [0:5]    - Male leisure preferences (5: NO n_children!)
-    [5:11]   - Female leisure preferences (6: WITH n_children)
-    [11:16]  - Shared: beta_c, theta_lm, theta_lf, theta_c, beta_interact
+    [0:6]    - Male leisure preferences
+    [6:12]   - Female leisure preferences
+    [12:16]  - Shared: beta_c, theta_lm, theta_lf, theta_c
     [16:23]  - Male hours opportunity (7 params)
     [23:30]  - Female hours opportunity (7 params)
     [30:36]  - Male wage opportunity (6 params, vw only)
@@ -3488,29 +3498,29 @@ def fast_neg_ll_with_grad_couples(
     n_params = 42 if wage_spec == "vw" else 30
     
     # -------------------------------------------------------------------------
-    # Unpack theta - CORRECTED STRUCTURE
+    # Unpack theta - SIMPLIFIED STRUCTURE
     # -------------------------------------------------------------------------
-    # Male leisure preferences [0:5] - NO n_children!
+    # Male leisure preferences [0:6]
     beta_lm0 = theta[0]
     beta_lm_age_norm = theta[1]
     beta_lm_age_norm2 = theta[2]
-    beta_lm_educL = theta[3]
-    beta_lm_educH = theta[4]
-
-    # Female leisure preferences [5:11] - WITH n_children
-    beta_lf0 = theta[5]
-    beta_lf_age_norm = theta[6]
-    beta_lf_age_norm2 = theta[7]
-    beta_lf_n_children = theta[8]
-    beta_lf_educL = theta[9]
-    beta_lf_educH = theta[10]
-
-    # Shared params [11:16] - WITH interaction
-    beta_c = theta[11]
-    theta_lm = theta[12]
-    theta_lf = theta[13]
-    theta_c = theta[14]
-    beta_interact = theta[15]
+    beta_lm_n_children = theta[3]
+    beta_lm_educL = theta[4]
+    beta_lm_educH = theta[5]
+    
+    # Female leisure preferences [6:12]
+    beta_lf0 = theta[6]
+    beta_lf_age_norm = theta[7]
+    beta_lf_age_norm2 = theta[8]
+    beta_lf_n_children = theta[9]
+    beta_lf_educL = theta[10]
+    beta_lf_educH = theta[11]
+    
+    # Shared params [12:16]
+    beta_c = theta[12]
+    theta_lm = theta[13]
+    theta_lf = theta[14]
+    theta_c = theta[15]
     
     # Male hours opportunity [16:23]
     beta_work_m = theta[16]
@@ -3533,86 +3543,84 @@ def fast_neg_ll_with_grad_couples(
     # -------------------------------------------------------------------------
     # Box-Cox transforms (computed ONCE)
     # -------------------------------------------------------------------------
-    lm_bc = _fast_boxcox(data.l_male, theta_lm)
-    lf_bc = _fast_boxcox(data.l_female, theta_lf)
+    lm_bc = _fast_boxcox(data.l_m, theta_lm)
+    lf_bc = _fast_boxcox(data.l_f, theta_lf)
     c_bc = _fast_boxcox(data.c, theta_c)
-    dlm_bc_dtheta = _fast_d_boxcox_dtheta(data.l_male, theta_lm)
-    dlf_bc_dtheta = _fast_d_boxcox_dtheta(data.l_female, theta_lf)
+    dlm_bc_dtheta = _fast_d_boxcox_dtheta(data.l_m, theta_lm)
+    dlf_bc_dtheta = _fast_d_boxcox_dtheta(data.l_f, theta_lf)
     dc_bc_dtheta = _fast_d_boxcox_dtheta(data.c, theta_c)
     
     # -------------------------------------------------------------------------
-    # Utility computation (CORRECTED)
+    # Utility computation (SIMPLIFIED)
     # -------------------------------------------------------------------------
     beta_leisure_m = (
         beta_lm0
-        + beta_lm_age_norm * data.age_norm_male
-        + beta_lm_age_norm2 * data.age_norm2_male
-        # NO n_children for males!
-        + beta_lm_educL * data.educL_male
-        + beta_lm_educH * data.educH_male
+        + beta_lm_age_norm * data.age_norm_m
+        + beta_lm_age_norm2 * data.age_norm2_m
+        + beta_lm_n_children * data.n_children
+        + beta_lm_educL * data.educL_m
+        + beta_lm_educH * data.educH_m
     )
-
+    
     beta_leisure_f = (
         beta_lf0
-        + beta_lf_age_norm * data.age_norm_female
-        + beta_lf_age_norm2 * data.age_norm2_female
-        + beta_lf_n_children * data.n_children  # n_children only for females
-        + beta_lf_educL * data.educL_female
-        + beta_lf_educH * data.educH_female
+        + beta_lf_age_norm * data.age_norm_f
+        + beta_lf_age_norm2 * data.age_norm2_f
+        + beta_lf_n_children * data.n_children
+        + beta_lf_educL * data.educL_f
+        + beta_lf_educH * data.educH_f
     )
-
-    # Add interaction term!
-    u = (beta_leisure_m * lm_bc + beta_leisure_f * lf_bc + beta_c * c_bc +
-         beta_interact * data.l_male * data.l_female)
+    
+    u = beta_leisure_m * lm_bc + beta_leisure_f * lf_bc + beta_c * c_bc
     
     # -------------------------------------------------------------------------
-    # Utility derivatives (16 params) - CORRECTED STRUCTURE
+    # Utility derivatives (16 params)
     # -------------------------------------------------------------------------
     du_dtheta = np.empty((n, 16), dtype=np.float64)
-
-    # Male leisure params [0:5] - NO n_children!
+    
+    # Male leisure params [0:6]
     du_dtheta[:, 0] = lm_bc                          # beta_lm0
-    du_dtheta[:, 1] = data.age_norm_male * lm_bc        # beta_lm_age_norm
-    du_dtheta[:, 2] = data.age_norm2_male * lm_bc       # beta_lm_age_norm2
-    du_dtheta[:, 3] = data.educL_male * lm_bc           # beta_lm_educL
-    du_dtheta[:, 4] = data.educH_male * lm_bc           # beta_lm_educH
-
-    # Female leisure params [5:11] - WITH n_children
-    du_dtheta[:, 5] = lf_bc                          # beta_lf0
-    du_dtheta[:, 6] = data.age_norm_female * lf_bc        # beta_lf_age_norm
-    du_dtheta[:, 7] = data.age_norm2_female * lf_bc       # beta_lf_age_norm2
-    du_dtheta[:, 8] = data.n_children * lf_bc        # beta_lf_n_children (females only!)
-    du_dtheta[:, 9] = data.educL_female * lf_bc           # beta_lf_educL
-    du_dtheta[:, 10] = data.educH_female * lf_bc          # beta_lf_educH
-
-    # Shared params [11:16] - WITH interaction
-    du_dtheta[:, 11] = c_bc                             # beta_c
-    du_dtheta[:, 12] = beta_leisure_m * dlm_bc_dtheta   # theta_lm
-    du_dtheta[:, 13] = beta_leisure_f * dlf_bc_dtheta   # theta_lf
-    du_dtheta[:, 14] = beta_c * dc_bc_dtheta            # theta_c
-    du_dtheta[:, 15] = data.l_male * data.l_female              # beta_interact (NEW!)
+    du_dtheta[:, 1] = data.age_norm_m * lm_bc        # beta_lm_age_norm
+    du_dtheta[:, 2] = data.age_norm2_m * lm_bc       # beta_lm_age_norm2
+    du_dtheta[:, 3] = data.n_children * lm_bc        # beta_lm_n_children
+    du_dtheta[:, 4] = data.educL_m * lm_bc           # beta_lm_educL
+    du_dtheta[:, 5] = data.educH_m * lm_bc           # beta_lm_educH
+    
+    # Female leisure params [6:12]
+    du_dtheta[:, 6] = lf_bc                          # beta_lf0
+    du_dtheta[:, 7] = data.age_norm_f * lf_bc        # beta_lf_age_norm
+    du_dtheta[:, 8] = data.age_norm2_f * lf_bc       # beta_lf_age_norm2
+    du_dtheta[:, 9] = data.n_children * lf_bc        # beta_lf_n_children
+    du_dtheta[:, 10] = data.educL_f * lf_bc          # beta_lf_educL
+    du_dtheta[:, 11] = data.educH_f * lf_bc          # beta_lf_educH
+    
+    # Shared params [12:16]
+    du_dtheta[:, 12] = c_bc                          # beta_c
+    du_dtheta[:, 13] = beta_leisure_m * dlm_bc_dtheta  # theta_lm
+    du_dtheta[:, 14] = beta_leisure_f * dlf_bc_dtheta  # theta_lf
+    du_dtheta[:, 15] = beta_c * dc_bc_dtheta           # theta_c
     
     # -------------------------------------------------------------------------
     # Hours opportunity density (SIMPLIFIED - no region)
     # -------------------------------------------------------------------------
     h_opp_m = (
-        beta_work_m * data.working_male
-        + beta_pt1_m * data.working_pt1_male
-        + beta_pt2_m * data.working_pt2_male
-        + beta_ft_m * data.working_ft_male
-        + beta_gsur_m * data.working_male * data.gsur_male
-        + beta_work_educL_m * data.working_male * data.educL_male
-        + beta_work_educH_m * data.working_male * data.educH_male
+        beta_work_m * data.working_m
+        + beta_pt1_m * data.working_pt1_m
+        + beta_pt2_m * data.working_pt2_m
+        + beta_ft_m * data.working_ft_m
+        + beta_gsur_m * data.working_m * data.gsur_m
+        + beta_work_educL_m * data.working_m * data.educL_m
+        + beta_work_educH_m * data.working_m * data.educH_m
     )
     
     h_opp_f = (
-        beta_work_f * data.working_female
-        + beta_pt1_f * data.working_pt1_female
-        + beta_pt2_f * data.working_pt2_female
-        + beta_ft_f * data.working_ft_female
-        + beta_gsur_f * data.working_female * data.gsur_female
-        + beta_work_educL_f * data.working_female * data.educL_female
-        + beta_work_educH_f * data.working_female * data.educH_female
+        beta_work_f * data.working_f
+        + beta_pt1_f * data.working_pt1_f
+        + beta_pt2_f * data.working_pt2_f
+        + beta_ft_f * data.working_ft_f
+        + beta_gsur_f * data.working_f * data.gsur_f
+        + beta_work_educL_f * data.working_f * data.educL_f
+        + beta_work_educH_f * data.working_f * data.educH_f
     )
     
     h_opp = h_opp_m + h_opp_f
@@ -3620,21 +3628,21 @@ def fast_neg_ll_with_grad_couples(
     # Hours opp derivatives (14 params: 7 male + 7 female)
     dh_dtheta = np.empty((n, 14), dtype=np.float64)
     # Male hopp [0:7]
-    dh_dtheta[:, 0] = data.working_male
-    dh_dtheta[:, 1] = data.working_pt1_male
-    dh_dtheta[:, 2] = data.working_pt2_male
-    dh_dtheta[:, 3] = data.working_ft_male
-    dh_dtheta[:, 4] = data.working_male * data.gsur_male
-    dh_dtheta[:, 5] = data.working_male * data.educL_male
-    dh_dtheta[:, 6] = data.working_male * data.educH_male
+    dh_dtheta[:, 0] = data.working_m
+    dh_dtheta[:, 1] = data.working_pt1_m
+    dh_dtheta[:, 2] = data.working_pt2_m
+    dh_dtheta[:, 3] = data.working_ft_m
+    dh_dtheta[:, 4] = data.working_m * data.gsur_m
+    dh_dtheta[:, 5] = data.working_m * data.educL_m
+    dh_dtheta[:, 6] = data.working_m * data.educH_m
     # Female hopp [7:14]
-    dh_dtheta[:, 7] = data.working_female
-    dh_dtheta[:, 8] = data.working_pt1_female
-    dh_dtheta[:, 9] = data.working_pt2_female
-    dh_dtheta[:, 10] = data.working_ft_female
-    dh_dtheta[:, 11] = data.working_female * data.gsur_female
-    dh_dtheta[:, 12] = data.working_female * data.educL_female
-    dh_dtheta[:, 13] = data.working_female * data.educH_female
+    dh_dtheta[:, 7] = data.working_f
+    dh_dtheta[:, 8] = data.working_pt1_f
+    dh_dtheta[:, 9] = data.working_pt2_f
+    dh_dtheta[:, 10] = data.working_ft_f
+    dh_dtheta[:, 11] = data.working_f * data.gsur_f
+    dh_dtheta[:, 12] = data.working_f * data.educL_f
+    dh_dtheta[:, 13] = data.working_f * data.educH_f
     
     # -------------------------------------------------------------------------
     # Wage opportunity density (SIMPLIFIED - no region/year)
@@ -3650,13 +3658,13 @@ def fast_neg_ll_with_grad_couples(
         
         mean_logw_m = (
             w_beta0_m
-            + w_educL_m * data.educL_male
-            + w_educH_m * data.educH_male
-            + w_pexp_m * data.pexp_male
-            + w_pexp2_m * data.pexp2_male
+            + w_educL_m * data.educL_m
+            + w_educH_m * data.educH_m
+            + w_pexp_m * data.pexp_m
+            + w_pexp2_m * data.pexp2_m
         )
         z_m = (data.log_wage_m - mean_logw_m) / sigma_m
-        w_opp_m = np.where(data.working_male > 0, 
+        w_opp_m = np.where(data.working_m > 0, 
                           -0.5 * z_m * z_m - np.log(sigma_m) - data.log_wage_m, 0.0)
         
         # Female wage params [36:42]
@@ -3669,13 +3677,13 @@ def fast_neg_ll_with_grad_couples(
         
         mean_logw_f = (
             w_beta0_f
-            + w_educL_f * data.educL_female
-            + w_educH_f * data.educH_female
-            + w_pexp_f * data.pexp_female
-            + w_pexp2_f * data.pexp2_female
+            + w_educL_f * data.educL_f
+            + w_educH_f * data.educH_f
+            + w_pexp_f * data.pexp_f
+            + w_pexp2_f * data.pexp2_f
         )
         z_f = (data.log_wage_f - mean_logw_f) / sigma_f
-        w_opp_f = np.where(data.working_female > 0,
+        w_opp_f = np.where(data.working_f > 0,
                           -0.5 * z_f * z_f - np.log(sigma_f) - data.log_wage_f, 0.0)
         
         w_opp = w_opp_m + w_opp_f
@@ -3686,19 +3694,19 @@ def fast_neg_ll_with_grad_couples(
         
         dw_dtheta = np.empty((n, 12), dtype=np.float64)
         # Male wopp [0:6]
-        dw_dtheta[:, 0] = np.where(data.working_male > 0, z_over_sigma_m, 0.0)
-        dw_dtheta[:, 1] = np.where(data.working_male > 0, z_over_sigma_m * data.educL_male, 0.0)
-        dw_dtheta[:, 2] = np.where(data.working_male > 0, z_over_sigma_m * data.educH_male, 0.0)
-        dw_dtheta[:, 3] = np.where(data.working_male > 0, z_over_sigma_m * data.pexp_male, 0.0)
-        dw_dtheta[:, 4] = np.where(data.working_male > 0, z_over_sigma_m * data.pexp2_male, 0.0)
-        dw_dtheta[:, 5] = np.where(data.working_male > 0, (z_m * z_m - 1.0) / sigma_m, 0.0)
+        dw_dtheta[:, 0] = np.where(data.working_m > 0, z_over_sigma_m, 0.0)
+        dw_dtheta[:, 1] = np.where(data.working_m > 0, z_over_sigma_m * data.educL_m, 0.0)
+        dw_dtheta[:, 2] = np.where(data.working_m > 0, z_over_sigma_m * data.educH_m, 0.0)
+        dw_dtheta[:, 3] = np.where(data.working_m > 0, z_over_sigma_m * data.pexp_m, 0.0)
+        dw_dtheta[:, 4] = np.where(data.working_m > 0, z_over_sigma_m * data.pexp2_m, 0.0)
+        dw_dtheta[:, 5] = np.where(data.working_m > 0, (z_m * z_m - 1.0) / sigma_m, 0.0)
         # Female wopp [6:12]
-        dw_dtheta[:, 6] = np.where(data.working_female > 0, z_over_sigma_f, 0.0)
-        dw_dtheta[:, 7] = np.where(data.working_female > 0, z_over_sigma_f * data.educL_female, 0.0)
-        dw_dtheta[:, 8] = np.where(data.working_female > 0, z_over_sigma_f * data.educH_female, 0.0)
-        dw_dtheta[:, 9] = np.where(data.working_female > 0, z_over_sigma_f * data.pexp_female, 0.0)
-        dw_dtheta[:, 10] = np.where(data.working_female > 0, z_over_sigma_f * data.pexp2_female, 0.0)
-        dw_dtheta[:, 11] = np.where(data.working_female > 0, (z_f * z_f - 1.0) / sigma_f, 0.0)
+        dw_dtheta[:, 6] = np.where(data.working_f > 0, z_over_sigma_f, 0.0)
+        dw_dtheta[:, 7] = np.where(data.working_f > 0, z_over_sigma_f * data.educL_f, 0.0)
+        dw_dtheta[:, 8] = np.where(data.working_f > 0, z_over_sigma_f * data.educH_f, 0.0)
+        dw_dtheta[:, 9] = np.where(data.working_f > 0, z_over_sigma_f * data.pexp_f, 0.0)
+        dw_dtheta[:, 10] = np.where(data.working_f > 0, z_over_sigma_f * data.pexp2_f, 0.0)
+        dw_dtheta[:, 11] = np.where(data.working_f > 0, (z_f * z_f - 1.0) / sigma_f, 0.0)
     else:
         w_opp = 0.0
         dw_dtheta = None
@@ -4069,7 +4077,7 @@ def get_n_params_joint(wage_spec: str = "fw") -> Dict[str, int]:
     """
     n_pref_sm = 9       # single males preferences (simplified)
     n_pref_sf = 9       # single females preferences (simplified, same as males)
-    n_pref_cou = 16     # couples preferences: male(5) + female(6) + shared(5) with interaction
+    n_pref_cou = 16     # couples preferences (simplified)
     n_hopp_m = 7        # hours opportunity (males, no region)
     n_hopp_f = 7        # hours opportunity (females, no region)
     n_wopp_m = 6        # wage opportunity (males, no region/year)
@@ -4135,28 +4143,27 @@ def get_initial_theta_joint(wage_spec: str = "fw") -> np.ndarray:
         0.5,   # theta_c
     ]
     
-    # Couples preferences (16) - CORRECTED: male(5) + female(6) + shared(5)
+    # Couples preferences (16) - SIMPLIFIED
     pref_cou = [
-        # Male leisure (5) - NO n_children!
+        # Male leisure (6)
         1.0,   # beta_l0_m
         0.0,   # beta_l_age_norm_m
         0.0,   # beta_l_age_norm2_m
-        0.0,   # beta_l_n_children_m  # FIXME: REMOVE THIS - males don't have n_children!
+        0.0,   # beta_l_n_children_m
         0.0,   # beta_l_educL_m
         0.0,   # beta_l_educH_m
-        # Female leisure (6) - WITH n_children
+        # Female leisure (6)
         1.0,   # beta_l0_f
         0.0,   # beta_l_age_norm_f
         0.0,   # beta_l_age_norm2_f
         0.2,   # beta_l_n_children_f
         0.0,   # beta_l_educL_f
         0.0,   # beta_l_educH_f
-        # Shared (5) - WITH interaction term
+        # Shared (4)
         1.0,   # beta_c
         0.5,   # theta_l_m
         0.5,   # theta_l_f
         0.5,   # theta_c
-        # FIXME: ADD beta_interact = 0.0 here!
     ]
     
     # Hours opportunity - males (7) - SIMPLIFIED (no region)
@@ -4229,15 +4236,15 @@ def get_param_names_joint(wage_spec: str = "fw") -> List[str]:
         "sf.pref.beta_c", "sf.pref.theta_l", "sf.pref.theta_c",
     ]
     
-    # Couples preferences (16) - CORRECTED: male(5) + female(6) + shared(5)
+    # Couples preferences (16)
     names += [
-        # Male (5) - FIXME: REMOVE beta_l_n_children_m!
+        # Male (6)
         "cou.pref.beta_l0_m", "cou.pref.beta_l_age_norm_m", "cou.pref.beta_l_age_norm2_m",
         "cou.pref.beta_l_n_children_m", "cou.pref.beta_l_educL_m", "cou.pref.beta_l_educH_m",
         # Female (6)
         "cou.pref.beta_l0_f", "cou.pref.beta_l_age_norm_f", "cou.pref.beta_l_age_norm2_f",
         "cou.pref.beta_l_n_children_f", "cou.pref.beta_l_educL_f", "cou.pref.beta_l_educH_f",
-        # Shared (5) - FIXME: ADD "cou.pref.beta_interact" here!
+        # Shared (4)
         "cou.pref.beta_c", "cou.pref.theta_l_m", "cou.pref.theta_l_f", "cou.pref.theta_c",
     ]
     
@@ -4343,7 +4350,7 @@ def _extract_group_params_from_joint(
         return result
         
     elif group == "cou":
-        # Couples: prefs(16: male5+female6+shared5) + hopp_m(7) + hopp_f(7) + wopp_m(6) + wopp_f(6)
+        # Couples need all: preferences(16) + hopp_m(7) + hopp_f(7) + wopp_m(6) + wopp_f(6)
         pref = theta_joint[idx_pref_cou_start:idx_pref_cou_end]
         hopp_m = theta_joint[idx_hopp_m_start:idx_hopp_m_end]
         hopp_f = theta_joint[idx_hopp_f_start:idx_hopp_f_end]
@@ -4379,27 +4386,27 @@ def unpack_theta_couples(theta: np.ndarray, wage_spec: str = "fw") -> Tuple:
     wopp_m : WageOppParams (or default for fw)
     wopp_f : WageOppParams (or default for fw)
     """
-    # Preferences (16 params total) - CORRECTED STRUCTURE
+    # Preferences (16 params total)
     pref = PrefParamsCouples(
-        # Male leisure (5) [0:5] - NO n_children!
+        # Male leisure (6) [0:6]
         beta_lm0=theta[0],
         beta_lm_age_norm=theta[1],
         beta_lm_age_norm2=theta[2],
-        beta_lm_educL=theta[3],
-        beta_lm_educH=theta[4],
-        # Female leisure (6) [5:11] - WITH n_children
-        beta_lf0=theta[5],
-        beta_lf_age_norm=theta[6],
-        beta_lf_age_norm2=theta[7],
-        beta_lf_n_children=theta[8],
-        beta_lf_educL=theta[9],
-        beta_lf_educH=theta[10],
-        # Shared (5) [11:16] - WITH interaction
-        beta_c=theta[11],
-        theta_lm=theta[12],
-        theta_lf=theta[13],
-        theta_c=theta[14],
-        beta_interact=theta[15],
+        beta_lm_n_children=theta[3],
+        beta_lm_educL=theta[4],
+        beta_lm_educH=theta[5],
+        # Female leisure (6) [6:12]
+        beta_lf0=theta[6],
+        beta_lf_age_norm=theta[7],
+        beta_lf_age_norm2=theta[8],
+        beta_lf_n_children=theta[9],
+        beta_lf_educL=theta[10],
+        beta_lf_educH=theta[11],
+        # Shared (4) [12:16]
+        beta_c=theta[12],
+        theta_lm=theta[13],
+        theta_lf=theta[14],
+        theta_c=theta[15],
     )
     
     # Hours opportunity - male (7 params: indices 16-22)
@@ -4735,21 +4742,21 @@ def analytical_gradient_couples(
     # Get data arrays
     # =========================================================================
     # Leisure
-    if "leis_util_male" in df.columns:
-        l_male = df["leis_util_male"].to_numpy()
-    elif "hours_male" in df.columns:
-        hours_male = pd.to_numeric(df["hours_male"], errors="coerce").fillna(0).to_numpy()
-        l_male = (TOTAL_LEISURE_HOURS - hours_male) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+    if "leis_util_m" in df.columns:
+        l_m = df["leis_util_m"].to_numpy()
+    elif "hours_m" in df.columns:
+        hours_m = pd.to_numeric(df["hours_m"], errors="coerce").fillna(0).to_numpy()
+        l_m = (TOTAL_LEISURE_HOURS - hours_m) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
     else:
-        l_male = np.ones(n)
+        l_m = np.ones(n)
     
-    if "leis_util_female" in df.columns:
-        l_female = df["leis_util_female"].to_numpy()
-    elif "hours_female" in df.columns:
-        hours_female = pd.to_numeric(df["hours_female"], errors="coerce").fillna(0).to_numpy()
-        l_female = (TOTAL_LEISURE_HOURS - hours_female) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
+    if "leis_util_f" in df.columns:
+        l_f = df["leis_util_f"].to_numpy()
+    elif "hours_f" in df.columns:
+        hours_f = pd.to_numeric(df["hours_f"], errors="coerce").fillna(0).to_numpy()
+        l_f = (TOTAL_LEISURE_HOURS - hours_f) / (TOTAL_LEISURE_HOURS - MEAN_LHW_NORM)
     else:
-        l_female = np.ones(n)
+        l_f = np.ones(n)
     
     # Consumption
     if "dispy_util_m" in df.columns and "dispy_util_f" in df.columns:
@@ -4759,47 +4766,47 @@ def analytical_gradient_couples(
     else:
         c_total = np.ones(n)
     
-    l_male = np.clip(l_male, 1e-6, None)
-    l_female = np.clip(l_female, 1e-6, None)
+    l_m = np.clip(l_m, 1e-6, None)
+    l_f = np.clip(l_f, 1e-6, None)
     c_total = np.clip(c_total, 1e-6, None)
     
     # Box-Cox transforms
-    l_m_bc = boxcox_transform(l_male, pref.theta_lm)
-    l_f_bc = boxcox_transform(l_female, pref.theta_lf)
+    l_m_bc = boxcox_transform(l_m, pref.theta_lm)
+    l_f_bc = boxcox_transform(l_f, pref.theta_lf)
     c_bc = boxcox_transform(c_total, pref.theta_c)
     
     # Derivatives of Box-Cox w.r.t. theta
-    dl_m_bc_dtheta = d_boxcox_dtheta(l_male, pref.theta_lm)
-    dl_f_bc_dtheta = d_boxcox_dtheta(l_female, pref.theta_lf)
+    dl_m_bc_dtheta = d_boxcox_dtheta(l_m, pref.theta_lm)
+    dl_f_bc_dtheta = d_boxcox_dtheta(l_f, pref.theta_lf)
     dc_bc_dtheta = d_boxcox_dtheta(c_total, pref.theta_c)
     
     # Covariates
-    age_norm_male = _get_col(df, "age_norm_male", 0.0)
-    age_norm2_male = _get_col(df, "age_norm2_male", age_norm_male ** 2)
-    age_norm_female = _get_col(df, "age_norm_female", 0.0)
-    age_norm2_female = _get_col(df, "age_norm2_female", age_norm_female ** 2)
+    age_norm_m = _get_col(df, "age_norm_m", 0.0)
+    age_norm2_m = _get_col(df, "age_norm2_m", age_norm_m ** 2)
+    age_norm_f = _get_col(df, "age_norm_f", 0.0)
+    age_norm2_f = _get_col(df, "age_norm2_f", age_norm_f ** 2)
     n_children = _get_col(df, "n_children", 0.0)
-    educL_male = _get_col(df, "educL_male", 0.0)
-    educH_male = _get_col(df, "educH_male", 0.0)
-    educL_female = _get_col(df, "educL_female", 0.0)
-    educH_female = _get_col(df, "educH_female", 0.0)
+    educL_m = _get_col(df, "educL_m", 0.0)
+    educH_m = _get_col(df, "educH_m", 0.0)
+    educL_f = _get_col(df, "educL_f", 0.0)
+    educH_f = _get_col(df, "educH_f", 0.0)
     
     # Beta leisure coefficients
     beta_leisure_m = (
         pref.beta_lm0
-        + pref.beta_lm_age_norm * age_norm_male
-        + pref.beta_lm_age_norm2 * age_norm2_male
+        + pref.beta_lm_age_norm * age_norm_m
+        + pref.beta_lm_age_norm2 * age_norm2_m
         + pref.beta_lm_n_children * n_children
-        + pref.beta_lm_educL * educL_male
-        + pref.beta_lm_educH * educH_male
+        + pref.beta_lm_educL * educL_m
+        + pref.beta_lm_educH * educH_m
     )
     beta_leisure_f = (
         pref.beta_lf0
-        + pref.beta_lf_age_norm * age_norm_female
-        + pref.beta_lf_age_norm2 * age_norm2_female
+        + pref.beta_lf_age_norm * age_norm_f
+        + pref.beta_lf_age_norm2 * age_norm2_f
         + pref.beta_lf_n_children * n_children
-        + pref.beta_lf_educL * educL_female
-        + pref.beta_lf_educH * educH_female
+        + pref.beta_lf_educL * educL_f
+        + pref.beta_lf_educH * educH_f
     )
     
     # Compute utility (no interaction term in simplified spec)
@@ -4812,19 +4819,19 @@ def analytical_gradient_couples(
     
     # Male leisure params [0:6]
     du_dpref[:, 0] = l_m_bc                   # beta_lm0
-    du_dpref[:, 1] = age_norm_male * l_m_bc      # beta_lm_age_norm
-    du_dpref[:, 2] = age_norm2_male * l_m_bc     # beta_lm_age_norm2
+    du_dpref[:, 1] = age_norm_m * l_m_bc      # beta_lm_age_norm
+    du_dpref[:, 2] = age_norm2_m * l_m_bc     # beta_lm_age_norm2
     du_dpref[:, 3] = n_children * l_m_bc      # beta_lm_n_children
-    du_dpref[:, 4] = educL_male * l_m_bc         # beta_lm_educL
-    du_dpref[:, 5] = educH_male * l_m_bc         # beta_lm_educH
+    du_dpref[:, 4] = educL_m * l_m_bc         # beta_lm_educL
+    du_dpref[:, 5] = educH_m * l_m_bc         # beta_lm_educH
     
     # Female leisure params [6:12]
     du_dpref[:, 6] = l_f_bc                   # beta_lf0
-    du_dpref[:, 7] = age_norm_female * l_f_bc      # beta_lf_age_norm
-    du_dpref[:, 8] = age_norm2_female * l_f_bc     # beta_lf_age_norm2
+    du_dpref[:, 7] = age_norm_f * l_f_bc      # beta_lf_age_norm
+    du_dpref[:, 8] = age_norm2_f * l_f_bc     # beta_lf_age_norm2
     du_dpref[:, 9] = n_children * l_f_bc      # beta_lf_n_children
-    du_dpref[:, 10] = educL_female * l_f_bc        # beta_lf_educL
-    du_dpref[:, 11] = educH_female * l_f_bc        # beta_lf_educH
+    du_dpref[:, 10] = educL_f * l_f_bc        # beta_lf_educL
+    du_dpref[:, 11] = educH_f * l_f_bc        # beta_lf_educH
     
     # Shared params [12:16]
     du_dpref[:, 12] = c_bc                              # beta_c
@@ -4835,35 +4842,35 @@ def analytical_gradient_couples(
     # =========================================================================
     # Hours opportunity derivatives (14 params: 7 male + 7 female)
     # =========================================================================
-    working_male = _get_col(df, "working_male", 0.0)
-    working_pt1_male = _get_col(df, "working_pt1_male", 0.0)
-    working_pt2_male = _get_col(df, "working_pt2_male", 0.0)
-    working_ft_male = _get_col(df, "working_ft_male", 0.0)
-    gsur_male = _get_col(df, "gsur_male", _get_col(df, "gsur", 0.0))
+    working_m = _get_col(df, "working_m", 0.0)
+    working_pt1_m = _get_col(df, "working_pt1_m", 0.0)
+    working_pt2_m = _get_col(df, "working_pt2_m", 0.0)
+    working_ft_m = _get_col(df, "working_ft_m", 0.0)
+    gsur_m = _get_col(df, "gsur_m", _get_col(df, "gsur", 0.0))
     
-    working_female = _get_col(df, "working_female", 0.0)
-    working_pt1_female = _get_col(df, "working_pt1_female", 0.0)
-    working_pt2_female = _get_col(df, "working_pt2_female", 0.0)
-    working_ft_female = _get_col(df, "working_ft_female", 0.0)
-    gsur_female = _get_col(df, "gsur_female", _get_col(df, "gsur", 0.0))
+    working_f = _get_col(df, "working_f", 0.0)
+    working_pt1_f = _get_col(df, "working_pt1_f", 0.0)
+    working_pt2_f = _get_col(df, "working_pt2_f", 0.0)
+    working_ft_f = _get_col(df, "working_ft_f", 0.0)
+    gsur_f = _get_col(df, "gsur_f", _get_col(df, "gsur", 0.0))
     
     dh_dtheta = np.zeros((n, 14), dtype=float)
     # Male hopp [0:7]
-    dh_dtheta[:, 0] = working_male
-    dh_dtheta[:, 1] = working_pt1_male
-    dh_dtheta[:, 2] = working_pt2_male
-    dh_dtheta[:, 3] = working_ft_male
-    dh_dtheta[:, 4] = working_male * gsur_male
-    dh_dtheta[:, 5] = working_male * educL_male
-    dh_dtheta[:, 6] = working_male * educH_male
+    dh_dtheta[:, 0] = working_m
+    dh_dtheta[:, 1] = working_pt1_m
+    dh_dtheta[:, 2] = working_pt2_m
+    dh_dtheta[:, 3] = working_ft_m
+    dh_dtheta[:, 4] = working_m * gsur_m
+    dh_dtheta[:, 5] = working_m * educL_m
+    dh_dtheta[:, 6] = working_m * educH_m
     # Female hopp [7:14]
-    dh_dtheta[:, 7] = working_female
-    dh_dtheta[:, 8] = working_pt1_female
-    dh_dtheta[:, 9] = working_pt2_female
-    dh_dtheta[:, 10] = working_ft_female
-    dh_dtheta[:, 11] = working_female * gsur_female
-    dh_dtheta[:, 12] = working_female * educL_female
-    dh_dtheta[:, 13] = working_female * educH_female
+    dh_dtheta[:, 7] = working_f
+    dh_dtheta[:, 8] = working_pt1_f
+    dh_dtheta[:, 9] = working_pt2_f
+    dh_dtheta[:, 10] = working_ft_f
+    dh_dtheta[:, 11] = working_f * gsur_f
+    dh_dtheta[:, 12] = working_f * educL_f
+    dh_dtheta[:, 13] = working_f * educH_f
     
     # Compute hopp values
     h_opp = ff_calc_hopp_couples(df, hopp_m, hopp_f)
@@ -4889,23 +4896,23 @@ def analytical_gradient_couples(
         wage_f = np.clip(wage_f, 1e-6, None)
         log_wage_f = np.log(wage_f)
         
-        pexp_male = _get_col(df, "pexp_male", 0.0)
-        pexp_female = _get_col(df, "pexp_female", 0.0)
+        pexp_m = _get_col(df, "pexp_m", 0.0)
+        pexp_f = _get_col(df, "pexp_f", 0.0)
         
         # Simplified mean log-wage (no regions, no year dummies)
         mean_logw_m = (
             wopp_m.beta0
-            + wopp_m.beta_educL * educL_male
-            + wopp_m.beta_educH * educH_male
-            + wopp_m.beta_pexp * pexp_male
-            + wopp_m.beta_pexp2 * pexp_male**2
+            + wopp_m.beta_educL * educL_m
+            + wopp_m.beta_educH * educH_m
+            + wopp_m.beta_pexp * pexp_m
+            + wopp_m.beta_pexp2 * pexp_m**2
         )
         mean_logw_f = (
             wopp_f.beta0
-            + wopp_f.beta_educL * educL_female
-            + wopp_f.beta_educH * educH_female
-            + wopp_f.beta_pexp * pexp_female
-            + wopp_f.beta_pexp2 * pexp_female**2
+            + wopp_f.beta_educL * educL_f
+            + wopp_f.beta_educH * educH_f
+            + wopp_f.beta_pexp * pexp_f
+            + wopp_f.beta_pexp2 * pexp_f**2
         )
         
         sigma_m = np.abs(wopp_m.sigma) + 1e-6
@@ -4917,19 +4924,19 @@ def analytical_gradient_couples(
         
         dw_dtheta = np.zeros((n, 12), dtype=float)
         # Male wopp [0:6]
-        dw_dtheta[:, 0] = np.where(working_male > 0, z_over_sigma_m, 0)
-        dw_dtheta[:, 1] = np.where(working_male > 0, z_over_sigma_m * educL_male, 0)
-        dw_dtheta[:, 2] = np.where(working_male > 0, z_over_sigma_m * educH_male, 0)
-        dw_dtheta[:, 3] = np.where(working_male > 0, z_over_sigma_m * pexp_male, 0)
-        dw_dtheta[:, 4] = np.where(working_male > 0, z_over_sigma_m * pexp_male**2, 0)
-        dw_dtheta[:, 5] = np.where(working_male > 0, (z_m**2 - 1) / sigma_m, 0)
+        dw_dtheta[:, 0] = np.where(working_m > 0, z_over_sigma_m, 0)
+        dw_dtheta[:, 1] = np.where(working_m > 0, z_over_sigma_m * educL_m, 0)
+        dw_dtheta[:, 2] = np.where(working_m > 0, z_over_sigma_m * educH_m, 0)
+        dw_dtheta[:, 3] = np.where(working_m > 0, z_over_sigma_m * pexp_m, 0)
+        dw_dtheta[:, 4] = np.where(working_m > 0, z_over_sigma_m * pexp_m**2, 0)
+        dw_dtheta[:, 5] = np.where(working_m > 0, (z_m**2 - 1) / sigma_m, 0)
         # Female wopp [6:12]
-        dw_dtheta[:, 6] = np.where(working_female > 0, z_over_sigma_f, 0)
-        dw_dtheta[:, 7] = np.where(working_female > 0, z_over_sigma_f * educL_female, 0)
-        dw_dtheta[:, 8] = np.where(working_female > 0, z_over_sigma_f * educH_female, 0)
-        dw_dtheta[:, 9] = np.where(working_female > 0, z_over_sigma_f * pexp_female, 0)
-        dw_dtheta[:, 10] = np.where(working_female > 0, z_over_sigma_f * pexp_female**2, 0)
-        dw_dtheta[:, 11] = np.where(working_female > 0, (z_f**2 - 1) / sigma_f, 0)
+        dw_dtheta[:, 6] = np.where(working_f > 0, z_over_sigma_f, 0)
+        dw_dtheta[:, 7] = np.where(working_f > 0, z_over_sigma_f * educL_f, 0)
+        dw_dtheta[:, 8] = np.where(working_f > 0, z_over_sigma_f * educH_f, 0)
+        dw_dtheta[:, 9] = np.where(working_f > 0, z_over_sigma_f * pexp_f, 0)
+        dw_dtheta[:, 10] = np.where(working_f > 0, z_over_sigma_f * pexp_f**2, 0)
+        dw_dtheta[:, 11] = np.where(working_f > 0, (z_f**2 - 1) / sigma_f, 0)
     else:
         w_opp = np.zeros(n)
         dw_dtheta = np.zeros((n, 12))
@@ -5030,10 +5037,10 @@ def fast_neg_ll_with_grad_joint(
     - Hours opp: 7 (const, age_norm, age_norm2, n_children, educL, educH, gsur)
     - Wage opp: 6 (const, age_norm, age_norm2, educL, educH, pexp, vw only)
     
-    Couples standalone expects (29 fw, 41 vw):
-    - Male prefs: 5 (beta_lm0, age_norm, age_norm2, educL, educH) - NO n_children!
+    Couples standalone expects (30 fw, 42 vw):
+    - Male prefs: 6 (beta_lm0, age_norm, age_norm2, n_children, educL, educH)
     - Female prefs: 6 (beta_lf0, age_norm, age_norm2, n_children, educL, educH)
-    - Shared prefs: 5 (beta_c, theta_lm, theta_lf, theta_c, beta_interact)
+    - Shared prefs: 4 (beta_c, theta_lm, theta_lf, theta_c)
     - Male hopp: 7
     - Female hopp: 7
     - Male wopp: 6 (vw only)
@@ -5149,42 +5156,7 @@ def fast_neg_ll_with_grad_joint(
         if wage_spec == "vw":
             grad[idx_wopp_m[0]:idx_wopp_m[1]] -= neg_grad_cou[30:36]
             grad[idx_wopp_f[0]:idx_wopp_f[1]] -= neg_grad_cou[36:42]
-
-    # ========================================================================
-    # DIAGNOSTIC LOGGING - Helps identify gradient issues
-    # ========================================================================
-    # Print LL contributions (note: these are NEGATIVE LL values from the functions)
-    try:
-        ll_sm = neg_ll_sm if data_sm is not None else 0.0
-    except NameError:
-        ll_sm = 0.0
-    try:
-        ll_sf = neg_ll_sf if data_sf is not None else 0.0
-    except NameError:
-        ll_sf = 0.0
-    try:
-        ll_cou = neg_ll_cou if data_cou is not None else 0.0
-    except NameError:
-        ll_cou = 0.0
-
-    print(f"[JOINT] LL contributions: SM={-ll_sm:.2f}, SF={-ll_sf:.2f}, COU={-ll_cou:.2f}, Total={ll_total:.2f}")
-
-    # Print gradient norms for each parameter group
-    print(f"[JOINT] Gradient norms:")
-    print(f"  SM Prefs [0:9]:      {np.linalg.norm(grad[idx_pref_sm[0]:idx_pref_sm[1]]):.6f}")
-    print(f"  SF Prefs [9:18]:     {np.linalg.norm(grad[idx_pref_sf[0]:idx_pref_sf[1]]):.6f}")
-    print(f"  COU Prefs [18:34]:   {np.linalg.norm(grad[idx_pref_cou[0]:idx_pref_cou[1]]):.6f}")
-    print(f"  HOPP_M [34:41]:      {np.linalg.norm(grad[idx_hopp_m[0]:idx_hopp_m[1]]):.6f}")
-    print(f"  HOPP_F [41:48]:      {np.linalg.norm(grad[idx_hopp_f[0]:idx_hopp_f[1]]):.6f}")
-
-    if wage_spec == "vw":
-        print(f"  WOPP_M [48:54]:      {np.linalg.norm(grad[idx_wopp_m[0]:idx_wopp_m[1]]):.6f}")
-        print(f"  WOPP_F [54:60]:      {np.linalg.norm(grad[idx_wopp_f[0]:idx_wopp_f[1]]):.6f}")
-
-    print(f"  Total gradient norm: {np.linalg.norm(grad):.6f}")
-    print("-" * 80)
-    # ========================================================================
-
+    
     return -ll_total, -grad
 
 
@@ -5575,7 +5547,7 @@ def main() -> None:
                 method="L-BFGS-B",
                 jac=True,
                 bounds=bounds,
-                options={"disp": True, "maxiter": args.maxiter, "ftol": 1e-12, "gtol": 1e-6},
+                options={"disp": True, "maxiter": args.maxiter, "ftol": 1e-9, "gtol": 1e-5},
             )
         else:
             # Use FAST precomputed-data function for BFGS too
@@ -5853,7 +5825,7 @@ def main() -> None:
         LOGGER.info("=" * 60)
         
         # Verify couples data has wide format columns
-        required_cols = ["hours_male", "hours_female", "idhh", "draw"]
+        required_cols = ["hours_m", "hours_f", "idhh", "draw"]
         missing = [c for c in required_cols if c not in df.columns]
         if missing:
             raise ValueError(f"Couples data missing required columns: {missing}. "
@@ -5969,7 +5941,7 @@ def main() -> None:
             method="L-BFGS-B",
             jac=True,
             bounds=bounds,
-            options={"disp": True, "maxiter": args.maxiter, "ftol": 1e-12, "gtol": 1e-6},
+            options={"disp": True, "maxiter": args.maxiter, "ftol": 1e-9, "gtol": 1e-5},
         )
     elif not is_singles:
         # Couples - USE ANALYTICAL GRADIENT (available via fast_neg_ll_with_grad_couples)
@@ -5998,7 +5970,7 @@ def main() -> None:
             method="L-BFGS-B",
             jac=True,  # CRITICAL: Tell optimizer we're providing gradient
             bounds=bounds,
-            options={"disp": True, "maxiter": args.maxiter, "ftol": 1e-12, "gtol": 1e-6},
+            options={"disp": True, "maxiter": args.maxiter, "ftol": 1e-9, "gtol": 1e-5},
         )
     else:
         # Singles with BFGS (numerical gradient)

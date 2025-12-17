@@ -1007,9 +1007,40 @@ def clean_harmonize_fr(
     
     # Merge with original data
     if "idperson" in df.columns and "idperson" in df_sim.columns:
-        # Get columns to merge from simulation
-        sim_cols = [c for c in df_sim.columns if c not in df.columns or c == "idperson"]
-        final_df = df.merge(df_sim[sim_cols], on="idperson", how="left")
+        # CRITICAL FIX: Prioritize EUROMOD simulation outputs over input data
+        # The old logic kept input values if columns existed in both - this is wrong!
+        # EUROMOD outputs (ils_*, lma, lun, lmc, etc.) should REPLACE input values
+
+        # Strategy: Take ALL columns from df_sim, merge with df, keep df_sim versions
+        # Step 1: Get columns unique to original df (not in simulation)
+        df_only_cols = [c for c in df.columns if c not in df_sim.columns and c != "idperson"]
+
+        # Step 2: Merge simulation output with original data's unique columns
+        # Use how="outer" to keep all records from both
+        final_df = df_sim.merge(
+            df[["idperson"] + df_only_cols],
+            on="idperson",
+            how="left",
+            suffixes=("", "_original")  # Keep df_sim version when conflicts
+        )
+
+        logging.info(f"Merged EUROMOD output: {len(df_sim.columns)} sim columns + {len(df_only_cols)} original-only columns")
+
+        # Remove duplicate columns (keep first occurrence, which is from df_sim)
+        dup_cols = final_df.columns[final_df.columns.duplicated()].tolist()
+        if dup_cols:
+            logging.warning(f"Found {len(dup_cols)} duplicate columns, removing: {dup_cols[:10]}...")
+            final_df = final_df.loc[:, ~final_df.columns.duplicated()]
+            logging.info(f"After de-duplication: {final_df.shape[1]} columns")
+
+        # Log which EUROMOD labor market variables were included
+        labor_vars = ["lma", "lun", "lmc", "lhw_a", "lhw_a1", "lhw_a_9", "lhw_a_20"]
+        for var in labor_vars:
+            if var in final_df.columns:
+                std_val = final_df[var].std() if final_df[var].notna().any() else 0
+                logging.info(f"  EUROMOD labor variable '{var}': present (std={std_val:.4f})")
+            else:
+                logging.warning(f"  EUROMOD labor variable '{var}': MISSING from output")
     else:
         final_df = df_sim
     

@@ -143,6 +143,96 @@ def _restrict_to_deciders(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _build_mnl_block_couples_wide(df: pd.DataFrame, sample_group: str) -> pd.DataFrame:
+    """Build MNL dataset for couples in WIDE format (_male/_female columns)."""
+    df = df.copy()
+
+    if "idperson" not in df.columns or "draw" not in df.columns or "is_chosen" not in df.columns:
+        raise KeyError("Expected columns 'idperson', 'draw', 'is_chosen'.")
+    if "ils_dispy" not in df.columns:
+        raise KeyError("Expected EUROMOD disposable income 'ils_dispy' after merge.")
+
+    # For couples in wide format, process male and female separately
+    for gender in ["male", "female"]:
+        # Hours and leisure
+        lhw_col = f"lhw_{gender}"
+        hours_col = f"hours_{gender}"
+        leisure_col = f"leisure_{gender}"
+
+        if lhw_col in df.columns:
+            hours = pd.to_numeric(df[lhw_col], errors="coerce").fillna(0.0)
+            df[hours_col] = hours
+
+            leisure = TOTAL_LEISURE_HOURS - hours
+            leisure = leisure.clip(lower=DCM_MIN_POSITIVE)
+            df[leisure_col] = leisure
+
+            df[f"log_l_{gender}"] = np.log(leisure)
+
+            # Working status indicators (for hours opportunity)
+            df[f"working_{gender}"] = (hours > 0).astype(int)
+            df[f"working_pt1_{gender}"] = ((hours > 0) & (hours < 20)).astype(int)
+            df[f"working_pt2_{gender}"] = ((hours >= 20) & (hours < 35)).astype(int)
+            df[f"working_ft_{gender}"] = (hours >= 35).astype(int)
+
+        # GSUR: Labor force participation probability (for hours opportunity)
+        # Use actual employment rate as GSUR proxy
+        working_col = f"working_{gender}"
+        if working_col in df.columns:
+            # Simple approach: use observed employment status as probability
+            df[f"gsur_{gender}"] = df[working_col].astype(float)
+            # Alternative: could use group-level employment rate
+            # df[f"gsur_{gender}"] = df[working_col].mean()
+
+        # Wages: Log-transformation (for wage opportunity)
+        wage_col = f"wage_{gender}"
+        if wage_col in df.columns:
+            wage = pd.to_numeric(df[wage_col], errors="coerce").fillna(1.0)
+            wage = wage.clip(lower=DCM_MIN_POSITIVE)
+            df[f"log_wage_{gender}"] = np.log(wage)
+
+        # Education dummies from deh_male/deh_female
+        deh_col = f"deh_{gender}"
+        if deh_col in df.columns:
+            deh_num = pd.to_numeric(df[deh_col], errors="coerce")
+            df[f"educL_{gender}"] = (deh_num.isin([0, 1, 2])).astype(int)
+            df[f"educH_{gender}"] = (deh_num == 5).astype(int)
+            df[f"educM_{gender}"] = (~df[f"educL_{gender}"].astype(bool) & ~df[f"educH_{gender}"].astype(bool)).astype(int)
+
+        # Experience variables (for wage opportunity)
+        pexp_col = f"pexp_{gender}"
+        if pexp_col in df.columns:
+            pexp_num = pd.to_numeric(df[pexp_col], errors="coerce").fillna(0.0)
+            df[f"pexp_years_{gender}"] = pexp_num
+            df[f"pexp_years2_{gender}"] = pexp_num ** 2
+
+            # Create alias for estimation code compatibility
+            df[f"pexp2_{gender}"] = df[f"pexp_years2_{gender}"]
+
+        # Age normalization (for preference parameters)
+        dag_col = f"dag_{gender}"
+        if dag_col in df.columns:
+            dag_values = pd.to_numeric(df[dag_col], errors="coerce")
+            dag_mean = dag_values.mean()
+            df[f"age_norm_{gender}"] = dag_values - dag_mean
+            df[f"age_norm2_{gender}"] = df[f"age_norm_{gender}"] ** 2
+            logging.debug(f"Created age_norm_{gender} (mean=0.00, std={df[f'age_norm_{gender}'].std():.2f})")
+
+        # Total children count (create alias for compatibility)
+        num_children_col = f"num_children_total_{gender}"
+        if num_children_col in df.columns:
+            df[f"n_children_{gender}"] = pd.to_numeric(df[num_children_col], errors="coerce").fillna(0)
+            logging.debug(f"Created n_children_{gender} alias (mean={df[f'n_children_{gender}'].mean():.2f})")
+
+    # Consumption (household-level, already in ils_dispy)
+    cons = pd.to_numeric(df["ils_dispy"], errors="coerce").clip(lower=DCM_MIN_POSITIVE)
+    df["consumption"] = cons
+    df["log_c"] = np.log(cons)
+    df["sample_group"] = sample_group
+
+    return df
+
+
 def _build_mnl_block(df: pd.DataFrame, sample_group: str) -> pd.DataFrame:
     df = df.copy()
 
@@ -195,46 +285,190 @@ def _build_mnl_block(df: pd.DataFrame, sample_group: str) -> pd.DataFrame:
         pexp_num = pd.to_numeric(df["pexp_years"], errors="coerce").fillna(0.0)
         df["pexp_years2"] = pexp_num * pexp_num
 
+    # Age normalization (for preference parameters)
+    if "dag" in df.columns:
+        dag_values = pd.to_numeric(df["dag"], errors="coerce")
+        dag_mean = dag_values.mean()
+        df["age_norm"] = dag_values - dag_mean
+        df["age_norm2"] = df["age_norm"] ** 2
+        logging.debug(f"Created age_norm (mean=0.00, std={df['age_norm'].std():.2f})")
+
+    # Total children count (create alias for compatibility)
+    if "num_children_total" in df.columns:
+        df["n_children"] = pd.to_numeric(df["num_children_total"], errors="coerce").fillna(0)
+        logging.debug(f"Created n_children alias (mean={df['n_children'].mean():.2f})")
+
     return df
 
 
-def _build_loc_distribution(df: pd.DataFrame) -> Optional[Dict[Any, float]]:
+def _reshape_couples_to_wide(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Empirical distribution over loc among working observations (hours > 0 and lma == 1 if present).
-    
-    NOTE: This function is retained for possible future use but is NOT called in the current
-    implementation. The RURO prior (following Stijn's implementation) depends only on hours
-    and wages, not on occupation.
+    Reshape couples data from long format (2 rows per household-draw) to
+    wide format (1 row per household-draw with _male and _female columns).
+
+    Input (LONG):
+        idhh    draw    dgn    lhw    wage    yem00    deh    pexp    ...
+        1001    0       1      40     15.5    2400     3      5       ... (male, dgn=1)
+        1001    0       0      35     12.0    2100     4      3       ... (female, dgn=0)
+
+    Output (WIDE):
+        idhh    draw    lhw_male    lhw_female    wage_male    wage_female    ...
+        1001    0       40          35            15.5         12.0           ...
+
+    Uses dgn (0=female, 1=male) to identify gender.
+
+    This function resolves the naming conflict between flag columns (e.g., lhw_f = flag)
+    and gender-specific columns by using _male and _female suffixes.
     """
-    if "loc" not in df.columns:
-        return None
+    import logging
 
-    if "hours" in df.columns:
-        hours = pd.to_numeric(df["hours"], errors="coerce").fillna(0.0)
-    elif "lhw" in df.columns:
-        hours = pd.to_numeric(df["lhw"], errors="coerce").fillna(0.0)
-    else:
-        return None
+    if "ruro_group" not in df.columns:
+        raise KeyError("Expected 'ruro_group' column for couples identification.")
 
-    mask = hours > 0
-    if "lma" in df.columns:
-        lma = pd.to_numeric(df["lma"], errors="coerce").fillna(0).astype(int)
-        mask &= lma == 1
+    # Only reshape couples data (ruro_group == 10)
+    is_couple = df["ruro_group"] == 10
 
-    if not mask.any():
-        return None
+    if not is_couple.any():
+        logging.info("No couples data to reshape (ruro_group != 10).")
+        return df
 
-    loc_series = pd.to_numeric(df.loc[mask, "loc"], errors="coerce")
-    loc_series = loc_series[loc_series != -1]
-    if loc_series.empty:
-        return None
+    df_couples = df[is_couple].copy()
+    df_non_couples = df[~is_couple].copy()
 
-    counts = loc_series.value_counts(dropna=True)
-    total = counts.sum()
-    if total <= 0:
-        return None
+    if "dgn" not in df_couples.columns:
+        raise KeyError("Couples data must have 'dgn' column for gender identification.")
 
-    return (counts / total).to_dict()
+    if "idhh" not in df_couples.columns:
+        raise KeyError("Couples data must have 'idhh' column for household identification.")
+
+    if "draw" not in df_couples.columns:
+        raise KeyError("Couples data must have 'draw' column.")
+
+    # Verify we have 2 rows per household-draw
+    dgn = pd.to_numeric(df_couples["dgn"], errors="coerce").fillna(-1).astype(int)
+    rows_per_hh_draw = df_couples.groupby(["idhh", "draw"]).size()
+
+    expected_rows = 2
+    n_bad = (rows_per_hh_draw != expected_rows).sum()
+    if n_bad > 0:
+        logging.warning(
+            f"Expected {expected_rows} rows per (idhh, draw) for couples, but {n_bad} "
+            f"household-draws have different counts. Proceeding anyway..."
+        )
+
+    # Identify male/female rows
+    male_mask = dgn == 1
+    female_mask = dgn == 0
+
+    df_male = df_couples[male_mask].copy()
+    df_female = df_couples[female_mask].copy()
+
+    logging.info(f"Reshaping couples: {len(df_male)} male rows, {len(df_female)} female rows")
+
+    # Columns to exclude from pivoting (keep as-is or merge later)
+    id_cols = {"idhh", "draw", "idperson", "idorighh", "idorigperson", "idpartner", "idfather", "idmother"}
+
+    # Flag columns: end with _f, _s, _a, _o (common EUROMOD flag suffixes)
+    flag_suffixes = ("_f", "_s", "_a", "_o")
+    flag_cols = {c for c in df_couples.columns if any(c.endswith(suf) for suf in flag_suffixes)}
+
+    # Structural columns that shouldn't be gender-specific
+    structural_cols = {
+        "ruro_group", "ruro_decider", "hh_IsHead", "hh_IsPartner",
+        "dgn",  # gender indicator itself
+        "sample_group", "chosen", "is_chosen"
+    }
+
+    # EUROMOD internal/temporary columns (usually start with i_, il_, tu_)
+    internal_prefixes = ("i_", "il_", "tu_", "temp_")
+    internal_cols = {c for c in df_couples.columns if any(c.startswith(pre) for pre in internal_prefixes)}
+
+    # Household-level columns (same for both partners)
+    # These will be preserved without _male/_female suffixes
+    household_cols = {
+        "idhh", "draw", "idorighh", "ruro_group",
+        "keep_for_analysis", "ruro_sample",
+        "is_chosen", "chosen",  # Choice indicators
+        "other_members_income",  # Household income
+        "ils_dispy_em"  # Household disposable income from EUROMOD (couples aggregate)
+    }
+
+    # Determine which columns to pivot
+    exclude_cols = id_cols | flag_cols | structural_cols | internal_cols
+    pivot_cols = []
+    for col in df_couples.columns:
+        if col not in exclude_cols:
+            # Additional filter: skip EUROMOD benefit/tax aggregates (usually start with ils_, tis_, etc.)
+            if col.startswith(("ils_", "tis_", "tsc_", "tin_", "bsa", "bun", "bho", "bdi")):
+                continue
+            pivot_cols.append(col)
+
+    logging.info(f"Pivoting {len(pivot_cols)} columns to _male/_female format")
+    logging.info(f"Excluded {len(exclude_cols)} columns from pivoting (flags, IDs, internals)")
+
+    # Rename male/female columns
+    rename_male = {col: f"{col}_male" for col in pivot_cols}
+    rename_female = {col: f"{col}_female" for col in pivot_cols}
+
+    df_male_renamed = df_male.rename(columns=rename_male)
+    df_female_renamed = df_female.rename(columns=rename_female)
+
+    # Merge on (idhh, draw)
+    merge_keys = ["idhh", "draw"]
+    df_wide = df_male_renamed.merge(
+        df_female_renamed,
+        on=merge_keys,
+        how="inner",
+        suffixes=("_MALE_DUP", "_FEMALE_DUP")
+    )
+
+    # Preserve one copy of household-level columns before dropping duplicates
+    # Columns like is_chosen, chosen, ruro_group should be same for both partners
+    dup_male_cols = [c for c in df_wide.columns if c.endswith("_MALE_DUP")]
+    dup_female_cols = [c for c in df_wide.columns if c.endswith("_FEMALE_DUP")]
+
+    # For each duplicate pair, keep the male version with original name
+    for male_col in dup_male_cols:
+        base_name = male_col.replace("_MALE_DUP", "")
+        if base_name not in df_wide.columns:
+            df_wide[base_name] = df_wide[male_col]
+
+    # Now drop all duplicate columns
+    drop_cols = dup_male_cols + dup_female_cols
+    if drop_cols:
+        logging.info(f"Dropping {len(drop_cols)} duplicate columns from merge (kept {len(dup_male_cols)} originals)")
+        df_wide = df_wide.drop(columns=drop_cols)
+
+    # Ensure one copy of household-level variables
+    for var in household_cols:
+        male_var = f"{var}_male"
+        female_var = f"{var}_female"
+        if male_var in df_wide.columns and var not in df_wide.columns:
+            df_wide[var] = df_wide[male_var]
+        # Drop gender-specific versions of household vars
+        df_wide = df_wide.drop(columns=[male_var, female_var], errors="ignore")
+
+    # Create household-level idperson for couples (use idhh since household is the decision unit)
+    if "idperson" not in df_wide.columns and "idhh" in df_wide.columns:
+        df_wide["idperson"] = df_wide["idhh"]
+        logging.info("Created household-level idperson from idhh for couples")
+
+    # Create ils_dispy from ils_dispy_em if needed (for compatibility with _build_mnl_block)
+    if "ils_dispy" not in df_wide.columns and "ils_dispy_em" in df_wide.columns:
+        df_wide["ils_dispy"] = df_wide["ils_dispy_em"]
+        logging.info("Created ils_dispy from ils_dispy_em for couples")
+
+    logging.info(f"Reshaped couples data: {len(df_wide)} rows (was {len(df_couples)} in long format)")
+
+    # If there were singles in the input, we cannot combine them with reshaped couples
+    # because they have incompatible schemas (singles don't have _male/_female columns)
+    if not df_non_couples.empty:
+        logging.warning(
+            f"Input contained {len(df_non_couples)} non-couples rows. "
+            "Returning only reshaped couples data. Singles should be processed separately."
+        )
+
+    return df_wide
 
 
 def _compute_prior(
@@ -368,22 +602,22 @@ def _compute_prior(
     couples_mask = (ruro_group == 10).to_numpy()
     
     if couples_mask.any():
-        # For couples, we need hours_m, hours_f, wage_m, wage_f
+        # For couples, we need hours_male, hours_female, wage_male, wage_female
         # If not present, fall back to per-person hours/wage (less accurate but functional)
-        if "hours_m" in df.columns and "hours_f" in df.columns:
-            h_m = pd.to_numeric(df["hours_m"], errors="coerce").fillna(0.0).to_numpy()
-            h_f = pd.to_numeric(df["hours_f"], errors="coerce").fillna(0.0).to_numpy()
+        if "hours_male" in df.columns and "hours_female" in df.columns:
+            h_m = pd.to_numeric(df["hours_male"], errors="coerce").fillna(0.0).to_numpy()
+            h_f = pd.to_numeric(df["hours_female"], errors="coerce").fillna(0.0).to_numpy()
         else:
-            # Fallback: use individual hours (couples data should have hours_m/hours_f)
-            LOGGER.warning("Couples data missing hours_m/hours_f; using individual 'hours' column.")
+            # Fallback: use individual hours (couples data should have hours_male/hours_female)
+            LOGGER.warning("Couples data missing hours_male/hours_female; using individual 'hours' column.")
             h_m = hours.to_numpy()
             h_f = hours.to_numpy()
-        
-        if "wage_m" in df.columns and "wage_f" in df.columns:
-            w_m = pd.to_numeric(df["wage_m"], errors="coerce").fillna(0.0).to_numpy()
-            w_f = pd.to_numeric(df["wage_f"], errors="coerce").fillna(0.0).to_numpy()
+
+        if "wage_male" in df.columns and "wage_female" in df.columns:
+            w_m = pd.to_numeric(df["wage_male"], errors="coerce").fillna(0.0).to_numpy()
+            w_f = pd.to_numeric(df["wage_female"], errors="coerce").fillna(0.0).to_numpy()
         else:
-            LOGGER.warning("Couples data missing wage_m/wage_f; using individual 'wage' column.")
+            LOGGER.warning("Couples data missing wage_male/wage_female; using individual 'wage' column.")
             w_m = wage.to_numpy()
             w_f = wage.to_numpy()
         
@@ -476,8 +710,7 @@ def parse_args() -> argparse.Namespace:
         "--h-max",
         type=float,
         default=DEFAULT_H_MAX,
-        help="Upper bound of hour support for opportunities.",
-    )
+        help="Upper bound of hour support for opportunities.",    )
     ap.add_argument(
         "--w-min",
         type=float,
@@ -489,6 +722,28 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=DEFAULT_W_MAX,
         help="Upper bound of wage support for opportunities.",
+    )
+    ap.add_argument(
+        "--year",
+        type=int,
+        default=None,
+        help="Year of the dataset (for logging/info only).",
+    )
+    ap.add_argument(
+        "--skip-csv",
+        action="store_true",
+        help="Skip CSV output (parquet only). Default behavior already skips CSV.",
+    )
+    ap.add_argument(
+        "--gsur-file",
+        type=str,
+        default=None,
+        help="Path to GSUR wage estimates file (optional, for future use).",
+    )
+    ap.add_argument(
+        "--no-gsur",
+        action="store_true",
+        help="Explicitly skip GSUR wage correction (default if --gsur-file not provided).",
     )
     return ap.parse_args()
 
@@ -526,7 +781,11 @@ def main() -> None:
         # Keep only deciders in couples (head/partner)
         couples_long = _restrict_to_deciders(couples_long)
 
-        couples_mnl = _build_mnl_block(couples_long, sample_group="couples")
+        # NEW: Reshape from long (2 rows/household) to wide (1 row with _male/_female columns)
+        couples_wide = _reshape_couples_to_wide(couples_long)
+
+        # Use couples-specific MNL builder for wide format
+        couples_mnl = _build_mnl_block_couples_wide(couples_wide, sample_group="couples")
         frames.append(couples_mnl)
 
     full_mnl = pd.concat(frames, axis=0, ignore_index=True)

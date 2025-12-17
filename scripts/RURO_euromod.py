@@ -307,9 +307,20 @@ def run_euromod_for_draws(
     scenario_dir.mkdir(parents=True, exist_ok=True)
 
     # -------------------------------------------------------------------------
-    # 1. Load EUROMOD baseline microdata
+    # 1. Load EUROMOD baseline microdata and store original columns
     # -------------------------------------------------------------------------
     em_input = _read_microdata_file(micro_template_path)
+
+    # Store original EUROMOD template columns for later filtering
+    # CRITICAL: Only columns that exist in the original dataset should be sent to EUROMOD
+    # This prevents EUROMOD from receiving pre-calculated outputs (like ils_dispy from draws)
+    original_template_cols = set(em_input.columns)
+    logging.info(f"RURO_euromod: Original template has {len(original_template_cols)} columns")
+    logging.info(f"RURO_euromod: ils_dispy in original template: {'ils_dispy' in original_template_cols}")
+
+    # Show first 20 columns
+    orig_cols_list = list(original_template_cols)[:20]
+    logging.info(f"RURO_euromod: First 20 original columns: {orig_cols_list}")
 
     # -------------------------------------------------------------------------
     # 2. Validate draws dataframe
@@ -529,26 +540,75 @@ def run_euromod_for_draws(
     merged["wage"] = final_w
 
     # -------------------------------------------------------------------------
-    # 10. EUROMOD consistency fixes for RURO hypothetical jobs
-    #     Use yem, yivwg, lhw from draws file (already computed correctly).
-    #     For non-working deciders, set yem=0.
+    # 10. CRITICAL FIX: French EUROMOD uses yem00 (regular) + yemxp (overtime)
+    #
+    #     The French system (EUROMO_sys_france_2015.md) uses:
+    #     - yem00: Regular employment income (hours ≤ 35 per week)
+    #     - yemxp: Overtime pay (hours > 35 per week)
+    #
+    #     France has a 35-hour standard workweek. We must split employment income
+    #     into regular and overtime components for EUROMOD to calculate ils_dispy correctly.
     # -------------------------------------------------------------------------
-    
-    # YEM: Use draws value for working deciders, 0 for non-working deciders, baseline for non-deciders
-    if "yem" in merged.columns or "yem_draw" in merged.columns:
-        final_yem = np.where(working_mask, yem_from_draws, 
-                            np.where(not_working_decider, 0.0, baseline_yem))
-        merged["yem"] = final_yem
-        logging.info(f"RURO_euromod: yem updated - working deciders use draws value, "
-                    f"mean yem for working: {yem_from_draws[working_mask].mean():.2f}")
-    
-    # YIVWG: Use draws value for working deciders, 0 for non-working deciders, baseline for non-deciders
+    FRANCE_STANDARD_HOURS = 35.0
+
+    # Split hours into regular (≤35) and overtime (>35)
+    regular_hours = np.minimum(lhw_from_draws, FRANCE_STANDARD_HOURS)
+    overtime_hours = np.maximum(lhw_from_draws - FRANCE_STANDARD_HOURS, 0.0)
+
+    # Calculate regular and overtime income
+    yem00_from_draws = regular_hours * yivwg_from_draws * WEEKS_PER_MONTH
+    yemxp_from_draws = overtime_hours * yivwg_from_draws * WEEKS_PER_MONTH
+
+    # Get baseline yem00 and yemxp for non-deciders
+    baseline_yem00 = pd.to_numeric(merged["yem00"], errors="coerce").fillna(0.0) if "yem00" in merged.columns else pd.Series(0.0, index=merged.index)
+    baseline_yemxp = pd.to_numeric(merged["yemxp"], errors="coerce").fillna(0.0) if "yemxp" in merged.columns else pd.Series(0.0, index=merged.index)
+
+    # Set yem00 (regular employment income) - CRITICAL for ils_dispy!
+    if "yem00" in merged.columns or "yem00" in original_template_cols:
+        final_yem00 = np.where(working_mask, yem00_from_draws,
+                              np.where(not_working_decider, 0.0, baseline_yem00))
+        merged["yem00"] = final_yem00
+        logging.info(f"RURO_euromod: ✅ Set yem00 (regular employment income) for {working_mask.sum()} working deciders")
+        logging.info(f"RURO_euromod:    yem00 range: {yem00_from_draws[working_mask].min():.2f} to {yem00_from_draws[working_mask].max():.2f}, mean={yem00_from_draws[working_mask].mean():.2f}")
+    else:
+        logging.warning(f"RURO_euromod: ⚠️  yem00 not in template columns - this may cause ils_dispy to stay constant!")
+
+    # Set yemxp (overtime pay)
+    if "yemxp" in merged.columns or "yemxp" in original_template_cols:
+        final_yemxp = np.where(working_mask, yemxp_from_draws,
+                              np.where(not_working_decider, 0.0, baseline_yemxp))
+        merged["yemxp"] = final_yemxp
+        n_overtime = (overtime_hours[working_mask] > 0).sum()
+        logging.info(f"RURO_euromod: ✅ Set yemxp (overtime pay) for {working_mask.sum()} working deciders ({n_overtime} with overtime)")
+        if n_overtime > 0:
+            logging.info(f"RURO_euromod:    yemxp range: {yemxp_from_draws[working_mask & (overtime_hours > 0)].min():.2f} to {yemxp_from_draws[working_mask & (overtime_hours > 0)].max():.2f}")
+    else:
+        logging.warning(f"RURO_euromod: ⚠️  yemxp not in template columns")
+
+    # -------------------------------------------------------------------------
+    # 11. EUROMOD consistency fixes for RURO hypothetical jobs
+    #     Set yem (total) for compatibility, and update yivwg/lhw
+    # -------------------------------------------------------------------------
+
+    # YEM (total employment income): yem00 + yemxp for compatibility
+    # Some EUROMOD policies may still reference yem
+    baseline_yem = pd.to_numeric(merged["yem"], errors="coerce").fillna(0.0) if "yem" in merged.columns else pd.Series(0.0, index=merged.index)
+    final_yem = np.where(working_mask, yem_from_draws,
+                        np.where(not_working_decider, 0.0, baseline_yem))
+    merged["yem"] = final_yem
+    logging.info(f"RURO_euromod: Set yem (total employment income) for compatibility")
+
+    # YIVWG: Hourly wage - use draws value for working deciders
     final_yivwg = np.where(working_mask, yivwg_from_draws,
                           np.where(not_working_decider, 0.0, baseline_yivwg))
     merged[wage_col] = final_yivwg
     
     # LHW: Already set above via hours_col, but ensure consistency
     # (lhw and hours should be the same for RURO)
+
+    # -------------------------------------------------------------------------
+    # 12. Additional EUROMOD consistency fixes
+    # -------------------------------------------------------------------------
 
     # BUN: Unemployment benefits = 0 when working
     if "bun" in merged.columns:
@@ -572,7 +632,7 @@ def run_euromod_for_draws(
         merged["lunmy"] = lunmy
 
     # -------------------------------------------------------------------------
-    # 11. Draw-specific IDs (panel-like structure for EUROMOD)
+    # 13. Draw-specific IDs (panel-like structure for EUROMOD)
     #     This allows EUROMOD to treat each draw as a separate "household" while
     #     we can still reconstruct original groupings via *_true columns.
     # -------------------------------------------------------------------------
@@ -590,7 +650,7 @@ def run_euromod_for_draws(
             merged[kin] = kin_new
 
     # -------------------------------------------------------------------------
-    # 12. Sort for EUROMOD stability and run
+    # 14. Sort for EUROMOD stability and filter columns
     # -------------------------------------------------------------------------
     sort_cols = []
     if "idhh" in merged.columns:
@@ -600,7 +660,15 @@ def run_euromod_for_draws(
     if sort_cols:
         merged = merged.sort_values(sort_cols).reset_index(drop=True)
 
-    # DEBUG: Verify yem values before EUROMOD
+    # DEBUG: Verify yem00/yemxp/yem values before EUROMOD
+    if "yem00" in merged.columns:
+        logging.info(f"RURO_euromod DEBUG: yem00 before EUROMOD - min={merged['yem00'].min():.2f}, "
+                    f"max={merged['yem00'].max():.2f}, mean={merged['yem00'].mean():.2f}, "
+                    f"nunique={merged['yem00'].nunique()}")
+    if "yemxp" in merged.columns:
+        logging.info(f"RURO_euromod DEBUG: yemxp before EUROMOD - min={merged['yemxp'].min():.2f}, "
+                    f"max={merged['yemxp'].max():.2f}, mean={merged['yemxp'].mean():.2f}, "
+                    f"nunique={merged['yemxp'].nunique()}")
     if "yem" in merged.columns:
         logging.info(f"RURO_euromod DEBUG: yem before EUROMOD - min={merged['yem'].min():.2f}, "
                     f"max={merged['yem'].max():.2f}, mean={merged['yem'].mean():.2f}, "
@@ -610,8 +678,62 @@ def run_euromod_for_draws(
         sample_data = merged[merged[f"{id_col}_true"] == sample_person][['draw', 'yem', 'lhw', 'yivwg']].head(5)
         logging.info(f"RURO_euromod DEBUG: Sample person {sample_person} yem values:\n{sample_data.to_string()}")
 
+    # -------------------------------------------------------------------------
+    # 15. CRITICAL FIX: Column filtering before EUROMOD
+    #     Only send columns that exist in original template to EUROMOD.
+    #     EUROMOD does NOT recalculate fields that already exist in the input.
+    #     We filter to only original template columns and store draw-specific columns
+    #     to merge back after EUROMOD completes.
+    # -------------------------------------------------------------------------
+
+    # KEY INSIGHT: yem, lhw, yivwg exist in BOTH template and draws
+    # We must use the DRAWN values (which vary), not template values (constant)!
+    # So we CANNOT just filter to "columns in original template"
+    # Instead: Filter out ils_* outputs and draw metadata, but KEEP drawn inputs
+
+    # Find all ils_* OUTPUT columns to filter (not inputs like ils_earns)
+    ils_output_cols = [c for c in merged.columns if c.startswith('ils_') and c != 'ils_earns']
+
+    # Find draw metadata columns (draw, *_true, etc.) - not in original template
+    draw_metadata_cols = [c for c in merged.columns if c not in original_template_cols and not c.startswith('ils_')]
+
+    # Columns to filter out (not send to EUROMOD)
+    cols_to_filter = set(ils_output_cols) | set(draw_metadata_cols)
+
+    # Columns to send: everything EXCEPT filtered columns
+    # This includes yem/lhw/yivwg with DRAWN values!
+    cols_to_send = [c for c in merged.columns if c not in cols_to_filter]
+
+    print(f"\n{'='*80}")
+    print(f"RURO_euromod FIX: merged has {len(merged.columns)} total columns")
+    print(f"RURO_euromod FIX: Filtering out {len(ils_output_cols)} ils_* output columns")
+    print(f"RURO_euromod FIX: Filtering out {len(draw_metadata_cols)} draw metadata columns")
+    print(f"RURO_euromod FIX: Sending {len(cols_to_send)} columns to EUROMOD")
+    print(f"RURO_euromod FIX: ils_dispy will be filtered: {'ils_dispy' in cols_to_filter}")
+
+    # Critical check: yem should be in cols_to_send and should VARY!
+    if 'yem' in merged.columns:
+        yem_std = merged['yem'].std()
+        yem_in_send = 'yem' in cols_to_send
+        print(f"RURO_euromod FIX: yem std={yem_std:.2f} yem in cols_to_send={yem_in_send}")
+        if yem_std > 100 and yem_in_send:
+            print(f"RURO_euromod FIX: [OK] yem VARIES and will be sent to EUROMOD - GOOD!")
+        else:
+            print(f"RURO_euromod FIX: [WARNING] yem problem detected!")
+
+    print(f"{'='*80}\n")
+
+    # Store filtered columns to merge back later
+    draw_specific_data = merged[list(cols_to_filter)].copy()
+
+    # Create dataset for EUROMOD with DRAWN values
+    merged_for_euromod = merged[cols_to_send].copy()
+
+    logging.info(f"RURO_euromod: Sending {len(cols_to_send)} columns to EUROMOD")
+    logging.info(f"RURO_euromod: ils_dispy filtered out: {'ils_dispy' not in merged_for_euromod.columns}")
+
     runner = EuromodRunner(em_root)
-    sim_df = runner.run_on_dataframe(merged, country=country, system_code=system_code, dataset_name=dataset_name)
+    sim_df = runner.run_on_dataframe(merged_for_euromod, country=country, system_code=system_code, dataset_name=dataset_name)
 
     # DEBUG: Verify yem values after EUROMOD
     if "yem" in sim_df.columns:
@@ -619,16 +741,68 @@ def run_euromod_for_draws(
                     f"max={sim_df['yem'].max():.2f}, mean={sim_df['yem'].mean():.2f}, "
                     f"nunique={sim_df['yem'].nunique()}")
 
-    # -------------------------------------------------------------------------
-    # 13. Reattach draw and "true" IDs to output
-    # -------------------------------------------------------------------------
-    sim_df["draw"] = merged["draw"].values
-    if "idhh_true" in merged.columns:
-        sim_df["idhh_true"] = merged["idhh_true"].values
-    sim_df[f"{id_col}_true"] = merged[f"{id_col}_true"].values
+    # DEBUG: Verify ils_dispy values after EUROMOD
+    if "ils_dispy" in sim_df.columns:
+        logging.info(f"RURO_euromod DEBUG: ils_dispy after EUROMOD - min={sim_df['ils_dispy'].min():.2f}, "
+                    f"max={sim_df['ils_dispy'].max():.2f}, mean={sim_df['ils_dispy'].mean():.2f}, "
+                    f"nunique={sim_df['ils_dispy'].nunique()}")
+        # Sample one person to verify varying ils_dispy
+        if f"{id_col}_true" in merged.columns:
+            sample_person = merged[f"{id_col}_true"].iloc[0]
+            # Find matching rows in sim_df using original ID before draw-specific transformation
+            # EUROMOD output has draw-specific IDs (id * 1000 + draw), so we need to extract the base ID
+            if id_col in sim_df.columns:
+                sim_df_base_ids = sim_df[id_col] // 1000
+                sample_mask = (sim_df_base_ids == sample_person)
+                if sample_mask.any():
+                    sample_data = sim_df[sample_mask][['ils_dispy']].head(5)
+                    sample_data.index = range(len(sample_data))
+                    logging.info(f"RURO_euromod DEBUG: Sample person {sample_person} ils_dispy values from EUROMOD:\n{sample_data.to_string()}")
 
     # -------------------------------------------------------------------------
-    # 14. Save combined output
+    # 16. Merge EUROMOD output with draw-specific data
+    #     CRITICAL FIX: EUROMOD output has FULL PRIORITY
+    #     - Keep ALL columns from EUROMOD simulation (original + new simulation outputs)
+    #     - Only add draw-specific columns that are UNIQUE (don't exist in EUROMOD output)
+    # -------------------------------------------------------------------------
+
+    # Step 1: Identify which filtered columns are unique (not in EUROMOD output)
+    euromod_output_cols = set(sim_df.columns)
+    unique_draw_cols = cols_to_filter - euromod_output_cols
+
+    logging.info(f"RURO_euromod: EUROMOD output has {len(euromod_output_cols)} columns")
+    logging.info(f"RURO_euromod: Of {len(cols_to_filter)} filtered columns, "
+                f"{len(unique_draw_cols)} are unique (not in EUROMOD output)")
+    logging.info(f"RURO_euromod: Unique draw columns to add: {list(unique_draw_cols)[:10]}...")
+
+    # Step 2: Add ONLY unique draw-specific columns to EUROMOD output
+    #         EUROMOD columns (including common ones like yem, lhw) take priority
+    for col in unique_draw_cols:
+        if col in draw_specific_data.columns:
+            sim_df[col] = draw_specific_data[col].values
+
+    # Step 3: Verify row count matches
+    if len(sim_df) != len(draw_specific_data):
+        logging.warning(f"RURO_euromod: Row count mismatch! EUROMOD output has {len(sim_df)} rows, "
+                       f"but draw_specific_data has {len(draw_specific_data)} rows")
+
+    logging.info(f"RURO_euromod: Final merged dataset has {len(sim_df)} rows and {len(sim_df.columns)} columns")
+
+    # Step 4: Verify that EUROMOD-calculated ils_dispy was used (not pre-EUROMOD baseline)
+    if "ils_dispy" in sim_df.columns and "draw" in sim_df.columns:
+        # Check if ils_dispy varies within persons across draws
+        if f"{id_col}_true" in sim_df.columns:
+            sample_person = sim_df[f"{id_col}_true"].iloc[0]
+            person_data = sim_df[sim_df[f"{id_col}_true"] == sample_person].head(5)
+            ils_std = person_data["ils_dispy"].std()
+            logging.info(f"RURO_euromod VERIFICATION: Sample person {sample_person} ils_dispy std={ils_std:.6f} "
+                        f"(should be > 0 if EUROMOD recalculated)")
+            if ils_std < 1e-6:
+                logging.warning(f"RURO_euromod WARNING: ils_dispy appears constant for person {sample_person}! "
+                              f"EUROMOD may not have recalculated disposable income.")
+
+    # -------------------------------------------------------------------------
+    # 17. Save combined output
     # -------------------------------------------------------------------------
     combined_path = scenario_dir / "combined_draws_em.parquet"
     sim_df.to_parquet(combined_path, index=False)  # type: ignore[arg-type]

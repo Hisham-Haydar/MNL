@@ -15,7 +15,9 @@
       "Bash(..venvScriptspython.exe -m pip list:*)",
       "Bash(findstr:*)",
       "Bash(Test-Path \"U:\\EUROMOD-STORAGE\\Data\\processed\\fr\\2016\\fr_2016_processed.parquet\")",
-      "Bash(Select-Object -First 50)"
+      "Bash(Select-Object -First 50)",
+      "Bash(Select-String -Pattern 'POST-ESTIMATION COMPLETE|HTML Report:|ERROR|WARNING' -Context 0,2)",
+      "Bash(Test-Path \"U:\\Desktop\\Nizam_Hisham\\MNL\\outputs\\post_estimation\\fr\\2016\\joint\\vw_pooled_post_estimation_report.html\")"
     ],
     "deny": [],
     "ask": []

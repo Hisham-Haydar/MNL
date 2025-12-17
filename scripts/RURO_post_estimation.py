@@ -1231,7 +1231,7 @@ def compute_fit_diagnostics(
                 V_i = np.zeros_like(h_i, dtype=float)
             else:
                 V_i = V_i[finite_mask]
-            h_i = h_i[finite_mask]
+                h_i = h_i[finite_mask]
             
             # Softmax probabilities
             if SCIPY_AVAILABLE:

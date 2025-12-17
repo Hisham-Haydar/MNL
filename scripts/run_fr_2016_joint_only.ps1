@@ -70,7 +70,7 @@ $LOG_FILE = "$LOG_DIR\fr_${YEAR}_joint_only_$TIMESTAMP.md"
 
 # Skip data regeneration if MNL file exists and is recent?
 # Set to $false to ALWAYS regenerate (recommended after code changes)
-$SKIP_IF_MNL_EXISTS = $false
+$SKIP_IF_MNL_EXISTS = $true
 
 # ---------------------------------------------------------------------
 # PERFORMANCE OPTIMIZATIONS
@@ -340,11 +340,14 @@ $pipelineStart = Get-Date
 # =====================================================================
 $needsDataRegen = $true
 
-if ($SKIP_IF_MNL_EXISTS -and (Test-Path $MNL_FILE)) {
+if ($SKIP_IF_MNL_EXISTS -and (Test-Path $MNL_FILE) -and (Test-Path $EM_COMBINED) -and (Test-Path $SINGLES_RURO) -and (Test-Path $COUPLES_RURO)) {
     Write-Host ""
-    Write-Host "MNL file exists: $MNL_FILE" -ForegroundColor Yellow
-    Write-Host "Skipping data regeneration (set SKIP_IF_MNL_EXISTS=`$false to force)" -ForegroundColor Yellow
+    Write-Host "All required intermediate datasets found. Skipping Steps 1-6." -ForegroundColor Yellow
+    Write-Host "Set SKIP_IF_MNL_EXISTS=`$false to force a full rebuild." -ForegroundColor Yellow
     $needsDataRegen = $false
+} else {
+    Write-Host ""
+    Write-Host "Regenerating intermediate datasets (files missing or rebuild forced)..." -ForegroundColor Yellow
 }
 
 if ($needsDataRegen) {

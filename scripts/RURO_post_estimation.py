@@ -2625,14 +2625,14 @@ def run_post_estimation(
     if df_cou is not None:
         LOGGER.info("   Couples (males)...")
         fit_results['cou_m'] = compute_fit_diagnostics(
-            df_cou, utility_computer, 'cou', hours_col='hours_m', is_couples=True
+            df_cou, utility_computer, 'cou', hours_col='hours_male', is_couples=True
         )
         LOGGER.info(f"      Obs: {fit_results['cou_m']['participation_rate_observed']:.1%}, "
                    f"Pred: {fit_results['cou_m']['participation_rate_predicted']:.1%}")
-        
+
         LOGGER.info("   Couples (females)...")
         fit_results['cou_f'] = compute_fit_diagnostics(
-            df_cou, utility_computer, 'cou', hours_col='hours_f', is_couples=True
+            df_cou, utility_computer, 'cou', hours_col='hours_female', is_couples=True
         )
         LOGGER.info(f"      Obs: {fit_results['cou_f']['participation_rate_observed']:.1%}, "
                    f"Pred: {fit_results['cou_f']['participation_rate_predicted']:.1%}")
@@ -2641,23 +2641,45 @@ def run_post_estimation(
         n_individuals = kwargs.get('n_individuals', 1000)
 
     # Compute null log-likelihood for rho-squared
-    # Try multiple ID column names
-    id_col = None
-    for candidate in ['ruro_id', 'idhh', 'idperson', 'id']:
-        if candidate in df.columns:
-            id_col = candidate
-            break
+    # Combine all available DataFrames
+    dfs_available = []
+    if df_sm is not None:
+        dfs_available.append(df_sm)
+    if df_sf is not None:
+        dfs_available.append(df_sf)
+    if df_cou is not None:
+        dfs_available.append(df_cou)
 
-    if id_col is not None:
-        n_alts = df.groupby(id_col).size()
-        ll_null = -np.sum(np.log(n_alts))
-        rho_squared = 1 - (log_likelihood / ll_null)
-        rho_squared_adj = 1 - ((log_likelihood - len(theta)) / ll_null)
+    if dfs_available:
+        df_combined = pd.concat(dfs_available, ignore_index=True)
+
+        # Try multiple ID column names
+        id_col = None
+        for candidate in ['ruro_id', 'idhh', 'idperson', 'id']:
+            if candidate in df_combined.columns:
+                id_col = candidate
+                break
+
+        if id_col is not None:
+            n_alts = df_combined.groupby(id_col).size()
+            ll_null = -np.sum(np.log(n_alts))
+            rho_squared = 1 - (log_likelihood / ll_null)
+            rho_squared_adj = 1 - ((log_likelihood - len(theta)) / ll_null)
+        else:
+            LOGGER.warning("Could not compute rho-squared: ID column not found")
+            ll_null = None
+            rho_squared = None
+            rho_squared_adj = None
     else:
-        LOGGER.warning("Could not compute rho-squared: ID column not found")
+        LOGGER.warning("Could not compute rho-squared: No DataFrames provided")
         ll_null = None
         rho_squared = None
         rho_squared_adj = None
+
+    # Calculate total observations for AIC_per_obs
+    n_obs = 0
+    if dfs_available:
+        n_obs = len(df_combined)
 
     fit_stats = {
         'log_likelihood': log_likelihood,
@@ -2668,7 +2690,7 @@ def run_post_estimation(
         'rho_squared_adj': rho_squared_adj,
         'AIC': -2 * log_likelihood + 2 * len(theta),
         'BIC': -2 * log_likelihood + np.log(n_individuals) * len(theta),
-        'AIC_per_obs': (-2 * log_likelihood + 2 * len(theta)) / len(df) if len(df) > 0 else None,
+        'AIC_per_obs': (-2 * log_likelihood + 2 * len(theta)) / n_obs if n_obs > 0 else None,
     }
       # Compute MU diagnostics
     LOGGER.info("\n3. Computing marginal utility diagnostics...")

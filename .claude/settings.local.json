@@ -14,7 +14,8 @@
       "Bash(..venvScriptspython.exe -c \"import sys; print(''Python executable:'', sys.executable); print(''Python prefix:'', sys.prefix)\")",
       "Bash(..venvScriptspython.exe -m pip list:*)",
       "Bash(findstr:*)",
-      "Bash(Test-Path \"U:\\EUROMOD-STORAGE\\Data\\processed\\fr\\2016\\fr_2016_processed.parquet\")"
+      "Bash(Test-Path \"U:\\EUROMOD-STORAGE\\Data\\processed\\fr\\2016\\fr_2016_processed.parquet\")",
+      "Bash(Select-Object -First 50)"
     ],
     "deny": [],
     "ask": []

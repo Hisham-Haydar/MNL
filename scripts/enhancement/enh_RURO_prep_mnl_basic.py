@@ -16,7 +16,12 @@ import os
 import sys
 from pathlib import Path
 
-import scripts.RURO_prep_mnl_basic as base
+# Ensure base scripts are importable when run directly
+BASE_DIR = Path(__file__).resolve().parents[1]
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+import RURO_prep_mnl_basic as base
 
 
 def main() -> None:

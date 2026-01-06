@@ -37,7 +37,7 @@ $MAX_ITER = 5000      # Maximum optimizer iterations (Phase 4 converges at ~52)
 
 # Paths
 $PROJ_ROOT = "U:\Desktop\Nizam_Hisham\MNL"
-$SCRIPTS = "$PROJ_ROOT\scripts"
+$SCRIPTS = "$PROJ_ROOT\scripts\enhanced"
 $DATA_ROOT = "U:\EUROMOD-STORAGE\Data"
 $PROC = "$DATA_ROOT\processed\fr\$YEAR"
 $RAW = "$DATA_ROOT\raw\FR_$YEAR.txt"
@@ -356,7 +356,7 @@ if ($needsDataRegen) {
     # =====================================================================
     Write-Step "STEP 1/7: DATA PREPARATION (france_data_prep.py)"
 
-    $cmd = "python `"$SCRIPTS\france_data_prep.py`" --year $YEAR --raw-dir `"$DATA_ROOT\raw`" --out-dir `"$PROC`" --system-year $SYSTEM_YEAR --export-format parquet"
+    $cmd = "python `"$SCRIPTS\enh_france_data_prep.py`" --year $YEAR --raw-dir `"$DATA_ROOT\raw`" --out-dir `"$PROC`" --system-year $SYSTEM_YEAR --export-format parquet"
 
     $step1Result = Run-PythonScript $cmd "Prepare raw EUROMOD data for France $YEAR"
 
@@ -378,7 +378,7 @@ if ($needsDataRegen) {
     # =====================================================================
     Write-Step "STEP 2/7: RURO PREPARATION (RURO_prep.py)"
 
-    $cmd = "python `"$SCRIPTS\RURO_prep.py`" --processed-dir `"$PROC`" --base-year $YEAR --export-format parquet"
+    $cmd = "python `"$SCRIPTS\enh_RURO_prep.py`" --processed-dir `"$PROC`" --base-year $YEAR --export-format parquet"
 
     if (-not (Run-PythonScript $cmd "Build RURO-ready datasets (singles/couples)")) {
         Write-Host "Pipeline stopped at Step 2" -ForegroundColor Red
@@ -390,7 +390,7 @@ if ($needsDataRegen) {
     # =====================================================================
     Write-Step "STEP 3/7: GENERATE DRAWS (RURO_draws.py)"
 
-    $cmd = "python `"$SCRIPTS\RURO_draws.py`" --singles-path `"$SINGLES_RURO`" --n-draws $N_DRAWS --wage-spec $WAGE_SPEC"
+    $cmd = "python `"$SCRIPTS\enh_RURO_draws.py`" --singles-path `"$SINGLES_RURO`" --n-draws $N_DRAWS --wage-spec $WAGE_SPEC"
     if (Test-Path $COUPLES_RURO) {
         $cmd += " --couples-path `"$COUPLES_RURO`""
     }
@@ -408,7 +408,7 @@ if ($needsDataRegen) {
     $EUROMOD_SYSTEM = "${COUNTRY}_$SYSTEM_YEAR"
     $EUROMOD_DATASET = "${COUNTRY}_$YEAR"
 
-    $cmd = "python `"$SCRIPTS\RURO_euromod.py`" --singles-draws `"$SINGLES_DRAWS`" --microdata-template `"$RAW`" --euromod-root `"$EUROMOD_ROOT`" --euromod-system $EUROMOD_SYSTEM --euromod-dataset $EUROMOD_DATASET --scenario-dir `"$SCEN`""
+    $cmd = "python `"$SCRIPTS\enh_RURO_euromod.py`" --singles-draws `"$SINGLES_DRAWS`" --microdata-template `"$RAW`" --euromod-root `"$EUROMOD_ROOT`" --euromod-system $EUROMOD_SYSTEM --euromod-dataset $EUROMOD_DATASET --scenario-dir `"$SCEN`""
     if (Test-Path $COUPLES_DRAWS) {
         $cmd += " --couples-draws `"$COUPLES_DRAWS`""
     }

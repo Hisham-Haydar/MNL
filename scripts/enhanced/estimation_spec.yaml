@@ -1,0 +1,198 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - Base (VW)
+# ==============================================================================
+# Variable wages with Box-Cox utility, Mincer wage equation, focal hours
+#
+# This specification uses:
+# - Box-Cox utility function for consumption and leisure
+# - Mincer wage equation (log-normal with education and experience)
+# - Focal hours indicators (part-time 1/2, full-time)
+# - GSUR unemployment rate effects
+# ==============================================================================
+
+specification:
+  name: "base_vw"
+  description: "Variable wages with Box-Cox utility, Mincer wages, focal hours"
+  wage_spec: "vw"  # fw | vw | loc_empirical
+
+# ------------------------------------------------------------------------------
+# Utility Function (Preference Side)
+# ------------------------------------------------------------------------------
+utility:
+  functional_form: "box_cox"  # box_cox | log | linear
+
+  # Consumption utility: β_c * BC(c; θ_c)
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"
+    box_cox_bounds: [0.1, 7.0]  # Typical range for Box-Cox parameters
+
+  # Leisure utility: [β_l0 + Σ β_l_X * X] * BC(l; θ_l)
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: "theta_l"
+    box_cox_bounds: [0.1, 3.0]
+
+    shifters:
+      - variable: "age_norm"
+        coefficient: "beta_l_age_norm"
+        description: "Age effect (demeaned)"
+
+      - variable: "age_norm2"
+        coefficient: "beta_l_age_norm2"
+        description: "Age squared (quadratic aging effect)"
+
+      - variable: "n_children"
+        coefficient: "beta_l_n_children"
+        description: "Number of children effect"
+        gender_specific: true  # Only for females in singles, always for females in couples
+
+      - variable: "educL"
+        coefficient: "beta_l_educL"
+        description: "Low education dummy"
+
+      - variable: "educH"
+        coefficient: "beta_l_educH"
+        description: "High education dummy"
+        # educM is reference category (omitted)
+
+# ------------------------------------------------------------------------------
+# Hours Opportunity Density (log h(h|X))
+# ------------------------------------------------------------------------------
+hours_opportunity:
+  shifters:
+    - variable: "working"
+      coefficient: "beta_work"
+      description: "Working indicator (h>0)"
+
+    - variable: "working_pt1"
+      coefficient: "beta_pt1"
+      description: "Part-time 1 focal point (~20h)"
+
+    - variable: "working_pt2"
+      coefficient: "beta_pt2"
+      description: "Part-time 2 focal point (~30h)"
+
+    - variable: "working_ft"
+      coefficient: "beta_ft"
+      description: "Full-time focal point (~40h)"
+
+    - variable: "gsur"
+      coefficient: "beta_gsur"
+      description: "Group-specific unemployment rate"
+      interaction: "working"  # Only affects h>0
+
+    - variable: "educL"
+      coefficient: "beta_work_educL"
+      description: "Low education × working interaction"
+      interaction: "working"
+
+    - variable: "educH"
+      coefficient: "beta_work_educH"
+      description: "High education × working interaction"
+      interaction: "working"
+
+# ------------------------------------------------------------------------------
+# Wage Opportunity Density (log w(w|X)) - Mincer Equation
+# ------------------------------------------------------------------------------
+wage_opportunity:
+  specification: "log_normal"  # log w ~ N(μ(X), σ²)
+
+  mean_shifters:
+    - variable: "intercept"
+      coefficient: "beta_w0"
+      description: "Log-wage intercept"
+
+    - variable: "educL"
+      coefficient: "beta_w_educL"
+      description: "Low education wage penalty"
+
+    - variable: "educH"
+      coefficient: "beta_w_educH"
+      description: "High education wage premium"
+
+    - variable: "pexp_years"
+      coefficient: "beta_pexp"
+      description: "Experience (linear term)"
+
+    - variable: "pexp_years2"
+      coefficient: "beta_pexp2"
+      description: "Experience squared (concave returns)"
+
+  variance:
+    parameter: "sigma"
+    description: "Standard deviation of log-wage residual"
+    bounds: [0.1, 20.0]
+
+# ------------------------------------------------------------------------------
+# Couples-Specific Parameters
+# ------------------------------------------------------------------------------
+couples:
+  leisure_interaction:
+    coefficient: "beta_interact"
+    description: "Male-female leisure cross-term (complementarity)"
+
+  # Note: Male has NO n_children effect
+  # Female has n_children effect (asymmetric preferences)
+
+# ------------------------------------------------------------------------------
+# Parameter Initialization
+# ------------------------------------------------------------------------------
+initial_values:
+  # Preference parameters
+  beta_l0: 1.0
+  beta_l_age_norm: 0.0
+  beta_l_age_norm2: 0.0
+  beta_l_n_children: 0.1  # Female only
+  beta_l_educL: 0.0
+  beta_l_educH: 0.0
+  beta_c: 1.0
+  theta_l: 0.5
+  theta_c: 0.5
+
+  # Hours opportunity parameters
+  beta_work: 0.5
+  beta_pt1: 0.0
+  beta_pt2: 0.0
+  beta_ft: 0.0
+  beta_gsur: 0.0
+  beta_work_educL: 0.0
+  beta_work_educH: 0.0
+
+  # Wage opportunity parameters (vw only)
+  beta_w0: 2.5
+  beta_w_educL: -0.2
+  beta_w_educH: 0.3
+  beta_pexp: 0.02
+  beta_pexp2: -0.001
+  sigma: 0.4
+
+  # Couples parameters
+  beta_interact: 0.0
+
+# ------------------------------------------------------------------------------
+# Optimization Settings
+# ------------------------------------------------------------------------------
+optimization:
+  method: "L-BFGS-B"  # L-BFGS-B | BFGS | trust-constr
+  analytical_gradient: true
+  max_iterations: 10000
+  tolerance: 1e-7
+
+  # Bounds for constrained parameters
+  # Format: parameter_name: [lower_bound, upper_bound]
+  # Unbounded parameters should be omitted
+  bounds:
+    theta_l: [0.1, 3.0]
+    theta_c: [0.1, 3.0]
+    sigma: [0.1, 20.0]
+    # All beta parameters are unbounded
+
+# ------------------------------------------------------------------------------
+# Notes
+# ------------------------------------------------------------------------------
+# - This specification uses the enhanced pipeline normalization constants
+# - Prior correction is applied automatically using the 'prior' column
+# - GSUR unemployment rates should be in the data (gsur or u_rate column)
+# - Experience variables (pexp_years) should be in years, not months
+# - Focal hours bands: PT1=[15,25], PT2=[25,35], FT=[35,45]

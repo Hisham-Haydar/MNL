@@ -18,7 +18,12 @@ from typing import List, Tuple
 
 import numpy as np
 
-import scripts.RURO_estimate_FR as base
+# Ensure base scripts are importable when run directly
+BASE_DIR = Path(__file__).resolve().parents[1]
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+import RURO_estimate_FR as base
 
 try:
     from joblib import Parallel, delayed
@@ -56,8 +61,10 @@ def main() -> None:
     parser.add_argument(
         "--joint-n-jobs",
         type=int,
+        nargs="?",
+        const=1,
         default=1,
-        help="Optional parallelization for joint gradient (joblib) if available.",
+        help="Optional parallelization for joint gradient (joblib) if available; if passed without a value, defaults to 1.",
     )
     args, forward_args = parser.parse_known_args()
 
@@ -203,7 +210,7 @@ def main() -> None:
                 names.append(f"wopp.beta_year_{y}")
         return names
 
-    def get_initial_theta_singles_enh(wage_spec: str = "fw") -> np.ndarray:
+    def get_initial_theta_singles_enh(wage_spec: str = "fw", is_male: bool = True) -> np.ndarray:
         theta: List[float] = [
             1.0, 0.0, 0.0,  # beta_l0, log_age, log_age2
             0.1, 0.1, 0.1,  # child0_3/4_6/7_9
@@ -221,6 +228,10 @@ def main() -> None:
             theta += [0.0] * len(YEAR_CODES)    # wage×year
         return np.array(theta, dtype=float)
 
+    # Preserve original precompute functions to avoid recursion
+    _base_precompute_singles = base.precompute_data_singles
+    _base_precompute_couples = base.precompute_data_couples
+
     def precompute_data_singles_enh(df: base.pd.DataFrame, is_male: bool = True) -> PrecomputedDataSinglesEnh:
         n = len(df)
 
@@ -231,7 +242,7 @@ def main() -> None:
                 arr = np.full(n, default)
             return np.ascontiguousarray(arr, dtype=np.float64)
 
-        data_tmp = base.precompute_data_singles(df, is_male=is_male)
+        data_tmp = _base_precompute_singles(df, is_male=is_male)
         c = data_tmp.c
         l = data_tmp.l
 
@@ -717,7 +728,7 @@ def main() -> None:
                 arr = np.full(n, default)
             return np.ascontiguousarray(arr, dtype=np.float64)
 
-        data_tmp = base.precompute_data_couples(df)
+        data_tmp = _base_precompute_couples(df)
 
         dag_m = get("dag_m", 1.0)
         dag_f = get("dag_f", 1.0)

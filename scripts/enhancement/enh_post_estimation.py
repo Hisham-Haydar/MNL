@@ -10,11 +10,17 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import sys
 
 import numpy as np
 import pandas as pd
 
-import scripts.RURO_post_estimation as base
+# Ensure base scripts are importable when run directly
+BASE_DIR = Path(__file__).resolve().parents[1]
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+import RURO_post_estimation as base
 
 
 def parse_args() -> argparse.Namespace:

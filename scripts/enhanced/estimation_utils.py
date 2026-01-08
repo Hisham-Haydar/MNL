@@ -177,8 +177,22 @@ def _validate_mnl_dataset(
         required_cols = ["idhh", "draw", "consumption", "leisure", "hours", "prior"]
         optional_cols = ["wage", "gsur", "u_rate", "loc4", "age_norm", "n_children", "educL", "educM", "educH"]
     else:  # couples
-        required_cols = ["idhh", "draw", "consumption", "leisure_male", "leisure_female",
-                        "hours_male", "hours_female", "prior"]
+        # NOTE: Consumption can be either household-level OR person-level (consumption_male/consumption_female)
+        base_required_cols = ["idhh", "draw", "leisure_male", "leisure_female",
+                              "hours_male", "hours_female", "prior"]
+
+        # Check if we have person-level consumption (CORRECT for couples)
+        has_person_consumption = "consumption_male" in df.columns and "consumption_female" in df.columns
+        has_household_consumption = "consumption" in df.columns
+
+        if has_person_consumption:
+            required_cols = base_required_cols + ["consumption_male", "consumption_female"]
+        elif has_household_consumption:
+            required_cols = base_required_cols + ["consumption"]
+        else:
+            errors.append("Couples data must have either 'consumption' OR 'consumption_male'+'consumption_female'")
+            required_cols = base_required_cols  # Continue validation
+
         optional_cols = ["wage_male", "wage_female", "gsur_male", "gsur_female",
                         "u_rate_male", "u_rate_female", "loc4_male", "loc4_female"]
 
@@ -190,8 +204,15 @@ def _validate_mnl_dataset(
     logger.info(f"  Present optional columns: {present_optional if present_optional else 'None'}")
 
     # 2. Check for NaN in core variables
-    core_vars = ["consumption", "leisure", "hours", "prior"] if dataset_type == "singles" else \
-                ["consumption", "leisure_male", "leisure_female", "hours_male", "hours_female", "prior"]
+    if dataset_type == "singles":
+        core_vars = ["consumption", "leisure", "hours", "prior"]
+    else:
+        # For couples, check person-level consumption if present
+        if "consumption_male" in df.columns:
+            core_vars = ["consumption_male", "consumption_female", "leisure_male", "leisure_female",
+                        "hours_male", "hours_female", "prior"]
+        else:
+            core_vars = ["consumption", "leisure_male", "leisure_female", "hours_male", "hours_female", "prior"]
 
     for var in core_vars:
         if var in df.columns:
@@ -204,6 +225,15 @@ def _validate_mnl_dataset(
         n_nonpositive = (df["consumption"] <= 0).sum()
         if n_nonpositive > 0:
             errors.append(f"Found {n_nonpositive} non-positive consumption values")
+
+    # Check person-level consumption for couples
+    if dataset_type == "couples":
+        for suffix in ["_male", "_female"]:
+            col = f"consumption{suffix}"
+            if col in df.columns:
+                n_nonpositive = (df[col] <= 0).sum()
+                if n_nonpositive > 0:
+                    errors.append(f"Found {n_nonpositive} non-positive {col} values")
 
     if dataset_type == "singles":
         if "leisure" in df.columns:
@@ -369,7 +399,9 @@ class PrecomputedDataCouples:
     All arrays are (n_obs,) unless otherwise noted.
     """
     # Core utility components
-    consumption: np.ndarray     # Household consumption (shared)
+    # NOTE: Consumption is HOUSEHOLD-LEVEL (sum of male + female disposable income)
+    # normalized_consumption_couples = (ils_dispy_male + ils_dispy_female) / mean(ils_dispy_male + ils_dispy_female)
+    consumption: np.ndarray    # Household consumption (normalized sum)
     log_c: np.ndarray          # log(consumption)
 
     # Male leisure
@@ -497,9 +529,11 @@ def precompute_data_singles(
         c_scale = norm["c_scale"]
         l_scale = norm["l_scale"]
 
-    # Extract core variables
-    consumption = df["consumption"].values.copy()
-    leisure = df["leisure"].values.copy()
+    # Extract core variables (MUST use normalized versions!)
+    # R code normalizes consumption first: dispy_util = ils_dispy / mean_dispy_19
+    # Then Box-Cox transforms the normalized value
+    consumption = df["c_norm"].values.copy()
+    leisure = df["l_norm"].values.copy()
 
     # Clip to avoid log(0)
     consumption = np.maximum(consumption, EPS)
@@ -677,11 +711,15 @@ def precompute_data_couples(
         l_scale = norm["l_scale"]
 
     # Core variables
-    consumption = np.maximum(df["consumption"].values.copy(), EPS)
+    # CRITICAL: For couples, consumption is HOUSEHOLD-LEVEL (sum of male+female)
+    # normalized_consumption_couples = (ils_dispy_male + ils_dispy_female) / mean(ils_dispy_male + ils_dispy_female)
+    # We use the single "c_norm" column which is the normalized household sum
+    consumption = np.maximum(df["c_norm"].values.copy(), EPS)
     log_c = np.log(consumption)
 
-    leisure_male = np.maximum(df["leisure_male"].values.copy(), EPS)
-    leisure_female = np.maximum(df["leisure_female"].values.copy(), EPS)
+    # Leisure is gender-specific and normalized
+    leisure_male = np.maximum(df["l_norm_male"].values.copy(), EPS)
+    leisure_female = np.maximum(df["l_norm_female"].values.copy(), EPS)
     log_l_male = np.log(leisure_male)
     log_l_female = np.log(leisure_female)
 
@@ -898,13 +936,15 @@ if HAS_NUMBA:
     @numba.jit(nopython=True, fastmath=True)
     def box_cox_derivative_theta(x: np.ndarray, theta: float) -> np.ndarray:
         """
-        Derivative of Box-Cox w.r.t. θ: ∂BC/∂θ
+        Derivative of Box-Cox w.r.t. θ: ∂BC/∂θ with improved numerical stability
 
         For θ≠0:
             ∂BC/∂θ = (x^θ * log(x) * θ - (x^θ - 1)) / θ²
 
         For θ→0:
             ∂BC/∂θ|_{θ=0} = 0.5 * (log(x))²
+
+        Uses Taylor expansion for |theta| < 0.05 to avoid catastrophic cancellation
 
         Parameters
         ----------
@@ -920,12 +960,16 @@ if HAS_NUMBA:
         """
         log_x = np.log(x)
 
-        if abs(theta) < 1e-8:
-            # Limit: θ → 0
-            return 0.5 * log_x * log_x
+        # Use Taylor expansion for |theta| < 0.05 to avoid numerical issues
+        # Taylor: ∂BC/∂θ ≈ (log x)²/2 + θ(log x)³/6 + θ²(log x)⁴/24
+        if abs(theta) < 0.05:
+            log_x2 = log_x * log_x
+            log_x3 = log_x2 * log_x
+            # Third-order Taylor expansion for better accuracy
+            return 0.5 * log_x2 * (1.0 + theta * log_x / 3.0 + theta * theta * log_x2 / 12.0)
         else:
             x_theta = np.power(x, theta)
-            numerator = x_theta * log_x * theta - (x_theta - 1.0)
+            numerator = x_theta * (theta * log_x - 1.0) + 1.0
             return numerator / (theta * theta)
 
 else:
@@ -944,14 +988,17 @@ else:
 
 
     def box_cox_derivative_theta(x: np.ndarray, theta: float) -> np.ndarray:
-        """Derivative of Box-Cox w.r.t. θ (NumPy implementation)"""
+        """Derivative of Box-Cox w.r.t. θ (NumPy implementation) with improved stability"""
         log_x = np.log(x)
 
-        if abs(theta) < 1e-8:
-            return 0.5 * log_x * log_x
+        # Use Taylor expansion for |theta| < 0.05 to avoid numerical issues
+        if abs(theta) < 0.05:
+            log_x2 = log_x * log_x
+            log_x3 = log_x2 * log_x
+            return 0.5 * log_x2 * (1.0 + theta * log_x / 3.0 + theta * theta * log_x2 / 12.0)
         else:
             x_theta = np.power(x, theta)
-            numerator = x_theta * log_x * theta - (x_theta - 1.0)
+            numerator = x_theta * (theta * log_x - 1.0) + 1.0
             return numerator / (theta * theta)
 
 

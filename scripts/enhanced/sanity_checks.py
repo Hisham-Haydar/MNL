@@ -550,23 +550,31 @@ def sanity_report_mnl_dataset(df: pd.DataFrame, household_type: str,
         assert_positive_values(df, ["leisure_male", "leisure_female"], stage)
 
         # Consumption can be either:
-        # 1. Household-level: "consumption" (standard in household labor supply models)
-        # 2. Individual-level: "consumption_m" and "consumption_f" (if tracked separately)
+        # 1. Household-level: "consumption" (old standard)
+        # 2. Individual-level: "consumption_male" and "consumption_female" (CORRECT - person-level)
+        # 3. Individual-level: "consumption_m" and "consumption_f" (alias for compatibility)
         has_household_consumption = "consumption" in df.columns
-        has_individual_consumption = ("consumption_m" in df.columns and "consumption_f" in df.columns)
+        has_individual_consumption = (
+            ("consumption_male" in df.columns and "consumption_female" in df.columns) or
+            ("consumption_m" in df.columns and "consumption_f" in df.columns)
+        )
 
         if has_household_consumption:
-            # Standard: household-level consumption
+            # Old standard: household-level consumption (INCORRECT for couples!)
             assert_no_missing(df, ["consumption"], stage)
             assert_positive_values(df, ["consumption"], stage)
         elif has_individual_consumption:
-            # Alternative: individual consumption (for compatibility)
-            assert_no_missing(df, ["consumption_m", "consumption_f"], stage)
-            assert_positive_values(df, ["consumption_m", "consumption_f"], stage)
+            # CORRECT: person-level consumption (varies by each person's hours choice)
+            if "consumption_male" in df.columns:
+                cons_cols = ["consumption_male", "consumption_female"]
+            else:
+                cons_cols = ["consumption_m", "consumption_f"]
+            assert_no_missing(df, cons_cols, stage)
+            assert_positive_values(df, cons_cols, stage)
         else:
             raise ValueError(
                 f"[{stage}] Couples data must have either household 'consumption' or "
-                f"individual 'consumption_m'/'consumption_f' columns"
+                f"individual 'consumption_male'/'consumption_female' columns"
             )
 
     else:
@@ -598,6 +606,8 @@ def sanity_report_mnl_dataset(df: pd.DataFrame, household_type: str,
         # Couples: check consumption variance (household or individual)
         if "consumption" in df.columns:
             consumption_std = df["consumption"].std()
+        elif "consumption_male" in df.columns:
+            consumption_std = df[["consumption_male", "consumption_female"]].std().mean()
         else:
             consumption_std = df[["consumption_m", "consumption_f"]].std().mean()
 

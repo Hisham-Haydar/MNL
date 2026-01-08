@@ -1,0 +1,1416 @@
+---
+title: "RURO - estimation"
+author: "Stijn Van Houtven"
+date: '2022-05-17'
+output: html_document
+---
+
+## 0.1 setup and options
+```{r setup, purl = T}
+rm(list=ls())
+gc()
+
+# load packages
+first_use_packages <- FALSE 
+#KnitroR will not be installed 
+
+pkglst <- c("ggplot2", "dplyr", "readxl", "openxlsx", "stringr", "tidyr", "hutils", "matrixcalc", "numDeriv", "knitr") #, "KnitroR"
+if (first_use_packages) {
+  for (pkg in pkglst) {
+    if (!(pkg %in% rownames(installed.packages()))) {
+      install.packages(pkg, dependencies = TRUE)
+    }
+  }
+}
+update.packages(checkBuilt = TRUE, oldPkgs = pkglst, ask = FALSE)
+for (pkg in pkglst) {
+  library(pkg, character.only = TRUE)
+}
+knitr::opts_chunk$set(echo = TRUE)
+select <- dplyr::select
+
+# set options 
+## specifications
+wri <- FALSE
+# use of real income concept
+filter_opt <- "woles"
+# filter uses LES-variable "wiles", or not "woles" (in that case only used for exclusion employers/self-employed)
+wasp <- "fw" 
+# wage specification: "fw" for fixed wages, "vw" for variable wages
+utfu <- "bc"
+# utility function: "bc" for BoxCox, "tl" for translog
+gsur <- TRUE
+# use of group-specific unemployment rate
+oli <- "lim"
+# out-of-labor income:
+#   "lim" for no unemployment benefits or social assistance (only exceptions)
+#   "bsa" for full take up of simulated social assistance
+#   "dat" for unemployment benefits and social assistance as recorded in data 
+#   "mix" for full take up of simulated social assistance and unemployment benefits as recorded in data
+## paths
+workingdirectory <- "J:/GHUM-FEB-CES4-SRV-DATA/tempSVH/CH3/RURO_2025/"
+EMfolder <- "J:/GHUM-FEB-CES4-SRV-DATA/tempSVH/CH3/RURO_2025/BE_master_BE_ITT/"
+
+inputfolder <- paste0(workingdirectory, "Input/")
+outputfolder <- paste0(workingdirectory, "Output/")
+estimationfolder <-paste0(workingdirectory, "Estimation/") 
+
+## other options 
+adjustments_to_data <- FALSE
+new_choicesets <- FALSE
+new_mean_dispy_lhw <- FALSE
+new_validation <- TRUE
+Jacobian <- TRUE
+sizecs <- 100 #for now max 100, otherwise problems with id's)
+years <- c(2015, 2017, 2019)
+
+## Define parameters of prior distribution
+pi0_m <- pi0_f <- 0.10
+h_min <- 1
+h_max <- 70
+w_min <- 1
+w_max <- 120 
+prior <- c(pi0_m, pi0_f, h_min, h_max, w_min, w_max)
+#more than 99% of observations have wage below 60.
+
+options(scipen = 15)
+
+
+#functions
+#source(paste0(workingdirectory, "Ruro_functions.R"))
+
+#set-up of Euromod connector
+library("reticulate")
+use_condaenv("EM_con")
+em <- import("euromod")
+emmodel <- em$Model(EMfolder)
+
+#external information
+##CPI and minimum wages
+mw_CPI_tab <- as.data.frame(read_xlsx(paste0(inputfolder, "external input/external input.xlsx"), sheet = "mw_CPI"))
+##group-specific unemployment rate
+if (gsur) {
+  gsurtab <- as.data.frame(read_xlsx(paste0(inputfolder, "external input/external input.xlsx"), sheet = "gsurSB"))
+} else {
+  gsurtab <- as.data.frame(read_xlsx(paste0(inputfolder, "external input/external input.xlsx"), sheet = "gsurONE"))
+}
+gsurtab_long <- gsurtab %>% pivot_longer(starts_with("Y"), names_to = "year", values_to = "GSURate") %>% mutate(category_year = paste0(category, "_", as.numeric(str_sub(year, -4))))
+##evolution of consumer prices on 4 digit-level
+if (wri){
+  pricetable <- ff_read_price_evolution(inputfolder, excel = "external input/Indexen per productgroep vanaf 2006.xls", tab = "CPI-IPC 2013 = 100")
+}
+```
+
+## 0.1bis_a adjustments to the data
+```{r}
+if (adjustments_to_data){
+  silc_2015 <- read.delim(paste0(inputfolder, "EM-SILC/be_2015_c4.txt"))
+  old_names_silc_2015 <- colnames(silc_2015)
+  silc_2015 <- silc_2015 %>% 
+    rename_at(.vars = vars(starts_with("exp")),
+              .funs = funs(sub("exp", "xs", .))) %>% 
+    select(-X_merge)
+  write.table(silc_2015, paste0(inputfolder, "EM-SILC/BE_2015_c5.txt"), sep = "\t", row.names = FALSE, quote = FALSE)
+  
+  rm(silc_2015, old_names_silc_2015)
+}
+```
+
+
+##0.2 functions
+```{r}
+# for choicesets_est 
+f_choicesets_est <- function(wasp, sizecs, oli, filter_opt, prior = c(pi0_m, pi0_f, h_min, h_max, w_min, w_max), inputfolder, data, outputfolder, writeoutput){
+  silc <- read.delim(paste0(inputfolder, data))
+  silc <- silc %>% select(!starts_with("xs"))
+  names_silc <- names(silc)
+  samp <- ff_filter_silc(silc, filter_opt, TRUE)
+  samp <- ff_newids(samp)
+
+  year <- as.numeric(str_sub(samp$ddt[1], -4))
+  pi0_m <- prior[1]
+  pi0_f <- prior[2]
+  h_min <- prior[3]
+  h_max <- prior[4]
+  w_min <- prior[5]
+  w_max <- prior[6]
+  samp_rep <- samp %>% group_by(idhh) %>% slice(rep(seq_len(n()), sizecs)) %>% ungroup()
+  samp_rep$draw <- rep(rep(c(0:(sizecs-1)), length(unique(samp$idhh))), rep(samp$hh_size[samp$personal_rank == 1], each = sizecs))
+  
+  samp_rep <- samp_rep %>% mutate(
+    hours = ifelse(draw == 0 & lma == 1, lhw, 0), 
+    wage = ifelse(draw == 0 & lma == 1 & hours > 0, yivwg, 0), 
+    #wage = wage_nominal * mw_CPI_tab$HPI[match(2019, mw_CPI_tab$incomeyear)]/mw_CPI_tab$HPI[match(year, mw_CPI_tab$incomeyear)],
+    idhh_true = idhh,
+    idhh = idhh + draw, 
+    idperson = idperson + draw, 
+    idfather = ifelse(idfather == 0, 0, idfather + draw), 
+    idmother = ifelse(idmother == 0, 0, idmother + draw), 
+    idpartner = ifelse(idpartner == 0, 0, idpartner + draw)
+  )
+  samp_rep <- samp_rep %>% mutate(
+    pi0 = case_when(lma == 1 & dgn == 1 ~ pi0_m, 
+                    lma == 1 & dgn == 0 ~ pi0_f,
+                    T ~ 0),
+    pi0_d = 0,
+    hours_d = 0, 
+    wage_d = 0
+  )
+  set.seed(1)
+  samp_rep[samp_rep$lma==1 & samp_rep$draw != 0,]$pi0_d <- runif(sum(samp_rep$lma == 1 & samp_rep$draw != 0), 0, 1)
+  samp_rep[samp_rep$lma==1 & samp_rep$draw != 0,]$hours_d <- runif(sum(samp_rep$lma == 1 & samp_rep$draw != 0), h_min, h_max)
+  samp_rep[samp_rep$lma==1 & samp_rep$draw != 0,]$wage_d <- runif(sum(samp_rep$lma == 1 & samp_rep$draw != 0), w_min, w_max)
+  if (wasp == "fw"){
+    samp_rep <- samp_rep %>% mutate(
+      hours = ifelse(draw == 0, hours, ifelse(lma == 1 & pi0_d > pi0, hours_d, 0)), 
+      wage = ifelse(draw == 0, wage, ifelse(lma == 1 & hours > 0, yivwg, 0)),
+      #wage = wage_nominal * mw_CPI_tab$HPI[match(2019, mw_CPI_tab$incomeyear)]/mw_CPI_tab$HPI[match(year, mw_CPI_tab$incomeyear)],
+    )
+  }
+  if (wasp == "vw"){
+    samp_rep <- samp_rep %>% mutate(
+      hours = ifelse(draw == 0, hours, ifelse(lma == 1 & pi0_d > pi0, hours_d, 0)), 
+      wage = ifelse(draw == 0, wage, ifelse(lma == 1 & hours > 0, wage_d, 0)),
+      #wage_nominal = wage * mw_CPI_tab$HPI[match(year, mw_CPI_tab$incomeyear)]/mw_CPI_tab$HPI[match(2019, mw_CPI_tab$incomeyear)]
+    )
+  }
+  samp_rep <- samp_rep %>% mutate(
+    bun = ifelse(lma == 1 & hours > 0, 0, bun), 
+    #reported bun is used only in cases of unemployment
+    bsa = ifelse(lma == 1 & hours > 0, 0, bsa), 
+    #reported bsa is used only in cases of unemployment
+    yem = ifelse(lma == 1, hours * wage * 4.33, yem), 
+    #yem is made consistent with chosen hours and wage
+    lhw = hours, 
+    #necessary as in EM lhw will be used (eg for calculation yemeq)
+    yemmy = ifelse(lma != 1, yemmy, ifelse(hours > 0, 12, 0)),
+    #assume in-work for 12 months (lma condition should not matter)
+    lunmy = ifelse(lma != 1, lunmy, ifelse(hours > 0, 0, lunmy)),
+    #assumption of no unemployment benefits should be consistent with lunmy
+    yivwg = ifelse(lma != 1, yivwg, ifelse(hours > 0, wage, yivwg))
+  )
+  # difference between EM-input oli and estimation input oli. we make this clear in output file name. 
+  oli_ou <- oli
+  ##in case of limited or simulated oli, reported bun etc. is not used, even with hours == 0
+  if (oli == "lim" | oli == "bsa"){
+    samp_rep <- samp_rep %>% mutate(
+      bun = ifelse(lma == 1, 0, bun),
+      bsa = ifelse(lma == 1, 0, bsa))#,
+    #  bhl = ifelse(lma == 1, 0, bhl))
+    #TO CHECK: why bhl? 
+    oli_ou <- "lim"
+  }
+  ##in case of mixed oli, reported bun is used, and social assistance is simulated with full take-up
+  ##we use thus EM-input from datoli together with full-take up option in EM, which gives mixoli input for estimation. 
+  if (oli == "mix"){
+    oli_ou <- "dat"
+  }
+  samp_EM_input_singles <- samp_rep %>% filter(group %in% c(0,1)) %>% select(all_of(names_silc)) %>% mutate_if(is.numeric, ~ round(., digits = 5))
+  samp_EM_input_couples <- samp_rep %>% filter(group == 10) %>% select(all_of(names_silc)) %>% mutate_if(is.numeric, ~ round(., digits = 5))
+  samp_aux <- samp_rep %>% select(idperson, all_of(setdiff(names(samp_rep), names_silc)))
+  samp_EM_input_baseline <- samp_rep %>% filter(draw == 0) %>% select(all_of(names_silc)) %>% mutate_if(is.numeric, ~ round(., digits = 5))
+  rm(samp_rep)
+  
+  if (writeoutput) {
+    op_em_s <- paste0(inputfolder, "EM-SILC-choicesets/", wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "_", filter_opt, ifelse(wri, "_wri", "_wai"),
+                      "/be_", year, "_singles_est.txt")
+    op_em_c <- paste0(inputfolder, "EM-SILC-choicesets/", wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "_", filter_opt, ifelse(wri, "_wri", "_wai"),
+                      "/be_", year, "_couples_est.txt")
+    op_aux <-  paste0(inputfolder, "EM-SILC-choicesets/", wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "_", filter_opt, ifelse(wri, "_wri", "_wai"),
+                      "/aux_", year, "_est.txt")
+    op_em_b <- paste0(inputfolder, "EM-SILC/lma/",
+                    "be_", year, "_z9.txt")
+    
+    print(paste0(op_em_b, " at ", Sys.time()))
+    write.table(samp_EM_input_baseline, op_em_b, sep = "\t", row.names = FALSE, quote = FALSE)
+    print(paste0(op_em_s, " at ", Sys.time()))
+    write.table(samp_EM_input_singles, op_em_s, sep = "\t", row.names = FALSE, quote = FALSE)
+    print(paste0(op_em_c, " at ", Sys.time()))
+    write.table(samp_EM_input_couples, op_em_c, sep = "\t", row.names = FALSE, quote = FALSE)
+    print(paste0(op_aux, " at ", Sys.time()))
+    write.table(samp_aux, op_aux, sep = "\t", row.names = FALSE, quote = FALSE)
+  } else {
+    assign(paste0("be_", year, "_bl_lma"), samp_EM_input_baseline, envir = .GlobalEnv)
+    assign(paste0("be_", year, "_singles_est"), samp_EM_input_singles, envir = .GlobalEnv)
+    assign(paste0("be_", year, "_couples_est"), samp_EM_input_couples, envir = .GlobalEnv)
+    assign(paste0("aux_", year, "_est"), samp_aux, envir = .GlobalEnv)
+  }
+  rm(samp_EM_input_baseline, samp_EM_input_singles, samp_EM_input_couples, samp_aux)
+}  
+
+ff_filter_silc <- function(silc, filter_opt, tableoutput){
+  #necessary to have mw_CPI_tab and w_max
+  if (filter_opt == "wiles"){
+    silc <- silc %>% mutate(
+      f_option = "wiles",
+      lma = ifelse(les %in% c(1,3,5,7) & dec == 0 & dag < 65 & dag > 16 & byr + pdi + poa + psu == 0, 1, 0))
+      # 9:other and 10:family worker (only in 2017) not included 
+  } 
+  if (filter_opt == "woles"){
+    silc <- silc %>% mutate(
+      f_option = "woles",
+      lma = ifelse(les != 2 & dec == 0 & dag < 65 & dag > 16 & byr + pdi + poa + psu == 0, 1, 0))
+  }
+  silc <- silc %>% group_by(idhh) %>% mutate(
+    hhlma = sum(lma)
+  ) %>% ungroup()
+  
+  silc_f <- silc %>% mutate(
+    group = case_when(dgn == 1 & idpartner == 0 ~ "sm",
+                      dgn == 0 & idpartner == 0 ~ "sf",
+                      dgn == 1 & idpartner != 0 ~ "cm",
+                      dgn == 0 & idpartner != 0 ~ "cf"),
+    year = as.numeric(str_sub(ddt, -4)),
+    cond_lma_les = ifelse((f_option == "wiles" & les %in% c(1,3,5,7))|
+                            (f_option == "woles" & les != 2), 1, 0), 
+    cond_lma_dec = ifelse(dec == 0, 1, 0), 
+    cond_lma_dag = ifelse(dag < 65 & dag > 16, 1, 0),
+    cond_lma_byr = ifelse(byr == 0, 1, 0),
+    cond_lma_pdi = ifelse(pdi == 0, 1, 0), 
+    cond_lma_poa = ifelse(poa == 0, 1, 0), 
+    cond_lma_psu = ifelse(psu == 0, 1, 0),
+    cond_lma = ifelse(lma == 1, 1, 0),
+    cond_lhw = ifelse(lhw <= 70, 1, 0), 
+    cond_yivwg = ifelse(yivwg >= mw_CPI_tab$minwage[match(year, mw_CPI_tab$incomeyear)]/(38*4.33) 
+                                  & yivwg < w_max, 1, 0), 
+    cond_yse = ifelse(yse <= 100 * mw_CPI_tab$CPI[match(year, mw_CPI_tab$incomeyear)]/100, 1, 0),
+    cond_s_hhlma = ifelse((group %in% c("sm", "sf") & hhlma == 1) | (group %in% c("cm", "cf")), 1, 0),
+    cond_c_partnerlma = ifelse((group %in% c("cm", "cf") & silc$lma[match(idpartner, silc$idperson)] == 1)
+                               | (group %in% c("sm", "sf")), 1, 0),
+    cond_c_partnerdgn = ifelse((group %in% c("cm", "cf") & silc$dgn[match(idpartner, silc$idperson)] != dgn)
+                               | (group %in% c("sm", "sf")), 1, 0),
+    cond_c_hhlma = ifelse((group %in% c("cm", "cf") & hhlma == 2) | (group %in% c("sm", "sf")), 1, 0), 
+    filter_in = (cond_lma_les * cond_lma_dec * cond_lma_dag * cond_lma_byr * cond_lma_pdi * cond_lma_poa * cond_lma_psu
+                 * cond_lhw * cond_yivwg * cond_yse * cond_s_hhlma * cond_c_hhlma * cond_c_partnerlma * cond_c_partnerdgn)
+    )
+  silc_f <- silc_f %>% mutate(
+    cond_c_partnerfilter = ifelse((group %in% c("cm", "cf") & silc_f$filter_in[match(idpartner, silc_f$idperson)] == 1)
+                                  | (group %in% c("sm", "sf")), 1, 0),
+    filter_in = filter_in * cond_c_partnerfilter
+    )
+  
+  samp <- silc %>% filter(idhh %in% (silc_f %>% filter(filter_in == 1) %>% pull(idhh)))
+  
+  if (tableoutput){
+    filtertable_obs <- silc_f %>% group_by(group) %>% summarise(
+      nofilter = n(),
+      filter_lma_les = sum(cond_lma_les),
+      filter_lma_dec = sum(cond_lma_les*cond_lma_dec),
+      filter_lma_dag = sum(cond_lma_les*cond_lma_dec*cond_lma_dag),
+      filter_lma_byr = sum(cond_lma_les*cond_lma_dec*cond_lma_dag*cond_lma_byr), 
+      filter_lma_pdi = sum(cond_lma_les*cond_lma_dec*cond_lma_dag*cond_lma_byr*cond_lma_pdi),
+      filter_lma_poa = sum(cond_lma_les*cond_lma_dec*cond_lma_dag*cond_lma_byr*cond_lma_pdi*cond_lma_poa),
+      filter_lma_psu = sum(cond_lma_les*cond_lma_dec*cond_lma_dag*cond_lma_byr*cond_lma_pdi*cond_lma_poa*cond_lma_psu), 
+      filter_lma = sum(cond_lma), 
+      filter_lhw = sum(cond_lma*cond_lhw),
+      filter_yivwg = sum(cond_lma*cond_lhw*cond_yivwg),
+      filter_yse = sum(cond_lma*cond_lhw*cond_yivwg*cond_yse), 
+      filter_s_hhlma = sum(cond_lma*cond_lhw*cond_yivwg*cond_yse*cond_s_hhlma), 
+      filter_c_partnerlma = sum(cond_lma*cond_lhw*cond_yivwg*cond_yse*cond_s_hhlma*cond_c_partnerlma), 
+      filter_c_partnerdgn = sum(cond_lma*cond_lhw*cond_yivwg*cond_yse*cond_s_hhlma*cond_c_partnerlma*cond_c_partnerdgn),
+      filter_c_hhlma = sum(cond_lma*cond_lhw*cond_yivwg*cond_yse*cond_s_hhlma*cond_c_partnerlma*cond_c_partnerdgn*cond_c_hhlma),
+      filter_c_partnerfilter = sum(cond_lma*cond_lhw*cond_yivwg*cond_yse*cond_s_hhlma*cond_c_hhlma*cond_c_partnerlma*cond_c_partnerdgn*cond_c_partnerfilter)
+    ) %>%
+      pivot_longer(cols = -group, names_to = 'Filter') %>% 
+      pivot_wider(names_from = group, values_from = value) %>% 
+      rename(sm_obs = sm, sf_obs = sf, cm_obs = cm, cf_obs = cf)
+    filtertable_dwt <- silc_f %>% group_by(group) %>% summarise(
+      nofilter = n(),
+      filter_lma_les = sum(cond_lma_les*dwt),
+      filter_lma_dec = sum(cond_lma_les*cond_lma_dec*dwt),
+      filter_lma_dag = sum(cond_lma_les*cond_lma_dec*cond_lma_dag*dwt),
+      filter_lma_byr = sum(cond_lma_les*cond_lma_dec*cond_lma_dag*cond_lma_byr*dwt), 
+      filter_lma_pdi = sum(cond_lma_les*cond_lma_dec*cond_lma_dag*cond_lma_byr*cond_lma_pdi*dwt),
+      filter_lma_poa = sum(cond_lma_les*cond_lma_dec*cond_lma_dag*cond_lma_byr*cond_lma_pdi*cond_lma_poa*dwt),
+      filter_lma_psu = sum(cond_lma_les*cond_lma_dec*cond_lma_dag*cond_lma_byr*cond_lma_pdi*cond_lma_poa*cond_lma_psu*dwt), 
+      filter_lma = sum(cond_lma*dwt), 
+      filter_lhw = sum(cond_lma*cond_lhw*dwt),
+      filter_yivwg = sum(cond_lma*cond_lhw*cond_yivwg*dwt),
+      filter_yse = sum(cond_lma*cond_lhw*cond_yivwg*cond_yse*dwt), 
+      filter_s_hhlma = sum(cond_lma*cond_lhw*cond_yivwg*cond_yse*cond_s_hhlma*dwt), 
+      filter_c_partnerlma = sum(cond_lma*cond_lhw*cond_yivwg*cond_yse*cond_s_hhlma*cond_c_hhlma*cond_c_partnerlma*dwt), 
+      filter_c_partnerdgn = sum(cond_lma*cond_lhw*cond_yivwg*cond_yse*cond_s_hhlma*cond_c_hhlma*cond_c_partnerlma*cond_c_partnerdgn*dwt),
+      filter_c_hhlma = sum(cond_lma*cond_lhw*cond_yivwg*cond_yse*cond_s_hhlma*cond_c_hhlma*dwt),
+      filter_c_partnerfilter =sum(cond_lma*cond_lhw*cond_yivwg*cond_yse*cond_s_hhlma*cond_c_hhlma*cond_c_partnerlma*cond_c_partnerdgn*cond_c_partnerfilter*dwt)
+    ) %>%
+      pivot_longer(cols = -group, names_to = 'Filter') %>% 
+      pivot_wider(names_from = group, values_from = value) %>% 
+      rename(sm_dwt = sm, sf_dwt = sf, cm_dwt = cm, cf_dwt = cf)
+    
+    filtertable <- full_join(filtertable_obs, filtertable_dwt, by = "Filter")
+    write.csv2(filtertable, paste0(outputfolder, filter_opt, "/filtertable", silc_f$year[1], ".csv"), row.names = F)
+    
+    lm_beforefilter <- silc_f %>% mutate(
+      working = ifelse(lhw > 0, 1, 0), 
+      working_pt1 = ifelse(lhw >= 18.5 & lhw <= 20.5, 1, 0), 
+      working_pt2 = ifelse(lhw >= 29.5 & lhw <= 30.5, 1, 0), 
+      working_ft = ifelse(lhw >= 37.5 & lhw <= 40.5, 1, 0)
+    )
+    lm_afterfilter <- lm_beforefilter %>% filter(idhh %in% (silc_f %>% filter(filter_in == 1) %>% pull(idhh)))
+    wtab_bf_all_dwt <- lm_beforefilter %>% summarise(
+      group = "all",
+      n = sum(dwt),
+      working = sum(working*dwt), 
+      working_pt1 = sum(working_pt1*dwt), 
+      working_pt2 = sum(working_pt2*dwt), 
+      working_ft = sum(working_ft*dwt)
+    ) %>%
+      pivot_longer(cols = -group, names_to = 'lm') %>% 
+      pivot_wider(names_from = group, values_from = value) %>% 
+      rename(all_dwt = all)
+    wtab_bf_all_obs <- lm_beforefilter %>% mutate(dwt = 1) %>% summarise(
+      group = "all",
+      n = sum(dwt),
+      working = sum(working*dwt), 
+      working_pt1 = sum(working_pt1*dwt), 
+      working_pt2 = sum(working_pt2*dwt), 
+      working_ft = sum(working_ft*dwt)
+    ) %>%
+      pivot_longer(cols = -group, names_to = 'lm') %>% 
+      pivot_wider(names_from = group, values_from = value) %>% 
+      rename(all_obs = all)
+    wtab_bf_gr_dwt <- lm_beforefilter %>% group_by(group) %>% summarise(
+      n = sum(dwt),
+      working = sum(working*dwt), 
+      working_pt1 = sum(working_pt1*dwt), 
+      working_pt2 = sum(working_pt2*dwt), 
+      working_ft = sum(working_ft*dwt)
+    ) %>%
+      pivot_longer(cols = -group, names_to = 'lm') %>% 
+      pivot_wider(names_from = group, values_from = value) %>% 
+      rename(sm_obs = sm, sf_obs = sf, cm_obs = cm, cf_obs = cf)
+    wtab_bf_gr_obs <- lm_beforefilter %>% mutate(dwt = 1) %>% group_by(group) %>% summarise(
+      n = sum(dwt),
+      working = sum(working*dwt), 
+      working_pt1 = sum(working_pt1*dwt), 
+      working_pt2 = sum(working_pt2*dwt), 
+      working_ft = sum(working_ft*dwt)
+    ) %>%
+      pivot_longer(cols = -group, names_to = 'lm') %>% 
+      pivot_wider(names_from = group, values_from = value) %>% 
+      rename(sm_obs = sm, sf_obs = sf, cm_obs = cm, cf_obs = cf)
+    wtab_bf_obs <- left_join(wtab_bf_all_obs, wtab_bf_gr_obs, by = "lm")
+    wtab_bf_dwt <- left_join(wtab_bf_all_dwt, wtab_bf_gr_dwt, by = "lm")
+    wtab_bf <- left_join(wtab_bf_obs, wtab_bf_dwt, by = "lm")
+    
+    write.csv2(wtab_bf, paste0(outputfolder, filter_opt, "/lm_beforefilter", silc_f$year[1], ".csv"), row.names = F)
+    
+    wtab_af_all_dwt <- lm_afterfilter %>% summarise(
+      group = "all",
+      n = sum(dwt),
+      working = sum(working*dwt), 
+      working_pt1 = sum(working_pt1*dwt), 
+      working_pt2 = sum(working_pt2*dwt), 
+      working_ft = sum(working_ft*dwt)
+    ) %>%
+      pivot_longer(cols = -group, names_to = 'lm') %>% 
+      pivot_wider(names_from = group, values_from = value) %>% 
+      rename(all_dwt = all)
+    wtab_af_all_obs <- lm_afterfilter %>% mutate(dwt = 1) %>% summarise(
+      group = "all",
+      n = sum(dwt),
+      working = sum(working*dwt), 
+      working_pt1 = sum(working_pt1*dwt), 
+      working_pt2 = sum(working_pt2*dwt), 
+      working_ft = sum(working_ft*dwt)
+    ) %>%
+      pivot_longer(cols = -group, names_to = 'lm') %>% 
+      pivot_wider(names_from = group, values_from = value) %>% 
+      rename(all_obs = all)
+    wtab_af_gr_dwt <- lm_afterfilter %>% group_by(group) %>% summarise(
+      n = sum(dwt),
+      working = sum(working*dwt), 
+      working_pt1 = sum(working_pt1*dwt), 
+      working_pt2 = sum(working_pt2*dwt), 
+      working_ft = sum(working_ft*dwt)
+    ) %>%
+      pivot_longer(cols = -group, names_to = 'lm') %>% 
+      pivot_wider(names_from = group, values_from = value) %>% 
+      rename(sm_obs = sm, sf_obs = sf, cm_obs = cm, cf_obs = cf)
+    wtab_af_gr_obs <- lm_afterfilter %>% mutate(dwt = 1) %>% group_by(group) %>% summarise(
+      n = sum(dwt),
+      working = sum(working*dwt), 
+      working_pt1 = sum(working_pt1*dwt), 
+      working_pt2 = sum(working_pt2*dwt), 
+      working_ft = sum(working_ft*dwt)
+    ) %>%
+      pivot_longer(cols = -group, names_to = 'lm') %>% 
+      pivot_wider(names_from = group, values_from = value) %>% 
+      rename(sm_obs = sm, sf_obs = sf, cm_obs = cm, cf_obs = cf)
+    wtab_af_obs <- left_join(wtab_af_all_obs, wtab_af_gr_obs, by = "lm")
+    wtab_af_dwt <- left_join(wtab_af_all_dwt, wtab_af_gr_dwt, by = "lm")
+    wtab_af <- left_join(wtab_af_obs, wtab_af_dwt, by = "lm")
+    write.csv2(wtab_af, paste0(outputfolder, filter_opt, "/lm_afterfilter", silc_f$year[1], ".csv"), row.names = F)
+    
+    lm_beforefilter2 <- lm_beforefilter %>% mutate(group = "all")
+    lm_beforefilter_double <- rbind(lm_beforefilter, lm_beforefilter2)
+    ytab_bf_dwt <- lm_beforefilter_double %>% group_by(group, working, working_pt1, working_pt2, working_ft) %>%
+      summarise(
+        mean_dwt = weighted.mean(yivwg, dwt),
+        p10_dwt = weighted_quantile(v=yivwg, w=dwt, p=0.1), 
+        p25_dwt = weighted_quantile(v=yivwg, w=dwt, p=0.25),
+        p50_dwt = weighted_quantile(v=yivwg, w=dwt, p=0.5),
+        p75_dwt = weighted_quantile(v=yivwg, w=dwt, p=0.25),
+        p90_dwt = weighted_quantile(v=yivwg, w=dwt, p=0.9)
+      ) 
+    ytab_bf_obs <- lm_beforefilter_double %>% mutate(dwt = 1) %>% 
+      group_by(group, working, working_pt1, working_pt2, working_ft) %>%
+      summarise(
+        mean_obs = weighted.mean(yivwg, dwt),
+        p10_obs = weighted_quantile(v=yivwg, w=dwt, p=0.1), 
+        p25_obs = weighted_quantile(v=yivwg, w=dwt, p=0.25),
+        p50_obs = weighted_quantile(v=yivwg, w=dwt, p=0.5),
+        p75_obs = weighted_quantile(v=yivwg, w=dwt, p=0.25),
+        p90_obs = weighted_quantile(v=yivwg, w=dwt, p=0.9)
+      )
+    ytab_bf <- left_join(ytab_bf_obs, ytab_bf_dwt, by = c("group", "working", "working_pt1", "working_pt2", "working_ft"))
+    write.csv2(ytab_bf, paste0(outputfolder, filter_opt, "/wage_beforefilter", silc_f$year[1], ".csv"), row.names = F)
+    
+    lm_afterfilter2 <- lm_afterfilter %>% mutate(group = "all")
+    lm_afterfilter_double <- rbind(lm_afterfilter, lm_afterfilter2)
+    ytab_af_dwt <- lm_afterfilter_double %>% group_by(group, working, working_pt1, working_pt2, working_ft) %>%
+      summarise(
+        mean_dwt = weighted.mean(yivwg, dwt),
+        p10_dwt = weighted_quantile(v=yivwg, w=dwt, p=0.1), 
+        p25_dwt = weighted_quantile(v=yivwg, w=dwt, p=0.25),
+        p50_dwt = weighted_quantile(v=yivwg, w=dwt, p=0.5),
+        p75_dwt = weighted_quantile(v=yivwg, w=dwt, p=0.25),
+        p90_dwt = weighted_quantile(v=yivwg, w=dwt, p=0.9)
+      ) 
+    ytab_af_obs <- lm_afterfilter_double %>% mutate(dwt = 1) %>% 
+      group_by(group, working, working_pt1, working_pt2, working_ft) %>%
+      summarise(
+        mean_obs = weighted.mean(yivwg, dwt),
+        p10_obs = weighted_quantile(v=yivwg, w=dwt, p=0.1), 
+        p25_obs = weighted_quantile(v=yivwg, w=dwt, p=0.25),
+        p50_obs = weighted_quantile(v=yivwg, w=dwt, p=0.5),
+        p75_obs = weighted_quantile(v=yivwg, w=dwt, p=0.25),
+        p90_obs = weighted_quantile(v=yivwg, w=dwt, p=0.9)
+      )
+    ytab_af <- left_join(ytab_af_obs, ytab_af_dwt, by = c("group", "working", "working_pt1", "working_pt2", "working_ft"))
+    write.csv2(ytab_af, paste0(outputfolder, filter_opt, "/wage_afterfilter", silc_f$year[1], ".csv"), row.names = F)
+    
+  }
+  return(samp)
+}
+
+ff_newids <- function(samp){
+  #add new ids
+  samp <- samp %>% group_by(idhh) %>% mutate(
+    hh_size = n(),
+    personal_rank = order(order(-lma, -dgn, -dag, decreasing = FALSE))
+  ) %>% ungroup() %>% mutate(
+    year = as.numeric(str_sub(ddt, -4)), 
+    idhhorig = idhh, 
+    idpersonorig = idperson, 
+    idpartnerorig = idpartner, 
+    idfatherorig = idfather, 
+    idmotherorig = idmother, 
+    hh_rank = rank(idhhorig, ties.method = "min"), 
+    idhh = (((year - 2000) * 10^nchar(dim(samp)[1])) + rank(idhhorig, ties.method = "min"))*100,
+    idperson = (idhh * 100) + personal_rank * 100 
+  )
+  samp <- samp %>% mutate(
+    idpartner = ifelse(idpartnerorig == 0, 0, samp$idperson[match(idpartnerorig, samp$idpersonorig)]),
+    idfather = ifelse(idfatherorig == 0, 0, samp$idperson[match(idfatherorig, samp$idpersonorig)]),
+    idmother = ifelse(idmotherorig == 0, 0, samp$idperson[match(idmotherorig, samp$idpersonorig)])
+  )
+  idhh_sm <- samp %>% filter(lma == 1 & idpartner == 0 & dgn == 1) %>% pull(idhh)
+  idhh_sf <- samp %>% filter(lma == 1 & idpartner == 0 & dgn == 0) %>% pull(idhh)
+  idhh_cou <- samp %>% filter(lma == 1 & idpartner != 0) %>% pull(idhh)
+  samp <- samp %>% mutate(
+    groupchar = case_when(idhh %in% idhh_sm ~ "sm",
+                          idhh %in% idhh_sf ~ "sf",
+                          idhh %in% idhh_cou ~ "cou"), 
+    group = case_when(idhh %in% idhh_sm ~ 1,
+                      idhh %in% idhh_sf ~ 0, 
+                      idhh %in% idhh_cou ~ 10),
+    groupy = year * 100 + group
+  )
+  return(samp)
+}
+
+# for preparing data
+f_preparedata_est <- function(samp, wasp, gsurtab_long, mw_CPI_tab, wri, mean_dispy_19){
+  samp <- ff_newvars(samp, gsurtab_long, mw_CPI_tab, wri, mean_dispy_19, afterrun = T)
+  
+  sm_p <- samp %>% filter(lma == 1 & group == 1)
+  sf_p <- samp %>% filter(lma == 1 & group == 0)
+  cou_p <- samp %>% filter(lma == 1 & group == 10) %>% mutate(dwt = round(dwt, digits = 3))
+  #couples on one row
+  common_variables <- c("idhh", "idhh_true", "idorighh", "group", "groupy", "dwt", 
+                        "children0_3", "children4_6", "children7_9", 
+                        "regW", "regB", "draw",
+                        "yd1", "yd2", "yd3")
+  cou_p <- cou_p %>%
+    mutate(gender = ifelse(dgn == 1, "m", "f")) %>% 
+    pivot_wider(id_cols = all_of(common_variables),
+                names_from = gender,
+                values_from = all_of(setdiff(colnames(cou_p), common_variables)))
+  #probability for draw given the prior distribution
+  if (wasp == "vw") {
+    sm_p <- sm_p %>% mutate(
+      prior = log(ifelse(hours==0, pi0, (1-pi0)*(1/(h_max-h_min)))
+                  *ifelse(wage==0, 1, 1/(w_max-w_min))))
+    sf_p <- sf_p %>% mutate(
+      prior = log(ifelse(hours==0, pi0, (1-pi0)*(1/(h_max-h_min)))
+                  *ifelse(wage==0, 1, 1/(w_max-w_min))))
+    cou_p <- cou_p %>% mutate(
+      prior = log(ifelse(hours_m==0, pi0_m, (1-pi0_m)*(1/(h_max-h_min)))
+                  *ifelse(wage_m==0, 1, 1/(w_max-w_min))
+                  *ifelse(hours_f==0, pi0_f, (1-pi0_f)*(1/(h_max-h_min)))
+                  *ifelse(wage_f==0, 1, 1/(w_max-w_min))))
+  }
+  if (wasp == "fw") {
+    sm_p <- sm_p %>% mutate(
+      prior = log(ifelse(hours==0, pi0, (1-pi0)*(1/(h_max-h_min)))))
+    sf_p <- sf_p %>% mutate(
+      prior = log(ifelse(hours==0, pi0, (1-pi0)*(1/(h_max-h_min)))))
+    cou_p <- cou_p %>% mutate(
+      prior = log(ifelse(hours_m==0, pi0_m, (1-pi0_m)*(1/(h_max-h_min)))
+                  *ifelse(hours_f==0, pi0_f, (1-pi0_f)*(1/(h_max-h_min)))))
+  }
+  return(list("sm"=sm_p, "sf"=sf_p, "cou"=cou_p))
+}
+
+ff_newvars <- function(samp, gsurtab_long, mw_CPI_tab, wri, mean_dispy_19, afterrun = T){
+  #after join of EM_output and aux and if wri == TRUE with dpi in samp
+  samp <- samp %>% group_by(idhh) %>% mutate(
+    children = sum(dag <= 18 | (dag <= 25 & dec != 0)),
+    D_children6 = ifelse(sum(dag<6) >= 1, 1, 0), 
+    children0_3 = sum(dag <= 3),
+    children4_6 = sum(dag > 3 & dag <= 6),
+    children7_9 = sum(dag > 6 & dag <= 9),
+    children4_12 = sum(dag > 4 & dag <= 12),
+    children0_13 = sum(dag <= 13), 
+    deppers = hh_size - hhlma, 
+    depadults = hh_size - hhlma - children
+  ) %>% ungroup() %>% mutate(
+    regW = ifelse(drgn1 == 3, 1, 0), 
+    regB = ifelse(drgn1 == 1, 1, 0), 
+    educL = ifelse(deh %in% c(0,1,2), 1, 0), 
+    educH = ifelse(deh == 5, 1, 0),
+    pexp = pmax(0, case_when(deh %in% c(0,1,2) ~ dag - 15, 
+                             deh %in% c(3,4) ~ dag - 19,
+                             TRUE ~ dag - 23))/100,
+    gsur_category_year = paste0(case_when(dgn == 0 ~ "f", 
+                                          dgn == 1 ~ "m"), "_", 
+                                case_when(dag <= 14 ~ "00_14", 
+                                          dag <= 24 ~ "15_24", 
+                                          dag <= 54 ~ "25_54", 
+                                          dag <= 64 ~ "55_64", 
+                                          TRUE ~ "65_00"), "_", 
+                                case_when(deh %in% c(0,1,2) ~ "loweduc", 
+                                          deh %in% c(3,4) ~ "mideduc", 
+                                          deh == 5 ~ "higheduc"), "_", year),
+    gsur = gsurtab_long$GSURate[match(gsur_category_year, gsurtab_long$category_year)],
+    yd1 = ifelse(match(year, years) == 1, 1, 0),
+    yd2 = ifelse(match(year, years) == 2, 1, 0),
+    yd3 = ifelse(match(year, years) == 3, 1, 0),
+    uprating = mw_CPI_tab$CPI[match(2019, mw_CPI_tab$incomeyear)]/mw_CPI_tab$CPI[match(year, mw_CPI_tab$incomeyear)]
+  )
+  if(afterrun){
+    samp <- samp %>% mutate(
+      wage = ifelse(lma == 1 & hours > 0, yivwg, 0),
+      working = ifelse(hours > 0, 1, 0), 
+      working_pt1 = ifelse(hours >= 18.5 & hours <= 20.5, 1, 0), 
+      working_pt2 = ifelse(hours >= 29.5 & hours <= 30.5, 1, 0), 
+      working_ft = ifelse(hours >= 37.5 & hours <= 40.5, 1, 0), 
+      ils_dispy = pmax(1, ils_dispy) #no negative incomes allowed for translog utility
+    ) %>% group_by(idhh) %>% mutate(
+    eqincome = sum(ils_dispy)/(1 + 0.5*(hh_size - children0_13) + 0.3*children0_13)
+  ) %>% ungroup()
+    if (wri) {
+      samp <- samp %>% mutate(
+        dispy_util = (ils_dispy/dpi)/mean_dispy_19
+      )
+    } else {
+      samp <- samp %>% mutate(
+        dispy_util = (ils_dispy * uprating)/mean_dispy_19
+      )
+    }
+  }
+  return(samp)
+}
+
+#for output tables
+f_summarytable <- function(pdata, mean_dispy_19){
+  sm <- pdata$sm
+  sf <- pdata$sf
+  cou <- pdata$cou
+  
+  sm_sum <- ff_sum(sm %>% mutate(dwt = 1), mfc = "m", mean_dispy_19) %>% select(vars, osm_obs = osm, dsm_obs = dsm)
+  sf_sum <- ff_sum(sf %>% mutate(dwt = 1), mfc = "f", mean_dispy_19) %>% select(vars, osf_obs = osf, dsf_obs = dsf)
+  cou_sum <- ff_sum(cou %>% mutate(dwt = 1), mfc = "c", mean_dispy_19) %>% select(vars, oc_obs = oc, dc_obs = dc)
+  sm_sum_wtd <- ff_sum(sm, mfc = "m", mean_dispy_19) %>% select(vars, osm_wtd = osm, dsm_wtd = dsm)
+  sf_sum_wtd <- ff_sum(sf, mfc = "f", mean_dispy_19) %>% select(vars, osf_wtd = osf, dsf_wtd = dsf)
+  cou_sum_wtd <- ff_sum(cou, mfc = "c", mean_dispy_19) %>% select(vars, oc_wtd = oc, dc_wtd = dc)
+  
+  sum_table <- full_join(sm_sum, sf_sum, by = "vars")
+  sum_table <- full_join(sum_table, cou_sum, by = "vars")
+  sum_table <- full_join(sum_table, sm_sum_wtd, by = "vars")
+  sum_table <- full_join(sum_table, sf_sum_wtd, by = "vars")
+  sum_table <- full_join(sum_table, cou_sum_wtd, by = "vars")
+  
+  return(sum_table)
+}
+
+ff_sum <- function(df, mfc, mean_dispy_19){
+  if (mfc == "m"){
+    df_sum <- df %>% mutate(observed = ifelse(draw == 0, "osm", "dsm")) %>% group_by(observed) %>% summarise(
+      total = sum(dwt), 
+      age_m = weighted.mean(dag, dwt), 
+      age_f = 0,
+      ch0_3 = sum((children0_3 > 0)*dwt)/total, 
+      ch4_6 = sum((children4_6 > 0)*dwt)/total,
+      ch7_9 = sum((children7_9 > 0)*dwt)/total,
+      exp_m = weighted.mean(pexp, dwt),
+      exp_f = 0,
+      brussels = sum((regB == 1)*dwt)/total,
+      flanders = sum((regB == 0 & regW == 0)*dwt)/total,
+      wallonia = sum((regW == 1)*dwt)/total,
+      low_educ_m = sum((educL == 1)*dwt)/total,
+      mid_educ_m = sum((educL == 0 & educH == 0)*dwt)/total,
+      high_educ_m = sum((educH == 1)*dwt)/total,
+      low_educ_f = 0, 
+      mid_educ_f = 0, 
+      high_educ_f = 0,
+      working_m = sum((working == 1)*dwt)/total, 
+      working_f = 0,
+      working_pt1_m = sum((working_pt1 == 1)*dwt)/total, 
+      working_pt2_m = sum((working_pt2 == 1)*dwt)/total,
+      working_ft_m = sum((working_ft == 1)*dwt)/total,
+      working_pt1_f = 0, 
+      working_pt2_f = 0, 
+      working_ft_f = 0,
+      mean_hours_m = weighted.mean(hours, dwt),
+      mean_hours_f = 0,
+      mean_hours_m_cw = weighted.mean(ifelse(hours > 0, hours, NA), dwt, na.rm = TRUE),
+      mean_hours_f_cw = 0,
+      mean_ils_dispy_m = weighted.mean(dispy_util * mean_dispy_19, dwt),
+      mean_ils_dispy_f = 0,
+      mean_ils_dispy_m_iw = weighted.mean(ifelse(hours > 0, dispy_util * mean_dispy_19, NA), dwt, na.rm = TRUE),
+      mean_ils_dispy_f_iw = 0,
+      mean_ils_dispy_m_ow = weighted.mean(ifelse(hours == 0, dispy_util * mean_dispy_19, NA), dwt, na.rm = TRUE), 
+      mean_ils_dispy_f_ow = 0,
+      zero_hours_m = sum((hours == 0)*dwt)/total,
+      zero_hours_f = 0,
+      wage_m = weighted.mean(ifelse(hours > 0, wage, NA), dwt, na.rm = TRUE), 
+      wage_f = 0)
+  } 
+  if (mfc == "f"){
+    df_sum <- df %>% mutate(observed = ifelse(draw == 0, "osf", "dsf")) %>% group_by(observed) %>% summarise(
+      total = sum(dwt),
+      age_m = 0, 
+      age_f = weighted.mean(dag, dwt),
+      ch0_3 = sum((children0_3 > 0)*dwt)/total, 
+      ch4_6 = sum((children4_6 > 0)*dwt)/total,
+      ch7_9 = sum((children7_9 > 0)*dwt)/total,
+      exp_m = 0,
+      exp_f = weighted.mean(pexp, dwt),
+      brussels = sum((regB == 1)*dwt)/total,
+      flanders = sum((regB == 0 & regW == 0)*dwt)/total,
+      wallonia = sum((regW == 1)*dwt)/total,
+      low_educ_m = 0, 
+      mid_educ_m = 0, 
+      high_educ_m = 0, 
+      low_educ_f = sum((educL == 1)*dwt)/total,
+      mid_educ_f = sum((educL == 0 & educH == 0)*dwt)/total,
+      high_educ_f = sum((educH == 1)*dwt)/total,
+      working_m = 0, 
+      working_f = sum((working == 1)*dwt)/total, 
+      working_pt1_m = 0, 
+      working_pt2_m = 0, 
+      working_ft_m = 0, 
+      working_pt1_f = sum((working_pt1 == 1)*dwt)/total, 
+      working_pt2_f = sum((working_pt2 == 1)*dwt)/total,
+      working_ft_f = sum((working_ft == 1)*dwt)/total,
+      mean_hours_m = 0,
+      mean_hours_f = weighted.mean(hours, dwt),
+      mean_hours_m_cw = 0,
+      mean_hours_f_cw = weighted.mean(ifelse(hours > 0, hours, NA), dwt, na.rm = TRUE),
+      mean_ils_dispy_m = 0,
+      mean_ils_dispy_f = weighted.mean(dispy_util * mean_dispy_19, dwt),
+      mean_ils_dispy_m_iw = 0,
+      mean_ils_dispy_f_iw = weighted.mean(ifelse(hours > 0, dispy_util * mean_dispy_19, NA), dwt, na.rm = TRUE),
+      mean_ils_dispy_m_ow = 0, 
+      mean_ils_dispy_f_ow = weighted.mean(ifelse(hours == 0, dispy_util * mean_dispy_19, NA), dwt, na.rm = TRUE),
+      zero_hours_m = 0,
+      zero_hours_f = sum((hours == 0)*dwt)/total,
+      wage_m = 0, 
+      wage_f = weighted.mean(ifelse(hours > 0, wage, NA), dwt, na.rm = TRUE))
+  }
+  if (mfc == "c") {
+    df_sum <- df %>% mutate(observed = ifelse(draw == 0, "oc", "dc")) %>% group_by(observed) %>% summarise(
+      total = sum(dwt), 
+      age_m = weighted.mean(dag_m, dwt), 
+      age_f = weighted.mean(dag_f, dwt),
+      ch0_3 = sum((children0_3 > 0)*dwt)/total, 
+      ch4_6 = sum((children4_6 > 0)*dwt)/total,
+      ch7_9 = sum((children7_9 > 0)*dwt)/total,
+      exp_m = weighted.mean(pexp_m, dwt),
+      exp_f = weighted.mean(pexp_f, dwt),
+      brussels = sum((regB == 1)*dwt)/total,
+      flanders = sum((regB == 0 & regW == 0)*dwt)/total,
+      wallonia = sum((regW == 1)*dwt)/total,
+      low_educ_m = sum((educL_m == 1)*dwt)/total,
+      mid_educ_m = sum((educL_m == 0 & educH_m == 0)*dwt)/total,
+      high_educ_m = sum((educH_m == 1)*dwt)/total, 
+      low_educ_f = sum((educL_f == 1)*dwt)/total,
+      mid_educ_f = sum((educL_f == 0 & educH_f == 0)*dwt)/total,
+      high_educ_f = sum((educH_f == 1)*dwt)/total, 
+      working_m = sum((working_m == 1)*dwt)/total,
+      working_f = sum((working_f == 1)*dwt)/total,
+      working_pt1_m = sum((working_pt1_m == 1)*dwt)/total, 
+      working_pt2_m = sum((working_pt2_m == 1)*dwt)/total,
+      working_ft_m = sum((working_ft_m == 1)*dwt)/total,
+      working_pt1_f = sum((working_pt1_f == 1)*dwt)/total,
+      working_pt2_f = sum((working_pt2_f == 1)*dwt)/total,
+      working_ft_f = sum((working_ft_f == 1)*dwt)/total,
+      mean_hours_m = weighted.mean(hours_m, dwt),
+      mean_hours_f = weighted.mean(hours_f, dwt),
+      mean_hours_m_cw = weighted.mean(ifelse(hours_m > 0, hours_m, NA), dwt, na.rm = TRUE),
+      mean_hours_f_cw = weighted.mean(ifelse(hours_f > 0, hours_f, NA), dwt, na.rm = TRUE),
+      mean_ils_dispy_m = weighted.mean(dispy_util_m * mean_dispy_19, dwt),
+      mean_ils_dispy_f = weighted.mean(dispy_util_f * mean_dispy_19, dwt),
+      mean_ils_dispy_m_iw = weighted.mean(ifelse(hours_m > 0, dispy_util_m * mean_dispy_19, NA), dwt, na.rm = TRUE),
+      mean_ils_dispy_f_iw = weighted.mean(ifelse(hours_f > 0, dispy_util_f * mean_dispy_19, NA), dwt, na.rm = TRUE),
+      mean_ils_dispy_m_ow = weighted.mean(ifelse(hours_m == 0, dispy_util_m * mean_dispy_19, NA), dwt, na.rm = TRUE),
+      mean_ils_dispy_f_ow = weighted.mean(ifelse(hours_f == 0, dispy_util_f * mean_dispy_19, NA), dwt, na.rm = TRUE),
+      zero_hours_m = sum((hours_m == 0)*dwt)/total,
+      zero_hours_f = sum((hours_f == 0)*dwt)/total,
+      wage_m = weighted.mean(ifelse(hours_m > 0, wage_m, NA), dwt, na.rm = TRUE), 
+      wage_f = weighted.mean(ifelse(hours_f > 0, wage_f, NA), dwt, na.rm = TRUE))
+  }
+  df_sum <- df_sum %>% 
+    pivot_longer(cols = -observed, names_to = 'vars') %>% 
+    pivot_wider(names_from = observed, values_from = value)
+  return(df_sum)
+}
+
+f_dist_dispy <- function(pdata, mean_dispy_19){
+  sm <- pdata$sm %>% mutate(dispy = dispy_util * mean_dispy_19)
+  sf <- pdata$sf %>% mutate(dispy = dispy_util * mean_dispy_19)
+  coum <- pdata$cou %>% 
+    mutate(dispy = dispy_util_m * mean_dispy_19, 
+           working = working_m, working_pt1 = working_pt1_m, working_pt2 = working_pt2_m, working_ft = working_ft_m)
+  couf <- pdata$cou %>% 
+    mutate(dispy = dispy_util_f * mean_dispy_19,
+           working = working_f, working_pt1 = working_pt1_f, working_pt2 = working_pt2_f, working_ft = working_ft_f)
+  
+  sm_didi <- ff_didi(sm %>% mutate(dwt = 1)) %>% mutate(group="sm_obs")
+  sf_didi <- ff_didi(sf %>% mutate(dwt = 1)) %>% mutate(group="sf_obs")
+  coum_didi <- ff_didi(coum %>% mutate(dwt = 1)) %>% mutate(group="coum_obs")
+  couf_didi <- ff_didi(couf %>% mutate(dwt = 1)) %>% mutate(group="couf_obs")
+  sm_didi_wtd <- ff_didi(sm) %>% mutate(group="sm_obs")
+  sf_didi_wtd <- ff_didi(sf) %>% mutate(group="sf_obs")
+  coum_didi_wtd <- ff_didi(coum) %>% mutate(group="coum_obs")
+  couf_didi_wtd <- ff_didi(couf) %>% mutate(group="couf_obs")
+  
+  dist_dispy <- full_join(sm_didi, sf_didi)
+  dist_dispy <- full_join(dist_dispy, coum_didi)
+  dist_dispy <- full_join(dist_dispy, couf_didi)
+  dist_dispy <- full_join(dist_dispy, sm_didi_wtd)
+  dist_dispy <- full_join(dist_dispy, sf_didi_wtd)
+  dist_dispy <- dist_dispy %>% 
+    select(group, working, working_pt1, working_pt2, working_ft, mean, p10, p25, p50, p75, p90)
+  
+  return(dist_dispy)
+}
+
+ff_didi <- function(df){
+  df_dist <- df %>% group_by(working, working_pt1, working_pt2, working_ft) %>% summarise(
+    mean = weighted.mean(dispy, dwt), 
+    p10 = weighted_quantile(dispy, dwt, 0.1),
+    p25 = weighted_quantile(dispy, dwt, 0.25),
+    p50 = weighted_quantile(dispy, dwt, 0.5),
+    p75 = weighted_quantile(dispy, dwt, 0.75),
+    p90 = weighted_quantile(dispy, dwt, 0.9)
+  )
+  return(df_dist)
+}
+
+# for likelihood
+f_likelihood <- function(param, sm, sf, cou, wasp, print_opt = T){
+  sm <- ff_calc_util(param, sm, "sm")
+  sf <- ff_calc_util(param, sf, "sf")
+  cou <- ff_calc_util(param, cou, "cou")
+  
+  sm <- ff_calc_hopp(param, sm, "sm")
+  sf <- ff_calc_hopp(param, sf, "sf")
+  cou <- ff_calc_hopp(param, cou, "cou")
+  
+  if (wasp == "vw"){
+    sm <- ff_calc_wopp(param, sm, "sm")
+    sf <- ff_calc_wopp(param, sf, "sf")
+    cou <- ff_calc_wopp(param, cou, "cou")
+  } else if (wasp == "fw"){
+    sm$wopp <- sf$wopp <- cou$wopp <- 0
+  }
+  
+  prob_sm <- sm %>% 
+    group_by(idhh_true) %>% 
+    summarise(prob = sum(ifelse(draw == 0, exp(util + hopp + wopp - prior), 0)/sum(exp(util + hopp + wopp - prior))), .groups = "drop")
+  prob_sf <- sf %>% 
+    group_by(idhh_true) %>% 
+    summarise(prob = sum(ifelse(draw == 0, exp(util + hopp + wopp - prior), 0)/sum(exp(util + hopp + wopp - prior))), .groups = "drop")
+  prob_c <- cou %>% 
+    group_by(idhh_true) %>% 
+    summarise(prob = sum(ifelse(draw == 0, exp(util + hopp + wopp - prior), 0)/sum(exp(util + hopp + wopp - prior))), .groups = "drop")
+  
+  LL <- -sum(log(prob_sm$prob)) - sum(log(prob_sf$prob)) - sum(log(prob_c$prob))
+  if(print_opt){print(paste0("likelihood evaluated"))}
+  
+  return(LL)
+}
+
+ff_calc_util <- function(param, df, type){
+  if (type == "sm"){
+    df <- df %>% mutate(
+      util = ((param[1] + param[2]*log(dag) + param[3]*log(dag)^2 + param[4]*children4_6 + param[5]*children7_9
+               + param[6]*regW + param[7]*regB + param[8]*educL + param[9]*educH)
+              * (((168 - hours)/(168-mean_lhw_19))^param[10]-1)/param[10]
+              + param[11] * (dispy_util^param[12]-1)/param[12])
+    )
+  }
+  if (type == "sf"){
+    df <- df %>% mutate(
+      util = ((param[13] + param[14]*log(dag) + param[15]*log(dag)^2 + param[16]*children0_3 + param[17]*children4_6 + param[18]*children7_9
+               + param[19]*regW + param[20]*regB + param[21]*educL + param[22]*educH)
+              * (((168 - hours)/(168-mean_lhw_19))^param[23]-1)/param[23]
+              + param[24] * (dispy_util^param[25]-1)/param[25])
+    )
+  }
+  if (type == "cou"){
+    df <- df %>% mutate(
+      util = (((param[26] + param[27]*log(dag_m) + param[28]*log(dag_m)^2 + param[29]*children0_3 + param[30]*children4_6 + param[31]*children7_9
+                + param[32]*regW + param[33]*regB + param[34]*educL_m + param[35]*educH_m)
+               * (((168 - hours_m)/(168-mean_lhw_19))^param[46]-1)/param[46])
+              + ((param[36] + param[37]*log(dag_f) + param[38]*log(dag_f)^2 + param[39]*children0_3 + param[40]*children4_6 + param[41]*children7_9
+                  + param[42]*regW + param[43]*regB + param[44]*educL_f + param[45]*educH_f)
+                 * (((168 - hours_f)/(168-mean_lhw_19))^param[47]-1)/param[47])
+              + param[48] * ((dispy_util_m + dispy_util_f)^param[49]-1)/param[49]
+              + param[50] * ((((168 - hours_m)/(168-mean_lhw_19))^param[46]-1)/param[46]) * ((((168 - hours_f)/(168-mean_lhw_19))^param[47]-1)/param[47])),
+    )
+  }
+  return(df)
+}
+
+ff_calc_hopp <- function(param, df, type){
+  if (type == "sm"){
+    df <- df %>% mutate(
+      hopp = (param[51]*working + param[52]*working_pt1 + param[53]*working_pt2 + param[54]*working_ft
+              + param[55]*working*gsur + param[56]*working*regW + param[57]*working*regB + param[58]*working*educL + param[59]*working*educH),
+    )
+  }
+  if (type == "sf"){
+    df <- df %>% mutate(
+      hopp = (param[60]*working + param[61]*working_pt1 + param[62]*working_pt2 + param[63]*working_ft
+              + param[64]*working*gsur + param[65]*working*regW + param[66]*working*regB + param[67]*working*educL + param[68]*working*educH),
+    )
+  }
+  if (type == "cou"){
+    df <- df %>% mutate(
+      hopp = (param[51]*working_m + param[52]*working_pt1_m + param[53]*working_pt2_m + param[54]*working_ft_m + param[55]*working_m*gsur_m 
+              + param[56]*working_m*regW + param[57]*working_m*regB + param[58]*working_m*educL_m + param[59]*working_m*educH_m
+              + param[60]*working_f + param[61]*working_pt1_f + param[62]*working_pt2_f + param[63]*working_ft_f + param[64]*working_f*gsur_f
+              + param[65]*working_f*regW + param[66]*working_f*regB + param[67]*working_f*educL_f + param[68]*working_f*educH_f),
+    )
+  }
+  return(df)
+}
+
+ff_calc_wopp <- function(param, df, type){
+  if (type == "sm"){
+    df <- df %>% mutate(
+      lw = (param[69] + param[70]*educL + param[71]*educH + param[72]*pexp + param[73]*pexp^2 
+            + param[81]*yd1 + param[82]*yd2),
+      wopp = ifelse(working==0, 0, -0.5*((log(wage)-lw)/param[79])^2 - log(param[79]*wage*sqrt(2*pi)))
+    )
+  }
+  if (type == "sf"){
+    df <- df %>% mutate(
+      lw = (param[74] + param[75]*educL + param[76]*educH + param[77]*pexp + param[78]*pexp^2
+            + param[81]*yd1 + param[82]*yd2),
+      wopp = ifelse(working==0, 0, -0.5*((log(wage)-lw)/param[80])^2 - log(param[80]*wage*sqrt(2*pi)))
+    )
+  }
+  if (type == "cou"){
+    df <- df %>% mutate(
+      lw_m = (param[69] + param[70]*educL_m + param[71]*educH_m + param[72]*pexp_m + param[73]*pexp_m^2 
+              + param[81]*yd1 + param[82]*yd2),
+      lw_f = (param[74] + param[75]*educL_f + param[76]*educH_f + param[77]*pexp_f + param[78]*pexp_f^2
+              + param[81]*yd1 + param[82]*yd2),
+      wopp = (ifelse(working_m == 0, 0, -0.5*((log(wage_m)-lw_m)/param[79])^2 - log(param[79]*wage_m*sqrt(2*pi)))
+              + ifelse(working_f == 0, 0, -0.5*((log(wage_f)-lw_f)/param[80])^2 - log(param[80]*wage_f*sqrt(2*pi))))
+    )
+  }
+  return(df)
+}
+
+
+f_gradient <- function(param, sm, sf, cou, wasp){
+  if (wasp == "fw"){
+    deriv <- paste0("d", seq(1, 68, 1))
+  } else if (wasp == "vw"){
+    deriv <- paste0("d", seq(1, 82, 1))
+  }
+  sm[,deriv] <- sf[,deriv] <- cou[,deriv] <- 0
+  # single men
+  sm <- ff_calc_util(param, sm, "sm")
+  sf <- ff_calc_util(param, sf, "sf")
+  cou <- ff_calc_util(param, cou, "cou")
+  sm <- ff_calc_hopp(param, sm, "sm")
+  sf <- ff_calc_hopp(param, sf, "sf")
+  cou <- ff_calc_hopp(param, cou, "cou")
+  if (wasp == "fw"){
+    sm <- sm %>% mutate(wopp = 0)
+    sf <- sf %>% mutate(wopp = 0)
+    cou <- cou %>% mutate(wopp = 0)
+  } else if (wasp == "vw"){
+    sm <- ff_calc_wopp(param, sm, "sm")
+    sf <- ff_calc_wopp(param, sf, "sf")
+    cou <- ff_calc_wopp(param, cou, "cou")
+  }
+  sm <- sm %>% mutate(
+    d1 = (((168-hours)/(168-mean_lhw_19))^param[10]-1)/param[10],
+    d2 = log(dag)*(((168-hours)/(168-mean_lhw_19))^param[10]-1)/param[10],
+    d3 = log(dag)^2*(((168-hours)/(168-mean_lhw_19))^param[10]-1)/param[10], 
+    d4 = children4_6*(((168-hours)/(168-mean_lhw_19))^param[10]-1)/param[10], 
+    d5 = children7_9*(((168-hours)/(168-mean_lhw_19))^param[10]-1)/param[10], 
+    d6 = regW*(((168-hours)/(168-mean_lhw_19))^param[10]-1)/param[10], 
+    d7 = regB*(((168-hours)/(168-mean_lhw_19))^param[10]-1)/param[10], 
+    d8 = educL*(((168-hours)/(168-mean_lhw_19))^param[10]-1)/param[10], 
+    d9 = educH*(((168-hours)/(168-mean_lhw_19))^param[10]-1)/param[10], 
+    d10 = ((param[1] + param[2]*log(dag) + param[3]*log(dag)^2 + param[4]*children4_6 + param[5]*children7_9
+            + param[6]*regW + param[7]*regB + param[8]*educL + param[9]*educH)
+           *((param[10]*((168-hours)/(168-mean_lhw_19))^param[10]*log((168-hours)/(168-mean_lhw_19))-(((168-hours)/(168-mean_lhw_19))^param[10]-1))/param[10]^2)),
+    d11 = (dispy_util^param[12]-1)/param[12],
+    d12 = param[11]*(param[12]*dispy_util^param[12]*log(dispy_util)-(dispy_util^param[12]-1))/param[12]^2,
+    d51 = working, 
+    d52 = working_pt1,
+    d53 = working_pt2,
+    d54 = working_ft,
+    d55 = gsur*working, 
+    d56 = regW*working, 
+    d57 = regB*working,
+    d58 = educL*working,
+    d59 = educH*working
+  )
+  sf <- sf %>% mutate(
+    d13 = (((168-hours)/(168-mean_lhw_19))^param[23]-1)/param[23],
+    d14 = log(dag)*(((168-hours)/(168-mean_lhw_19))^param[23]-1)/param[23],
+    d15 = log(dag)^2*(((168-hours)/(168-mean_lhw_19))^param[23]-1)/param[23],
+    d16 = children0_3*(((168-hours)/(168-mean_lhw_19))^param[23]-1)/param[23],
+    d17 = children4_6*(((168-hours)/(168-mean_lhw_19))^param[23]-1)/param[23], 
+    d18 = children7_9*(((168-hours)/(168-mean_lhw_19))^param[23]-1)/param[23],
+    d19 = regW*(((168-hours)/(168-mean_lhw_19))^param[23]-1)/param[23], 
+    d20 = regB*(((168-hours)/(168-mean_lhw_19))^param[23]-1)/param[23], 
+    d21 = educL*(((168-hours)/(168-mean_lhw_19))^param[23]-1)/param[23], 
+    d22 = educH*(((168-hours)/(168-mean_lhw_19))^param[23]-1)/param[23], 
+    d23 = ((param[13] + param[14]*log(dag) + param[15]*log(dag)^2 + param[16]*children0_3 + param[17]*children4_6 + param[18]*children7_9
+            + param[19]*regW + param[20]*regB + param[21]*educL + param[22]*educH)
+           *((param[23]*((168-hours)/(168-mean_lhw_19))^param[23]*log((168-hours)/(168-mean_lhw_19))-(((168-hours)/(168-mean_lhw_19))^param[23]-1))/param[23]^2)),
+    d24 = (dispy_util^param[25]-1)/param[25], 
+    d25 = param[24]*(param[25]*dispy_util^param[25]*log(dispy_util)-(dispy_util^param[25]-1))/param[25]^2,
+    d60 = working, 
+    d61 = working_pt1,
+    d62 = working_pt2, 
+    d63 = working_ft,
+    d64 = gsur*working, 
+    d65 = regW*working,
+    d66 = regB*working,
+    d67 = educL*working,
+    d68 = educH*working    
+  )
+  cou <- cou %>% mutate(
+    d26 = (((168-hours_m)/(168-mean_lhw_19))^param[46]-1)/param[46], 
+    d27 = log(dag_m)*(((168-hours_m)/(168-mean_lhw_19))^param[46]-1)/param[46],
+    d28 = log(dag_m)^2*(((168-hours_m)/(168-mean_lhw_19))^param[46]-1)/param[46],
+    d29 = children0_3*(((168-hours_m)/(168-mean_lhw_19))^param[46]-1)/param[46],
+    d30 = children4_6*(((168-hours_m)/(168-mean_lhw_19))^param[46]-1)/param[46],
+    d31 = children7_9*(((168-hours_m)/(168-mean_lhw_19))^param[46]-1)/param[46],
+    d32 = regW*(((168-hours_m)/(168-mean_lhw_19))^param[46]-1)/param[46],
+    d33 = regB*(((168-hours_m)/(168-mean_lhw_19))^param[46]-1)/param[46],
+    d34 = educL_m*(((168-hours_m)/(168-mean_lhw_19))^param[46]-1)/param[46],
+    d35 = educH_m*(((168-hours_m)/(168-mean_lhw_19))^param[46]-1)/param[46], 
+    d36 = (((168-hours_f)/(168-mean_lhw_19))^param[47]-1)/param[47],
+    d37 = log(dag_f)*(((168-hours_f)/(168-mean_lhw_19))^param[47]-1)/param[47],
+    d38 = log(dag_f)^2*(((168-hours_f)/(168-mean_lhw_19))^param[47]-1)/param[47],
+    d39 = children0_3*(((168-hours_f)/(168-mean_lhw_19))^param[47]-1)/param[47],
+    d40 = children4_6*(((168-hours_f)/(168-mean_lhw_19))^param[47]-1)/param[47],
+    d41 = children7_9*(((168-hours_f)/(168-mean_lhw_19))^param[47]-1)/param[47],
+    d42 = regW*(((168-hours_f)/(168-mean_lhw_19))^param[47]-1)/param[47],
+    d43 = regB*(((168-hours_f)/(168-mean_lhw_19))^param[47]-1)/param[47],
+    d44 = educL_f*(((168-hours_f)/(168-mean_lhw_19))^param[47]-1)/param[47],
+    d45 = educH_f*(((168-hours_f)/(168-mean_lhw_19))^param[47]-1)/param[47],
+    d46 = (((param[26] + param[27]*log(dag_m) + param[28]*log(dag_m)^2 + param[29]*children0_3 + param[30]*children4_6 
+             + param[31]*children7_9 + param[32]*regW + param[33]*regB + param[34]*educL_m + param[35]*educH_m)
+            +param[50]*((((168-hours_f)/(168-mean_lhw_19))^param[47]-1)/param[47]))
+           *((param[46]*((168-hours_m)/(168-mean_lhw_19))^param[46]*log((168-hours_m)/(168-mean_lhw_19))-(((168-hours_m)/(168-mean_lhw_19))^param[46]-1))/param[46]^2)),
+    d47 = (((param[36] + param[37]*log(dag_f) + param[38]*log(dag_f)^2 + param[39]*children0_3 + param[40]*children4_6 
+             + param[41]*children7_9 + param[42]*regW + param[43]*regB + param[44]*educL_f + param[45]*educH_f)
+            +param[50]*((((168-hours_m)/(168-mean_lhw_19))^param[46]-1)/param[46]))
+           *((param[47]*((168-hours_f)/(168-mean_lhw_19))^param[47]*log((168-hours_f)/(168-mean_lhw_19))-(((168-hours_f)/(168-mean_lhw_19))^param[47]-1))/param[47]^2)),
+    d48 = ((dispy_util_m + dispy_util_f)^param[49]-1)/param[49],
+    d49 = param[48]*(param[49]*(dispy_util_m+dispy_util_f)^param[49]*log(dispy_util_m+dispy_util_f)-((dispy_util_m+dispy_util_f)^param[49]-1))/param[49]^2,
+    d50 = ((((168-hours_m)/(168-mean_lhw_19))^param[46]-1)/param[46])*((((168-hours_f)/(168-mean_lhw_19))^param[47]-1)/param[47]),
+    d51 = working_m, 
+    d52 = working_pt1_m,
+    d53 = working_pt2_m,
+    d54 = working_ft_m,
+    d55 = gsur_m*working_m, 
+    d56 = regW*working_m, 
+    d57 = regB*working_m,
+    d58 = educL_m*working_m,
+    d59 = educH_m*working_m,        
+    d60 = working_f, 
+    d61 = working_pt1_f,
+    d62 = working_pt2_f, 
+    d63 = working_ft_f,
+    d64 = gsur_f*working_f, 
+    d65 = regW*working_f,
+    d66 = regB*working_f,
+    d67 = educL_f*working_f,
+    d68 = educH_f*working_f
+  )
+  if (wasp == "vw"){
+    sm <- sm %>% mutate(
+      d69 = ifelse(working == 0, 0, ((log(wage)-lw)/param[79]^2)),
+      d70 = ifelse(working == 0, 0, ((log(wage)-lw)/param[79]^2)*educL),
+      d71 = ifelse(working == 0, 0, ((log(wage)-lw)/param[79]^2)*educH), 
+      d72 = ifelse(working == 0, 0, ((log(wage)-lw)/param[79]^2)*pexp),
+      d73 = ifelse(working == 0, 0, ((log(wage)-lw)/param[79]^2)*pexp^2),
+      d79 = ifelse(working == 0, 0, ((log(wage)-lw)^2/(param[79]^3))-(1/param[79])),
+      d81 = ifelse(working == 0, 0, ((log(wage)-lw)/param[79]^2)*yd1),
+      d82 = ifelse(working == 0, 0, ((log(wage)-lw)/param[79]^2)*yd2)
+    )
+    sf <- sf %>% mutate(
+      d74 = ifelse(working == 0, 0, ((log(wage)-lw)/param[80]^2)),
+      d75 = ifelse(working == 0, 0, ((log(wage)-lw)/param[80]^2)*educL),
+      d76 = ifelse(working == 0, 0, ((log(wage)-lw)/param[80]^2)*educH), 
+      d77 = ifelse(working == 0, 0, ((log(wage)-lw)/param[80]^2)*pexp),
+      d78 = ifelse(working == 0, 0, ((log(wage)-lw)/param[80]^2)*pexp^2),
+      d80 = ifelse(working == 0, 0, ((log(wage)-lw)^2/(param[80]^3))-(1/param[80])),
+      d81 = ifelse(working == 0, 0, ((log(wage)-lw)/param[80]^2)*yd1),
+      d82 = ifelse(working == 0, 0, ((log(wage)-lw)/param[80]^2)*yd2)
+    )
+    cou <- cou %>% mutate(
+      d69 = ifelse(working_m == 0, 0, ((log(wage_m)-lw_m)/param[79]^2)),
+      d70 = ifelse(working_m == 0, 0, ((log(wage_m)-lw_m)/param[79]^2)*educL_m),
+      d71 = ifelse(working_m == 0, 0, ((log(wage_m)-lw_m)/param[79]^2)*educH_m), 
+      d72 = ifelse(working_m == 0, 0, ((log(wage_m)-lw_m)/param[79]^2)*pexp_m),
+      d73 = ifelse(working_m == 0, 0, ((log(wage_m)-lw_m)/param[79]^2)*pexp_m^2),
+      d74 = ifelse(working_f == 0, 0, ((log(wage_f)-lw_f)/param[80]^2)),
+      d75 = ifelse(working_f == 0, 0, ((log(wage_f)-lw_f)/param[80]^2)*educL_f),
+      d76 = ifelse(working_f == 0, 0, ((log(wage_f)-lw_f)/param[80]^2)*educH_f),
+      d77 = ifelse(working_f == 0, 0, ((log(wage_f)-lw_f)/param[80]^2)*pexp_f),
+      d78 = ifelse(working_f == 0, 0, ((log(wage_f)-lw_f)/param[80]^2)*pexp_f^2),
+      d79 = ifelse(working_m == 0, 0, ((log(wage_m)-lw_m)^2/(param[79]^3))-(1/param[79])),
+      d80 = ifelse(working_f == 0, 0, ((log(wage_f)-lw_f)^2/(param[80]^3))-(1/param[80])),
+      d81 = (ifelse(working_m == 0, 0, (log(wage_m)-lw_m)/param[79]^2)
+             + ifelse(working_f == 0, 0, (log(wage_f)-lw_f)/param[80]^2)) * yd1,
+      d82 = (ifelse(working_m == 0, 0, (log(wage_m)-lw_m)/param[79]^2)
+             + ifelse(working_f == 0, 0, (log(wage_f)-lw_f)/param[80]^2)) * yd2
+    )
+  }
+  sm_contrib <- sm %>% group_by(idhh_true) %>% 
+    summarise_at(c(deriv), ~ sum(ifelse(draw == 0, . - sum(exp(util + hopp + wopp - prior)/sum(exp(util + hopp + wopp - prior)) * .), 0)))
+  sf_contrib <- sf %>% group_by(idhh_true) %>% 
+    summarise_at(c(deriv), ~ sum(ifelse(draw == 0, . - sum(exp(util + hopp + wopp - prior)/sum(exp(util + hopp + wopp - prior)) * .), 0)))
+  cou_contrib <- cou %>% group_by(idhh_true) %>% 
+    summarise_at(c(deriv), ~ sum(ifelse(draw == 0, . - sum(exp(util + hopp + wopp - prior)/sum(exp(util + hopp + wopp - prior)) * .), 0)))
+
+  gradient <- (-colSums(sm_contrib[,-1])-colSums(sf_contrib[,-1])-colSums(cou_contrib[,-1]))
+  print("gradient evaluated")
+  return(gradient)
+}
+```
+
+
+# 1 Choice sets
+```{r}
+if (new_choicesets){
+  print(paste0("2015 at ", Sys.time()))
+  f_choicesets_est(wasp, sizecs, oli, filter_opt, prior, inputfolder, "EM-SILC/BE_2015_c5.txt", outputfolder, writeoutput = F) 
+  rm(be_2015_bl_lma)
+  em_s_2015 <- emmodel$countries["BE"]$systems["BE_2015"]$run(be_2015_singles_est, "be_2015_c1.txt")$outputs[0]
+  rm(be_2015_singles_est)
+  em_c_2015 <- emmodel$countries["BE"]$systems["BE_2015"]$run(be_2015_couples_est, "be_2015_c1.txt")$outputs[0]
+  rm(be_2015_couples_est)
+  em_2015 <- rbind(em_s_2015, em_c_2015)
+  rm(em_s_2015, em_c_2015)
+  
+  print(paste0("2017 at ", Sys.time()))
+  f_choicesets_est(wasp, sizecs, oli, filter_opt, prior, inputfolder, "EM-SILC/BE_2017_c1.txt", outputfolder, writeoutput = F)
+  rm(be_2017_bl_lma)
+  em_s_2017 <- emmodel$countries["BE"]$systems["BE_2017"]$run(be_2017_singles_est, "be_2017_c1.txt")$outputs[0]
+  rm(be_2017_singles_est)
+  em_c_2017 <- emmodel$countries["BE"]$systems["BE_2017"]$run(be_2017_couples_est, "be_2017_c1.txt")$outputs[0]
+  rm(be_2017_couples_est)
+  em_2017 <- rbind(em_s_2017, em_c_2017)
+  rm(em_s_2017, em_c_2017)
+  
+  em <- bind_rows(em_2015, em_2017)
+  rm(em_2015, em_2017)
+  aux <- bind_rows(aux_2015_est, aux_2017_est)
+  rm(aux_2015_est, aux_2017_est)
+  
+  print(paste0("2019 at ", Sys.time()))
+  f_choicesets_est(wasp, sizecs, oli, filter_opt, prior, inputfolder, "EM-SILC/BE_2019_z9.txt", outputfolder, writeoutput = F)
+  em_s_2019 <- emmodel$countries["BE"]$systems["BE_2019"]$run(be_2019_singles_est, "be_2019_c2.txt")$outputs[0]
+  rm(be_2019_singles_est)
+  em_c_2019 <- emmodel$countries["BE"]$systems["BE_2019"]$run(be_2019_couples_est, "be_2019_c2.txt")$outputs[0]
+  rm(be_2019_couples_est)
+  em_2019 <- rbind(em_s_2019, em_c_2019)
+  rm(em_s_2019, em_c_2019)
+  
+  em <- bind_rows(em, em_2019)
+  rm(em_2019)
+  aux <- bind_rows(aux, aux_2019_est)
+  rm(aux_2019_est)
+  
+  print(paste0("prepare data at ", Sys.time()))
+  samp <- left_join(em, aux, by="idperson")
+  rm(em, aux)
+  samp <- samp %>% group_by(idhh) %>% mutate(dwt = mean(dwt)) %>% ungroup()
+  samp <- samp %>% mutate(
+    bsa_dif = ifelse(lma==1, bsa_s - bsa, 0),
+    #ils_dispy = ils_dispy - bsa_dif #for now not corrected because too many negative ils_dispy's
+  )
+  
+  if (new_mean_dispy_lhw){
+    em_base_2019 <- emmodel$countries["BE"]$systems["BE_2019"]$run(be_2019_bl_lma, "be_2019_c2.txt")$outputs[0]  
+    if (filter_opt == "wiles"){
+      em_base_2019_f <- em_base_2019 %>% mutate(
+        lma = ifelse(les %in% c(1,3,5,7) & dec == 0 & dag < 65 & dag > 16 & byr + pdi + poa + psu == 0, 1, 0))
+    } 
+    if (filter_opt == "woles"){
+      em_base_2019_f <- em_base_2019 %>% mutate(
+        lma = ifelse(les != 2 & dec == 0 & dag < 65 & dag > 16 & byr + pdi + poa + psu == 0, 1, 0))
+    }
+    mean_dispy_19_from_data <- weighted.mean(em_base_2019_f %>% filter(lma==1) %>% pull(ils_dispy),
+                                             em_base_2019_f %>% filter(lma==1) %>% pull(dwt))
+    #2420.324
+    
+    mean_lhw_19_from_data <- weighted.mean(em_base_2019_f %>% filter(lma==1 & lhw > 0) %>% pull(lhw), 
+                                           em_base_2019_f %>% filter(lma==1 & lhw > 0) %>% pull(dwt))
+    #32.6535 for all, #37.23516 for those with positive working hours
+    
+    #choose round numbers, easier for interpretation, easier to keep fixed over versions
+  } 
+  #choose round numbers, easier for interpretation, easier to keep fixed over versions
+  mean_dispy_19 <- 2500 
+  mean_lhw_19 <- 35 
+  rm(be_2019_bl_lma)
+  
+  pdata <- f_preparedata_est(samp, wasp, gsurtab_long, mw_CPI_tab, wri, mean_dispy_19)
+  saveRDS(pdata, file = paste0(estimationfolder, wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "_", filter_opt, ifelse(wri, "_wri", "_wai"), "_pdata.RDS"))
+  
+  summarytable <- f_summarytable(pdata, mean_dispy_19)
+  dist_dispy <- f_dist_dispy(pdata, mean_dispy_19)
+  write.xlsx(list("sumtab_est" = summarytable, "distdispy_est" = dist_dispy), 
+             paste0(estimationfolder, wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "_", filter_opt, ifelse(wri, "_wri", "_wai"), "_esttables.xlsx"), 
+             append = F)
+
+  rm(samp, summarytable)
+}
+```
+  
+# 2 Estimation 
+## 2.1 Load data
+```{r}
+if (!exists("pdata")){
+  pdata <- readRDS(paste0(estimationfolder, wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "_", filter_opt, ifelse(wri, "_wri", "_wai"), "_pdata.RDS"))
+}
+
+sm <- pdata$sm
+sf <- pdata$sf
+cou <-pdata$cou
+
+rm(pdata)
+
+#select only useful columns
+keepvar_s <- c("idhh", "idhh_true", "idperson","idorighh","idorigperson","draw","prior", "dwt",
+               "dag","children0_3","children4_6","children7_9","regW","regB","educL",
+               "educH","hours","dispy_util","working","working_pt1","working_pt2","working_ft",
+               "pexp", "wage","gsur", "yd1", "yd2", "yd3")
+keepvar_c <- c("idhh", "idhh_true", "idperson_m","idorighh","idorigperson_m","draw","prior", "dwt",
+               "dag_m","children0_3","children4_6","children7_9","regW","regB","educL_m",
+               "educH_m","hours_m","dispy_util_m","working_m","working_pt1_m","working_pt2_m","working_ft_m",
+               "pexp_m","wage_m","gsur_m",
+               "idperson_f","idorigperson_f","dag_f","educL_f","educH_f","hours_f","dispy_util_f",
+               "working_f","working_pt1_f","working_pt2_f","working_ft_f","pexp_f","wage_f","gsur_f", "yd1",
+               "yd2", "yd3")
+
+sm_optim <- sm %>% select(all_of(keepvar_s))
+sf_optim <- sf %>% select(all_of(keepvar_s))
+cou_optim <- cou %>% select(all_of(keepvar_c))
+
+rm(sm,sf,cou)
+gc()
+```
+
+
+## 2.2 Maximum likelihood 
+```{r}
+# wrapper function necessary for knitro optimization
+f_likelihood_optim <- function(param){
+  return(f_likelihood(param, sm_optim, sf_optim, cou_optim, wasp))
+}
+f_likelihood_optim_nopr <- function(param){
+  return(f_likelihood(param, sm_optim, sf_optim, cou_optim, wasp, print_opt = F))
+}
+
+f_gradient_optim <- function(param){
+  return(f_gradient(param, sm_optim, sf_optim, cou_optim, wasp))
+}
+
+inequality_constraints <- function(param){
+  rbind(1e-10 - (param[1] + param[2]*log(median(sm_optim$dag)) + param[3]*log(median(sm_optim$dag))^2 
+                 + param[4]*median(sm_optim$children4_6) + param[5]*median(sm_optim$children7_9)
+                 + param[6]*median(sm_optim$regW) + param[7]*median(sm_optim$regB) 
+                 + param[8]*median(sm_optim$educL) + param[9]*median(sm_optim$educH)),
+        1e-10 - (param[13] + param[14]*log(median(sf_optim$dag)) + param[15]*log(median(sf_optim$dag))^2 
+                 + param[16]*median(sf_optim$children0_3) + param[17]*median(sf_optim$children4_6) + param[18]*median(sf_optim$children7_9)
+                 + param[19]*median(sf_optim$regW) + param[20]*median(sf_optim$regB)
+                 + param[21]*median(sf_optim$educL) + param[22]*median(sf_optim$educH)),
+        1e-10 - (param[26] + param[27]*log(median(cou_optim$dag_m)) + param[28]*log(median(cou_optim$dag_m))^2 
+                 + param[29]*median(cou_optim$children0_3) + param[30]*median(cou_optim$children4_6) + param[31]*median(cou_optim$children7_9)
+                 + param[32]*median(cou_optim$regW) + param[33]*median(cou_optim$regB) 
+                 + param[34]*median(cou_optim$educL_m) + param[35]*median(cou_optim$educH_m)),
+        1e-10 - (param[36] + param[37]*log(median(cou_optim$dag_f)) + param[38]*log(median(cou_optim$dag_f))^2 
+                 + param[39]*median(cou_optim$children0_3) + param[40]*median(cou_optim$children4_6) + param[41]*median(cou_optim$children7_9)
+                  + param[42]*median(cou_optim$regW) + param[43]*median(cou_optim$regB) + param[44]*median(cou_optim$educL_f) + param[45]*median(cou_optim$educH_f)))
+}
+
+##naive starting point
+param_x0 <- c(rep(1,9), -10, 1, 1, #sm util
+           rep(1,10), -10, 1, 1, #sf util
+           rep(1,20), rep(-10,2), 1, 1, 1, #cou util
+           rep(1,9), #hopp m
+           rep(1,9), #hopp f
+           rep(1,5), #wopp m shifter
+           rep(1,5), #wopp f shifter
+           1, 1, #wopp m & f distr. 
+           1, 1) #year dummies
+if (wasp == "fw"){param_x0 <- param_x0[1:68]}
+
+##starting value parameters (result of previous estimation)
+#param <- read.csv2(paste0(outputfolder, wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "/", ifelse(wri, "wri", "wai"), "_param_100cs.csv"))[-c(1,2), -1]
+
+# optimization
+Sys.time()
+iteration <- 0
+est <- knitro(x0=param, objective = f_likelihood_optim, gradient = f_gradient_optim) 
+Sys.time()
+
+iteration <- 0
+est <- optim(par = param, fn = f_likelihood_optim, gr = f_gradient_optim)
+
+
+install.packages("nloptr")
+library(nloptr)
+
+# first guess without gradient evaluation (faster), limited with nr of likelihood evaluations (no full optimization)
+# Dividing rectangles algorithm 
+Sys.time()
+est_FG <- nloptr(x0 = param_x0, 
+                 eval_f = f_likelihood_optim_nopr, 
+                 lb = c(rep(-5, 9), -20, 0.0001, -20, rep(-5, 10), -20, 0.0001, -20, rep(-5, 20), rep(-20, 2), 0.0001, -20, 0.0001, rep(-5, 18)), 
+                 ub = rep(5,68),
+                 eval_g_ineq = inequality_constraints, 
+                 opts = list("algorithm" = "NLOPT_LN_COBYLA", 
+                             "xtol_rel" = 1.0e-8, 
+                             "maxeval" = 1000,
+                             "print_level" = 1))
+print(est_FG)
+print(est_FG$solution)
+# check whether analytical gradient performs well in this first-guess
+Sys.time()
+check_gradient <- check.derivatives(.x = est_FG$solution, 
+                                    func = f_likelihood_optim, 
+                                    func_grad = f_gradient_optim, 
+                                    check_derivatives_print = "all")
+print(check_gradient)
+# optimise with method of moving asymptotes (using gradient)
+Sys.time()
+est <- nloptr(x0 = est_FG$solution, eval_f = f_likelihood_optim, eval_grad_f = f_gradient_optim,
+              opts = list("algorithm" = "NLOPT_LD_CCSAQ", 
+                          "xtol_rel" = 1.0e-12, 
+                          "maxeval" = -1,
+                          "print_level" = 1))
+Sys.time()
+print(est)
+print(est$solution)
+
+```
+--------
+optim - results:
+> est
+$par
+ [1]  0.95984449  0.71607683  0.46895661  1.27205478  1.17486057  0.98839387  0.98382624  1.05969680  0.99069961 -9.85422266  1.23005335  0.97961002  0.97374260  0.87062736
+[15]  0.60387540  1.09157981  1.09758598  1.07213786  1.02904893  1.03756662  1.08394708  1.00656364 -9.81804275  1.20143340  1.01213651  0.61804027  0.62445563  0.03283799
+[29]  0.98018546  0.99612174  1.00140574  0.98634512  1.01260672  0.96828263  0.88325031  0.94491727  2.72758570  0.57736067  0.99535922  1.02057350  1.00373349  0.97606596
+[43]  1.04612978  1.09519852  0.96697658 -9.75673399 -9.94193837  1.49329101  1.33350614  1.08646660  0.85004547  0.94233667  1.03461489  1.58179380  1.63252136  0.88642835
+[57]  0.90812009  0.80834926  0.89976489  0.77897744  0.98734751  1.18940522  1.43578723  1.01476836  0.69583038  0.83619338  0.44353896  0.94953310
+
+$value
+[1] 34438.65
+
+$counts
+function gradient 
+     501       NA 
+
+$convergence
+[1] 1
+
+$message
+NULL
+--------
+nloptr results
+
+--------
+
+## 2.3 Save results
+```{r}
+# write result to csv
+write.csv2(c(est$status, est$obj, est$x, est$objHessian), paste0(outputfolder, wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "_", filter_opt, ifelse(wri, "_wri", "_wai"), "/", "param_100cs.csv"))
+```
+
+# 3 variance-covariance, standard errors and t-values
+```{r}
+if (exists("est")){
+  param <- est$x
+} else{
+  param <- read.csv2(paste0(outputfolder, wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "_", filter_opt, ifelse(wri, "_wri", "wai"), "/", "param_100cs.csv"))[-c(1,2), -1]
+}
+
+if (Jacobian) {
+hessian <- jacobian(f_gradient_knitro, param)
+write.csv2(hessian, paste0(outputfolder, wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "_", filter_opt, ifelse(wri, "_wri", "wai"), "/", "nHessian_wJac.csv"))
+varcov <- solve(hessian)
+write.csv2(varcov, paste0(outputfolder, wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli,"_", filter_opt, ifelse(wri, "_wri", "wai"), "/", "varcov_wJac.csv"))
+SE <- sqrt(diag(solve(hessian)))
+TV <- param/SE
+SE_TV <- cbind(SE, TV)
+write.csv2(SE_TV, paste0(outputfolder, wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "_", filter_opt, ifelse(wri, "_wri", "wai"), "/", "SE_TV_wJac.csv"))
+}
+
+neg_h <- f_numeric_hessian(param, 10^-6)
+write.csv2(neg_h, paste0(outputfolder, wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "_", filter_opt, ifelse(wri, "_wri", "wai"), "/", "nHessian.csv"))
+
+#check negative-semi-definiteness
+ev <- eigen(-neg_h)
+ev$values
+ev$vector
+
+#var-covar and SE
+varcov <- solve(neg_h)
+SE <- sqrt(diag(solve(neg_h)))
+TV <- param/SE
+
+write.csv2(varcov, paste0(outputfolder, wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "_", filter_opt, ifelse(wri, "_wri", "wai"), "/", "varcov.csv"))
+write.csv2(SE, paste0(outputfolder, wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "_", filter_opt, ifelse(wri, "_wri", "wai"), "/", "se_param.csv"))
+write.csv2(TV, paste0(outputfolder, wasp, ifelse(gsur, "_gsur_", "_nogsur_"), oli, "_", filter_opt, ifelse(wri, "_wri", "wai"), "/", "tv_param.csv"))
+```

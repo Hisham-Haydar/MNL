@@ -99,6 +99,17 @@ def compute_likelihood_singles(
     # V = u + log h + log w - log π
     V = u + log_h + log_w - np.log(data.prior)
 
+    # Validate likelihood computation
+    if not np.all(np.isfinite(V)):
+        n_nan = np.sum(np.isnan(V))
+        n_inf = np.sum(np.isinf(V))
+        logger.error(f"Non-finite V: {n_nan} NaN, {n_inf} Inf")
+        logger.error(f"u finite: {np.all(np.isfinite(u))}")
+        logger.error(f"log_h finite: {np.all(np.isfinite(log_h))}")
+        logger.error(f"log_w finite: {np.all(np.isfinite(log_w))}")
+        logger.error(f"prior finite: {np.all(np.isfinite(data.prior))}")
+        raise ValueError("Likelihood contains NaN/Inf - check inputs")
+
     # ===== 5. COMPUTE LOG-LIKELIHOOD =====
     # Log-sum-exp for each choice set
     lse = compute_log_sum_exp_by_group(V, data.group_starts, data.group_ends)
@@ -469,6 +480,23 @@ def compute_gradient_singles(
 
         # Add to gradient
         grad += dV_obs - dV_exp
+
+    # Validate gradient computation
+    if not np.all(np.isfinite(grad)):
+        n_bad = np.sum(~np.isfinite(grad))
+        logger.error(f"Gradient contains {n_bad} non-finite entries")
+        for i in range(n_params):
+            if not np.isfinite(grad[i]):
+                logger.error(f"  {spec.all_param_names[i]}: {grad[i]}")
+        raise ValueError("Gradient contains NaN/Inf")
+
+    # Warn if gradient is suspiciously zero for non-bounded parameters
+    grad_norms = np.abs(grad)
+    zero_grads = grad_norms < 1e-12
+    if np.any(zero_grads):
+        for i in np.where(zero_grads)[0]:
+            param_name = spec.all_param_names[i]
+            logging.warning(f"Zero gradient for {param_name} (may be at optimum or identification issue)")
 
     return -grad  # Negative for minimization
 
@@ -868,6 +896,9 @@ def _compute_utility_couples(
     # Box-Cox transformations
     bc_l_male = box_cox_transform(data.leisure_male, theta_l)
     bc_l_female = box_cox_transform(data.leisure_female, theta_l)
+    # CRITICAL: For couples, consumption is HOUSEHOLD-LEVEL (normalized sum of male+female)
+    # normalized_consumption_couples = (ils_dispy_male + ils_dispy_female) / mean(ils_dispy_male + ils_dispy_female)
+    # The data.consumption field already contains the normalized household sum
     bc_c = box_cox_transform(data.consumption, theta_c)
 
     # Male leisure coefficient
@@ -907,9 +938,11 @@ def _compute_utility_couples(
     # Consumption coefficient (shared)
     beta_c = params[spec.utility_consumption_coef]
 
-    # Male and female utility
-    u_male = beta_l_coeff_male * bc_l_male + beta_c * bc_c
-    u_female = beta_l_coeff_female * bc_l_female + beta_c * bc_c
+    # Male and female leisure utility (CONSUMPTION ADDED ONLY ONCE, NOT TWICE!)
+    # This matches the R reference code where consumption appears once in total utility
+    u_male_leisure = beta_l_coeff_male * bc_l_male
+    u_female_leisure = beta_l_coeff_female * bc_l_female
+    u_consumption = beta_c * bc_c  # Consumption is household public good, added once
 
     # Interaction term (if specified)
     if spec.couples_interaction_coef:
@@ -918,7 +951,9 @@ def _compute_utility_couples(
     else:
         u_interact = 0.0
 
-    return u_male + u_female + u_interact
+    # Total utility: male_leisure + female_leisure + consumption + interaction
+    # (NOT male_total + female_total which would double-count consumption)
+    return u_male_leisure + u_female_leisure + u_consumption + u_interact
 
 
 def _compute_hours_opportunity_couples_gender(
@@ -1194,6 +1229,7 @@ def _compute_utility_derivatives_couples(
 
     bc_l_male = box_cox_transform(data.leisure_male, theta_l)
     bc_l_female = box_cox_transform(data.leisure_female, theta_l)
+    # CRITICAL: Consumption is HOUSEHOLD-LEVEL (normalized sum already computed)
     bc_c = box_cox_transform(data.consumption, theta_c)
 
     # Compute male and female leisure coefficients
@@ -1258,9 +1294,10 @@ def _compute_utility_derivatives_couples(
 
         dV_dtheta[:, idx] = deriv
 
-    # Derivative w.r.t. beta_c (consumption coefficient - shared, counted twice)
+    # Derivative w.r.t. beta_c (consumption coefficient - shared household public good)
+    # FIXED: Consumption appears ONCE in utility (not twice), matching R reference code
     idx_beta_c = spec.get_param_index(spec.utility_consumption_coef)
-    dV_dtheta[:, idx_beta_c] = 2.0 * bc_c  # Twice because consumption is shared
+    dV_dtheta[:, idx_beta_c] = bc_c  # Once, not twice!
 
     # Derivative w.r.t. theta_l (affects both male and female leisure)
     idx_theta_l = spec.get_param_index(spec.utility_leisure_theta)
@@ -1276,10 +1313,11 @@ def _compute_utility_derivatives_couples(
             dbc_l_male_dtheta * bc_l_female + bc_l_male * dbc_l_female_dtheta
         )
 
-    # Derivative w.r.t. theta_c (consumption Box-Cox - shared, counted twice)
+    # Derivative w.r.t. theta_c (consumption Box-Cox parameter)
+    # CRITICAL: Consumption is HOUSEHOLD-LEVEL (normalized sum already computed)
     idx_theta_c = spec.get_param_index(spec.utility_consumption_theta)
     dbc_c_dtheta = box_cox_derivative_theta(data.consumption, theta_c)
-    dV_dtheta[:, idx_theta_c] = 2.0 * beta_c * dbc_c_dtheta
+    dV_dtheta[:, idx_theta_c] = beta_c * dbc_c_dtheta
 
     # Derivative w.r.t. interaction coefficient
     if spec.couples_interaction_coef:

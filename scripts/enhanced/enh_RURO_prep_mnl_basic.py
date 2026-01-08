@@ -50,7 +50,7 @@ from sanity_checks import sanity_report_mnl_dataset, sanity_report_couples_gende
 LOGGER = logging.getLogger(__name__)
 
 TOTAL_LEISURE_HOURS = 80.0
-DCM_MIN_POSITIVE = 1e-6
+DCM_MIN_POSITIVE = 1.0  # Floor for consumption/leisure (matches R code: pmax(1, ils_dispy))
 
 # ---- Prior parameters (will be overridden by drawsmeta if provided) ----------------
 DEFAULT_PI0_M = 0.10
@@ -209,33 +209,17 @@ def _merge_euromod_outputs(long_df: pd.DataFrame, em_df: pd.DataFrame) -> pd.Dat
     # CRITICAL: Handle column collision for ils_dispy
     # If long_df had ils_dispy (e.g., from draws) but EUROMOD also returns ils_dispy,
     # the merge creates ils_dispy (from long_df) and ils_dispy_em (from em_df).
-    # Prefer EUROMOD's authoritative ils_dispy_em and harmonize.
+    # ALWAYS prefer EUROMOD's authoritative ils_dispy_em (counterfactual disposable income).
     if "ils_dispy_em" in merged.columns:
-        # Check if ils_dispy from long_df is mostly missing
-        ils_from_long = merged["ils_dispy"] if "ils_dispy" in merged.columns else None
         ils_from_em = merged["ils_dispy_em"]
+        em_missing_rate = ils_from_em.isna().mean()
 
-        if ils_from_long is not None:
-            long_missing_rate = ils_from_long.isna().mean()
-            em_missing_rate = ils_from_em.isna().mean()
-
-            # If long_df's ils_dispy is mostly missing and EUROMOD's is not, use EUROMOD's
-            if long_missing_rate > 0.5 and em_missing_rate < 0.5:
-                logging.info(
-                    f"EUROMOD merge: ils_dispy from long_df is {long_missing_rate:.1%} missing, "
-                    f"ils_dispy_em is {em_missing_rate:.1%} missing. Using ils_dispy_em as canonical."
-                )
-                merged["ils_dispy"] = ils_from_em
-            elif em_missing_rate < long_missing_rate:
-                # Even if not majority missing, prefer EUROMOD's authoritative output
-                logging.info(
-                    f"EUROMOD merge: Preferring ils_dispy_em (EUROMOD output) over ils_dispy from long_df "
-                    f"(missing rates: {em_missing_rate:.1%} vs {long_missing_rate:.1%})"
-                )
-                merged["ils_dispy"] = ils_from_em
-        else:
-            # No ils_dispy from long_df, so use EUROMOD's
-            merged["ils_dispy"] = ils_from_em
+        # ALWAYS use EUROMOD output (counterfactual income) when available
+        logging.info(
+            f"EUROMOD merge: Using ils_dispy_em (EUROMOD counterfactual output) as canonical ils_dispy "
+            f"(missing rate: {em_missing_rate:.1%})"
+        )
+        merged["ils_dispy"] = ils_from_em
 
     # Now validate ils_dispy is present and not all missing
     if "ils_dispy" not in merged.columns or merged["ils_dispy"].isna().all():
@@ -625,8 +609,11 @@ def _build_mnl_block_couples_wide(df: pd.DataFrame, sample_group: str) -> pd.Dat
 
     if "idperson" not in df.columns or "draw" not in df.columns or "is_chosen" not in df.columns:
         raise KeyError("Expected columns 'idperson', 'draw', 'is_chosen'.")
-    if "ils_dispy" not in df.columns:
-        raise KeyError("Expected EUROMOD disposable income 'ils_dispy' after merge.")
+    # CRITICAL: For couples, consumption is PERSON-LEVEL (consumption_male and consumption_female)
+    if "consumption_male" not in df.columns or "consumption_female" not in df.columns:
+        raise KeyError(
+            "Expected PERSON-LEVEL consumption columns 'consumption_male' and 'consumption_female' after reshape."
+        )
 
     # For couples in wide format, process male and female separately
     for gender in ["male", "female"]:
@@ -700,10 +687,8 @@ def _build_mnl_block_couples_wide(df: pd.DataFrame, sample_group: str) -> pd.Dat
             df[f"n_children_{gender}"] = pd.to_numeric(df[num_children_col], errors="coerce").fillna(0)
             logging.debug(f"Created n_children_{gender} alias (mean={df[f'n_children_{gender}'].mean():.2f})")
 
-    # Consumption (household-level, already in ils_dispy)
-    cons = pd.to_numeric(df["ils_dispy"], errors="coerce").clip(lower=DCM_MIN_POSITIVE)
-    df["consumption"] = cons
-    df["log_c"] = np.log(cons)
+    # NOTE: For couples, consumption_male and consumption_female are already created in reshape
+    # No need to create a single 'consumption' column - couples utility uses BC(c_male + c_female)
     df["sample_group"] = sample_group
 
     return df
@@ -856,7 +841,8 @@ def _reshape_couples_to_wide(df: pd.DataFrame, allow_unbalanced: bool = False) -
         "keep_for_analysis", "ruro_sample",
         "is_chosen", "chosen",  # Choice indicators
         "other_members_income",  # Household income
-        "ils_dispy_em",  # Household disposable income from EUROMOD (couples aggregate)
+        # NOTE: ils_dispy/ils_dispy_em are PERSON-level (vary by each person's hours in each draw)
+        # They should be PIVOTED to _male/_female, NOT treated as household-level
         "drgn1",  # Region (required for GSUR merge)
         "year", "year_for_ruro", "data_year"  # Time identifiers (required for GSUR merge)
     }
@@ -867,9 +853,13 @@ def _reshape_couples_to_wide(df: pd.DataFrame, allow_unbalanced: bool = False) -
     for col in df_couples.columns:
         if col not in exclude_cols:
             # Additional filter: skip EUROMOD benefit/tax aggregates (usually start with ils_, tis_, etc.)
-            if col.startswith(("ils_", "tis_", "tsc_", "tin_", "bsa", "bun", "bho", "bdi")):
-                continue
-            pivot_cols.append(col)
+            # EXCEPTION: ils_dispy and ils_dispy_em are PERSON-level consumption - MUST be pivoted!
+            if col in ("ils_dispy", "ils_dispy_em"):
+                pivot_cols.append(col)  # Force pivot for disposable income
+            elif col.startswith(("ils_", "tis_", "tsc_", "tin_", "bsa", "bun", "bho", "bdi")):
+                continue  # Skip other EUROMOD aggregates
+            else:
+                pivot_cols.append(col)
 
     logging.info(f"Pivoting {len(pivot_cols)} columns to _male/_female format")
     logging.info(f"Excluded {len(exclude_cols)} columns from pivoting (flags, IDs, internals)")
@@ -911,7 +901,26 @@ def _reshape_couples_to_wide(df: pd.DataFrame, allow_unbalanced: bool = False) -
     dup_male_cols = [c for c in df_wide.columns if c.endswith("_MALE_DUP")]
     dup_female_cols = [c for c in df_wide.columns if c.endswith("_FEMALE_DUP")]
 
-    # For each duplicate pair, keep the male version with original name
+    # SPECIAL HANDLING: ils_dispy_male and ils_dispy_female need floor applied (EUROMOD can return negative)
+    # These are PERSON-LEVEL variables (vary by each person's hours choice) so we keep BOTH!
+    if "ils_dispy_male" in df_wide.columns and "ils_dispy_female" in df_wide.columns:
+        # Apply floor to both male and female disposable income
+        before_male_min = df_wide["ils_dispy_male"].min()
+        before_female_min = df_wide["ils_dispy_female"].min()
+
+        df_wide["ils_dispy_male"] = df_wide["ils_dispy_male"].clip(lower=DCM_MIN_POSITIVE)
+        df_wide["ils_dispy_female"] = df_wide["ils_dispy_female"].clip(lower=DCM_MIN_POSITIVE)
+
+        n_floored_male = (df_wide["ils_dispy_male"] == DCM_MIN_POSITIVE).sum()
+        n_floored_female = (df_wide["ils_dispy_female"] == DCM_MIN_POSITIVE).sum()
+
+        logging.info(
+            f"Applied consumption floor={DCM_MIN_POSITIVE} to couples disposable income:\n"
+            f"  Male:   min {before_male_min:.2f} → {df_wide['ils_dispy_male'].min():.2f} ({n_floored_male} obs floored)\n"
+            f"  Female: min {before_female_min:.2f} → {df_wide['ils_dispy_female'].min():.2f} ({n_floored_female} obs floored)"
+        )
+
+    # For each remaining duplicate pair, keep the male version with original name
     for male_col in dup_male_cols:
         base_name = male_col.replace("_MALE_DUP", "")
         if base_name not in df_wide.columns:
@@ -956,10 +965,20 @@ def _reshape_couples_to_wide(df: pd.DataFrame, allow_unbalanced: bool = False) -
         df_wide["idperson"] = df_wide["idhh"]
         logging.info("Created household-level idperson from idhh for couples")
 
-    # Create ils_dispy from ils_dispy_em if needed
-    if "ils_dispy" not in df_wide.columns and "ils_dispy_em" in df_wide.columns:
-        df_wide["ils_dispy"] = df_wide["ils_dispy_em"]
-        logging.info("Created ils_dispy from ils_dispy_em for couples")
+    # Create consumption_male and consumption_female from ils_dispy_male and ils_dispy_female
+    # These are PERSON-LEVEL variables (vary by each person's hours choice in each draw)
+    if "ils_dispy_male" in df_wide.columns and "ils_dispy_female" in df_wide.columns:
+        df_wide["consumption_male"] = df_wide["ils_dispy_male"]
+        df_wide["consumption_female"] = df_wide["ils_dispy_female"]
+        logging.info(
+            f"Created consumption_male and consumption_female from ils_dispy_male/female "
+            f"(min_male: {df_wide['consumption_male'].min():.2f}, "
+            f"min_female: {df_wide['consumption_female'].min():.2f})"
+        )
+    else:
+        logging.warning(
+            "Missing ils_dispy_male or ils_dispy_female columns - consumption will not be created!"
+        )
 
     logging.info(f"Reshaped couples data: {len(df_wide)} rows (was {len(df_couples)} in long format)")
 
@@ -1032,7 +1051,8 @@ def _normalize_couples_wide(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, f
     """
     Normalize consumption and leisure for couples (wide format).
 
-    Household consumption: common scaling
+    CRITICAL: Consumption is PERSON-LEVEL (varies by each person's hours choice in each draw).
+    Male and female consumption are normalized separately but use the SAME scaling factor.
     Individual leisure: gender-specific minima
     """
     df = df.copy()
@@ -1045,9 +1065,12 @@ def _normalize_couples_wide(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, f
     else:
         raise KeyError("Cannot identify chosen observations")
 
-    # Consumption: mean of chosen (household-level)
-    c_chosen = df.loc[chosen_mask, "consumption"]
-    c_scale = float(c_chosen.mean())
+    # Consumption scaling: Use mean of HOUSEHOLD SUM from ALL observations
+    # CRITICAL: We must use ALL observations, not just chosen, to avoid biasing the scale
+    # If we only use chosen, then mean(c_norm for chosen) = 1.0 by construction,
+    # which creates an artificial negative relationship if non-chosen have higher consumption
+    consumption_all = df["consumption_male"] + df["consumption_female"]
+    c_scale = float(consumption_all.mean())  # Mean of HOUSEHOLD consumption across ALL draws
 
     # Leisure: gender-specific minima
     l_male_chosen = df.loc[chosen_mask, "leisure_male"]
@@ -1059,7 +1082,9 @@ def _normalize_couples_wide(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, f
     l_male_scale = float(l_male_positive.min()) if len(l_male_positive) > 0 else 1.0
     l_female_scale = float(l_female_positive.min()) if len(l_female_positive) > 0 else 1.0
 
-    # Create normalized variables
+    # Create normalized HOUSEHOLD consumption
+    # We normalize the SUM, not each component separately!
+    df["consumption"] = df["consumption_male"] + df["consumption_female"]
     df["c_norm"] = df["consumption"] / c_scale
     df["log_c_norm"] = np.log(df["c_norm"].clip(lower=DCM_MIN_POSITIVE))
 

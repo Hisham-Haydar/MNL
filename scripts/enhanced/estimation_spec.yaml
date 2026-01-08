@@ -25,13 +25,13 @@ utility:
   consumption:
     coefficient: "beta_c"
     box_cox_exponent: "theta_c"
-    box_cox_bounds: [0.1, 7.0]  # Typical range for Box-Cox parameters
+    box_cox_bounds: [0.0, 5.0]  # Allow log utility (theta=0) and flexible curvature
 
   # Leisure utility: [β_l0 + Σ β_l_X * X] * BC(l; θ_l)
   leisure:
     intercept: "beta_l0"
     box_cox_exponent: "theta_l"
-    box_cox_bounds: [0.1, 3.0]
+    box_cox_bounds: [0.001, 5.0]  # Allow near-log utility (theta→0) and flexible curvature
 
     shifters:
       - variable: "age_norm"
@@ -183,10 +183,11 @@ optimization:
   # Format: parameter_name: [lower_bound, upper_bound]
   # Unbounded parameters should be omitted
   bounds:
-    theta_l: [0.1, 3.0]
-    theta_c: [0.1, 3.0]
+    theta_l: [0.0, 5.0]  # Allow log utility (theta=0) to flexible curvature (5.0)
+    theta_c: [0.0, 5.0]  # Allow log utility (theta=0) to flexible curvature (5.0)
     sigma: [0.1, 20.0]
-    # All beta parameters are unbounded
+    beta_pexp2: [-10.0, 0.0]  # Must be negative (concave wage-experience profile)
+    # Other beta parameters are unbounded
 
 # ------------------------------------------------------------------------------
 # Notes

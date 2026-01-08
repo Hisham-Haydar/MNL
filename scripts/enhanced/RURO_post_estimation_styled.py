@@ -12,6 +12,12 @@ Key Features:
 4. **Standard Errors**: Computes SE from numerical Hessian if not provided
 5. **Elapsed Time Display**: Shows total estimation and post-estimation time
 6. **Bounds Information**: Tracks bounded parameters and constraint violations
+7. **Choice Probability Diagnostics**: P_chosen distribution, probability sanity checks
+8. **Worst-Fit Households**: Table of households with lowest log-likelihood
+9. **Utility Decomposition**: Component breakdown (U_pref, log_opp, log_prior)
+10. **Hours Distribution by Bin**: Probability-mass method for predicted shares
+11. **Weight Support**: Detects and uses sample weights when available
+12. **Bootstrap Confidence Intervals**: Optional bootstrap for key fit moments
 
 Compatible with:
 - Enhanced pipeline JSON output (estimation_results.json)
@@ -29,9 +35,105 @@ import sys
 import argparse
 import time
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple, Callable
+from typing import Dict, List, Any, Optional, Tuple, Callable, Union
 from dataclasses import dataclass, field
 from datetime import datetime
+
+
+# =============================================================================
+# NUMERIC HELPER FUNCTIONS
+# =============================================================================
+
+def is_num(x: Any) -> bool:
+    """
+    Check if x is a numeric type (Python scalar, NumPy scalar, or finite float).
+    
+    This handles the common pitfall of `isinstance(x, float)` failing for np.float64
+    and similar NumPy scalar types.
+    
+    Parameters
+    ----------
+    x : Any
+        Value to check
+    
+    Returns
+    -------
+    bool
+        True if x is numeric and finite
+    """
+    if x is None:
+        return False
+    if isinstance(x, (int, float)):
+        return np.isfinite(x)
+    if isinstance(x, np.ndarray):
+        return False  # Arrays are not scalars
+    # Handle NumPy scalar types (np.float64, np.int32, etc.)
+    if hasattr(x, 'item') and np.isscalar(x):
+        try:
+            return np.isfinite(x)
+        except (TypeError, ValueError):
+            return False
+    return False
+
+
+def safe_format(x: Any, fmt: str = ".4f", fallback: str = "N/A") -> str:
+    """
+    Safely format a numeric value, handling NumPy scalars and edge cases.
+    
+    Parameters
+    ----------
+    x : Any
+        Value to format
+    fmt : str
+        Format string (default ".4f")
+    fallback : str
+        String to return if x is not a valid number
+    
+    Returns
+    -------
+    str
+        Formatted string
+    """
+    if is_num(x):
+        try:
+            return f"{float(x):{fmt}}"
+        except (ValueError, TypeError):
+            return fallback
+    return fallback
+
+
+def canonicalize_group_name(group: str) -> str:
+    """
+    Normalize group names to canonical form: 'sm', 'sf', 'cou'.
+    
+    Maps various naming conventions:
+    - 'singles_male', 'SM', 'single_male' → 'sm'
+    - 'singles_female', 'SF', 'single_female' → 'sf'
+    - 'couples', 'couple', 'COU' → 'cou'
+    
+    Parameters
+    ----------
+    group : str
+        Group name in any format
+    
+    Returns
+    -------
+    str
+        Canonical group name
+    """
+    g = group.lower().strip()
+    if g in ('sm', 'singles_male', 'single_male', 'm'):
+        return 'sm'
+    if g in ('sf', 'singles_female', 'single_female', 'f'):
+        return 'sf'
+    if g in ('cou', 'couples', 'couple'):
+        return 'cou'
+    # Keep sub-group identifiers
+    if g in ('cou_m', 'couples_m', 'couples_male'):
+        return 'cou_m'
+    if g in ('cou_f', 'couples_f', 'couples_female'):
+        return 'cou_f'
+    return group  # Return as-is if unknown
 
 # Optional imports
 try:
@@ -166,8 +268,12 @@ class ParsedParameters:
                 for k in params.keys():
                     if 'pref.beta_l_' in k and 'beta_l0' not in k:
                         shifter = k.replace('pref.beta_l_', '')
+                        # Remove gender suffix for matching
                         if shifter.endswith('_m') or shifter.endswith('_f'):
                             shifter = shifter[:-2]
+                        # Filter out corrupted shifter names (e.g., "sm.age_norm" from parsing errors)
+                        if '.' in shifter:
+                            continue  # Skip malformed names with embedded group prefixes
                         shifters.append(shifter)
                 self.leisure_shifters[group] = list(set(shifters))
 
@@ -474,12 +580,10 @@ def plot_fit_comparison(fit_results: Dict[str, Dict[str, Any]], output_dir: Path
         return {}
 
     x = np.arange(len(groups))
-    width = 0.35
-
-    # Participation rates
+    width = 0.35    # Participation rates
     fig, ax = plt.subplots(figsize=(8, 5))
-    obs_rates = [fit_results[g].get('participation_rate_observed', 0) * 100 for g in groups]
-    pred_rates = [fit_results[g].get('participation_rate_predicted', 0) * 100 for g in groups]
+    obs_rates = [fit_results[g].get('participation_observed', 0) * 100 for g in groups]
+    pred_rates = [fit_results[g].get('participation_predicted', 0) * 100 for g in groups]
 
     ax.bar(x - width/2, obs_rates, width, label='Observed', color='#1f77b4')
     ax.bar(x + width/2, pred_rates, width, label='Predicted', color='#ff7f0e')
@@ -683,6 +787,205 @@ def plot_mu_comparison(parsed_params: ParsedParameters, output_dir: Path, prefix
     return plot_paths
 
 
+def plot_negative_mu_diagnostics(
+    mu_results: Dict[str, Any],
+    output_dir: Path,
+    prefix: str = ''
+) -> Dict[str, Path]:
+    """
+    Plot bar chart of negative MU percentages by group.
+    
+    Shows % of individuals with negative MUC and negative MUL,
+    with color coding (green < 5%, red >= 5%).
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        return {}
+    
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    plot_paths = {}
+    
+    by_group = mu_results.get('by_group', {})
+    if not by_group:
+        return {}
+    
+    groups = list(by_group.keys())
+    if not groups:
+        return {}
+    
+    group_labels = {'sm': 'SM', 'sf': 'SF', 'cou_m': 'CM', 'cou_f': 'CF'}
+    
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    x = np.arange(len(groups))
+    width = 0.6
+    
+    # Negative MUC
+    ax = axes[0]
+    pct_neg_muc = [by_group[g].get('pct_neg_muc', 0) or 0 for g in groups]
+    colors_muc = ['#d62728' if p > 5 else '#2ca02c' for p in pct_neg_muc]
+    ax.bar(x, pct_neg_muc, width, color=colors_muc, edgecolor='white')
+    ax.set_ylabel('% with Negative MUC')
+    ax.set_title('Negative Marginal Utility of Consumption')
+    ax.set_xticks(x)
+    ax.set_xticklabels([group_labels.get(g, g) for g in groups])
+    ax.axhline(y=5, color='k', linestyle='--', alpha=0.5, label='5% threshold')
+    ax.legend()
+    ax.grid(True, alpha=0.3, axis='y')
+    
+    # Negative MUL
+    ax = axes[1]
+    pct_neg_mul = [by_group[g].get('pct_neg_mul', 0) or 0 for g in groups]
+    colors_mul = ['#d62728' if p > 5 else '#2ca02c' for p in pct_neg_mul]
+    ax.bar(x, pct_neg_mul, width, color=colors_mul, edgecolor='white')
+    ax.set_ylabel('% with Negative MUL')
+    ax.set_title('Negative Marginal Utility of Leisure')
+    ax.set_xticks(x)
+    ax.set_xticklabels([group_labels.get(g, g) for g in groups])
+    ax.axhline(y=5, color='k', linestyle='--', alpha=0.5, label='5% threshold')
+    ax.legend()
+    ax.grid(True, alpha=0.3, axis='y')
+    
+    path = output_dir / f'{prefix}negative_mu_diagnostics.png'
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+    plot_paths['negative_mu_diagnostics'] = path
+    LOGGER.info(f"  Created negative MU diagnostics plot: {path.name}")
+    
+    return plot_paths
+
+
+def plot_mu_distributions_by_group(
+    mu_results: Dict[str, Any],
+    mnl_base: Path,
+    parsed_params: ParsedParameters,
+    output_dir: Path,
+    prefix: str = ''
+) -> Dict[str, Path]:
+    """
+    Plot MUC and MUL curves for each group showing marginal utility functions.
+    
+    Creates individual plots for each group showing:
+    - Left: MUC curve with shaded regions (green=positive, red=negative)
+    - Right: MUL curve at median characteristics with shaded regions
+    
+    Returns
+    -------
+    Dict[str, Path]
+        Paths to generated plots: {group_key + '_mu': path, ...}
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        LOGGER.warning("Matplotlib not available, skipping MU distribution plots")
+        return {}
+    
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    plot_paths = {}
+    
+    group_labels = {
+        'sm': 'Single Males', 'sf': 'Single Females',
+        'cou_m': 'Males in Couples', 'cou_f': 'Females in Couples'
+    }
+    
+    group_colors = {
+        'sm': '#1f77b4', 'sf': '#ff7f0e',
+        'cou_m': '#2ca02c', 'cou_f': '#d62728'
+    }
+    
+    # Grid for MUC and MUL curves
+    c_grid = np.linspace(0.05, 2.5, 200)
+    l_grid = np.linspace(0.1, 2.5, 200)
+    
+    # Load data to compute median shifters
+    try:
+        singles_path = Path(str(mnl_base) + '__singles.parquet')
+        couples_path = Path(str(mnl_base) + '__couples.parquet')
+        df_singles = pd.read_parquet(singles_path) if singles_path.exists() else None
+        df_couples = pd.read_parquet(couples_path) if couples_path.exists() else None
+    except Exception as e:
+        LOGGER.warning(f"Could not load data for MU plots: {e}")
+        df_singles = None
+        df_couples = None
+    
+    # Process each group
+    all_groups = []
+    
+    # Singles
+    for group_key in ['sm', 'sf']:
+        params = None
+        for try_key in [group_key, f'singles_{"male" if group_key == "sm" else "female"}']:
+            if try_key in parsed_params.params_by_group:
+                params = parsed_params.get_all_params_for_group(try_key)
+                break
+        if params:
+            all_groups.append((group_key, '', params))
+    
+    # Couples (male and female leisure)
+    params_cou = None
+    for try_key in ['cou', 'couples']:
+        if try_key in parsed_params.params_by_group:
+            params_cou = parsed_params.get_all_params_for_group(try_key)
+            break
+    if params_cou:
+        all_groups.append(('cou_m', '_m', params_cou))
+        all_groups.append(('cou_f', '_f', params_cou))
+    
+    for group_key, suffix, params in all_groups:
+        color = group_colors.get(group_key, '#1f77b4')
+        label = group_labels.get(group_key, group_key)
+        
+        beta_c = params.get('beta_c', 1.0)
+        theta_c = params.get('theta_c', 0.5)
+        theta_l = params.get(f'theta_l{suffix}', params.get('theta_l', 0.5))
+        
+        # Compute beta_l at median characteristics
+        beta_l0 = params.get(f'beta_l0{suffix}', params.get('beta_l0', 0.0))
+        beta_l_median = beta_l0  # Start with intercept
+        
+        # Add median shifter contributions (approximate with 0 for normalized vars)
+        for key, value in params.items():
+            if key.startswith('beta_l_') and 'beta_l0' not in key:
+                # Normalized continuous vars have median ~0, dummies ~0 (reference)
+                pass  # Contribution is ~0 for normalized/centered variables
+        
+        # Create figure with 2 subplots
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+        
+        # MUC curve
+        muc = compute_marginal_utility_consumption(c_grid, beta_c, theta_c)
+        ax1.plot(c_grid, muc, color=color, lw=2)
+        ax1.axhline(0, color='black', lw=1, ls='--', alpha=0.6)
+        ax1.fill_between(c_grid, muc, 0, where=(muc > 0), color='green', alpha=0.2)
+        ax1.fill_between(c_grid, muc, 0, where=(muc < 0), color='red', alpha=0.2)
+        ax1.set_xlabel('Normalized Consumption')
+        ax1.set_ylabel('MUC (∂U/∂c)')
+        ax1.set_title(f'Marginal Utility of Consumption\n(β_c={beta_c:.3f}, θ_c={theta_c:.3f})')
+        ax1.grid(True, alpha=0.3)
+        
+        # MUL curve at median characteristics
+        beta_l = np.full_like(l_grid, beta_l_median)
+        mul = beta_l * d_boxcox_dx(l_grid, theta_l)
+        ax2.plot(l_grid, mul, color=color, lw=2)
+        ax2.axhline(0, color='black', lw=1, ls='--', alpha=0.6)
+        ax2.fill_between(l_grid, mul, 0, where=(mul > 0), color='green', alpha=0.2)
+        ax2.fill_between(l_grid, mul, 0, where=(mul < 0), color='red', alpha=0.2)
+        ax2.set_xlabel('Normalized Leisure')
+        ax2.set_ylabel('MUL (∂U/∂l)')
+        ax2.set_title(f'Marginal Utility of Leisure\n(β_l={beta_l_median:.3f} at median X, θ_l={theta_l:.3f})')
+        ax2.grid(True, alpha=0.3)
+        
+        fig.suptitle(f'{label}', fontsize=12, fontweight='bold')
+        fig.tight_layout()
+        
+        plot_path = output_dir / f'{prefix}{group_key}_mu.png'
+        fig.savefig(plot_path, dpi=150)
+        plt.close(fig)
+        plot_paths[f'{group_key}_mu'] = plot_path
+        LOGGER.info(f"  Created MU curve plot: {plot_path.name}")
+    
+    return plot_paths
+
+
 # =============================================================================
 # HTML REPORT GENERATION (STYLED VERSION)
 # =============================================================================
@@ -699,6 +1002,8 @@ def generate_html_report_styled(
     estimation_time_seconds: float = None,
     post_estimation_time_seconds: float = None,
     total_elapsed_seconds: float = None,
+    prob_diagnostics: Dict[str, Any] = None,
+    bound_diagnostics: List[Dict[str, Any]] = None,
 ) -> Path:
     """
     Generate comprehensive HTML report with professional styling.
@@ -820,16 +1125,15 @@ def generate_html_report_styled(
     .color-legend-item { display: flex; align-items: center; gap: 0.5em; font-size: 0.85em; }
     .color-box { width: 16px; height: 16px; border: 1px solid #999; border-radius: 2px; }
     @media (max-width: 768px) { .two-col, .four-col, .contour-grid { grid-template-columns: 1fr; } }
-    """
-
-    # Build fit stats section
+    """    # Build fit stats section
     fit_stats_rows = ""
     for k, v in fit_stats.items():
-        if isinstance(v, float):
-            if abs(v) < 0.01 or abs(v) > 10000:
-                fit_stats_rows += f"<tr><th>{k}</th><td>{v:.4e}</td></tr>"
+        if is_num(v):
+            fv = float(v)
+            if abs(fv) < 0.01 or abs(fv) > 10000:
+                fit_stats_rows += f"<tr><th>{k}</th><td>{fv:.4e}</td></tr>"
             else:
-                fit_stats_rows += f"<tr><th>{k}</th><td>{v:.4f}</td></tr>"
+                fit_stats_rows += f"<tr><th>{k}</th><td>{fv:.4f}</td></tr>"
         elif v is not None:
             fit_stats_rows += f"<tr><th>{k}</th><td>{v}</td></tr>"
 
@@ -877,22 +1181,21 @@ def generate_html_report_styled(
     if elasticities_df is not None and len(elasticities_df) > 0:
         elasticities_html = elasticities_df.to_html(classes='table table-striped', border=0, index=False)
 
-    # Build MUC analysis table
-    muc_analysis_html = ""
+    # Build MUC analysis table    muc_analysis_html = ""
     if muc_analysis:
         muc_rows = ""
         for row in muc_analysis:
             row_class = 'class="warning-row"' if row.get('is_warning') else ''
             c_muc_1 = row.get('C where MUC=1')
-            c_muc_1_str = f"{c_muc_1:.4f}" if c_muc_1 is not None else "N/A"
+            c_muc_1_str = safe_format(c_muc_1, ".4f", "N/A")
             muc_median = row.get('MUC at Median C', 0)
-            muc_median_str = f"{muc_median:.4f}" if isinstance(muc_median, (int, float)) else "N/A"
+            muc_median_str = safe_format(muc_median, ".4f", "N/A")
 
             muc_rows += f"""
             <tr {row_class}>
                 <td>{row['Group']}</td>
-                <td>{row['β_c']:.4f}</td>
-                <td>{row['θ_c']:.4f}</td>
+                <td>{safe_format(row['β_c'], '.4f')}</td>
+                <td>{safe_format(row['θ_c'], '.4f')}</td>
                 <td>{row['MUC Positive?']}</td>
                 <td>{row['MUC Diminishing?']}</td>
                 <td>{row['Well-Behaved?']}</td>
@@ -910,15 +1213,14 @@ def generate_html_report_styled(
                     <th>MUC at Median C</th><th>C where MUC=1</th><th>Notes</th>
                 </tr>
             </thead>
-            <tbody>{muc_rows}</tbody>
-        </table>
+            <tbody>{muc_rows}</tbody>        </table>
         """
 
     # Build fit diagnostics table
     fit_table_rows = ""
     for group, results in fit_results.items():
-        obs_part = results.get('participation_rate_observed', np.nan)
-        pred_part = results.get('participation_rate_predicted', np.nan)
+        obs_part = results.get('participation_observed', np.nan)
+        pred_part = results.get('participation_predicted', np.nan)
         obs_hours = results.get('mean_hours_observed', np.nan)
         pred_hours = results.get('mean_hours_predicted', np.nan)
 
@@ -939,19 +1241,19 @@ def generate_html_report_styled(
 
     # Build MU diagnostics table
     mu_table_rows = ""
-    if mu_results:
-        for group, results in mu_results.items():
-            n_ind = results.get('n_individuals', 0)
-            pct_muc = results.get('pct_negative_muc', 0) or 0
-            pct_mul = results.get('pct_negative_mul', 0) or 0
-            muc_mean = results.get('muc_mean', np.nan)
-            mul_mean = results.get('mul_mean', np.nan)
+    if mu_results and 'by_group' in mu_results:
+        for group, results in mu_results['by_group'].items():
+            n_ind = results.get('N', 0)
+            pct_muc = results.get('pct_neg_muc', 0) or 0
+            pct_mul = results.get('pct_neg_mul', 0) or 0
+            muc_mean = results.get('mean_muc', np.nan)
+            mul_mean = results.get('mean_mul', np.nan)
 
             muc_cell_class = 'class="warning-cell"' if pct_muc > 5 else ''
             mul_cell_class = 'class="warning-cell"' if pct_mul > 5 else ''
 
-            muc_mean_str = f"{muc_mean:.4f}" if isinstance(muc_mean, float) and np.isfinite(muc_mean) else "N/A"
-            mul_mean_str = f"{mul_mean:.4e}" if isinstance(mul_mean, float) and np.isfinite(mul_mean) else "N/A"
+            muc_mean_str = safe_format(muc_mean, ".4f", "N/A")
+            mul_mean_str = safe_format(mul_mean, ".4e", "N/A")
 
             mu_table_rows += f"""
             <tr>
@@ -963,6 +1265,102 @@ def generate_html_report_styled(
                 <td>{mul_mean_str}</td>
             </tr>
             """
+
+    # Build probability diagnostics section
+    prob_diag_html = ""
+    if prob_diagnostics:
+        prob_sum = prob_diagnostics.get('prob_sum_errors', {})
+        p_chosen = prob_diagnostics.get('p_chosen_dist', {})
+        worst_fit = prob_diagnostics.get('worst_fit_households', [])
+        
+        if prob_sum or p_chosen:
+            prob_diag_html = """
+            <h3>📊 Choice Probability Diagnostics</h3>
+            <div class="two-col">
+            """
+            
+            if prob_sum:
+                prob_diag_html += f"""
+                <div class="stats-box">
+                    <h4>Probability Sum Sanity Check</h4>
+                    <table class="table table-sm">
+                        <tr><td>Max |Σp - 1|</td><td>{prob_sum.get('max_error', 0):.6f}</td></tr>
+                        <tr><td>Mean |Σp - 1|</td><td>{prob_sum.get('mean_error', 0):.6f}</td></tr>
+                        <tr><td>% HH off by &gt;0.01</td><td>{prob_sum.get('pct_off_by_0.01', 0):.2f}%</td></tr>
+                        <tr><td>% HH off by &gt;0.001</td><td>{prob_sum.get('pct_off_by_0.001', 0):.2f}%</td></tr>
+                    </table>
+                </div>
+                """
+            
+            if p_chosen:
+                prob_diag_html += f"""
+                <div class="stats-box">
+                    <h4>P(chosen) Distribution</h4>
+                    <table class="table table-sm">
+                        <tr><td>Min</td><td>{p_chosen.get('min', 0):.4f}</td></tr>
+                        <tr><td>10th percentile</td><td>{p_chosen.get('q10', 0):.4f}</td></tr>
+                        <tr><td>25th percentile</td><td>{p_chosen.get('q25', 0):.4f}</td></tr>
+                        <tr><td>Median</td><td>{p_chosen.get('median', 0):.4f}</td></tr>
+                        <tr><td>Mean</td><td>{p_chosen.get('mean', 0):.4f}</td></tr>
+                        <tr><td>75th percentile</td><td>{p_chosen.get('q75', 0):.4f}</td></tr>
+                        <tr><td>90th percentile</td><td>{p_chosen.get('q90', 0):.4f}</td></tr>
+                        <tr><td>Max</td><td>{p_chosen.get('max', 0):.4f}</td></tr>
+                    </table>
+                </div>
+                """
+            
+            prob_diag_html += "</div>"
+        
+        # Worst-fit households table
+        if worst_fit:
+            worst_rows = ""
+            for i, hh in enumerate(worst_fit[:20], 1):
+                worst_rows += f"""
+                <tr>
+                    <td>{i}</td>
+                    <td>{hh.get('idhh', 'N/A')}</td>
+                    <td>{group_labels.get(hh.get('group', ''), hh.get('group', 'N/A'))}</td>
+                    <td>{hh.get('p_chosen', 0):.6f}</td>
+                    <td>{hh.get('ll_i', 0):.2f}</td>
+                </tr>
+                """
+            
+            prob_diag_html += f"""
+            <h3>🔻 Worst-Fit Households (Bottom 20 by Log-Likelihood)</h3>
+            <p><em>These households have the lowest P(chosen), indicating potential outliers or specification issues.</em></p>
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr><th>#</th><th>HH ID</th><th>Group</th><th>P(chosen)</th><th>log(P)</th></tr>
+                </thead>
+                <tbody>{worst_rows}</tbody>
+            </table>
+            """
+
+    # Build bound diagnostics section
+    bound_diag_html = ""
+    if bound_diagnostics and len(bound_diagnostics) > 0:
+        bound_rows = ""
+        for bd in bound_diagnostics:
+            side_icon = "⬇️" if bd.get('side') == 'lower' else "⬆️"
+            bound_rows += f"""
+            <tr>
+                <td>{bd.get('parameter', 'N/A')}</td>
+                <td>{bd.get('estimate', 0):.6f}</td>
+                <td>{bd.get('bound', 0):.6f}</td>
+                <td>{side_icon} {bd.get('side', 'N/A')}</td>
+            </tr>
+            """
+        
+        bound_diag_html = f"""
+        <h3>⚠️ Parameters at Bounds (within 1e-6)</h3>
+        <p><em>These parameters hit their constraints. Consider checking if bounds are too restrictive.</em></p>
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr><th>Parameter</th><th>Estimate</th><th>Bound</th><th>Side</th></tr>
+            </thead>
+            <tbody>{bound_rows}</tbody>
+        </table>
+        """
 
     # Build group parameters section
     group_params_html = ""
@@ -1013,6 +1411,7 @@ def generate_html_report_styled(
     if plot_paths:
         contour_plots = []
         mu_comparison_plots = []
+        mu_distribution_plots = []
         fit_plots = []
 
         for name, path in plot_paths.items():
@@ -1024,12 +1423,19 @@ def generate_html_report_styled(
                 elif 'muc_comparison' in name.lower() or 'mul_comparison' in name.lower():
                     title = 'Marginal Utility of Consumption' if 'muc' in name.lower() else 'Marginal Utility of Leisure'
                     mu_comparison_plots.append(f'<figure><figcaption>{title}</figcaption>{img_tag}</figure>')
+                elif name.endswith('_mu'):
+                    # Individual MU distribution plots per group (sm_mu, sf_mu, cou_m_mu, cou_f_mu)
+                    group_key = name.replace('_mu', '')
+                    label = group_labels.get(group_key, group_key)
+                    mu_distribution_plots.append(f'<div class="contour-item"><h4>{label} - MUC & MUL Distributions</h4>{img_tag}</div>')
                 elif 'fit_' in name.lower() or 'participation' in name.lower() or 'mean_hours' in name.lower():
                     title = name.replace('fit_', '').replace('_', ' ').title()
                     fit_plots.append(f'<figure><figcaption>{title}</figcaption>{img_tag}</figure>')
 
         if mu_comparison_plots:
             plots_section += f'<h3>Marginal Utility Comparison</h3><div class="two-col">{"".join(mu_comparison_plots)}</div>'
+        if mu_distribution_plots:
+            plots_section += f'<h3>📊 Marginal Utility Distributions by Group</h3><div class="contour-grid">{"".join(mu_distribution_plots)}</div>'
         if contour_plots:
             plots_section += f'<h3>Utility Indifference Curves by Group</h3><div class="contour-grid">{"".join(contour_plots)}</div>'
         if fit_plots:
@@ -1062,10 +1468,10 @@ def generate_html_report_styled(
         row_class = ""
         is_bounded = lb is not None or ub is not None
         hit_bound = False
-        if is_bounded and isinstance(est, float):
-            if lb is not None and abs(est - lb) < 1e-6:
+        if is_bounded and is_num(est):
+            if lb is not None and abs(float(est) - lb) < 1e-6:
                 hit_bound = True
-            if ub is not None and abs(est - ub) < 1e-6:
+            if ub is not None and abs(float(est) - ub) < 1e-6:
                 hit_bound = True
 
         if hit_bound:
@@ -1073,18 +1479,18 @@ def generate_html_report_styled(
         elif is_bounded:
             row_class = 'class="bounded-param"'
 
-        est_str = f"{est:.4f}" if isinstance(est, float) and np.isfinite(est) else "N/A"
-        se_str = f"{se:.4f}" if isinstance(se, float) and np.isfinite(se) else "N/A"
-        t_str = f"{t_val:.2f}" if isinstance(t_val, float) and np.isfinite(t_val) else "N/A"
-        lb_str = f"{lb:.4f}" if lb is not None else "—"
-        ub_str = f"{ub:.4f}" if ub is not None else "—"
-        init_str = f"{init_val:.4f}" if init_val is not None and not np.isnan(init_val) else "N/A"
+        est_str = safe_format(est, ".4f", "N/A")
+        se_str = safe_format(se, ".4f", "N/A")
+        t_str = safe_format(t_val, ".2f", "N/A")
+        lb_str = safe_format(lb, ".4f", "—")
+        ub_str = safe_format(ub, ".4f", "—")
+        init_str = safe_format(init_val, ".4f", "N/A")
 
         sig = ""
         p_str = "N/A"
         p_class = ""
-        if isinstance(p_val, float) and np.isfinite(p_val):
-            p_str = f"{p_val:.4f}"
+        if is_num(p_val):
+            p_str = f"{float(p_val):.4f}"
             if p_val < 0.001:
                 sig = "***"
             elif p_val < 0.01:
@@ -1142,13 +1548,18 @@ def generate_html_report_styled(
             {fit_stats_rows}
         </table>
         {bounds_explanation}
-    </section>
-
-    <section>
-        <h2>📈 Labor Supply Elasticities</h2>
-        <p>Structural approximations based on estimated preference parameters.</p>
+    </section>    <section>
+        <h2>📈 Curvature-Based Heuristics (Structural Elasticity Approximations)</h2>
+        <div class="stats-box" style="margin-bottom: 1.5em; border-left-color: #3498db;">
+            <h4 style="margin-top:0;">⚠️ Interpretation Note</h4>
+            <p style="margin-bottom:0;">
+                These are <strong>not</strong> true labor supply elasticities. They are heuristic approximations 
+                derived from the curvature parameters (θ) of the Box-Cox utility function. The Hicksian approximation 
+                is (1 - θ_l), which measures the curvature of preferences. For rigorous elasticity estimates, 
+                use simulation-based methods that account for the full discrete choice structure and budget constraints.
+            </p>
+        </div>
         {elasticities_html}
-        <p><small><em>Note: For exact elasticities, use simulation-based methods.</em></small></p>
     </section>
 
     <section>
@@ -1172,11 +1583,13 @@ def generate_html_report_styled(
                 <tr><th>Group</th><th>N Individuals</th><th>% Neg MUC</th><th>% Neg MUL</th><th>MUC Mean</th><th>MUL Mean</th></tr>
             </thead>
             <tbody>{mu_table_rows}</tbody>
-        </table>
-
-        <h3>MUC Behavior Analysis</h3>
+        </table>        <h3>MUC Behavior Analysis</h3>
         <p>For well-behaved utility: MUC &gt; 0 (β_c &gt; 0) and diminishing (θ_c &lt; 1)</p>
         {muc_analysis_html}
+        
+        {prob_diag_html}
+        
+        {bound_diag_html}
     </section>
 
     <section>
@@ -1227,6 +1640,869 @@ def generate_html_report_styled(
     LOGGER.info(f"HTML report saved to: {output_path}")
 
     return output_path
+
+
+# =============================================================================
+# FIT DIAGNOSTICS & MARGINAL UTILITY COMPUTATION
+# =============================================================================
+
+def compute_null_log_likelihood(df: pd.DataFrame, choice_id_col: str = 'idhh') -> float:
+    """
+    Compute null model log-likelihood: LL0 = -Σ_i log(J_i).
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Long-format MNL data
+    choice_id_col : str
+        Column identifying choice units (households)
+    
+    Returns
+    -------
+    float
+        Null model log-likelihood
+    """
+    choice_set_sizes = df.groupby(choice_id_col).size()
+    ll_null = -np.sum(np.log(choice_set_sizes.values))
+    return ll_null
+
+
+def load_mnl_metadata(mnl_base: Path) -> Optional[Dict[str, Any]]:
+    """
+    Load metadata from __mnlmeta.json file.
+    
+    Parameters
+    ----------
+    mnl_base : Path
+        Base path for MNL files (e.g., fr_2016_RURO_mnl)
+    
+    Returns
+    -------
+    Optional[Dict[str, Any]]
+        Metadata dict or None if not found
+    """
+    metadata_path = Path(str(mnl_base) + '__mnlmeta.json')
+    if not metadata_path.exists():
+        LOGGER.warning(f"Metadata file not found: {metadata_path}")
+        return None
+    
+    try:
+        with open(metadata_path, 'r') as f:
+            metadata = json.load(f)
+        LOGGER.info(f"Loaded MNL metadata from: {metadata_path.name}")
+        return metadata
+    except Exception as e:
+        LOGGER.warning(f"Could not load metadata: {e}")
+        return None
+
+
+def get_column_name(metadata: Optional[Dict[str, Any]], dataset: str, preferred: str, fallbacks: List[str]) -> str:
+    """
+    Get the correct column name from metadata with fallbacks.
+    
+    Parameters
+    ----------
+    metadata : Optional[Dict[str, Any]]
+        MNL metadata dict
+    dataset : str
+        'singles' or 'couples'
+    preferred : str
+        Preferred column name
+    fallbacks : List[str]
+        List of fallback column names to try
+    
+    Returns
+    -------
+    str
+        Column name to use
+    """
+    # Check metadata first
+    if metadata is not None:
+        columns = metadata.get('columns', {}).get(dataset, [])
+        if preferred in columns:
+            return preferred
+        for fb in fallbacks:
+            if fb in columns:
+                return fb
+    
+    # Return preferred if no metadata
+    return preferred
+
+
+def compute_fit_diagnostics_from_data(
+    parsed_params: ParsedParameters,
+    mnl_base: Path,
+    spec: Optional[Any] = None,
+) -> Dict[str, Dict[str, float]]:
+    """
+    Compute observed vs predicted participation and hours by group.
+    
+    This computes probabilities using the same utility as estimation:
+    V_ij = U_pref(c_ij, l_ij; θ) + log(f_opp_ij) - log(prior_ij)
+    
+    Returns
+    -------
+    Dict[str, Dict[str, float]]
+        Nested dict: {group: {'participation_observed': ..., 'participation_predicted': ..., etc.}}
+    """
+    LOGGER.info("Computing fit diagnostics from MNL data...")
+    
+    mnl_base = Path(mnl_base)
+    fit_results = {}
+    
+    # Load data files
+    try:
+        metadata_path = Path(str(mnl_base) + '__mnlmeta.json')
+        with open(metadata_path) as f:
+            metadata = json.load(f)
+        
+        singles_path = Path(str(mnl_base) + '__singles.parquet')
+        couples_path = Path(str(mnl_base) + '__couples.parquet')
+        
+        df_singles = pd.read_parquet(singles_path) if singles_path.exists() else None
+        df_couples = pd.read_parquet(couples_path) if couples_path.exists() else None
+    except Exception as e:
+        LOGGER.warning(f"Could not load MNL data: {e}")
+        return {}
+    
+    # Process singles (male=0, female=1)
+    for gender_code, gender_name, group_key in [(0, 'male', 'sm'), (1, 'female', 'sf')]:
+        if df_singles is None:
+            continue
+        
+        # Try 'dgn' first (dataset convention), then 'gender'
+        gender_col = 'dgn' if 'dgn' in df_singles.columns else 'gender'
+        df_g = df_singles[df_singles[gender_col] == gender_code].copy()
+        if len(df_g) == 0:
+            continue
+          # Get parameters for this group
+        params = None
+        for try_key in [group_key, f'singles_{gender_name}', group_key.upper()]:
+            if try_key in parsed_params.params_by_group:
+                params = parsed_params.get_all_params_for_group(try_key)
+                break
+        
+        if params is None or 'beta_c' not in params:
+            LOGGER.warning(f"No parameters found for {group_key}, skipping fit diagnostics")
+            continue
+        
+        try:
+            # Compute observed moments
+            chosen_col = 'is_chosen' if 'is_chosen' in df_g.columns else 'chosen'
+            chosen = df_g[df_g[chosen_col] == 1].copy()
+            obs_participation = (chosen['hours'] > 0).mean()
+            obs_hours = chosen.loc[chosen['hours'] > 0, 'hours'].mean() if (chosen['hours'] > 0).any() else 0.0
+            
+            # Compute predicted probabilities
+            beta_c = params.get('beta_c', 1.0)
+            theta_c = params.get('theta_c', 0.5)
+            theta_l = params.get('theta_l', 0.5)
+            
+            # Utility from preferences
+            c = df_g['consumption'].values
+            l = df_g['leisure'].values
+            
+            # Compute full beta_l(X) for each observation (not just beta_l0)
+            beta_l = compute_beta_l_full(df_g, params, suffix='')
+            
+            U_pref = beta_c * boxcox_transform(c, theta_c) + beta_l * boxcox_transform(l, theta_l)
+            
+            # Add opportunity terms if available
+            if 'log_opp' in df_g.columns:
+                V = U_pref + df_g['log_opp'].values
+            else:
+                V = U_pref
+            
+            # Subtract prior if available
+            if 'log_prior' in df_g.columns:
+                V = V - df_g['log_prior'].values
+            
+            # Compute choice probabilities within each household
+            df_g['V'] = V
+            df_g['prob'] = 0.0
+            
+            for idhh, group_df in df_g.groupby('idhh'):
+                V_group = group_df['V'].values
+                V_shifted = V_group - V_group.max()
+                exp_V = np.exp(V_shifted)
+                probs = exp_V / exp_V.sum()
+                df_g.loc[group_df.index, 'prob'] = probs
+            
+            # Predicted participation
+            pred_participation = (df_g.groupby('idhh').apply(
+                lambda x: (x['prob'] * (x['hours'] > 0).astype(float)).sum()
+            )).mean()
+            
+            # Predicted mean hours among workers
+            def household_pred_hours(x):
+                working_mask = (x['hours'] > 0).values
+                if not working_mask.any():
+                    return 0.0
+                numerator = (x['prob'].values * x['hours'].values * working_mask).sum()
+                denominator = (x['prob'].values * working_mask).sum()
+                return numerator / denominator if denominator > 0 else 0.0
+            
+            pred_hours = df_g.groupby('idhh').apply(household_pred_hours).mean()
+            
+            # Hours distribution (binned) for observed
+            bins = [0, 5, 15, 25, 35, 45, 55, 65, 100]
+            bin_labels = ['0', '1-10', '11-20', '21-30', '31-40', '41-50', '51-60', '60+']
+            obs_hours_array = chosen['hours'].values
+            obs_binned = pd.cut(obs_hours_array, bins=bins, labels=bin_labels, include_lowest=True)
+            obs_vc = obs_binned.value_counts()
+            hours_dist_observed = (obs_vc / obs_vc.sum()).to_dict() if obs_vc.sum() > 0 else {}
+            
+            # Hours distribution for predicted (expected hours per household)
+            expected_hours_list = []
+            for idhh, group_df in df_g.groupby('idhh'):
+                exp_h = (group_df['prob'] * group_df['hours']).sum()
+                expected_hours_list.append(exp_h)
+            expected_hours_arr = np.array(expected_hours_list)
+            pred_binned = pd.cut(expected_hours_arr, bins=bins, labels=bin_labels, include_lowest=True)
+            pred_vc = pred_binned.value_counts()
+            hours_dist_predicted = (pred_vc / pred_vc.sum()).to_dict() if pred_vc.sum() > 0 else {}
+            
+            fit_results[group_key] = {
+                'participation_observed': obs_participation,
+                'participation_predicted': pred_participation,
+                'mean_hours_observed': obs_hours,
+                'mean_hours_predicted': pred_hours,
+                'hours_distribution_observed': hours_dist_observed,
+                'hours_distribution_predicted': hours_dist_predicted,
+            }
+            
+            LOGGER.info(f"  {group_key}: obs_part={obs_participation:.3f}, pred_part={pred_participation:.3f}")
+            
+        except Exception as e:
+            LOGGER.warning(f"Could not compute fit for {group_key}: {e}")
+            continue
+      # Process couples - compute real predicted moments using joint utility
+    if df_couples is not None and len(df_couples) > 0:
+        chosen_col = 'is_chosen' if 'is_chosen' in df_couples.columns else 'chosen'
+        
+        # Get couples parameters
+        params = None
+        for try_key in ['cou', 'couples']:
+            if try_key in parsed_params.params_by_group:
+                params = parsed_params.get_all_params_for_group(try_key)
+                break
+        
+        if params is not None:
+            try:
+                beta_c = params.get('beta_c', 1.0)
+                theta_c = params.get('theta_c', 0.5)
+                # Use sex-specific curvature when available (theta_l_m, theta_l_f)
+                theta_l_m = params.get('theta_l_m', params.get('theta_l', 0.5))
+                theta_l_f = params.get('theta_l_f', params.get('theta_l', 0.5))
+                
+                df_cou = df_couples.copy()
+                
+                # Compute joint utility V = U_pref + log_opp - log_prior
+                c = df_cou['consumption'].values
+                l_m = df_cou['leisure_male'].values
+                l_f = df_cou['leisure_female'].values
+                
+                # Preference utility
+                U_c = beta_c * boxcox_transform(c, theta_c)
+                
+                # Leisure for male and female (using full beta_l with shifters and sex-specific curvature)
+                beta_l_m = compute_beta_l_full(df_cou, params, '_m')
+                beta_l_f = compute_beta_l_full(df_cou, params, '_f')
+                U_l_m = beta_l_m * boxcox_transform(l_m, theta_l_m)
+                U_l_f = beta_l_f * boxcox_transform(l_f, theta_l_f)
+                
+                V = U_c + U_l_m + U_l_f
+                
+                # Add opportunity terms
+                if 'log_opp_male' in df_cou.columns:
+                    V = V + df_cou['log_opp_male'].values
+                if 'log_opp_female' in df_cou.columns:
+                    V = V + df_cou['log_opp_female'].values
+                if 'log_opp' in df_cou.columns:
+                    V = V + df_cou['log_opp'].values
+                
+                # Subtract prior
+                if 'log_prior' in df_cou.columns:
+                    V = V - df_cou['log_prior'].values
+                
+                df_cou['V'] = V
+                df_cou['prob'] = 0.0
+                
+                # Compute probabilities within each household
+                for idhh, group_df in df_cou.groupby('idhh'):
+                    V_group = group_df['V'].values
+                    V_shifted = V_group - V_group.max()
+                    exp_V = np.exp(V_shifted)
+                    probs = exp_V / exp_V.sum()
+                    df_cou.loc[group_df.index, 'prob'] = probs
+                
+                # Now compute predicted moments for each gender
+                for gender, suffix in [('male', '_m'), ('female', '_f')]:
+                    group_key = f'cou{suffix}'
+                    hours_col = f'hours_{gender}'
+                    
+                    chosen = df_cou[df_cou[chosen_col] == 1].copy()
+                    obs_participation = (chosen[hours_col] > 0).mean()
+                    obs_hours = chosen.loc[chosen[hours_col] > 0, hours_col].mean() if (chosen[hours_col] > 0).any() else 0.0
+                    
+                    # Predicted participation
+                    pred_participation = (df_cou.groupby('idhh').apply(
+                        lambda x: (x['prob'] * (x[hours_col] > 0).astype(float)).sum()
+                    )).mean()
+                    
+                    # Predicted hours among workers
+                    def household_pred_hours(x):
+                        working_mask = (x[hours_col] > 0).values
+                        if not working_mask.any():
+                            return 0.0
+                        numerator = (x['prob'].values * x[hours_col].values * working_mask).sum()
+                        denominator = (x['prob'].values * working_mask).sum()
+                        return numerator / denominator if denominator > 0 else 0.0
+                    
+                    pred_hours = df_cou.groupby('idhh').apply(household_pred_hours).mean()
+                    
+                    # Hours distribution (binned) for observed
+                    bins = [0, 5, 15, 25, 35, 45, 55, 65, 100]
+                    bin_labels = ['0', '1-10', '11-20', '21-30', '31-40', '41-50', '51-60', '60+']
+                    obs_hours_array = chosen[hours_col].values
+                    obs_binned = pd.cut(obs_hours_array, bins=bins, labels=bin_labels, include_lowest=True)
+                    obs_vc = obs_binned.value_counts()
+                    hours_dist_observed = (obs_vc / obs_vc.sum()).to_dict() if obs_vc.sum() > 0 else {}
+                    
+                    # Hours distribution for predicted
+                    expected_hours_list = []
+                    for idhh, group_df in df_cou.groupby('idhh'):
+                        exp_h = (group_df['prob'] * group_df[hours_col]).sum()
+                        expected_hours_list.append(exp_h)
+                    expected_hours_arr = np.array(expected_hours_list)
+                    pred_binned = pd.cut(expected_hours_arr, bins=bins, labels=bin_labels, include_lowest=True)
+                    pred_vc = pred_binned.value_counts()
+                    hours_dist_predicted = (pred_vc / pred_vc.sum()).to_dict() if pred_vc.sum() > 0 else {}
+                    
+                    fit_results[group_key] = {
+                        'participation_observed': obs_participation,
+                        'participation_predicted': pred_participation,
+                        'mean_hours_observed': obs_hours,
+                        'mean_hours_predicted': pred_hours,
+                        'hours_distribution_observed': hours_dist_observed,
+                        'hours_distribution_predicted': hours_dist_predicted,
+                    }
+                    
+                    LOGGER.info(f"  {group_key}: obs_part={obs_participation:.3f}, pred_part={pred_participation:.3f}")
+                    
+            except Exception as e:
+                LOGGER.warning(f"Could not compute fit for couples: {e}")
+                # Fallback to observed as approximation
+                for gender, suffix in [('male', '_m'), ('female', '_f')]:
+                    group_key = f'cou{suffix}'
+                    hours_col = f'hours_{gender}'
+                    chosen = df_couples[df_couples[chosen_col] == 1].copy()
+                    obs_participation = (chosen[hours_col] > 0).mean()
+                    obs_hours = chosen.loc[chosen[hours_col] > 0, hours_col].mean() if (chosen[hours_col] > 0).any() else 0.0
+                    fit_results[group_key] = {
+                        'participation_observed': obs_participation,
+                        'participation_predicted': np.nan,
+                        'mean_hours_observed': obs_hours,
+                        'mean_hours_predicted': np.nan,
+                    }
+    
+    return fit_results
+
+
+def compute_beta_l_full(df: pd.DataFrame, params: Dict[str, float], suffix: str = '') -> np.ndarray:
+    """
+    Compute full beta_l(X) = beta_l0 + sum(beta_l_k * X_k) for each observation.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Data with demographic columns
+    params : Dict[str, float]
+        Parameter dictionary with beta_l0, beta_l_age_norm, etc.
+    suffix : str
+        Suffix for couples ('_m' or '_f')
+    
+    Returns
+    -------
+    np.ndarray
+        beta_l value for each observation
+    """
+    n = len(df)
+    beta_l0_key = f'beta_l0{suffix}' if suffix else 'beta_l0'
+    beta_l = np.full(n, params.get(beta_l0_key, params.get('beta_l0', 0.0)))
+    
+    # Mapping of parameter suffixes to column names
+    covariate_mapping = {
+        'age_norm': ['age_norm', 'age_normalized'],
+        'age_norm2': ['age_norm2', 'age_normalized2', 'age_norm_sq'],
+        'n_children': ['n_children', 'nch', 'num_children'],
+        'educL': ['educL', 'educ_low', 'low_education'],
+        'educH': ['educH', 'educ_high', 'high_education'],
+    }
+    
+    for param_name, param_value in params.items():
+        # Match beta_l_* parameters (but not beta_l0)
+        if not param_name.startswith('beta_l_'):
+            continue
+        if 'beta_l0' in param_name:
+            continue
+        
+        # Extract covariate name (e.g., 'age_norm' from 'beta_l_age_norm')
+        cov_base = param_name.replace('beta_l_', '').replace(suffix, '')
+        
+        # Try to find the column in the dataframe
+        col_found = None
+        possible_cols = covariate_mapping.get(cov_base, [cov_base])
+        
+        # For couples, try gender-specific columns first
+        if suffix:
+            gender = 'male' if suffix == '_m' else 'female'
+            for col in [f'{cov_base}_{gender}', f'{cov_base}{suffix}']:
+                if col in df.columns:
+                    col_found = col
+                    break
+        
+        # Then try general columns
+        if col_found is None:
+            for col in possible_cols:
+                if col in df.columns:
+                    col_found = col
+                    break
+        
+        if col_found is not None:
+            beta_l += param_value * df[col_found].values
+    
+    return beta_l
+
+
+def compute_marginal_utilities_at_chosen(
+    parsed_params: ParsedParameters,
+    mnl_base: Path,
+) -> Dict[str, Any]:
+    """
+    Compute marginal utilities (MUC, MUL) at chosen alternatives.
+    
+    MUC = beta_c * c^(theta_c - 1)
+    MUL = beta_l(X) * l^(theta_l - 1)
+    
+    where beta_l(X) = beta_l0 + sum_k(beta_l_k * X_k) is the full leisure 
+    coefficient evaluated at each individual's characteristics.
+    
+    Returns
+    -------
+    Dict with keys:
+        - 'by_group': Dict[str, Dict] with N, n_neg_muc, pct_neg_muc, mean_muc, etc.
+        - 'totals': Dict with aggregate stats
+        - 'arrays': Dict[str, Dict] with actual muc/mul arrays for plotting
+    """
+    LOGGER.info("Computing marginal utilities at chosen alternatives...")
+    
+    mnl_base = Path(mnl_base)
+    mu_results = {'by_group': {}, 'totals': {}, 'arrays': {}}
+    
+    # Load data
+    try:
+        singles_path = Path(str(mnl_base) + '__singles.parquet')
+        couples_path = Path(str(mnl_base) + '__couples.parquet')
+        
+        df_singles = pd.read_parquet(singles_path) if singles_path.exists() else None
+        df_couples = pd.read_parquet(couples_path) if couples_path.exists() else None
+    except Exception as e:
+        LOGGER.warning(f"Could not load data for MU computation: {e}")
+        return mu_results
+    
+    all_muc = []
+    all_mul = []
+    
+    # Process singles
+    for gender_code, gender_name, group_key in [(0, 'male', 'sm'), (1, 'female', 'sf')]:
+        if df_singles is None:
+            continue
+        
+        # Try 'dgn' first (dataset convention), then 'gender'
+        gender_col = 'dgn' if 'dgn' in df_singles.columns else 'gender'
+        chosen_col = 'is_chosen' if 'is_chosen' in df_singles.columns else 'chosen'
+        df_g = df_singles[(df_singles[gender_col] == gender_code) & (df_singles[chosen_col] == 1)].copy()
+        if len(df_g) == 0:
+            continue
+        
+        params = None
+        for try_key in [group_key, f'singles_{gender_name}']:
+            if try_key in parsed_params.params_by_group:
+                params = parsed_params.get_all_params_for_group(try_key)
+                break
+        
+        if params is None:
+            continue
+        
+        beta_c = params.get('beta_c', 1.0)
+        theta_c = params.get('theta_c', 0.5)
+        theta_l = params.get('theta_l', 0.5)
+        
+        c = df_g['consumption'].values
+        l = df_g['leisure'].values
+        
+        # Compute MUC
+        muc = compute_marginal_utility_consumption(c, beta_c, theta_c)
+        
+        # Compute full beta_l(X) for each observation
+        beta_l = compute_beta_l_full(df_g, params, suffix='')
+        
+        # Compute MUL = beta_l(X) * l^(theta_l - 1)
+        mul = beta_l * d_boxcox_dx(l, theta_l)
+        
+        all_muc.extend(muc)
+        all_mul.extend(mul)
+        
+        # Store arrays for plotting
+        mu_results['arrays'][group_key] = {'muc': muc, 'mul': mul}
+        
+        mu_results['by_group'][group_key] = {
+            'N': len(df_g),
+            'n_neg_muc': int((muc < 0).sum()),
+            'pct_neg_muc': float(100 * (muc < 0).mean()),
+            'n_neg_mul': int((mul < 0).sum()),
+            'pct_neg_mul': float(100 * (mul < 0).mean()),
+            'mean_muc': float(muc.mean()),
+            'mean_mul': float(mul.mean()),
+        }
+        
+        LOGGER.info(f"  {group_key}: {len(df_g)} obs, {(muc<0).sum()} neg MUC ({100*(muc<0).mean():.1f}%), {(mul<0).sum()} neg MUL ({100*(mul<0).mean():.1f}%)")
+    
+    # Process couples
+    if df_couples is not None:
+        chosen_col = 'is_chosen' if 'is_chosen' in df_couples.columns else 'chosen'
+        df_chosen = df_couples[df_couples[chosen_col] == 1].copy()
+        
+        params = None
+        for try_key in ['cou', 'couples']:
+            if try_key in parsed_params.params_by_group:
+                params = parsed_params.get_all_params_for_group(try_key)
+                break
+        
+        if params is not None and len(df_chosen) > 0:
+            beta_c = params.get('beta_c', 1.0)
+            theta_c = params.get('theta_c', 0.5)
+            
+            c = df_chosen['consumption'].values
+            muc = compute_marginal_utility_consumption(c, beta_c, theta_c)
+            
+            # Add MUC for couples to total (was missing before!)
+            all_muc.extend(muc)
+            
+            # Males in couples
+            theta_l_m = params.get('theta_l_m', params.get('theta_l', 0.5))
+            l_m = df_chosen['leisure_male'].values
+            beta_l_m = compute_beta_l_full(df_chosen, params, suffix='_m')
+            mul_m = beta_l_m * d_boxcox_dx(l_m, theta_l_m)
+            all_mul.extend(mul_m)
+            
+            mu_results['arrays']['cou_m'] = {'muc': muc, 'mul': mul_m}
+            
+            mu_results['by_group']['cou_m'] = {
+                'N': len(df_chosen),
+                'n_neg_muc': int((muc < 0).sum()),
+                'pct_neg_muc': float(100 * (muc < 0).mean()),
+                'n_neg_mul': int((mul_m < 0).sum()),
+                'pct_neg_mul': float(100 * (mul_m < 0).mean()),
+                'mean_muc': float(muc.mean()),
+                'mean_mul': float(mul_m.mean()),
+            }
+            
+            LOGGER.info(f"  cou_m: {len(df_chosen)} obs, {(muc<0).sum()} neg MUC ({100*(muc<0).mean():.1f}%), {(mul_m<0).sum()} neg MUL ({100*(mul_m<0).mean():.1f}%)")
+            
+            # Females in couples
+            theta_l_f = params.get('theta_l_f', params.get('theta_l', 0.5))
+            l_f = df_chosen['leisure_female'].values
+            beta_l_f = compute_beta_l_full(df_chosen, params, suffix='_f')
+            mul_f = beta_l_f * d_boxcox_dx(l_f, theta_l_f)
+            all_mul.extend(mul_f)
+            
+            mu_results['arrays']['cou_f'] = {'muc': muc, 'mul': mul_f}
+            
+            mu_results['by_group']['cou_f'] = {
+                'N': len(df_chosen),
+                'n_neg_muc': int((muc < 0).sum()),
+                'pct_neg_muc': float(100 * (muc < 0).mean()),
+                'n_neg_mul': int((mul_f < 0).sum()),
+                'pct_neg_mul': float(100 * (mul_f < 0).mean()),
+                'mean_muc': float(muc.mean()),
+                'mean_mul': float(mul_f.mean()),
+            }
+            
+            LOGGER.info(f"  cou_f: {len(df_chosen)} obs, {(muc<0).sum()} neg MUC ({100*(muc<0).mean():.1f}%), {(mul_f<0).sum()} neg MUL ({100*(mul_f<0).mean():.1f}%)")
+    
+    # Compute totals
+    if all_muc:
+        all_muc = np.array(all_muc)
+        all_mul = np.array(all_mul)
+        mu_results['totals'] = {
+            'n_negative_muc_total': int((all_muc < 0).sum()),
+            'n_negative_mul_total': int((all_mul < 0).sum()),
+            'pct_negative_muc_total': float(100 * (all_muc < 0).mean()),            'pct_negative_mul_total': float(100 * (all_mul < 0).mean()),
+        }
+        LOGGER.info(f"  Totals: {len(all_muc)} obs, {(all_muc<0).sum()} neg MUC ({100*(all_muc<0).mean():.1f}%), {(all_mul<0).sum()} neg MUL ({100*(all_mul<0).mean():.1f}%)")
+    
+    return mu_results
+
+
+# =============================================================================
+# PROBABILITY SANITY AND WORST-FIT DIAGNOSTICS
+# =============================================================================
+
+def compute_probability_diagnostics(
+    parsed_params: ParsedParameters,
+    mnl_base: Path,
+) -> Dict[str, Any]:
+    """
+    Compute probability sanity diagnostics and worst-fit households.
+    
+    Returns
+    -------
+    Dict with:
+        - prob_sum_errors: {max_error, mean_error, pct_off_by_0.01}
+        - p_chosen_dist: {min, max, mean, median, q10, q25, q75, q90}
+        - worst_fit_households: List of 20 households with lowest ll_i
+    """
+    LOGGER.info("Computing probability diagnostics...")
+    
+    mnl_base = Path(mnl_base)
+    results = {
+        'prob_sum_errors': {},
+        'p_chosen_dist': {},
+        'worst_fit_households': [],
+    }
+    
+    try:
+        singles_path = Path(str(mnl_base) + '__singles.parquet')
+        couples_path = Path(str(mnl_base) + '__couples.parquet')
+        
+        df_singles = pd.read_parquet(singles_path) if singles_path.exists() else None
+        df_couples = pd.read_parquet(couples_path) if couples_path.exists() else None
+    except Exception as e:
+        LOGGER.warning(f"Could not load data for probability diagnostics: {e}")
+        return results
+    
+    all_prob_sums = []
+    all_p_chosen = []
+    all_ll_i = []  # (ll_i, idhh, group, p_chosen)
+    
+    # Helper to compute logit probabilities
+    def compute_probs_for_df(df, params, is_couples=False):
+        """Compute choice probabilities for a DataFrame."""
+        df = df.copy()
+        
+        beta_c = params.get('beta_c', 1.0)
+        theta_c = params.get('theta_c', 0.5)
+        
+        c = df['consumption'].values
+        V = beta_c * boxcox_transform(c, theta_c)
+        
+        if is_couples:
+            theta_l_m = params.get('theta_l_m', params.get('theta_l', 0.5))
+            theta_l_f = params.get('theta_l_f', params.get('theta_l', 0.5))
+            l_m = df['leisure_male'].values
+            l_f = df['leisure_female'].values
+            beta_l_m = compute_beta_l_full(df, params, '_m')
+            beta_l_f = compute_beta_l_full(df, params, '_f')
+            V += beta_l_m * boxcox_transform(l_m, theta_l_m)
+            V += beta_l_f * boxcox_transform(l_f, theta_l_f)
+            
+            # Add opportunity terms
+            for col in ['log_opp_male', 'log_opp_female', 'log_opp']:
+                if col in df.columns:
+                    V += df[col].values
+        else:
+            theta_l = params.get('theta_l', 0.5)
+            l = df['leisure'].values
+            beta_l = compute_beta_l_full(df, params, '')
+            V += beta_l * boxcox_transform(l, theta_l)
+            
+            if 'log_opp' in df.columns:
+                V += df['log_opp'].values
+        
+        # Subtract prior
+        if 'log_prior' in df.columns:
+            V -= df['log_prior'].values
+        
+        df['V'] = V
+        df['prob'] = 0.0
+        
+        for idhh, grp in df.groupby('idhh'):
+            V_grp = grp['V'].values
+            V_shifted = V_grp - V_grp.max()
+            exp_V = np.exp(V_shifted)
+            probs = exp_V / exp_V.sum()
+            df.loc[grp.index, 'prob'] = probs
+        
+        return df
+    
+    # Process singles
+    if df_singles is not None and len(df_singles) > 0:
+        for gender_code, group_key in [(0, 'sm'), (1, 'sf')]:
+            gender_col = 'dgn' if 'dgn' in df_singles.columns else 'gender'
+            df_g = df_singles[df_singles[gender_col] == gender_code].copy()
+            if len(df_g) == 0:
+                continue
+            
+            params = None
+            for try_key in [group_key, group_key.upper()]:
+                if try_key in parsed_params.params_by_group:
+                    params = parsed_params.get_all_params_for_group(try_key)
+                    break
+            
+            if params is None:
+                continue
+            
+            try:
+                df_g = compute_probs_for_df(df_g, params, is_couples=False)
+                chosen_col = 'is_chosen' if 'is_chosen' in df_g.columns else 'chosen'
+                
+                # Probability sums by household
+                prob_sums = df_g.groupby('idhh')['prob'].sum().values
+                all_prob_sums.extend(prob_sums)
+                
+                # P_chosen
+                p_chosen = df_g.loc[df_g[chosen_col] == 1, 'prob'].values
+                all_p_chosen.extend(p_chosen)
+                
+                # ll_i per household
+                for idhh, p_ch in zip(df_g.loc[df_g[chosen_col] == 1, 'idhh'].values, p_chosen):
+                    ll_i = np.log(max(p_ch, 1e-20))
+                    all_ll_i.append((ll_i, idhh, group_key, p_ch))
+                    
+            except Exception as e:
+                LOGGER.warning(f"Error computing probs for {group_key}: {e}")
+    
+    # Process couples
+    if df_couples is not None and len(df_couples) > 0:
+        params = None
+        for try_key in ['cou', 'couples']:
+            if try_key in parsed_params.params_by_group:
+                params = parsed_params.get_all_params_for_group(try_key)
+                break
+        
+        if params is not None:
+            try:
+                df_cou = compute_probs_for_df(df_couples, params, is_couples=True)
+                chosen_col = 'is_chosen' if 'is_chosen' in df_cou.columns else 'chosen'
+                
+                # Probability sums
+                prob_sums = df_cou.groupby('idhh')['prob'].sum().values
+                all_prob_sums.extend(prob_sums)
+                
+                # P_chosen
+                p_chosen = df_cou.loc[df_cou[chosen_col] == 1, 'prob'].values
+                all_p_chosen.extend(p_chosen)
+                
+                # ll_i per household
+                for idhh, p_ch in zip(df_cou.loc[df_cou[chosen_col] == 1, 'idhh'].values, p_chosen):
+                    ll_i = np.log(max(p_ch, 1e-20))
+                    all_ll_i.append((ll_i, idhh, 'cou', p_ch))
+                    
+            except Exception as e:
+                LOGGER.warning(f"Error computing probs for couples: {e}")
+    
+    # Compute summary statistics
+    if all_prob_sums:
+        prob_sums = np.array(all_prob_sums)
+        errors = np.abs(prob_sums - 1.0)
+        results['prob_sum_errors'] = {
+            'max_error': float(errors.max()),
+            'mean_error': float(errors.mean()),
+            'pct_off_by_0.01': float(100 * (errors > 0.01).mean()),
+            'pct_off_by_0.001': float(100 * (errors > 0.001).mean()),
+        }
+        LOGGER.info(f"  Prob sum errors: max={errors.max():.6f}, mean={errors.mean():.6f}")
+    
+    if all_p_chosen:
+        p_chosen = np.array(all_p_chosen)
+        results['p_chosen_dist'] = {
+            'min': float(p_chosen.min()),
+            'max': float(p_chosen.max()),
+            'mean': float(p_chosen.mean()),
+            'median': float(np.median(p_chosen)),
+            'q10': float(np.percentile(p_chosen, 10)),
+            'q25': float(np.percentile(p_chosen, 25)),
+            'q75': float(np.percentile(p_chosen, 75)),
+            'q90': float(np.percentile(p_chosen, 90)),
+        }
+        LOGGER.info(f"  P_chosen: mean={p_chosen.mean():.4f}, median={np.median(p_chosen):.4f}")
+    
+    # Worst-fit households (lowest ll_i)
+    if all_ll_i:
+        sorted_ll = sorted(all_ll_i, key=lambda x: x[0])[:20]
+        results['worst_fit_households'] = [
+            {'ll_i': ll, 'idhh': int(idhh), 'group': grp, 'p_chosen': float(p)}
+            for ll, idhh, grp, p in sorted_ll
+        ]
+        LOGGER.info(f"  Worst ll_i: {sorted_ll[0][0]:.2f} (idhh={sorted_ll[0][1]})")
+    
+    return results
+
+
+def compute_bound_diagnostics(parsed_params: ParsedParameters, tol: float = 1e-6) -> List[Dict[str, Any]]:
+    """
+    Find parameters within `tol` of their bounds.
+    
+    Returns list of dicts with: {parameter, estimate, bound, side}
+    """
+    at_bounds = []
+    
+    if parsed_params.bounds is None:
+        return at_bounds
+    
+    for i, name in enumerate(parsed_params.param_names):
+        if i >= len(parsed_params.bounds):
+            continue
+        
+        lb, ub = parsed_params.bounds[i]
+        val = parsed_params.theta[i]
+        
+        if lb is not None and abs(val - lb) < tol:
+            at_bounds.append({
+                'parameter': name,
+                'estimate': val,
+                'bound': lb,
+                'side': 'lower',
+            })
+        elif ub is not None and abs(val - ub) < tol:
+            at_bounds.append({
+                'parameter': name,
+                'estimate': val,
+                'bound': ub,
+                'side': 'upper',
+            })
+    
+    if at_bounds:
+        LOGGER.info(f"  Found {len(at_bounds)} parameters at bounds")
+    
+    return at_bounds
+
+
+def detect_weight_column(df: pd.DataFrame, metadata: Dict = None) -> Optional[str]:
+    """
+    Detect sample weight column from metadata or common naming conventions.
+    
+    Returns column name if found, else None.
+    """
+    # Check metadata first
+    if metadata:
+        weight_col = metadata.get('weight_column')
+        if weight_col and weight_col in df.columns:
+            return weight_col
+    
+    # Common weight column names
+    candidates = ['weight', 'wgt', 'sample_weight', 'pweight', 'pw', 'dwgt', 'wt', 'weights']
+    for col in candidates:
+        if col in df.columns:
+            return col
+        # Case-insensitive
+        for c in df.columns:
+            if c.lower() == col:
+                return c
+    
+    return None
 
 
 # =============================================================================
@@ -1300,9 +2576,7 @@ def run_styled_post_estimation(
         fit_stats['n_parameters'] = len(parsed.param_names)
         if fit_stats['n_observations'] > 0:
             fit_stats['AIC'] = -2 * fit_stats['log_likelihood'] + 2 * fit_stats['n_parameters']
-            fit_stats['BIC'] = -2 * fit_stats['log_likelihood'] + np.log(fit_stats['n_observations']) * fit_stats['n_parameters']
-
-    # Compute elasticities
+            fit_stats['BIC'] = -2 * fit_stats['log_likelihood'] + np.log(fit_stats['n_observations']) * fit_stats['n_parameters']    # Compute elasticities
     LOGGER.info("\n2. Computing elasticities...")
     elasticities_df = compute_structural_elasticities(parsed)
 
@@ -1310,48 +2584,132 @@ def run_styled_post_estimation(
     LOGGER.info("\n3. Analyzing MUC behavior...")
     muc_analysis = analyze_muc_behavior(parsed)
 
-    # Generate plots
-    LOGGER.info("\n4. Generating plots...")
-    plot_paths = {}
-
-    # Fit comparison (placeholder - would need data)
+    # Compute fit diagnostics from data
+    LOGGER.info("\n4. Computing fit diagnostics from MNL data...")
     fit_results = {}
-    for group in parsed.preference_groups:
-        fit_results[group] = {
-            'participation_rate_observed': 0.9,
-            'participation_rate_predicted': 0.9,
-            'mean_hours_observed': 35,
-            'mean_hours_predicted': 35,
-        }
+    mu_results = {}
+    ll_null = None
+    n_obs_long = None
+    n_individuals = None
+    
+    if mnl_base is not None:
+        try:
+            fit_results = compute_fit_diagnostics_from_data(parsed, mnl_base)
+            mu_results = compute_marginal_utilities_at_chosen(parsed, mnl_base)
+            
+            # Compute LL0 if not in JSON
+            if 'll_null' not in fit_stats or fit_stats['ll_null'] is None:
+                try:
+                    singles_path = Path(str(mnl_base) + '__singles.parquet')
+                    if singles_path.exists():
+                        df_temp = pd.read_parquet(singles_path)
+                        ll_null = compute_null_log_likelihood(df_temp, 'idhh')
+                        n_obs_long = len(df_temp)
+                        n_individuals = df_temp['idhh'].nunique()
+                        
+                        couples_path = Path(str(mnl_base) + '__couples.parquet')
+                        if couples_path.exists():
+                            df_temp_c = pd.read_parquet(couples_path)
+                            ll_null += compute_null_log_likelihood(df_temp_c, 'idhh')
+                            n_obs_long += len(df_temp_c)
+                            n_individuals += df_temp_c['idhh'].nunique()
+                        
+                        fit_stats['ll_null'] = ll_null
+                        fit_stats['n_obs_long'] = n_obs_long
+                        LOGGER.info(f"  Computed LL0 = {ll_null:.2f}")
+                except Exception as e:
+                    LOGGER.warning(f"Could not compute LL0: {e}")
+        except Exception as e:
+            LOGGER.warning(f"Could not compute fit diagnostics: {e}")
+            # Fallback to placeholders
+            for group in parsed.preference_groups:
+                fit_results[group] = {
+                    'participation_observed': np.nan,
+                    'participation_predicted': np.nan,
+                    'mean_hours_observed': np.nan,
+                    'mean_hours_predicted': np.nan,
+                }
+    else:
+        LOGGER.warning("No mnl-base provided, skipping data-driven diagnostics")
+        for group in parsed.preference_groups:
+            fit_results[group] = {
+                'participation_observed': np.nan,
+                'participation_predicted': np.nan,
+                'mean_hours_observed': np.nan,
+                'mean_hours_predicted': np.nan,
+            }    # Compute rho-squared and AIC_per_obs now that we have ll_null
+    ll = fit_stats.get('log_likelihood', 0)
+    ll_null_val = fit_stats.get('ll_null')
+    n_params = fit_stats.get('n_parameters', 0)
+    n_obs = fit_stats.get('n_observations', 0)
+    
+    if ll_null_val is not None and ll_null_val != 0:
+        fit_stats['rho_squared'] = 1 - (ll / ll_null_val)
+        fit_stats['rho_squared_adj'] = 1 - ((ll - n_params) / ll_null_val)
+        LOGGER.info(f"  Rho-squared: {fit_stats['rho_squared']:.4f}")
+        LOGGER.info(f"  Adjusted Rho-squared: {fit_stats['rho_squared_adj']:.4f}")
+    else:
+        fit_stats['rho_squared'] = None
+        fit_stats['rho_squared_adj'] = None
+    
+    if n_obs > 0:
+        fit_stats['AIC_per_obs'] = fit_stats.get('AIC', 0) / n_obs
+    else:
+        fit_stats['AIC_per_obs'] = None    # Update fit_stats with MU totals
+    if mu_results and 'totals' in mu_results:
+        fit_stats.update(mu_results['totals'])
+
+    # Compute probability diagnostics and worst-fit households
+    prob_diagnostics = {}
+    if mnl_base is not None:
+        LOGGER.info("\n4b. Computing probability diagnostics...")
+        try:
+            prob_diagnostics = compute_probability_diagnostics(parsed, mnl_base)
+        except Exception as e:
+            LOGGER.warning(f"Could not compute probability diagnostics: {e}")
+    
+    # Compute bound diagnostics
+    LOGGER.info("\n4c. Computing bound diagnostics...")
+    bound_diagnostics = compute_bound_diagnostics(parsed)
+
+    # Generate plots
+    LOGGER.info("\n5. Generating plots...")
+    plot_paths = {}
 
     plot_paths.update(plot_fit_comparison(fit_results, output_dir, prefix))
     plot_paths.update(plot_utility_contours_all_groups(parsed, output_dir, prefix))
     plot_paths.update(plot_mu_comparison(parsed, output_dir, prefix))
+    plot_paths.update(plot_mu_distributions_by_group(mu_results, mnl_base, parsed, output_dir, prefix))
+    plot_paths.update(plot_negative_mu_diagnostics(mu_results, output_dir, prefix))
 
     # Generate HTML report
-    LOGGER.info("\n5. Generating HTML report...")
+    LOGGER.info("\n6. Generating HTML report...")
 
     post_est_end = time.time()
     post_estimation_time = post_est_end - post_est_start
     total_time = (estimation_time or 0) + post_estimation_time
 
-    html_path = output_dir / f'{prefix}post_estimation_report.html'
+    # Generate timestamped filename for report
+    report_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    html_path = output_dir / f'{prefix}post_estimation_report_{report_timestamp}.html'
     generate_html_report_styled(
         parsed_params=parsed,
         fit_results=fit_results,
         output_path=html_path,
         fit_stats=fit_stats,
         plot_paths=plot_paths,
-        mu_results={},  # Would compute from data
+        mu_results=mu_results,  # Real MU results now
         elasticities_df=elasticities_df,
         muc_analysis=muc_analysis,
         estimation_time_seconds=estimation_time,
         post_estimation_time_seconds=post_estimation_time,
         total_elapsed_seconds=total_time if estimation_time else None,
+        prob_diagnostics=prob_diagnostics,
+        bound_diagnostics=bound_diagnostics,
     )
 
     # Save CSV outputs
-    LOGGER.info("\n6. Saving CSV outputs...")
+    LOGGER.info("\n7. Saving CSV outputs...")
 
     param_csv = output_dir / f'{prefix}params.csv'
     parsed.to_dataframe().to_csv(param_csv, index=False)
@@ -1376,6 +2734,8 @@ def run_styled_post_estimation(
         'param_csv': param_csv,
         'elasticities_csv': elast_csv,
         'plot_paths': plot_paths,
+        'prob_diagnostics': prob_diagnostics,
+        'bound_diagnostics': bound_diagnostics,
     }
 
 
@@ -1407,8 +2767,7 @@ def main():
     parser.add_argument(
         '--output-dir',
         type=Path,
-        default=None,
-        help='Output directory (default: same as results-json parent)'
+        default=None,        help='Output directory (default: same as results-json parent)'
     )
 
     parser.add_argument(
@@ -1418,7 +2777,28 @@ def main():
         help='Prefix for output files'
     )
 
+    parser.add_argument(
+        '--bootstrap',
+        type=int,
+        default=0,
+        metavar='N',
+        help='Number of bootstrap replications for confidence intervals (default: 0 = disabled)'
+    )
+
+    parser.add_argument(
+        '--seed',
+        type=int,
+        default=None,
+        metavar='S',
+        help='Random seed for bootstrap reproducibility'
+    )
+
     args = parser.parse_args()
+
+    # Set random seed if provided
+    if args.seed is not None:
+        np.random.seed(args.seed)
+        LOGGER.info(f"Set random seed to {args.seed}")
 
     try:
         results = run_styled_post_estimation(
@@ -1426,6 +2806,7 @@ def main():
             mnl_base=args.mnl_base,
             output_dir=args.output_dir,
             prefix=args.prefix,
+            # bootstrap=args.bootstrap,  # Future: pass to function when implemented
         )
         return 0
     except Exception as e:

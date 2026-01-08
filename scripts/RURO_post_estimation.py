@@ -2302,7 +2302,7 @@ def generate_html_report(
                 param_rows = [f"<tr><td>{k}</td><td>{v:.4f}</td></tr>" for k, v in sorted(shared_params.items())]
                 group_params_html += f"""
                 <div class="param-group">
-                    <h4>Couples (shared)</h4>
+                    <h4>Couples (shared)</h4>aut
                     <table class="table table-sm">{''.join(param_rows)}</table>
                 </div>
                 """

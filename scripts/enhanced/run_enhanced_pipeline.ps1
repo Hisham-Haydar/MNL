@@ -16,7 +16,7 @@
 #   5. enh_prepare_FR_gsur.py       - Prepare GSUR data (if needed)
 #   6. enh_RURO_prep_mnl_basic.py   - Build MNL estimation dataset
 #   7. enh_RURO_estimate_FR.py      - Joint estimation
-#   8. enh_RURO_post_estimation.py  - Post-estimation analysis & reports
+#   8. RURO_post_estimation_styled.py - Post-estimation analysis & reports (styled HTML)
 #
 # Usage:
 #   1. Activate virtual environment: .\.venv\Scripts\Activate.ps1
@@ -377,26 +377,11 @@ Write-Host ""
 # Display CLI options if set
 if ($SkipTo -gt 0 -or $OnlyStep -gt 0 -or $SkipSteps -ne "" -or $ForceRebuild) {
     Write-Host "CLI Options:" -ForegroundColor Magenta
-    if ($SkipTo -gt 0) { 
-        Write-Host "  SkipTo:       Step $SkipTo (will skip steps 1-$($SkipTo-1), then run steps $SkipTo-8)" -ForegroundColor Yellow 
-    }
+    if ($SkipTo -gt 0) { Write-Host "  SkipTo:       Step $SkipTo (skipping steps 1-$($SkipTo-1))" -ForegroundColor Yellow }
     if ($OnlyStep -gt 0) { Write-Host "  OnlyStep:     Step $OnlyStep only" -ForegroundColor Yellow }
     if ($SkipSteps -ne "") { Write-Host "  SkipSteps:    $SkipSteps" -ForegroundColor Yellow }
     if ($ForceRebuild) { Write-Host "  ForceRebuild: Enabled" -ForegroundColor Yellow }
     Write-Host ""
-    
-    # Confirmation prompt for SkipTo (to clarify it continues after target step)
-    if ($SkipTo -gt 0 -and $OnlyStep -eq 0) {
-        Write-Host "NOTE: -SkipTo will run from Step $SkipTo through Step 8." -ForegroundColor Cyan
-        Write-Host "      To run ONLY Step $SkipTo, use: -OnlyStep $SkipTo" -ForegroundColor Cyan
-        Write-Host ""
-        $response = Read-Host "Continue? (Y/n)"
-        if ($response -eq "n" -or $response -eq "N") {
-            Write-Host "Aborted by user." -ForegroundColor Yellow
-            exit 0
-        }
-        Write-Host ""
-    }
 }
 
 # =====================================================================
@@ -485,33 +470,15 @@ $pipelineStart = Get-Date
 # =====================================================================
 $needsDataRegen = $true
 
-# Check if user wants to run any of steps 1-6
-$userWantsSteps1to6 = $false
-if ($OnlyStep -gt 0 -and $OnlyStep -le 6) {
-    $userWantsSteps1to6 = $true
-} elseif ($SkipTo -gt 0 -and $SkipTo -le 6) {
-    $userWantsSteps1to6 = $true
-} elseif ($SkipTo -eq 0 -and $OnlyStep -eq 0) {
-    # Default: run all steps
-    $userWantsSteps1to6 = $true
-}
-
-# Skip data regeneration ONLY if:
-# 1. All files exist
-# 2. User didn't request steps 1-6 via CLI
-# 3. ForceRebuild is not set
-if ($SKIP_IF_MNL_EXISTS -and 
-    (Test-Path $MNL_SINGLES) -and 
-    (Test-Path $MNL_COUPLES) -and 
-    (Test-Path $EM_COMBINED) -and 
-    (Test-Path $SINGLES_RURO) -and 
-    (Test-Path $COUPLES_RURO) -and
-    -not $userWantsSteps1to6) {
-    
-    Write-Host ""
-    Write-Host "All required intermediate datasets found. Skipping Steps 1-6." -ForegroundColor Yellow
-    Write-Host "Set SKIP_IF_MNL_EXISTS=`$false or use -ForceRebuild to force a full rebuild." -ForegroundColor Yellow
-    $needsDataRegen = $false
+# Skip data regeneration if all files exist AND we're not forcing a rebuild AND no SkipTo/OnlyStep is set for steps 1-6
+if ($SKIP_IF_MNL_EXISTS -and (Test-Path $MNL_SINGLES) -and (Test-Path $MNL_COUPLES) -and (Test-Path $EM_COMBINED) -and (Test-Path $SINGLES_RURO) -and (Test-Path $COUPLES_RURO)) {
+    # But respect SkipTo/OnlyStep - if user explicitly requests steps 1-6, run them
+    if ($SkipTo -eq 0 -and $OnlyStep -eq 0) {
+        Write-Host ""
+        Write-Host "All required intermediate datasets found. Skipping Steps 1-6." -ForegroundColor Yellow
+        Write-Host "Set SKIP_IF_MNL_EXISTS=`$false or use -ForceRebuild to force a full rebuild." -ForegroundColor Yellow
+        $needsDataRegen = $false
+    }
 }
 
 # =====================================================================
@@ -669,13 +636,14 @@ if ($needsDataRegen -and (Should-RunStep 6)) {
 # STEP 7: JOINT ESTIMATION
 # =====================================================================
 if (Should-RunStep 7) {
-    Write-Step "STEP 7/8: JOINT ESTIMATION (enh_RURO_estimate_FR.py)"    Write-Host "MODEL PARAMETERS:" -ForegroundColor Magenta
+    Write-Step "STEP 7/8: JOINT ESTIMATION (enh_RURO_estimate_FR.py)"
+
+    Write-Host "MODEL PARAMETERS:" -ForegroundColor Magenta
     if ($WAGE_SPEC -eq "vw") {
         Write-Host "  Total: 60 params (variable wages)" -ForegroundColor White
         Write-Host "  - Preferences: 34 params (singles male/female + couples)" -ForegroundColor White
         Write-Host "  - Hours opportunity: 14 params (gender-specific)" -ForegroundColor White
-        Write-Host "  - Wage opportunity: 12 params (gender-specific)" -ForegroundColor White
-    } else {
+        Write-Host "  - Wage opportunity: 12 params (gender-specific)" -ForegroundColor White    } else {
         Write-Host "  Total: 48 params (fixed wages)" -ForegroundColor White
         Write-Host "  - Preferences: 34 params (singles male/female + couples)" -ForegroundColor White
         Write-Host "  - Hours opportunity: 14 params (gender-specific)" -ForegroundColor White
@@ -770,7 +738,7 @@ if (Should-RunStep 7) {
 }
 
 # =====================================================================
-# STEP 8: POST-ESTIMATION ANALYSIS (STYLED VERSION)
+# STEP 8: POST-ESTIMATION ANALYSIS
 # =====================================================================
 if (Should-RunStep 8) {
     Write-Step "STEP 8/8: POST-ESTIMATION ANALYSIS (RURO_post_estimation_styled.py)"
@@ -784,33 +752,18 @@ if (Should-RunStep 8) {
         Write-Host "ERROR: No estimation_results.json found in $RESULTS_DIR" -ForegroundColor Red
         Write-Host "Post-estimation requires successful estimation output." -ForegroundColor Yellow
         exit 1
-    }
+    }    Write-Host "  Using estimation results: $($estResultsJson.FullName)" -ForegroundColor Cyan
 
-    Write-Host "  Using estimation results: $($estResultsJson.FullName)" -ForegroundColor Cyan
-    Write-Host "  Using STYLED post-estimation (rich HTML with emojis, MUC analysis, elapsed time)" -ForegroundColor Magenta
-
-    # Use the new styled post-estimation script (matches old vw_pooled aesthetics)
+    # Use styled post-estimation for better HTML reports and NumPy scalar handling
     $cmd = "python `"$SCRIPTS\RURO_post_estimation_styled.py`" " +
            "--results-json `"$($estResultsJson.FullName)`" " +
            "--mnl-base `"$MNL_BASE`" " +
            "--output-dir `"$POST_EST_DIR`" " +
            "--prefix `"fr_${YEAR}_joint_`""
 
-    if (-not (Run-PythonScript $cmd "Run styled post-estimation analysis (MUC behavior, elasticities, elapsed time)")) {
-        Write-Host "WARNING: Styled post-estimation analysis failed" -ForegroundColor Yellow
-        Write-Host "Falling back to basic post-estimation..." -ForegroundColor Yellow
-
-        # Fallback to basic version if styled fails
-        $cmd_fallback = "python `"$SCRIPTS\enh_RURO_post_estimation.py`" " +
-               "--results-json `"$($estResultsJson.FullName)`" " +
-               "--mnl-base `"$MNL_BASE`" " +
-               "--output-dir `"$POST_EST_DIR`" " +
-               "--prefix `"fr_${YEAR}_joint_`""
-
-        if (-not (Run-PythonScript $cmd_fallback "Run basic post-estimation analysis (fallback)")) {
-            Write-Host "WARNING: Basic post-estimation also failed" -ForegroundColor Yellow
-            Write-Host "Check logs for details. Continuing to summary..." -ForegroundColor Yellow
-        }
+    if (-not (Run-PythonScript $cmd "Run post-estimation analysis (elasticities, MUC/MUL, diagnostics)")) {
+        Write-Host "WARNING: Post-estimation analysis failed" -ForegroundColor Yellow
+        Write-Host "Check logs for details. Continuing to summary..." -ForegroundColor Yellow
     }
 
     # Find post-estimation report

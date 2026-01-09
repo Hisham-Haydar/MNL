@@ -319,23 +319,21 @@ def _validate_mnl_dataset(
             if draw_min != 0 or draw_max != n_draws - 1:
                 warnings_list.append(
                     f"Draw range [{draw_min}, {draw_max}] doesn't match expected [0, {n_draws-1}]"
-                )
-
-    # Report results
+                )    # Report results
     if warnings_list:
         logger.warning(f"  Validation warnings for {dataset_type}:")
         for w in warnings_list:
-            logger.warning(f"    ⚠️  {w}")
+            logger.warning(f"    [WARN] {w}")
 
     if errors:
         logger.error(f"  Validation errors for {dataset_type}:")
         for e in errors:
-            logger.error(f"    ❌ {e}")
+            logger.error(f"    [ERROR] {e}")
 
         if strict:
             raise ValueError(f"Validation failed for {dataset_type} dataset. See errors above.")
     else:
-        logger.info(f"  ✅ {dataset_type.capitalize()} dataset validation passed")
+        logger.info(f"  [OK] {dataset_type.capitalize()} dataset validation passed")
 
 
 # ==============================================================================
@@ -572,18 +570,14 @@ def precompute_data_singles(
     # Focal points (from old script logic)
     working_pt1 = ((hours >= 15) & (hours <= 25)).astype(float)  # ~20h
     working_pt2 = ((hours >= 25) & (hours <= 35)).astype(float)  # ~30h
-    working_ft = ((hours >= 35) & (hours <= 45)).astype(float)   # ~40h
-
-    # GSUR (check both column names for backwards compatibility)
+    working_ft = ((hours >= 35) & (hours <= 45)).astype(float)   # ~40h    # GSUR (check both column names for backwards compatibility)
     if "gsur" in df.columns:
         gsur = df["gsur"].fillna(0.0).values
     elif "u_rate" in df.columns:
         gsur = df["u_rate"].fillna(0.0).values
     else:
-        logger.warning("  ⚠️  No GSUR column found (gsur or u_rate), using zeros")
-        gsur = np.zeros(n_obs)
-
-    # Wage opportunity variables (optional)
+        logger.warning("  [WARN] No GSUR column found (gsur or u_rate), using zeros")
+        gsur = np.zeros(n_obs)    # Wage opportunity variables (optional)
     log_wage = None
     pexp_years = None
     pexp_years2 = None
@@ -594,15 +588,13 @@ def precompute_data_singles(
             wage = np.maximum(wage, EPS)  # Avoid log(0)
             log_wage = np.log(wage)
         else:
-            logger.warning("  ⚠️  No wage column found, setting to None")
+            logger.warning("  [WARN] No wage column found, setting to None")
 
         if "pexp_years" in df.columns:
             pexp_years = df["pexp_years"].fillna(0.0).values
             pexp_years2 = pexp_years ** 2
         else:
-            logger.warning("  ⚠️  No pexp_years column found, setting to None")
-
-    # Occupation variables (optional)
+            logger.warning("  [WARN] No pexp_years column found, setting to None")    # Occupation variables (optional)
     loc4 = None
     loc4_1 = loc4_2 = loc4_3 = loc4_4 = None
 
@@ -614,12 +606,14 @@ def precompute_data_singles(
             loc4_3 = (loc4 == 3).astype(float)
             loc4_4 = (loc4 == 4).astype(float)
         else:
-            logger.warning("  ⚠️  No loc4 column found, setting to None")
+            logger.warning("  [WARN] No loc4 column found, setting to None")
 
     # Prior
     prior = df["prior"].values.copy()
     # Clip to avoid log(0) in likelihood
-    prior = np.maximum(prior, EPS)    # Group structure
+    prior = np.maximum(prior, EPS)
+
+    # Group structure
     group_ids = df["idhh"].unique()
     n_groups = len(group_ids)
 
@@ -744,9 +738,7 @@ def precompute_data_couples(
     n_children = df.get("n_children", pd.Series(0.0, index=df.index)).fillna(0.0).values
     educL_female = df.get("educL_female", pd.Series(0.0, index=df.index)).fillna(0.0).values
     educM_female = df.get("educM_female", pd.Series(0.0, index=df.index)).fillna(0.0).values
-    educH_female = df.get("educH_female", pd.Series(0.0, index=df.index)).fillna(0.0).values
-
-    # Male hours opportunity
+    educH_female = df.get("educH_female", pd.Series(0.0, index=df.index)).fillna(0.0).values    # Male hours opportunity
     hours_male = df["hours_male"].values
     working_male = (hours_male > 0).astype(float)
     working_pt1_male = ((hours_male >= 15) & (hours_male <= 25)).astype(float)
@@ -758,7 +750,7 @@ def precompute_data_couples(
     elif "u_rate_male" in df.columns:
         gsur_male = df["u_rate_male"].fillna(0.0).values
     else:
-        logger.warning("  ⚠️  No male GSUR column found, using zeros")
+        logger.warning("  [WARN] No male GSUR column found, using zeros")
         gsur_male = np.zeros(n_obs)
 
     # Female hours opportunity
@@ -773,7 +765,7 @@ def precompute_data_couples(
     elif "u_rate_female" in df.columns:
         gsur_female = df["u_rate_female"].fillna(0.0).values
     else:
-        logger.warning("  ⚠️  No female GSUR column found, using zeros")
+        logger.warning("  [WARN] No female GSUR column found, using zeros")
         gsur_female = np.zeros(n_obs)
 
     # Wage variables (optional)
@@ -1213,15 +1205,13 @@ def validate_data_spec_compatibility(
                 errors.append("Specification requires wage_spec=loc_empirical, but couples dataset missing loc4 columns")
 
     # Check GSUR columns (if spec uses gsur in hours opportunity)
-    # (This is optional - not all specs may use GSUR)
-
-    if errors:
+    # (This is optional - not all specs may use GSUR)    if errors:
         logger.error("Data-specification compatibility errors:")
         for e in errors:
-            logger.error(f"  ❌ {e}")
+            logger.error(f"  [ERROR] {e}")
         raise ValueError("Data incompatible with specification. See errors above.")
     else:
-        logger.info("  ✅ Data compatible with specification")
+        logger.info("  [OK] Data compatible with specification")
 
 
 # ==============================================================================

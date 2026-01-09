@@ -488,8 +488,7 @@ def estimate_joint(
         """Callback function to log iteration progress."""
         iteration_state['count'] += 1
         iter_num = iteration_state['count']
-        
-        # Compute current objective value
+          # Compute current objective value
         current_f = objective(xk)
         
         # Log every iteration or every 10 iterations based on verbosity
@@ -500,7 +499,7 @@ def estimate_joint(
             logger.info(
                 f"Iter {iter_num:4d}: neg_LL = {current_f:14.4f}, "
                 f"LL = {-current_f:14.4f}, "
-                f"θ_l_sm = {theta_l_sm:.4f}, θ_c_sm = {theta_c_sm:.4f}"
+                f"th_l_sm = {theta_l_sm:.4f}, th_c_sm = {theta_c_sm:.4f}"
             )
         
         iteration_state['last_f'] = current_f

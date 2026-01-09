@@ -28,9 +28,20 @@ from estimation_utils import (
     box_cox_derivative_x,
     box_cox_derivative_theta,
     compute_log_sum_exp_by_group,
-    EPS
+    EPS,
+    HAS_NUMBA
 )
 from estimation_spec_parser import EstimationSpec
+
+# Import Numba if available (used in estimation_utils for log-sum-exp)
+if HAS_NUMBA:
+    from numba import jit, prange
+else:
+    def jit(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+    prange = range
 
 
 # ==============================================================================
@@ -489,6 +500,7 @@ def compute_gradient_singles(
     # fw: no wage derivatives (all zeros)
 
     # ===== 3. COMPUTE GRADIENT VIA SOFTMAX WEIGHTING =====
+    # Loop-based approach is faster than vectorized due to efficient NumPy @ operator
     grad = np.zeros(n_params)
 
     for g in range(data.n_groups):
@@ -510,24 +522,12 @@ def compute_gradient_singles(
     # Validate gradient computation
     if not np.all(np.isfinite(grad)):
         n_bad = np.sum(~np.isfinite(grad))
+        logger = logging.getLogger(__name__)
         logger.error(f"Gradient contains {n_bad} non-finite entries")
         for i in range(n_params):
             if not np.isfinite(grad[i]):
                 logger.error(f"  {spec.all_param_names[i]}: {grad[i]}")
         raise ValueError("Gradient contains NaN/Inf")
-
-    # NOTE: Zero gradients are EXPECTED in 4-group architecture!
-    # - Singles male: zeros for _sf, _m, _f parameters
-    # - Singles female: zeros for _sm, _m, _f parameters
-    # - Couples: zeros for _sm, _sf parameters
-    # The joint gradient function sums these, giving non-zero for all params.
-    # Commenting out misleading warnings:
-    # grad_norms = np.abs(grad)
-    # zero_grads = grad_norms < 1e-12
-    # if np.any(zero_grads):
-    #     for i in np.where(zero_grads)[0]:
-    #         param_name = spec.all_param_names[i]
-    #         logging.warning(f"Zero gradient for {param_name} (may be at optimum or identification issue)")
 
     return -grad  # Negative for minimization
 
@@ -1266,15 +1266,24 @@ def compute_gradient_couples(
         _compute_wage_derivatives_loc_couples_gender(dV_dtheta, params, data, spec, is_male=True)
         _compute_wage_derivatives_loc_couples_gender(dV_dtheta, params, data, spec, is_male=False)
 
-    # Softmax gradient
+    # ===== 3. COMPUTE GRADIENT VIA SOFTMAX WEIGHTING =====
+    # Loop-based approach is faster than vectorized due to efficient NumPy @ operator
     grad = np.zeros(n_params)
+
     for g in range(data.n_groups):
         start, end = data.group_starts[g], data.group_ends[g]
+
+        # Softmax probabilities for this group
         V_group = V[start:end]
         P_group = np.exp(V_group - lse[g])
 
+        # Observed derivative (first alternative in group = draw 0)
         dV_obs = dV_dtheta[start, :]
+
+        # Expected derivative (softmax-weighted average)
         dV_exp = P_group @ dV_dtheta[start:end, :]
+
+        # Add to gradient
         grad += dV_obs - dV_exp
 
     return -grad

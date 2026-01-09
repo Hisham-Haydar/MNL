@@ -30,6 +30,7 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Dict, Optional, Any
 
 # CRITICAL: Disable Numba debug logging BEFORE importing any numba-accelerated code
 # Numba's debug logging produces massive output that can hang the estimation
@@ -97,7 +98,8 @@ def setup_logging(output_dir: Path, verbose: bool = False) -> None:
     ch.setLevel(logging.DEBUG if verbose else logging.INFO)
     ch.setFormatter(logging.Formatter(
         '%(levelname)s - %(message)s'
-    ))    logger.addHandler(fh)
+    ))
+    logger.addHandler(fh)
     logger.addHandler(ch)
 
 
@@ -110,7 +112,7 @@ def compute_standard_errors(
     grad_func,
     eps: float = 1e-5,
     logger: logging.Logger = None
-) -> Dict[str, any]:
+) -> Dict[str, Any]:
     """
     Compute standard errors using numerical Hessian approximation.
     
@@ -319,6 +321,21 @@ def save_results_json(
         'total_walltime_seconds': float(results['total_walltime'])
     }
 
+    # Add standard errors if available
+    if 'standard_errors' in results and results['standard_errors'] is not None:
+        se_results = results['standard_errors']
+        output['standard_errors'] = {
+            'se': [float(x) if not np.isnan(x) else None for x in se_results['se']],
+            't_values': [float(x) if not np.isnan(x) else None for x in se_results['t_values']],
+            'p_values': [float(x) if not np.isnan(x) else None for x in se_results['p_values']],
+        }
+        # Also add SEs to each group result
+        for group_name in group_keys:
+            if group_name in output['results']:
+                output['results'][group_name]['standard_errors'] = output['standard_errors']['se']
+                output['results'][group_name]['t_values'] = output['standard_errors']['t_values']
+                output['results'][group_name]['p_values'] = output['standard_errors']['p_values']
+
     # Save
     json_path = output_dir / "estimation_results.json"
     with open(json_path, 'w') as f:
@@ -514,6 +531,13 @@ Examples:
         help="Disable strict metadata validation (not recommended)"
     )
 
+    # Standard errors
+    parser.add_argument(
+        "--skip-se",
+        action="store_true",
+        help="Skip standard error computation (faster, but no SEs)"
+    )
+
     # Logging
     parser.add_argument(
         "--verbose",
@@ -535,15 +559,17 @@ Examples:
     logger.info(f"Started: {datetime.now().isoformat()}")
     logger.info("")
 
-    try:
-        # ===== 1. LOAD SPECIFICATION =====
+    try:        # ===== 1. LOAD SPECIFICATION =====
         logger.info("="*80)
         logger.info("Step 1: Loading Specification")
         logger.info("="*80)
 
         spec_path = Path(args.spec_config)
-        if not spec_path.is_absolute():        # Relative to script directory
-            spec_path = Path(__file__).parent / args.spec_config
+        if not spec_path.is_absolute():
+            # Check if the path exists as-is first (relative to cwd)
+            if not spec_path.exists():
+                # Try relative to script directory
+                spec_path = Path(__file__).parent / args.spec_config
 
         spec = parse_specification(spec_path)
         
@@ -737,9 +763,7 @@ Examples:
                 spec=spec,
                 theta_init=theta_init,
                 use_gradient=spec.opt_analytical_gradient
-            )
-
-            # Format results like estimate_joint output
+            )            # Format results like estimate_joint output
             results = {
                 group_name: opt_result,
                 'walltimes': {group_name: walltime},
@@ -748,6 +772,49 @@ Examples:
                 'n_groups_total': data.n_groups,
                 'total_walltime': walltime
             }
+
+        # ===== 7b. COMPUTE STANDARD ERRORS =====
+        if not args.skip_se:
+            logger.info("")
+            logger.info("="*80)
+            logger.info("Step 7b: Computing Standard Errors")
+            logger.info("="*80)
+            
+            from estimation_engine import compute_gradient_joint
+            
+            # Get the final theta from results
+            if 'joint' in results:
+                theta_final = results['joint'].x
+                group_key = 'joint'
+            else:
+                # Single group estimation
+                for key in ['singles_male', 'singles_female', 'couples']:
+                    if key in results:
+                        theta_final = results[key].x
+                        group_key = key
+                        break
+            
+            # Build gradient function for SE computation
+            def grad_func_for_se(theta):
+                return compute_gradient_joint(
+                    theta, data_sm, data_sf, data_cou, spec
+                )
+            
+            # Compute SEs
+            se_results = compute_standard_errors(
+                theta=theta_final,
+                grad_func=grad_func_for_se,
+                eps=1e-5,
+                logger=logger
+            )
+            
+            # Store in results
+            results['standard_errors'] = se_results
+            
+            logger.info(f"SE computation complete. {np.sum(~np.isnan(se_results['se']))} valid SEs out of {len(se_results['se'])}")
+        else:
+            logger.info("Skipping standard error computation (--skip-se flag)")
+            results['standard_errors'] = None
 
         # ===== 8. SAVE RESULTS =====
         logger.info("")

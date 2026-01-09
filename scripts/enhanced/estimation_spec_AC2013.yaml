@@ -1,0 +1,601 @@
+# ==============================================================================
+# Aaberge-Colombino (2013) Style Estimation Specification
+# ==============================================================================
+# This specification aligns with:
+#   Aaberge & Colombino (2013) - "Empirical Optimal Income Taxation: 
+#   A Microeconometric Application to Norway"
+#
+# Key features:
+#   - Log utility (Box-Cox with θ≈0) as default
+#   - log(age) and log(age)² shifters
+#   - Child-age-group dummies (C1, C2, C3)
+#   - Extended wage equation with experience terms
+#   - Explicit non-work mass parameter
+#   - Couples: μ₀ joint market availability, cross-leisure interaction
+#
+# Author: RURO Pipeline (A-C Extension)
+# Created: 2026-01-09
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Model Version Flag
+# ------------------------------------------------------------------------------
+# "AC2013" - Aaberge-Colombino style specification
+# "legacy" - Original Stijn Van Houtven specification
+model_version: "AC2013"
+
+# ------------------------------------------------------------------------------
+# Wage Specification
+# ------------------------------------------------------------------------------
+# Options: "fw" (fixed wages), "vw" (variable wages), "loc_empirical"
+wage_spec: "vw"
+
+# ------------------------------------------------------------------------------
+# Data Variable Mappings
+# ------------------------------------------------------------------------------
+variables:
+  # Core variables
+  consumption_log: "logy"           # Log disposable income
+  leisure_log: "logl"               # Log leisure hours
+  hours: "lhrs"                     # Labor hours
+  hours_squared: "lhrs2"            # Hours squared
+  wage_log: "logw"                  # Log hourly wage
+  
+  # Demographics
+  age: "dage"                       # Age in years
+  age_squared: "dage2"              # Age squared (for legacy)
+  
+  # Experience (NEW for A-C)
+  experience: "pexp"                # Years of potential experience
+  experience_squared: "pexp2"       # Experience squared
+  
+  # Children by age group (NEW for A-C)
+  children_0_2: "nch02"             # Number of children aged 0-2 (C1)
+  children_3_6: "nch36"             # Number of children aged 3-6 (C2)
+  children_7_17: "nch717"           # Number of children aged 7-17 (C3)
+  children_total: "n_children"      # Total number of children (legacy)
+  
+  # Education
+  education_low: "educL"            # Low education dummy
+  education_medium: "educM"         # Medium education dummy
+  education_high: "educH"           # High education dummy
+  
+  # Region
+  region: "reg"                     # Region indicator
+  
+  # Labor market
+  unemployment_rate: "gsur"         # Regional unemployment / non-participation
+
+# ------------------------------------------------------------------------------
+# Hours Categories (Discrete Choice Set)
+# ------------------------------------------------------------------------------
+# Maintained from Stijn's structure - discrete hours categories
+hours_categories:
+  values: [0, 10, 20, 30, 40]
+  labels: ["non-work", "part-time-1", "part-time-2", "part-time-3", "full-time"]
+  reference: 0  # h=0 is the reference category
+
+# ------------------------------------------------------------------------------
+# Utility Form
+# ------------------------------------------------------------------------------
+utility_form: "box_cox"             # Box-Cox with θ parameter (θ=0 gives log)
+
+# ------------------------------------------------------------------------------
+# Singles Specification
+# ------------------------------------------------------------------------------
+# Structure follows 4-group architecture:
+# - Singles Male (suffix _sm)
+# - Singles Female (suffix _sf)
+# Parameters are gender-specific where indicated
+# ------------------------------------------------------------------------------
+
+singles:
+  
+  # ============================================================================
+  # PREFERENCE BLOCK (Utility Function)
+  # ============================================================================
+  # U = β_l * BC(l,θ_l) + β_c * BC(c,θ_c)
+  #
+  # Where:
+  #   β_l = β_l0 + β_age * log(age) + β_age2 * log(age)² 
+  #              + β_C1*C1 + β_C2*C2 + β_C3*C3
+  #              + β_nch * n_children (females only)
+  #
+  # BC(x,θ) = log(x) when θ=0 (A-C default)
+  #         = (x^θ - 1)/θ otherwise
+  # ============================================================================
+  
+  preference:
+    
+    # --------------------------------------------------------------------------
+    # Consumption Parameters (gender-specific)
+    # --------------------------------------------------------------------------
+    consumption:
+      # Males
+      beta_c_sm:
+        init: 1.0
+        bounds: [0.001, 50.0]
+        description: "Male consumption coefficient"
+      theta_c_sm:
+        init: 0.0              # A-C uses log form (θ=0)
+        bounds: [-2.0, 2.0]
+        fixed: false
+        description: "Male Box-Cox consumption (0=log)"
+      
+      # Females
+      beta_c_sf:
+        init: 1.0
+        bounds: [0.001, 50.0]
+        description: "Female consumption coefficient"
+      theta_c_sf:
+        init: 0.0
+        bounds: [-2.0, 2.0]
+        fixed: false
+        description: "Female Box-Cox consumption (0=log)"
+    
+    # --------------------------------------------------------------------------
+    # Leisure Parameters (gender-specific)
+    # --------------------------------------------------------------------------
+    leisure:
+      # Males
+      beta_l0_sm:
+        init: 1.0
+        bounds: [-50.0, 50.0]
+        description: "Male leisure intercept"
+      theta_l_sm:
+        init: 0.0
+        bounds: [-2.0, 2.0]
+        fixed: false
+        description: "Male Box-Cox leisure (0=log)"
+      
+      # Females
+      beta_l0_sf:
+        init: 1.0
+        bounds: [-50.0, 50.0]
+        description: "Female leisure intercept"
+      theta_l_sf:
+        init: 0.0
+        bounds: [-2.0, 2.0]
+        fixed: false
+        description: "Female Box-Cox leisure (0=log)"
+    
+    # --------------------------------------------------------------------------
+    # Age Shifters (A-C Style: log(age) and log(age)²)
+    # --------------------------------------------------------------------------
+    # These enter as shifters on the leisure term:
+    # β_l = β_l0 + β_age*log(age) + β_age2*log(age)²
+    age_shifters:
+      # Males
+      beta_age_sm:
+        init: 0.0
+        bounds: [-10.0, 10.0]
+        description: "Male log-age effect on leisure"
+      beta_age2_sm:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Male log-age squared effect"
+      
+      # Females
+      beta_age_sf:
+        init: 0.0
+        bounds: [-10.0, 10.0]
+        description: "Female log-age effect on leisure"
+      beta_age2_sf:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Female log-age squared effect"
+    
+    # --------------------------------------------------------------------------
+    # Children Age-Group Shifters (A-C's C1, C2, C3)
+    # --------------------------------------------------------------------------
+    # C1 = children aged 0-2 (highest childcare burden)
+    # C2 = children aged 3-6 (pre-school)
+    # C3 = children aged 7-17 (school age)
+    # Note: These may only be relevant for females in practice
+    children_shifters:
+      # Females only (males typically have beta=0 fixed)
+      beta_C1_sf:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Female: children 0-2 effect on leisure"
+      beta_C2_sf:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Female: children 3-6 effect on leisure"
+      beta_C3_sf:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Female: children 7-17 effect on leisure"
+      
+      # Legacy: total children (for backwards compatibility)
+      beta_nch_sf:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Female: total children effect (legacy)"
+  
+  # ============================================================================
+  # OPPORTUNITY BLOCK
+  # ============================================================================
+  opportunity:
+    
+    # --------------------------------------------------------------------------
+    # Hours Opportunity (Discrete Logit - analogous to A-C's g₁(h)g₂(h))
+    # --------------------------------------------------------------------------
+    # log h(h|X) = Σ β_h * X_h
+    #
+    # Components:
+    # - working: participation indicator
+    # - PT1, PT2, FT: focal point dummies
+    # - gsur × working: unemployment effect
+    # - educ × working: education effect
+    # --------------------------------------------------------------------------
+    hours:
+      type: "discrete_logit"
+      
+      # Working indicator (baseline participation)
+      beta_working:
+        init: 0.0
+        bounds: [-10.0, 10.0]
+        description: "Working (h>0) intercept"
+      
+      # Focal point dummies (relative to reference hours)
+      beta_PT1:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Part-time 1 (10h) focal point"
+      beta_PT2:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Part-time 2 (20h) focal point"
+      beta_FT:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Full-time (40h) focal point"
+      
+      # Covariate interactions with working
+      beta_gsur:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Unemployment × working effect"
+      beta_educ_working:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Education × working effect"
+    
+    # --------------------------------------------------------------------------
+    # Wage Opportunity (Lognormal - A-C Extended)
+    # --------------------------------------------------------------------------
+    # log(w) ~ N(μ_w, σ²_w)
+    # μ_w = β_w0 + β_exp*exp + β_exp2*exp² + β_educL*educL + β_educH*educH
+    #
+    # This extends Stijn's specification with experience terms from A-C
+    # --------------------------------------------------------------------------
+    wage:
+      type: "lognormal"
+      
+      # Wage equation intercept
+      beta_w0:
+        init: 2.5
+        bounds: [-5.0, 10.0]
+        description: "Wage equation intercept"
+      
+      # Experience terms (A-C style)
+      beta_exp:
+        init: 0.03
+        bounds: [-0.2, 0.3]
+        description: "Experience effect on log wage"
+      beta_exp2:
+        init: -0.0005
+        bounds: [-0.02, 0.02]
+        description: "Experience squared effect"
+      
+      # Education effects
+      beta_educL:
+        init: -0.1
+        bounds: [-1.0, 1.0]
+        description: "Low education effect on log wage"
+      beta_educH:
+        init: 0.2
+        bounds: [-1.0, 1.0]
+        description: "High education effect on log wage"
+      
+      # Wage variance
+      sigma_w:
+        init: 0.4
+        bounds: [0.05, 2.0]
+        description: "Log wage standard deviation"
+
+# ------------------------------------------------------------------------------
+# Couples Specification
+# ------------------------------------------------------------------------------
+# Structure follows 4-group architecture:
+# - Couples Male (suffix _cm)
+# - Couples Female (suffix _cf)
+# - Joint parameters (no suffix or _joint suffix)
+# ------------------------------------------------------------------------------
+
+couples:
+  
+  # ============================================================================
+  # PREFERENCE BLOCK (Joint Utility Function)
+  # ============================================================================
+  # U_couple = U_m(c, l_m; θ_m) + U_f(c, l_f; θ_f) 
+  #          + α_ll * BC(l_m) * BC(l_f)   [NEW: cross-leisure interaction]
+  #
+  # Where each spouse's utility follows the A-C structure:
+  #   U_g = β_lg * BC(l_g, θ_lg) + β_c * BC(c, θ_c)
+  #
+  # Note: Consumption is shared at household level in couples
+  # ============================================================================
+  
+  preference:
+    
+    # --------------------------------------------------------------------------
+    # Male Preferences
+    # --------------------------------------------------------------------------
+    male:
+      consumption:
+        beta_c_cm:
+          init: 0.5
+          bounds: [0.001, 50.0]
+          description: "Male contribution to consumption utility"
+        theta_c_cm:
+          init: 0.0
+          bounds: [-2.0, 2.0]
+          description: "Male Box-Cox consumption"
+      
+      leisure:
+        beta_l0_cm:
+          init: 1.0
+          bounds: [-50.0, 50.0]
+          description: "Male leisure intercept"
+        theta_l_cm:
+          init: 0.0
+          bounds: [-2.0, 2.0]
+          description: "Male Box-Cox leisure"
+      
+      age_shifters:
+        beta_age_cm:
+          init: 0.0
+          bounds: [-10.0, 10.0]
+          description: "Male log-age effect"
+        beta_age2_cm:
+          init: 0.0
+          bounds: [-5.0, 5.0]
+          description: "Male log-age squared"
+    
+    # --------------------------------------------------------------------------
+    # Female Preferences
+    # --------------------------------------------------------------------------
+    female:
+      consumption:
+        beta_c_cf:
+          init: 0.5
+          bounds: [0.001, 50.0]
+          description: "Female contribution to consumption utility"
+        theta_c_cf:
+          init: 0.0
+          bounds: [-2.0, 2.0]
+          description: "Female Box-Cox consumption"
+      
+      leisure:
+        beta_l0_cf:
+          init: 1.0
+          bounds: [-50.0, 50.0]
+          description: "Female leisure intercept"
+        theta_l_cf:
+          init: 0.0
+          bounds: [-2.0, 2.0]
+          description: "Female Box-Cox leisure"
+      
+      age_shifters:
+        beta_age_cf:
+          init: 0.0
+          bounds: [-10.0, 10.0]
+          description: "Female log-age effect"
+        beta_age2_cf:
+          init: 0.0
+          bounds: [-5.0, 5.0]
+          description: "Female log-age squared"
+    
+    # --------------------------------------------------------------------------
+    # Joint Preference Terms
+    # --------------------------------------------------------------------------
+    joint:
+      # NEW: Cross-leisure interaction (A-C's αₗₘ)
+      alpha_ll:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Husband-wife leisure complementarity"
+    
+    # --------------------------------------------------------------------------
+    # Children Shifters (shared for couple, affects female primarily)
+    # --------------------------------------------------------------------------
+    children_shifters:
+      beta_C1_cf:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Children 0-2 effect on female leisure"
+      beta_C2_cf:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Children 3-6 effect on female leisure"
+      beta_C3_cf:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Children 7-17 effect on female leisure"
+      beta_nch_cf:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Total children effect on female (legacy)"
+  
+  # ============================================================================
+  # OPPORTUNITY BLOCK (Joint Market Access)
+  # ============================================================================
+  opportunity:
+    
+    # --------------------------------------------------------------------------
+    # Joint Market Availability (NEW - A-C's μ₀)
+    # --------------------------------------------------------------------------
+    # This parameter captures correlation in spouses' market access
+    # log f_opp += log(μ₀) when both spouses work
+    # μ₀ > 1: positive assortative matching in market participation
+    # μ₀ < 1: negative assortative matching
+    # μ₀ = 1: independent (no joint effect)
+    # --------------------------------------------------------------------------
+    joint:
+      mu_0:
+        init: 1.0
+        bounds: [0.1, 5.0]
+        description: "Joint market availability parameter"
+        enabled: true
+    
+    # --------------------------------------------------------------------------
+    # Male Hours Opportunity
+    # --------------------------------------------------------------------------
+    hours_male:
+      beta_working_cm:
+        init: 0.0
+        bounds: [-10.0, 10.0]
+        description: "Male working intercept"
+      beta_PT1_cm:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Male PT-1 focal point"
+      beta_PT2_cm:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Male PT-2 focal point"
+      beta_FT_cm:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Male FT focal point"
+      beta_gsur_cm:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Male unemployment effect"
+    
+    # --------------------------------------------------------------------------
+    # Female Hours Opportunity
+    # --------------------------------------------------------------------------
+    hours_female:
+      beta_working_cf:
+        init: 0.0
+        bounds: [-10.0, 10.0]
+        description: "Female working intercept"
+      beta_PT1_cf:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Female PT-1 focal point"
+      beta_PT2_cf:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Female PT-2 focal point"
+      beta_FT_cf:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Female FT focal point"
+      beta_gsur_cf:
+        init: 0.0
+        bounds: [-5.0, 5.0]
+        description: "Female unemployment effect"
+    
+    # --------------------------------------------------------------------------
+    # Male Wage Opportunity (A-C extended)
+    # --------------------------------------------------------------------------
+    wage_male:
+      beta_w0_cm:
+        init: 2.5
+        bounds: [-5.0, 10.0]
+        description: "Male wage intercept"
+      beta_exp_cm:
+        init: 0.03
+        bounds: [-0.2, 0.3]
+        description: "Male experience effect"
+      beta_exp2_cm:
+        init: -0.0005
+        bounds: [-0.02, 0.02]
+        description: "Male experience squared"
+      beta_educL_cm:
+        init: -0.1
+        bounds: [-1.0, 1.0]
+        description: "Male low education wage effect"
+      beta_educH_cm:
+        init: 0.2
+        bounds: [-1.0, 1.0]
+        description: "Male high education wage effect"
+      sigma_w_cm:
+        init: 0.4
+        bounds: [0.05, 2.0]
+        description: "Male log wage std dev"
+    
+    # --------------------------------------------------------------------------
+    # Female Wage Opportunity (A-C extended)
+    # --------------------------------------------------------------------------
+    wage_female:
+      beta_w0_cf:
+        init: 2.3
+        bounds: [-5.0, 10.0]
+        description: "Female wage intercept"
+      beta_exp_cf:
+        init: 0.025
+        bounds: [-0.2, 0.3]
+        description: "Female experience effect"
+      beta_exp2_cf:
+        init: -0.0004
+        bounds: [-0.02, 0.02]
+        description: "Female experience squared"
+      beta_educL_cf:
+        init: -0.1
+        bounds: [-1.0, 1.0]
+        description: "Female low education wage effect"
+      beta_educH_cf:
+        init: 0.2
+        bounds: [-1.0, 1.0]
+        description: "Female high education wage effect"
+      sigma_w_cf:
+        init: 0.45
+        bounds: [0.05, 2.0]
+        description: "Female log wage std dev"
+
+# ------------------------------------------------------------------------------
+# Estimation Settings
+# ------------------------------------------------------------------------------
+estimation:
+  method: "L-BFGS-B"
+  max_iterations: 10000
+  tolerance: 1.0e-6
+  
+  # Gradient settings
+  use_analytical_gradient: true
+  finite_diff_step: 1.0e-8
+  
+  # Parallel processing
+  n_jobs: -1                      # -1 = use all cores
+  
+  # Convergence criteria
+  gradient_tolerance: 1.0e-5
+  
+  # Diagnostics
+  compute_hessian: true
+  compute_std_errors: true
+  
+  # A-C style diagnostics (NEW)
+  report_ll_breakdown: true       # Preference vs opportunity LL
+  report_gradient_norms: true     # By parameter block
+  report_p_nonwork: true          # Non-working proportion
+
+# ------------------------------------------------------------------------------
+# Output Settings
+# ------------------------------------------------------------------------------
+output:
+  save_estimates: true
+  save_std_errors: true
+  save_covariance: true
+  save_diagnostics: true
+  
+  # File formats
+  format: "parquet"               # or "csv"
+  
+  # Naming
+  prefix: "AC2013"

@@ -125,109 +125,32 @@ wage_opportunity:
     bounds: [0.1, 20.0]
 
 # ------------------------------------------------------------------------------
-# Singles-Specific Parameters
-# ------------------------------------------------------------------------------
-singles:
-  # CRITICAL: Singles males and females have SEPARATE leisure parameters
-  # Each gender has their own preference parameters!
-  gender_specific_leisure: true  # Enable gender-specific parameters for singles
-
-  # Gender-specific leisure parameters (when gender_specific_leisure=true):
-  # Singles Male (_sm suffix):
-  # - beta_l0_sm, beta_l_age_norm_sm, beta_l_age_norm2_sm
-  # - beta_l_educL_sm, beta_l_educH_sm
-  # - beta_c_sm, theta_l_sm, theta_c_sm
-  #
-  # Singles Female (_sf suffix):
-  # - beta_l0_sf, beta_l_age_norm_sf, beta_l_age_norm2_sf, beta_l_n_children_sf
-  # - beta_l_educL_sf, beta_l_educH_sf
-  # - beta_c_sf, theta_l_sf, theta_c_sf
-
-# ------------------------------------------------------------------------------
 # Couples-Specific Parameters
 # ------------------------------------------------------------------------------
 couples:
-  # CRITICAL: Couples have GENDER-SPECIFIC leisure parameters
-  # Males and females in couples have different preferences!
-  gender_specific_leisure: true  # Enable gender-specific beta_l0, theta_l, etc.
-
   leisure_interaction:
     coefficient: "beta_interact"
     description: "Male-female leisure cross-term (complementarity)"
 
-  # Gender-specific leisure parameters (when gender_specific_leisure=true):
-  # Couples Male (_m suffix):
-  # - beta_l0_m, beta_l_age_norm_m, beta_l_age_norm2_m
-  # - beta_l_educL_m, beta_l_educH_m
-  # - theta_l_m (Box-Cox exponent)
-  #
-  # Couples Female (_f suffix):
-  # - beta_l0_f, beta_l_age_norm_f, beta_l_age_norm2_f, beta_l_n_children_f
-  # - beta_l_educL_f, beta_l_educH_f
-  # - theta_l_f (Box-Cox exponent)
-  #
-  # Shared parameters (household level):
-  # - beta_c, theta_c (consumption - household level)
+  # Note: Male has NO n_children effect
+  # Female has n_children effect (asymmetric preferences)
 
 # ------------------------------------------------------------------------------
 # Parameter Initialization
 # ------------------------------------------------------------------------------
 initial_values:
-  # ============================================================================
-  # GROUP 1: Singles Male (_sm suffix)
-  # ============================================================================
-  beta_l0_sm: 1.0
-  beta_l_age_norm_sm: 0.0
-  beta_l_age_norm2_sm: 0.0
-  beta_l_educL_sm: 0.0
-  beta_l_educH_sm: 0.0
-  beta_c_sm: 1.0
-  theta_l_sm: 0.5
-  theta_c_sm: 0.5
-
-  # ============================================================================
-  # GROUP 2: Singles Female (_sf suffix)
-  # ============================================================================
-  beta_l0_sf: 1.0
-  beta_l_age_norm_sf: 0.0
-  beta_l_age_norm2_sf: 0.0
-  beta_l_n_children_sf: 0.1  # Only for females
-  beta_l_educL_sf: 0.0
-  beta_l_educH_sf: 0.0
-  beta_c_sf: 1.0
-  theta_l_sf: 0.5
-  theta_c_sf: 0.5
-
-  # ============================================================================
-  # GROUP 3: Couples Male (_m suffix)
-  # ============================================================================
-  beta_l0_m: 1.0
-  beta_l_age_norm_m: 0.0
-  beta_l_age_norm2_m: 0.0
-  beta_l_educL_m: 0.0
-  beta_l_educH_m: 0.0
-  theta_l_m: 0.5
-
-  # ============================================================================
-  # GROUP 4: Couples Female (_f suffix)
-  # ============================================================================
-  beta_l0_f: 1.0
-  beta_l_age_norm_f: 0.0
-  beta_l_age_norm2_f: 0.0
-  beta_l_n_children_f: 0.1  # Only for females in couples
-  beta_l_educL_f: 0.0
-  beta_l_educH_f: 0.0
-  theta_l_f: 0.5
-
-  # ============================================================================
-  # COUPLES HOUSEHOLD: Consumption (shared for couples household)
-  # ============================================================================
+  # Preference parameters
+  beta_l0: 1.0
+  beta_l_age_norm: 0.0
+  beta_l_age_norm2: 0.0
+  beta_l_n_children: 0.1  # Female only
+  beta_l_educL: 0.0
+  beta_l_educH: 0.0
   beta_c: 1.0
+  theta_l: 0.5
   theta_c: 0.5
 
-  # ============================================================================
-  # SHARED OPPORTUNITY: Hours (all groups)
-  # ============================================================================
+  # Hours opportunity parameters
   beta_work: 0.5
   beta_pt1: 0.0
   beta_pt2: 0.0
@@ -236,9 +159,7 @@ initial_values:
   beta_work_educL: 0.0
   beta_work_educH: 0.0
 
-  # ============================================================================
-  # SHARED OPPORTUNITY: Wages (all groups)
-  # ============================================================================
+  # Wage opportunity parameters (vw only)
   beta_w0: 2.5
   beta_w_educL: -0.2
   beta_w_educH: 0.3
@@ -246,9 +167,7 @@ initial_values:
   beta_pexp2: -0.001
   sigma: 0.4
 
-  # ============================================================================
-  # COUPLES ONLY: Interaction
-  # ============================================================================
+  # Couples parameters
   beta_interact: 0.0
 
 # ------------------------------------------------------------------------------
@@ -258,49 +177,17 @@ optimization:
   method: "L-BFGS-B"  # L-BFGS-B | BFGS | trust-constr
   analytical_gradient: true
   max_iterations: 10000
-  # L-BFGS-B convergence tolerances
-  # ftol: relative change in f(x) must be > ftol * |f(x)| to continue
-  # gtol: norm of projected gradient must be > gtol to continue
-  tolerance: 1.0e-9      # ftol (function value relative change) - TIGHTENED
-  gradient_tolerance: 1.0e-6  # gtol (projected gradient norm) - NEW!
-
-  # Display settings
-  disp: true  # Enable optimizer output
-  iprint: 1  # Print every iteration (L-BFGS-B specific)
+  tolerance: 1e-7
 
   # Bounds for constrained parameters
   # Format: parameter_name: [lower_bound, upper_bound]
   # Unbounded parameters should be omitted
   bounds:
-    # Singles Male Box-Cox parameters
-    theta_l_sm: [0.0, 5.0]  # Singles male leisure curvature
-    theta_c_sm: [0.0, 5.0]  # Singles male consumption curvature
-    # Singles Female Box-Cox parameters
-    theta_l_sf: [0.0, 5.0]  # Singles female leisure curvature
-    theta_c_sf: [0.0, 5.0]  # Singles female consumption curvature
-    # Couples Male Box-Cox parameter
-    theta_l_m: [0.0, 5.0]  # Couples male leisure curvature
-    # Couples Female Box-Cox parameter
-    theta_l_f: [0.0, 5.0]  # Couples female leisure curvature
-    # Couples Household Consumption Box-Cox
-    theta_c: [0.0, 5.0]  # Couples household consumption curvature
-    # Wage parameters (shared)
+    theta_l: [0.0, 5.0]  # Allow log utility (theta=0) to flexible curvature (5.0)
+    theta_c: [0.0, 5.0]  # Allow log utility (theta=0) to flexible curvature (5.0)
     sigma: [0.1, 20.0]
     beta_pexp2: [-10.0, 0.0]  # Must be negative (concave wage-experience profile)
     # Other beta parameters are unbounded
-
-# ------------------------------------------------------------------------------
-# Gradient Verification (Debugging/Validation)
-# ------------------------------------------------------------------------------
-gradient_verification:
-  enabled: true  # ENABLED to verify analytical gradients
-  method: "central"  # "forward" or "central" (central is more accurate)
-  epsilon: 1.0e-7  # Step size for finite differences
-  tolerance: 1.0e-4  # Max acceptable relative error
-  check_at_init: true  # Check gradient at initial values
-  check_random_points: 0  # Number of random points to test (0 = disabled)
-  random_seed: 42
-  verbose: true  # Print detailed comparison
 
 # ------------------------------------------------------------------------------
 # Notes

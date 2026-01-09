@@ -35,13 +35,17 @@ class EstimationSpec:
     - Parameter names and structure
     - Initial values and bounds
     - Shifter configurations
+    
+    Supports model versions:
+    - "legacy": Original Stijn Van Houtven specification
+    - "AC2013": Aaberge-Colombino (2013) aligned specification
     """
-    # Metadata
+    # Metadata (required fields - no defaults)
     name: str
     description: str
     wage_spec: str  # fw | vw | loc_empirical
 
-    # Utility configuration
+    # Utility configuration (required fields)
     utility_form: str  # box_cox | log | linear
     utility_consumption_coef: str
     utility_consumption_theta: Optional[str]
@@ -61,6 +65,11 @@ class EstimationSpec:
     # Couples configuration
     couples_interaction_coef: Optional[str]
 
+    # === Fields with defaults below this line ===
+    
+    # Model version (NEW: AC2013 support)
+    model_version: str = "legacy"  # "legacy" or "AC2013"
+
     # Parameter management
     all_param_names: List[str] = field(default_factory=list)
     initial_values: Dict[str, float] = field(default_factory=dict)
@@ -71,6 +80,24 @@ class EstimationSpec:
     opt_analytical_gradient: bool = True
     opt_max_iterations: int = 10000
     opt_tolerance: float = 1e-6
+    opt_gradient_tolerance: float = 1e-6  # gtol - NEW FIELD
+    opt_display_convergence: bool = False  # NEW FIELD for disp
+    opt_iprint: int = -1  # NEW FIELD for L-BFGS-B iteration printing    # Gradient verification settings
+    grad_verify_enabled: bool = False
+    grad_verify_method: str = "central"
+    grad_verify_epsilon: float = 1e-7
+    grad_verify_tolerance: float = 1e-4
+    grad_verify_at_init: bool = True
+    grad_verify_random_points: int = 0
+    grad_verify_seed: int = 42
+    grad_verify_verbose: bool = False
+    
+    # A-C 2013 specific settings (NEW)
+    ac2013_use_log_age: bool = False           # Use log(age) instead of linear age
+    ac2013_children_age_groups: bool = False   # Use C1, C2, C3 instead of n_children
+    ac2013_experience_in_wage: bool = False    # Use exp, exp² in wage equation
+    ac2013_couples_cross_leisure: bool = False # Use α_ll cross-leisure term
+    ac2013_couples_mu_0: bool = False          # Use μ₀ joint market availability
 
     def get_initial_vector(self) -> np.ndarray:
         """
@@ -82,6 +109,17 @@ class EstimationSpec:
             Initial values vector
         """
         return np.array([self.initial_values[name] for name in self.all_param_names])
+
+    def is_ac2013(self) -> bool:
+        """
+        Check if this specification uses Aaberge-Colombino (2013) style.
+        
+        Returns
+        -------
+        bool
+            True if model_version is "AC2013"
+        """
+        return self.model_version == "AC2013"
 
     def get_bounds_tuple(self) -> List[Tuple[Optional[float], Optional[float]]]:
         """
@@ -148,6 +186,83 @@ class EstimationSpec:
 
         return {name: theta[i] for i, name in enumerate(self.all_param_names)}
 
+    def has_couples_gender_specific_params(self) -> bool:
+        """
+        Check if specification includes gender-specific couples parameters.
+
+        Returns
+        -------
+        bool
+            True if couples gender-specific parameters are present
+        """
+        # Check for existence of _m or _f suffixed leisure parameters
+        return any(name.endswith('_m') or name.endswith('_f')
+                   for name in self.all_param_names)
+
+    def get_couples_param_map(self) -> Dict[str, str]:
+        """
+        Get mapping from singles parameter names to couples-specific parameter names.
+
+        For couples estimation with gender-specific parameters, this maps:
+        - Male: base param name -> param_name_m
+        - Female: base param name -> param_name_f
+
+        Returns
+        -------
+        dict
+            Mapping like {'beta_l0_male': 'beta_l0_m', 'beta_l0_female': 'beta_l0_f', ...}
+        """
+        if not self.has_couples_gender_specific_params():
+            return {}
+
+        param_map = {}
+
+        # Map leisure intercept
+        if self.utility_leisure_intercept in self.all_param_names:
+            param_map[f"{self.utility_leisure_intercept}_male"] = f"{self.utility_leisure_intercept}_m"
+            param_map[f"{self.utility_leisure_intercept}_female"] = f"{self.utility_leisure_intercept}_f"
+
+        # Map leisure shifters
+        for shifter in self.utility_leisure_shifters:
+            coef = shifter["coefficient"]
+            # Skip n_children for males
+            if not (shifter.get("gender_specific") and shifter["variable"] == "n_children"):
+                param_map[f"{coef}_male"] = f"{coef}_m"
+            param_map[f"{coef}_female"] = f"{coef}_f"        # Map leisure theta
+        if self.utility_leisure_theta:
+            param_map[f"{self.utility_leisure_theta}_male"] = f"{self.utility_leisure_theta}_m"
+            param_map[f"{self.utility_leisure_theta}_female"] = f"{self.utility_leisure_theta}_f"
+
+        return param_map
+    
+    def is_ac2013(self) -> bool:
+        """
+        Check if this specification uses A-C 2013 style.
+        
+        Returns
+        -------
+        bool
+            True if model_version is "AC2013"
+        """
+        return self.model_version == "AC2013"
+    
+    def get_ac2013_features(self) -> Dict[str, bool]:
+        """
+        Get dictionary of which A-C 2013 features are enabled.
+        
+        Returns
+        -------
+        dict
+            Feature name -> enabled status
+        """
+        return {
+            'use_log_age': self.ac2013_use_log_age,
+            'children_age_groups': self.ac2013_children_age_groups,
+            'experience_in_wage': self.ac2013_experience_in_wage,
+            'couples_cross_leisure': self.ac2013_couples_cross_leisure,
+            'couples_mu_0': self.ac2013_couples_mu_0
+        }
+
 
 def parse_specification(yaml_path: Path) -> EstimationSpec:
     """
@@ -168,25 +283,32 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     FileNotFoundError
         If YAML file doesn't exist
     ValueError
-        If specification is invalid
-    """
+        If specification is invalid    """
     logger = logging.getLogger(__name__)
     logger.info("="*80)
     logger.info(f"Parsing specification: {yaml_path}")
     logger.info("="*80)
-
+    
     if not yaml_path.exists():
         raise FileNotFoundError(f"Specification file not found: {yaml_path}")
-
-    # Load YAML
-    with open(yaml_path, 'r') as f:
+    
+    # Load YAML (with explicit UTF-8 encoding for Unicode chars like θ, μ)
+    with open(yaml_path, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
 
-    # Extract metadata
+    # Check for model version (NEW: AC2013 support)
+    model_version = config.get("model_version", "legacy")
+    if model_version not in ["legacy", "AC2013"]:
+        logger.warning(f"Unknown model_version '{model_version}', treating as 'legacy'")
+        model_version = "legacy"
+    
+    logger.info(f"Model version: {model_version}")
+
+    # Extract metadata - handle both old and new YAML formats
     spec_meta = config.get("specification", {})
-    name = spec_meta.get("name", "unknown")
-    description = spec_meta.get("description", "")
-    wage_spec = spec_meta.get("wage_spec", "fw")
+    name = spec_meta.get("name", config.get("name", "unknown"))
+    description = spec_meta.get("description", config.get("description", ""))
+    wage_spec = spec_meta.get("wage_spec", config.get("wage_spec", "fw"))
 
     logger.info(f"Specification: {name}")
     logger.info(f"Description: {description}")
@@ -236,35 +358,55 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         interaction_config = couples_config.get("leisure_interaction", {})
         couples_interaction_coef = interaction_config.get("coefficient", "beta_interact")
 
-    # Parse initial values
+    # Parse initial values - support both flat and nested AC2013 formats
     initial_values = config.get("initial_values", {})
+    bounds = {}
+    
+    if not initial_values and model_version == "AC2013":
+        # AC2013 format: extract init/bounds from nested 'parameters' section
+        logger.info("AC2013 format detected - extracting init/bounds from nested structure")
+        initial_values, bounds = _extract_ac2013_parameters(config)
+    
     if not initial_values:
         logger.warning("No initial values specified in YAML")
 
-    # Parse bounds
+    # Parse bounds from optimization section (may override nested bounds)
     opt_config = config.get("optimization", {})
     bounds = opt_config.get("bounds", {})    # Parse optimization settings
     opt_method = opt_config.get("method", "L-BFGS-B")
     opt_analytical_gradient = opt_config.get("analytical_gradient", True)
     opt_max_iterations = opt_config.get("max_iterations", 10000)
-    opt_tolerance = float(opt_config.get("tolerance", 1e-6))
+    opt_tolerance = float(opt_config.get("tolerance", 1e-9))
+    opt_gradient_tolerance = float(opt_config.get("gradient_tolerance", 1e-6))  # NEW
+    opt_display = opt_config.get("disp", False)  # NEW
+    opt_iprint = int(opt_config.get("iprint", -1))  # NEW
+
+    # Parse gradient verification settings
+    grad_verify = config.get('gradient_verification', {})
 
     # Build parameter list (order matters!)
-    all_param_names = _build_parameter_list(
-        utility_form=utility_form,
-        utility_consumption_coef=utility_consumption_coef,
-        utility_consumption_theta=utility_consumption_theta,
-        utility_leisure_intercept=utility_leisure_intercept,
-        utility_leisure_theta=utility_leisure_theta,
-        utility_leisure_shifters=utility_leisure_shifters,
-        hours_shifters=hours_shifters,
-        wage_spec=wage_spec,
-        wage_form=wage_form,
-        wage_mean_shifters=wage_mean_shifters,
-        wage_variance_param=wage_variance_param,
-        wage_loc_groups=wage_loc_groups,
-        couples_interaction_coef=couples_interaction_coef
-    )
+    # For AC2013, use extracted parameter names; for legacy, build from spec
+    if model_version == "AC2013" and initial_values:
+        # AC2013: parameter names come from the extracted initial_values
+        all_param_names = list(initial_values.keys())
+        logger.info(f"AC2013: Using {len(all_param_names)} parameters from YAML")
+    else:
+        # Legacy: build parameter list from spec structure
+        all_param_names = _build_parameter_list(
+            utility_form=utility_form,
+            utility_consumption_coef=utility_consumption_coef,
+            utility_consumption_theta=utility_consumption_theta,
+            utility_leisure_intercept=utility_leisure_intercept,
+            utility_leisure_theta=utility_leisure_theta,
+            utility_leisure_shifters=utility_leisure_shifters,
+            hours_shifters=hours_shifters,
+            wage_spec=wage_spec,
+            wage_form=wage_form,
+            wage_mean_shifters=wage_mean_shifters,
+            wage_variance_param=wage_variance_param,
+            wage_loc_groups=wage_loc_groups,
+            couples_interaction_coef=couples_interaction_coef
+        )
 
     logger.info(f"Total parameters: {len(all_param_names)}")
 
@@ -311,7 +453,25 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         opt_method=opt_method,
         opt_analytical_gradient=opt_analytical_gradient,
         opt_max_iterations=opt_max_iterations,
-        opt_tolerance=opt_tolerance
+        opt_tolerance=opt_tolerance,
+        opt_gradient_tolerance=opt_gradient_tolerance,  # NEW
+        opt_display_convergence=opt_display,  # NEW
+        opt_iprint=opt_iprint,  # NEW
+        grad_verify_enabled=grad_verify.get('enabled', False),
+        grad_verify_method=grad_verify.get('method', 'central'),
+        grad_verify_epsilon=float(grad_verify.get('epsilon', 1e-7)),
+        grad_verify_tolerance=float(grad_verify.get('tolerance', 1e-4)),
+        grad_verify_at_init=grad_verify.get('check_at_init', True),
+        grad_verify_random_points=int(grad_verify.get('check_random_points', 0)),
+        grad_verify_seed=int(grad_verify.get('random_seed', 42)),
+        grad_verify_verbose=grad_verify.get('verbose', False),
+        # NEW: AC2013 settings
+        model_version=model_version,
+        ac2013_use_log_age=(model_version == "AC2013"),
+        ac2013_children_age_groups=(model_version == "AC2013"),
+        ac2013_experience_in_wage=(model_version == "AC2013"),
+        ac2013_couples_cross_leisure=(model_version == "AC2013" and 'alpha_ll' in all_param_names),
+        ac2013_couples_mu_0=(model_version == "AC2013" and 'mu_0' in all_param_names),
     )
 
 
@@ -348,27 +508,98 @@ def _build_parameter_list(
     """
     params = []
 
-    # 1. Leisure shifters
-    params.append(utility_leisure_intercept)  # beta_l0
+    # ==========================================================================
+    # FULLY SEPARATE 4-GROUP ARCHITECTURE
+    # ==========================================================================
+    # We have 4 distinct groups with their own preference parameters:
+    # 1. Singles Male (_sm suffix)
+    # 2. Singles Female (_sf suffix)
+    # 3. Couples Male (_m suffix)
+    # 4. Couples Female (_f suffix)
+    #
+    # SHARED parameters (all groups):
+    # - Hours opportunity (beta_work, beta_pt1, beta_pt2, beta_ft, beta_gsur, beta_work_educL, beta_work_educH)
+    # - Wage opportunity (beta_w0, beta_w_educL, beta_w_educH, beta_pexp, beta_pexp2, sigma)
+    #
+    # COUPLES ONLY parameters:
+    # - Household consumption (beta_c, theta_c)
+    # - Interaction term (beta_interact)
+    # ==========================================================================
 
+    # GROUP 1: Singles Male - Leisure preferences (_sm suffix)
+    singles_male_params = [
+        f"{utility_leisure_intercept}_sm",  # beta_l0_sm
+    ]
     for shifter in utility_leisure_shifters:
-        params.append(shifter["coefficient"])
+        # Skip n_children for males (only for females)
+        if shifter.get("gender_specific") and shifter["variable"] == "n_children":
+            continue
+        singles_male_params.append(f"{shifter['coefficient']}_sm")
 
-    # 2. Consumption coefficient
-    params.append(utility_consumption_coef)  # beta_c
+    singles_male_params.append(f"{utility_consumption_coef}_sm")  # beta_c_sm
 
-    # 3. Box-Cox exponents (if applicable)
     if utility_form == "box_cox":
         if utility_leisure_theta:
-            params.append(utility_leisure_theta)  # theta_l
+            singles_male_params.append(f"{utility_leisure_theta}_sm")  # theta_l_sm
         if utility_consumption_theta:
-            params.append(utility_consumption_theta)  # theta_c
+            singles_male_params.append(f"{utility_consumption_theta}_sm")  # theta_c_sm
 
-    # 4. Hours opportunity parameters
+    params.extend(singles_male_params)
+
+    # GROUP 2: Singles Female - Leisure preferences (_sf suffix)
+    singles_female_params = [
+        f"{utility_leisure_intercept}_sf",  # beta_l0_sf
+    ]
+    for shifter in utility_leisure_shifters:
+        singles_female_params.append(f"{shifter['coefficient']}_sf")
+
+    singles_female_params.append(f"{utility_consumption_coef}_sf")  # beta_c_sf
+
+    if utility_form == "box_cox":
+        if utility_leisure_theta:
+            singles_female_params.append(f"{utility_leisure_theta}_sf")  # theta_l_sf
+        if utility_consumption_theta:
+            singles_female_params.append(f"{utility_consumption_theta}_sf")  # theta_c_sf
+
+    params.extend(singles_female_params)
+
+    # GROUP 3: Couples Male - Leisure preferences (_m suffix)
+    couples_male_params = [
+        f"{utility_leisure_intercept}_m",  # beta_l0_m
+    ]
+    for shifter in utility_leisure_shifters:
+        # Skip n_children for males (only for females)
+        if shifter.get("gender_specific") and shifter["variable"] == "n_children":
+            continue
+        couples_male_params.append(f"{shifter['coefficient']}_m")
+
+    if utility_form == "box_cox" and utility_leisure_theta:
+        couples_male_params.append(f"{utility_leisure_theta}_m")  # theta_l_m
+
+    params.extend(couples_male_params)
+
+    # GROUP 4: Couples Female - Leisure preferences (_f suffix)
+    couples_female_params = [
+        f"{utility_leisure_intercept}_f",  # beta_l0_f
+    ]
+    for shifter in utility_leisure_shifters:
+        couples_female_params.append(f"{shifter['coefficient']}_f")
+
+    if utility_form == "box_cox" and utility_leisure_theta:
+        couples_female_params.append(f"{utility_leisure_theta}_f")  # theta_l_f
+
+    params.extend(couples_female_params)
+
+    # COUPLES HOUSEHOLD: Consumption (shared for couples, no suffix)
+    params.append(utility_consumption_coef)  # beta_c
+    if utility_form == "box_cox" and utility_consumption_theta:
+        params.append(utility_consumption_theta)  # theta_c
+
+    # SHARED OPPORTUNITY: Hours parameters (all groups)
     for shifter in hours_shifters:
         params.append(shifter["coefficient"])
 
-    # 5. Wage opportunity parameters
+    # SHARED OPPORTUNITY: Wage parameters (all groups)
     if wage_spec == "vw":
         # Mincer equation parameters
         for shifter in wage_mean_shifters:
@@ -390,7 +621,7 @@ def _build_parameter_list(
         for shifter in wage_mean_shifters:
             params.append(shifter["coefficient"])
 
-    # 6. Couples interaction (if applicable)
+    # COUPLES ONLY: Interaction term
     if couples_interaction_coef:
         params.append(couples_interaction_coef)
 
@@ -400,6 +631,60 @@ def _build_parameter_list(
         raise ValueError(f"Duplicate parameter names found: {set(duplicates)}")
 
     return params
+
+
+def _extract_ac2013_parameters(config: Dict) -> Tuple[Dict[str, float], Dict[str, Tuple[float, float]]]:
+    """
+    Extract initial values and bounds from AC2013 nested YAML structure.
+    
+    AC2013 format uses nested sections like singles/preference/consumption with:
+      param_name:
+        init: value
+        bounds: [lower, upper]
+        description: "..."
+    
+    Parameters
+    ----------
+    config : dict
+        Full YAML config
+        
+    Returns
+    -------
+    initial_values : dict
+        Parameter name -> initial value
+    bounds : dict
+        Parameter name -> (lower, upper)
+    """
+    initial_values = {}
+    bounds = {}
+    
+    def extract_from_section(section: Dict, prefix: str = ""):
+        """Recursively extract parameters from nested sections."""
+        if not isinstance(section, dict):
+            return
+        for key, value in section.items():
+            if isinstance(value, dict):
+                if 'init' in value:
+                    # This is a parameter definition
+                    param_name = key
+                    initial_values[param_name] = float(value['init'])
+                    if 'bounds' in value:
+                        b = value['bounds']
+                        bounds[param_name] = (float(b[0]), float(b[1]))
+                else:
+                    # Nested section - recurse
+                    extract_from_section(value, key)
+    
+    # Look in singles and couples sections
+    for section_name in ['singles', 'couples']:
+        section = config.get(section_name, {})
+        extract_from_section(section)
+    
+    # Also look in top-level parameters section if present
+    if 'parameters' in config:
+        extract_from_section(config['parameters'])
+    
+    return initial_values, bounds
 
 
 def load_custom_initial_values(csv_path: Path) -> Dict[str, float]:
@@ -438,19 +723,49 @@ def load_custom_initial_values(csv_path: Path) -> Dict[str, float]:
     if csv_path.suffix.lower() == '.json':
         with open(csv_path, 'r') as f:
             data = json.load(f)
-        
-        if "param_names" not in data or "theta" not in data:
-            raise ValueError("JSON must have fields: param_names, theta")
-        
-        return dict(zip(data["param_names"], data["theta"]))
+
+        # NEW FORMAT: Check for 'results' key (enhanced estimation output)
+        if "results" in data:
+            init_dict = {}
+            # Collect all parameters from all groups
+            for group_name in ['singles_male', 'singles_female', 'couples']:
+                if group_name in data['results']:
+                    params = data['results'][group_name].get('parameters', {})
+                    init_dict.update(params)
+            return init_dict
+
+        # OLD FORMAT: Check for param_names and theta arrays
+        elif "param_names" in data and "theta" in data:
+            # Strip hierarchical prefixes like 'sm.pref.' from old format
+            clean_names = []
+            for name in data["param_names"]:
+                # Remove prefixes: sm.pref.beta_l0 → beta_l0
+                if '.' in name:
+                    clean_name = name.split('.')[-1]
+                else:
+                    clean_name = name
+                clean_names.append(clean_name)
+            return dict(zip(clean_names, data["theta"]))
+
+        else:
+            raise ValueError("JSON must have either 'results' dict or 'param_names'+'theta' arrays")
     
     # Otherwise treat as CSV
     df = pd.read_csv(csv_path)
 
-    if "parameter_name" not in df.columns or "value" not in df.columns:
-        raise ValueError("CSV must have columns: parameter_name, value")
+    # Support both 'parameter_name' and 'parameter' column names
+    param_col = None
+    if "parameter_name" in df.columns:
+        param_col = "parameter_name"
+    elif "parameter" in df.columns:
+        param_col = "parameter"
+    else:
+        raise ValueError("CSV must have column 'parameter_name' or 'parameter'")
 
-    return dict(zip(df["parameter_name"], df["value"]))
+    if "value" not in df.columns:
+        raise ValueError("CSV must have column 'value'")
+
+    return dict(zip(df[param_col], df["value"]))
 
 
 # ==============================================================================

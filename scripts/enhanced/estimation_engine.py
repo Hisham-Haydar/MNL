@@ -146,6 +146,14 @@ def _compute_utility_singles(
     For Box-Cox specification:
         u = [β_l0 + Σ β_l_X * X] * BC(l; θ_l) + β_c * BC(c; θ_c)
 
+    With 4-group architecture, singles male and singles female have separate parameters:
+    - Singles Male: use parameters with _sm suffix
+    - Singles Female: use parameters with _sf suffix
+    
+    For AC2013 specification:
+        - Age enters as log(age) and log(age)² instead of linear
+        - Children can enter as C1, C2, C3 age groups
+
     Parameters
     ----------
     params : dict
@@ -163,19 +171,25 @@ def _compute_utility_singles(
     if spec.utility_form != "box_cox":
         raise NotImplementedError(f"Utility form {spec.utility_form} not implemented")
 
-    # Box-Cox transformations
-    theta_l = params[spec.utility_leisure_theta]
-    theta_c = params[spec.utility_consumption_theta]
+    # Determine gender suffix for parameter names
+    gender_suffix = "_sm" if data.is_male else "_sf"
+
+    # Box-Cox transformations with gender-specific exponents
+    theta_l_name = f"{spec.utility_leisure_theta}{gender_suffix}"
+    theta_c_name = f"{spec.utility_consumption_theta}{gender_suffix}"
+    theta_l = params[theta_l_name]
+    theta_c = params[theta_c_name]
 
     bc_l = box_cox_transform(data.leisure, theta_l)
     bc_c = box_cox_transform(data.consumption, theta_c)
 
-    # Leisure coefficient (intercept + demographic shifters)
-    beta_l_coeff = params[spec.utility_leisure_intercept]  # beta_l0
+    # Leisure coefficient (intercept + demographic shifters) - gender-specific
+    beta_l0_name = f"{spec.utility_leisure_intercept}{gender_suffix}"
+    beta_l_coeff = params[beta_l0_name]  # beta_l0_sm or beta_l0_sf
 
     for shifter_config in spec.utility_leisure_shifters:
         var_name = shifter_config["variable"]
-        coef_name = shifter_config["coefficient"]
+        coef_base = shifter_config["coefficient"]
         is_gender_specific = shifter_config.get("gender_specific", False)
 
         # Get data array
@@ -190,10 +204,22 @@ def _compute_utility_singles(
             if var_name == "n_children" and data.is_male:
                 continue  # Skip for males
 
+        # Use gender-specific parameter name
+        coef_name = f"{coef_base}{gender_suffix}"
+        
+        # AC2013: Transform age variables to log form
+        if spec.is_ac2013() and var_name == "age_norm":
+            # Use log(age) instead of normalized age
+            if hasattr(data, 'age') and data.age is not None:
+                from estimation_utils_AC2013 import compute_log_age_terms
+                log_age, _ = compute_log_age_terms(data.age)
+                var_data = log_age
+        
         beta_l_coeff = beta_l_coeff + params[coef_name] * var_data
 
-    # Consumption coefficient
-    beta_c = params[spec.utility_consumption_coef]
+    # Consumption coefficient - gender-specific
+    beta_c_name = f"{spec.utility_consumption_coef}{gender_suffix}"
+    beta_c = params[beta_c_name]
 
     # Total utility
     u = beta_l_coeff * bc_l + beta_c * bc_c
@@ -490,13 +516,18 @@ def compute_gradient_singles(
                 logger.error(f"  {spec.all_param_names[i]}: {grad[i]}")
         raise ValueError("Gradient contains NaN/Inf")
 
-    # Warn if gradient is suspiciously zero for non-bounded parameters
-    grad_norms = np.abs(grad)
-    zero_grads = grad_norms < 1e-12
-    if np.any(zero_grads):
-        for i in np.where(zero_grads)[0]:
-            param_name = spec.all_param_names[i]
-            logging.warning(f"Zero gradient for {param_name} (may be at optimum or identification issue)")
+    # NOTE: Zero gradients are EXPECTED in 4-group architecture!
+    # - Singles male: zeros for _sf, _m, _f parameters
+    # - Singles female: zeros for _sm, _m, _f parameters
+    # - Couples: zeros for _sm, _sf parameters
+    # The joint gradient function sums these, giving non-zero for all params.
+    # Commenting out misleading warnings:
+    # grad_norms = np.abs(grad)
+    # zero_grads = grad_norms < 1e-12
+    # if np.any(zero_grads):
+    #     for i in np.where(zero_grads)[0]:
+    #         param_name = spec.all_param_names[i]
+    #         logging.warning(f"Zero gradient for {param_name} (may be at optimum or identification issue)")
 
     return -grad  # Negative for minimization
 
@@ -512,6 +543,10 @@ def _compute_utility_derivatives_singles(
 
     For Box-Cox utility:
         u = [β_l0 + Σ β_l_X * X] * BC(l; θ_l) + β_c * BC(c; θ_c)
+
+    With 4-group architecture, singles male and singles female have separate parameters:
+    - Singles Male: use parameters with _sm suffix
+    - Singles Female: use parameters with _sf suffix
 
     Derivatives:
         ∂u/∂β_l0 = BC(l; θ_l)
@@ -531,17 +566,25 @@ def _compute_utility_derivatives_singles(
     spec : EstimationSpec
         Specification
     """
-    theta_l = params[spec.utility_leisure_theta]
-    theta_c = params[spec.utility_consumption_theta]
+    # Determine gender suffix for parameter names
+    gender_suffix = "_sm" if data.is_male else "_sf"
+
+    # Box-Cox transformations with gender-specific exponents
+    theta_l_name = f"{spec.utility_leisure_theta}{gender_suffix}"
+    theta_c_name = f"{spec.utility_consumption_theta}{gender_suffix}"
+    theta_l = params[theta_l_name]
+    theta_c = params[theta_c_name]
 
     bc_l = box_cox_transform(data.leisure, theta_l)
     bc_c = box_cox_transform(data.consumption, theta_c)
 
-    # Compute leisure coefficient
-    beta_l_coeff = params[spec.utility_leisure_intercept]
+    # Compute leisure coefficient - gender-specific
+    beta_l0_name = f"{spec.utility_leisure_intercept}{gender_suffix}"
+    beta_l_coeff = params[beta_l0_name]
+
     for shifter_config in spec.utility_leisure_shifters:
         var_name = shifter_config["variable"]
-        coef_name = shifter_config["coefficient"]
+        coef_base = shifter_config["coefficient"]
         is_gender_specific = shifter_config.get("gender_specific", False)
 
         if is_gender_specific and var_name == "n_children" and data.is_male:
@@ -549,38 +592,42 @@ def _compute_utility_derivatives_singles(
 
         if hasattr(data, var_name):
             var_data = getattr(data, var_name)
+            coef_name = f"{coef_base}{gender_suffix}"
             beta_l_coeff = beta_l_coeff + params[coef_name] * var_data
 
-    beta_c = params[spec.utility_consumption_coef]
+    # Consumption coefficient - gender-specific
+    beta_c_name = f"{spec.utility_consumption_coef}{gender_suffix}"
+    beta_c = params[beta_c_name]
 
-    # Derivative w.r.t. leisure intercept
-    idx_beta_l0 = spec.get_param_index(spec.utility_leisure_intercept)
+    # Derivative w.r.t. leisure intercept - gender-specific
+    idx_beta_l0 = spec.get_param_index(beta_l0_name)
     dV_dtheta[:, idx_beta_l0] = bc_l
 
-    # Derivatives w.r.t. leisure shifters
+    # Derivatives w.r.t. leisure shifters - gender-specific
     for shifter_config in spec.utility_leisure_shifters:
         var_name = shifter_config["variable"]
-        coef_name = shifter_config["coefficient"]
+        coef_base = shifter_config["coefficient"]
         is_gender_specific = shifter_config.get("gender_specific", False)
 
         if is_gender_specific and var_name == "n_children" and data.is_male:
             continue
 
+        coef_name = f"{coef_base}{gender_suffix}"
         idx = spec.get_param_index(coef_name)
         var_data = getattr(data, var_name)
         dV_dtheta[:, idx] = var_data * bc_l
 
-    # Derivative w.r.t. consumption coefficient
-    idx_beta_c = spec.get_param_index(spec.utility_consumption_coef)
+    # Derivative w.r.t. consumption coefficient - gender-specific
+    idx_beta_c = spec.get_param_index(beta_c_name)
     dV_dtheta[:, idx_beta_c] = bc_c
 
-    # Derivative w.r.t. theta_l
-    idx_theta_l = spec.get_param_index(spec.utility_leisure_theta)
+    # Derivative w.r.t. theta_l - gender-specific
+    idx_theta_l = spec.get_param_index(theta_l_name)
     dbc_l_dtheta = box_cox_derivative_theta(data.leisure, theta_l)
     dV_dtheta[:, idx_theta_l] = beta_l_coeff * dbc_l_dtheta
 
-    # Derivative w.r.t. theta_c
-    idx_theta_c = spec.get_param_index(spec.utility_consumption_theta)
+    # Derivative w.r.t. theta_c - gender-specific
+    idx_theta_c = spec.get_param_index(theta_c_name)
     dbc_c_dtheta = box_cox_derivative_theta(data.consumption, theta_c)
     dV_dtheta[:, idx_theta_c] = beta_c * dbc_c_dtheta
 
@@ -890,19 +937,38 @@ def _compute_utility_couples(
     if spec.utility_form != "box_cox":
         raise NotImplementedError(f"Utility form {spec.utility_form} not implemented")
 
-    theta_l = params[spec.utility_leisure_theta]
+    # Check if we have gender-specific couples parameters
+    has_gender_specific = spec.has_couples_gender_specific_params()
+
+    # Get Box-Cox exponents
+    if has_gender_specific:
+        # Use separate theta_l for male and female
+        theta_l_m_name = f"{spec.utility_leisure_theta}_m"
+        theta_l_f_name = f"{spec.utility_leisure_theta}_f"
+        theta_l_male = params[theta_l_m_name]
+        theta_l_female = params[theta_l_f_name]
+    else:
+        # Use shared theta_l (old behavior)
+        theta_l_male = params[spec.utility_leisure_theta]
+        theta_l_female = params[spec.utility_leisure_theta]
+
     theta_c = params[spec.utility_consumption_theta]
 
-    # Box-Cox transformations
-    bc_l_male = box_cox_transform(data.leisure_male, theta_l)
-    bc_l_female = box_cox_transform(data.leisure_female, theta_l)
+    # Box-Cox transformations with gender-specific exponents
+    bc_l_male = box_cox_transform(data.leisure_male, theta_l_male)
+    bc_l_female = box_cox_transform(data.leisure_female, theta_l_female)
     # CRITICAL: For couples, consumption is HOUSEHOLD-LEVEL (normalized sum of male+female)
     # normalized_consumption_couples = (ils_dispy_male + ils_dispy_female) / mean(ils_dispy_male + ils_dispy_female)
     # The data.consumption field already contains the normalized household sum
     bc_c = box_cox_transform(data.consumption, theta_c)
 
-    # Male leisure coefficient
-    beta_l_coeff_male = params[spec.utility_leisure_intercept]
+    # Male leisure coefficient - use gender-specific parameters if available
+    if has_gender_specific:
+        beta_l_intercept_m = params[f"{spec.utility_leisure_intercept}_m"]
+        beta_l_coeff_male = beta_l_intercept_m
+    else:
+        beta_l_coeff_male = params[spec.utility_leisure_intercept]
+
     for shifter_config in spec.utility_leisure_shifters:
         var_name = shifter_config["variable"]
         coef_name = shifter_config["coefficient"]
@@ -915,10 +981,20 @@ def _compute_utility_couples(
         var_name_male = f"{var_name}_male"
         if hasattr(data, var_name_male):
             var_data = getattr(data, var_name_male)
-            beta_l_coeff_male = beta_l_coeff_male + params[coef_name] * var_data
+            # Use gender-specific coefficient if available
+            if has_gender_specific:
+                coef_name_m = f"{coef_name}_m"
+                beta_l_coeff_male = beta_l_coeff_male + params[coef_name_m] * var_data
+            else:
+                beta_l_coeff_male = beta_l_coeff_male + params[coef_name] * var_data
 
-    # Female leisure coefficient (includes n_children)
-    beta_l_coeff_female = params[spec.utility_leisure_intercept]
+    # Female leisure coefficient (includes n_children) - use gender-specific parameters if available
+    if has_gender_specific:
+        beta_l_intercept_f = params[f"{spec.utility_leisure_intercept}_f"]
+        beta_l_coeff_female = beta_l_intercept_f
+    else:
+        beta_l_coeff_female = params[spec.utility_leisure_intercept]
+
     for shifter_config in spec.utility_leisure_shifters:
         var_name = shifter_config["variable"]
         coef_name = shifter_config["coefficient"]
@@ -933,7 +1009,12 @@ def _compute_utility_couples(
             else:
                 continue
 
-        beta_l_coeff_female = beta_l_coeff_female + params[coef_name] * var_data
+        # Use gender-specific coefficient if available
+        if has_gender_specific:
+            coef_name_f = f"{coef_name}_f"
+            beta_l_coeff_female = beta_l_coeff_female + params[coef_name_f] * var_data
+        else:
+            beta_l_coeff_female = beta_l_coeff_female + params[coef_name] * var_data
 
     # Consumption coefficient (shared)
     beta_c = params[spec.utility_consumption_coef]
@@ -1224,17 +1305,32 @@ def _compute_utility_derivatives_couples(
     spec : EstimationSpec
         Specification
     """
-    theta_l = params[spec.utility_leisure_theta]
+    # Check if we have gender-specific couples parameters
+    has_gender_specific = spec.has_couples_gender_specific_params()
+
+    # Get Box-Cox exponents
+    if has_gender_specific:
+        theta_l_male = params[f"{spec.utility_leisure_theta}_m"]
+        theta_l_female = params[f"{spec.utility_leisure_theta}_f"]
+    else:
+        theta_l_male = params[spec.utility_leisure_theta]
+        theta_l_female = params[spec.utility_leisure_theta]
+
     theta_c = params[spec.utility_consumption_theta]
 
-    bc_l_male = box_cox_transform(data.leisure_male, theta_l)
-    bc_l_female = box_cox_transform(data.leisure_female, theta_l)
+    # Box-Cox transformations
+    bc_l_male = box_cox_transform(data.leisure_male, theta_l_male)
+    bc_l_female = box_cox_transform(data.leisure_female, theta_l_female)
     # CRITICAL: Consumption is HOUSEHOLD-LEVEL (normalized sum already computed)
     bc_c = box_cox_transform(data.consumption, theta_c)
 
     # Compute male and female leisure coefficients
-    beta_l_coeff_male = params[spec.utility_leisure_intercept]
-    beta_l_coeff_female = params[spec.utility_leisure_intercept]
+    if has_gender_specific:
+        beta_l_coeff_male = params[f"{spec.utility_leisure_intercept}_m"]
+        beta_l_coeff_female = params[f"{spec.utility_leisure_intercept}_f"]
+    else:
+        beta_l_coeff_male = params[spec.utility_leisure_intercept]
+        beta_l_coeff_female = params[spec.utility_leisure_intercept]
 
     for shifter_config in spec.utility_leisure_shifters:
         var_name = shifter_config["variable"]
@@ -1246,7 +1342,10 @@ def _compute_utility_derivatives_couples(
             var_name_male = f"{var_name}_male"
             if hasattr(data, var_name_male):
                 var_data = getattr(data, var_name_male)
-                beta_l_coeff_male = beta_l_coeff_male + params[coef_name] * var_data
+                if has_gender_specific:
+                    beta_l_coeff_male = beta_l_coeff_male + params[f"{coef_name}_m"] * var_data
+                else:
+                    beta_l_coeff_male = beta_l_coeff_male + params[coef_name] * var_data
 
         # Female (include n_children)
         if var_name == "n_children":
@@ -1257,61 +1356,112 @@ def _compute_utility_derivatives_couples(
                 var_data = getattr(data, var_name_female)
             else:
                 continue
-        beta_l_coeff_female = beta_l_coeff_female + params[coef_name] * var_data
+
+        if has_gender_specific:
+            beta_l_coeff_female = beta_l_coeff_female + params[f"{coef_name}_f"] * var_data
+        else:
+            beta_l_coeff_female = beta_l_coeff_female + params[coef_name] * var_data
 
     beta_c = params[spec.utility_consumption_coef]
 
-    # Derivative w.r.t. beta_l0 (affects both male and female)
-    idx_beta_l0 = spec.get_param_index(spec.utility_leisure_intercept)
-    dV_dtheta[:, idx_beta_l0] = bc_l_male + bc_l_female
+    # DERIVATIVES - Gender-specific handling
+    if has_gender_specific:
+        # Separate derivatives for male and female intercepts
+        idx_beta_l0_m = spec.get_param_index(f"{spec.utility_leisure_intercept}_m")
+        idx_beta_l0_f = spec.get_param_index(f"{spec.utility_leisure_intercept}_f")
+        dV_dtheta[:, idx_beta_l0_m] = bc_l_male
+        dV_dtheta[:, idx_beta_l0_f] = bc_l_female
+    else:
+        # Shared intercept (old behavior)
+        idx_beta_l0 = spec.get_param_index(spec.utility_leisure_intercept)
+        dV_dtheta[:, idx_beta_l0] = bc_l_male + bc_l_female
 
     # Derivatives w.r.t. leisure shifters
     for shifter_config in spec.utility_leisure_shifters:
         var_name = shifter_config["variable"]
         coef_name = shifter_config["coefficient"]
         is_gender_specific = shifter_config.get("gender_specific", False)
-        idx = spec.get_param_index(coef_name)
 
-        deriv = np.zeros(data.n_obs)
+        if has_gender_specific:
+            # Separate derivatives for male and female parameters
+            # Male derivative (skip n_children)
+            if not (is_gender_specific and var_name == "n_children"):
+                idx_m = spec.get_param_index(f"{coef_name}_m")
+                var_name_male = f"{var_name}_male"
+                if hasattr(data, var_name_male):
+                    var_data = getattr(data, var_name_male)
+                    dV_dtheta[:, idx_m] = var_data * bc_l_male
 
-        # Male contribution (skip n_children)
-        if not (is_gender_specific and var_name == "n_children"):
-            var_name_male = f"{var_name}_male"
-            if hasattr(data, var_name_male):
-                var_data = getattr(data, var_name_male)
-                deriv += var_data * bc_l_male
-
-        # Female contribution
-        if var_name == "n_children":
-            var_data = data.n_children
-        else:
-            var_name_female = f"{var_name}_female"
-            if hasattr(data, var_name_female):
-                var_data = getattr(data, var_name_female)
+            # Female derivative
+            idx_f = spec.get_param_index(f"{coef_name}_f")
+            if var_name == "n_children":
+                var_data = data.n_children
             else:
-                continue
-        deriv += var_data * bc_l_female
+                var_name_female = f"{var_name}_female"
+                if hasattr(data, var_name_female):
+                    var_data = getattr(data, var_name_female)
+                else:
+                    continue
+            dV_dtheta[:, idx_f] = var_data * bc_l_female
+        else:
+            # Shared parameter (old behavior)
+            idx = spec.get_param_index(coef_name)
+            deriv = np.zeros(data.n_obs)
 
-        dV_dtheta[:, idx] = deriv
+            # Male contribution (skip n_children)
+            if not (is_gender_specific and var_name == "n_children"):
+                var_name_male = f"{var_name}_male"
+                if hasattr(data, var_name_male):
+                    var_data = getattr(data, var_name_male)
+                    deriv += var_data * bc_l_male
+
+            # Female contribution
+            if var_name == "n_children":
+                var_data = data.n_children
+            else:
+                var_name_female = f"{var_name}_female"
+                if hasattr(data, var_name_female):
+                    var_data = getattr(data, var_name_female)
+                else:
+                    continue
+            deriv += var_data * bc_l_female
+
+            dV_dtheta[:, idx] = deriv
 
     # Derivative w.r.t. beta_c (consumption coefficient - shared household public good)
     # FIXED: Consumption appears ONCE in utility (not twice), matching R reference code
     idx_beta_c = spec.get_param_index(spec.utility_consumption_coef)
     dV_dtheta[:, idx_beta_c] = bc_c  # Once, not twice!
 
-    # Derivative w.r.t. theta_l (affects both male and female leisure)
-    idx_theta_l = spec.get_param_index(spec.utility_leisure_theta)
-    dbc_l_male_dtheta = box_cox_derivative_theta(data.leisure_male, theta_l)
-    dbc_l_female_dtheta = box_cox_derivative_theta(data.leisure_female, theta_l)
-    dV_dtheta[:, idx_theta_l] = (beta_l_coeff_male * dbc_l_male_dtheta +
-                                  beta_l_coeff_female * dbc_l_female_dtheta)
+    # Derivative w.r.t. theta_l - gender-specific handling
+    if has_gender_specific:
+        # Separate theta_l derivatives for male and female
+        idx_theta_l_m = spec.get_param_index(f"{spec.utility_leisure_theta}_m")
+        idx_theta_l_f = spec.get_param_index(f"{spec.utility_leisure_theta}_f")
+        dbc_l_male_dtheta = box_cox_derivative_theta(data.leisure_male, theta_l_male)
+        dbc_l_female_dtheta = box_cox_derivative_theta(data.leisure_female, theta_l_female)
+        dV_dtheta[:, idx_theta_l_m] = beta_l_coeff_male * dbc_l_male_dtheta
+        dV_dtheta[:, idx_theta_l_f] = beta_l_coeff_female * dbc_l_female_dtheta
+    else:
+        # Shared theta_l (old behavior - affects both male and female)
+        idx_theta_l = spec.get_param_index(spec.utility_leisure_theta)
+        dbc_l_male_dtheta = box_cox_derivative_theta(data.leisure_male, theta_l_male)
+        dbc_l_female_dtheta = box_cox_derivative_theta(data.leisure_female, theta_l_female)
+        dV_dtheta[:, idx_theta_l] = (beta_l_coeff_male * dbc_l_male_dtheta +
+                                      beta_l_coeff_female * dbc_l_female_dtheta)
 
-    # Add interaction term contribution to theta_l derivative
-    if spec.couples_interaction_coef:
+        # Add interaction term contribution to shared theta_l derivative
+        if spec.couples_interaction_coef:
+            beta_interact = params[spec.couples_interaction_coef]
+            dV_dtheta[:, idx_theta_l] += beta_interact * (
+                dbc_l_male_dtheta * bc_l_female + bc_l_male * dbc_l_female_dtheta
+            )
+
+    # Add interaction term contribution to gender-specific theta_l derivatives
+    if has_gender_specific and spec.couples_interaction_coef:
         beta_interact = params[spec.couples_interaction_coef]
-        dV_dtheta[:, idx_theta_l] += beta_interact * (
-            dbc_l_male_dtheta * bc_l_female + bc_l_male * dbc_l_female_dtheta
-        )
+        dV_dtheta[:, idx_theta_l_m] += beta_interact * dbc_l_male_dtheta * bc_l_female
+        dV_dtheta[:, idx_theta_l_f] += beta_interact * bc_l_male * dbc_l_female_dtheta
 
     # Derivative w.r.t. theta_c (consumption Box-Cox parameter)
     # CRITICAL: Consumption is HOUSEHOLD-LEVEL (normalized sum already computed)
@@ -1503,6 +1653,115 @@ def _compute_wage_derivatives_loc_couples_gender(
             deriv_common += residual_g / sigma_g * var_data * loc_indicator
 
         dV_dtheta[:, idx] += np.where(working > 0, deriv_common, 0.0)
+
+
+# ==============================================================================
+# Joint Estimation (4-Group Architecture)
+# ==============================================================================
+
+def compute_likelihood_joint(
+    theta: np.ndarray,
+    data_singles_male: Optional[PrecomputedDataSingles],
+    data_singles_female: Optional[PrecomputedDataSingles],
+    data_couples: Optional[PrecomputedDataCouples],
+    spec: EstimationSpec
+) -> float:
+    """
+    Compute negative log-likelihood for joint estimation of all groups.
+
+    This function sums the likelihoods from:
+    - Singles male (using _sm parameters)
+    - Singles female (using _sf parameters)
+    - Couples (using _m, _f, and shared parameters)
+
+    Parameters
+    ----------
+    theta : np.ndarray
+        Full parameter vector (46 parameters for 4-group architecture)
+    data_singles_male : PrecomputedDataSingles or None
+        Male singles data
+    data_singles_female : PrecomputedDataSingles or None
+        Female singles data
+    data_couples : PrecomputedDataCouples or None
+        Couples data
+    spec : EstimationSpec
+        Specification
+
+    Returns
+    -------
+    float
+        Negative log-likelihood (for minimization)
+    """
+    ll_total = 0.0
+
+    # Singles male contribution
+    if data_singles_male is not None:
+        ll_sm = compute_likelihood_singles(theta, data_singles_male, spec)
+        ll_total += ll_sm
+
+    # Singles female contribution
+    if data_singles_female is not None:
+        ll_sf = compute_likelihood_singles(theta, data_singles_female, spec)
+        ll_total += ll_sf
+
+    # Couples contribution
+    if data_couples is not None:
+        ll_c = compute_likelihood_couples(theta, data_couples, spec)
+        ll_total += ll_c
+
+    return ll_total  # Already negative for minimization
+
+
+def compute_gradient_joint(
+    theta: np.ndarray,
+    data_singles_male: Optional[PrecomputedDataSingles],
+    data_singles_female: Optional[PrecomputedDataSingles],
+    data_couples: Optional[PrecomputedDataCouples],
+    spec: EstimationSpec
+) -> np.ndarray:
+    """
+    Compute gradient of negative log-likelihood for joint estimation.
+
+    This function sums the gradients from all groups. Each group's gradient
+    will have zeros for parameters not used by that group, which is correct
+    because those parameters don't affect that group's likelihood.
+
+    Parameters
+    ----------
+    theta : np.ndarray
+        Full parameter vector (46 parameters)
+    data_singles_male : PrecomputedDataSingles or None
+        Male singles data
+    data_singles_female : PrecomputedDataSingles or None
+        Female singles data
+    data_couples : PrecomputedDataCouples or None
+        Couples data
+    spec : EstimationSpec
+        Specification
+
+    Returns
+    -------
+    np.ndarray, shape (46,)
+        Gradient of negative log-likelihood
+    """
+    grad_total = np.zeros(len(theta))
+
+    # Singles male contribution
+    if data_singles_male is not None:
+        grad_sm = compute_gradient_singles(theta, data_singles_male, spec)
+        grad_total += grad_sm
+
+    # Singles female contribution
+    if data_singles_female is not None:
+        grad_sf = compute_gradient_singles(theta, data_singles_female, spec)
+        grad_total += grad_sf
+
+    # Couples contribution
+    if data_couples is not None:
+        grad_c = compute_gradient_couples(theta, data_couples, spec)
+        grad_total += grad_c
+
+    return grad_total
 
 
 # ==============================================================================

@@ -31,6 +31,14 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+# CRITICAL: Disable Numba debug logging BEFORE importing any numba-accelerated code
+# Numba's debug logging produces massive output that can hang the estimation
+logging.getLogger('numba').setLevel(logging.WARNING)
+logging.getLogger('numba.core').setLevel(logging.WARNING)
+logging.getLogger('numba.core.byteflow').setLevel(logging.WARNING)
+logging.getLogger('numba.core.interpreter').setLevel(logging.WARNING)
+logging.getLogger('numba.core.ssa').setLevel(logging.WARNING)
+
 import numpy as np
 import pandas as pd
 
@@ -52,6 +60,7 @@ from parallel_estimation import (
     estimate_joint,
     format_estimation_results
 )
+from scipy.stats import norm
 
 
 # ==============================================================================
@@ -88,10 +97,112 @@ def setup_logging(output_dir: Path, verbose: bool = False) -> None:
     ch.setLevel(logging.DEBUG if verbose else logging.INFO)
     ch.setFormatter(logging.Formatter(
         '%(levelname)s - %(message)s'
-    ))
-
-    logger.addHandler(fh)
+    ))    logger.addHandler(fh)
     logger.addHandler(ch)
+
+
+# ==============================================================================
+# Standard Error Computation
+# ==============================================================================
+
+def compute_standard_errors(
+    theta: np.ndarray,
+    grad_func,
+    eps: float = 1e-5,
+    logger: logging.Logger = None
+) -> Dict[str, any]:
+    """
+    Compute standard errors using numerical Hessian approximation.
+    
+    Uses central differences on the gradient to approximate the Hessian,
+    then inverts to get variance-covariance matrix.
+    
+    Parameters
+    ----------
+    theta : np.ndarray
+        Final parameter estimates
+    grad_func : callable
+        Function that returns gradient of NEGATIVE log-likelihood
+    eps : float
+        Step size for numerical differentiation
+    logger : logging.Logger
+        Logger for progress messages
+        
+    Returns
+    -------
+    dict with keys:
+        - 'se': np.ndarray of standard errors
+        - 'varcov': variance-covariance matrix
+        - 't_values': t-statistics (theta / se)
+        - 'p_values': p-values (two-sided)
+        - 'hessian': numerical Hessian matrix
+    """
+    if logger is None:
+        logger = logging.getLogger(__name__)
+    
+    n_params = len(theta)
+    logger.info(f"Computing numerical Hessian ({n_params}x{n_params})...")
+    
+    # Compute Hessian numerically (central differences on gradient)
+    H = np.zeros((n_params, n_params))
+    
+    for i in range(n_params):
+        theta_plus = theta.copy()
+        theta_minus = theta.copy()
+        theta_plus[i] += eps
+        theta_minus[i] -= eps
+        
+        g_plus = grad_func(theta_plus)
+        g_minus = grad_func(theta_minus)
+        
+        # Second derivative: (g(x+h) - g(x-h)) / 2h
+        H[:, i] = (g_plus - g_minus) / (2 * eps)
+        
+        if (i + 1) % 10 == 0:
+            logger.info(f"  Hessian column {i+1}/{n_params} computed")
+    
+    # Symmetrize
+    H = 0.5 * (H + H.T)
+    
+    # Compute variance-covariance matrix
+    try:
+        varcov = np.linalg.inv(H)
+        se = np.sqrt(np.abs(np.diag(varcov)))  # abs to handle numerical issues
+        
+        # Check for negative variances (indicates identification problems)
+        neg_var = np.diag(varcov) < 0
+        if np.any(neg_var):
+            n_neg = np.sum(neg_var)
+            logger.warning(f"Warning: {n_neg} parameters have negative variance (identification issue)")
+            se[neg_var] = np.nan
+        
+        # Compute t-values and p-values
+        with np.errstate(divide='ignore', invalid='ignore'):
+            t_values = theta / se
+            p_values = 2 * (1 - norm.cdf(np.abs(t_values)))
+        
+        logger.info(f"Standard errors computed successfully")
+        
+        return {
+            'se': se,
+            'varcov': varcov,
+            't_values': t_values,
+            'p_values': p_values,
+            'hessian': H,
+        }
+        
+    except np.linalg.LinAlgError as e:
+        logger.error(f"Hessian inversion failed: {e}")
+        logger.error("This typically indicates model identification problems")
+        
+        # Return NaN for all SE
+        return {
+            'se': np.full(n_params, np.nan),
+            'varcov': None,
+            't_values': np.full(n_params, np.nan),
+            'p_values': np.full(n_params, np.nan),
+            'hessian': H,
+        }
 
 
 # ==============================================================================
@@ -149,12 +260,40 @@ def save_results_json(
         if param_name in spec.bounds:
             lb, ub = spec.bounds[param_name]
             bounds_dict[param_name] = [lb, ub]
-        initial_dict[param_name] = float(spec.initial_values.get(param_name, 0.0))
-
-    # Add group results
-    for group_name in ['singles_male', 'singles_female', 'couples']:
+        initial_dict[param_name] = float(spec.initial_values.get(param_name, 0.0))    # Add group results - handle both separate groups and joint estimation
+    group_keys = ['singles_male', 'singles_female', 'couples', 'joint']
+    for group_name in group_keys:
         if group_name in results:
             opt_result = results[group_name]
+
+            # Add convergence diagnostics
+            convergence_diag = {}
+            if hasattr(opt_result, 'jac') and opt_result.jac is not None:
+                grad = opt_result.jac
+                bounds_tuple = spec.get_bounds_tuple()
+                theta_final = opt_result.x
+
+                # Compute projected gradient
+                grad_proj = grad.copy()
+                for i in range(len(theta_final)):
+                    lb, ub = bounds_tuple[i]
+                    if lb is not None and abs(theta_final[i] - lb) < 1e-8:
+                        if grad[i] > 0:
+                            grad_proj[i] = 0.0
+                    elif ub is not None and abs(theta_final[i] - ub) < 1e-8:
+                        if grad[i] < 0:
+                            grad_proj[i] = 0.0
+
+                convergence_diag = {
+                    'gradient_norm_full': float(np.linalg.norm(grad)),
+                    'gradient_norm_projected': float(np.linalg.norm(grad_proj)),
+                    'gradient_inf_norm_full': float(np.linalg.norm(grad, ord=np.inf)),
+                    'gradient_inf_norm_projected': float(np.linalg.norm(grad_proj, ord=np.inf))
+                }
+
+            # Get walltime - 'joint' uses 'joint' key in walltimes
+            walltime_key = group_name
+            walltime = results.get('walltimes', {}).get(walltime_key, results.get('total_walltime', 0.0))
 
             output['results'][group_name] = {
                 'success': bool(opt_result.success),
@@ -162,12 +301,14 @@ def save_results_json(
                 'n_iterations': int(opt_result.nit),
                 'n_function_evaluations': int(opt_result.nfev),
                 'final_ll': float(-opt_result.fun),
-                'gradient_norm': float(np.linalg.norm(opt_result.jac)),
-                'walltime_seconds': float(results['walltimes'][group_name]),
+                'gradient_norm': float(np.linalg.norm(opt_result.jac)) if hasattr(opt_result, 'jac') and opt_result.jac is not None else None,
+                'walltime_seconds': float(walltime),
 
                 'parameters': spec.unpack_parameters(opt_result.x),
+                'theta': opt_result.x.tolist(),  # Also save raw theta vector
                 'bounds': bounds_dict,
-                'initial_values': initial_dict
+                'initial_values': initial_dict,
+                'convergence_diagnostics': convergence_diag
             }
 
     # Add summary

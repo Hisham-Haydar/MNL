@@ -1013,9 +1013,9 @@ def _normalize_singles(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, float]
     else:
         raise KeyError("Cannot identify chosen observations (need 'is_chosen' or 'draw')")
 
-    # Consumption: mean of chosen
-    c_chosen = df.loc[chosen_mask, "consumption"]
-    c_scale = float(c_chosen.mean())
+    # Consumption: mean of ALL observations (not just chosen)
+    # Using only chosen creates selection bias in normalization
+    c_scale = float(df["consumption"].mean())
 
     if c_scale <= 0:
         raise ValueError(f"Invalid consumption scaling constant: {c_scale}")

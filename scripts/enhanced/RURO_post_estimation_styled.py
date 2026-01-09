@@ -2871,14 +2871,14 @@ def run_styled_post_estimation(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Load estimation results
-    LOGGER.info("\n1. Loading estimation results...")
-
-    # Try enhanced format first, then legacy
+    LOGGER.info("\n1. Loading estimation results...")    # Try enhanced format first, then legacy
     try:
         parsed, data = load_estimation_results_from_json(results_json_path)
     except (KeyError, TypeError):
         LOGGER.info("  Trying legacy JSON format...")
-        parsed, data = load_estimation_results_legacy(results_json_path)    LOGGER.info(f"   Found {len(parsed.groups)} groups: {parsed.groups}")
+        parsed, data = load_estimation_results_legacy(results_json_path)
+    
+    LOGGER.info(f"   Found {len(parsed.groups)} groups: {parsed.groups}")
     LOGGER.info(f"   Preference groups: {parsed.preference_groups}")
 
     # Check if SEs are missing and compute if requested
@@ -3102,8 +3102,7 @@ def main():
     )
 
     parser.add_argument(
-        '--mnl-base',
-        type=Path,
+        '--mnl-base',        type=Path,
         default=None,
         help='Base path for MNL data files (optional)'
     )
@@ -3111,15 +3110,18 @@ def main():
     parser.add_argument(
         '--output-dir',
         type=Path,
-        default=None,        help='Output directory (default: same as results-json parent)'
+        default=None,
+        help='Output directory (default: same as results-json parent)'
     )
-
+    
     parser.add_argument(
         '--prefix',
         type=str,
         default="",
         help='Prefix for output files'
-    )    parser.add_argument(
+    )
+    
+    parser.add_argument(
         '--bootstrap',
         type=int,
         default=0,
@@ -3148,12 +3150,12 @@ def main():
         help='Path to YAML specification file (required for --compute-se)'
     )
 
-    args = parser.parse_args()
-
-    # Set random seed if provided
+    args = parser.parse_args()    # Set random seed if provided
     if args.seed is not None:
         np.random.seed(args.seed)
-        LOGGER.info(f"Set random seed to {args.seed}")    try:
+        LOGGER.info(f"Set random seed to {args.seed}")
+    
+    try:
         results = run_styled_post_estimation(
             results_json_path=args.results_json,
             mnl_base=args.mnl_base,

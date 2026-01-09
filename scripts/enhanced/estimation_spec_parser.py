@@ -509,8 +509,10 @@ def _build_parameter_list(
     params = []
 
     # ==========================================================================
+
     # FULLY SEPARATE 4-GROUP ARCHITECTURE
     # ==========================================================================
+
     # We have 4 distinct groups with their own preference parameters:
     # 1. Singles Male (_sm suffix)
     # 2. Singles Female (_sf suffix)
@@ -717,9 +719,7 @@ def load_custom_initial_values(csv_path: Path) -> Dict[str, float]:
     import json
 
     if not csv_path.exists():
-        raise FileNotFoundError(f"Initial values file not found: {csv_path}")
-
-    # Check if it's a JSON file
+        raise FileNotFoundError(f"Initial values file not found: {csv_path}")    # Check if it's a JSON file
     if csv_path.suffix.lower() == '.json':
         with open(csv_path, 'r') as f:
             data = json.load(f)
@@ -727,10 +727,10 @@ def load_custom_initial_values(csv_path: Path) -> Dict[str, float]:
         # NEW FORMAT: Check for 'results' key (enhanced estimation output)
         if "results" in data:
             init_dict = {}
-            # Collect all parameters from all groups
-            for group_name in ['singles_male', 'singles_female', 'couples']:
-                if group_name in data['results']:
-                    params = data['results'][group_name].get('parameters', {})
+            # Collect all parameters from all groups (support joint, singles_male, etc.)
+            for group_name, group_data in data['results'].items():
+                if isinstance(group_data, dict) and 'parameters' in group_data:
+                    params = group_data.get('parameters', {})
                     init_dict.update(params)
             return init_dict
 
@@ -766,6 +766,145 @@ def load_custom_initial_values(csv_path: Path) -> Dict[str, float]:
         raise ValueError("CSV must have column 'value'")
 
     return dict(zip(df[param_col], df["value"]))
+
+
+def find_latest_results(
+    search_dirs: List[Path],
+    results_filename: str = "estimation_results.json"
+) -> Optional[Path]:
+    """
+    Find the most recent estimation results file across multiple directories.
+    
+    Searches in the specified directories and their subdirectories for
+    results files, returning the path to the most recently modified one.
+    
+    Parameters
+    ----------
+    search_dirs : List[Path]
+        Directories to search for results files
+    results_filename : str
+        Name of the results file to look for (default: estimation_results.json)
+        
+    Returns
+    -------
+    Optional[Path]
+        Path to the most recent results file, or None if not found
+    """
+    import os
+    
+    logger = logging.getLogger(__name__)
+    candidates = []
+    
+    for search_dir in search_dirs:
+        if not search_dir.exists():
+            continue
+            
+        # Search recursively for results files
+        for root, dirs, files in os.walk(search_dir):
+            if results_filename in files:
+                results_path = Path(root) / results_filename
+                mtime = results_path.stat().st_mtime
+                candidates.append((results_path, mtime))
+                
+    if not candidates:
+        logger.info("No previous estimation results found")
+        return None
+        
+    # Sort by modification time (newest first)
+    candidates.sort(key=lambda x: x[1], reverse=True)
+    latest_path = candidates[0][0]
+    
+    logger.info(f"Found {len(candidates)} previous results file(s)")
+    logger.info(f"Latest: {latest_path}")
+    
+    return latest_path
+
+
+def load_warm_start_values(
+    spec: 'EstimationSpec',
+    results_path: Optional[Path] = None,
+    search_dirs: Optional[List[Path]] = None,
+    default_value: float = 0.0
+) -> Tuple[np.ndarray, Dict[str, str]]:
+    """
+    Load initial values from previous results with fallback to defaults.
+    
+    For parameters that exist in both the current specification and the
+    previous results, uses the estimated values. For new parameters,
+    uses the default value from the spec or the provided default_value.
+    
+    Parameters
+    ----------
+    spec : EstimationSpec
+        Current specification with parameter names
+    results_path : Optional[Path]
+        Explicit path to results JSON file. If None, auto-finds latest.
+    search_dirs : Optional[List[Path]]
+        Directories to search if results_path is None
+    default_value : float
+        Default value for new parameters not in previous results (default: 0.0)
+        
+    Returns
+    -------
+    Tuple[np.ndarray, Dict[str, str]]
+        - Initial values vector
+        - Dictionary mapping parameter names to their source ('previous', 'spec_default', 'fallback_default')
+    """
+    import json
+    
+    logger = logging.getLogger(__name__)
+    
+    # Find results file if not explicitly provided
+    if results_path is None and search_dirs is not None:
+        results_path = find_latest_results(search_dirs)
+    
+    # Load previous parameters if available
+    prev_params = {}
+    if results_path is not None and results_path.exists():
+        try:
+            prev_params = load_custom_initial_values(results_path)
+            logger.info(f"Loaded {len(prev_params)} parameters from: {results_path}")
+        except Exception as e:
+            logger.warning(f"Failed to load previous results: {e}")
+            prev_params = {}
+    
+    # Build initial values vector
+    theta_init = np.zeros(len(spec.all_param_names))
+    sources = {}
+    
+    n_from_prev = 0
+    n_from_spec = 0
+    n_from_default = 0
+    
+    for i, param_name in enumerate(spec.all_param_names):
+        if param_name in prev_params:
+            # Use value from previous estimation
+            theta_init[i] = prev_params[param_name]
+            sources[param_name] = 'previous'
+            n_from_prev += 1
+        elif param_name in spec.initial_values and spec.initial_values[param_name] != 0.0:
+            # Use spec default (if non-zero, meaning it was explicitly set)
+            theta_init[i] = spec.initial_values[param_name]
+            sources[param_name] = 'spec_default'
+            n_from_spec += 1
+        else:
+            # Use fallback default
+            theta_init[i] = default_value
+            sources[param_name] = 'fallback_default'
+            n_from_default += 1
+    
+    logger.info(f"Initial values: {n_from_prev} from previous, "
+                f"{n_from_spec} from spec, {n_from_default} from fallback default ({default_value})")
+    
+    # Log which parameters are new
+    if n_from_default > 0 or n_from_spec > 0:
+        new_params = [p for p, s in sources.items() if s != 'previous']
+        if new_params and len(new_params) <= 20:
+            logger.info(f"New/default parameters: {new_params}")
+        elif new_params:
+            logger.info(f"New/default parameters: {new_params[:10]} ... and {len(new_params)-10} more")
+    
+    return theta_init, sources
 
 
 # ==============================================================================

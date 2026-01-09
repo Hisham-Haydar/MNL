@@ -276,6 +276,31 @@ class ParsedParameters:
                             continue  # Skip malformed names with embedded group prefixes
                         shifters.append(shifter)
                 self.leisure_shifters[group] = list(set(shifters))
+        
+        # Handle 'joint' group with suffixed parameters (e.g., beta_c_sm, beta_c_sf)
+        # This creates virtual preference groups 'sm', 'sf', 'm', 'f' for analysis
+        if 'joint' in self.params_by_group:
+            joint_params = self.params_by_group['joint']
+            for suffix in ['sm', 'sf', 'm', 'f']:
+                # Check if we have parameters with this suffix
+                suffix_params = {k: v for k, v in joint_params.items() if k.endswith(f'_{suffix}')}
+                if suffix_params:
+                    # Create virtual group with stripped suffix names
+                    self.params_by_group[suffix] = {}
+                    for k, v in suffix_params.items():
+                        # Strip the suffix to get standard param name (e.g., beta_c_sm -> beta_c)
+                        base_name = k.rsplit(f'_{suffix}', 1)[0]
+                        self.params_by_group[suffix][base_name] = v
+                    
+                    # Add shared parameters (those without _sm/_sf suffixes but not group-specific)
+                    for k, v in joint_params.items():
+                        # Add params that don't have any gender suffix and aren't already added
+                        if not any(k.endswith(f'_{s}') for s in ['sm', 'sf', 'm', 'f']):
+                            if k not in self.params_by_group[suffix]:
+                                self.params_by_group[suffix][k] = v
+                    
+                    if suffix not in self.preference_groups:
+                        self.preference_groups.append(suffix)
 
     def get_param(self, group: str, param_name: str, default: float = 0.0) -> float:
         """Get a parameter value by group and name."""
@@ -359,19 +384,29 @@ def load_estimation_results_from_json(json_path: Path) -> Tuple[ParsedParameters
 
     for group_name, group_data in results.items():
         if not group_data.get('success', False):
-            LOGGER.warning(f"Group {group_name} did not converge, skipping")
-            continue
-
+            LOGGER.warning(f"Group {group_name} did not converge (hit iteration limit), proceeding anyway with current estimates")
+            # Don't skip - we still have valid parameter estimates
+        
         params = group_data.get('parameters', {})
-        se_dict = group_data.get('standard_errors', {})
+        se_raw = group_data.get('standard_errors', {})
         bounds_dict = group_data.get('bounds', {})
         init_dict = group_data.get('initial_values', {})
+        
+        # Handle standard_errors as list (indexed) or dict (keyed by param name)
+        if isinstance(se_raw, list):
+            # Convert list to dict keyed by parameter name
+            param_names_list = list(params.keys())
+            se_dict = {param_names_list[i]: (se_raw[i] if se_raw[i] is not None else np.nan) 
+                       for i in range(min(len(param_names_list), len(se_raw)))}
+        else:
+            se_dict = se_raw if se_raw else {}
 
         for param_name, param_value in params.items():
             full_name = f"{group_name}.{param_name}"
             all_param_names.append(full_name)
             all_theta.append(param_value)
-            all_se.append(se_dict.get(param_name, np.nan))
+            se_val = se_dict.get(param_name, np.nan)
+            all_se.append(se_val if se_val is not None else np.nan)
 
             if param_name in bounds_dict:
                 b = bounds_dict[param_name]
@@ -458,8 +493,11 @@ def analyze_muc_behavior(parsed_params: ParsedParameters) -> List[Dict[str, Any]
 
         group_label = {
             'sm': 'Single Males', 'sf': 'Single Females',
-            'cou': 'Couples (shared)', 'singles_male': 'Single Males',
-            'singles_female': 'Single Females', 'couples': 'Couples'
+            'm': 'Males in Couples', 'f': 'Females in Couples',
+            'cou': 'Couples', 'cou_m': 'Males in Couples', 'cou_f': 'Females in Couples',
+            'singles_male': 'Single Males', 'singles_female': 'Single Females',
+            'couples': 'Couples', 'couples_m': 'Males in Couples', 'couples_f': 'Females in Couples',
+            'joint': 'Joint (All Groups)'
         }.get(group, group)
 
         rows.append({
@@ -487,9 +525,10 @@ def compute_structural_elasticities(parsed_params: ParsedParameters) -> pd.DataF
     rows = []
     group_labels = {
         'sm': 'Single Males', 'sf': 'Single Females',
+        'm': 'Males in Couples', 'f': 'Females in Couples',
         'cou_m': 'Males in Couples', 'cou_f': 'Females in Couples',
         'singles_male': 'Single Males', 'singles_female': 'Single Females',
-        'couples': 'Couples'
+        'couples': 'Couples', 'joint': 'Joint (All)'
     }
 
     for group in parsed_params.preference_groups:
@@ -567,12 +606,12 @@ def plot_fit_comparison(fit_results: Dict[str, Dict[str, Any]], output_dir: Path
     """Generate fit comparison plots."""
     if not MATPLOTLIB_AVAILABLE:
         return {}
-
     plot_paths = {}
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-
+    
     group_labels = {'sm': 'SM', 'sf': 'SF', 'cou_m': 'CM', 'cou_f': 'CF',
+                   'm': 'CM', 'f': 'CF',
                    'singles_male': 'SM', 'singles_female': 'SF', 'couples_m': 'CM', 'couples_f': 'CF'}
 
     groups = list(fit_results.keys())
@@ -627,13 +666,12 @@ def plot_utility_contours_all_groups(parsed_params: ParsedParameters, output_dir
     """Generate utility contour plots for all groups."""
     if not MATPLOTLIB_AVAILABLE:
         return {}
-
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     plot_paths = {}
-
     group_labels = {
         'sm': 'Single Males', 'sf': 'Single Females',
+        'm': 'Males in Couples', 'f': 'Females in Couples',
         'cou_m': 'Males in Couples', 'cou_f': 'Females in Couples',
         'singles_male': 'Single Males', 'singles_female': 'Single Females',
         'couples_m': 'Males in Couples', 'couples_f': 'Females in Couples',
@@ -648,13 +686,11 @@ def plot_utility_contours_all_groups(parsed_params: ParsedParameters, output_dir
     for g in ['sm', 'sf', 'singles_male', 'singles_female']:
         if g in parsed_params.params_by_group:
             params = parsed_params.get_all_params_for_group(g)
-            groups_to_plot.append((g, {
-                'beta_c': params.get('beta_c', 1.0),
+            groups_to_plot.append((g, {                'beta_c': params.get('beta_c', 1.0),
                 'theta_c': params.get('theta_c', 0.5),
                 'beta_l0': params.get('beta_l0', 0.0),
                 'theta_l': params.get('theta_l', 0.5),
             }))
-
     for g in ['cou', 'couples']:
         if g in parsed_params.params_by_group:
             params = parsed_params.get_all_params_for_group(g)
@@ -669,6 +705,25 @@ def plot_utility_contours_all_groups(parsed_params: ParsedParameters, output_dir
                 'theta_c': params.get('theta_c', 0.5),
                 'beta_l0': params.get('beta_l0_f', params.get('beta_l0', 0.0)),
                 'theta_l': params.get('theta_l_f', params.get('theta_l', 0.5)),
+            }))
+            break  # Only process once
+    else:
+        # Check for virtual groups 'm' and 'f' (from joint estimation with suffixed params)
+        if 'm' in parsed_params.params_by_group:
+            params = parsed_params.get_all_params_for_group('m')
+            groups_to_plot.append(('cou_m', {
+                'beta_c': params.get('beta_c', 1.0),
+                'theta_c': params.get('theta_c', 0.5),
+                'beta_l0': params.get('beta_l0', 0.0),
+                'theta_l': params.get('theta_l', 0.5),
+            }))
+        if 'f' in parsed_params.params_by_group:
+            params = parsed_params.get_all_params_for_group('f')
+            groups_to_plot.append(('cou_f', {
+                'beta_c': params.get('beta_c', 1.0),
+                'theta_c': params.get('theta_c', 0.5),
+                'beta_l0': params.get('beta_l0', 0.0),
+                'theta_l': params.get('theta_l', 0.5),
             }))
 
     for group, params in groups_to_plot:
@@ -717,23 +772,22 @@ def plot_mu_comparison(parsed_params: ParsedParameters, output_dir: Path, prefix
     """Generate MUC and MUL comparison plots."""
     if not MATPLOTLIB_AVAILABLE:
         return {}
-
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     plot_paths = {}
-
     c_grid = np.linspace(0.05, 2.5, 200)
     l_grid = np.linspace(0.1, 2.5, 200)
-
     colors = {
-        'sm': '#1f77b4', 'sf': '#ff7f0e', 'cou_m': '#2ca02c', 'cou_f': '#d62728',
+        'sm': '#1f77b4', 'sf': '#ff7f0e', 
+        'm': '#2ca02c', 'f': '#d62728',
+        'cou_m': '#2ca02c', 'cou_f': '#d62728',
         'singles_male': '#1f77b4', 'singles_female': '#ff7f0e',
         'couples_m': '#2ca02c', 'couples_f': '#d62728', 'cou': '#9467bd', 'couples': '#9467bd'
     }
-
     group_labels = {
         'sm': 'Single Males', 'sf': 'Single Females',
         'cou_m': 'Males in Couples', 'cou_f': 'Females in Couples',
+        'm': 'Males in Couples', 'f': 'Females in Couples',
         'singles_male': 'Single Males', 'singles_female': 'Single Females',
         'couples': 'Couples (shared)', 'cou': 'Couples (shared)'
     }
@@ -813,7 +867,8 @@ def plot_negative_mu_diagnostics(
     if not groups:
         return {}
     
-    group_labels = {'sm': 'SM', 'sf': 'SF', 'cou_m': 'CM', 'cou_f': 'CF'}
+    group_labels = {'sm': 'SM', 'sf': 'SF', 'cou_m': 'CM', 'cou_f': 'CF',
+                     'm': 'CM', 'f': 'CF'}
     
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
     x = np.arange(len(groups))
@@ -868,8 +923,7 @@ def plot_mu_distributions_by_group(
     Creates individual plots for each group showing:
     - Left: MUC curve with shaded regions (green=positive, red=negative)
     - Right: MUL curve at median characteristics with shaded regions
-    
-    Returns
+      Returns
     -------
     Dict[str, Path]
         Paths to generated plots: {group_key + '_mu': path, ...}
@@ -877,18 +931,18 @@ def plot_mu_distributions_by_group(
     if not MATPLOTLIB_AVAILABLE:
         LOGGER.warning("Matplotlib not available, skipping MU distribution plots")
         return {}
-    
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     plot_paths = {}
-    
     group_labels = {
         'sm': 'Single Males', 'sf': 'Single Females',
+        'm': 'Males in Couples', 'f': 'Females in Couples',
         'cou_m': 'Males in Couples', 'cou_f': 'Females in Couples'
     }
     
     group_colors = {
         'sm': '#1f77b4', 'sf': '#ff7f0e',
+        'm': '#2ca02c', 'f': '#d62728',
         'cou_m': '#2ca02c', 'cou_f': '#d62728'
     }
     
@@ -919,16 +973,24 @@ def plot_mu_distributions_by_group(
                 break
         if params:
             all_groups.append((group_key, '', params))
-    
-    # Couples (male and female leisure)
+      # Couples (male and female leisure)
     params_cou = None
     for try_key in ['cou', 'couples']:
         if try_key in parsed_params.params_by_group:
             params_cou = parsed_params.get_all_params_for_group(try_key)
             break
+    
     if params_cou:
         all_groups.append(('cou_m', '_m', params_cou))
         all_groups.append(('cou_f', '_f', params_cou))
+    else:
+        # Check for virtual groups 'm' and 'f' (from joint estimation with suffixed params)
+        if 'm' in parsed_params.params_by_group:
+            params_m = parsed_params.get_all_params_for_group('m')
+            all_groups.append(('cou_m', '', params_m))  # No suffix needed, params already specific
+        if 'f' in parsed_params.params_by_group:
+            params_f = parsed_params.get_all_params_for_group('f')
+            all_groups.append(('cou_f', '', params_f))
     
     for group_key, suffix, params in all_groups:
         color = group_colors.get(group_key, '#1f77b4')
@@ -1011,12 +1073,14 @@ def generate_html_report_styled(
     Matches the aesthetics of vw_pooled_post_estimation_report.html
     """
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
+    
     group_labels = {
         'sm': 'Single Males', 'sf': 'Single Females',
+        'm': 'Males in Couples', 'f': 'Females in Couples',
         'cou': 'Couples', 'cou_m': 'Males in Couples', 'cou_f': 'Females in Couples',
         'singles_male': 'Single Males', 'singles_female': 'Single Females',
         'couples': 'Couples', 'couples_m': 'Males in Couples', 'couples_f': 'Females in Couples',
+        'joint': 'Joint (All Groups)',
     }
 
     if fit_stats is None:
@@ -1174,14 +1238,13 @@ def generate_html_report_styled(
         </div>
       </div>
     </div>
-    """
-
-    # Build elasticities table
+    """    # Build elasticities table
     elasticities_html = ""
     if elasticities_df is not None and len(elasticities_df) > 0:
         elasticities_html = elasticities_df.to_html(classes='table table-striped', border=0, index=False)
 
-    # Build MUC analysis table    muc_analysis_html = ""
+    # Build MUC analysis table
+    muc_analysis_html = ""
     if muc_analysis:
         muc_rows = ""
         for row in muc_analysis:
@@ -1304,37 +1367,37 @@ def generate_html_report_styled(
                         <tr><td>Mean</td><td>{p_chosen.get('mean', 0):.4f}</td></tr>
                         <tr><td>75th percentile</td><td>{p_chosen.get('q75', 0):.4f}</td></tr>
                         <tr><td>90th percentile</td><td>{p_chosen.get('q90', 0):.4f}</td></tr>
-                        <tr><td>Max</td><td>{p_chosen.get('max', 0):.4f}</td></tr>
-                    </table>
+                        <tr><td>Max</td><td>{p_chosen.get('max', 0):.4f}</td></tr>                    </table>
                 </div>
                 """
             
             prob_diag_html += "</div>"
         
-        # Worst-fit households table
-        if worst_fit:
-            worst_rows = ""
-            for i, hh in enumerate(worst_fit[:20], 1):
-                worst_rows += f"""
-                <tr>
-                    <td>{i}</td>
-                    <td>{hh.get('idhh', 'N/A')}</td>
-                    <td>{group_labels.get(hh.get('group', ''), hh.get('group', 'N/A'))}</td>
-                    <td>{hh.get('p_chosen', 0):.6f}</td>
-                    <td>{hh.get('ll_i', 0):.2f}</td>
-                </tr>
-                """
-            
-            prob_diag_html += f"""
-            <h3>🔻 Worst-Fit Households (Bottom 20 by Log-Likelihood)</h3>
-            <p><em>These households have the lowest P(chosen), indicating potential outliers or specification issues.</em></p>
-            <table class="table table-striped table-sm">
-                <thead>
-                    <tr><th>#</th><th>HH ID</th><th>Group</th><th>P(chosen)</th><th>log(P)</th></tr>
-                </thead>
-                <tbody>{worst_rows}</tbody>
-            </table>
-            """
+        # Worst-fit households table - COMMENTED OUT per user request
+        # These diagnostics can be misleading and are not essential for model evaluation
+        # if worst_fit:
+        #     worst_rows = ""
+        #     for i, hh in enumerate(worst_fit[:20], 1):
+        #         worst_rows += f"""
+        #         <tr>
+        #             <td>{i}</td>
+        #             <td>{hh.get('idhh', 'N/A')}</td>
+        #             <td>{group_labels.get(hh.get('group', ''), hh.get('group', 'N/A'))}</td>
+        #             <td>{hh.get('p_chosen', 0):.6f}</td>
+        #             <td>{hh.get('ll_i', 0):.2f}</td>
+        #         </tr>
+        #         """
+        #     
+        #     prob_diag_html += f"""
+        #     <h3>🔻 Worst-Fit Households (Bottom 20 by Log-Likelihood)</h3>
+        #     <p><em>These households have the lowest P(chosen), indicating potential outliers or specification issues.</em></p>
+        #     <table class="table table-striped table-sm">
+        #         <thead>
+        #             <tr><th>#</th><th>HH ID</th><th>Group</th><th>P(chosen)</th><th>log(P)</th></tr>
+        #         </thead>
+        #         <tbody>{worst_rows}</tbody>
+        #     </table>
+        #     """
 
     # Build bound diagnostics section
     bound_diag_html = ""
@@ -1450,72 +1513,143 @@ def generate_html_report_styled(
       <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-weak);"></div>p ∈ [0.1, 0.25)</div>
       <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-insig);"></div>p ≥ 0.25</div>
     </div>
-    """
-
-    # Build full parameter table
+    """    # Build full parameter table - SEPARATED by preference vs opportunity
     param_df = parsed_params.to_dataframe()
-    param_table_rows = ""
-    for idx, row in param_df.iterrows():
-        param_name = row.get('parameter', '')
-        est = row.get('estimate', np.nan)
-        se = row.get('std_error', np.nan)
-        t_val = row.get('t_value', np.nan)
-        p_val = row.get('p_value', np.nan)
-        lb = row.get('lower_bound')
-        ub = row.get('upper_bound')
-        init_val = row.get('initial_value')
+    
+    # Classify parameters into preference vs opportunity
+    def classify_param(name):
+        """Classify parameter as 'preference', 'hours_opp', 'wage_opp', or 'other'."""
+        name_lower = name.lower()
+        # Preference parameters: beta_l*, beta_c*, theta_l*, theta_c*, beta_interact
+        if any(x in name_lower for x in ['beta_l', 'beta_c', 'theta_l', 'theta_c', 'beta_interact']):
+            return 'preference'
+        # Hours opportunity: beta_work, beta_pt*, beta_ft, beta_gsur, beta_work_educ*
+        if any(x in name_lower for x in ['beta_work', 'beta_pt', 'beta_ft', 'beta_gsur']):
+            return 'hours_opp'
+        # Wage opportunity: beta_w*, beta_pexp*, sigma
+        if any(x in name_lower for x in ['beta_w', 'beta_pexp', 'sigma']):
+            return 'wage_opp'
+        return 'other'
+    
+    param_df['category'] = param_df['parameter'].apply(classify_param)
+    
+    def build_param_table_html(df_subset, title, description=""):
+        """Build HTML table for a subset of parameters."""
+        if len(df_subset) == 0:
+            return ""
+        
+        rows_html = ""
+        for idx, row in df_subset.iterrows():
+            param_name = row.get('parameter', '')
+            est = row.get('estimate', np.nan)
+            se = row.get('std_error', np.nan)
+            t_val = row.get('t_value', np.nan)
+            p_val = row.get('p_value', np.nan)
+            lb = row.get('lower_bound')
+            ub = row.get('upper_bound')
+            init_val = row.get('initial_value')
 
-        row_class = ""
-        is_bounded = lb is not None or ub is not None
-        hit_bound = False
-        if is_bounded and is_num(est):
-            if lb is not None and abs(float(est) - lb) < 1e-6:
-                hit_bound = True
-            if ub is not None and abs(float(est) - ub) < 1e-6:
-                hit_bound = True
+            row_class = ""
+            is_bounded = lb is not None or ub is not None
+            hit_bound = False
+            if is_bounded and is_num(est):
+                if lb is not None and abs(float(est) - lb) < 1e-6:
+                    hit_bound = True
+                if ub is not None and abs(float(est) - ub) < 1e-6:
+                    hit_bound = True
 
-        if hit_bound:
-            row_class = 'class="bound-hit"'
-        elif is_bounded:
-            row_class = 'class="bounded-param"'
+            if hit_bound:
+                row_class = 'class="bound-hit"'
+            elif is_bounded:
+                row_class = 'class="bounded-param"'
 
-        est_str = safe_format(est, ".4f", "N/A")
-        se_str = safe_format(se, ".4f", "N/A")
-        t_str = safe_format(t_val, ".2f", "N/A")
-        lb_str = safe_format(lb, ".4f", "—")
-        ub_str = safe_format(ub, ".4f", "—")
-        init_str = safe_format(init_val, ".4f", "N/A")
+            est_str = safe_format(est, ".4f", "N/A")
+            se_str = safe_format(se, ".4f", "N/A")
+            t_str = safe_format(t_val, ".2f", "N/A")
+            lb_str = safe_format(lb, ".4f", "—")
+            ub_str = safe_format(ub, ".4f", "—")
+            init_str = safe_format(init_val, ".4f", "N/A")
 
-        sig = ""
-        p_str = "N/A"
-        p_class = ""
-        if is_num(p_val):
-            p_str = f"{float(p_val):.4f}"
-            if p_val < 0.001:
-                sig = "***"
-            elif p_val < 0.01:
-                sig = "**"
-            elif p_val < 0.05:
-                sig = "*"
-            elif p_val < 0.1:
-                p_class = 'class="pval-marginal"'
-            elif p_val < 0.25:
-                p_class = 'class="pval-weak"'
-            else:
-                p_class = 'class="pval-insig"'
+            sig = ""
+            p_str = "N/A"
+            p_class = ""
+            if is_num(p_val):
+                p_str = f"{float(p_val):.4f}"
+                if p_val < 0.001:
+                    sig = "***"
+                elif p_val < 0.01:
+                    sig = "**"
+                elif p_val < 0.05:
+                    sig = "*"
+                elif p_val < 0.1:
+                    p_class = 'class="pval-marginal"'
+                elif p_val < 0.25:
+                    p_class = 'class="pval-weak"'
+                else:
+                    p_class = 'class="pval-insig"'
 
-        param_table_rows += f"""
-        <tr {row_class}>
-            <td>{param_name}</td>
-            <td>{est_str}</td>
-            <td>{se_str}</td>
-            <td>{t_str}</td>
-            <td {p_class}>{p_str} {sig}</td>
-            <td>{lb_str}</td>
-            <td>{ub_str}</td>
-            <td>{init_str}</td>
-        </tr>
+            rows_html += f"""
+            <tr {row_class}>
+                <td>{param_name}</td>
+                <td>{est_str}</td>
+                <td>{se_str}</td>
+                <td>{t_str}</td>
+                <td {p_class}>{p_str} {sig}</td>
+                <td>{lb_str}</td>
+                <td>{ub_str}</td>
+                <td>{init_str}</td>
+            </tr>
+            """
+        
+        desc_html = f"<p><em>{description}</em></p>" if description else ""
+        return f"""
+        <h3>{title}</h3>
+        {desc_html}
+        <div style="max-height:400px; overflow-y:auto;">
+            <table class="table table-striped table-sm param-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Estimate</th>
+                        <th>Std Error</th>
+                        <th>t-value</th>
+                        <th>p-value</th>
+                        <th>Lower Bound</th>
+                        <th>Upper Bound</th>
+                        <th>Initial Value</th>
+                    </tr>
+                </thead>
+                <tbody>{rows_html}</tbody>
+            </table>
+        </div>
         """
+    
+    # Build separate tables for each category
+    pref_table = build_param_table_html(
+        param_df[param_df['category'] == 'preference'],
+        "🎯 Preference Parameters (Utility Function)",
+        "Parameters determining the utility from consumption (β_c, θ_c) and leisure (β_l*, θ_l) by demographic group."
+    )
+    
+    hours_opp_table = build_param_table_html(
+        param_df[param_df['category'] == 'hours_opp'],
+        "⏰ Hours Opportunity Parameters",
+        "Parameters for the hours density: working indicator, focal hours (PT/FT), education interactions, unemployment rate effects."
+    )
+    
+    wage_opp_table = build_param_table_html(
+        param_df[param_df['category'] == 'wage_opp'],
+        "💰 Wage Opportunity Parameters (Mincer Equation)",
+        "Log-wage equation parameters: intercept, education effects, experience effects, and residual standard deviation (σ)."
+    )
+    
+    other_table = build_param_table_html(
+        param_df[param_df['category'] == 'other'],
+        "📋 Other Parameters",
+        ""
+    )
+    
+    param_table_rows = pref_table + hours_opp_table + wage_opp_table + other_table
 
     # Assemble HTML
     html = f"""<!DOCTYPE html>
@@ -1602,29 +1736,11 @@ def generate_html_report_styled(
         <div class="param-groups">
             {group_params_html}
         </div>
-    </section>
-
-    <section>
-        <h2>📋 Full Parameter Estimates</h2>
+    </section>    <section>
+        <h2>📋 Parameter Estimates by Category</h2>
         <p><em>Significance: *** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05</em></p>
         {color_legend}
-        <div style="max-height:600px; overflow-y:auto;">
-            <table class="table table-striped table-sm param-table">
-                <thead>
-                    <tr>
-                        <th>Parameter</th>
-                        <th>Estimate</th>
-                        <th>Std Error</th>
-                        <th>t-value</th>
-                        <th>p-value</th>
-                        <th>Lower Bound</th>
-                        <th>Upper Bound</th>
-                        <th>Initial Value</th>
-                    </tr>
-                </thead>
-                <tbody>{param_table_rows}</tbody>
-            </table>
-        </div>
+        {param_table_rows}
     </section>
 
     <footer>
@@ -1875,17 +1991,29 @@ def compute_fit_diagnostics_from_data(
             
         except Exception as e:
             LOGGER.warning(f"Could not compute fit for {group_key}: {e}")
-            continue
-      # Process couples - compute real predicted moments using joint utility
+            continue      # Process couples - compute real predicted moments using joint utility
     if df_couples is not None and len(df_couples) > 0:
         chosen_col = 'is_chosen' if 'is_chosen' in df_couples.columns else 'chosen'
         
-        # Get couples parameters
-        params = None
+        # Get couples parameters - try multiple keys including the new 'm'/'f' virtual groups
+        params_m = None
+        params_f = None
+        
+        # First try to get from 'cou' or 'couples' groups
         for try_key in ['cou', 'couples']:
             if try_key in parsed_params.params_by_group:
-                params = parsed_params.get_all_params_for_group(try_key)
+                params_m = parsed_params.get_all_params_for_group(try_key)
+                params_f = params_m  # Same group for both in old format
                 break
+        
+        # If not found, try the new 'm' and 'f' virtual groups created from 'joint'
+        if params_m is None and 'm' in parsed_params.params_by_group:
+            params_m = parsed_params.get_all_params_for_group('m')
+        if params_f is None and 'f' in parsed_params.params_by_group:
+            params_f = parsed_params.get_all_params_for_group('f')
+        
+        # Use params_m as the main params dict for shared parameters
+        params = params_m
         
         if params is not None:
             try:
@@ -2168,21 +2296,33 @@ def compute_marginal_utilities_at_chosen(
         }
         
         LOGGER.info(f"  {group_key}: {len(df_g)} obs, {(muc<0).sum()} neg MUC ({100*(muc<0).mean():.1f}%), {(mul<0).sum()} neg MUL ({100*(mul<0).mean():.1f}%)")
-    
-    # Process couples
+      # Process couples
     if df_couples is not None:
         chosen_col = 'is_chosen' if 'is_chosen' in df_couples.columns else 'chosen'
         df_chosen = df_couples[df_couples[chosen_col] == 1].copy()
         
-        params = None
-        for try_key in ['cou', 'couples']:
-            if try_key in parsed_params.params_by_group:
-                params = parsed_params.get_all_params_for_group(try_key)
-                break
+        # Try to find couples parameters - check multiple possible group names
+        params_m = None
+        params_f = None
         
-        if params is not None and len(df_chosen) > 0:
-            beta_c = params.get('beta_c', 1.0)
-            theta_c = params.get('theta_c', 0.5)
+        # First, try 'm' and 'f' virtual groups (from joint estimation)
+        if 'm' in parsed_params.params_by_group:
+            params_m = parsed_params.get_all_params_for_group('m')
+        if 'f' in parsed_params.params_by_group:
+            params_f = parsed_params.get_all_params_for_group('f')
+          # If not found, try 'cou' or 'couples' group with suffixed params
+        if params_m is None:
+            for try_key in ['cou', 'couples']:
+                if try_key in parsed_params.params_by_group:
+                    params = parsed_params.get_all_params_for_group(try_key)
+                    params_m = params
+                    params_f = params
+                    break
+        
+        if params_m is not None and len(df_chosen) > 0:
+            # Get consumption parameters (shared between M and F in couples)
+            beta_c = params_m.get('beta_c', 1.0)
+            theta_c = params_m.get('theta_c', 0.5)
             
             c = df_chosen['consumption'].values
             muc = compute_marginal_utility_consumption(c, beta_c, theta_c)
@@ -2191,9 +2331,9 @@ def compute_marginal_utilities_at_chosen(
             all_muc.extend(muc)
             
             # Males in couples
-            theta_l_m = params.get('theta_l_m', params.get('theta_l', 0.5))
+            theta_l_m = params_m.get('theta_l_m', params_m.get('theta_l', 0.5))
             l_m = df_chosen['leisure_male'].values
-            beta_l_m = compute_beta_l_full(df_chosen, params, suffix='_m')
+            beta_l_m = compute_beta_l_full(df_chosen, params_m, suffix='_m')
             mul_m = beta_l_m * d_boxcox_dx(l_m, theta_l_m)
             all_mul.extend(mul_m)
             
@@ -2211,10 +2351,11 @@ def compute_marginal_utilities_at_chosen(
             
             LOGGER.info(f"  cou_m: {len(df_chosen)} obs, {(muc<0).sum()} neg MUC ({100*(muc<0).mean():.1f}%), {(mul_m<0).sum()} neg MUL ({100*(mul_m<0).mean():.1f}%)")
             
-            # Females in couples
-            theta_l_f = params.get('theta_l_f', params.get('theta_l', 0.5))
+            # Females in couples - use params_f if available, else fallback to params_m
+            params_female = params_f if params_f is not None else params_m
+            theta_l_f = params_female.get('theta_l_f', params_female.get('theta_l', 0.5))
             l_f = df_chosen['leisure_female'].values
-            beta_l_f = compute_beta_l_full(df_chosen, params, suffix='_f')
+            beta_l_f = compute_beta_l_full(df_chosen, params_female, suffix='_f')
             mul_f = beta_l_f * d_boxcox_dx(l_f, theta_l_f)
             all_mul.extend(mul_f)
             
@@ -2307,9 +2448,8 @@ def compute_probability_diagnostics(
             beta_l_f = compute_beta_l_full(df, params, '_f')
             V += beta_l_m * boxcox_transform(l_m, theta_l_m)
             V += beta_l_f * boxcox_transform(l_f, theta_l_f)
-            
-            # Add opportunity terms
-            for col in ['log_opp_male', 'log_opp_female', 'log_opp']:
+              # Add opportunity terms - check multiple possible column names
+            for col in ['log_q_total_male', 'log_opp_male', 'log_q_total_female', 'log_opp_female', 'log_q_total', 'log_opp']:
                 if col in df.columns:
                     V += df[col].values
         else:
@@ -2318,12 +2458,18 @@ def compute_probability_diagnostics(
             beta_l = compute_beta_l_full(df, params, '')
             V += beta_l * boxcox_transform(l, theta_l)
             
-            if 'log_opp' in df.columns:
-                V += df['log_opp'].values
+            # Add opportunity terms - check multiple possible column names
+            for col in ['log_q_total', 'log_opp']:
+                if col in df.columns:
+                    V += df[col].values
+                    break
         
-        # Subtract prior
-        if 'log_prior' in df.columns:
-            V -= df['log_prior'].values
+        # Subtract prior - check multiple possible column names
+        for prior_col in ['prior', 'log_prior']:
+            if prior_col in df.columns:
+                # 'prior' is already log_prior in some datasets
+                V -= df[prior_col].values
+                break
         
         df['V'] = V
         df['prob'] = 0.0
@@ -2337,9 +2483,9 @@ def compute_probability_diagnostics(
         
         return df
     
-    # Process singles
-    if df_singles is not None and len(df_singles) > 0:
-        for gender_code, group_key in [(0, 'sm'), (1, 'sf')]:
+    # Process singles    if df_singles is not None and len(df_singles) > 0:
+        # dgn=1 means male, dgn=0 means female
+        for gender_code, group_key in [(1, 'sm'), (0, 'sf')]:
             gender_col = 'dgn' if 'dgn' in df_singles.columns else 'gender'
             df_g = df_singles[df_singles[gender_col] == gender_code].copy()
             if len(df_g) == 0:
@@ -2371,13 +2517,13 @@ def compute_probability_diagnostics(
                     ll_i = np.log(max(p_ch, 1e-20))
                     all_ll_i.append((ll_i, idhh, group_key, p_ch))
                     
-            except Exception as e:
-                LOGGER.warning(f"Error computing probs for {group_key}: {e}")
+            except Exception as e:                LOGGER.warning(f"Error computing probs for {group_key}: {e}")
     
     # Process couples
     if df_couples is not None and len(df_couples) > 0:
+        # Try to find couples parameters - check multiple possible group names
         params = None
-        for try_key in ['cou', 'couples']:
+        for try_key in ['m', 'cou', 'couples']:
             if try_key in parsed_params.params_by_group:
                 params = parsed_params.get_all_params_for_group(try_key)
                 break
@@ -2506,6 +2652,178 @@ def detect_weight_column(df: pd.DataFrame, metadata: Dict = None) -> Optional[st
 
 
 # =============================================================================
+# STANDARD ERROR COMPUTATION
+# =============================================================================
+
+def _compute_and_update_standard_errors(
+    parsed: ParsedParameters,
+    data: Dict[str, Any],
+    mnl_base: Path,
+    spec_config: Path,
+    results_json_path: Path,
+) -> Tuple[ParsedParameters, Dict[str, Any]]:
+    """
+    Compute standard errors and update parsed results and JSON file.
+    
+    Parameters
+    ----------
+    parsed : ParsedParameters
+        Parsed estimation results
+    data : dict
+        Raw JSON data
+    mnl_base : Path
+        Base path for MNL data files
+    spec_config : Path
+        Path to YAML specification
+    results_json_path : Path
+        Path to results JSON (will be updated)
+        
+    Returns
+    -------
+    Tuple of (updated_parsed, updated_data)
+    """
+    from estimation_utils import (
+        load_and_validate_mnl_data,
+        precompute_data_singles,
+        precompute_data_couples,
+    )
+    from estimation_spec_parser import parse_specification
+    from estimation_engine import compute_gradient_joint
+    from scipy.stats import norm
+    
+    # Load specification
+    spec = parse_specification(spec_config)
+    
+    # Get theta from results
+    if 'results' in data and 'joint' in data['results']:
+        theta = np.array(data['results']['joint']['theta'])
+    else:
+        # Try to reconstruct from parsed
+        theta = parsed.theta
+    
+    LOGGER.info(f"   Loaded {len(theta)} parameters")
+    
+    # Load data
+    singles_path = Path(str(mnl_base) + "__singles.parquet")
+    couples_path = Path(str(mnl_base) + "__couples.parquet")
+    metadata_path = Path(str(mnl_base) + "__mnlmeta.json")
+    
+    df_singles, df_couples, metadata = load_and_validate_mnl_data(
+        singles_path=singles_path,
+        couples_path=couples_path if couples_path.exists() else None,
+        metadata_path=metadata_path,
+        strict_validation=False
+    )
+    
+    # Precompute data
+    include_wage_vars = (spec.wage_spec in ["vw", "loc_empirical"])
+    include_loc_vars = (spec.wage_spec == "loc_empirical")
+    
+    data_sm = None
+    data_sf = None
+    data_cou = None
+    
+    if df_singles is not None:
+        df_sm = df_singles[df_singles["dgn"] == 1]
+        df_sf = df_singles[df_singles["dgn"] == 0]
+        
+        if len(df_sm) > 0:
+            data_sm = precompute_data_singles(
+                df=df_sm, metadata=metadata, is_male=True,
+                include_wage_vars=include_wage_vars, include_loc_vars=include_loc_vars
+            )
+        if len(df_sf) > 0:
+            data_sf = precompute_data_singles(
+                df=df_sf, metadata=metadata, is_male=False,
+                include_wage_vars=include_wage_vars, include_loc_vars=include_loc_vars
+            )
+    
+    if df_couples is not None:
+        data_cou = precompute_data_couples(
+            df=df_couples, metadata=metadata,
+            include_wage_vars=include_wage_vars, include_loc_vars=include_loc_vars
+        )
+    
+    # Build gradient function
+    def grad_func(theta_):
+        return compute_gradient_joint(theta_, data_sm, data_sf, data_cou, spec)
+    
+    # Compute Hessian numerically
+    n_params = len(theta)
+    eps = 1e-5
+    H = np.zeros((n_params, n_params))
+    
+    for i in range(n_params):
+        theta_plus = theta.copy()
+        theta_minus = theta.copy()
+        theta_plus[i] += eps
+        theta_minus[i] -= eps
+        
+        g_plus = grad_func(theta_plus)
+        g_minus = grad_func(theta_minus)
+        
+        H[:, i] = (g_plus - g_minus) / (2 * eps)
+        
+        if (i + 1) % 10 == 0:
+            LOGGER.info(f"   Hessian column {i+1}/{n_params}")
+    
+    # Symmetrize
+    H = 0.5 * (H + H.T)
+    
+    # Compute SEs using pseudoinverse
+    varcov = np.linalg.pinv(H, rcond=1e-10)
+    se = np.sqrt(np.abs(np.diag(varcov)))
+    
+    # Handle negative variances
+    neg_var = np.diag(varcov) < 0
+    if np.any(neg_var):
+        se[neg_var] = np.nan
+    
+    # Compute t-values and p-values
+    with np.errstate(divide='ignore', invalid='ignore'):
+        t_values = theta / se
+        p_values = 2 * (1 - norm.cdf(np.abs(t_values)))
+    
+    # Update parsed
+    parsed.std_errors = se
+    
+    # Update JSON data
+    se_list = [float(x) if not np.isnan(x) else None for x in se]
+    t_list = [float(x) if not np.isnan(x) else None for x in t_values]
+    p_list = [float(x) if not np.isnan(x) else None for x in p_values]
+    
+    if 'results' in data and 'joint' in data['results']:
+        data['results']['joint']['standard_errors'] = se_list
+        data['results']['joint']['t_values'] = t_list
+        data['results']['joint']['p_values'] = p_list
+    
+    data['standard_errors'] = {
+        'se': se_list,
+        't_values': t_list,
+        'p_values': p_list,
+    }
+    
+    # Save updated JSON
+    with open(results_json_path, 'w') as f:
+        json.dump(data, f, indent=2)
+    LOGGER.info(f"   Updated {results_json_path} with standard errors")
+    
+    # Also save CSV
+    params_df = pd.DataFrame({
+        'parameter': spec.all_param_names,
+        'estimate': theta,
+        'std_error': se,
+        't_value': t_values,
+        'p_value': p_values,
+    })
+    csv_path = results_json_path.parent / 'params_with_se.csv'
+    params_df.to_csv(csv_path, index=False)
+    LOGGER.info(f"   Saved {csv_path}")
+    
+    return parsed, data
+
+
+# =============================================================================
 # MAIN POST-ESTIMATION PIPELINE
 # =============================================================================
 
@@ -2514,6 +2832,8 @@ def run_styled_post_estimation(
     mnl_base: Path = None,
     output_dir: Path = None,
     prefix: str = "",
+    compute_se: bool = False,
+    spec_config: Path = None,
 ) -> Dict[str, Any]:
     """
     Main entry point for styled post-estimation.
@@ -2528,6 +2848,10 @@ def run_styled_post_estimation(
         Output directory (defaults to results_json_path parent)
     prefix : str
         Prefix for output files
+    compute_se : bool
+        If True, compute standard errors if not present
+    spec_config : Path, optional
+        Path to YAML specification file (required for compute_se)
 
     Returns
     -------
@@ -2554,10 +2878,30 @@ def run_styled_post_estimation(
         parsed, data = load_estimation_results_from_json(results_json_path)
     except (KeyError, TypeError):
         LOGGER.info("  Trying legacy JSON format...")
-        parsed, data = load_estimation_results_legacy(results_json_path)
-
-    LOGGER.info(f"   Found {len(parsed.groups)} groups: {parsed.groups}")
+        parsed, data = load_estimation_results_legacy(results_json_path)    LOGGER.info(f"   Found {len(parsed.groups)} groups: {parsed.groups}")
     LOGGER.info(f"   Preference groups: {parsed.preference_groups}")
+
+    # Check if SEs are missing and compute if requested
+    se_computed = False
+    if parsed.std_errors is None or np.all(np.isnan(parsed.std_errors)):
+        LOGGER.info("   Standard errors not found in results")
+        if compute_se:
+            if mnl_base is None:
+                LOGGER.warning("   Cannot compute SEs: --mnl-base required")
+            elif spec_config is None:
+                LOGGER.warning("   Cannot compute SEs: --spec-config required")
+            else:
+                LOGGER.info("   Computing standard errors from numerical Hessian...")
+                try:
+                    parsed, data = _compute_and_update_standard_errors(
+                        parsed, data, mnl_base, spec_config, results_json_path
+                    )
+                    se_computed = True
+                    LOGGER.info("   Standard errors computed and saved")
+                except Exception as e:
+                    LOGGER.error(f"   Failed to compute SEs: {e}")
+        else:
+            LOGGER.info("   Use --compute-se flag to compute them")
 
     # Extract timing info from results
     estimation_time = None
@@ -2775,9 +3119,7 @@ def main():
         type=str,
         default="",
         help='Prefix for output files'
-    )
-
-    parser.add_argument(
+    )    parser.add_argument(
         '--bootstrap',
         type=int,
         default=0,
@@ -2793,19 +3135,32 @@ def main():
         help='Random seed for bootstrap reproducibility'
     )
 
+    parser.add_argument(
+        '--compute-se',
+        action='store_true',
+        help='Compute standard errors if not present in results (requires --spec-config)'
+    )
+
+    parser.add_argument(
+        '--spec-config',
+        type=Path,
+        default=None,
+        help='Path to YAML specification file (required for --compute-se)'
+    )
+
     args = parser.parse_args()
 
     # Set random seed if provided
     if args.seed is not None:
         np.random.seed(args.seed)
-        LOGGER.info(f"Set random seed to {args.seed}")
-
-    try:
+        LOGGER.info(f"Set random seed to {args.seed}")    try:
         results = run_styled_post_estimation(
             results_json_path=args.results_json,
             mnl_base=args.mnl_base,
             output_dir=args.output_dir,
             prefix=args.prefix,
+            compute_se=args.compute_se,
+            spec_config=args.spec_config,
             # bootstrap=args.bootstrap,  # Future: pass to function when implemented
         )
         return 0

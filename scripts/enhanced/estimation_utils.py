@@ -360,14 +360,25 @@ class PrecomputedDataSingles:
     n_children: np.ndarray   # Number of children (0 for males, actual for females)
     educL: np.ndarray        # Low education dummy
     educM: np.ndarray        # Medium education dummy
-    educH: np.ndarray        # High education dummy
-
-    # Hours opportunity shifters
+    educH: np.ndarray        # High education dummy    # Hours opportunity shifters
     working: np.ndarray      # 1 if hours > 0, else 0
     working_pt1: np.ndarray  # Part-time 1 indicator (~20h focal)
     working_pt2: np.ndarray  # Part-time 2 indicator (~30h focal)
     working_ft: np.ndarray   # Full-time indicator (~40h focal)
     gsur: np.ndarray         # Group-specific unemployment rate (0 if missing)
+      # NEW: Interaction variables for hours opportunity
+    female: np.ndarray       # 1 if female, 0 if male
+    in_couple: np.ndarray    # 1 if in couple, 0 if single (always 0 for singles)
+    drgn1: np.ndarray        # Region code (1-8) - kept for backward compatibility
+    
+    # Region dummies (Île-de-France = region 1 is reference)
+    reg2: np.ndarray         # Region 2 dummy
+    reg3: np.ndarray         # Region 3 dummy
+    reg4: np.ndarray         # Region 4 dummy
+    reg5: np.ndarray         # Region 5 dummy
+    reg6: np.ndarray         # Region 6 dummy
+    reg7: np.ndarray         # Region 7 dummy
+    reg8: np.ndarray         # Region 8 dummy
 
     # Wage opportunity (if vw or loc_empirical)
     log_wage: Optional[np.ndarray]  # log(wage) for workers, 0 for non-workers
@@ -438,14 +449,27 @@ class PrecomputedDataCouples:
     working_pt1_male: np.ndarray
     working_pt2_male: np.ndarray
     working_ft_male: np.ndarray
-    gsur_male: np.ndarray
-
-    # Female hours opportunity
+    gsur_male: np.ndarray    # Female hours opportunity
     working_female: np.ndarray
     working_pt1_female: np.ndarray
     working_pt2_female: np.ndarray
     working_ft_female: np.ndarray
-    gsur_female: np.ndarray
+    gsur_female: np.ndarray    # NEW: Interaction variables for hours opportunity (couples)
+    female_male: np.ndarray   # Always 0 for male partner
+    female_female: np.ndarray # Always 1 for female partner
+    in_couple_male: np.ndarray  # Always 1 for couples
+    in_couple_female: np.ndarray  # Always 1 for couples
+    drgn1_male: np.ndarray    # Region code (household-level)
+    drgn1_female: np.ndarray  # Same as drgn1_male (household-level)
+    
+    # Region dummies (Île-de-France = region 1 is reference)
+    reg2: np.ndarray         # Region 2 dummy (household-level)
+    reg3: np.ndarray         # Region 3 dummy
+    reg4: np.ndarray         # Region 4 dummy
+    reg5: np.ndarray         # Region 5 dummy
+    reg6: np.ndarray         # Region 6 dummy
+    reg7: np.ndarray         # Region 7 dummy
+    reg8: np.ndarray         # Region 8 dummy
 
     # Male wage opportunity (if vw or loc_empirical)
     log_wage_male: Optional[np.ndarray]
@@ -606,12 +630,48 @@ def precompute_data_singles(
             loc4_3 = (loc4 == 3).astype(float)
             loc4_4 = (loc4 == 4).astype(float)
         else:
-            logger.warning("  [WARN] No loc4 column found, setting to None")
-
-    # Prior
+            logger.warning("  [WARN] No loc4 column found, setting to None")    # Prior
     prior = df["prior"].values.copy()
     # Clip to avoid log(0) in likelihood
     prior = np.maximum(prior, EPS)
+
+    # NEW: Interaction variables for hours opportunity
+    # Female indicator: 0 for male, 1 for female
+    female = np.zeros(n_obs) if is_male else np.ones(n_obs)
+    
+    # In couple indicator: always 0 for singles
+    in_couple = np.zeros(n_obs)
+      # Region indicator (Île-de-France = drgn1)
+    if "drgn1" in df.columns:
+        drgn1 = df["drgn1"].fillna(0.0).values
+    elif "drgn" in df.columns:
+        # Check if drgn == 1 (Île-de-France code)
+        drgn1 = (df["drgn"] == 1).astype(float).values
+    else:
+        logger.warning("  [WARN] No drgn1/drgn column found, using zeros")
+        drgn1 = np.zeros(n_obs)
+    
+    # Create region dummies (region 1 = Île-de-France is reference)
+    # Check for existing reg_nuts1_* columns first
+    if "reg_nuts1_2" in df.columns:
+        reg2 = df["reg_nuts1_2"].fillna(0.0).values
+        reg3 = df["reg_nuts1_3"].fillna(0.0).values
+        reg4 = df["reg_nuts1_4"].fillna(0.0).values
+        reg5 = df["reg_nuts1_5"].fillna(0.0).values
+        reg6 = df["reg_nuts1_6"].fillna(0.0).values
+        reg7 = df["reg_nuts1_7"].fillna(0.0).values
+        reg8 = df["reg_nuts1_8"].fillna(0.0).values
+    elif "drgn1" in df.columns:
+        # Create dummies from drgn1 code
+        reg2 = (drgn1 == 2).astype(float)
+        reg3 = (drgn1 == 3).astype(float)
+        reg4 = (drgn1 == 4).astype(float)
+        reg5 = (drgn1 == 5).astype(float)
+        reg6 = (drgn1 == 6).astype(float)
+        reg7 = (drgn1 == 7).astype(float)
+        reg8 = (drgn1 == 8).astype(float)
+    else:
+        reg2 = reg3 = reg4 = reg5 = reg6 = reg7 = reg8 = np.zeros(n_obs)
 
     # Group structure
     group_ids = df["idhh"].unique()
@@ -631,7 +691,7 @@ def precompute_data_singles(
         )
 
     logger.info(f"  Extracted {n_groups:,} groups with {n_obs:,} total observations")
-
+    
     return PrecomputedDataSingles(
         consumption=consumption,
         leisure=leisure,
@@ -647,7 +707,16 @@ def precompute_data_singles(
         working_pt1=working_pt1,
         working_pt2=working_pt2,
         working_ft=working_ft,
-        gsur=gsur,
+        gsur=gsur,        female=female,
+        in_couple=in_couple,
+        drgn1=drgn1,
+        reg2=reg2,
+        reg3=reg3,
+        reg4=reg4,
+        reg5=reg5,
+        reg6=reg6,
+        reg7=reg7,
+        reg8=reg8,
         log_wage=log_wage,
         pexp_years=pexp_years,
         pexp_years2=pexp_years2,
@@ -805,10 +874,50 @@ def precompute_data_couples(
             loc4_1_female = (loc4_female == 1).astype(float)
             loc4_2_female = (loc4_female == 2).astype(float)
             loc4_3_female = (loc4_female == 3).astype(float)
-            loc4_4_female = (loc4_female == 4).astype(float)
+            loc4_4_female = (loc4_female == 4).astype(float)    # Prior
+    prior = np.maximum(df["prior"].values.copy(), EPS)
 
-    # Prior
-    prior = np.maximum(df["prior"].values.copy(), EPS)    # Group structure
+    # NEW: Interaction variables for hours opportunity (couples)
+    # Gender indicators (fixed for couples)
+    female_male = np.zeros(n_obs)    # Male partner is never female
+    female_female = np.ones(n_obs)   # Female partner is always female
+    
+    # In couple indicator: always 1 for couples
+    in_couple_male = np.ones(n_obs)
+    in_couple_female = np.ones(n_obs)
+      # Region indicator (Île-de-France = drgn1) - household level
+    if "drgn1" in df.columns:
+        drgn1 = df["drgn1"].fillna(0.0).values
+    elif "drgn" in df.columns:
+        drgn1 = (df["drgn"] == 1).astype(float).values
+    else:
+        logger.warning("  [WARN] No drgn1/drgn column found, using zeros")
+        drgn1 = np.zeros(n_obs)
+    drgn1_male = drgn1   # Same for both partners
+    drgn1_female = drgn1
+    
+    # Create region dummies (region 1 = Île-de-France is reference) - household level
+    if "reg_nuts1_2" in df.columns:
+        reg2 = df["reg_nuts1_2"].fillna(0.0).values
+        reg3 = df["reg_nuts1_3"].fillna(0.0).values
+        reg4 = df["reg_nuts1_4"].fillna(0.0).values
+        reg5 = df["reg_nuts1_5"].fillna(0.0).values
+        reg6 = df["reg_nuts1_6"].fillna(0.0).values
+        reg7 = df["reg_nuts1_7"].fillna(0.0).values
+        reg8 = df["reg_nuts1_8"].fillna(0.0).values
+    elif "drgn1" in df.columns:
+        # Create dummies from drgn1 code
+        reg2 = (drgn1 == 2).astype(float)
+        reg3 = (drgn1 == 3).astype(float)
+        reg4 = (drgn1 == 4).astype(float)
+        reg5 = (drgn1 == 5).astype(float)
+        reg6 = (drgn1 == 6).astype(float)
+        reg7 = (drgn1 == 7).astype(float)
+        reg8 = (drgn1 == 8).astype(float)
+    else:
+        reg2 = reg3 = reg4 = reg5 = reg6 = reg7 = reg8 = np.zeros(n_obs)
+
+    # Group structure
     group_ids = df["idhh"].unique()
     n_groups = len(group_ids)
     
@@ -825,7 +934,7 @@ def precompute_data_couples(
         )
 
     logger.info(f"  Extracted {n_groups:,} groups with {n_obs:,} total observations")
-
+    
     return PrecomputedDataCouples(
         consumption=consumption,
         log_c=log_c,
@@ -854,6 +963,18 @@ def precompute_data_couples(
         working_pt2_female=working_pt2_female,
         working_ft_female=working_ft_female,
         gsur_female=gsur_female,
+        female_male=female_male,
+        female_female=female_female,        in_couple_male=in_couple_male,
+        in_couple_female=in_couple_female,
+        drgn1_male=drgn1_male,
+        drgn1_female=drgn1_female,
+        reg2=reg2,
+        reg3=reg3,
+        reg4=reg4,
+        reg5=reg5,
+        reg6=reg6,
+        reg7=reg7,
+        reg8=reg8,
         log_wage_male=log_wage_male,
         pexp_years_male=pexp_years_male,
         pexp_years2_male=pexp_years2_male,

@@ -54,7 +54,9 @@ from estimation_utils import (
 )
 from estimation_spec_parser import (
     parse_specification,
-    load_custom_initial_values
+    load_custom_initial_values,
+    find_latest_results,
+    load_warm_start_values
 )
 from parallel_estimation import (
     estimate_single_group,
@@ -457,9 +459,7 @@ Examples:
         type=str,
         default=None,
         help="Path to metadata JSON (default: {mnl_base}__mnlmeta.json)"
-    )
-
-    # Specification
+    )    # Specification
     parser.add_argument(
         "--spec-config",
         type=str,
@@ -470,7 +470,28 @@ Examples:
         "--init-params",
         type=str,
         default=None,
-        help="CSV with custom initial values (overrides spec)"
+        help="CSV or JSON with custom initial values (overrides spec and warm-start)"
+    )
+    
+    # Warm-start from previous results
+    parser.add_argument(
+        "--warm-start",
+        type=str,
+        default="auto",
+        help="Warm-start from previous results: 'auto' (search output dir), "
+             "'none' (use spec defaults), or path to results JSON file"
+    )
+    parser.add_argument(
+        "--warm-start-search-dir",
+        type=str,
+        default=None,
+        help="Additional directory to search for previous results (used with --warm-start auto)"
+    )
+    parser.add_argument(
+        "--warm-start-default",
+        type=float,
+        default=0.0,
+        help="Default value for new parameters not in previous results (default: 0.0)"
     )
 
     # Estimation group
@@ -703,29 +724,80 @@ Examples:
                 metadata=metadata,
                 include_wage_vars=include_wage_vars,
                 include_loc_vars=include_loc_vars
-            )
-
-        # ===== 6. GET INITIAL VALUES =====
+            )        # ===== 6. GET INITIAL VALUES =====
         logger.info("")
         logger.info("="*80)
         logger.info("Step 6: Setting Initial Values")
         logger.info("="*80)
 
-        theta_init = spec.get_initial_vector()
+        # Determine warm-start behavior
+        if args.warm_start.lower() == "none":
+            # Use spec defaults only
+            logger.info("Warm-start disabled - using specification defaults")
+            theta_init = spec.get_initial_vector()
+            init_sources = {p: 'spec_default' for p in spec.all_param_names}
+            
+        elif args.warm_start.lower() == "auto":
+            # Auto-find previous results
+            search_dirs = [output_dir]
+            
+            # Add parent directory to search (for sibling estimation folders)
+            if output_dir.parent.exists():
+                search_dirs.append(output_dir.parent)
+            
+            # Add custom search directory if specified
+            if args.warm_start_search_dir:
+                search_dirs.append(Path(args.warm_start_search_dir))
+            
+            logger.info(f"Auto-searching for previous results in: {[str(d) for d in search_dirs]}")
+            theta_init, init_sources = load_warm_start_values(
+                spec=spec,
+                search_dirs=search_dirs,
+                default_value=args.warm_start_default
+            )
+            
+        else:
+            # Explicit path to previous results
+            prev_results_path = Path(args.warm_start)
+            if not prev_results_path.exists():
+                logger.warning(f"Warm-start file not found: {prev_results_path}")
+                logger.warning("Falling back to specification defaults")
+                theta_init = spec.get_initial_vector()
+                init_sources = {p: 'spec_default' for p in spec.all_param_names}
+            else:
+                logger.info(f"Loading warm-start values from: {prev_results_path}")
+                theta_init, init_sources = load_warm_start_values(
+                    spec=spec,
+                    results_path=prev_results_path,
+                    default_value=args.warm_start_default
+                )
 
+        # Override with explicit init-params if provided (highest priority)
         if args.init_params:
-            logger.info(f"Loading custom initial values from: {args.init_params}")
+            logger.info(f"Overriding with custom initial values from: {args.init_params}")
             custom_init = load_custom_initial_values(Path(args.init_params))
 
             for param_name, value in custom_init.items():
                 if param_name in spec.initial_values:
                     idx = spec.get_param_index(param_name)
                     theta_init[idx] = value
+                    init_sources[param_name] = 'init_params_override'
                     logger.info(f"  {param_name} = {value}")
                 else:
                     logger.warning(f"Unknown parameter in custom init: {param_name}")
 
-        logger.info(f"Initial vector: {theta_init}")
+        # Log summary of initial values by source
+        source_counts = {}
+        for src in init_sources.values():
+            source_counts[src] = source_counts.get(src, 0) + 1
+        logger.info(f"Initial values by source: {source_counts}")
+        
+        # Log the initial vector (compact format for many params)
+        if len(theta_init) <= 20:
+            logger.info(f"Initial vector: {theta_init}")
+        else:
+            logger.info(f"Initial vector (first 10): {theta_init[:10]}")
+            logger.info(f"Initial vector (last 10): {theta_init[-10:]}")
 
         # ===== 7. RUN ESTIMATION =====
         logger.info("")

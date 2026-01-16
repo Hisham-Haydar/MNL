@@ -26,11 +26,12 @@ from typing import Dict, Optional, Tuple, Any
 import numpy as np
 
 try:
-    from gamspy import Container, Model, Variable, Equation
+    from gamspy import Container, Model, Variable, Equation, Options
     from gamspy.math import exp as gp_exp, log as gp_log
     HAS_GAMSPY = True
 except ImportError:
     HAS_GAMSPY = False
+    Options = None  # Fallback for type hints
     logging.warning("GAMSPy not available. Install with: pip install gamspy")
 
 from estimation_utils import PrecomputedDataSingles, PrecomputedDataCouples
@@ -312,34 +313,27 @@ def estimate_singles_gamspy(
         equations=[obj_eq], 
         problem="nlp",
         sense="max", 
-        objective=obj
+    objective=obj
     )
     
     # ========================================================================
     # 4. Solve
     # ========================================================================
-    
     logger.info(f"  Solving with {solver_name.upper()}...")
     
-    # Solver options
-    solver_options = {}
+    # Solver options - use GAMSPY Options object
+    solver_options = Options()
     
     if solver_name == "conopt":
-        solver_options = {
-            "rtmaxv": "1.e6",  # Max runtime (1e6 seconds ~ 11 days)
-            "rvhess": "1",      # Use Hessian information
-        }
+        solver_options.rtmaxv = "1.e6"  # Max runtime (1e6 seconds ~ 11 days)
+        solver_options.rvhess = "1"      # Use Hessian information
     elif solver_name in ["ipopt", "ipopth"]:
-        solver_options = {
-            "max_iter": 1000,
-            "tol": 1e-6,
-            "print_level": 5 if verbose else 3,
-        }
+        solver_options.max_iter = 1000
+        solver_options.tol = 1e-6
+        solver_options.print_level = 5 if verbose else 3
     elif solver_name == "knitro":
-        solver_options = {
-            "maxit": 1000,
-            "opttol": 1e-6,
-        }
+        solver_options.maxit = 1000
+        solver_options.opttol = 1e-6
     
     # Solve
     result = model.solve(solver=solver_name, options=solver_options)
@@ -571,12 +565,15 @@ def estimate_couples_gamspy(
     # ========================================================================
     
     logger.info(f"  Solving with {solver_name.upper()}...")
-    
-    solver_options = {}
+      # Solver options - use GAMSPY Options object
+    solver_options = Options()
     if solver_name == "conopt":
-        solver_options = {"rtmaxv": "1.e6", "rvhess": "1"}
+        solver_options.rtmaxv = "1.e6"
+        solver_options.rvhess = "1"
     elif solver_name in ["ipopt", "ipopth"]:
-        solver_options = {"max_iter": 1000, "tol": 1e-6, "print_level": 5 if verbose else 3}
+        solver_options.max_iter = 1000
+        solver_options.tol = 1e-6
+        solver_options.print_level = 5 if verbose else 3
     
     result = model.solve(solver=solver_name, options=solver_options)
     walltime = time.time() - start_time
@@ -911,21 +908,25 @@ def estimate_joint_gamspy(
         name="ruro_joint_mnl_gamspy",
         equations=[eq_sm, eq_sf, eq_cou, eq_total],
         problem="nlp",
-        sense="max",
+    sense="max",
         objective=ll_total_var
     )
     
     logger.info(f"  Solving joint model with {solver_name.upper()}...")
     logger.info("  (This may take 5-15 minutes depending on data size)")
     
-    # Solver options
-    solver_options = {}
+    # Solver options - use GAMSPY Options object
+    solver_options = Options()
     if solver_name == "conopt":
-        solver_options = {"rtmaxv": "1.e6", "rvhess": "1"}
+        solver_options.rtmaxv = "1.e6"
+        solver_options.rvhess = "1"
     elif solver_name in ["ipopt", "ipopth"]:
-        solver_options = {"max_iter": 1000, "tol": 1e-6, "print_level": 5 if verbose else 3}
+        solver_options.max_iter = 1000
+        solver_options.tol = 1e-6
+        solver_options.print_level = 5 if verbose else 3
     elif solver_name == "knitro":
-        solver_options = {"maxit": 1000, "opttol": 1e-6}
+        solver_options.maxit = 1000
+        solver_options.opttol = 1e-6
     
     result = model.solve(solver=solver_name, options=solver_options)
     walltime = time.time() - start_time

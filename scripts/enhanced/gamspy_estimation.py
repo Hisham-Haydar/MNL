@@ -871,8 +871,7 @@ def estimate_joint_gamspy(
     ll_sf_var = Variable(container, "ll_singles_female", type="free")
     ll_cou_var = Variable(container, "ll_couples", type="free")
     ll_total_var = Variable(container, "ll_joint", type="free")
-    
-    # Equations to track each component
+      # Equations to track each component
     eq_sm = Equation(container, "eq_ll_sm", definition=(ll_sm_var == ll_sm))
     eq_sf = Equation(container, "eq_ll_sf", definition=(ll_sf_var == ll_sf))
     eq_cou = Equation(container, "eq_ll_cou", definition=(ll_cou_var == ll_cou))
@@ -887,10 +886,11 @@ def estimate_joint_gamspy(
         name="ruro_joint_mnl_gamspy",
         equations=[eq_sm, eq_sf, eq_cou, eq_total],
         problem="nlp",
-    sense="max",
+        sense="max",
         objective=ll_total_var
     )
-      logger.info(f"  Solving joint model with {solver_name.upper()}...")
+    
+    logger.info(f"  Solving joint model with {solver_name.upper()}...")
     logger.info("  (This may take 5-15 minutes depending on data size)")
     
     # Solve without solver-specific options for now

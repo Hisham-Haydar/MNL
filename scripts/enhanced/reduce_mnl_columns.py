@@ -45,8 +45,10 @@ import yaml
 CORE_ID_COLS = {
     # Household identifiers
     "idhh",           # Household ID (primary key for grouping)
+    "idhh_true",      # True household ID (CRITICAL: Step 6 merge key from EUROMOD)
     "didp",           # Person ID within household
     "idperson",       # Global person ID
+    "idperson_true",  # True person ID (CRITICAL: Step 6 merge key from EUROMOD)
     "hid",            # Alternative household ID
     
     # Draw/choice identifiers
@@ -63,38 +65,53 @@ CORE_ID_COLS = {
 
 # Demographics (person-level characteristics)
 DEMOGRAPHIC_COLS = {
-    # Age
+    # Age (used in Step 6 for normalization, Step 7 for estimation)
     "dag",            # Age (years)
     "age",            # Age
-    "age_norm",       # Age demeaned
-    "age_norm2",      # Age squared (demeaned)
+    "age_norm",       # Age demeaned (created in Step 6)
+    "age_norm2",      # Age squared (created in Step 6)
     
-    # Gender
+    # Gender (CRITICAL: used in Step 6 for couples reshaping)
     "dgn",            # Gender (0=female, 1=male)
     "female",         # Female indicator
     "male",           # Male indicator
     
-    # Education
+    # Education (used in Step 6 for GSUR merge, Step 7 for estimation)
     "deh",            # Education (EUROMOD code)
+    "deh_male",       # Male education (couples)
+    "deh_female",     # Female education (couples)
     "educ3",          # Education 3 categories (0=low, 1=mid, 2=high)
+    "educ3_male",     # Male education 3 categories (couples, GSUR merge)
+    "educ3_female",   # Female education 3 categories (couples, GSUR merge)
     "educL",          # Low education dummy
     "educM",          # Medium education dummy (reference)
     "educH",          # High education dummy
+    "educL_male",     # Male low education (couples)
+    "educM_male",     # Male medium education (couples)
+    "educH_male",     # Male high education (couples)
+    "educL_female",   # Female low education (couples)
+    "educM_female",   # Female medium education (couples)
+    "educH_female",   # Female high education (couples)
     
-    # Children
+    # Children (used in Step 7 estimation)
     "n_children",     # Number of children in household
+    "num_children_total", # Alternative children count (used in Step 6)
     "nkids",          # Alternative children count
     "nch02",          # Children 0-2
     "nch36",          # Children 3-6
     "nch712",         # Children 7-12
     "nch1317",        # Children 13-17
     
-    # Couple status
+    # Couple status (CRITICAL: used in Step 6 for couples processing)
     "in_couple",      # In couple indicator
     "couple",         # Couple indicator
     "idpartner",      # Partner ID
+    "ruro_group",     # RURO group (1=singles, 10=couples, CRITICAL for Step 6)
+    "ruro_decider",   # Decision-maker in couple
+    "ruro_sample",    # Sample indicator
+    "keep_for_analysis", # Analysis filter
     
-    # Region
+    # Region (CRITICAL: used in Step 6 for GSUR merge)
     "drgn",           # Region (detailed)
     "drgn1",          # Region (NUTS1 level) - 8 categories for France
     "reg_nuts1",      # NUTS1 region code
@@ -110,34 +127,40 @@ DEMOGRAPHIC_COLS = {
 
 # Labor market variables (hours, wages, occupation)
 LABOR_MARKET_COLS = {
-    # Hours
+    # Hours (CRITICAL: used in Step 6 to compute leisure)
     "hours",          # Weekly hours worked
     "hours_observed", # Observed hours (for draw=0)
+    "hours_male",     # Male hours (couples, used in Step 6)
+    "hours_female",   # Female hours (couples, used in Step 6)
     "lhw",            # Hours worked (alternative name)
     "working",        # Working indicator (hours > 0)
     "working_pt1",    # Part-time 1 indicator (~20h)
     "working_pt2",    # Part-time 2 indicator (~30h)
     "working_ft",     # Full-time indicator (~40h)
     
-    # Wages
+    # Wages (used in Step 7 estimation)
     "wage",           # Hourly wage
     "wage_observed",  # Observed wage
+    "wage_male",      # Male wage (couples)
+    "wage_female",    # Female wage (couples)
     "lwage",          # Log wage
     "yem",            # Earnings
     
-    # Experience
+    # Experience (used in Step 7 estimation)
     "pexp_years",     # Potential experience (years)
     "pexp_years2",    # Potential experience squared
     "exp",            # Experience
     "exp2",           # Experience squared
     
-    # Occupation (LOC4 = 4 major ISCO groups)
+    # Occupation (LOC4 = 4 major ISCO groups, used in Step 7 estimation)
     "loc",            # Occupation code (detailed)
     "loc4",           # Occupation 4 groups (1=managers, 2=prof, 3=tech, 4=other)
     "loc4_1",         # Managers dummy
     "loc4_2",         # Professionals dummy
     "loc4_3",         # Technicians dummy
     "loc4_4",         # Clerks/service dummy
+    "loc4_male",      # Male occupation (couples)
+    "loc4_female",    # Female occupation (couples)
     
     # Industry (NACE)
     "lindi",          # Industry code (NACE)
@@ -148,7 +171,10 @@ LABOR_MARKET_COLS = {
 # EUROMOD tax-benefit outputs
 EUROMOD_COLS = {
     # Disposable income components
-    "ils_dispy",      # Household disposable income
+    "ils_dispy",      # Household disposable income (CRITICAL: used in Step 6 for consumption)
+    "ils_dispy_em",   # EUROMOD disposable income (alternative name)
+    "ils_dispy_male", # Male disposable income (CRITICAL: for couples consumption_male in Step 6)
+    "ils_dispy_female", # Female disposable income (CRITICAL: for couples consumption_female in Step 6)
     "ils_origy",      # Original income
     "ils_earns",      # Earnings
     "ils_pen",        # Pensions
@@ -168,16 +194,19 @@ EUROMOD_COLS = {
     "ils_earns_female", # Female earnings (EUROMOD)
 }
 
-# Consumption and leisure (computed from income)
+# Consumption and leisure (computed from income in Step 6, used in Step 7)
 UTILITY_COLS = {
-    "consumption",    # Household consumption
-    "consumption_male",   # Male consumption (couples)
-    "consumption_female", # Female consumption (couples)
-    "leisure",        # Leisure (hours)
-    "leisure_male",   # Male leisure (couples)
-    "leisure_female", # Female leisure (couples)
+    # Consumption (computed in Step 6 from ils_dispy, used in Step 7 estimation)
+    "consumption",    # Household consumption (CRITICAL: Step 7 singles estimation)
+    "consumption_male",   # Male consumption (CRITICAL: Step 7 couples estimation)
+    "consumption_female", # Female consumption (CRITICAL: Step 7 couples estimation)
     
-    # Normalized versions
+    # Leisure (computed in Step 6 from hours, used in Step 7)
+    "leisure",        # Leisure hours (CRITICAL: Step 7 singles)
+    "leisure_male",   # Male leisure (CRITICAL: Step 7 couples)
+    "leisure_female", # Female leisure (CRITICAL: Step 7 couples)
+    
+    # Normalized versions (computed in Step 6, used in Step 7)
     "c_norm",         # Normalized consumption
     "l_norm",         # Normalized leisure
     "l_norm_male",    # Normalized male leisure
@@ -186,16 +215,27 @@ UTILITY_COLS = {
     "log_l_norm",     # Log normalized leisure
     "log_l_norm_male",    # Log normalized male leisure
     "log_l_norm_female",  # Log normalized female leisure
+    
+    # Raw log versions (may be created in Step 6)
+    "log_c",          # Log consumption (unnormalized)
+    "log_l",          # Log leisure (unnormalized)
 }
 
-# Prior and GSUR (group-specific unemployment rates)
+# Prior and GSUR (used in Step 7 estimation)
 PRIOR_GSUR_COLS = {
+    # Prior probability (CRITICAL: used in Step 7 likelihood computation)
     "prior",          # Prior probability (from draw generation)
-    "log_prior",      # Log prior
-    "prior_h",        # Hours prior
-    "prior_w",        # Wage prior
-    "gsur",           # Group-specific unemployment rate
+    "log_prior",      # Log prior (used in Step 7 log-likelihood)
+    "prior_h",        # Hours prior component
+    "prior_w",        # Wage prior component
+    
+    # GSUR unemployment rates (used in wage opportunity cost in Step 7)
+    "gsur",           # Group-specific unemployment rate (singles)
+    "gsur_male",      # Male GSUR (couples)
+    "gsur_female",    # Female GSUR (couples)
     "u_rate",         # Alternative unemployment rate name
+    "u_rate_male",    # Male unemployment rate
+    "u_rate_female",  # Female unemployment rate
 }
 
 # Weights and other metadata
@@ -205,6 +245,34 @@ METADATA_COLS = {
     "weight",         # Weight
     "idperson_draw",  # Person-draw composite ID
     "idhh_draw",      # Household-draw composite ID
+    "sample_group",   # Sample group (created in Step 6)
+    "chosen",         # Alternative name for is_chosen (used in Step 8)
+    "other_members_income", # Other household members' income (used in Step 6 for singles consumption)
+    
+    # Original IDs (used in Step 6 couples reshape)
+    "idorighh",       # Original household ID
+    "idorigperson",   # Original person ID
+    "idfather",       # Father ID
+    "idmother",       # Mother ID
+    
+    # Household composition flags
+    "hh_IsHead",      # Household head indicator
+    "hh_IsPartner",   # Partner indicator
+}
+
+# Step 8 (Post-estimation) specific columns
+POST_ESTIMATION_COLS = {
+    # Predicted values (created in Step 7, used in Step 8)
+    "log_opp",        # Log opportunity cost (singles)
+    "log_opp_male",   # Male log opportunity cost (couples)
+    "log_opp_female", # Female log opportunity cost (couples)
+    
+    # Probability diagnostics
+    "prob",           # Choice probability
+    "log_prob",       # Log probability
+    
+    # Gender/group indicators for post-estimation analysis
+    "gender",         # Gender indicator (alternative to dgn)
 }
 
 
@@ -214,7 +282,7 @@ def get_required_columns_from_yaml(yaml_path: Path) -> Set[str]:
     
     Returns set of column names that must be kept.
     """
-    with open(yaml_path, 'r') as f:
+    with open(yaml_path, 'r', encoding='utf-8') as f:
         spec = yaml.safe_load(f)
     
     required = set()
@@ -255,11 +323,19 @@ def get_all_required_columns(yaml_paths: List[Path]) -> Set[str]:
     """
     Get union of all columns needed across all YAML specifications.
     
-    This ensures the reduced dataset works with ALL possible specifications.
+    This ensures the reduced dataset works with ALL possible specifications
+    AND all columns used in Steps 6, 7, and 8 are preserved.
+    
+    Priority order:
+    1. Core columns (IDs, choice indicators) - ALWAYS needed
+    2. Step 6 columns (demographics, EUROMOD outputs) - needed to CREATE MNL dataset
+    3. Step 7 columns (consumption, leisure, prior, GSUR) - needed for ESTIMATION
+    4. Step 8 columns (probabilities, diagnostics) - needed for POST-ESTIMATION
+    5. YAML spec columns - specification-specific variables
     """
     all_required = set()
     
-    # Add core columns
+    # Add core columns (ALWAYS keep - needed for all steps)
     all_required.update(CORE_ID_COLS)
     all_required.update(DEMOGRAPHIC_COLS)
     all_required.update(LABOR_MARKET_COLS)
@@ -267,8 +343,9 @@ def get_all_required_columns(yaml_paths: List[Path]) -> Set[str]:
     all_required.update(UTILITY_COLS)
     all_required.update(PRIOR_GSUR_COLS)
     all_required.update(METADATA_COLS)
+    all_required.update(POST_ESTIMATION_COLS)
     
-    # Add variables from YAML specs
+    # Add variables from YAML specs (specification-specific)
     for yaml_path in yaml_paths:
         if yaml_path.exists():
             logging.info(f"  Analyzing {yaml_path.name}...")
@@ -378,20 +455,20 @@ def main():
         epilog="""
 Examples:
   # Dry run (show what would be done)
-  python reduce_mnl_columns.py --input-dir U:/EUROMOD-STORAGE/Data/processed/fr/2016 --dry-run
+  python reduce_mnl_columns.py --input-dir U:/EUROMOD-STORAGE/interim/ruro/fr/scenarios_2016 --dry-run
 
   # Actually reduce columns
-  python reduce_mnl_columns.py --input-dir U:/EUROMOD-STORAGE/Data/processed/fr/2016
+  python reduce_mnl_columns.py --input-dir U:/EUROMOD-STORAGE/interim/ruro/fr/scenarios_2016
 
   # Specify custom output directory
   python reduce_mnl_columns.py \\
-      --input-dir U:/EUROMOD-STORAGE/Data/processed/fr/2016 \\
-      --output-dir U:/EUROMOD-STORAGE/Data/processed/fr/2016_reduced
+      --input-dir U:/EUROMOD-STORAGE/interim/ruro/fr/scenarios_2016 \\
+      --output-dir U:/EUROMOD-STORAGE/interim/ruro/fr/scenarios_2016_reduced
 
 Notes:
-  - Run this BETWEEN Step 5 (EUROMOD) and Step 6 (MNL dataset creation)
-  - Input files: fr_2016_RURO_euromod_{singles_male,singles_female,couples}.parquet
-  - Output files: Same names in output directory (or _reduced suffix)
+  - Run this BETWEEN Step 4 (EUROMOD) and Step 6 (MNL dataset creation)
+  - Input file: combined_draws_em.parquet (EUROMOD output from Step 4)
+  - Output file: Same name in output directory (or _reduced suffix)
   - Preserves all columns needed for any YAML specification variant
 """
     )
@@ -471,12 +548,10 @@ Notes:
     required_cols = get_all_required_columns(yaml_files)
     logging.info(f"Total required columns: {len(required_cols)}")
     logging.info("")
-    
-    # Process each file
+      # Process the combined EUROMOD output file
+    # This is what Step 6 actually reads!
     files = [
-        ("fr_2016_RURO_euromod_singles_male.parquet", "Singles Male"),
-        ("fr_2016_RURO_euromod_singles_female.parquet", "Singles Female"),
-        ("fr_2016_RURO_euromod_couples.parquet", "Couples"),
+        ("combined_draws_em.parquet", "Combined EUROMOD Output"),
     ]
     
     results = {}
@@ -493,8 +568,7 @@ Notes:
         result = reduce_dataset(input_path, output_path, required_cols, dry_run=args.dry_run)
         results[label] = result
         logging.info("")
-    
-    # Summary
+      # Summary
     logging.info("="*80)
     logging.info("SUMMARY")
     logging.info("="*80)
@@ -508,17 +582,22 @@ Notes:
         if result['missing_cols'] > 0:
             logging.info(f"  ⚠ Missing {result['missing_cols']} required columns")
     
-    total_original_size = sum(r['original_size_mb'] for r in results.values())
-    total_reduced_size = sum(r['reduced_size_mb'] for r in results.values())
-    total_compression = total_original_size / total_reduced_size if total_reduced_size > 0 else 0
-    
-    logging.info("")
-    logging.info("Total:")
-    logging.info(f"  Original: {total_original_size:.1f} MB")
-    logging.info(f"  Reduced: {total_reduced_size:.1f} MB")
-    logging.info(f"  Savings: {total_original_size - total_reduced_size:.1f} MB "
-                f"({100 * (total_original_size - total_reduced_size) / total_original_size:.1f}%)")
-    logging.info(f"  Compression: {total_compression:.2f}x")
+    if results:
+        total_original_size = sum(r['original_size_mb'] for r in results.values())
+        total_reduced_size = sum(r['reduced_size_mb'] for r in results.values())
+        total_compression = total_original_size / total_reduced_size if total_reduced_size > 0 else 0
+        
+        logging.info("")
+        logging.info("Total:")
+        logging.info(f"  Original: {total_original_size:.1f} MB")
+        logging.info(f"  Reduced: {total_reduced_size:.1f} MB")
+        if total_original_size > 0:
+            logging.info(f"  Savings: {total_original_size - total_reduced_size:.1f} MB "
+                        f"({100 * (total_original_size - total_reduced_size) / total_original_size:.1f}%)")
+            logging.info(f"  Compression: {total_compression:.2f}x")
+    else:
+        logging.warning("")
+        logging.warning("No files were processed! Check that input files exist.")
     
     if args.dry_run:
         logging.info("")

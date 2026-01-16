@@ -551,17 +551,10 @@ def estimate_couples_gamspy(
     # ========================================================================
     
     logger.info(f"  Solving with {solver_name.upper()}...")
-      # Solver options - use GAMSPY Options object
-    solver_options = Options()
-    if solver_name == "conopt":
-        solver_options.rtmaxv = "1.e6"
-        solver_options.rvhess = "1"
-    elif solver_name in ["ipopt", "ipopth"]:
-        solver_options.max_iter = 1000
-        solver_options.tol = 1e-6
-        solver_options.print_level = 5 if verbose else 3
     
-    result = model.solve(solver=solver_name, options=solver_options)
+    # Solve without solver-specific options for now
+    # (GAMSPY Options object doesn't support solver-specific fields like rtmaxv)
+    result = model.solve(solver=solver_name)
     walltime = time.time() - start_time
     
     # ========================================================================

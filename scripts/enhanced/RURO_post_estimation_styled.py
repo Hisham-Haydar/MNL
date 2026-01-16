@@ -1716,8 +1716,7 @@ def generate_html_report_styled(
             <thead>
                 <tr><th>Group</th><th>N Individuals</th><th>% Neg MUC</th><th>% Neg MUL</th><th>MUC Mean</th><th>MUL Mean</th></tr>
             </thead>
-            <tbody>{mu_table_rows}</tbody>
-        </table>        <h3>MUC Behavior Analysis</h3>
+            <tbody>{mu_table_rows}</tbody>        <h3>MUC Behavior Analysis</h3>
         <p>For well-behaved utility: MUC &gt; 0 (β_c &gt; 0) and diminishing (θ_c &lt; 1)</p>
         {muc_analysis_html}
         
@@ -2311,15 +2310,7 @@ def compute_marginal_utilities_at_chosen(
         if 'f' in parsed_params.params_by_group:
             params_f = parsed_params.get_all_params_for_group('f')
           # If not found, try 'cou' or 'couples' group with suffixed params
-        if params_m is None:
-            for try_key in ['cou', 'couples']:
-                if try_key in parsed_params.params_by_group:
-                    params = parsed_params.get_all_params_for_group(try_key)
-                    params_m = params
-                    params_f = params
-                    break
-        
-        if params_m is not None and len(df_chosen) > 0:
+        if params_m is not None:
             # Get consumption parameters (shared between M and F in couples)
             beta_c = params_m.get('beta_c', 1.0)
             theta_c = params_m.get('theta_c', 0.5)
@@ -3115,6 +3106,12 @@ def main():
     )
     
     parser.add_argument(
+        '--auto-timestamp',
+        action='store_true',
+        help='Automatically create timestamped subfolder: {output-dir}/run_{YYYY-MM-DD}_{HH-MM-SS}/'
+    )
+    
+    parser.add_argument(
         '--prefix',
         type=str,
         default="",
@@ -3150,16 +3147,27 @@ def main():
         help='Path to YAML specification file (required for --compute-se)'
     )
 
-    args = parser.parse_args()    # Set random seed if provided
-    if args.seed is not None:
+    args = parser.parse_args()    # Set random seed if provided    if args.seed is not None:
         np.random.seed(args.seed)
         LOGGER.info(f"Set random seed to {args.seed}")
+    
+    # Handle timestamped output directory
+    output_dir = args.output_dir
+    if args.auto_timestamp:
+        from datetime import datetime
+        timestamp = datetime.now().strftime("run_%Y-%m-%d_%H-%M-%S")
+        if output_dir is None:
+            output_dir = args.results_json.parent / timestamp
+        else:
+            output_dir = Path(output_dir) / timestamp
+        print(f"Auto-timestamp enabled: {output_dir}")
+        LOGGER.info(f"Timestamped output directory: {output_dir}")
     
     try:
         results = run_styled_post_estimation(
             results_json_path=args.results_json,
             mnl_base=args.mnl_base,
-            output_dir=args.output_dir,
+            output_dir=output_dir,
             prefix=args.prefix,
             compute_se=args.compute_se,
             spec_config=args.spec_config,

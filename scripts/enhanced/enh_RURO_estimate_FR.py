@@ -509,15 +509,23 @@ Examples:
         type=int,
         default=-1,
         help="Number of parallel jobs for joint estimation (-1 = all CPUs)"
+    )    # Solver selection
+    parser.add_argument(
+        "--solver",
+        type=str,
+        default="scipy",
+        choices=["scipy", "gamspy-conopt", "gamspy-ipopt", "gamspy-knitro"],
+        help="Optimization solver: scipy (L-BFGS-B), gamspy-conopt (2-3x faster), "
+             "gamspy-ipopt, or gamspy-knitro (default: scipy)"
     )
 
-    # Optimization
+    # Optimization (SciPy-specific)
     parser.add_argument(
         "--method",
         type=str,
         default=None,
         choices=["L-BFGS-B", "BFGS", "trust-constr"],
-        help="Optimization method (overrides spec)"
+        help="SciPy optimization method (overrides spec, ignored for GAMSPy)"
     )
     parser.add_argument(
         "--maxiter",
@@ -534,7 +542,7 @@ Examples:
     parser.add_argument(
         "--no-gradient",
         action="store_true",
-        help="Disable analytical gradient (use numerical approximation)"
+        help="Disable analytical gradient - SciPy only (use numerical approximation)"
     )
 
     # Output
@@ -543,6 +551,11 @@ Examples:
         type=str,
         required=True,
         help="Directory for estimation results"
+    )
+    parser.add_argument(
+        "--auto-timestamp",
+        action="store_true",
+        help="Automatically create timestamped subfolder: {output-dir}/run_{YYYY-MM-DD}_{HH-MM-SS}/"
     )
 
     # Validation
@@ -557,19 +570,26 @@ Examples:
         "--skip-se",
         action="store_true",
         help="Skip standard error computation (faster, but no SEs)"
-    )
-
-    # Logging
+    )    # Logging
     parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable verbose logging (DEBUG level)"
     )
-
+    
     args = parser.parse_args()
 
     # Setup output directory and logging
-    output_dir = Path(args.output_dir)
+    output_dir_base = Path(args.output_dir)
+    
+    if args.auto_timestamp:
+        # Create timestamped subdirectory
+        timestamp = datetime.now().strftime("run_%Y-%m-%d_%H-%M-%S")
+        output_dir = output_dir_base / timestamp
+        print(f"Auto-timestamp enabled: {output_dir}")
+    else:
+        output_dir = output_dir_base
+    
     output_dir.mkdir(parents=True, exist_ok=True)
     setup_logging(output_dir, verbose=args.verbose)
 
@@ -578,6 +598,9 @@ Examples:
     logger.info("Enhanced RURO MNL Estimation - France")
     logger.info("="*80)
     logger.info(f"Started: {datetime.now().isoformat()}")
+    logger.info(f"Output directory: {output_dir}")
+    if args.auto_timestamp:
+        logger.info(f"  (Timestamped run folder created automatically)")
     logger.info("")
 
     try:        # ===== 1. LOAD SPECIFICATION =====
@@ -797,45 +820,176 @@ Examples:
             logger.info(f"Initial vector: {theta_init}")
         else:
             logger.info(f"Initial vector (first 10): {theta_init[:10]}")
-            logger.info(f"Initial vector (last 10): {theta_init[-10:]}")
-
-        # ===== 7. RUN ESTIMATION =====
+            logger.info(f"Initial vector (last 10): {theta_init[-10:]}")        # ===== 7. RUN ESTIMATION =====
         logger.info("")
         logger.info("="*80)
         logger.info("Step 7: Running Estimation")
         logger.info("="*80)
-
-        if args.group == "joint":
-            # Parallel joint estimation
-            results = estimate_joint(
-                data_singles_male=data_sm,
-                data_singles_female=data_sf,
-                data_couples=data_cou,
-                spec=spec,
-                n_jobs=args.n_jobs,
-                use_gradient=spec.opt_analytical_gradient
-            )
+        
+        # Check if using GAMSPy solver
+        use_gamspy = args.solver.startswith("gamspy-")
+        
+        if use_gamspy:
+            # Extract GAMSPy solver name (conopt, ipopt, knitro)
+            gamspy_solver = args.solver.split("-")[1]
+            logger.info(f"Using GAMSPy solver: {gamspy_solver.upper()}")
+            logger.info("Note: GAMSPy uses automatic differentiation (no manual gradient)")
+              # Import GAMSPy estimation functions
+            try:
+                from gamspy_estimation import (
+                    estimate_singles_gamspy, 
+                    estimate_couples_gamspy,
+                    estimate_joint_gamspy
+                )
+            except ImportError as e:
+                logger.error(f"Failed to import GAMSPy estimation module: {e}")
+                logger.error("Make sure gamspy_estimation.py is in scripts/enhanced/")
+                raise
+            
+            # Run estimation with GAMSPy
+            if args.group == "joint":
+                # Joint estimation with GAMSPy
+                logger.info("="*80)
+                logger.info("JOINT ESTIMATION WITH GAMSPy")
+                logger.info("="*80)
+                logger.info("This will estimate all three groups simultaneously with shared parameters")
+                logger.info("Expected runtime: 10-16 minutes (vs 30-40 min with SciPy)")
+                logger.info("="*80)
+                
+                gamspy_result = estimate_joint_gamspy(
+                    data_singles_male=data_sm,
+                    data_singles_female=data_sf,
+                    data_couples=data_cou,
+                    spec=spec,
+                    solver=gamspy_solver,
+                    verbose=args.verbose
+                )
+                
+                # Convert to format compatible with downstream code
+                class GAMSPyJointResult:
+                    def __init__(self, gamspy_dict):
+                        self.x = gamspy_dict['theta']
+                        self.fun = -gamspy_dict['log_likelihood']
+                        self.success = ('Optimal' in gamspy_dict['solver_status'] or 
+                                      'Normal' in gamspy_dict['solver_status'])
+                        self.message = f"{gamspy_dict['solver_status']} ({gamspy_dict['model_status']})"
+                        self.nit = gamspy_dict['n_iterations'] or 0
+                        self.nfev = self.nit
+                        self.jac = None
+                
+                opt_result = GAMSPyJointResult(gamspy_result)
+                walltime = gamspy_result['walltime']
+                
+                # Create results dict in joint format
+                results = {
+                    'singles_male': opt_result,  # Same params for all groups
+                    'singles_female': opt_result,
+                    'couples': opt_result,
+                    'walltimes': {
+                        'singles_male': walltime / 3,  # Approximate split
+                        'singles_female': walltime / 3,
+                        'couples': walltime / 3,
+                    },
+                    'joint_ll': gamspy_result['log_likelihood'],
+                    'll_breakdown': {
+                        'singles_male': gamspy_result['ll_singles_male'],
+                        'singles_female': gamspy_result['ll_singles_female'],
+                        'couples': gamspy_result['ll_couples'],
+                    },
+                    'n_obs_total': data_sm.n_obs + data_sf.n_obs + data_cou.n_obs,
+                    'n_groups_total': data_sm.n_groups + data_sf.n_groups + data_cou.n_groups,
+                    'total_walltime': walltime,
+                    'gamspy_solver': gamspy_solver,
+                }
+            else:
+                # Single group estimation with GAMSPy
+                if args.group in ["singles_male", "singles_pooled"]:
+                    data = data_sm
+                    group_name = args.group
+                    logger.info(f"Estimating {group_name} with GAMSPy...")
+                    gamspy_result = estimate_singles_gamspy(
+                        data=data, spec=spec, theta_init=theta_init, 
+                        solver=gamspy_solver, verbose=args.verbose
+                    )
+                    
+                elif args.group == "singles_female":
+                    data = data_sf
+                    group_name = "singles_female"
+                    logger.info(f"Estimating {group_name} with GAMSPy...")
+                    gamspy_result = estimate_singles_gamspy(
+                        data=data, spec=spec, theta_init=theta_init,
+                        solver=gamspy_solver, verbose=args.verbose
+                    )
+                    
+                elif args.group == "couples":
+                    data = data_cou
+                    group_name = "couples"
+                    logger.info(f"Estimating {group_name} with GAMSPy...")
+                    gamspy_result = estimate_couples_gamspy(
+                        data=data, spec=spec, theta_init=theta_init,
+                        solver=gamspy_solver, verbose=args.verbose
+                    )
+                
+                # Convert GAMSPy result to SciPy-like OptimizeResult format
+                # (for compatibility with downstream code)
+                class GAMSPyResult:
+                    def __init__(self, gamspy_dict):
+                        self.x = gamspy_dict['theta']
+                        self.fun = -gamspy_dict['log_likelihood']  # Negative LL
+                        self.success = ('Optimal' in gamspy_dict['solver_status'] or 
+                                      'Normal' in gamspy_dict['solver_status'])
+                        self.message = f"{gamspy_dict['solver_status']} ({gamspy_dict['model_status']})"
+                        self.nit = gamspy_dict['n_iterations'] or 0
+                        self.nfev = self.nit  # Approximate
+                        self.jac = None  # GAMSPy doesn't return gradient
+                
+                opt_result = GAMSPyResult(gamspy_result)
+                walltime = gamspy_result['walltime']
+                
+                # Format results
+                results = {
+                    group_name: opt_result,
+                    'walltimes': {group_name: walltime},
+                    'joint_ll': gamspy_result['log_likelihood'],
+                    'n_obs_total': data.n_obs,
+                    'n_groups_total': data.n_groups,
+                    'total_walltime': walltime,
+                    'gamspy_solver': gamspy_solver,
+                }
+        
         else:
-            # Single group estimation
-            if args.group in ["singles_male", "singles_pooled"]:
-                data = data_sm
-                group_name = args.group
-            elif args.group == "singles_female":
-                data = data_sf
-                group_name = "singles_female"
-            elif args.group == "couples":
-                data = data_cou
-                group_name = "couples"
+            # Use SciPy estimation (original path)
+            if args.group == "joint":
+                # Parallel joint estimation
+                results = estimate_joint(
+                    data_singles_male=data_sm,
+                    data_singles_female=data_sf,
+                    data_couples=data_cou,
+                    spec=spec,
+                    n_jobs=args.n_jobs,
+                    use_gradient=spec.opt_analytical_gradient
+                )
+            else:
+                # Single group estimation
+                if args.group in ["singles_male", "singles_pooled"]:
+                    data = data_sm
+                    group_name = args.group
+                elif args.group == "singles_female":
+                    data = data_sf
+                    group_name = "singles_female"
+                elif args.group == "couples":
+                    data = data_cou
+                    group_name = "couples"
 
-            logger.info(f"Estimating {group_name}...")
+                logger.info(f"Estimating {group_name}...")
 
-            group_name, opt_result, walltime = estimate_single_group(
-                group_name=group_name,
-                data=data,
-                spec=spec,
-                theta_init=theta_init,
-                use_gradient=spec.opt_analytical_gradient
-            )            # Format results like estimate_joint output
+                group_name, opt_result, walltime = estimate_single_group(
+                    group_name=group_name,
+                    data=data,
+                    spec=spec,
+                    theta_init=theta_init,
+                    use_gradient=spec.opt_analytical_gradient
+                )            # Format results like estimate_joint output
             results = {
                 group_name: opt_result,
                 'walltimes': {group_name: walltime},

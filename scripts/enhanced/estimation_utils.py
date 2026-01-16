@@ -395,14 +395,15 @@ class PrecomputedDataSingles:
     # Normalization & prior
     prior: np.ndarray        # Importance sampling prior
     c_scale: float           # Consumption normalization constant
-    l_scale: float           # Leisure normalization constant
-
-    # Group structure (for softmax)
+    l_scale: float           # Leisure normalization constant    # Group structure (for softmax)
     group_ids: np.ndarray    # Person IDs (unique identifiers)
     group_starts: np.ndarray # Index where each group starts
     group_ends: np.ndarray   # Index where each group ends (exclusive)
     n_groups: int            # Number of individuals
     n_obs: int               # Total observations (n_groups × n_draws)
+    
+    # Chosen alternative indicator (for GAMSPy estimation)
+    actual_choice: np.ndarray  # 1.0 if this is the observed choice, 0.0 otherwise
 
     # Metadata
     is_male: bool            # True if male dataset, False if female
@@ -494,14 +495,15 @@ class PrecomputedDataCouples:
     # Normalization & prior
     prior: np.ndarray
     c_scale: float
-    l_scale: float
-
-    # Group structure
+    l_scale: float    # Group structure
     group_ids: np.ndarray
     group_starts: np.ndarray
     group_ends: np.ndarray
     n_groups: int
     n_obs: int
+    
+    # Chosen alternative indicator (for GAMSPy estimation)
+    actual_choice: np.ndarray  # 1.0 if this is the observed choice, 0.0 otherwise
 
 
 # ==============================================================================
@@ -686,9 +688,27 @@ def precompute_data_singles(
     # Validate group boundaries
     if not np.all(group_ends > group_starts):
         raise ValueError(
-            "Invalid group boundaries detected. "
-            f"group_starts: {group_starts[:10]}, group_ends: {group_ends[:10]}"
+            "Invalid group boundaries detected. "            f"group_starts: {group_starts[:10]}, group_ends: {group_ends[:10]}"
         )
+
+    # Identify actual choice for each group (for GAMSPy estimation)
+    # The actual choice is where hours matches the observed hours
+    # For importance sampling, this is typically the row with highest prior or where hours == hours_observed
+    actual_choice = np.zeros(n_obs)
+    if "hours_observed" in df.columns:
+        # If we have explicit observed hours column
+        hours_obs = df["hours_observed"].values
+        actual_choice = (df["hours"].values == hours_obs).astype(float)
+    else:
+        # Fallback: assume first row in each group is the observed choice
+        # (or the one with prior closest to 1.0)
+        for g in range(n_groups):
+            start = group_starts[g]
+            end = group_ends[g]
+            # Find row with maximum prior in this group
+            group_priors = prior[start:end]
+            chosen_local_idx = np.argmax(group_priors)
+            actual_choice[start + chosen_local_idx] = 1.0
 
     logger.info(f"  Extracted {n_groups:,} groups with {n_obs:,} total observations")
     
@@ -733,6 +753,7 @@ def precompute_data_singles(
         group_ends=group_ends,
         n_groups=n_groups,
         n_obs=n_obs,
+        actual_choice=actual_choice,
         is_male=is_male
     )
 
@@ -925,13 +946,30 @@ def precompute_data_couples(
     group_sizes = df.groupby("idhh", sort=False).size().values
     group_ends = np.cumsum(group_sizes)
     group_starts = np.concatenate([[0], group_ends[:-1]])
-    
-    # Validate group boundaries
+      # Validate group boundaries
     if not np.all(group_ends > group_starts):
         raise ValueError(
             "Invalid group boundaries detected. "
             f"group_starts: {group_starts[:10]}, group_ends: {group_ends[:10]}"
         )
+
+    # Identify actual choice for each group (for GAMSPy estimation)
+    actual_choice = np.zeros(n_obs)
+    if "hours_male_observed" in df.columns and "hours_female_observed" in df.columns:
+        # If we have explicit observed hours columns
+        hours_m_obs = df["hours_male_observed"].values
+        hours_f_obs = df["hours_female_observed"].values
+        hours_m = df["hours_male"].values
+        hours_f = df["hours_female"].values
+        actual_choice = ((hours_m == hours_m_obs) & (hours_f == hours_f_obs)).astype(float)
+    else:
+        # Fallback: assume row with maximum prior in each group
+        for g in range(n_groups):
+            start = group_starts[g]
+            end = group_ends[g]
+            group_priors = prior[start:end]
+            chosen_local_idx = np.argmax(group_priors)
+            actual_choice[start + chosen_local_idx] = 1.0
 
     logger.info(f"  Extracted {n_groups:,} groups with {n_obs:,} total observations")
     
@@ -994,11 +1032,11 @@ def precompute_data_couples(
         prior=prior,
         c_scale=c_scale,
         l_scale=l_scale,
-        group_ids=group_ids,
-        group_starts=group_starts,
+        group_ids=group_ids,        group_starts=group_starts,
         group_ends=group_ends,
         n_groups=n_groups,
-        n_obs=n_obs
+        n_obs=n_obs,
+        actual_choice=actual_choice
     )
 
 

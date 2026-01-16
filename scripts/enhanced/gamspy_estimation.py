@@ -843,18 +843,18 @@ def estimate_joint_gamspy(
             c_val = data_couples.consumption[global_idx]
             log_c_term = np.log(max(c_val / y_ref_cou, LOG_EPS))
             util_j = param_vars['beta_c'] * log_c_term
-            
-            # Female leisure
+              # Female leisure
             l_f_val = data_couples.leisure_female[global_idx]
             log_l_f_term = np.log(max(l_f_val / l_ref_cou, LOG_EPS))
             beta_l_f_expr = param_vars['beta_l0_f']
-            for shifter in spec.utility_leisure_shifters_female:
+            for shifter in spec.utility_leisure_shifters:
                 var_name = shifter['variable']
-                coef_name = shifter['coefficient']
-                if coef_name in param_vars:
+                base_coef = shifter['coefficient']
+                coef_name_f = f"{base_coef}_f"  # Add _f suffix for female
+                if coef_name_f in param_vars:
                     demo_val = getattr(data_couples, var_name, None)
                     if demo_val is not None:
-                        beta_l_f_expr = beta_l_f_expr + param_vars[coef_name] * float(demo_val[global_idx])
+                        beta_l_f_expr = beta_l_f_expr + param_vars[coef_name_f] * float(demo_val[global_idx])
             
             util_j = util_j + beta_l_f_expr * log_l_f_term
             
@@ -863,13 +863,14 @@ def estimate_joint_gamspy(
             log_l_m_term = np.log(max(l_m_val / l_ref_cou, LOG_EPS))
             
             beta_l_m_expr = param_vars['beta_l0_m']
-            for shifter in spec.utility_leisure_shifters_male:
+            for shifter in spec.utility_leisure_shifters:
                 var_name = shifter['variable']
-                coef_name = shifter['coefficient']
-                if coef_name in param_vars:
+                base_coef = shifter['coefficient']
+                coef_name_m = f"{base_coef}_m"  # Add _m suffix for male
+                if coef_name_m in param_vars:
                     demo_val = getattr(data_couples, var_name, None)
                     if demo_val is not None:
-                        beta_l_m_expr = beta_l_m_expr + param_vars[coef_name] * float(demo_val[global_idx])
+                        beta_l_m_expr = beta_l_m_expr + param_vars[coef_name_m] * float(demo_val[global_idx])
             
             util_j = util_j + beta_l_m_expr * log_l_m_term
             utilities.append(util_j)

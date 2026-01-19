@@ -241,7 +241,8 @@ def _compute_utility_singles(
 def _compute_hours_opportunity_singles(
     params: Dict[str, float],
     data: PrecomputedDataSingles,
-    spec: EstimationSpec
+    spec: EstimationSpec,
+    is_male: bool = True
 ) -> np.ndarray:
     """
     Compute log hours opportunity density for singles.
@@ -254,6 +255,10 @@ def _compute_hours_opportunity_singles(
     - GSUR × working
     - education × working
 
+    Uses gender-specific parameters: _male suffix for males, _female for females.
+    This allows different hours opportunity effects by gender while sharing
+    parameters between singles and couples of the same gender.
+
     Parameters
     ----------
     params : dict
@@ -262,6 +267,8 @@ def _compute_hours_opportunity_singles(
         Precomputed data
     spec : EstimationSpec
         Specification
+    is_male : bool
+        True for male, False for female (determines parameter suffix)
 
     Returns
     -------
@@ -269,11 +276,19 @@ def _compute_hours_opportunity_singles(
         Log hours opportunity density
     """
     log_h = np.zeros(data.n_obs)
+    gender_suffix = "_male" if is_male else "_female"
 
     for shifter_config in spec.hours_shifters:
         var_name = shifter_config["variable"]
         coef_name = shifter_config["coefficient"]
         interaction = shifter_config.get("interaction", None)
+
+        # Use gender-specific coefficient name
+        coef_name_gender = f"{coef_name}{gender_suffix}"
+
+        # Fall back to base name if gender-specific not found (for backward compatibility)
+        if coef_name_gender not in params and coef_name in params:
+            coef_name_gender = coef_name
 
         # Get data array
         if hasattr(data, var_name):
@@ -288,7 +303,8 @@ def _compute_hours_opportunity_singles(
             else:
                 raise ValueError(f"Unknown interaction: {interaction}")
 
-        log_h = log_h + params[coef_name] * var_data
+        if coef_name_gender in params:
+            log_h = log_h + params[coef_name_gender] * var_data
 
     return log_h
 
@@ -339,7 +355,8 @@ def _compute_wage_opportunity_vw_singles(
             mu_w = mu_w + params[coef_name]
         elif hasattr(data, var_name):
             var_data = getattr(data, var_name)
-            mu_w = mu_w + params[coef_name] * var_data
+            if var_data is not None:
+                mu_w = mu_w + params[coef_name] * var_data
         else:
             raise ValueError(f"Variable {var_name} not found in precomputed data")
 
@@ -400,7 +417,8 @@ def _compute_wage_opportunity_loc_singles(
 
         if hasattr(data, var_name):
             var_data = getattr(data, var_name)
-            common_shift = common_shift + params[coef_name] * var_data
+            if var_data is not None:
+                common_shift = common_shift + params[coef_name] * var_data
         else:
             raise ValueError(f"Variable {var_name} not found in precomputed data")
 
@@ -693,14 +711,14 @@ def _compute_wage_derivatives_vw_singles(
     dV_dtheta : np.ndarray
         Derivative matrix to update
     params : dict
-        Parameter dictionary
-    data : PrecomputedDataSingles
+        Parameter dictionary    data : PrecomputedDataSingles
         Precomputed data
     spec : EstimationSpec
         Specification
     """
     # Compute μ(X)
     mu_w = np.zeros(data.n_obs)
+    
     for shifter_config in spec.wage_mean_shifters:
         var_name = shifter_config["variable"]
         coef_name = shifter_config["coefficient"]
@@ -709,8 +727,9 @@ def _compute_wage_derivatives_vw_singles(
             mu_w = mu_w + params[coef_name]
         else:
             var_data = getattr(data, var_name)
-            mu_w = mu_w + params[coef_name] * var_data
-
+            if var_data is not None:
+                mu_w = mu_w + params[coef_name] * var_data
+    
     sigma = params[spec.wage_variance_param]
     residual = (data.log_wage - mu_w) / sigma
 
@@ -722,12 +741,12 @@ def _compute_wage_derivatives_vw_singles(
 
         if var_name == "intercept":
             deriv = residual / sigma
+            dV_dtheta[:, idx] = np.where(data.working > 0, deriv, 0.0)
         else:
-            var_data = getattr(data, var_name)
-            deriv = residual / sigma * var_data
-
-        # Only for workers
-        dV_dtheta[:, idx] = np.where(data.working > 0, deriv, 0.0)
+            var_data = getattr(data, var_name, None)
+            if var_data is not None:
+                deriv = residual / sigma * var_data
+                dV_dtheta[:, idx] = np.where(data.working > 0, deriv, 0.0)
 
     # Derivative w.r.t. sigma
     idx_sigma = spec.get_param_index(spec.wage_variance_param)
@@ -767,7 +786,8 @@ def _compute_wage_derivatives_loc_singles(
         var_name = shifter_config["variable"]
         coef_name = shifter_config["coefficient"]
         var_data = getattr(data, var_name)
-        common_shift = common_shift + params[coef_name] * var_data
+        if var_data is not None:
+            common_shift = common_shift + params[coef_name] * var_data
 
     # Derivatives for each LOC group
     for group_config in spec.wage_loc_groups:
@@ -809,7 +829,10 @@ def _compute_wage_derivatives_loc_singles(
             sigma_g = params[sigma_name]
             residual_g = (data.log_wage - mu_g) / sigma_g
 
-            deriv_common += residual_g / sigma_g * var_data * loc_indicator
+            if var_data is not None:
+
+
+                deriv_common += residual_g / sigma_g * var_data * loc_indicator
 
         dV_dtheta[:, idx] = np.where(data.working > 0, deriv_common, 0.0)
 
@@ -1132,7 +1155,8 @@ def _compute_wage_opportunity_vw_couples_gender(
             var_name_gender = f"{var_name}{suffix}"
             if hasattr(data, var_name_gender):
                 var_data = getattr(data, var_name_gender)
-                mu_w = mu_w + params[coef_name] * var_data
+                if var_data is not None:
+                    mu_w = mu_w + params[coef_name] * var_data
 
     sigma = params[spec.wage_variance_param]
     residual = (log_wage - mu_w) / sigma
@@ -1185,7 +1209,8 @@ def _compute_wage_opportunity_loc_couples_gender(
         var_name_gender = f"{var_name}{suffix}"
         if hasattr(data, var_name_gender):
             var_data = getattr(data, var_name_gender)
-            common_shift = common_shift + params[coef_name] * var_data
+            if var_data is not None:
+                common_shift = common_shift + params[coef_name] * var_data
 
     # LOC-specific densities
     for group_config in spec.wage_loc_groups:
@@ -1383,14 +1408,12 @@ def _compute_utility_derivatives_couples(
     else:
         # Shared intercept (old behavior)
         idx_beta_l0 = spec.get_param_index(spec.utility_leisure_intercept)
-        dV_dtheta[:, idx_beta_l0] = bc_l_male + bc_l_female
-
-    # Derivatives w.r.t. leisure shifters
+        dV_dtheta[:, idx_beta_l0] = bc_l_male + bc_l_female    # Derivatives w.r.t. leisure shifters
     for shifter_config in spec.utility_leisure_shifters:
         var_name = shifter_config["variable"]
         coef_name = shifter_config["coefficient"]
         is_gender_specific = shifter_config.get("gender_specific", False)
-
+        
         if has_gender_specific:
             # Separate derivatives for male and female parameters
             # Male derivative (skip n_children)
@@ -1399,7 +1422,8 @@ def _compute_utility_derivatives_couples(
                 var_name_male = f"{var_name}_male"
                 if hasattr(data, var_name_male):
                     var_data = getattr(data, var_name_male)
-                    dV_dtheta[:, idx_m] = var_data * bc_l_male
+                    if var_data is not None:
+                        dV_dtheta[:, idx_m] = var_data * bc_l_male
 
             # Female derivative
             idx_f = spec.get_param_index(f"{coef_name}_f")
@@ -1411,19 +1435,20 @@ def _compute_utility_derivatives_couples(
                     var_data = getattr(data, var_name_female)
                 else:
                     continue
-            dV_dtheta[:, idx_f] = var_data * bc_l_female
+            
+            if var_data is not None:
+                dV_dtheta[:, idx_f] = var_data * bc_l_female
         else:
             # Shared parameter (old behavior)
             idx = spec.get_param_index(coef_name)
-            deriv = np.zeros(data.n_obs)
-
-            # Male contribution (skip n_children)
+            deriv = np.zeros(data.n_obs)            # Male contribution (skip n_children)
             if not (is_gender_specific and var_name == "n_children"):
                 var_name_male = f"{var_name}_male"
                 if hasattr(data, var_name_male):
                     var_data = getattr(data, var_name_male)
-                    deriv += var_data * bc_l_male
-
+                    if var_data is not None:
+                        deriv += var_data * bc_l_male
+            
             # Female contribution
             if var_name == "n_children":
                 var_data = data.n_children
@@ -1433,7 +1458,9 @@ def _compute_utility_derivatives_couples(
                     var_data = getattr(data, var_name_female)
                 else:
                     continue
-            deriv += var_data * bc_l_female
+            
+            if var_data is not None:
+                deriv += var_data * bc_l_female
 
             dV_dtheta[:, idx] = deriv
 
@@ -1541,25 +1568,24 @@ def _compute_wage_derivatives_vw_couples_gender(
     suffix = "_male" if is_male else "_female"
 
     log_wage = getattr(data, f"log_wage{suffix}")
-    working = getattr(data, f"working{suffix}")
-
-    # Compute mean
+    working = getattr(data, f"working{suffix}")    # Compute mean
     mu_w = np.zeros(data.n_obs)
     for shifter_config in spec.wage_mean_shifters:
         var_name = shifter_config["variable"]
         coef_name = shifter_config["coefficient"]
-
+        
         if var_name == "intercept":
             mu_w = mu_w + params[coef_name]
         else:
             var_name_gender = f"{var_name}{suffix}"
             if hasattr(data, var_name_gender):
                 var_data = getattr(data, var_name_gender)
-                mu_w = mu_w + params[coef_name] * var_data
+                if var_data is not None:
+                    mu_w = mu_w + params[coef_name] * var_data
 
     sigma = params[spec.wage_variance_param]
     residual = (log_wage - mu_w) / sigma
-
+    
     # Derivatives w.r.t. mean parameters
     for shifter_config in spec.wage_mean_shifters:
         var_name = shifter_config["variable"]
@@ -1568,15 +1594,14 @@ def _compute_wage_derivatives_vw_couples_gender(
 
         if var_name == "intercept":
             deriv = residual / sigma
+            dV_dtheta[:, idx] += np.where(working > 0, deriv, 0.0)
         else:
             var_name_gender = f"{var_name}{suffix}"
             if hasattr(data, var_name_gender):
                 var_data = getattr(data, var_name_gender)
-                deriv = residual / sigma * var_data
-            else:
-                continue
-
-        dV_dtheta[:, idx] += np.where(working > 0, deriv, 0.0)  # += for both genders
+                if var_data is not None:
+                    deriv = residual / sigma * var_data
+                    dV_dtheta[:, idx] += np.where(working > 0, deriv, 0.0)  # += for both genders
 
     # Derivative w.r.t. sigma
     idx_sigma = spec.get_param_index(spec.wage_variance_param)
@@ -1607,7 +1632,8 @@ def _compute_wage_derivatives_loc_couples_gender(
         var_name_gender = f"{var_name}{suffix}"
         if hasattr(data, var_name_gender):
             var_data = getattr(data, var_name_gender)
-            common_shift = common_shift + params[coef_name] * var_data
+            if var_data is not None:
+                common_shift = common_shift + params[coef_name] * var_data
 
     # Derivatives for each LOC group
     for group_config in spec.wage_loc_groups:
@@ -1659,7 +1685,10 @@ def _compute_wage_derivatives_loc_couples_gender(
             sigma_g = params[sigma_name]
             residual_g = (log_wage - mu_g) / sigma_g
 
-            deriv_common += residual_g / sigma_g * var_data * loc_indicator
+            if var_data is not None:
+
+
+                deriv_common += residual_g / sigma_g * var_data * loc_indicator
 
         dV_dtheta[:, idx] += np.where(working > 0, deriv_common, 0.0)
 

@@ -3142,12 +3142,14 @@ def main():
 
     parser.add_argument(
         '--spec-config',
-        type=Path,
-        default=None,
+        type=Path,        default=None,
         help='Path to YAML specification file (required for --compute-se)'
     )
 
-    args = parser.parse_args()    # Set random seed if provided    if args.seed is not None:
+    args = parser.parse_args()
+    
+    # Set random seed if provided
+    if args.seed is not None:
         np.random.seed(args.seed)
         LOGGER.info(f"Set random seed to {args.seed}")
     

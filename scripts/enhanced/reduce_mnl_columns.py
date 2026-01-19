@@ -147,8 +147,14 @@ LABOR_MARKET_COLS = {
     "yem",            # Earnings
     
     # Experience (used in Step 7 estimation)
-    "pexp_years",     # Potential experience (years)
-    "pexp_years2",    # Potential experience squared
+    "pexp_years",     # Potential experience (years) - singles
+    "pexp_years2",    # Potential experience squared - singles
+    "pexp_years_male",    # Male experience (years) - couples
+    "pexp_years_female",  # Female experience (years) - couples
+    "pexp_years2_male",   # Male experience squared - couples
+    "pexp_years2_female", # Female experience squared - couples
+    "pexp2_male",     # Alias for pexp_years2_male
+    "pexp2_female",   # Alias for pexp_years2_female
     "exp",            # Experience
     "exp2",           # Experience squared
     

@@ -593,10 +593,10 @@ def precompute_data_singles(
     hours = df["hours"].values
     working = (hours > 0).astype(float)
 
-    # Focal points (from old script logic)
-    working_pt1 = ((hours >= 15) & (hours <= 25)).astype(float)  # ~20h
-    working_pt2 = ((hours >= 25) & (hours <= 35)).astype(float)  # ~30h
-    working_ft = ((hours >= 35) & (hours <= 45)).astype(float)   # ~40h    # GSUR (check both column names for backwards compatibility)
+    # Focal hours peaks matching Stijn's R code (narrow bands around typical schedules)
+    working_pt1 = ((hours >= 18.5) & (hours <= 20.5)).astype(float)  # ~20h part-time
+    working_pt2 = ((hours >= 29.5) & (hours <= 30.5)).astype(float)  # ~30h part-time
+    working_ft = ((hours >= 37.5) & (hours <= 40.5)).astype(float)   # ~40h full-time    # GSUR (check both column names for backwards compatibility)
     if "gsur" in df.columns:
         gsur = df["gsur"].fillna(0.0).values
     elif "u_rate" in df.columns:
@@ -831,9 +831,10 @@ def precompute_data_couples(
     educH_female = df.get("educH_female", pd.Series(0.0, index=df.index)).fillna(0.0).values    # Male hours opportunity
     hours_male = df["hours_male"].values
     working_male = (hours_male > 0).astype(float)
-    working_pt1_male = ((hours_male >= 15) & (hours_male <= 25)).astype(float)
-    working_pt2_male = ((hours_male >= 25) & (hours_male <= 35)).astype(float)
-    working_ft_male = ((hours_male >= 35) & (hours_male <= 45)).astype(float)
+    # Focal hours peaks matching Stijn's R code (narrow bands around typical schedules)
+    working_pt1_male = ((hours_male >= 18.5) & (hours_male <= 20.5)).astype(float)  # ~20h part-time
+    working_pt2_male = ((hours_male >= 29.5) & (hours_male <= 30.5)).astype(float)  # ~30h part-time
+    working_ft_male = ((hours_male >= 37.5) & (hours_male <= 40.5)).astype(float)   # ~40h full-time
 
     if "gsur_male" in df.columns:
         gsur_male = df["gsur_male"].fillna(0.0).values
@@ -846,9 +847,10 @@ def precompute_data_couples(
     # Female hours opportunity
     hours_female = df["hours_female"].values
     working_female = (hours_female > 0).astype(float)
-    working_pt1_female = ((hours_female >= 15) & (hours_female <= 25)).astype(float)
-    working_pt2_female = ((hours_female >= 25) & (hours_female <= 35)).astype(float)
-    working_ft_female = ((hours_female >= 35) & (hours_female <= 45)).astype(float)
+    # Focal hours peaks matching Stijn's R code (narrow bands around typical schedules)
+    working_pt1_female = ((hours_female >= 18.5) & (hours_female <= 20.5)).astype(float)  # ~20h part-time
+    working_pt2_female = ((hours_female >= 29.5) & (hours_female <= 30.5)).astype(float)  # ~30h part-time
+    working_ft_female = ((hours_female >= 37.5) & (hours_female <= 40.5)).astype(float)   # ~40h full-time
 
     if "gsur_female" in df.columns:
         gsur_female = df["gsur_female"].fillna(0.0).values

@@ -58,10 +58,266 @@ SOLVER_MAP = {
 # Helper Functions
 # ==============================================================================
 
+# Group to parameter suffix mapping for 4-group architecture
+SUFFIX_MAP = {
+    "singles_male": "_sm",
+    "singles_female": "_sf",
+    "couples_male": "_m",
+    "couples_female": "_f",
+    "couples_household": "",  # No suffix for household-level parameters
+}
+
+
+def boxcox_gamspy(value: float, theta_var, epsilon: float = 1e-12):
+    """
+    Box-Cox transformation for GAMSPy expressions.
+
+    Mathematical form:
+        BC(x, θ) = (x^θ - 1) / θ    if θ ≠ 0
+        BC(x, θ) = log(x)            if θ = 0 (limit)
+
+    This matches the SciPy implementation in estimation_utils.py lines 1049-1072.
+
+    Parameters
+    ----------
+    value : float
+        Scalar value to transform (consumption or leisure observation)
+    theta_var : GAMSPy Variable
+        Box-Cox exponent parameter (being optimized)
+    epsilon : float, default=1e-12
+        Small constant added to theta to prevent division by zero
+        Must be small enough not to affect results but large enough to avoid numerical issues
+
+    Returns
+    -------
+    GAMSPy expression
+        Box-Cox transformed value
+
+    Notes
+    -----
+    **Challenge**: GAMSPy's power() function requires a CONSTANT exponent, but theta
+    is a Variable being optimized. Direct use of power(x, theta_var) fails with error:
+        "function POWER called with non-constant argument in position 2"
+
+    **Solution**: Use the exponential-logarithm identity:
+        x^θ = exp(θ * log(x))
+
+    This works in GAMSPy because:
+    - log(x) is a constant (computed from data value)
+    - θ is a Variable
+    - Multiplication (θ * log(x)) and exp() are allowed with variable arguments!
+
+    The formula (exp(θ * log(x)) - 1) / (θ + ε) is smooth and differentiable everywhere,
+    which is what GAMSPy's solvers need for gradient-based optimization.
+
+    **Implementation Details**:
+    1. Compute log(value) as a constant
+    2. Use exp(theta_var * log_value) to compute x^theta
+    3. Apply Box-Cox formula: (x^theta - 1) / (theta + epsilon)
+    4. The epsilon prevents division by zero while preserving limit behavior
+
+    **Verification**:
+    - When θ = 0.5: BC(x, 0.5) = (x^0.5 - 1) / 0.5 = 2*(√x - 1)
+    - When θ → 0: BC(x, 0+ε) ≈ log(x) by L'Hôpital's rule
+    - When θ = 1: BC(x, 1) = (x - 1) / 1 = x - 1
+
+    **References**:
+    This approach is based on the working implementation in:
+    scripts/archive/rum_approach/RUM/DCM2_gamspy.py lines 877-890
+    """
+    from gamspy.math import exp as gp_exp
+    import math
+
+    # Ensure value is positive (add small epsilon to avoid log(0) issues)
+    safe_value = max(value, LOG_EPS)
+
+    # Compute log(value) as a CONSTANT (not a GAMSPy expression)
+    # This is the key: log_val is a plain float, not a Variable
+    log_val = math.log(safe_value)
+
+    # Compute x^theta using exponential-logarithm identity: x^θ = exp(θ * log(x))
+    # This works because:
+    # - log_val is a constant (float)
+    # - theta_var is a Variable
+    # - theta_var * log_val is a GAMSPy expression
+    # - gp_exp() accepts variable arguments
+    x_pow_theta = gp_exp(theta_var * log_val)
+
+    # Box-Cox formula: (x^theta - 1) / (theta + epsilon)
+    # The epsilon prevents division by zero while preserving the limit behavior
+    bc_value = (x_pow_theta - 1.0) / (theta_var + epsilon)
+
+    return bc_value
+
+
+def get_param_name(base_name: str, group: str, param_vars: dict) -> str:
+    """
+    Get actual parameter name for a group-specific context.
+
+    This function enables specification-agnostic code by dynamically determining
+    which parameter variant to use based on the estimation group.
+
+    Strategy:
+    1. Try group-specific parameter (e.g., beta_c + _sm = beta_c_sm)
+    2. Fall back to generic parameter (e.g., beta_c)
+    3. Raise error if neither exists
+
+    Parameters
+    ----------
+    base_name : str
+        Base parameter name without suffix (e.g., "beta_c", "beta_l0")
+    group : str
+        Estimation group: "singles_male", "singles_female", "couples_male",
+        "couples_female", or "couples_household"
+    param_vars : dict
+        Dictionary mapping parameter names to GAMSPy Variables
+
+    Returns
+    -------
+    str
+        Actual parameter name that exists in param_vars
+
+    Raises
+    ------
+    ValueError
+        If parameter not found with either suffix or as generic
+
+    Examples
+    --------
+    >>> # 4-group spec has beta_c_sm, beta_c_sf, beta_c (household)
+    >>> get_param_name("beta_c", "singles_male", param_vars)
+    "beta_c_sm"
+
+    >>> # Legacy spec might only have beta_c (generic)
+    >>> get_param_name("beta_c", "singles_male", param_vars_legacy)
+    "beta_c"
+
+    >>> # AC2013 spec uses _cm/_cf for couples
+    >>> get_param_name("beta_l0", "couples_male", param_vars_ac2013)
+    "beta_l0_cm"  # If _cm used instead of _m
+    """
+    suffix = SUFFIX_MAP.get(group, "")
+
+    # Try with suffix first (most specific)
+    if suffix:
+        param_with_suffix = f"{base_name}{suffix}"
+        if param_with_suffix in param_vars:
+            return param_with_suffix
+
+    # Try generic parameter (fallback)
+    if base_name in param_vars:
+        return base_name
+
+    # Not found - provide helpful error message
+    tried_names = [f"{base_name}{suffix}", base_name] if suffix else [base_name]
+    raise ValueError(
+        f"Parameter '{base_name}' for group '{group}' not found in specification. "
+        f"Tried: {', '.join(tried_names)}. "
+        f"Available parameters: {list(param_vars.keys())[:10]}..."
+    )
+
+
+def validate_gamspy_result(model, ll_final: float, theta_final: np.ndarray,
+                          expected_ll_range: tuple = (-20000, -1000),
+                          logger=None) -> None:
+    """
+    Validate GAMSPy optimization result and raise errors if something is wrong.
+
+    Parameters
+    ----------
+    model : GAMSPy Model object
+        The Model object (contains solver/model status after solve())
+    ll_final : float
+        Final log-likelihood value
+    theta_final : np.ndarray
+        Final parameter estimates
+    expected_ll_range : tuple, default=(-20000, -1000)
+        Expected range for log-likelihood (min, max)
+    logger : logging.Logger, optional
+        Logger for warnings
+
+    Raises
+    ------
+    RuntimeError
+        If solver failed or results are invalid
+    """
+    if logger is None:
+        logger = logging.getLogger(__name__)
+
+    # Get solver/model status from MODEL object
+    # GAMSPy stores: model.solve_status (SolveStatus enum) and model.status (ModelStatus enum)
+    solve_status_enum = getattr(model, 'solve_status', None)
+    model_status_enum = getattr(model, 'status', None)
+
+    solver_status = str(solve_status_enum) if solve_status_enum else 'Unknown'
+    model_status = str(model_status_enum) if model_status_enum else 'Unknown'
+
+    # Known bad statuses (check string representation of enum)
+    failed_solver_statuses = ['Iteration Interrupt', 'Resource Interrupt', 'Error Unknown',
+                              'Capability Problems', 'Licensing Problems', 'User Interrupt']
+    failed_model_statuses = ['Infeasible', 'Unbounded', 'InfeasibleIntermed', 'Error Unknown']
+
+    if solver_status in failed_solver_statuses:
+        raise RuntimeError(
+            f"GAMSPy solver FAILED with status '{solver_status}'. "
+            f"Model status: '{model_status}'. "
+            f"Final LL: {ll_final:.4f}. "
+            f"Check solver output for details."
+        )
+
+    if model_status in failed_model_statuses:
+        raise RuntimeError(
+            f"GAMSPy model status is FAILED: '{model_status}'. "
+            f"Solver status: '{solver_status}'. "
+            f"Final LL: {ll_final:.4f}. "
+            f"The optimization problem may be infeasible or unbounded."
+        )
+
+    # Check log-likelihood is reasonable
+    ll_min, ll_max = expected_ll_range
+    if ll_final < ll_min:
+        logger.error(
+            f"SUSPICIOUS RESULT: Log-likelihood {ll_final:.4f} is suspiciously low (< {ll_min}). "
+            f"Expected range: [{ll_min}, {ll_max}]"
+        )
+        raise RuntimeError(
+            f"Log-likelihood {ll_final:.4f} is outside expected range. "
+            f"Optimization may have failed silently. "
+            f"Solver status: {solver_status}, Model status: {model_status}"
+        )
+
+    if ll_final > ll_max:
+        logger.warning(
+            f"SUSPICIOUS RESULT: Log-likelihood {ll_final:.4f} is suspiciously high (> {ll_max}). "
+            f"Expected range: [{ll_min}, {ll_max}]. "
+            f"This may indicate an error in likelihood construction."
+        )
+
+    # Check for NaN or Inf in parameters
+    if np.any(np.isnan(theta_final)):
+        raise RuntimeError(
+            f"Parameter estimates contain NaN values! "
+            f"Solver status: {solver_status}, Model status: {model_status}. "
+            f"Optimization failed."
+        )
+
+    if np.any(np.isinf(theta_final)):
+        raise RuntimeError(
+            f"Parameter estimates contain Inf values! "
+            f"Solver status: {solver_status}, Model status: {model_status}. "
+            f"Optimization failed or bounds are incorrect."
+        )
+
+    # Check if parameters changed from initial values (detect silent failure)
+    # Note: This check would require passing theta_init, so we skip it here
+
+    logger.info(f"[OK] Result validation passed: LL={ll_final:.4f}, Solver={solver_status}, Model={model_status}")
+
+
 def ensure_local_workdir():
     r"""
     Ensure we're on a local (non-UNC) working directory for GAMS/GAMSPy.
-    
+
     GAMS has issues with UNC paths (\\server\share). If current directory
     is on UNC path, this function changes to a local temp directory.
     """
@@ -114,17 +370,21 @@ def estimate_singles_gamspy(
     data: PrecomputedDataSingles,
     spec: EstimationSpec,
     theta_init: np.ndarray,
+    group: str = "singles_male",
     solver: str = "conopt",
-    verbose: bool = True
+    verbose: bool = True,
+    solver_options: Optional[Dict[str, str]] = None
 ) -> Dict[str, Any]:
     """
     Estimate singles MNL using GAMSPy + CONOPT/IPOPT.
-    
-    Uses Aaberge-Colombino log-linear utility specification:
-        U_j = β_c * log(C_j / y_ref) + β_l(Z) * log(L_j / l_ref) + ASC_j
-        
-    where β_l(Z) varies by demographics (age, children, region, etc.)
-    
+
+    Uses Box-Cox utility specification (matching SciPy implementation):
+        U_j = β_c * BC(C_j/c_scale, θ_c) + β_l(Z) * BC(L_j/l_scale, θ_l) + ASC_j
+
+    where:
+        BC(x, θ) = (x^θ - 1) / θ  (Box-Cox transformation)
+        β_l(Z) varies by demographics (age, children, education, etc.)
+
     Parameters
     ----------
     data : PrecomputedDataSingles
@@ -133,11 +393,21 @@ def estimate_singles_gamspy(
         Specification from YAML config
     theta_init : np.ndarray
         Initial parameter values (length = n_params)
+    group : str, default="singles_male"
+        Estimation group: "singles_male" or "singles_female"
+        Determines which gender-specific parameters to use
     solver : str, default="conopt"
         GAMSPy solver: "conopt", "ipopt", "ipopth", or "knitro"
     verbose : bool, default=True
         If True, print solver output
-        
+    solver_options : dict, optional
+        Solver-specific options to pass to GAMSPy. For CONOPT, common options include:
+        - "Tol_Optimality": Optimality tolerance (default 1e-7)
+        - "Tol_Obj_Change": Limit for relative change in objective (default 3e-12)
+        - "Lim_Iteration": Maximum iterations
+        - "Lim_StallIter": Stalled iterations limit (default 100)
+        Example: {"Tol_Optimality": "1e-9", "Lim_Iteration": "10000"}
+
     Returns
     -------
     dict with:
@@ -159,7 +429,7 @@ def estimate_singles_gamspy(
     
     solver_name = SOLVER_MAP[solver]
     
-    logger.info(f"Starting GAMSPy estimation (solver={solver_name.upper()})")
+    logger.info(f"Starting GAMSPy estimation (solver={solver_name.upper()}, group={group})")
     logger.info(f"  Observations: {data.n_obs:,}")
     logger.info(f"  Groups: {data.n_groups:,}")
     logger.info(f"  Alternatives: {data.n_alts}")
@@ -240,37 +510,62 @@ def estimate_singles_gamspy(
         utilities = []
         
         for global_idx in alt_indices:
-            # Consumption utility: β_c * log(C / y_ref)
+            # === CONSUMPTION UTILITY: β_c * BC(C / c_scale, θ_c) ===
+            # Use group-specific parameters (e.g., beta_c_sm, theta_c_sm for singles male)
             c_val = data.consumption[global_idx]
-            log_c_term = np.log(max(c_val / y_ref, LOG_EPS))
-            
-            util_j = param_vars['beta_c'] * log_c_term
-            params_used.add('beta_c')
-            
-            # Leisure utility: β_l(Z) * log(L / l_ref)
+            c_scaled = c_val / y_ref
+
+            # Get group-specific consumption parameters
+            beta_c_param = get_param_name('beta_c', group, param_vars)
+            theta_c_param = get_param_name('theta_c', group, param_vars)
+
+            # Box-Cox transform consumption
+            bc_c = boxcox_gamspy(c_scaled, param_vars[theta_c_param])
+
+            # Consumption utility component
+            util_j = param_vars[beta_c_param] * bc_c
+            params_used.add(beta_c_param)
+            params_used.add(theta_c_param)
+
+            # === LEISURE UTILITY: β_l(Z) * BC(L / l_scale, θ_l) ===
             l_val = data.leisure[global_idx]
-            log_l_term = np.log(max(l_val / l_ref, LOG_EPS))
-            
+            l_scaled = l_val / l_ref
+
+            # Get group-specific leisure parameters
+            beta_l0_param = get_param_name('beta_l0', group, param_vars)
+            theta_l_param = get_param_name('theta_l', group, param_vars)
+
             # Build β_l(Z) = β_l0 + Σ β_k * Z_k
-            beta_l_expr = param_vars['beta_l0']
-            params_used.add('beta_l0')
-            # Add demographic shifters
+            beta_l_expr = param_vars[beta_l0_param]
+            params_used.add(beta_l0_param)
+
+            # Add demographic shifters (also group-specific)
             for shifter in spec.utility_leisure_shifters:
                 var_name = shifter['variable']
-                coef_name = shifter['coefficient']
-                if coef_name not in param_vars:
+                base_coef = shifter['coefficient']
+
+                # Try to get group-specific coefficient
+                try:
+                    coef_param = get_param_name(base_coef, group, param_vars)
+                except ValueError:
+                    # Parameter doesn't exist for this group, skip
                     continue
-                
+
                 # Get demographic value for this observation
                 demo_val = getattr(data, var_name, None)
                 if demo_val is None:
                     logger.warning(f"Demographic variable '{var_name}' not found in data")
                     continue
-                
-                beta_l_expr = beta_l_expr + param_vars[coef_name] * float(demo_val[global_idx])
-                params_used.add(coef_name)
-            
-            util_j = util_j + beta_l_expr * log_l_term
+
+                beta_l_expr = beta_l_expr + param_vars[coef_param] * float(demo_val[global_idx])
+                params_used.add(coef_param)
+
+            # Box-Cox transform leisure
+            bc_l = boxcox_gamspy(l_scaled, param_vars[theta_l_param])
+            params_used.add(theta_l_param)
+
+            # Leisure utility component
+            util_j = util_j + beta_l_expr * bc_l
             
             # Add ASC if applicable (not for base alternative)
             # ASCs are alternative-specific, check if this alt has one
@@ -319,27 +614,34 @@ def estimate_singles_gamspy(
     # 4. Solve
     # ========================================================================
     logger.info(f"  Solving with {solver_name.upper()}...")
-    
-    # Solve without solver-specific options for now
-    # (GAMSPY Options object doesn't support solver-specific fields like rtmaxv)
-    result = model.solve(solver=solver_name)
-    
+
+    # Pass solver-specific options if provided
+    if solver_options:
+        logger.info(f"  Solver options: {solver_options}")
+        result = model.solve(solver=solver_name, solver_options=solver_options)
+    else:
+        result = model.solve(solver=solver_name)
+
     walltime = time.time() - start_time
-    
+
     # ========================================================================
     # 5. Extract results
     # ========================================================================
-    
+
     theta_final = np.array([
-        _extract_var_level(param_vars[name]) 
+        _extract_var_level(param_vars[name])
         for name in spec.all_param_names
     ])
     
     ll_final = _extract_var_level(obj)
     
-    # Get solver status
-    solver_status = str(getattr(result, 'solver_status', 'Unknown'))
-    model_status = str(getattr(result, 'model_status', 'Unknown'))
+    # Get solver/model status from MODEL object
+    # GAMSPy stores: model.solve_status (SolveStatus enum) and model.status (ModelStatus enum)
+    solve_status_enum = getattr(model, 'solve_status', None)
+    model_status_enum = getattr(model, 'status', None)
+
+    solver_status = str(solve_status_enum) if solve_status_enum else 'Unknown'
+    model_status = str(model_status_enum) if model_status_enum else 'Unknown'
     
     # Try to get iteration count
     n_iterations = getattr(result, 'iteration_count', None)
@@ -353,7 +655,16 @@ def estimate_singles_gamspy(
     logger.info(f"  Model status: {model_status}")
     if n_iterations is not None:
         logger.info(f"  Iterations: {n_iterations}")
-    
+
+    # ========================================================================
+    # 6. Validate results
+    # ========================================================================
+
+    logger.info("  Validating results...")
+    validate_gamspy_result(model, ll_final, theta_final,
+                          expected_ll_range=(-15000, -1000),
+                          logger=logger)
+
     return {
         'theta': theta_final,
         'log_likelihood': ll_final,
@@ -374,29 +685,32 @@ def estimate_couples_gamspy(
     spec: EstimationSpec,
     theta_init: np.ndarray,
     solver: str = "conopt",
-    verbose: bool = True
+    verbose: bool = True,
+    solver_options: Optional[Dict[str, str]] = None
 ) -> Dict[str, Any]:
     """
     Estimate couples MNL using GAMSPy + CONOPT/IPOPT.
-    
+
     Uses Aaberge-Colombino collective utility specification:
         U_j = β_c_f * log(C_j / y_ref) + β_c_m * log(C_j / y_ref) +
             β_l_f(Z_f) * log(L_f_j / l_ref) + β_l_m(Z_m) * log(L_m_j / l_ref) +
             ASC_j
-    
+
     Parameters
     ----------
     data : PrecomputedDataCouples
         Precomputed data for couples
     spec : EstimationSpec
-        Specification from YAML config  
+        Specification from YAML config
     theta_init : np.ndarray
         Initial parameter values
     solver : str, default="conopt"
         GAMSPy solver
     verbose : bool, default=True
         Print solver output
-        
+    solver_options : dict, optional
+        Solver-specific options (e.g., {"Tol_Optimality": "1e-9"})
+
     Returns
     -------
     dict with estimation results (same format as estimate_singles_gamspy)
@@ -479,45 +793,88 @@ def estimate_couples_gamspy(
         utilities = []
         
         for global_idx in alt_indices:
-            # Consumption utility (household-level)
+            # === CONSUMPTION UTILITY: β_c * BC(C / c_scale, θ_c) ===
+            # Use couples_household group for shared consumption parameter
             c_val = data.consumption[global_idx]
-            log_c_term = np.log(max(c_val / y_ref, LOG_EPS))
-            
-            # Household-level consumption utility
-            util_j = param_vars['beta_c'] * log_c_term
-            # Female leisure utility
+            c_scaled = c_val / y_ref
+
+            # Get household-level consumption parameters (shared between partners)
+            beta_c_param = get_param_name('beta_c', 'couples_household', param_vars)
+            theta_c_param = get_param_name('theta_c', 'couples_household', param_vars)
+
+            # Box-Cox transform consumption
+            bc_c = boxcox_gamspy(c_scaled, param_vars[theta_c_param])
+
+            # Consumption utility component (appears once, not twice!)
+            util_j = param_vars[beta_c_param] * bc_c
+
+            # === FEMALE LEISURE UTILITY: β_l_f(Z) * BC(L_f / l_scale, θ_l_f) ===
             l_f_val = data.leisure_female[global_idx]
-            log_l_f_term = np.log(max(l_f_val / l_ref, LOG_EPS))
-            beta_l_f_expr = param_vars['beta_l0_f']
+            l_f_scaled = l_f_val / l_ref
+
+            # Get female-specific leisure parameters
+            beta_l0_f_param = get_param_name('beta_l0', 'couples_female', param_vars)
+            theta_l_f_param = get_param_name('theta_l', 'couples_female', param_vars)
+
+            # Build female leisure coefficient β_l_f(Z) = β_l0_f + Σ β_k_f * Z_k
+            beta_l_f_expr = param_vars[beta_l0_f_param]
+
             for shifter in spec.utility_leisure_shifters:
                 var_name = shifter['variable']
                 base_coef = shifter['coefficient']
-                coef_name_f = f"{base_coef}_f"  # Add _f suffix for female
-                if coef_name_f not in param_vars:
+
+                # Try to get female-specific coefficient
+                try:
+                    coef_param_f = get_param_name(base_coef, 'couples_female', param_vars)
+                except ValueError:
+                    # Parameter doesn't exist for females, skip
                     continue
+
                 demo_val = getattr(data, var_name, None)
                 if demo_val is None:
                     continue
-                beta_l_f_expr = beta_l_f_expr + param_vars[coef_name_f] * float(demo_val[global_idx])
-            
-            util_j = util_j + beta_l_f_expr * log_l_f_term
-            
-            # Male leisure utility
+
+                beta_l_f_expr = beta_l_f_expr + param_vars[coef_param_f] * float(demo_val[global_idx])
+
+            # Box-Cox transform female leisure
+            bc_l_f = boxcox_gamspy(l_f_scaled, param_vars[theta_l_f_param])
+
+            # Female leisure utility component
+            util_j = util_j + beta_l_f_expr * bc_l_f
+
+            # === MALE LEISURE UTILITY: β_l_m(Z) * BC(L_m / l_scale, θ_l_m) ===
             l_m_val = data.leisure_male[global_idx]
-            log_l_m_term = np.log(max(l_m_val / l_ref, LOG_EPS))
-            beta_l_m_expr = param_vars['beta_l0_m']
+            l_m_scaled = l_m_val / l_ref
+
+            # Get male-specific leisure parameters
+            beta_l0_m_param = get_param_name('beta_l0', 'couples_male', param_vars)
+            theta_l_m_param = get_param_name('theta_l', 'couples_male', param_vars)
+
+            # Build male leisure coefficient β_l_m(Z) = β_l0_m + Σ β_k_m * Z_k
+            beta_l_m_expr = param_vars[beta_l0_m_param]
+
             for shifter in spec.utility_leisure_shifters:
                 var_name = shifter['variable']
                 base_coef = shifter['coefficient']
-                coef_name_m = f"{base_coef}_m"  # Add _m suffix for male
-                if coef_name_m not in param_vars:
+
+                # Try to get male-specific coefficient
+                try:
+                    coef_param_m = get_param_name(base_coef, 'couples_male', param_vars)
+                except ValueError:
+                    # Parameter doesn't exist for males, skip
                     continue
+
                 demo_val = getattr(data, var_name, None)
                 if demo_val is None:
                     continue
-                beta_l_m_expr = beta_l_m_expr + param_vars[coef_name_m] * float(demo_val[global_idx])
-            
-            util_j = util_j + beta_l_m_expr * log_l_m_term
+
+                beta_l_m_expr = beta_l_m_expr + param_vars[coef_param_m] * float(demo_val[global_idx])
+
+            # Box-Cox transform male leisure
+            bc_l_m = boxcox_gamspy(l_m_scaled, param_vars[theta_l_m_param])
+
+            # Male leisure utility component
+            util_j = util_j + beta_l_m_expr * bc_l_m
             
             utilities.append(util_j)
         
@@ -549,32 +906,53 @@ def estimate_couples_gamspy(
     # ========================================================================
     # 4. Solve
     # ========================================================================
-    
+
     logger.info(f"  Solving with {solver_name.upper()}...")
-    
-    # Solve without solver-specific options for now
-    # (GAMSPY Options object doesn't support solver-specific fields like rtmaxv)
-    result = model.solve(solver=solver_name)
+
+    # Pass solver-specific options if provided
+    if solver_options:
+        logger.info(f"  Solver options: {solver_options}")
+        result = model.solve(solver=solver_name, solver_options=solver_options)
+    else:
+        result = model.solve(solver=solver_name)
     walltime = time.time() - start_time
-    
+
     # ========================================================================
     # 5. Extract results
     # ========================================================================
-    
+
     theta_final = np.array([
         _extract_var_level(param_vars[name])
         for name in spec.all_param_names
     ])
-    
+
     ll_final = _extract_var_level(obj)
-    solver_status = str(getattr(result, 'solver_status', 'Unknown'))
-    model_status = str(getattr(result, 'model_status', 'Unknown'))
+
+    # Get solver/model status from MODEL object
+    # GAMSPy stores: model.solve_status (SolveStatus enum) and model.status (ModelStatus enum)
+    solve_status_enum = getattr(model, 'solve_status', None)
+    model_status_enum = getattr(model, 'status', None)
+
+    solver_status = str(solve_status_enum) if solve_status_enum else 'Unknown'
+    model_status = str(model_status_enum) if model_status_enum else 'Unknown'
     n_iterations = getattr(result, 'iteration_count', getattr(result, 'iter_used', None))
     
     logger.info(f"  ✓ Solved in {walltime:.1f} seconds")
     logger.info(f"  Final LL: {ll_final:.4f}")
     logger.info(f"  Solver status: {solver_status}")
-    
+    logger.info(f"  Model status: {model_status}")
+    if n_iterations is not None:
+        logger.info(f"  Iterations: {n_iterations}")
+
+    # ========================================================================
+    # 6. Validate results
+    # ========================================================================
+
+    logger.info("  Validating results...")
+    validate_gamspy_result(model, ll_final, theta_final,
+                          expected_ll_range=(-15000, -1000),
+                          logger=logger)
+
     return {
         'theta': theta_final,
         'log_likelihood': ll_final,
@@ -596,17 +974,21 @@ def estimate_joint_gamspy(
     data_couples: PrecomputedDataCouples,
     spec: EstimationSpec,
     solver: str = "conopt",
-    verbose: bool = True
+    verbose: bool = True,
+    solver_options: Optional[Dict[str, str]] = None
 ) -> Dict[str, Any]:
     """
     Estimate joint MNL (singles male + singles female + couples) using GAMSPy.
-    
+
     This combines all three groups into a single optimization problem with
-    shared parameters (beta_c, beta_l0, demographic coefficients).
-    
+    shared parameters across groups where applicable.
+
+    Uses Box-Cox utility specification (matching SciPy implementation):
+        U = β_c * BC(C/c_scale, θ_c) + β_l(Z) * BC(L/l_scale, θ_l) + opportunity terms
+
     The objective is to maximize the sum of log-likelihoods:
         LL_joint = LL_singles_male + LL_singles_female + LL_couples
-    
+
     Parameters
     ----------
     data_singles_male : PrecomputedDataSingles
@@ -621,7 +1003,13 @@ def estimate_joint_gamspy(
         GAMSPy solver: "conopt", "ipopt", "ipopth", or "knitro"
     verbose : bool, default=True
         If True, print solver output
-        
+    solver_options : dict, optional
+        Solver-specific options. For CONOPT:
+        - "Tol_Optimality": Optimality tolerance (default 1e-7)
+        - "Tol_Obj_Change": Limit for relative change in objective (default 3e-12)
+        - "Lim_Iteration": Maximum iterations
+        Example: {"Tol_Optimality": "1e-9", "Lim_Iteration": "10000"}
+
     Returns
     -------
     dict with:
@@ -711,28 +1099,107 @@ def estimate_joint_gamspy(
         if chosen_idx is None:
             continue
         
-        # Build utilities
+        # Build utilities for singles male
         utilities = []
         for global_idx in range(start_idx, end_idx):
-            # Consumption utility
+            # Consumption utility: β_c * BC(C, θ_c)
+            # NOTE: Apply Box-Cox to RAW values, NOT scaled (matches SciPy)
             c_val = data_singles_male.consumption[global_idx]
-            log_c_term = np.log(max(c_val / y_ref_sm, LOG_EPS))
-            util_j = param_vars['beta_c_sm'] * log_c_term
-            # Leisure utility
+
+            beta_c_param = get_param_name('beta_c', 'singles_male', param_vars)
+            theta_c_param = get_param_name('theta_c', 'singles_male', param_vars)
+            bc_c = boxcox_gamspy(c_val, param_vars[theta_c_param])
+            util_j = param_vars[beta_c_param] * bc_c
+
+            # Leisure utility: β_l(Z) * BC(L, θ_l)
+            # NOTE: Apply Box-Cox to RAW values, NOT scaled (matches SciPy)
             l_val = data_singles_male.leisure[global_idx]
-            log_l_term = np.log(max(l_val / l_ref_sm, LOG_EPS))
-            beta_l_expr = param_vars['beta_l0_sm']
+
+            beta_l0_param = get_param_name('beta_l0', 'singles_male', param_vars)
+            beta_l_expr = param_vars[beta_l0_param]
+
             for shifter in spec.utility_leisure_shifters:
                 var_name = shifter['variable']
-                coef_name = shifter['coefficient']
-                if coef_name in param_vars:
-                    demo_val = getattr(data_singles_male, var_name, None)
-                    if demo_val is not None:
-                        beta_l_expr = beta_l_expr + param_vars[coef_name] * float(demo_val[global_idx])
-            
-            util_j = util_j + beta_l_expr * log_l_term
+                base_coef = shifter['coefficient']
+
+                try:
+                    coef_param = get_param_name(base_coef, 'singles_male', param_vars)
+                except ValueError:
+                    continue
+
+                demo_val = getattr(data_singles_male, var_name, None)
+                if demo_val is not None:
+                    beta_l_expr = beta_l_expr + param_vars[coef_param] * float(demo_val[global_idx])
+
+            theta_l_param = get_param_name('theta_l', 'singles_male', param_vars)
+            bc_l = boxcox_gamspy(l_val, param_vars[theta_l_param])
+            util_j = util_j + beta_l_expr * bc_l
+
+            # Hours opportunity density (log_h)
+            # Use pre-computed variables from data
+            working = float(data_singles_male.working[global_idx])  # 0/1 indicator
+            pt1_focal = float(data_singles_male.working_pt1[global_idx])  # Part-time 1 ~20h
+            pt2_focal = float(data_singles_male.working_pt2[global_idx])  # Part-time 2 ~30h
+            ft_focal = float(data_singles_male.working_ft[global_idx])    # Full-time ~40h
+
+            # Get demographic variables for interactions
+            educL = float(getattr(data_singles_male, 'educL', np.zeros(1))[global_idx])
+            educH = float(getattr(data_singles_male, 'educH', np.zeros(1))[global_idx])
+            gsur_val = float(data_singles_male.gsur[global_idx])
+            female = 0.0  # This is singles_male
+            # Get region dummies for interaction
+            reg2 = float(getattr(data_singles_male, 'reg2', np.zeros(1))[global_idx]) if hasattr(data_singles_male, 'reg2') else 0.0
+            reg3 = float(getattr(data_singles_male, 'reg3', np.zeros(1))[global_idx]) if hasattr(data_singles_male, 'reg3') else 0.0
+
+            # Build log_h expression using MALE hours opportunity parameters
+            # (same parameters used for singles_male and couples_male)
+            log_h = (param_vars['beta_work_male'] * working
+                   + param_vars['beta_pt1_male'] * pt1_focal
+                   + param_vars['beta_pt2_male'] * pt2_focal
+                   + param_vars['beta_ft_male'] * ft_focal
+                   + param_vars['beta_gsur_male'] * (gsur_val * working)
+                   + param_vars['beta_work_educL_male'] * (educL * working)
+                   + param_vars['beta_work_educH_male'] * (educH * working)
+                   + param_vars['beta_work_reg2_male'] * (reg2 * working)
+                   + param_vars['beta_work_reg3_male'] * (reg3 * working))
+
+            # Add to utility
+            util_j = util_j + log_h
+
+            # Wage opportunity density (log_w) for workers
+            if working > 0.5 and data_singles_male.log_wage is not None:
+                log_wage_obs = float(data_singles_male.log_wage[global_idx])
+
+                # Build wage mean
+                mu_wage = param_vars['beta_w0']
+                mu_wage = mu_wage + param_vars['beta_w_educL'] * educL
+                mu_wage = mu_wage + param_vars['beta_w_educH'] * educH
+
+                # Add experience terms if available
+                if data_singles_male.pexp_years is not None:
+                    pexp = float(data_singles_male.pexp_years[global_idx])
+                    pexp2 = float(data_singles_male.pexp_years2[global_idx])
+                    mu_wage = mu_wage + param_vars['beta_pexp'] * pexp
+                    mu_wage = mu_wage + param_vars['beta_pexp2'] * pexp2
+
+                # Log-likelihood of observed wage
+                from gamspy.math import log as gp_log
+                residual = log_wage_obs - mu_wage
+                sigma_param = param_vars['sigma']
+
+                log_w = (-0.5 * (residual * residual) / (sigma_param * sigma_param + LOG_EPS)
+                        - gp_log(sigma_param + LOG_EPS)
+                        - 0.5 * gp_log(2.0 * 3.141592653589793))
+
+                util_j = util_j + log_w
+
+            # Importance sampling correction (subtract log_prior)
+            prior_j = float(data_singles_male.prior[global_idx])
+            log_prior = gp_log(prior_j + LOG_EPS)
+            util_j = util_j - log_prior
+
             utilities.append(util_j)
-        
+
         # Log-softmax
         chosen_util = utilities[chosen_idx]
         sum_exp_u = sum(gp_exp(u) for u in utilities)
@@ -766,24 +1233,103 @@ def estimate_joint_gamspy(
         
         utilities = []
         for global_idx in range(start_idx, end_idx):
+            # Consumption utility: β_c * BC(C, θ_c)
+            # NOTE: Apply Box-Cox to RAW values, NOT scaled (matches SciPy)
             c_val = data_singles_female.consumption[global_idx]
-            log_c_term = np.log(max(c_val / y_ref_sf, LOG_EPS))
-            util_j = param_vars['beta_c_sf'] * log_c_term
-            
+
+            beta_c_param = get_param_name('beta_c', 'singles_female', param_vars)
+            theta_c_param = get_param_name('theta_c', 'singles_female', param_vars)
+            bc_c = boxcox_gamspy(c_val, param_vars[theta_c_param])
+            util_j = param_vars[beta_c_param] * bc_c
+
+            # Leisure utility: β_l(Z) * BC(L, θ_l)
+            # NOTE: Apply Box-Cox to RAW values, NOT scaled (matches SciPy)
             l_val = data_singles_female.leisure[global_idx]
-            log_l_term = np.log(max(l_val / l_ref_sf, LOG_EPS))
-            beta_l_expr = param_vars['beta_l0_sf']
+
+            beta_l0_param = get_param_name('beta_l0', 'singles_female', param_vars)
+            beta_l_expr = param_vars[beta_l0_param]
+
             for shifter in spec.utility_leisure_shifters:
                 var_name = shifter['variable']
-                coef_name = shifter['coefficient']
-                if coef_name in param_vars:
-                    demo_val = getattr(data_singles_female, var_name, None)
-                    if demo_val is not None:
-                        beta_l_expr = beta_l_expr + param_vars[coef_name] * float(demo_val[global_idx])
-            
-            util_j = util_j + beta_l_expr * log_l_term
+                base_coef = shifter['coefficient']
+
+                try:
+                    coef_param = get_param_name(base_coef, 'singles_female', param_vars)
+                except ValueError:
+                    continue
+
+                demo_val = getattr(data_singles_female, var_name, None)
+                if demo_val is not None:
+                    beta_l_expr = beta_l_expr + param_vars[coef_param] * float(demo_val[global_idx])
+
+            theta_l_param = get_param_name('theta_l', 'singles_female', param_vars)
+            bc_l = boxcox_gamspy(l_val, param_vars[theta_l_param])
+            util_j = util_j + beta_l_expr * bc_l
+
+            # Hours opportunity density (log_h)
+            # Use pre-computed variables from data
+            working = float(data_singles_female.working[global_idx])  # 0/1 indicator
+            pt1_focal = float(data_singles_female.working_pt1[global_idx])  # Part-time 1 ~20h
+            pt2_focal = float(data_singles_female.working_pt2[global_idx])  # Part-time 2 ~30h
+            ft_focal = float(data_singles_female.working_ft[global_idx])    # Full-time ~40h
+
+            # Get demographic variables for interactions
+            educL = float(getattr(data_singles_female, 'educL', np.zeros(1))[global_idx])
+            educH = float(getattr(data_singles_female, 'educH', np.zeros(1))[global_idx])
+            gsur_val = float(data_singles_female.gsur[global_idx])
+            # Get region dummies for interaction
+            reg2 = float(getattr(data_singles_female, 'reg2', np.zeros(1))[global_idx]) if hasattr(data_singles_female, 'reg2') else 0.0
+            reg3 = float(getattr(data_singles_female, 'reg3', np.zeros(1))[global_idx]) if hasattr(data_singles_female, 'reg3') else 0.0
+
+            # Build log_h expression using FEMALE hours opportunity parameters
+            # (same parameters used for singles_female and couples_female)
+            log_h = (param_vars['beta_work_female'] * working
+                   + param_vars['beta_pt1_female'] * pt1_focal
+                   + param_vars['beta_pt2_female'] * pt2_focal
+                   + param_vars['beta_ft_female'] * ft_focal
+                   + param_vars['beta_gsur_female'] * (gsur_val * working)
+                   + param_vars['beta_work_educL_female'] * (educL * working)
+                   + param_vars['beta_work_educH_female'] * (educH * working)
+                   + param_vars['beta_work_reg2_female'] * (reg2 * working)
+                   + param_vars['beta_work_reg3_female'] * (reg3 * working))
+
+            # Add to utility
+            util_j = util_j + log_h
+
+            # Wage opportunity density (log_w) for workers
+            if working > 0.5 and data_singles_female.log_wage is not None:
+                log_wage_obs = float(data_singles_female.log_wage[global_idx])
+
+                # Build wage mean
+                mu_wage = param_vars['beta_w0']
+                mu_wage = mu_wage + param_vars['beta_w_educL'] * educL
+                mu_wage = mu_wage + param_vars['beta_w_educH'] * educH
+
+                # Add experience terms if available
+                if data_singles_female.pexp_years is not None:
+                    pexp = float(data_singles_female.pexp_years[global_idx])
+                    pexp2 = float(data_singles_female.pexp_years2[global_idx])
+                    mu_wage = mu_wage + param_vars['beta_pexp'] * pexp
+                    mu_wage = mu_wage + param_vars['beta_pexp2'] * pexp2
+
+                # Log-likelihood of observed wage
+                from gamspy.math import log as gp_log
+                residual = log_wage_obs - mu_wage
+                sigma_param = param_vars['sigma']
+
+                log_w = (-0.5 * (residual * residual) / (sigma_param * sigma_param + LOG_EPS)
+                        - gp_log(sigma_param + LOG_EPS)
+                        - 0.5 * gp_log(2.0 * 3.141592653589793))
+
+                util_j = util_j + log_w
+
+            # Importance sampling correction (subtract log_prior)
+            prior_j = float(data_singles_female.prior[global_idx])
+            log_prior = gp_log(prior_j + LOG_EPS)
+            util_j = util_j - log_prior
+
             utilities.append(util_j)
-        
+
         chosen_util = utilities[chosen_idx]
         sum_exp_u = sum(gp_exp(u) for u in utilities)
         log_prob = chosen_util - gp_log(sum_exp_u + LOG_EPS)
@@ -815,42 +1361,180 @@ def estimate_joint_gamspy(
         
         utilities = []
         for global_idx in range(start_idx, end_idx):
-            # Consumption (household level)
+            # Consumption utility: β_c * BC(C, θ_c) [household level]
+            # NOTE: Apply Box-Cox to RAW values, NOT scaled (matches SciPy)
             c_val = data_couples.consumption[global_idx]
-            log_c_term = np.log(max(c_val / y_ref_cou, LOG_EPS))
-            util_j = param_vars['beta_c'] * log_c_term
-              # Female leisure
+
+            beta_c_param = get_param_name('beta_c', 'couples_household', param_vars)
+            theta_c_param = get_param_name('theta_c', 'couples_household', param_vars)
+            bc_c = boxcox_gamspy(c_val, param_vars[theta_c_param])
+            util_j = param_vars[beta_c_param] * bc_c
+
+            # Female leisure utility: β_l_f(Z) * BC(L_f, θ_l_f)
+            # NOTE: Apply Box-Cox to RAW values, NOT scaled (matches SciPy)
             l_f_val = data_couples.leisure_female[global_idx]
-            log_l_f_term = np.log(max(l_f_val / l_ref_cou, LOG_EPS))
-            beta_l_f_expr = param_vars['beta_l0_f']
+
+            beta_l0_f_param = get_param_name('beta_l0', 'couples_female', param_vars)
+            beta_l_f_expr = param_vars[beta_l0_f_param]
+
             for shifter in spec.utility_leisure_shifters:
                 var_name = shifter['variable']
                 base_coef = shifter['coefficient']
-                coef_name_f = f"{base_coef}_f"  # Add _f suffix for female
-                if coef_name_f in param_vars:
-                    demo_val = getattr(data_couples, var_name, None)
-                    if demo_val is not None:
-                        beta_l_f_expr = beta_l_f_expr + param_vars[coef_name_f] * float(demo_val[global_idx])
-            
-            util_j = util_j + beta_l_f_expr * log_l_f_term
-            
-            # Male leisure
+
+                try:
+                    coef_param_f = get_param_name(base_coef, 'couples_female', param_vars)
+                except ValueError:
+                    continue
+
+                demo_val = getattr(data_couples, var_name, None)
+                if demo_val is not None:
+                    beta_l_f_expr = beta_l_f_expr + param_vars[coef_param_f] * float(demo_val[global_idx])
+
+            theta_l_f_param = get_param_name('theta_l', 'couples_female', param_vars)
+            bc_l_f = boxcox_gamspy(l_f_val, param_vars[theta_l_f_param])
+            util_j = util_j + beta_l_f_expr * bc_l_f
+
+            # Male leisure utility: β_l_m(Z) * BC(L_m, θ_l_m)
+            # NOTE: Apply Box-Cox to RAW values, NOT scaled (matches SciPy)
             l_m_val = data_couples.leisure_male[global_idx]
-            log_l_m_term = np.log(max(l_m_val / l_ref_cou, LOG_EPS))
-            
-            beta_l_m_expr = param_vars['beta_l0_m']
+
+            beta_l0_m_param = get_param_name('beta_l0', 'couples_male', param_vars)
+            beta_l_m_expr = param_vars[beta_l0_m_param]
+
             for shifter in spec.utility_leisure_shifters:
                 var_name = shifter['variable']
                 base_coef = shifter['coefficient']
-                coef_name_m = f"{base_coef}_m"  # Add _m suffix for male
-                if coef_name_m in param_vars:
-                    demo_val = getattr(data_couples, var_name, None)
-                    if demo_val is not None:
-                        beta_l_m_expr = beta_l_m_expr + param_vars[coef_name_m] * float(demo_val[global_idx])
-            
-            util_j = util_j + beta_l_m_expr * log_l_m_term
+
+                try:
+                    coef_param_m = get_param_name(base_coef, 'couples_male', param_vars)
+                except ValueError:
+                    continue
+
+                demo_val = getattr(data_couples, var_name, None)
+                if demo_val is not None:
+                    beta_l_m_expr = beta_l_m_expr + param_vars[coef_param_m] * float(demo_val[global_idx])
+
+            theta_l_m_param = get_param_name('theta_l', 'couples_male', param_vars)
+            bc_l_m = boxcox_gamspy(l_m_val, param_vars[theta_l_m_param])
+            util_j = util_j + beta_l_m_expr * bc_l_m
+
+            # Interaction term: β_interact * BC(L_m) * BC(L_f)
+            if 'beta_interact' in param_vars:
+                interact_term = param_vars['beta_interact'] * bc_l_m * bc_l_f
+                util_j = util_j + interact_term
+
+            # Hours opportunity density for MALE (log_h_m)
+            working_m = float(data_couples.working_male[global_idx])
+            pt1_focal_m = float(data_couples.working_pt1_male[global_idx])
+            pt2_focal_m = float(data_couples.working_pt2_male[global_idx])
+            ft_focal_m = float(data_couples.working_ft_male[global_idx])
+
+            # Male demographics
+            educL_m = float(getattr(data_couples, 'educL_male', np.zeros(1))[global_idx])
+            educH_m = float(getattr(data_couples, 'educH_male', np.zeros(1))[global_idx])
+            gsur_m = float(data_couples.gsur_male[global_idx])
+            # Get region dummies (household level)
+            reg2 = float(getattr(data_couples, 'reg2', np.zeros(1))[global_idx]) if hasattr(data_couples, 'reg2') else 0.0
+            reg3 = float(getattr(data_couples, 'reg3', np.zeros(1))[global_idx]) if hasattr(data_couples, 'reg3') else 0.0
+
+            # Build log_h_m using MALE hours opportunity parameters
+            # (same parameters as singles_male - shared across all males)
+            log_h_m = (param_vars['beta_work_male'] * working_m
+                     + param_vars['beta_pt1_male'] * pt1_focal_m
+                     + param_vars['beta_pt2_male'] * pt2_focal_m
+                     + param_vars['beta_ft_male'] * ft_focal_m
+                     + param_vars['beta_gsur_male'] * (gsur_m * working_m)
+                     + param_vars['beta_work_educL_male'] * (educL_m * working_m)
+                     + param_vars['beta_work_educH_male'] * (educH_m * working_m)
+                     + param_vars['beta_work_reg2_male'] * (reg2 * working_m)
+                     + param_vars['beta_work_reg3_male'] * (reg3 * working_m))
+
+            util_j = util_j + log_h_m
+
+            # Hours opportunity density for FEMALE (log_h_f)
+            working_f = float(data_couples.working_female[global_idx])
+            pt1_focal_f = float(data_couples.working_pt1_female[global_idx])
+            pt2_focal_f = float(data_couples.working_pt2_female[global_idx])
+            ft_focal_f = float(data_couples.working_ft_female[global_idx])
+
+            # Female demographics
+            educL_f = float(getattr(data_couples, 'educL_female', np.zeros(1))[global_idx])
+            educH_f = float(getattr(data_couples, 'educH_female', np.zeros(1))[global_idx])
+            gsur_f = float(data_couples.gsur_female[global_idx])
+
+            # Build log_h_f using FEMALE hours opportunity parameters
+            # (same parameters as singles_female - shared across all females)
+            log_h_f = (param_vars['beta_work_female'] * working_f
+                     + param_vars['beta_pt1_female'] * pt1_focal_f
+                     + param_vars['beta_pt2_female'] * pt2_focal_f
+                     + param_vars['beta_ft_female'] * ft_focal_f
+                     + param_vars['beta_gsur_female'] * (gsur_f * working_f)
+                     + param_vars['beta_work_educL_female'] * (educL_f * working_f)
+                     + param_vars['beta_work_educH_female'] * (educH_f * working_f)
+                     + param_vars['beta_work_reg2_female'] * (reg2 * working_f)
+                     + param_vars['beta_work_reg3_female'] * (reg3 * working_f))
+
+            util_j = util_j + log_h_f
+
+            # Wage opportunity for MALE (log_w_m)
+            if working_m > 0.5 and data_couples.log_wage_male is not None:
+                log_wage_m = float(data_couples.log_wage_male[global_idx])
+
+                # Build wage mean - only include terms if data is available
+                mu_wage_m = param_vars['beta_w0']
+                mu_wage_m = mu_wage_m + param_vars['beta_w_educL'] * educL_m
+                mu_wage_m = mu_wage_m + param_vars['beta_w_educH'] * educH_m
+
+                # Add experience terms only if available
+                if data_couples.pexp_years_male is not None:
+                    pexp_m = float(data_couples.pexp_years_male[global_idx])
+                    pexp2_m = float(data_couples.pexp_years2_male[global_idx])
+                    mu_wage_m = mu_wage_m + param_vars['beta_pexp'] * pexp_m
+                    mu_wage_m = mu_wage_m + param_vars['beta_pexp2'] * pexp2_m
+
+                from gamspy.math import log as gp_log
+                residual_m = log_wage_m - mu_wage_m
+                sigma_param = param_vars['sigma']
+
+                log_w_m = (-0.5 * (residual_m * residual_m) / (sigma_param * sigma_param + LOG_EPS)
+                          - gp_log(sigma_param + LOG_EPS)
+                          - 0.5 * gp_log(2.0 * 3.141592653589793))
+
+                util_j = util_j + log_w_m
+
+            # Wage opportunity for FEMALE (log_w_f)
+            if working_f > 0.5 and data_couples.log_wage_female is not None:
+                log_wage_f = float(data_couples.log_wage_female[global_idx])
+
+                # Build wage mean - only include terms if data is available
+                mu_wage_f = param_vars['beta_w0']
+                mu_wage_f = mu_wage_f + param_vars['beta_w_educL'] * educL_f
+                mu_wage_f = mu_wage_f + param_vars['beta_w_educH'] * educH_f
+
+                # Add experience terms only if available
+                if data_couples.pexp_years_female is not None:
+                    pexp_f = float(data_couples.pexp_years_female[global_idx])
+                    pexp2_f = float(data_couples.pexp_years2_female[global_idx])
+                    mu_wage_f = mu_wage_f + param_vars['beta_pexp'] * pexp_f
+                    mu_wage_f = mu_wage_f + param_vars['beta_pexp2'] * pexp2_f
+
+                from gamspy.math import log as gp_log
+                residual_f = log_wage_f - mu_wage_f
+                sigma_param = param_vars['sigma']
+
+                log_w_f = (-0.5 * (residual_f * residual_f) / (sigma_param * sigma_param + LOG_EPS)
+                          - gp_log(sigma_param + LOG_EPS)
+                          - 0.5 * gp_log(2.0 * 3.141592653589793))
+
+                util_j = util_j + log_w_f
+
+            # Importance sampling correction (subtract log_prior)
+            prior_j = float(data_couples.prior[global_idx])
+            log_prior = gp_log(prior_j + LOG_EPS)
+            util_j = util_j - log_prior
+
             utilities.append(util_j)
-        
+
         chosen_util = utilities[chosen_idx]
         sum_exp_u = sum(gp_exp(u) for u in utilities)
         log_prob = chosen_util - gp_log(sum_exp_u + LOG_EPS)
@@ -863,39 +1547,50 @@ def estimate_joint_gamspy(
     # ========================================================================
     
     logger.info("  Combining into joint log-likelihood...")
-    
+
     ll_joint = ll_sm + ll_sf + ll_cou
+
+    # DEBUG: Check expression types
+    logger.info(f"    ll_sm type: {type(ll_sm)}")
+    logger.info(f"    ll_sf type: {type(ll_sf)}")
+    logger.info(f"    ll_cou type: {type(ll_cou)}")
+    logger.info(f"    ll_joint type: {type(ll_joint)}")
     
-    # Create separate variables for tracking each group's contribution
-    ll_sm_var = Variable(container, "ll_singles_male", type="free")
-    ll_sf_var = Variable(container, "ll_singles_female", type="free")
-    ll_cou_var = Variable(container, "ll_couples", type="free")
-    ll_total_var = Variable(container, "ll_joint", type="free")
-      # Equations to track each component
-    eq_sm = Equation(container, "eq_ll_sm", definition=(ll_sm_var == ll_sm))
-    eq_sf = Equation(container, "eq_ll_sf", definition=(ll_sf_var == ll_sf))
-    eq_cou = Equation(container, "eq_ll_cou", definition=(ll_cou_var == ll_cou))
-    eq_total = Equation(container, "eq_ll_total", definition=(ll_total_var == ll_joint))
-    
+    # NOTE: We do NOT create Variables for LL tracking here.
+    # The LL expressions (ll_sm, ll_sf, ll_cou, ll_joint) are already GAMSPy expressions.
+    # We directly maximize the expression without creating constraining equations.
+    #
+    # CRITICAL: Creating equations like "ll_var == ll_expression" makes the problem
+    # trivial - the solver just sets ll_var to match the expression at the initial
+    # parameter values and doesn't optimize! We must maximize the expression directly.
+
     # ========================================================================
     # 6. Create model and solve
     # ========================================================================
-    
+
     model = Model(
         container,
         name="ruro_joint_mnl_gamspy",
-        equations=[eq_sm, eq_sf, eq_cou, eq_total],
         problem="nlp",
         sense="max",
-        objective=ll_total_var
+        objective=ll_joint  # Maximize the LL expression directly, no equations!
     )
-    
+
+    # DEBUG: Check model has variables
+    logger.info(f"    Model problem type: {model.problem}")
+    logger.info(f"    Model sense: {model.sense}")
+    logger.info(f"    Container has {len(container.data)} symbols")
+    logger.info(f"    Number of Variables in container: {sum(1 for s in container.data.values() if hasattr(s, 'type') and s.type in ['free', 'positive', 'binary'])}")
+
     logger.info(f"  Solving joint model with {solver_name.upper()}...")
     logger.info("  (This may take 5-15 minutes depending on data size)")
-    
-    # Solve without solver-specific options for now
-    # (GAMSPY Options object doesn't support solver-specific fields like rtmaxv)
-    result = model.solve(solver=solver_name)
+
+    # Pass solver-specific options if provided
+    if solver_options:
+        logger.info(f"  Solver options: {solver_options}")
+        result = model.solve(solver=solver_name, solver_options=solver_options)
+    else:
+        result = model.solve(solver=solver_name)
     walltime = time.time() - start_time
     
     # ========================================================================
@@ -906,15 +1601,27 @@ def estimate_joint_gamspy(
         _extract_var_level(param_vars[name])
         for name in spec.all_param_names
     ])
-    
-    ll_total_final = _extract_var_level(ll_total_var)
-    ll_sm_final = _extract_var_level(ll_sm_var)
-    ll_sf_final = _extract_var_level(ll_sf_var)
-    ll_cou_final = _extract_var_level(ll_cou_var)
-    
-    solver_status = str(getattr(result, 'solver_status', 'Unknown'))
-    model_status = str(getattr(result, 'model_status', 'Unknown'))
-    n_iterations = getattr(result, 'iteration_count', getattr(result, 'iter_used', None))
+
+    # Since we maximized ll_joint directly (not a Variable), we need to get the
+    # objective value from the model
+    ll_total_final = model.objective_value
+
+    # We don't have individual LL variables anymore, so we'll recompute them
+    # using the optimized parameters. This is a limitation of direct expression
+    # maximization - we lose the breakdown.
+    # For now, we'll report the total LL only.
+    ll_sm_final = None
+    ll_sf_final = None
+    ll_cou_final = None
+
+    # Get solver/model status from MODEL object
+    # GAMSPy stores: model.solve_status (SolveStatus enum) and model.status (ModelStatus enum)
+    solve_status_enum = getattr(model, 'solve_status', None)
+    model_status_enum = getattr(model, 'status', None)
+
+    solver_status = str(solve_status_enum) if solve_status_enum else 'Unknown'
+    model_status = str(model_status_enum) if model_status_enum else 'Unknown'
+    n_iterations = getattr(model, 'iteration_count', getattr(model, 'iter_used', None))
     
     logger.info("="*80)
     logger.info("JOINT ESTIMATION COMPLETE")
@@ -925,19 +1632,28 @@ def estimate_joint_gamspy(
     if n_iterations is not None:
         logger.info(f"  Iterations: {n_iterations}")
     logger.info("")
-    logger.info(f"  Log-Likelihood Breakdown:")
-    logger.info(f"    Singles male:   {ll_sm_final:12.4f}")
-    logger.info(f"    Singles female: {ll_sf_final:12.4f}")
-    logger.info(f"    Couples:        {ll_cou_final:12.4f}")
-    logger.info(f"    TOTAL:          {ll_total_final:12.4f}")
+    logger.info(f"  Joint Log-Likelihood: {ll_total_final:12.4f}")
+    logger.info("  (Individual group breakdown not available with direct expression maximization)")
     logger.info("="*80)
-    
+
+    # ========================================================================
+    # 8. Validate results
+    # ========================================================================
+
+    logger.info("  Validating results...")
+
+    # For joint estimation, expected range is wider since we have all groups
+    # TEMPORARILY VERY WIDE: Allow investigation (will narrow after fixing)
+    validate_gamspy_result(model, ll_total_final, theta_final,
+                          expected_ll_range=(-20000, -3000),
+                          logger=logger)
+
     return {
         'theta': theta_final,
         'log_likelihood': ll_total_final,
-        'll_singles_male': ll_sm_final,
-        'll_singles_female': ll_sf_final,
-        'll_couples': ll_cou_final,
+        'll_singles_male': ll_sm_final,  # Will be None
+        'll_singles_female': ll_sf_final,  # Will be None
+        'll_couples': ll_cou_final,  # Will be None
         'solver_status': solver_status,
         'model_status': model_status,
         'walltime': walltime,

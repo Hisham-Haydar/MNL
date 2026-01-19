@@ -562,8 +562,7 @@ def format_estimation_results(
     spec : EstimationSpec
         Specification used
 
-    Returns
-    -------
+    Returns    -------
     str
         Formatted results string
     """
@@ -581,14 +580,14 @@ def format_estimation_results(
     lines.append(f"Joint log-likelihood: {results['joint_ll']:.2f}")
     lines.append(f"Total walltime: {results['total_walltime']:.1f}s")
     lines.append("")
-
+    
     for group_name in ['singles_male', 'singles_female', 'couples']:
         if group_name not in results:
             continue
-
+        
         result = results[group_name]
         walltime = results['walltimes'][group_name]
-
+        
         lines.append("-"*80)
         lines.append(f"{group_name.upper()}")
         lines.append("-"*80)
@@ -597,7 +596,13 @@ def format_estimation_results(
         lines.append(f"Iterations: {result.nit}")
         lines.append(f"Function evaluations: {result.nfev}")
         lines.append(f"Final LL: {-result.fun:.4f}")
-        lines.append(f"Gradient norm: {np.linalg.norm(result.jac):.6e}")
+        
+        # Gradient norm (only available for SciPy, not GAMSPY)
+        if result.jac is not None:
+            lines.append(f"Gradient norm: {np.linalg.norm(result.jac):.6e}")
+        else:
+            lines.append(f"Gradient norm: N/A (GAMSPY uses automatic differentiation)")
+        
         lines.append(f"Walltime: {walltime:.1f}s")
         lines.append("")
 

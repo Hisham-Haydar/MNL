@@ -1,162 +1,116 @@
-# ==============================================================================
-# RURO MNL Estimation Specification - LOC Empirical
-# ==============================================================================
-# Occupation-based wage opportunity (4 major LOC groups)
-#
-# This specification uses:
-# - Box-Cox utility function for consumption and leisure (same as base_vw)
-# - Focal hours indicators (same as base_vw)
-# - Occupation-group-specific wage distributions (LOC4)
-#   - Group 1: Managers (highest wages)
-#   - Group 2: Professionals
-#   - Group 3: Technicians
-#   - Group 4: Clerks (lowest wages)
-# ==============================================================================
-
 specification:
-  name: "loc_empirical"
-  description: "Occupation-based wage opportunity (4 major LOC groups)"
-  wage_spec: "loc_empirical"
-
-# ------------------------------------------------------------------------------
-# Utility Function (Preference Side) - SAME AS BASE_VW
-# ------------------------------------------------------------------------------
+  name: loc_empirical
+  description: Occupation-based wage opportunity (4 major LOC groups)
+  wage_spec: loc_empirical
 utility:
-  functional_form: "box_cox"
-
+  functional_form: box_cox
   consumption:
-    coefficient: "beta_c"
-    box_cox_exponent: "theta_c"
-    box_cox_bounds: [0.1, 3.0]
-
+    coefficient: beta_c
+    box_cox_exponent: theta_c
+    box_cox_bounds:
+    - 0.1
+    - 3.0
   leisure:
-    intercept: "beta_l0"
-    box_cox_exponent: "theta_l"
-    box_cox_bounds: [0.1, 3.0]
-
+    intercept: beta_l0
+    box_cox_exponent: theta_l
+    box_cox_bounds:
+    - 0.1
+    - 3.0
     shifters:
-      - variable: "age_norm"
-        coefficient: "beta_l_age_norm"
-        description: "Age effect (demeaned)"
-
-      - variable: "age_norm2"
-        coefficient: "beta_l_age_norm2"
-        description: "Age squared"
-
-      - variable: "n_children"
-        coefficient: "beta_l_n_children"
-        description: "Number of children effect"
-        gender_specific: true
-
-      - variable: "educL"
-        coefficient: "beta_l_educL"
-        description: "Low education dummy"
-
-      - variable: "educH"
-        coefficient: "beta_l_educH"
-        description: "High education dummy"
-
-# ------------------------------------------------------------------------------
-# Hours Opportunity - SAME AS BASE_VW
-# ------------------------------------------------------------------------------
+    - variable: age_norm
+      coefficient: beta_l_age_norm
+      description: Age effect (demeaned)
+    - variable: age_norm2
+      coefficient: beta_l_age_norm2
+      description: Age squared
+    - variable: n_children
+      coefficient: beta_l_n_children
+      description: Number of children effect
+      gender_specific: true
+    - variable: educL
+      coefficient: beta_l_educL
+      description: Low education dummy
+    - variable: educH
+      coefficient: beta_l_educH
+      description: High education dummy
 hours_opportunity:
+  # Gender-specific parameters: _m for males (singles_male + couples_male)
+  #                             _f for females (singles_female + couples_female)
+  gender_specific: true
   shifters:
-    - variable: "working"
-      coefficient: "beta_work"
-      description: "Working indicator (h>0)"
-
-    - variable: "working_pt1"
-      coefficient: "beta_pt1"
-      description: "Part-time 1 focal point (~20h)"
-
-    - variable: "working_pt2"
-      coefficient: "beta_pt2"
-      description: "Part-time 2 focal point (~30h)"
-
-    - variable: "working_ft"
-      coefficient: "beta_ft"
-      description: "Full-time focal point (~40h)"
-
-    - variable: "gsur"
-      coefficient: "beta_gsur"
-      description: "Group-specific unemployment rate"
-      interaction: "working"
-
-    - variable: "educL"
-      coefficient: "beta_work_educL"
-      description: "Low education × working"
-      interaction: "working"
-
-    - variable: "educH"
-      coefficient: "beta_work_educH"
-      description: "High education × working"
-      interaction: "working"
-
-# ------------------------------------------------------------------------------
-# Wage Opportunity - Occupation-Based (LOC4)
-# ------------------------------------------------------------------------------
+  - variable: working
+    coefficient: beta_work
+    description: Working indicator (h>0)
+  - variable: working_pt1
+    coefficient: beta_pt1
+    description: Part-time 1 focal point (~20h)
+  - variable: working_pt2
+    coefficient: beta_pt2
+    description: Part-time 2 focal point (~30h)
+  - variable: working_ft
+    coefficient: beta_ft
+    description: Full-time focal point (~40h)
+  - variable: gsur
+    coefficient: beta_gsur
+    description: Group-specific unemployment rate
+    interaction: working
+  - variable: educL
+    coefficient: beta_work_educL
+    description: "Low education × working"
+    interaction: working
+  - variable: educH
+    coefficient: beta_work_educH
+    description: "High education × working"
+    interaction: working
+  - variable: reg2
+    coefficient: beta_work_reg2
+    description: "Region 2 × working"
+    interaction: working
+  - variable: reg3
+    coefficient: beta_work_reg3
+    description: "Region 3 × working"
+    interaction: working
 wage_opportunity:
-  specification: "occupation_groups"
-
-  # Wages vary by LOC4 major group
-  # Within each group: log w ~ N(μ_loc + X*β, σ_loc²)
-
+  specification: occupation_groups
   groups:
-    - group_id: 1
-      variable: "loc4_1"
-      intercept: "beta_w0_loc1"
-      sigma: "sigma_loc1"
-      description: "Managers (ISCO-08 major group 1)"
-
-    - group_id: 2
-      variable: "loc4_2"
-      intercept: "beta_w0_loc2"
-      sigma: "sigma_loc2"
-      description: "Professionals (ISCO-08 major group 2)"
-
-    - group_id: 3
-      variable: "loc4_3"
-      intercept: "beta_w0_loc3"
-      sigma: "sigma_loc3"
-      description: "Technicians (ISCO-08 major group 3)"
-
-    - group_id: 4
-      variable: "loc4_4"
-      intercept: "beta_w0_loc4"
-      sigma: "sigma_loc4"
-      description: "Clerks/Service workers (ISCO-08 major groups 4-9)"
-
-  # Common shifters across all occupation groups
+  - group_id: 1
+    variable: loc4_1
+    intercept: beta_w0_loc1
+    sigma: sigma_loc1
+    description: Managers (ISCO-08 major group 1)
+  - group_id: 2
+    variable: loc4_2
+    intercept: beta_w0_loc2
+    sigma: sigma_loc2
+    description: Professionals (ISCO-08 major group 2)
+  - group_id: 3
+    variable: loc4_3
+    intercept: beta_w0_loc3
+    sigma: sigma_loc3
+    description: Technicians (ISCO-08 major group 3)
+  - group_id: 4
+    variable: loc4_4
+    intercept: beta_w0_loc4
+    sigma: sigma_loc4
+    description: Clerks/Service workers (ISCO-08 major groups 4-9)
   mean_shifters:
-    - variable: "educL"
-      coefficient: "beta_w_educL"
-      description: "Low education wage penalty (common)"
-
-    - variable: "educH"
-      coefficient: "beta_w_educH"
-      description: "High education wage premium (common)"
-
-    - variable: "pexp_years"
-      coefficient: "beta_pexp"
-      description: "Experience (linear, common)"
-
-    - variable: "pexp_years2"
-      coefficient: "beta_pexp2"
-      description: "Experience squared (common)"
-
-# ------------------------------------------------------------------------------
-# Couples-Specific Parameters
-# ------------------------------------------------------------------------------
+  - variable: educL
+    coefficient: beta_w_educL
+    description: Low education wage penalty (common)
+  - variable: educH
+    coefficient: beta_w_educH
+    description: High education wage premium (common)
+  - variable: pexp_years
+    coefficient: beta_pexp
+    description: Experience (linear, common)
+  - variable: pexp_years2
+    coefficient: beta_pexp2
+    description: Experience squared (common)
 couples:
   leisure_interaction:
-    coefficient: "beta_interact"
-    description: "Male-female leisure cross-term"
-
-# ------------------------------------------------------------------------------
-# Parameter Initialization
-# ------------------------------------------------------------------------------
+    coefficient: beta_interact
+    description: Male-female leisure cross-term
 initial_values:
-  # Preference parameters (same as base_vw)
   beta_l0: 1.0
   beta_l_age_norm: 0.0
   beta_l_age_norm2: 0.0
@@ -166,8 +120,7 @@ initial_values:
   beta_c: 1.0
   theta_l: 0.5
   theta_c: 0.5
-
-  # Hours opportunity (same as base_vw)
+  # Base hours opportunity (if pooled, else ignored)
   beta_work: 0.5
   beta_pt1: 0.0
   beta_pt2: 0.0
@@ -175,51 +128,92 @@ initial_values:
   beta_gsur: 0.0
   beta_work_educL: 0.0
   beta_work_educH: 0.0
-
-  # LOC-specific intercepts (ordered by expected wage level)
-  beta_w0_loc1: 2.8  # Managers (highest)
-  beta_w0_loc2: 2.6  # Professionals
-  beta_w0_loc3: 2.4  # Technicians
-  beta_w0_loc4: 2.2  # Clerks (lowest)
-
-  # LOC-specific standard deviations
-  sigma_loc1: 0.5   # Managers (higher variance)
-  sigma_loc2: 0.4   # Professionals
-  sigma_loc3: 0.4   # Technicians
-  sigma_loc4: 0.35  # Clerks (lower variance)
-
-  # Shared education/experience effects
+  beta_work_reg2: 0.0
+  beta_work_reg3: 0.0
+  # Male hours opportunity (singles_male + couples_male)
+  beta_work_male: 0.5
+  beta_pt1_male: 0.0
+  beta_pt2_male: 0.0
+  beta_ft_male: 0.0
+  beta_gsur_male: 0.0
+  beta_work_educL_male: 0.0
+  beta_work_educH_male: 0.0
+  beta_work_reg2_male: 0.0
+  beta_work_reg3_male: 0.0
+  # Female hours opportunity (singles_female + couples_female)
+  beta_work_female: 0.5
+  beta_pt1_female: 0.0
+  beta_pt2_female: 0.0
+  beta_ft_female: 0.0
+  beta_gsur_female: 0.0
+  beta_work_educL_female: 0.0
+  beta_work_educH_female: 0.0
+  beta_work_reg2_female: 0.0
+  beta_work_reg3_female: 0.0
+  beta_w0_loc1: 2.8
+  beta_w0_loc2: 2.6
+  beta_w0_loc3: 2.4
+  beta_w0_loc4: 2.2
+  sigma_loc1: 0.5
+  sigma_loc2: 0.4
+  sigma_loc3: 0.4
+  sigma_loc4: 0.35
   beta_w_educL: -0.2
   beta_w_educH: 0.3
   beta_pexp: 0.02
   beta_pexp2: -0.001
-
-  # Couples
   beta_interact: 0.0
-
-# ------------------------------------------------------------------------------
-# Optimization Settings
-# ------------------------------------------------------------------------------
+  beta_l0_sm: 1.0
+  beta_l_age_norm_sm: 0.0
+  beta_l_age_norm2_sm: 0.0
+  beta_l_educL_sm: 0.0
+  beta_l_educH_sm: 0.0
+  beta_c_sm: 1.0
+  theta_l_sm: 0.5
+  theta_c_sm: 0.5
+  beta_l0_sf: 1.0
+  beta_l_age_norm_sf: 0.0
+  beta_l_age_norm2_sf: 0.0
+  beta_l_n_children_sf: 0.1
+  beta_l_educL_sf: 0.0
+  beta_l_educH_sf: 0.0
+  beta_c_sf: 1.0
+  theta_l_sf: 0.5
+  theta_c_sf: 0.5
+  beta_l0_m: 1.0
+  beta_l_age_norm_m: 0.0
+  beta_l_age_norm2_m: 0.0
+  beta_l_educL_m: 0.0
+  beta_l_educH_m: 0.0
+  theta_l_m: 0.5
+  beta_l0_f: 1.0
+  beta_l_age_norm_f: 0.0
+  beta_l_age_norm2_f: 0.0
+  beta_l_n_children_f: 0.1
+  beta_l_educL_f: 0.0
+  beta_l_educH_f: 0.0
+  theta_l_f: 0.5
 optimization:
-  method: "L-BFGS-B"
+  method: L-BFGS-B
   analytical_gradient: true
   max_iterations: 10000
   tolerance: 1e-6
-
   bounds:
-    theta_l: [0.1, 3.0]
-    theta_c: [0.1, 3.0]
-    sigma_loc1: [0.1, 20.0]
-    sigma_loc2: [0.1, 20.0]
-    sigma_loc3: [0.1, 20.0]
-    sigma_loc4: [0.1, 20.0]
-    # All beta parameters unbounded
-
-# ------------------------------------------------------------------------------
-# Notes
-# ------------------------------------------------------------------------------
-# - LOC4 variable must be present in data (created during draw generation)
-# - LOC4 codes: 1=Managers, 2=Professionals, 3=Technicians, 4=Others
-# - Each occupation group has its own mean and variance
-# - Education/experience effects are common across occupations
-# - This allows for realistic wage dispersion within occupation groups
+    theta_l:
+    - 0.1
+    - 3.0
+    theta_c:
+    - 0.1
+    - 3.0
+    sigma_loc1:
+    - 0.1
+    - 20.0
+    sigma_loc2:
+    - 0.1
+    - 20.0
+    sigma_loc3:
+    - 0.1
+    - 20.0
+    sigma_loc4:
+    - 0.1
+    - 20.0

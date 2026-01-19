@@ -540,6 +540,13 @@ Examples:
         help="Function tolerance (overrides spec)"
     )
     parser.add_argument(
+        "--solver-options",
+        type=str,
+        default=None,
+        help="CONOPT solver options as key=value pairs separated by commas. "
+             "Example: --solver-options 'Tol_Optimality=1e-9,Lim_Iteration=10000'"
+    )
+    parser.add_argument(
         "--no-gradient",
         action="store_true",
         help="Disable analytical gradient - SciPy only (use numerical approximation)"
@@ -834,7 +841,18 @@ Examples:
             gamspy_solver = args.solver.split("-")[1]
             logger.info(f"Using GAMSPy solver: {gamspy_solver.upper()}")
             logger.info("Note: GAMSPy uses automatic differentiation (no manual gradient)")
-              # Import GAMSPy estimation functions
+
+            # Parse solver options if provided
+            solver_options = None
+            if args.solver_options:
+                solver_options = {}
+                for pair in args.solver_options.split(","):
+                    if "=" in pair:
+                        key, value = pair.strip().split("=", 1)
+                        solver_options[key.strip()] = value.strip()
+                logger.info(f"Solver options: {solver_options}")
+
+            # Import GAMSPy estimation functions
             try:
                 from gamspy_estimation import (
                     estimate_singles_gamspy, 
@@ -862,7 +880,8 @@ Examples:
                     data_couples=data_cou,
                     spec=spec,
                     solver=gamspy_solver,
-                    verbose=args.verbose
+                    verbose=args.verbose,
+                    solver_options=solver_options
                 )
                 
                 # Convert to format compatible with downstream code
@@ -908,26 +927,29 @@ Examples:
                     group_name = args.group
                     logger.info(f"Estimating {group_name} with GAMSPy...")
                     gamspy_result = estimate_singles_gamspy(
-                        data=data, spec=spec, theta_init=theta_init, 
-                        solver=gamspy_solver, verbose=args.verbose
+                        data=data, spec=spec, theta_init=theta_init,
+                        solver=gamspy_solver, verbose=args.verbose,
+                        solver_options=solver_options
                     )
-                    
+
                 elif args.group == "singles_female":
                     data = data_sf
                     group_name = "singles_female"
                     logger.info(f"Estimating {group_name} with GAMSPy...")
                     gamspy_result = estimate_singles_gamspy(
                         data=data, spec=spec, theta_init=theta_init,
-                        solver=gamspy_solver, verbose=args.verbose
+                        solver=gamspy_solver, verbose=args.verbose,
+                        solver_options=solver_options
                     )
-                    
+
                 elif args.group == "couples":
                     data = data_cou
                     group_name = "couples"
                     logger.info(f"Estimating {group_name} with GAMSPy...")
                     gamspy_result = estimate_couples_gamspy(
                         data=data, spec=spec, theta_init=theta_init,
-                        solver=gamspy_solver, verbose=args.verbose
+                        solver=gamspy_solver, verbose=args.verbose,
+                        solver_options=solver_options
                     )
                 
                 # Convert GAMSPy result to SciPy-like OptimizeResult format
@@ -989,15 +1011,17 @@ Examples:
                     spec=spec,
                     theta_init=theta_init,
                     use_gradient=spec.opt_analytical_gradient
-                )            # Format results like estimate_joint output
-            results = {
-                group_name: opt_result,
-                'walltimes': {group_name: walltime},
-                'joint_ll': -opt_result.fun,
-                'n_obs_total': data.n_obs,
-                'n_groups_total': data.n_groups,
-                'total_walltime': walltime
-            }
+                )
+
+                # Format results like estimate_joint output
+                results = {
+                    group_name: opt_result,
+                    'walltimes': {group_name: walltime},
+                    'joint_ll': -opt_result.fun,
+                    'n_obs_total': data.n_obs,
+                    'n_groups_total': data.n_groups,
+                    'total_walltime': walltime
+                }
 
         # ===== 7b. COMPUTE STANDARD ERRORS =====
         if not args.skip_se:

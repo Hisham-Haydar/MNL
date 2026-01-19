@@ -98,10 +98,19 @@ DRAWS_DEMOGRAPHICS_COLS = {
     "educH",
     "educ3",        # For GSUR merge
     
-    # Experience
+    # Experience (singles)
     "pexp",
     "pexp_years",
     "pexp_years2",
+    # Experience (couples - gender-specific)
+    "pexp_male",
+    "pexp_female",
+    "pexp_years_male",
+    "pexp_years_female",
+    "pexp_years2_male",
+    "pexp_years2_female",
+    "pexp2_male",
+    "pexp2_female",
     "yd1", "yd2", "yd3",
 }
 

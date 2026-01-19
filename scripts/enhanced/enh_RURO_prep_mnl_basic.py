@@ -579,10 +579,11 @@ def _build_mnl_block_couples_wide(df: pd.DataFrame, sample_group: str) -> pd.Dat
             df[f"log_l_{gender}"] = np.log(leisure)
 
             # Working status indicators (for hours opportunity)
+            # Focal hours peaks matching Stijn's R code (narrow bands around typical schedules)
             df[f"working_{gender}"] = (hours > 0).astype(int)
-            df[f"working_pt1_{gender}"] = ((hours > 0) & (hours < 20)).astype(int)
-            df[f"working_pt2_{gender}"] = ((hours >= 20) & (hours < 35)).astype(int)
-            df[f"working_ft_{gender}"] = (hours >= 35).astype(int)
+            df[f"working_pt1_{gender}"] = ((hours >= 18.5) & (hours <= 20.5)).astype(int)  # ~20h part-time
+            df[f"working_pt2_{gender}"] = ((hours >= 29.5) & (hours <= 30.5)).astype(int)  # ~30h part-time
+            df[f"working_ft_{gender}"] = ((hours >= 37.5) & (hours <= 40.5)).astype(int)   # ~40h full-time
 
         # NOTE: GSUR is now merged externally, NOT set to working dummy
 
@@ -609,13 +610,27 @@ def _build_mnl_block_couples_wide(df: pd.DataFrame, sample_group: str) -> pd.Dat
             df[f"educM_{gender}"] = (~df[f"educL_{gender}"].astype(bool) & ~df[f"educH_{gender}"].astype(bool)).astype(int)
 
         # Experience variables (for wage opportunity)
+        # Priority: use pexp_years_{gender} if it exists (from reshape of raw pexp_years)
+        # Otherwise, convert pexp_{gender} (Stijn-style /100) back to years by multiplying by 100
+        pexp_years_col = f"pexp_years_{gender}"
         pexp_col = f"pexp_{gender}"
-        if pexp_col in df.columns:
-            pexp_num = pd.to_numeric(df[pexp_col], errors="coerce").fillna(0.0)
-            df[f"pexp_years_{gender}"] = pexp_num
-            df[f"pexp_years2_{gender}"] = pexp_num ** 2
 
-            # Create alias for estimation code compatibility
+        if pexp_years_col in df.columns:
+            # Already have pexp_years from reshape - use it directly
+            pexp_years_num = pd.to_numeric(df[pexp_years_col], errors="coerce").fillna(0.0)
+            df[pexp_years_col] = pexp_years_num  # Ensure numeric
+            df[f"pexp_years2_{gender}"] = pexp_years_num ** 2
+            logging.debug(f"Using existing {pexp_years_col} (mean={pexp_years_num.mean():.2f} years)")
+        elif pexp_col in df.columns:
+            # Only have Stijn-style pexp (scaled by /100) - convert to years
+            pexp_num = pd.to_numeric(df[pexp_col], errors="coerce").fillna(0.0)
+            pexp_years_num = pexp_num * 100.0  # Convert back to actual years
+            df[pexp_years_col] = pexp_years_num
+            df[f"pexp_years2_{gender}"] = pexp_years_num ** 2
+            logging.debug(f"Created {pexp_years_col} from {pexp_col} * 100 (mean={pexp_years_num.mean():.2f} years)")
+
+        # Create alias for estimation code compatibility
+        if f"pexp_years2_{gender}" in df.columns:
             df[f"pexp2_{gender}"] = df[f"pexp_years2_{gender}"]
 
         # Age normalization (for preference parameters)

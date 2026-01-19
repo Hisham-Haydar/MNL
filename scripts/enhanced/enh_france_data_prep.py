@@ -1594,7 +1594,7 @@ def clean_harmonize_fr(
         )
     else:
         households_to_remove = np.array([])
-        logging.info("Extreme screening skipped: no non-missing diff measure available.")
+        logging.info("Extreme-screened population: no non-missing diff measure available.")
 
     logging.info(f"Extreme-screened population: {int(screen_idx.sum())} records")
     logging.info(f"Households to remove due to extreme wages: {len(households_to_remove)}")
@@ -1937,6 +1937,86 @@ def finalize_post_filter_ruro_consistency(df: pd.DataFrame, config: Dict[str, An
         df["diff_yem_final"] = df.get("diff_yem_monthly", np.nan)
 
     return df
+
+# =============================================================================
+# PLOT GENERATION FUNCTION
+# =============================================================================
+
+def generate_plots(df: pd.DataFrame, title: str, prefix: str, out_dir: str) -> None:
+    """Generate diagnostic plots for the processed data."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    
+    plots_dir = out_dir
+    os.makedirs(plots_dir, exist_ok=True)
+    
+    logger.info(f"Generating plots for {title} ({len(df)} rows) -> {plots_dir}")
+    
+    # Define columns to plot (adjust based on what's available)
+    plot_cols = [
+        ("lhw", "Weekly Hours"),
+        ("lhw_base", "Baseline Weekly Hours"),
+        ("yem", "Employment Income"),
+        ("yem_base", "Baseline Employment Income"),
+        ("age", "Age"),
+        ("ils_dispy", "Disposable Income"),
+        ("hourly_wage", "Hourly Wage"),
+    ]
+    
+    for col, label in plot_cols:
+        if col not in df.columns:
+            continue
+        try:
+            fig, ax = plt.subplots(figsize=(8, 5))
+            data = df[col].dropna()
+            if len(data) == 0:
+                plt.close(fig)
+                continue
+            
+            ax.hist(data, bins=50, edgecolor="black", alpha=0.7)
+            ax.set_xlabel(label)
+            ax.set_ylabel("Count")
+            ax.set_title(f"{title} — {label} Distribution")
+            
+            # Add summary stats
+            stats_text = f"N={len(data):,}\nMean={data.mean():.2f}\nMedian={data.median():.2f}"
+            ax.text(0.95, 0.95, stats_text, transform=ax.transAxes, 
+                    verticalalignment='top', horizontalalignment='right',
+                    bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+            
+            plt.tight_layout()
+            out_path = os.path.join(plots_dir, f"{prefix}_{col}.png")
+            plt.savefig(out_path, dpi=150)
+            plt.close(fig)
+            logger.debug(f"Saved plot: {out_path}")
+        except Exception as e:
+            logger.warning(f"Could not plot {col}: {e}")
+            plt.close("all")
+    
+    # Hours distribution by gender (if dgn column exists)
+    if "dgn" in df.columns and "lhw" in df.columns:
+        try:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            for gender, label in [(0, "Male"), (1, "Female")]:
+                subset = df[df["dgn"] == gender]["lhw"].dropna()
+                if len(subset) > 0:
+                    ax.hist(subset, bins=30, alpha=0.5, label=label, edgecolor="black")
+            ax.set_xlabel("Weekly Hours")
+            ax.set_ylabel("Count")
+            ax.set_title(f"{title} — Hours by Gender")
+            ax.legend()
+            plt.tight_layout()
+            plt.savefig(os.path.join(plots_dir, f"{prefix}_hours_by_gender.png"), dpi=150)
+            plt.close(fig)
+        except Exception as e:
+            logger.warning(f"Could not plot hours by gender: {e}")
+            plt.close("all")
+    
+    logger.info(f"Plots saved to {plots_dir}")
 
 # =============================================================================
 # MAIN PREPARATION FUNCTION
@@ -2320,54 +2400,49 @@ def prepare_one_year(
         plot_bins = config.get("plot_bins", 40)
 
         # Overall combined plots
-        _generate_group_plots(
+        generate_plots(
             df_filtered,
-            group_name=f"{country} {year} (All)",
+            title=f"{country} {year} (All)",
             prefix=f"{output_prefix}_all",
-            bins=plot_bins,
-            plots_dir=plots_dir,
+            out_dir=plots_dir,
         )
 
         # Couples plots
         if len(df_filtered_couples) > 0:
-            _generate_group_plots(
+            generate_plots(
                 df_filtered_couples,
-                group_name=f"{country} {year} Couples",
+                title=f"{country} {year} Couples",
                 prefix=f"{output_prefix}_couples",
-                bins=plot_bins,
-                plots_dir=plots_dir,
+                out_dir=plots_dir,
             )
 
         # Singles plots
         if len(df_filtered_singles) > 0:
-            _generate_group_plots(
+            generate_plots(
                 df_filtered_singles,
-                group_name=f"{country} {year} Singles",
+                title=f"{country} {year} Singles",
                 prefix=f"{output_prefix}_singles",
-                bins=plot_bins,
-                plots_dir=plots_dir,
+                out_dir=plots_dir,
             )
 
             # Singles female plots
             singles_female_df = filter_singles_by_gender(df_filtered_singles, 0)
             if len(singles_female_df) > 0:
-                _generate_group_plots(
+                generate_plots(
                     singles_female_df,
-                    group_name=f"{country} {year} Singles (Female)",
+                    title=f"{country} {year} Singles (Female)",
                     prefix=f"{output_prefix}_singles_female",
-                    bins=plot_bins,
-                    plots_dir=plots_dir,
+                    out_dir=plots_dir,
                 )
 
             # Singles male plots
             singles_male_df = filter_singles_by_gender(df_filtered_singles, 1)
             if len(singles_male_df) > 0:
-                _generate_group_plots(
+                generate_plots(
                     singles_male_df,
-                    group_name=f"{country} {year} Singles (Male)",
+                    title=f"{country} {year} Singles (Male)",
                     prefix=f"{output_prefix}_singles_male",
-                    bins=plot_bins,
-                    plots_dir=plots_dir,
+                    out_dir=plots_dir,
                 )
     else:
         logging.info("Skipping plot generation (--no-plots flag set)")

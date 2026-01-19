@@ -94,7 +94,8 @@ def compute_likelihood_singles(
     u = _compute_utility_singles(params, data, spec)
 
     # ===== 2. COMPUTE HOURS OPPORTUNITY =====
-    log_h = _compute_hours_opportunity_singles(params, data, spec)
+    # Use gender-specific parameters: _male for males, _female for females
+    log_h = _compute_hours_opportunity_singles(params, data, spec, is_male=data.is_male)
 
     # ===== 3. COMPUTE WAGE OPPORTUNITY =====
     if spec.wage_spec == "fw":
@@ -1086,12 +1087,20 @@ def _compute_hours_opportunity_couples_gender(
         Log hours opportunity
     """
     suffix = "_male" if is_male else "_female"
+    gender_suffix = "_male" if is_male else "_female"  # For parameter names
     log_h = np.zeros(data.n_obs)
 
     for shifter_config in spec.hours_shifters:
         var_name = shifter_config["variable"]
         coef_name = shifter_config["coefficient"]
         interaction = shifter_config.get("interaction", None)
+
+        # Use gender-specific coefficient name
+        coef_name_gender = f"{coef_name}{gender_suffix}"
+
+        # Fall back to base name if gender-specific not found (for backward compatibility)
+        if coef_name_gender not in params and coef_name in params:
+            coef_name_gender = coef_name
 
         var_name_gender = f"{var_name}{suffix}"
         if hasattr(data, var_name_gender):
@@ -1104,7 +1113,8 @@ def _compute_hours_opportunity_couples_gender(
             working_var = f"working{suffix}"
             var_data = var_data * getattr(data, working_var)
 
-        log_h = log_h + params[coef_name] * var_data
+        if coef_name_gender in params:
+            log_h = log_h + params[coef_name_gender] * var_data
 
     return log_h
 

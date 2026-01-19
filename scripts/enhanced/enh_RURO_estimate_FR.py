@@ -167,26 +167,50 @@ def compute_standard_errors(
     
     # Symmetrize
     H = 0.5 * (H + H.T)
-    
-    # Compute variance-covariance matrix
+
+    # Check condition number
     try:
-        varcov = np.linalg.inv(H)
+        cond = np.linalg.cond(H)
+        logger.info(f"Hessian condition number: {cond:.2e}")
+        if cond > 1e10:
+            logger.warning(f"Hessian is ill-conditioned (cond={cond:.2e})")
+    except:
+        cond = np.inf
+        logger.warning("Could not compute condition number")
+
+    # Compute variance-covariance matrix with robust methods
+    try:
+        # First try regular inverse
+        if cond < 1e10:
+            varcov = np.linalg.inv(H)
+        else:
+            # Use pseudo-inverse for ill-conditioned matrices
+            logger.info("Using Moore-Penrose pseudoinverse for robustness...")
+            varcov = np.linalg.pinv(H, rcond=1e-10)
+
         se = np.sqrt(np.abs(np.diag(varcov)))  # abs to handle numerical issues
-        
+
         # Check for negative variances (indicates identification problems)
         neg_var = np.diag(varcov) < 0
         if np.any(neg_var):
             n_neg = np.sum(neg_var)
             logger.warning(f"Warning: {n_neg} parameters have negative variance (identification issue)")
             se[neg_var] = np.nan
-        
+
+        # Flag parameters with very large SEs (likely poorly identified)
+        large_se = se > 100 * np.abs(theta + 1e-10)
+        if np.any(large_se & ~np.isnan(se)):
+            n_large = np.sum(large_se & ~np.isnan(se))
+            logger.warning(f"Warning: {n_large} parameters have very large SEs (poor identification)")
+
         # Compute t-values and p-values
         with np.errstate(divide='ignore', invalid='ignore'):
             t_values = theta / se
             p_values = 2 * (1 - norm.cdf(np.abs(t_values)))
-        
-        logger.info(f"Standard errors computed successfully")
-        
+
+        n_valid = np.sum(np.isfinite(se))
+        logger.info(f"Standard errors computed: {n_valid}/{n_params} valid")
+
         return {
             'se': se,
             'varcov': varcov,
@@ -194,11 +218,36 @@ def compute_standard_errors(
             'p_values': p_values,
             'hessian': H,
         }
-        
+
     except np.linalg.LinAlgError as e:
         logger.error(f"Hessian inversion failed: {e}")
         logger.error("This typically indicates model identification problems")
-        
+
+        # Try pseudo-inverse as last resort
+        try:
+            logger.info("Attempting pseudo-inverse as fallback...")
+            varcov = np.linalg.pinv(H, rcond=1e-8)
+            se = np.sqrt(np.abs(np.diag(varcov)))
+            neg_var = np.diag(varcov) < 0
+            se[neg_var] = np.nan
+
+            with np.errstate(divide='ignore', invalid='ignore'):
+                t_values = theta / se
+                p_values = 2 * (1 - norm.cdf(np.abs(t_values)))
+
+            n_valid = np.sum(np.isfinite(se))
+            logger.info(f"Pseudo-inverse succeeded: {n_valid}/{n_params} valid SEs")
+
+            return {
+                'se': se,
+                'varcov': varcov,
+                't_values': t_values,
+                'p_values': p_values,
+                'hessian': H,
+            }
+        except Exception as e2:
+            logger.error(f"Pseudo-inverse also failed: {e2}")
+
         # Return NaN for all SE
         return {
             'se': np.full(n_params, np.nan),

@@ -672,6 +672,9 @@ Examples:
                 # Try relative to script directory
                 spec_path = Path(__file__).parent / args.spec_config
 
+        # Convert to absolute path NOW (before any working directory changes by GAMS)
+        spec_path = spec_path.resolve()
+
         spec = parse_specification(spec_path)
         
         # Override optimization settings if specified

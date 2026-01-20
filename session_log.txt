@@ -382,3 +382,14 @@ KeyboardInterrupt
 
 ]633;D;0]633;A]633;P;Cwd=U:\x5cDesktop\x5cNizam_Hisham\x5cMNLPS U:\Desktop\Nizam_Hisham\MNL> ]633;B
 ]633;D]633;A]633;P;Cwd=U:\x5cDesktop\x5cNizam_Hisham\x5cMNLPS U:\Desktop\Nizam_Hisham\MNL> ]633;B
+]633;D]633;A]633;P;Cwd=U:\x5cDesktop\x5cNizam_Hisham\x5cMNLPS U:\Desktop\Nizam_Hisham\MNL> ]633;B
+]633;D]633;A]633;P;Cwd=U:\x5cDesktop\x5cNizam_Hisham\x5cMNLPS U:\Desktop\Nizam_Hisham\MNL> ]633;B
+(.venv) python .\scripts\enhanced\RURO_post_estimation_styled.py `
+--results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/2016_gamspy/run_2026-01-20_15-57-10/estimation_results.json" `
+--mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
+--output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/2016_gamspy_styled" `
+--prefix "fr_2016_gamspy_" `
+--compute-se `
+--auto-timestamp
+
+]633;D;0]633;A]633;P;Cwd=U:\x5cDesktop\x5cNizam_Hisham\x5cMNLPS U:\Desktop\Nizam_Hisham\MNL> ]633;B

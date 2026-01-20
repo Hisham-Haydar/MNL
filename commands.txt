@@ -1,0 +1,40 @@
+python scripts/enhanced/RURO_post_estimation_styled.py 
+--results-json outputs/estimates/fr/2016_gamspy/run_2026-01-17_19-42-09/estimation_results.json
+ --mnl-base U:/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl
+ --output-dir outputs/post_estimation/fr/2016_gamspy_styled
+--prefix fr_2016_gamspy_
+ --compute-se
+
+
+
+
+(.venv) python scripts/enhanced/enh_RURO_estimate_FR.py `
+  --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
+  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/2016_gamspy_styled" `
+
+  --group joint `
+  --solver gamspy-conopt `
+  --spec-config "U:/Desktop/Nizam_Hisham/MNL/scripts/enhanced/estimation_spec.yaml" `
+  --warm-start "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/2016_gamspy/run_2026-01-20_15-30-09/estimation_results.json" `
+  --auto-timestamp `
+  --verbose
+
+
+
+python .\scripts\enhanced\RURO_post_estimation_styled.py `
+  --results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/2016_gamspy/run_2026-01-20_15-30-09/estimation_results.json" `
+  --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
+  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/2016_gamspy_styled" `
+  --prefix "fr_2016_gamspy_" `
+  --compute-se `
+  --auto-timestamp `
+  --verbose
+
+
+python .\scripts\enhanced\RURO_post_estimation_styled.py `
+--results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/2016_gamspy/run_2026-01-20_15-30-09/estimation_results.json" `
+--mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
+--output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/2016_gamspy_styled" `
+--prefix "fr_2016_gamspy_" `
+--compute-se `
+--auto-timestamp

@@ -262,7 +262,9 @@ class ParsedParameters:
             has_beta_l0 = any('beta_l0' in k for k in params.keys())
 
             if has_theta_l or has_beta_c or has_beta_l0:
-                self.preference_groups.append(group)
+                # Filter out 'joint' group - it's not a demographic group
+                if group not in ['joint', 'all', 'combined']:
+                    self.preference_groups.append(group)
 
                 shifters = []
                 for k in params.keys():
@@ -300,7 +302,9 @@ class ParsedParameters:
                                 self.params_by_group[suffix][k] = v
                     
                     if suffix not in self.preference_groups:
-                        self.preference_groups.append(suffix)
+                        # Filter out 'joint' group - it's not a demographic group
+                        if suffix not in ['joint', 'all', 'combined']:
+                            self.preference_groups.append(suffix)
 
     def get_param(self, group: str, param_name: str, default: float = 0.0) -> float:
         """Get a parameter value by group and name."""
@@ -523,8 +527,10 @@ def analyze_muc_behavior(parsed_params: ParsedParameters) -> List[Dict[str, Any]
 
     for group in parsed_params.preference_groups:
         params = parsed_params.get_all_params_for_group(group)
-        beta_c = params.get('beta_c', 1.0)
-        theta_c = params.get('theta_c', 0.5)
+        # For singles groups, try with suffix first (beta_c_sm, beta_c_sf)
+        suffix = f'_{group}' if group in ['sm', 'sf', 'm', 'f'] else ''
+        beta_c = params.get(f'beta_c{suffix}', params.get('beta_c', 1.0))
+        theta_c = params.get(f'theta_c{suffix}', params.get('theta_c', 0.5))
 
         muc_positive = beta_c > 0
         muc_diminishing = theta_c < 1
@@ -629,10 +635,12 @@ def compute_structural_elasticities(parsed_params: ParsedParameters) -> pd.DataF
                 'β_c': f'{beta_c:.3f}',
             })
         else:
-            theta_l = params.get('theta_l', 0.5)
-            theta_c = params.get('theta_c', 0.5)
-            beta_l0 = params.get('beta_l0', 0.0)
-            beta_c = params.get('beta_c', 1.0)
+            # For singles groups, try with suffix first
+            suffix = f'_{group}' if group in ['sm', 'sf', 'm', 'f'] else ''
+            theta_l = params.get(f'theta_l{suffix}', params.get('theta_l', 0.5))
+            theta_c = params.get(f'theta_c{suffix}', params.get('theta_c', 0.5))
+            beta_l0 = params.get(f'beta_l0{suffix}', params.get('beta_l0', 0.0))
+            beta_c = params.get(f'beta_c{suffix}', params.get('beta_c', 1.0))
 
             hicksian = 1 - theta_l
             marshallian = hicksian - 0.1
@@ -1197,33 +1205,8 @@ def generate_specification_html(parsed_params: ParsedParameters) -> str:
 
         symbolic_html += """
                 </div>
-            </div>"""
-
-        # Add opportunity specification if we have opportunity parameters
-        if opp_shifters:
-            symbolic_html += """
-            <div class="spec-section">
-                <h5>🎯 Hours Opportunity (Symbolic)</h5>
-                <div class="math-block">
-                    log h(h|X) = β<sub>work</sub> · I(h>0) + β<sub>pt1</sub> · I(h∈[18.5,20.5]) +
-                                 β<sub>pt2</sub> · I(h∈[29.5,30.5]) + β<sub>ft</sub> · I(h∈[37.5,40.5]) + ...
-                </div>
             </div>
-
-            <div class="spec-section">
-                <h5>🔢 Hours Opportunity (Numerical)</h5>
-                <div class="math-block">"""
-
-            for opp_key, opp_val in zip(opp_shifters[:6], opp_vals[:6]):  # Limit to first 6 for display
-                symbolic_html += f"{opp_key} = {opp_val:.4f}<br>"
-            if len(opp_shifters) > 6:
-                symbolic_html += f"... ({len(opp_shifters) - 6} more parameters)"
-
-            symbolic_html += """
-                </div>
-            </div>"""
-
-        symbolic_html += "\n        </div>"
+        </div>"""
         html_parts.append(symbolic_html)
 
     if not html_parts:
@@ -1432,6 +1415,76 @@ def generate_html_report_styled(
     elasticities_html = ""
     if elasticities_df is not None and len(elasticities_df) > 0:
         elasticities_html = elasticities_df.to_html(classes='table table-striped', border=0, index=False)
+
+    # Build wage equation display
+    wage_equation_html = ""
+    # Extract wage parameters (they should be in the first group or 'joint')
+    wage_params = {}
+    for group in parsed_params.groups:
+        params = parsed_params.get_all_params_for_group(group)
+        if 'beta_w0' in params:
+            wage_params = params
+            break
+
+    if wage_params:
+        beta_w0 = wage_params.get('beta_w0', 0.0)
+        beta_w_educL = wage_params.get('beta_w_educL', 0.0)
+        beta_w_educH = wage_params.get('beta_w_educH', 0.0)
+        beta_pexp = wage_params.get('beta_pexp', 0.0)
+        beta_pexp2 = wage_params.get('beta_pexp2', 0.0)
+        sigma = wage_params.get('sigma', 0.0)
+
+        wage_equation_html = f"""
+        <div class="stats-box" style="margin-top: 1em;">
+            <h4>Log-Wage Equation (Mincer Style)</h4>
+            <div class="math-block symbolic">
+                log(wage) = β<sub>w0</sub> + β<sub>w,educL</sub> · educL + β<sub>w,educH</sub> · educH
+                           + β<sub>pexp</sub> · experience + β<sub>pexp²</sub> · experience² + ε
+                <br><br>
+                where ε ~ N(0, σ²)
+            </div>
+            <div class="math-block numerical" style="margin-top: 1em;">
+                log(wage) = {beta_w0:.4f} + {beta_w_educL:+.4f} · educL + {beta_w_educH:+.4f} · educH
+                           + {beta_pexp:+.4f} · experience + {beta_pexp2:+.6f} · experience² + ε
+                <br><br>
+                σ = {sigma:.4f}
+            </div>
+        </div>
+        """
+
+    # Build hours opportunity HTML
+    hours_opportunity_html = ""
+    if wage_params:  # Same params dict contains opportunity parameters
+        beta_work = wage_params.get('beta_work', 0.0)
+        beta_pt1 = wage_params.get('beta_pt1', 0.0)
+        beta_pt2 = wage_params.get('beta_pt2', 0.0)
+        beta_ft = wage_params.get('beta_ft', 0.0)
+        beta_gsur = wage_params.get('beta_gsur', 0.0)
+        beta_work_educL = wage_params.get('beta_work_educL', 0.0)
+        beta_work_educH = wage_params.get('beta_work_educH', 0.0)
+        beta_work_female = wage_params.get('beta_work_female', 0.0)
+        beta_work_couple = wage_params.get('beta_work_couple', 0.0)
+        beta_work_idf = wage_params.get('beta_work_idf', 0.0)
+
+        hours_opportunity_html = f"""
+        <div class="stats-box" style="margin-top: 1em;">
+            <h4>Hours Opportunity Function</h4>
+            <div class="math-block symbolic">
+                log h(h|X) = β<sub>work</sub> · I(h>0) + β<sub>pt1</sub> · I(h∈[18.5,20.5])
+                           + β<sub>pt2</sub> · I(h∈[29.5,30.5]) + β<sub>ft</sub> · I(h∈[37.5,40.5])
+                           + β<sub>gsur</sub> · gsur + β<sub>work,educL</sub> · educL + β<sub>work,educH</sub> · educH
+                           + β<sub>work,female</sub> · female + β<sub>work,couple</sub> · couple + β<sub>work,idf</sub> · idf
+            </div>
+            <div class="math-block numerical" style="margin-top: 1em;">
+                log h(h|X) = {beta_work:.4f} · I(h>0) + {beta_pt1:+.4f} · I(h∈[18.5,20.5])
+                           + {beta_pt2:+.4f} · I(h∈[29.5,30.5]) + {beta_ft:+.4f} · I(h∈[37.5,40.5])
+                <br>
+                           + {beta_gsur:+.4f} · gsur + {beta_work_educL:+.4f} · educL + {beta_work_educH:+.4f} · educH
+                <br>
+                           + {beta_work_female:+.4f} · female + {beta_work_couple:+.4f} · couple + {beta_work_idf:+.4f} · idf
+            </div>
+        </div>
+        """
 
     # Build MUC analysis table
     muc_analysis_html = ""
@@ -1870,28 +1923,38 @@ def generate_html_report_styled(
     {time_section}
 
     <section>
-        <h2>📐 Model Specification</h2>
-        <p>Utility and opportunity functions for each demographic group, shown in both symbolic and numerical form.</p>
-        {specification_html}
-    </section>
-
-    <section>
         <h2>📈 Model Fit Statistics</h2>
         <table class="table" style="width:auto;">
             {fit_stats_rows}
         </table>
         {bounds_explanation}
-    </section>    <section>
+    </section>
+
+    <section>
+        <h2>📐 Model Specification</h2>
+        <p>Utility and opportunity functions for each demographic group, shown in both symbolic and numerical form.</p>
+        {specification_html}
+
+        <h3>⏰ Hours Opportunity Function (All Groups)</h3>
+        {hours_opportunity_html}
+
+        <h3>💰 Wage Equation - Mincer (All Groups)</h3>
+        {wage_equation_html}
+    </section>
+
+    <section>
         <h2>📈 Curvature-Based Heuristics (Structural Elasticity Approximations)</h2>
         <div class="stats-box" style="margin-bottom: 1.5em; border-left-color: #3498db;">
             <h4 style="margin-top:0;">⚠️ Interpretation Note</h4>
             <p style="margin-bottom:0;">
-                These are <strong>not</strong> true labor supply elasticities. They are heuristic approximations 
-                derived from the curvature parameters (θ) of the Box-Cox utility function. The Hicksian approximation 
-                is (1 - θ_l), which measures the curvature of preferences. For rigorous elasticity estimates, 
+                These are <strong>not</strong> true labor supply elasticities. They are heuristic approximations
+                derived from the curvature parameters (θ) of the Box-Cox utility function. The Hicksian approximation
+                is (1 - θ_l), which measures the curvature of preferences. For rigorous elasticity estimates,
                 use simulation-based methods that account for the full discrete choice structure and budget constraints.
             </p>
         </div>
+
+        <h3>📊 Labor Supply Elasticities</h3>
         {elasticities_html}
     </section>
 
@@ -2619,12 +2682,13 @@ def compute_probability_diagnostics(
     all_ll_i = []  # (ll_i, idhh, group, p_chosen)
     
     # Helper to compute logit probabilities
-    def compute_probs_for_df(df, params, is_couples=False):
+    def compute_probs_for_df(df, params, is_couples=False, group_suffix=''):
         """Compute choice probabilities for a DataFrame."""
         df = df.copy()
-        
-        beta_c = params.get('beta_c', 1.0)
-        theta_c = params.get('theta_c', 0.5)
+
+        # Try with suffix first (for sm, sf groups)
+        beta_c = params.get(f'beta_c{group_suffix}', params.get('beta_c', 1.0))
+        theta_c = params.get(f'theta_c{group_suffix}', params.get('theta_c', 0.5))
         
         c = df['consumption'].values
         V = beta_c * boxcox_transform(c, theta_c)
@@ -2643,9 +2707,9 @@ def compute_probability_diagnostics(
                 if col in df.columns:
                     V += df[col].values
         else:
-            theta_l = params.get('theta_l', 0.5)
+            theta_l = params.get(f'theta_l{group_suffix}', params.get('theta_l', 0.5))
             l = df['leisure'].values
-            beta_l = compute_beta_l_full(df, params, '')
+            beta_l = compute_beta_l_full(df, params, group_suffix)
             V += beta_l * boxcox_transform(l, theta_l)
             
             # Add opportunity terms - check multiple possible column names
@@ -2691,7 +2755,7 @@ def compute_probability_diagnostics(
                 continue
             
             try:
-                df_g = compute_probs_for_df(df_g, params, is_couples=False)
+                df_g = compute_probs_for_df(df_g, params, is_couples=False, group_suffix=f'_{group_key}')
                 chosen_col = 'is_chosen' if 'is_chosen' in df_g.columns else 'chosen'
                 
                 # Probability sums by household
@@ -2707,7 +2771,10 @@ def compute_probability_diagnostics(
                     ll_i = np.log(max(p_ch, 1e-20))
                     all_ll_i.append((ll_i, idhh, group_key, p_ch))
                     
-            except Exception as e:                LOGGER.warning(f"Error computing probs for {group_key}: {e}")
+            except Exception as e:
+                LOGGER.warning(f"Error computing probs for {group_key}: {e}")
+                import traceback
+                LOGGER.warning(traceback.format_exc())
     
     # Process couples
     if df_couples is not None and len(df_couples) > 0:

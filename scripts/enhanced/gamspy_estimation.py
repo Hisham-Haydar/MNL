@@ -958,6 +958,195 @@ def estimate_couples_gamspy(
 
 
 # ==============================================================================
+# Hessian Extraction and Identification Diagnostics
+# ==============================================================================
+
+def extract_hessian_diagnostics(model, param_vars, spec, logger):
+    """
+    Extract Hessian matrix from GAMSPy model and compute identification diagnostics.
+
+    Parameters
+    ----------
+    model : GAMSPy Model
+        The solved optimization model
+    param_vars : dict
+        Dictionary mapping parameter names to GAMSPy Variables
+    spec : EstimationSpec
+        Specification object containing parameter names
+    logger : logging.Logger
+        Logger for output
+
+    Returns
+    -------
+    dict with:
+        - hessian: np.ndarray (n_params, n_params) or None
+        - eigenvalues: np.ndarray (n_params,) or None
+        - condition_number: float or None
+        - standard_errors: np.ndarray (n_params,) or None
+        - t_values: np.ndarray (n_params,) or None
+        - p_values: np.ndarray (n_params,) or None
+        - correlation_matrix: np.ndarray (n_params, n_params) or None
+        - poorly_identified_params: list of parameter names
+    """
+    from scipy.stats import norm
+
+    n_params = len(spec.all_param_names)
+    theta = np.array([_extract_var_level(param_vars[name]) for name in spec.all_param_names])
+
+    logger.info("")
+    logger.info("="*80)
+    logger.info("EXTRACTING HESSIAN MATRIX")
+    logger.info("="*80)
+
+    # Try to get Hessian from GAMSPy
+    H = None
+
+    # Try multiple possible locations for Hessian
+    if hasattr(model, 'hessian'):
+        logger.info("  Found Hessian in model.hessian")
+        H = model.hessian
+        if hasattr(H, 'toarray'):
+            H = H.toarray()
+    elif hasattr(model, '_model') and hasattr(model._model, 'hessian'):
+        logger.info("  Found Hessian in model._model.hessian")
+        H = model._model.hessian
+        if hasattr(H, 'toarray'):
+            H = H.toarray()
+    elif hasattr(model, 'getHessian'):
+        logger.info("  Extracting Hessian using model.getHessian()")
+        try:
+            H = model.getHessian()
+            if hasattr(H, 'toarray'):
+                H = H.toarray()
+        except Exception as e:
+            logger.warning(f"  Failed to extract Hessian: {e}")
+
+    if H is None:
+        logger.warning("  ⚠ Hessian not found in GAMSPy model")
+        logger.warning("  Numerical Hessian computation not yet implemented")
+        logger.warning("  Returning None for all Hessian diagnostics")
+        return {
+            'hessian': None,
+            'eigenvalues': None,
+            'condition_number': None,
+            'standard_errors': None,
+            't_values': None,
+            'p_values': None,
+            'correlation_matrix': None,
+            'poorly_identified_params': [],
+        }
+
+    logger.info(f"  Hessian shape: {H.shape}")
+
+    # Ensure it's negative definite for maximum likelihood
+    # (GAMSPy may return -H already for minimization problems)
+    if H.shape[0] > 0:
+        # Check if it's positive or negative definite by looking at median eigenvalue
+        eigvals_test = np.linalg.eigvalsh(H)
+        if np.median(eigvals_test) > 0:
+            # Hessian is positive, negate it (we're maximizing LL)
+            H = -H
+            logger.info("  Negated Hessian (GAMSPy solver works with minimization)")
+
+    # Compute eigenvalues of -H (should be positive for maximum)
+    eigenvalues = np.linalg.eigvalsh(-H)
+    logger.info(f"  Eigenvalue range: [{eigenvalues.min():.2e}, {eigenvalues.max():.2e}]")
+
+    # Check for negative eigenvalues (saddle point!)
+    n_negative = np.sum(eigenvalues < 0)
+    if n_negative > 0:
+        logger.error(f"  ✗ Found {n_negative} NEGATIVE eigenvalues - NOT a local maximum!")
+        logger.error(f"  This indicates a saddle point, not an optimum!")
+
+    # Compute condition number
+    if eigenvalues.min() > 0:
+        condition_number = eigenvalues.max() / eigenvalues.min()
+    else:
+        condition_number = np.inf
+        logger.error("  ✗ Minimum eigenvalue ≤ 0, condition number is infinite!")
+
+    logger.info(f"  Condition number: {condition_number:.2e}")
+
+    # Interpret condition number
+    if condition_number < 100:
+        logger.info("  ✓ Well-conditioned Hessian (κ < 100)")
+    elif condition_number < 10000:
+        logger.warning(f"  ⚠ Moderate conditioning issues (100 ≤ κ < 10,000)")
+    else:
+        logger.error(f"  ✗ Severe identification problem (κ ≥ 10,000)")
+
+    # Compute covariance matrix (inverse of -H)
+    try:
+        logger.info("  Computing covariance matrix (inverse Hessian)...")
+        H_inv = np.linalg.inv(-H)
+        standard_errors = np.sqrt(np.diag(H_inv))
+
+        # Correlation matrix
+        correlation_matrix = H_inv / np.outer(standard_errors, standard_errors)
+
+        # T-statistics and p-values
+        t_values = theta / standard_errors
+        p_values = 2 * (1 - norm.cdf(np.abs(t_values)))
+
+        logger.info(f"  ✓ Computed standard errors for {n_params} parameters")
+
+    except np.linalg.LinAlgError as e:
+        logger.error(f"  ✗ Failed to invert Hessian: {e}")
+        logger.error("  SEVERE IDENTIFICATION PROBLEM - Hessian is singular!")
+        standard_errors = np.full(n_params, np.nan)
+        t_values = np.full(n_params, np.nan)
+        p_values = np.full(n_params, np.nan)
+        correlation_matrix = np.full((n_params, n_params), np.nan)
+
+    # Identify poorly identified parameters
+    poorly_identified = []
+    logger.info("")
+    logger.info("  Parameter significance check:")
+
+    for i, (name, val, se, t_val, p_val) in enumerate(zip(
+        spec.all_param_names, theta, standard_errors, t_values, p_values
+    )):
+        if np.isnan(se):
+            poorly_identified.append(name)
+            logger.warning(f"    ⚠ {name}: SE = NaN (singular Hessian)")
+        elif se > 10.0:
+            poorly_identified.append(name)
+            logger.warning(f"    ⚠ {name}: SE = {se:.2f} (very large, poorly identified)")
+        elif p_val > 0.10:
+            if p_val > 0.50:
+                poorly_identified.append(name)
+                logger.warning(f"    ⚠ {name}: p = {p_val:.3f} (not significant at any level)")
+            elif p_val > 0.20:
+                logger.info(f"       {name}: p = {p_val:.3f} (weakly significant)")
+        else:
+            # Significant - log only if verbose
+            if p_val < 0.01:
+                sig_level = "***"
+            elif p_val < 0.05:
+                sig_level = "**"
+            else:
+                sig_level = "*"
+            # Only log parameters of interest
+            if 'theta' in name or 'beta_c' in name:
+                logger.info(f"       {name}: t = {t_val:.2f}, p = {p_val:.4f} {sig_level}")
+
+    logger.info("="*80)
+    logger.info("")
+
+    return {
+        'hessian': H,
+        'eigenvalues': eigenvalues,
+        'condition_number': condition_number,
+        'standard_errors': standard_errors,
+        't_values': t_values,
+        'p_values': p_values,
+        'correlation_matrix': correlation_matrix,
+        'poorly_identified_params': poorly_identified,
+        'n_negative_eigenvalues': n_negative,
+    }
+
+
+# ==============================================================================
 # Joint Estimation (All Groups)
 # ==============================================================================
 

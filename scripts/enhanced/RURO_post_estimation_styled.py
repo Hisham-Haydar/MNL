@@ -1106,6 +1106,135 @@ def plot_mu_distributions_by_group(
 # HTML REPORT GENERATION (STYLED VERSION)
 # =============================================================================
 
+def generate_specification_html(parsed_params: ParsedParameters) -> str:
+    """
+    Generate HTML section showing model specification for each group.
+
+    Displays both symbolic (closed form) and numerical (with parameter values) versions
+    of the utility and opportunity functions.
+    """
+    group_specs = {
+        'sm': {'label': 'Single Males', 'suffix': '_sm', 'color': '#3498db'},
+        'sf': {'label': 'Single Females', 'suffix': '_sf', 'color': '#e74c3c'},
+        'm': {'label': 'Males in Couples', 'suffix': '_m', 'color': '#2ecc71'},
+        'f': {'label': 'Females in Couples', 'suffix': '_f', 'color': '#f39c12'},
+    }
+
+    html_parts = []
+
+    for group_key, group_info in group_specs.items():
+        # Try to find parameters for this group
+        params = None
+        for try_key in [group_key, f'singles_{"male" if group_key == "sm" else "female" if group_key == "sf" else ""}']:
+            if try_key in parsed_params.params_by_group:
+                params = parsed_params.get_all_params_for_group(try_key)
+                break
+
+        if params is None or len(params) == 0:
+            continue
+
+        suffix = group_info['suffix']
+        label = group_info['label']
+        color = group_info['color']
+
+        # Extract parameters
+        beta_c = params.get(f'beta_c{suffix}', params.get('beta_c', None))
+        theta_c = params.get(f'theta_c{suffix}', params.get('theta_c', None))
+        beta_l0 = params.get(f'beta_l0{suffix}', params.get('beta_l0', None))
+        theta_l = params.get(f'theta_l{suffix}', params.get('theta_l', None))
+
+        if beta_c is None:
+            continue
+
+        # Build leisure shifters
+        shifters = []
+        shifter_vals = []
+        for key, val in params.items():
+            if key.startswith('beta_l_') and not key.startswith('beta_l0'):
+                var_name = key.replace('beta_l_', '').replace(suffix, '').replace('_', '')
+                if var_name:
+                    shifters.append(var_name)
+                    shifter_vals.append(val)
+
+        # Build opportunity shifters
+        opp_shifters = []
+        opp_vals = []
+        for key, val in params.items():
+            if 'beta_work' in key or 'beta_pt' in key or 'beta_ft' in key or 'beta_gsur' in key:
+                opp_shifters.append(key)
+                opp_vals.append(val)
+
+        # Symbolic form
+        symbolic_html = f"""
+        <div class="spec-card" style="border-left: 4px solid {color};">
+            <h4>{label}</h4>
+
+            <div class="spec-section">
+                <h5>📐 Utility Function (Symbolic)</h5>
+                <div class="math-block">
+                    U = β<sub>c</sub> · BC(C, θ<sub>c</sub>) + β<sub>l</sub>(X) · BC(L, θ<sub>l</sub>)
+                </div>
+                <p style="margin-top:0.5em; font-size:0.9em;">
+                    where BC(x, θ) = (x<sup>θ</sup> - 1) / θ  (Box-Cox transformation)<br>
+                    β<sub>l</sub>(X) = β<sub>l0</sub>"""
+
+        if shifters:
+            symbolic_html += " + " + " + ".join([f"β<sub>l,{s}</sub> · {s}" for s in shifters])
+
+        symbolic_html += """
+                </p>
+            </div>
+
+            <div class="spec-section">
+                <h5>🔢 Utility Function (Numerical)</h5>
+                <div class="math-block">"""
+
+        symbolic_html += f"U = {beta_c:.4f} · BC(C, {theta_c:.4f}) + ("
+        symbolic_html += f"{beta_l0:.4f}"
+        for s, v in zip(shifters, shifter_vals):
+            symbolic_html += f" + {v:+.4f}·{s}"
+        symbolic_html += f") · BC(L, {theta_l:.4f})"
+
+        symbolic_html += """
+                </div>
+            </div>"""
+
+        # Add opportunity specification if we have opportunity parameters
+        if opp_shifters:
+            symbolic_html += """
+            <div class="spec-section">
+                <h5>🎯 Hours Opportunity (Symbolic)</h5>
+                <div class="math-block">
+                    log h(h|X) = β<sub>work</sub> · I(h>0) + β<sub>pt1</sub> · I(h∈[18.5,20.5]) +
+                                 β<sub>pt2</sub> · I(h∈[29.5,30.5]) + β<sub>ft</sub> · I(h∈[37.5,40.5]) + ...
+                </div>
+            </div>
+
+            <div class="spec-section">
+                <h5>🔢 Hours Opportunity (Numerical)</h5>
+                <div class="math-block">"""
+
+            for opp_key, opp_val in zip(opp_shifters[:6], opp_vals[:6]):  # Limit to first 6 for display
+                symbolic_html += f"{opp_key} = {opp_val:.4f}<br>"
+            if len(opp_shifters) > 6:
+                symbolic_html += f"... ({len(opp_shifters) - 6} more parameters)"
+
+            symbolic_html += """
+                </div>
+            </div>"""
+
+        symbolic_html += "\n        </div>"
+        html_parts.append(symbolic_html)
+
+    if not html_parts:
+        return ""
+
+    # Wrap all specs in a container (without section wrapper - caller will add it)
+    return f"""<div class="spec-container">
+            {"".join(html_parts)}
+        </div>"""
+
+
 def generate_html_report_styled(
     parsed_params: ParsedParameters,
     fit_results: Dict[str, Dict[str, Any]],
@@ -1242,6 +1371,13 @@ def generate_html_report_styled(
     .color-legend { display: flex; flex-wrap: wrap; gap: 1em; margin: 1em 0; padding: 0.5em; background: #f0f0f0; border-radius: 4px; }
     .color-legend-item { display: flex; align-items: center; gap: 0.5em; font-size: 0.85em; }
     .color-box { width: 16px; height: 16px; border: 1px solid #999; border-radius: 2px; }
+    .spec-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5em; margin-top: 1.5em; }
+    .spec-card { background: white; padding: 1.5em; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-top: 4px solid; }
+    .spec-section { margin-bottom: 1.5em; }
+    .spec-section h4 { margin: 0 0 0.75em 0; font-size: 1.1em; color: #333; border-bottom: 2px solid #eee; padding-bottom: 0.5em; }
+    .math-block { background: #f8f9fa; padding: 1em; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.95em; line-height: 1.6; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+    .math-block.symbolic { background: #e8f4f8; border-left: 3px solid #3498db; }
+    .math-block.numerical { background: #fef5e7; border-left: 3px solid #f39c12; }
     @media (max-width: 768px) { .two-col, .four-col, .contour-grid { grid-template-columns: 1fr; } }
     """    # Build fit stats section
     fit_stats_rows = ""
@@ -1705,6 +1841,9 @@ def generate_html_report_styled(
     
     param_table_rows = pref_table + hours_opp_table + wage_opp_table + other_table
 
+    # Generate specification HTML
+    specification_html = generate_specification_html(parsed_params)
+
     # Assemble HTML
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -1729,6 +1868,12 @@ def generate_html_report_styled(
     </div>
 
     {time_section}
+
+    <section>
+        <h2>📐 Model Specification</h2>
+        <p>Utility and opportunity functions for each demographic group, shown in both symbolic and numerical form.</p>
+        {specification_html}
+    </section>
 
     <section>
         <h2>📈 Model Fit Statistics</h2>

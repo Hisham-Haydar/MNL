@@ -966,6 +966,7 @@ def estimate_joint_gamspy(
     data_singles_female: PrecomputedDataSingles,
     data_couples: PrecomputedDataCouples,
     spec: EstimationSpec,
+    theta_init: Optional[np.ndarray] = None,
     solver: str = "conopt",
     verbose: bool = True,
     solver_options: Optional[Dict[str, str]] = None
@@ -992,6 +993,9 @@ def estimate_joint_gamspy(
         Precomputed data for couples
     spec : EstimationSpec
         Specification from YAML config
+    theta_init : np.ndarray, optional
+        Initial parameter values (length = n_params). If None, uses spec.initial_values.
+        This should come from warm-start (previous estimation results).
     solver : str, default="conopt"
         GAMSPy solver: "conopt", "ipopt", "ipopth", or "knitro"
     verbose : bool, default=True
@@ -1049,10 +1053,16 @@ def estimate_joint_gamspy(
     # ========================================================================
     
     logger.info("  Creating shared parameter variables...")
-    
+
     param_vars = {}
-    theta_init = np.array([spec.initial_values.get(name, 0.0) for name in spec.all_param_names])
-    
+
+    # Use provided theta_init (from warm-start) or fall back to spec defaults
+    if theta_init is None:
+        theta_init = np.array([spec.initial_values.get(name, 0.0) for name in spec.all_param_names])
+        logger.info("    Using spec default initial values")
+    else:
+        logger.info("    Using warm-start initial values")
+
     for i, param_name in enumerate(spec.all_param_names):
         var = Variable(container, param_name, type="free")
         var.l = float(theta_init[i])

@@ -932,6 +932,7 @@ Examples:
                     data_singles_female=data_sf,
                     data_couples=data_cou,
                     spec=spec,
+                    theta_init=theta_init,  # Pass warm-start initial values!
                     solver=gamspy_solver,
                     verbose=args.verbose,
                     solver_options=solver_options

@@ -1147,21 +1147,56 @@ def estimate_joint_gamspy(
             educH = float(getattr(data_singles_male, 'educH', np.zeros(1))[global_idx])
             gsur_val = float(data_singles_male.gsur[global_idx])
             female = 0.0  # This is singles_male
-            # Get region dummies for interaction
-            reg2 = float(getattr(data_singles_male, 'reg2', np.zeros(1))[global_idx]) if hasattr(data_singles_male, 'reg2') else 0.0
-            reg3 = float(getattr(data_singles_male, 'reg3', np.zeros(1))[global_idx]) if hasattr(data_singles_male, 'reg3') else 0.0
+            couple = 0.0  # This is singles
 
-            # Build log_h expression using MALE hours opportunity parameters
-            # (same parameters used for singles_male and couples_male)
-            log_h = (param_vars['beta_work_male'] * working
-                   + param_vars['beta_pt1_male'] * pt1_focal
-                   + param_vars['beta_pt2_male'] * pt2_focal
-                   + param_vars['beta_ft_male'] * ft_focal
-                   + param_vars['beta_gsur_male'] * (gsur_val * working)
-                   + param_vars['beta_work_educL_male'] * (educL * working)
-                   + param_vars['beta_work_educH_male'] * (educH * working)
-                   + param_vars['beta_work_reg2_male'] * (reg2 * working)
-                   + param_vars['beta_work_reg3_male'] * (reg3 * working))
+            # Build log_h from specification (specification-agnostic)
+            log_h = 0.0
+            for shifter in spec.hours_shifters:
+                var_name = shifter["variable"]
+                coef_name = shifter["coefficient"]
+                interaction = shifter.get("interaction", None)
+
+                # Get parameter - try gender-specific first, then base name
+                coef_name_gender = f"{coef_name}_male"
+                if coef_name_gender in param_vars:
+                    param = param_vars[coef_name_gender]
+                elif coef_name in param_vars:
+                    param = param_vars[coef_name]
+                else:
+                    continue  # Skip if parameter not found
+
+                # Get variable value
+                if var_name == "working":
+                    var_val = working
+                elif var_name == "working_pt1":
+                    var_val = pt1_focal
+                elif var_name == "working_pt2":
+                    var_val = pt2_focal
+                elif var_name == "working_ft":
+                    var_val = ft_focal
+                elif var_name == "gsur":
+                    var_val = gsur_val
+                elif var_name == "educL":
+                    var_val = educL
+                elif var_name == "educH":
+                    var_val = educH
+                elif var_name == "female":
+                    var_val = female
+                elif var_name in ("couple", "in_couple"):
+                    var_val = couple
+                elif var_name == "drgn1":
+                    # Get region indicator from data
+                    var_val = float(getattr(data_singles_male, 'drgn1', np.zeros(1))[global_idx]) if hasattr(data_singles_male, 'drgn1') else 0.0
+                elif hasattr(data_singles_male, var_name):
+                    var_val = float(getattr(data_singles_male, var_name)[global_idx])
+                else:
+                    continue  # Skip if variable not found
+
+                # Apply interaction if specified
+                if interaction == "working":
+                    var_val = var_val * working
+
+                log_h = log_h + param * var_val
 
             # Add to utility
             util_j = util_j + log_h
@@ -1277,21 +1312,57 @@ def estimate_joint_gamspy(
             educL = float(getattr(data_singles_female, 'educL', np.zeros(1))[global_idx])
             educH = float(getattr(data_singles_female, 'educH', np.zeros(1))[global_idx])
             gsur_val = float(data_singles_female.gsur[global_idx])
-            # Get region dummies for interaction
-            reg2 = float(getattr(data_singles_female, 'reg2', np.zeros(1))[global_idx]) if hasattr(data_singles_female, 'reg2') else 0.0
-            reg3 = float(getattr(data_singles_female, 'reg3', np.zeros(1))[global_idx]) if hasattr(data_singles_female, 'reg3') else 0.0
+            female = 1.0  # This is singles_female
+            couple = 0.0  # This is singles
 
-            # Build log_h expression using FEMALE hours opportunity parameters
-            # (same parameters used for singles_female and couples_female)
-            log_h = (param_vars['beta_work_female'] * working
-                   + param_vars['beta_pt1_female'] * pt1_focal
-                   + param_vars['beta_pt2_female'] * pt2_focal
-                   + param_vars['beta_ft_female'] * ft_focal
-                   + param_vars['beta_gsur_female'] * (gsur_val * working)
-                   + param_vars['beta_work_educL_female'] * (educL * working)
-                   + param_vars['beta_work_educH_female'] * (educH * working)
-                   + param_vars['beta_work_reg2_female'] * (reg2 * working)
-                   + param_vars['beta_work_reg3_female'] * (reg3 * working))
+            # Build log_h from specification (specification-agnostic)
+            log_h = 0.0
+            for shifter in spec.hours_shifters:
+                var_name = shifter["variable"]
+                coef_name = shifter["coefficient"]
+                interaction = shifter.get("interaction", None)
+
+                # Get parameter - try gender-specific first, then base name
+                coef_name_gender = f"{coef_name}_female"
+                if coef_name_gender in param_vars:
+                    param = param_vars[coef_name_gender]
+                elif coef_name in param_vars:
+                    param = param_vars[coef_name]
+                else:
+                    continue  # Skip if parameter not found
+
+                # Get variable value
+                if var_name == "working":
+                    var_val = working
+                elif var_name == "working_pt1":
+                    var_val = pt1_focal
+                elif var_name == "working_pt2":
+                    var_val = pt2_focal
+                elif var_name == "working_ft":
+                    var_val = ft_focal
+                elif var_name == "gsur":
+                    var_val = gsur_val
+                elif var_name == "educL":
+                    var_val = educL
+                elif var_name == "educH":
+                    var_val = educH
+                elif var_name == "female":
+                    var_val = female
+                elif var_name in ("couple", "in_couple"):
+                    var_val = couple
+                elif var_name == "drgn1":
+                    # Get region indicator from data
+                    var_val = float(getattr(data_singles_female, 'drgn1', np.zeros(1))[global_idx]) if hasattr(data_singles_female, 'drgn1') else 0.0
+                elif hasattr(data_singles_female, var_name):
+                    var_val = float(getattr(data_singles_female, var_name)[global_idx])
+                else:
+                    continue  # Skip if variable not found
+
+                # Apply interaction if specified
+                if interaction == "working":
+                    var_val = var_val * working
+
+                log_h = log_h + param * var_val
 
             # Add to utility
             util_j = util_j + log_h
@@ -1433,21 +1504,59 @@ def estimate_joint_gamspy(
             educL_m = float(getattr(data_couples, 'educL_male', np.zeros(1))[global_idx])
             educH_m = float(getattr(data_couples, 'educH_male', np.zeros(1))[global_idx])
             gsur_m = float(data_couples.gsur_male[global_idx])
-            # Get region dummies (household level)
-            reg2 = float(getattr(data_couples, 'reg2', np.zeros(1))[global_idx]) if hasattr(data_couples, 'reg2') else 0.0
-            reg3 = float(getattr(data_couples, 'reg3', np.zeros(1))[global_idx]) if hasattr(data_couples, 'reg3') else 0.0
+            female_m = 0.0  # Male
+            couple = 1.0  # This is couples
 
-            # Build log_h_m using MALE hours opportunity parameters
-            # (same parameters as singles_male - shared across all males)
-            log_h_m = (param_vars['beta_work_male'] * working_m
-                     + param_vars['beta_pt1_male'] * pt1_focal_m
-                     + param_vars['beta_pt2_male'] * pt2_focal_m
-                     + param_vars['beta_ft_male'] * ft_focal_m
-                     + param_vars['beta_gsur_male'] * (gsur_m * working_m)
-                     + param_vars['beta_work_educL_male'] * (educL_m * working_m)
-                     + param_vars['beta_work_educH_male'] * (educH_m * working_m)
-                     + param_vars['beta_work_reg2_male'] * (reg2 * working_m)
-                     + param_vars['beta_work_reg3_male'] * (reg3 * working_m))
+            # Build log_h_m from specification (specification-agnostic)
+            log_h_m = 0.0
+            for shifter in spec.hours_shifters:
+                var_name = shifter["variable"]
+                coef_name = shifter["coefficient"]
+                interaction = shifter.get("interaction", None)
+
+                # Get parameter - try gender-specific first, then base name
+                coef_name_gender = f"{coef_name}_male"
+                if coef_name_gender in param_vars:
+                    param = param_vars[coef_name_gender]
+                elif coef_name in param_vars:
+                    param = param_vars[coef_name]
+                else:
+                    continue  # Skip if parameter not found
+
+                # Get variable value for male
+                if var_name == "working":
+                    var_val = working_m
+                elif var_name == "working_pt1":
+                    var_val = pt1_focal_m
+                elif var_name == "working_pt2":
+                    var_val = pt2_focal_m
+                elif var_name == "working_ft":
+                    var_val = ft_focal_m
+                elif var_name == "gsur":
+                    var_val = gsur_m
+                elif var_name == "educL":
+                    var_val = educL_m
+                elif var_name == "educH":
+                    var_val = educH_m
+                elif var_name == "female":
+                    var_val = female_m
+                elif var_name in ("couple", "in_couple"):
+                    var_val = couple
+                elif var_name == "drgn1":
+                    # Get region indicator from data (household level)
+                    var_val = float(getattr(data_couples, 'drgn1_male', np.zeros(1))[global_idx]) if hasattr(data_couples, 'drgn1_male') else 0.0
+                elif hasattr(data_couples, f"{var_name}_male"):
+                    var_val = float(getattr(data_couples, f"{var_name}_male")[global_idx])
+                elif hasattr(data_couples, var_name):
+                    var_val = float(getattr(data_couples, var_name)[global_idx])
+                else:
+                    continue  # Skip if variable not found
+
+                # Apply interaction if specified
+                if interaction == "working":
+                    var_val = var_val * working_m
+
+                log_h_m = log_h_m + param * var_val
 
             util_j = util_j + log_h_m
 
@@ -1461,18 +1570,58 @@ def estimate_joint_gamspy(
             educL_f = float(getattr(data_couples, 'educL_female', np.zeros(1))[global_idx])
             educH_f = float(getattr(data_couples, 'educH_female', np.zeros(1))[global_idx])
             gsur_f = float(data_couples.gsur_female[global_idx])
+            female_f = 1.0  # Female
 
-            # Build log_h_f using FEMALE hours opportunity parameters
-            # (same parameters as singles_female - shared across all females)
-            log_h_f = (param_vars['beta_work_female'] * working_f
-                     + param_vars['beta_pt1_female'] * pt1_focal_f
-                     + param_vars['beta_pt2_female'] * pt2_focal_f
-                     + param_vars['beta_ft_female'] * ft_focal_f
-                     + param_vars['beta_gsur_female'] * (gsur_f * working_f)
-                     + param_vars['beta_work_educL_female'] * (educL_f * working_f)
-                     + param_vars['beta_work_educH_female'] * (educH_f * working_f)
-                     + param_vars['beta_work_reg2_female'] * (reg2 * working_f)
-                     + param_vars['beta_work_reg3_female'] * (reg3 * working_f))
+            # Build log_h_f from specification (specification-agnostic)
+            log_h_f = 0.0
+            for shifter in spec.hours_shifters:
+                var_name = shifter["variable"]
+                coef_name = shifter["coefficient"]
+                interaction = shifter.get("interaction", None)
+
+                # Get parameter - try gender-specific first, then base name
+                coef_name_gender = f"{coef_name}_female"
+                if coef_name_gender in param_vars:
+                    param = param_vars[coef_name_gender]
+                elif coef_name in param_vars:
+                    param = param_vars[coef_name]
+                else:
+                    continue  # Skip if parameter not found
+
+                # Get variable value for female
+                if var_name == "working":
+                    var_val = working_f
+                elif var_name == "working_pt1":
+                    var_val = pt1_focal_f
+                elif var_name == "working_pt2":
+                    var_val = pt2_focal_f
+                elif var_name == "working_ft":
+                    var_val = ft_focal_f
+                elif var_name == "gsur":
+                    var_val = gsur_f
+                elif var_name == "educL":
+                    var_val = educL_f
+                elif var_name == "educH":
+                    var_val = educH_f
+                elif var_name == "female":
+                    var_val = female_f
+                elif var_name in ("couple", "in_couple"):
+                    var_val = couple
+                elif var_name == "drgn1":
+                    # Get region indicator from data (household level)
+                    var_val = float(getattr(data_couples, 'drgn1_female', np.zeros(1))[global_idx]) if hasattr(data_couples, 'drgn1_female') else 0.0
+                elif hasattr(data_couples, f"{var_name}_female"):
+                    var_val = float(getattr(data_couples, f"{var_name}_female")[global_idx])
+                elif hasattr(data_couples, var_name):
+                    var_val = float(getattr(data_couples, var_name)[global_idx])
+                else:
+                    continue  # Skip if variable not found
+
+                # Apply interaction if specified
+                if interaction == "working":
+                    var_val = var_val * working_f
+
+                log_h_f = log_h_f + param * var_val
 
             util_j = util_j + log_h_f
 

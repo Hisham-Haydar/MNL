@@ -108,7 +108,8 @@
       "Bash(Select-String -Pattern \"ll_.*type:|Model problem|Container has|Number of Variables|Solving joint|Iterations:|Final LL:|COMPLETE\" -Context 0,1)",
       "Bash(\".venv/Scripts/python.exe\" -c \"\nimport json\n\n# Load metadata\nwith open\\(''U:/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__mnlmeta.json''\\) as f:\n    meta = json.load\\(f\\)\n\nprint\\(''=== METADATA ===''\\)\nprint\\(''Keys:'', list\\(meta.keys\\(\\)\\)\\)\nprint\\(\\)\nif ''singles_columns'' in meta:\n    print\\(''Singles columns:'', meta[''singles_columns'']\\)\nprint\\(\\)\nif ''couples_columns'' in meta:\n    print\\(''Couples columns:'', meta[''couples_columns'']\\)\n\")",
       "Bash(\".venv\\\\Scripts\\\\python.exe\" \"scripts\\\\enhanced\\\\enh_RURO_estimate_FR.py\" --mnl-base \"U:/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl\" --output-dir \"outputs\\\\estimates\\\\fr\\\\2016_gamspy\" --group joint --solver gamspy-conopt --spec-config \"scripts\\\\enhanced\\\\estimation_spec.yaml\" --auto-timestamp --verbose)",
-      "Bash(Select-String -Pattern \"Starting GAMSPy|LL expression built|Solving joint|COMPLETE|Final LL|Iterations|ERROR|WARNING\" -Context 0,1)"
+      "Bash(Select-String -Pattern \"Starting GAMSPy|LL expression built|Solving joint|COMPLETE|Final LL|Iterations|ERROR|WARNING\" -Context 0,1)",
+      "Read(//u/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/2016_gamspy/run_2026-01-19_18-28-33/**)"
     ],
     "deny": [],
     "ask": []

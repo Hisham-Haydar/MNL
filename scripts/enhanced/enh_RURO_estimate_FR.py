@@ -387,9 +387,10 @@ def save_results_json(
                 output['results'][group_name]['t_values'] = output['standard_errors']['t_values']
                 output['results'][group_name]['p_values'] = output['standard_errors']['p_values']
 
-    # Save
+    # Save - ensure directory exists first
     json_path = output_dir / "estimation_results.json"
-    with open(json_path, 'w') as f:
+    json_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(str(json_path), 'w') as f:
         json.dump(output, f, indent=2)
 
     logger.info(f"Saved results to: {json_path}")

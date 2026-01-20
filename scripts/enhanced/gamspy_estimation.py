@@ -109,7 +109,7 @@ def boxcox_gamspy(value: float, theta_var, epsilon: float = 1e-12):
     This is smooth, differentiable, and gives the correct limit at θ=0.
 
     **Verification**:
-    - When θ = 0: BC(x, 0) = log(x) * 1 = log(x) ✓
+    - When θ = 0: BC(x, 0) = log(x) * 1 = log(x) [OK]
     - When θ = 0.5: BC(x, 0.5) ≈ 2*(√x - 1) (matches standard formula)
     - When θ = 1: BC(x, 1) = x - 1 (matches standard formula)
     """
@@ -642,7 +642,7 @@ def estimate_singles_gamspy(
         # Try alternative attributes
         n_iterations = getattr(result, 'iter_used', None)
     
-    logger.info(f"  ✓ Solved in {walltime:.1f} seconds")
+    logger.info(f"  [OK] Solved in {walltime:.1f} seconds")
     logger.info(f"  Final LL: {ll_final:.4f}")
     logger.info(f"  Solver status: {solver_status}")
     logger.info(f"  Model status: {model_status}")
@@ -930,7 +930,7 @@ def estimate_couples_gamspy(
     model_status = str(model_status_enum) if model_status_enum else 'Unknown'
     n_iterations = getattr(result, 'iteration_count', getattr(result, 'iter_used', None))
     
-    logger.info(f"  ✓ Solved in {walltime:.1f} seconds")
+    logger.info(f"  [OK] Solved in {walltime:.1f} seconds")
     logger.info(f"  Final LL: {ll_final:.4f}")
     logger.info(f"  Solver status: {solver_status}")
     logger.info(f"  Model status: {model_status}")
@@ -960,6 +960,141 @@ def estimate_couples_gamspy(
 # ==============================================================================
 # Hessian Extraction and Identification Diagnostics
 # ==============================================================================
+
+def _extract_hessian_from_gams_workdir(container, param_vars, spec, logger):
+    """
+    Extract Hessian matrix from GAMS working directory files.
+
+    GAMS solvers (especially CONOPT) compute the Hessian and store it in scratch files.
+    This function attempts to read those files and reconstruct the Hessian matrix.
+
+    Parameters
+    ----------
+    container : GAMSPy Container
+        The GAMSPy container with working directory info
+    param_vars : dict
+        Dictionary mapping parameter names to GAMSPy Variables
+    spec : EstimationSpec
+        Specification object containing parameter names
+    logger : logging.Logger
+        Logger for output
+
+    Returns
+    -------
+    np.ndarray or None
+        Hessian matrix (n_params, n_params) if successful, None otherwise
+    """
+    import os
+    import glob
+
+    n_params = len(spec.all_param_names)
+
+    # Get the working directory from container
+    if not hasattr(container, 'working_directory'):
+        logger.warning("  Container has no working_directory attribute")
+        return None
+
+    workdir = container.working_directory
+    logger.info(f"  GAMS working directory: {workdir}")
+
+    # Look for CONOPT Hessian files
+    # CONOPT may write Hessian to files like: CNO*.scr, *.hes, or GDX files
+    possible_patterns = [
+        os.path.join(workdir, "CNO*.scr"),
+        os.path.join(workdir, "*.hes"),
+        os.path.join(workdir, "*_hessian.gdx"),
+        os.path.join(workdir, "*.gdx"),
+    ]
+
+    hessian_files = []
+    for pattern in possible_patterns:
+        hessian_files.extend(glob.glob(pattern))
+
+    if not hessian_files:
+        logger.warning(f"  No potential Hessian files found in {workdir}")
+        return None
+
+    logger.info(f"  Found {len(hessian_files)} potential Hessian file(s)")
+    for f in hessian_files[:5]:  # Show first 5
+        logger.info(f"    - {os.path.basename(f)}")
+
+    # Try to read GDX files (most structured format)
+    for gdx_file in [f for f in hessian_files if f.endswith('.gdx')]:
+        try:
+            logger.info(f"  Trying to read Hessian from GDX: {os.path.basename(gdx_file)}")
+            H = _read_hessian_from_gdx(gdx_file, n_params, logger)
+            if H is not None:
+                return H
+        except Exception as e:
+            logger.warning(f"  Failed to read {os.path.basename(gdx_file)}: {e}")
+            continue
+
+    # If GDX failed, try CONOPT scratch files (binary format - harder to parse)
+    logger.warning("  GDX extraction failed, CONOPT binary scratch files not yet supported")
+    return None
+
+
+def _read_hessian_from_gdx(gdx_path, n_params, logger):
+    """
+    Read Hessian matrix from a GAMS GDX file.
+
+    Parameters
+    ----------
+    gdx_path : str
+        Path to GDX file
+    n_params : int
+        Expected number of parameters
+    logger : logging.Logger
+        Logger
+
+    Returns
+    -------
+    np.ndarray or None
+        Hessian matrix if found, None otherwise
+    """
+    from gamspy import Container
+
+    try:
+        # Load GDX file into a new container
+        hess_container = Container(load_from=gdx_path)
+
+        # Look for symbols that might contain the Hessian
+        # Common names: hessian, hess, H, jacobian, second_derivatives
+        possible_names = ['hessian', 'hess', 'H', 'second_deriv', 'second_derivatives']
+
+        for name in possible_names:
+            if hasattr(hess_container, name):
+                logger.info(f"  Found symbol: {name}")
+                hess_symbol = getattr(hess_container, name)
+
+                # Try to convert to numpy array
+                if hasattr(hess_symbol, 'records'):
+                    records = hess_symbol.records
+                    logger.info(f"  Symbol has {len(records)} records")
+
+                    # Hessian is typically stored as (i, j, value) tuples
+                    # Try to reconstruct the matrix
+                    H = np.zeros((n_params, n_params))
+                    for _, row in records.iterrows():
+                        if len(row) >= 3:
+                            i = int(row.iloc[0])
+                            j = int(row.iloc[1])
+                            val = float(row.iloc[2])
+                            if 0 <= i < n_params and 0 <= j < n_params:
+                                H[i, j] = val
+                                H[j, i] = val  # Symmetric
+
+                    if np.any(H != 0):
+                        logger.info(f"  Reconstructed {n_params}x{n_params} Hessian matrix")
+                        return H
+
+        logger.warning(f"  No Hessian symbol found in GDX file")
+        return None
+
+    except Exception as e:
+        logger.warning(f"  Error reading GDX file: {e}")
+        return None
+
 
 def extract_hessian_diagnostics(model, param_vars, spec, logger):
     """
@@ -1021,8 +1156,18 @@ def extract_hessian_diagnostics(model, param_vars, spec, logger):
         except Exception as e:
             logger.warning(f"  Failed to extract Hessian: {e}")
 
+    # If not found, try extracting from GAMS working directory
+    if H is None and hasattr(model, 'container'):
+        logger.info("  Attempting to extract Hessian from GAMS working directory...")
+        try:
+            H = _extract_hessian_from_gams_workdir(model.container, param_vars, spec, logger)
+            if H is not None:
+                logger.info(f"  [OK] Successfully extracted Hessian from GAMS files")
+        except Exception as e:
+            logger.warning(f"  Failed to extract Hessian from GAMS workdir: {e}")
+
     if H is None:
-        logger.warning("  ⚠ Hessian not found in GAMSPy model")
+        logger.warning("  [!] Hessian not found in GAMSPy model")
         logger.warning("  Numerical Hessian computation not yet implemented")
         logger.warning("  Returning None for all Hessian diagnostics")
         return {
@@ -1034,6 +1179,7 @@ def extract_hessian_diagnostics(model, param_vars, spec, logger):
             'p_values': None,
             'correlation_matrix': None,
             'poorly_identified_params': [],
+            'n_negative_eigenvalues': 0,  # FIX: Add missing key
         }
 
     logger.info(f"  Hessian shape: {H.shape}")
@@ -1055,7 +1201,7 @@ def extract_hessian_diagnostics(model, param_vars, spec, logger):
     # Check for negative eigenvalues (saddle point!)
     n_negative = np.sum(eigenvalues < 0)
     if n_negative > 0:
-        logger.error(f"  ✗ Found {n_negative} NEGATIVE eigenvalues - NOT a local maximum!")
+        logger.error(f"  [X] Found {n_negative} NEGATIVE eigenvalues - NOT a local maximum!")
         logger.error(f"  This indicates a saddle point, not an optimum!")
 
     # Compute condition number
@@ -1063,17 +1209,17 @@ def extract_hessian_diagnostics(model, param_vars, spec, logger):
         condition_number = eigenvalues.max() / eigenvalues.min()
     else:
         condition_number = np.inf
-        logger.error("  ✗ Minimum eigenvalue ≤ 0, condition number is infinite!")
+        logger.error("  [X] Minimum eigenvalue ≤ 0, condition number is infinite!")
 
     logger.info(f"  Condition number: {condition_number:.2e}")
 
     # Interpret condition number
     if condition_number < 100:
-        logger.info("  ✓ Well-conditioned Hessian (κ < 100)")
+        logger.info("  [OK] Well-conditioned Hessian (kappa < 100)")
     elif condition_number < 10000:
-        logger.warning(f"  ⚠ Moderate conditioning issues (100 ≤ κ < 10,000)")
+        logger.warning(f"  [!] Moderate conditioning issues (100 ≤ kappa < 10,000)")
     else:
-        logger.error(f"  ✗ Severe identification problem (κ ≥ 10,000)")
+        logger.error(f"  [X] Severe identification problem (kappa ≥ 10,000)")
 
     # Compute covariance matrix (inverse of -H)
     try:
@@ -1088,10 +1234,10 @@ def extract_hessian_diagnostics(model, param_vars, spec, logger):
         t_values = theta / standard_errors
         p_values = 2 * (1 - norm.cdf(np.abs(t_values)))
 
-        logger.info(f"  ✓ Computed standard errors for {n_params} parameters")
+        logger.info(f"  [OK] Computed standard errors for {n_params} parameters")
 
     except np.linalg.LinAlgError as e:
-        logger.error(f"  ✗ Failed to invert Hessian: {e}")
+        logger.error(f"  [X] Failed to invert Hessian: {e}")
         logger.error("  SEVERE IDENTIFICATION PROBLEM - Hessian is singular!")
         standard_errors = np.full(n_params, np.nan)
         t_values = np.full(n_params, np.nan)
@@ -1108,14 +1254,14 @@ def extract_hessian_diagnostics(model, param_vars, spec, logger):
     )):
         if np.isnan(se):
             poorly_identified.append(name)
-            logger.warning(f"    ⚠ {name}: SE = NaN (singular Hessian)")
+            logger.warning(f"    [!] {name}: SE = NaN (singular Hessian)")
         elif se > 10.0:
             poorly_identified.append(name)
-            logger.warning(f"    ⚠ {name}: SE = {se:.2f} (very large, poorly identified)")
+            logger.warning(f"    [!] {name}: SE = {se:.2f} (very large, poorly identified)")
         elif p_val > 0.10:
             if p_val > 0.50:
                 poorly_identified.append(name)
-                logger.warning(f"    ⚠ {name}: p = {p_val:.3f} (not significant at any level)")
+                logger.warning(f"    [!] {name}: p = {p_val:.3f} (not significant at any level)")
             elif p_val > 0.20:
                 logger.info(f"       {name}: p = {p_val:.3f} (weakly significant)")
         else:
@@ -2023,10 +2169,10 @@ def estimate_joint_gamspy(
         'condition_number': hessian_diag['condition_number'],
         'correlation_matrix': hessian_diag['correlation_matrix'],
         'hessian_diagnostics': {
-            'condition_number': hessian_diag['condition_number'],
-            'min_eigenvalue': hessian_diag['eigenvalues'].min() if hessian_diag['eigenvalues'] is not None else None,
-            'max_eigenvalue': hessian_diag['eigenvalues'].max() if hessian_diag['eigenvalues'] is not None else None,
-            'n_negative_eigenvalues': hessian_diag['n_negative_eigenvalues'],
-            'poorly_identified_params': hessian_diag['poorly_identified_params'],
+            'condition_number': hessian_diag.get('condition_number'),
+            'min_eigenvalue': hessian_diag['eigenvalues'].min() if hessian_diag.get('eigenvalues') is not None else None,
+            'max_eigenvalue': hessian_diag['eigenvalues'].max() if hessian_diag.get('eigenvalues') is not None else None,
+            'n_negative_eigenvalues': hessian_diag.get('n_negative_eigenvalues', 0),
+            'poorly_identified_params': hessian_diag.get('poorly_identified_params', []),
         },
     }

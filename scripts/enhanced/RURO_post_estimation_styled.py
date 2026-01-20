@@ -220,6 +220,11 @@ class ParsedParameters:
     bounds: Optional[List[Tuple[float, float]]] = None
     initial_values: Optional[np.ndarray] = None
 
+    # Hessian-based diagnostics (from GAMSPy or other sources)
+    t_values: Optional[Dict[str, float]] = None
+    p_values: Optional[Dict[str, float]] = None
+    standard_errors: Optional[Dict[str, float]] = None
+
     # Parsed structure (populated by __post_init__)
     groups: List[str] = field(default_factory=list)
     params_by_group: Dict[str, Dict[str, float]] = field(default_factory=dict)
@@ -381,6 +386,9 @@ def load_estimation_results_from_json(json_path: Path) -> Tuple[ParsedParameters
     all_param_names = []
     all_theta = []
     all_se = []
+    all_t_values = {}
+    all_p_values = {}
+    all_se_dict = {}
     all_bounds = []
     all_init = []
 
@@ -447,17 +455,35 @@ def load_estimation_results_from_json(json_path: Path) -> Tuple[ParsedParameters
         
         params = group_data.get('parameters', {})
         se_raw = group_data.get('standard_errors', {})
+        t_raw = group_data.get('t_values', {})
+        p_raw = group_data.get('p_values', {})
         bounds_dict = group_data.get('bounds', {})
         init_dict = group_data.get('initial_values', {})
-        
+
         # Handle standard_errors as list (indexed) or dict (keyed by param name)
         if isinstance(se_raw, list):
             # Convert list to dict keyed by parameter name
             param_names_list = list(params.keys())
-            se_dict = {param_names_list[i]: (se_raw[i] if se_raw[i] is not None else np.nan) 
+            se_dict = {param_names_list[i]: (se_raw[i] if se_raw[i] is not None else np.nan)
                        for i in range(min(len(param_names_list), len(se_raw)))}
         else:
             se_dict = se_raw if se_raw else {}
+
+        # Handle t_values as list or dict
+        if isinstance(t_raw, list):
+            param_names_list = list(params.keys())
+            t_dict = {param_names_list[i]: (t_raw[i] if t_raw[i] is not None else np.nan)
+                      for i in range(min(len(param_names_list), len(t_raw)))}
+        else:
+            t_dict = t_raw if t_raw else {}
+
+        # Handle p_values as list or dict
+        if isinstance(p_raw, list):
+            param_names_list = list(params.keys())
+            p_dict = {param_names_list[i]: (p_raw[i] if p_raw[i] is not None else np.nan)
+                      for i in range(min(len(param_names_list), len(p_raw)))}
+        else:
+            p_dict = p_raw if p_raw else {}
 
         for param_name, param_value in params.items():
             full_name = f"{group_name}.{param_name}"
@@ -465,6 +491,16 @@ def load_estimation_results_from_json(json_path: Path) -> Tuple[ParsedParameters
             all_theta.append(param_value)
             se_val = se_dict.get(param_name, np.nan)
             all_se.append(se_val if se_val is not None else np.nan)
+
+            # Store t and p values by parameter name (for easy lookup later)
+            t_val = t_dict.get(param_name)
+            p_val = p_dict.get(param_name)
+            if t_val is not None:
+                all_t_values[param_name] = t_val
+            if p_val is not None:
+                all_p_values[param_name] = p_val
+            if se_val is not None:
+                all_se_dict[param_name] = se_val
 
             if param_name in bounds_dict:
                 b = bounds_dict[param_name]
@@ -484,6 +520,9 @@ def load_estimation_results_from_json(json_path: Path) -> Tuple[ParsedParameters
         std_errors=np.array(all_se) if any(not np.isnan(s) for s in all_se) else None,
         bounds=all_bounds if any(b[0] is not None or b[1] is not None for b in all_bounds) else None,
         initial_values=np.array([v if v is not None else np.nan for v in all_init]) if any(v is not None for v in all_init) else None,
+        t_values=all_t_values if all_t_values else None,
+        p_values=all_p_values if all_p_values else None,
+        standard_errors=all_se_dict if all_se_dict else None,
     )
 
     LOGGER.info(f"  Loaded {len(all_param_names)} parameters from {len(results)} groups")
@@ -1218,6 +1257,214 @@ def generate_specification_html(parsed_params: ParsedParameters) -> str:
         </div>"""
 
 
+def generate_identification_diagnostics_html(
+    hessian_diagnostics: Dict[str, Any],
+    parsed_params: ParsedParameters
+) -> str:
+    """
+    Generate HTML for Hessian-based identification diagnostics.
+
+    Parameters
+    ----------
+    hessian_diagnostics : dict
+        Dictionary containing:
+        - condition_number: float
+        - min_eigenvalue: float
+        - max_eigenvalue: float
+        - n_negative_eigenvalues: int
+        - poorly_identified_params: list of str
+    parsed_params : ParsedParameters
+        Parsed parameters with standard_errors, t_values, p_values
+
+    Returns
+    -------
+    str
+        HTML string for identification diagnostics section
+    """
+    if hessian_diagnostics is None:
+        return ""
+
+    condition_number = hessian_diagnostics.get('condition_number')
+    min_eigenvalue = hessian_diagnostics.get('min_eigenvalue')
+    max_eigenvalue = hessian_diagnostics.get('max_eigenvalue')
+    n_negative = hessian_diagnostics.get('n_negative_eigenvalues', 0)
+    poorly_identified = hessian_diagnostics.get('poorly_identified_params', [])
+
+    if condition_number is None:
+        return ""
+
+    # Color-code condition number
+    if condition_number < 100:
+        cond_color = "var(--success-color)"  # Green
+        cond_status = "✓ Well-Conditioned"
+        cond_interpretation = "The Hessian is well-conditioned (κ < 100). Parameters are well-identified with small standard errors."
+    elif condition_number < 10000:
+        cond_color = "var(--warning-color)"  # Yellow/Orange
+        cond_status = "⚠ Moderate Conditioning"
+        cond_interpretation = f"The Hessian shows moderate conditioning issues (100 ≤ κ < 10,000). Some parameters may have larger standard errors."
+    else:
+        cond_color = "var(--danger-color)"  # Red
+        cond_status = "✗ Severe Identification Problem"
+        cond_interpretation = f"The Hessian is severely ill-conditioned (κ ≥ 10,000). This indicates serious identification issues with unreliable parameter estimates."
+
+    # Build eigenvalue info
+    eigenvalue_html = f"""
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin-top: 1em;">
+            <div class="stats-box" style="border-left-color: #3498db;">
+                <h4 style="margin-top:0;">Minimum Eigenvalue</h4>
+                <p style="font-size: 1.5em; margin: 0;">{min_eigenvalue:.2e}</p>
+            </div>
+            <div class="stats-box" style="border-left-color: #3498db;">
+                <h4 style="margin-top:0;">Maximum Eigenvalue</h4>
+                <p style="font-size: 1.5em; margin: 0;">{max_eigenvalue:.2e}</p>
+            </div>
+            <div class="stats-box" style="border-left-color: {'var(--danger-color)' if n_negative > 0 else 'var(--success-color)'};">
+                <h4 style="margin-top:0;">Negative Eigenvalues</h4>
+                <p style="font-size: 1.5em; margin: 0;">{n_negative}</p>
+                <p style="font-size: 0.9em; margin: 0.5em 0 0 0; color: #666;">
+                    {'✗ NOT a local maximum!' if n_negative > 0 else '✓ Local maximum confirmed'}
+                </p>
+            </div>
+        </div>
+    """
+
+    # Build parameter significance table
+    param_rows = []
+    all_params = parsed_params.all_param_names if hasattr(parsed_params, 'all_param_names') else []
+
+    for group in parsed_params.preference_groups:
+        params = parsed_params.get_all_params_for_group(group)
+
+        # Try to get standard errors from parsed_params
+        if hasattr(parsed_params, 'standard_errors') and parsed_params.standard_errors:
+            se_dict = parsed_params.standard_errors
+        else:
+            se_dict = {}
+
+        if hasattr(parsed_params, 't_values') and parsed_params.t_values:
+            t_dict = parsed_params.t_values
+        else:
+            t_dict = {}
+
+        if hasattr(parsed_params, 'p_values') and parsed_params.p_values:
+            p_dict = parsed_params.p_values
+        else:
+            p_dict = {}
+
+        for param_name, param_value in params.items():
+            # Get SE, t, p for this parameter
+            se = se_dict.get(param_name)
+            t_val = t_dict.get(param_name)
+            p_val = p_dict.get(param_name)
+
+            if se is None or t_val is None or p_val is None:
+                continue  # Skip if we don't have diagnostics
+
+            # Determine significance stars
+            if p_val < 0.01:
+                sig_stars = "***"
+                sig_color = "var(--success-color)"
+            elif p_val < 0.05:
+                sig_stars = "**"
+                sig_color = "var(--warning-color)"
+            elif p_val < 0.10:
+                sig_stars = "*"
+                sig_color = "#f39c12"
+            else:
+                sig_stars = ""
+                sig_color = "#999"
+
+            # Highlight poorly identified
+            row_style = ""
+            if param_name in poorly_identified:
+                row_style = 'style="background-color: #fff3cd;"'  # Light yellow
+
+            param_rows.append(f"""
+                <tr {row_style}>
+                    <td><code>{param_name}</code></td>
+                    <td>{param_value:.6f}</td>
+                    <td>{se:.6f}</td>
+                    <td>{t_val:.3f}</td>
+                    <td>{p_val:.4f}</td>
+                    <td style="color: {sig_color}; font-weight: bold;">{sig_stars}</td>
+                </tr>
+            """)
+
+    param_table_html = ""
+    if param_rows:
+        param_table_html = f"""
+        <h3>Parameter Standard Errors and Significance</h3>
+        <p style="font-size: 0.9em; color: #666; margin-bottom: 1em;">
+            Significance levels: *** p&lt;0.01, ** p&lt;0.05, * p&lt;0.10.
+            Highlighted rows indicate poorly identified parameters (large SE or p&gt;0.10).
+        </p>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Estimate</th>
+                    <th>Std Error</th>
+                    <th>t-value</th>
+                    <th>p-value</th>
+                    <th>Sig</th>
+                </tr>
+            </thead>
+            <tbody>
+                {"".join(param_rows)}
+            </tbody>
+        </table>
+        """
+
+    # Build poorly identified params list
+    poorly_identified_html = ""
+    if poorly_identified:
+        poorly_list = ", ".join([f"<code>{p}</code>" for p in poorly_identified[:10]])
+        if len(poorly_identified) > 10:
+            poorly_list += f" (and {len(poorly_identified) - 10} more)"
+        poorly_identified_html = f"""
+        <div class="stats-box" style="border-left-color: var(--warning-color); margin-top: 1em;">
+            <h4 style="margin-top:0;">⚠ Poorly Identified Parameters ({len(poorly_identified)})</h4>
+            <p style="margin:0;">{poorly_list}</p>
+        </div>
+        """
+
+    return f"""
+    <section>
+        <h2>🔍 Identification Diagnostics</h2>
+        <p>Hessian-based diagnostics for parameter identification quality.</p>
+
+        <div class="stats-box" style="border-left-color: {cond_color}; margin-bottom: 1em;">
+            <h3 style="margin-top:0;">Condition Number: {condition_number:.2e}</h3>
+            <p style="font-size: 1.1em; margin: 0.5em 0;"><strong>{cond_status}</strong></p>
+            <p style="margin:0;">{cond_interpretation}</p>
+        </div>
+
+        <h3>Eigenvalue Analysis</h3>
+        {eigenvalue_html}
+
+        {param_table_html}
+
+        {poorly_identified_html}
+
+        <div class="stats-box" style="border-left-color: #95a5a6; margin-top: 1.5em;">
+            <h4 style="margin-top:0;">ℹ️ Technical Notes</h4>
+            <p style="margin-bottom: 0.5em;">
+                <strong>Condition Number (κ):</strong> Measures sensitivity of parameter estimates to small changes in data.
+                κ = λ<sub>max</sub> / λ<sub>min</sub>, where λ are eigenvalues of -H (Hessian).
+            </p>
+            <p style="margin-bottom: 0.5em;">
+                <strong>Eigenvalues:</strong> All eigenvalues of -H should be positive for a local maximum.
+                Near-zero eigenvalues indicate flat directions (weak identification).
+            </p>
+            <p style="margin:0;">
+                <strong>Standard Errors:</strong> Computed as SE = √diag((-H)⁻¹), where H is the Hessian at the optimum.
+                Large SE indicates parameter is not precisely estimated.
+            </p>
+        </div>
+    </section>
+    """
+
+
 def generate_html_report_styled(
     parsed_params: ParsedParameters,
     fit_results: Dict[str, Dict[str, Any]],
@@ -1232,6 +1479,7 @@ def generate_html_report_styled(
     total_elapsed_seconds: float = None,
     prob_diagnostics: Dict[str, Any] = None,
     bound_diagnostics: List[Dict[str, Any]] = None,
+    hessian_diagnostics: Dict[str, Any] = None,
 ) -> Path:
     """
     Generate comprehensive HTML report with professional styling.
@@ -1897,6 +2145,9 @@ def generate_html_report_styled(
     # Generate specification HTML
     specification_html = generate_specification_html(parsed_params)
 
+    # Generate identification diagnostics HTML
+    identification_html = generate_identification_diagnostics_html(hessian_diagnostics, parsed_params)
+
     # Assemble HTML
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -1929,6 +2180,8 @@ def generate_html_report_styled(
         </table>
         {bounds_explanation}
     </section>
+
+    {identification_html}
 
     <section>
         <h2>📐 Model Specification</h2>
@@ -3290,6 +3543,16 @@ def run_styled_post_estimation(
     post_estimation_time = post_est_end - post_est_start
     total_time = (estimation_time or 0) + post_estimation_time
 
+    # Extract Hessian diagnostics from data (if available from GAMSPy estimation)
+    hessian_diagnostics = data.get('hessian_diagnostics')
+    if hessian_diagnostics is None:
+        # Try to get from first group result
+        results = data.get('results', {})
+        for group_data in results.values():
+            if 'hessian_diagnostics' in group_data:
+                hessian_diagnostics = group_data['hessian_diagnostics']
+                break
+
     # Generate timestamped filename for report
     report_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     html_path = output_dir / f'{prefix}post_estimation_report_{report_timestamp}.html'
@@ -3307,6 +3570,7 @@ def run_styled_post_estimation(
         total_elapsed_seconds=total_time if estimation_time else None,
         prob_diagnostics=prob_diagnostics,
         bound_diagnostics=bound_diagnostics,
+        hessian_diagnostics=hessian_diagnostics,
     )
 
     # Save CSV outputs

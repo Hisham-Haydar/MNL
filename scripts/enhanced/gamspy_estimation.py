@@ -1989,6 +1989,20 @@ def estimate_joint_gamspy(
                           expected_ll_range=(-20000, -3000),
                           logger=logger)
 
+    # ========================================================================
+    # 9. Extract Hessian and compute identification diagnostics
+    # ========================================================================
+
+    logger.info("")
+    logger.info("Extracting Hessian matrix and computing identification diagnostics...")
+
+    hessian_diag = extract_hessian_diagnostics(
+        model=model,
+        param_vars=param_vars,
+        spec=spec,
+        logger=logger
+    )
+
     return {
         'theta': theta_final,
         'log_likelihood': ll_total_final,
@@ -2000,4 +2014,19 @@ def estimate_joint_gamspy(
         'walltime': walltime,
         'n_iterations': n_iterations,
         'gamspy_result': result,
+        # Hessian diagnostics
+        'hessian': hessian_diag['hessian'],
+        'standard_errors': hessian_diag['standard_errors'],
+        't_values': hessian_diag['t_values'],
+        'p_values': hessian_diag['p_values'],
+        'eigenvalues': hessian_diag['eigenvalues'],
+        'condition_number': hessian_diag['condition_number'],
+        'correlation_matrix': hessian_diag['correlation_matrix'],
+        'hessian_diagnostics': {
+            'condition_number': hessian_diag['condition_number'],
+            'min_eigenvalue': hessian_diag['eigenvalues'].min() if hessian_diag['eigenvalues'] is not None else None,
+            'max_eigenvalue': hessian_diag['eigenvalues'].max() if hessian_diag['eigenvalues'] is not None else None,
+            'n_negative_eigenvalues': hessian_diag['n_negative_eigenvalues'],
+            'poorly_identified_params': hessian_diag['poorly_identified_params'],
+        },
     }

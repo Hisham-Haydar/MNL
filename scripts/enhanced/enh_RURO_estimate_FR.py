@@ -387,6 +387,65 @@ def save_results_json(
                 output['results'][group_name]['t_values'] = output['standard_errors']['t_values']
                 output['results'][group_name]['p_values'] = output['standard_errors']['p_values']
 
+    # Add Hessian diagnostics if available (from GAMSPy estimation)
+    if 'hessian_diagnostics' in results and results['hessian_diagnostics'] is not None:
+        hess_diag = results['hessian_diagnostics']
+
+        # Convert numpy arrays to lists, handling None values
+        def to_serializable(val):
+            if val is None:
+                return None
+            elif isinstance(val, np.ndarray):
+                # Convert to list, replacing NaN/Inf with None
+                return [float(x) if np.isfinite(x) else None for x in val.flatten()]
+            elif isinstance(val, (np.integer, np.floating)):
+                return float(val) if np.isfinite(val) else None
+            elif isinstance(val, list):
+                return [to_serializable(x) for x in val]
+            else:
+                return val
+
+        # Build Hessian diagnostics output
+        hessian_output = {
+            'condition_number': to_serializable(hess_diag.get('condition_number')),
+            'min_eigenvalue': to_serializable(hess_diag.get('min_eigenvalue')),
+            'max_eigenvalue': to_serializable(hess_diag.get('max_eigenvalue')),
+            'n_negative_eigenvalues': int(hess_diag.get('n_negative_eigenvalues', 0)),
+            'poorly_identified_params': hess_diag.get('poorly_identified_params', [])
+        }
+
+        output['hessian_diagnostics'] = hessian_output
+
+        # Also add individual SEs, t-values, p-values to each group result
+        # (These come from the Hessian-based computation in GAMSPy)
+        if 'standard_errors' in results and results['standard_errors'] is not None:
+            se_arr = results['standard_errors']
+        else:
+            se_arr = None
+
+        if 't_values' in results and results['t_values'] is not None:
+            t_arr = results['t_values']
+        else:
+            t_arr = None
+
+        if 'p_values' in results and results['p_values'] is not None:
+            p_arr = results['p_values']
+        else:
+            p_arr = None
+
+        # Add to each group
+        for group_name in group_keys:
+            if group_name in output['results']:
+                if se_arr is not None:
+                    output['results'][group_name]['standard_errors'] = to_serializable(se_arr)
+                if t_arr is not None:
+                    output['results'][group_name]['t_values'] = to_serializable(t_arr)
+                if p_arr is not None:
+                    output['results'][group_name]['p_values'] = to_serializable(p_arr)
+
+                # Add Hessian diagnostics to each group result
+                output['results'][group_name]['hessian_diagnostics'] = hessian_output
+
     # Save - ensure directory exists first
     json_path = output_dir / "estimation_results.json"
     json_path.parent.mkdir(parents=True, exist_ok=True)
@@ -973,6 +1032,11 @@ Examples:
                     'n_groups_total': data_sm.n_groups + data_sf.n_groups + data_cou.n_groups,
                     'total_walltime': walltime,
                     'gamspy_solver': gamspy_solver,
+                    # Add Hessian diagnostics if available
+                    'standard_errors': gamspy_result.get('standard_errors'),
+                    't_values': gamspy_result.get('t_values'),
+                    'p_values': gamspy_result.get('p_values'),
+                    'hessian_diagnostics': gamspy_result.get('hessian_diagnostics'),
                 }
             else:
                 # Single group estimation with GAMSPy
@@ -1031,6 +1095,11 @@ Examples:
                     'n_groups_total': data.n_groups,
                     'total_walltime': walltime,
                     'gamspy_solver': gamspy_solver,
+                    # Add Hessian diagnostics if available
+                    'standard_errors': gamspy_result.get('standard_errors'),
+                    't_values': gamspy_result.get('t_values'),
+                    'p_values': gamspy_result.get('p_values'),
+                    'hessian_diagnostics': gamspy_result.get('hessian_diagnostics'),
                 }
         
         else:

@@ -381,6 +381,60 @@ def load_estimation_results_from_json(json_path: Path) -> Tuple[ParsedParameters
     all_init = []
 
     results = data.get('results', {})
+    metadata = data.get('metadata', {}) if isinstance(data.get('metadata'), dict) else {}
+    meta_group = metadata.get('group')
+
+    def _params_match(a: Dict[str, Any], b: Dict[str, Any],
+                      rtol: float = 1e-9, atol: float = 1e-12) -> bool:
+        if set(a.keys()) != set(b.keys()):
+            return False
+        for key in a.keys():
+            av = a.get(key)
+            bv = b.get(key)
+            if av is None or bv is None:
+                if av is not bv:
+                    return False
+                continue
+            if isinstance(av, (int, float, np.floating)) and isinstance(bv, (int, float, np.floating)):
+                if np.isnan(av) and np.isnan(bv):
+                    continue
+                if not np.isclose(av, bv, rtol=rtol, atol=atol):
+                    return False
+            else:
+                if av != bv:
+                    return False
+        return True
+
+    def _theta_match(a: Optional[List[float]], b: Optional[List[float]],
+                     rtol: float = 1e-9, atol: float = 1e-12) -> bool:
+        if a is None or b is None:
+            return a is b
+        try:
+            return np.allclose(a, b, rtol=rtol, atol=atol, equal_nan=True)
+        except Exception:
+            return False
+
+    if meta_group == "joint" and "joint" not in results and len(results) > 1:
+        group_names = list(results.keys())
+        base = results[group_names[0]]
+        base_params = base.get('parameters', {})
+        base_theta = base.get('theta', None)
+        identical = True
+        for g in group_names[1:]:
+            other = results[g]
+            if not _params_match(base_params, other.get('parameters', {})):
+                identical = False
+                break
+            if not _theta_match(base_theta, other.get('theta', None)):
+                identical = False
+                break
+        if identical and base_params:
+            LOGGER.warning(
+                "Detected joint estimation with duplicated group parameter blocks; "
+                "collapsing to a single 'joint' group for post-estimation."
+            )
+            results = {'joint': base}
+            data['results'] = results
 
     for group_name, group_data in results.items():
         if not group_data.get('success', False):

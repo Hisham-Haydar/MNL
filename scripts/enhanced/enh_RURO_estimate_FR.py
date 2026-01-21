@@ -414,6 +414,8 @@ def save_results_json(
                 return [float(x) if np.isfinite(x) else None for x in val.flatten()]
             elif isinstance(val, (np.integer, np.floating)):
                 return float(val) if np.isfinite(val) else None
+            elif isinstance(val, dict):
+                return {k: to_serializable(v) for k, v in val.items()}
             elif isinstance(val, list):
                 return [to_serializable(x) for x in val]
             else:
@@ -432,30 +434,19 @@ def save_results_json(
 
         # Also add individual SEs, t-values, p-values to each group result
         # (These come from the Hessian-based computation in GAMSPy)
-        if 'standard_errors' in results and results['standard_errors'] is not None:
-            se_arr = results['standard_errors']
-        else:
-            se_arr = None
-
-        if 't_values' in results and results['t_values'] is not None:
-            t_arr = results['t_values']
-        else:
-            t_arr = None
-
-        if 'p_values' in results and results['p_values'] is not None:
-            p_arr = results['p_values']
-        else:
-            p_arr = None
+        se_arr = output.get('standard_errors', {}).get('se')
+        t_arr = output.get('standard_errors', {}).get('t_values')
+        p_arr = output.get('standard_errors', {}).get('p_values')
 
         # Add to each group
         for group_name in group_keys:
             if group_name in output['results']:
                 if se_arr is not None:
-                    output['results'][group_name]['standard_errors'] = to_serializable(se_arr)
+                    output['results'][group_name]['standard_errors'] = se_arr
                 if t_arr is not None:
-                    output['results'][group_name]['t_values'] = to_serializable(t_arr)
+                    output['results'][group_name]['t_values'] = t_arr
                 if p_arr is not None:
-                    output['results'][group_name]['p_values'] = to_serializable(p_arr)
+                    output['results'][group_name]['p_values'] = p_arr
 
                 # Add Hessian diagnostics to each group result
                 output['results'][group_name]['hessian_diagnostics'] = hessian_output
@@ -463,10 +454,12 @@ def save_results_json(
     # Save - ensure directory exists first
     json_path = output_dir / "estimation_results.json"
     json_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(str(json_path), 'w') as f:
+    tmp_path = json_path.with_suffix(json_path.suffix + ".tmp")
+    with open(tmp_path, 'w', encoding='utf-8') as f:
         json.dump(output, f, indent=2)
+    tmp_path.replace(json_path)
 
-    logger.info(f"Saved results to: {json_path}")
+    logger.info(f"Saved results JSON: {json_path}")
 
 
 def save_results_csv(

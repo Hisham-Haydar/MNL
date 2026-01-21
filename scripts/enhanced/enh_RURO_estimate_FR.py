@@ -1148,43 +1148,73 @@ Examples:
 
         # ===== 7b. COMPUTE STANDARD ERRORS =====
         if not args.skip_se:
-            logger.info("")
-            logger.info("="*80)
-            logger.info("Step 7b: Computing Standard Errors")
-            logger.info("="*80)
-            
-            from estimation_engine import compute_gradient_joint
-            
-            # Get the final theta from results
-            if 'joint' in results:
-                theta_final = results['joint'].x
-                group_key = 'joint'
-            else:
-                # Single group estimation
-                for key in ['singles_male', 'singles_female', 'couples']:
-                    if key in results:
-                        theta_final = results[key].x
-                        group_key = key
-                        break
-            
-            # Build gradient function for SE computation
-            def grad_func_for_se(theta):
-                return compute_gradient_joint(
-                    theta, data_sm, data_sf, data_cou, spec
-                )
-            
-            # Compute SEs
-            se_results = compute_standard_errors(
-                theta=theta_final,
-                grad_func=grad_func_for_se,
-                eps=1e-5,
-                logger=logger
+            # Check if GAMSPy already provided Hessian diagnostics
+            has_gamspy_hessian = (
+                results.get('hessian_diagnostics') is not None and
+                results.get('standard_errors') is not None
             )
-            
-            # Store in results
-            results['standard_errors'] = se_results
-            
-            logger.info(f"SE computation complete. {np.sum(~np.isnan(se_results['se']))} valid SEs out of {len(se_results['se'])}")
+
+            if has_gamspy_hessian:
+                logger.info("")
+                logger.info("="*80)
+                logger.info("Step 7b: Standard Errors from GAMSPy Hessian")
+                logger.info("="*80)
+                logger.info("GAMSPy solver already computed Hessian-based diagnostics")
+                logger.info("Skipping numerical Hessian computation (already done by GAMSPy)")
+
+                # Count valid SEs
+                se_array = results.get('standard_errors')
+                if isinstance(se_array, dict):
+                    n_valid = sum(1 for v in se_array.values() if v is not None and not np.isnan(v))
+                    n_total = len(se_array)
+                elif isinstance(se_array, np.ndarray):
+                    n_valid = np.sum(~np.isnan(se_array))
+                    n_total = len(se_array)
+                else:
+                    n_valid, n_total = 0, 0
+
+                logger.info(f"GAMSPy provided {n_valid} valid SEs out of {n_total} parameters")
+
+            else:
+                # Compute numerical Hessian (SciPy estimation or GAMSPy didn't provide one)
+                logger.info("")
+                logger.info("="*80)
+                logger.info("Step 7b: Computing Standard Errors (Numerical Hessian)")
+                logger.info("="*80)
+                logger.info("Computing numerical Hessian using finite differences...")
+
+                from estimation_engine import compute_gradient_joint
+
+                # Get the final theta from results
+                if 'joint' in results:
+                    theta_final = results['joint'].x
+                    group_key = 'joint'
+                else:
+                    # Single group estimation
+                    for key in ['singles_male', 'singles_female', 'couples']:
+                        if key in results:
+                            theta_final = results[key].x
+                            group_key = key
+                            break
+
+                # Build gradient function for SE computation
+                def grad_func_for_se(theta):
+                    return compute_gradient_joint(
+                        theta, data_sm, data_sf, data_cou, spec
+                    )
+
+                # Compute SEs
+                se_results = compute_standard_errors(
+                    theta=theta_final,
+                    grad_func=grad_func_for_se,
+                    eps=1e-5,
+                    logger=logger
+                )
+
+                # Store in results
+                results['standard_errors'] = se_results
+
+                logger.info(f"SE computation complete. {np.sum(~np.isnan(se_results['se']))} valid SEs out of {len(se_results['se'])}")
         else:
             logger.info("Skipping standard error computation (--skip-se flag)")
             results['standard_errors'] = None

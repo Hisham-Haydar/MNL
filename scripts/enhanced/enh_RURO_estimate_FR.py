@@ -375,11 +375,25 @@ def save_results_json(
     # Add standard errors if available
     if 'standard_errors' in results and results['standard_errors'] is not None:
         se_results = results['standard_errors']
+
+        # Convert NumPy arrays to serializable lists
+        def convert_array(arr):
+            """Convert NumPy array to list, handling NaN/Inf."""
+            if arr is None:
+                return None
+            if isinstance(arr, np.ndarray):
+                return [float(x) if np.isfinite(x) else None for x in arr.flatten()]
+            elif isinstance(arr, list):
+                return arr  # Already a list
+            return arr
+
         output['standard_errors'] = {
-            'se': [float(x) if not np.isnan(x) else None for x in se_results['se']],
-            't_values': [float(x) if not np.isnan(x) else None for x in se_results['t_values']],
-            'p_values': [float(x) if not np.isnan(x) else None for x in se_results['p_values']],
+            'se': convert_array(se_results.get('se')),
+            't_values': convert_array(se_results.get('t_values')),
+            'p_values': convert_array(se_results.get('p_values')),
+            # Don't save varcov and hessian matrices (too large for JSON)
         }
+
         # Also add SEs to each group result
         for group_name in group_keys:
             if group_name in output['results']:

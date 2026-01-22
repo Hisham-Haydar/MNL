@@ -96,6 +96,8 @@ singles:
 
 couples:
   gender_specific_leisure: true
+  leisure_interaction:
+    coefficient: null
 
 # ------------------------------------------------------------------------------
 # Parameter Initialization (reuse base values; extra entries are ignored)
@@ -103,36 +105,24 @@ couples:
 initial_values:
   beta_l0_sm: 0.4179
   beta_l_age_norm_sm: -0.0076
-  beta_l_age_norm2_sm: -0.0017
-  beta_l_educL_sm: 0.1389
-  beta_l_educH_sm: -0.3457
   beta_c_sm: 1.0399
   theta_l_sm: 0.001
   theta_c_sm: 0.2628
 
   beta_l0_sf: 0.6778
   beta_l_age_norm_sf: -0.0208
-  beta_l_age_norm2_sf: -0.0006
   beta_l_n_children_sf: 0.2244
-  beta_l_educL_sf: 0.1394
-  beta_l_educH_sf: -0.4689
   beta_c_sf: 0.7602
   theta_l_sf: 0.0352
   theta_c_sf: 0.5345
 
   beta_l0_m: 0.2886
   beta_l_age_norm_m: -0.0031
-  beta_l_age_norm2_m: -0.0027
-  beta_l_educL_m: 0.1749
-  beta_l_educH_m: -0.7092
   theta_l_m: 0.0968
 
   beta_l0_f: 1.3515
   beta_l_age_norm_f: -0.0334
-  beta_l_age_norm2_f: -0.0006
   beta_l_n_children_f: 0.1
-  beta_l_educL_f: 0.1644
-  beta_l_educH_f: -0.2558
   theta_l_f: 0.001
 
   beta_c: 1.2740
@@ -142,21 +132,12 @@ initial_values:
   beta_pt1: 1.3308
   beta_pt2: 1.9189
   beta_ft: 2.9088
-  beta_gsur: 0.0
-  beta_work_educL: -0.4419
-  beta_work_educH: 0.7037
-  beta_work_female: 0.0
-  beta_work_couple: 0.0
-  beta_work_idf: 0.0
 
   beta_w0: 2.1850
   beta_w_educL: -0.0332
   beta_w_educH: 0.2865
   beta_pexp: 0.0032
-  beta_pexp2: 0.0
   sigma: 0.4723
-
-  beta_interact: -0.5534
 
 # ------------------------------------------------------------------------------
 # Optimization Settings
@@ -192,4 +173,3 @@ gradient_verification:
   check_random_points: 0
   random_seed: 42
   verbose: true
-

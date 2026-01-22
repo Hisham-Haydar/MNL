@@ -1271,7 +1271,9 @@ def generate_identification_diagnostics_html(
         - condition_number: float
         - min_eigenvalue: float
         - max_eigenvalue: float
+        - eigenvalues: list of float
         - n_negative_eigenvalues: int
+        - top_correlations: list of dicts (param_i, param_j, corr)
         - poorly_identified_params: list of str
     parsed_params : ParsedParameters
         Parsed parameters with standard_errors, t_values, p_values
@@ -1288,6 +1290,8 @@ def generate_identification_diagnostics_html(
     min_eigenvalue = hessian_diagnostics.get('min_eigenvalue')
     max_eigenvalue = hessian_diagnostics.get('max_eigenvalue')
     n_negative = hessian_diagnostics.get('n_negative_eigenvalues', 0)
+    eigenvalues = hessian_diagnostics.get('eigenvalues')
+    top_correlations = hessian_diagnostics.get('top_correlations', [])
     poorly_identified = hessian_diagnostics.get('poorly_identified_params', [])
 
     if condition_number is None:
@@ -1327,6 +1331,56 @@ def generate_identification_diagnostics_html(
             </div>
         </div>
     """
+
+    eigen_detail_html = ""
+    if eigenvalues:
+        eigvals = [v for v in eigenvalues if v is not None]
+        if eigvals:
+            eigvals_sorted = sorted(eigvals)
+            q05, q50, q95 = np.quantile(eigvals_sorted, [0.05, 0.50, 0.95])
+            smallest = ", ".join([f"{v:.2e}" for v in eigvals_sorted[:5]])
+            largest = ", ".join([f"{v:.2e}" for v in eigvals_sorted[-5:]])
+            eigen_detail_html = f"""
+            <div class="stats-box" style="border-left-color: #3498db; margin-top: 1em;">
+                <h4 style="margin-top:0;">Eigenvalue Summary</h4>
+                <p style="margin:0;">p5 / median / p95: {q05:.2e} / {q50:.2e} / {q95:.2e}</p>
+                <p style="margin:0.5em 0 0 0;">Smallest 5: {smallest}</p>
+                <p style="margin:0.5em 0 0 0;">Largest 5: {largest}</p>
+            </div>
+            """
+
+    correlation_html = ""
+    if top_correlations:
+        corr_rows = []
+        for item in top_correlations:
+            param_i = item.get('param_i')
+            param_j = item.get('param_j')
+            corr_val = item.get('corr')
+            if param_i is None or param_j is None or corr_val is None:
+                continue
+            corr_rows.append(f"""
+                <tr>
+                    <td><code>{param_i}</code></td>
+                    <td><code>{param_j}</code></td>
+                    <td>{corr_val:+.3f}</td>
+                </tr>
+            """)
+        if corr_rows:
+            correlation_html = f"""
+            <h3>High Correlations (|rho| >= 0.90)</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Parameter A</th>
+                        <th>Parameter B</th>
+                        <th>Correlation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {"".join(corr_rows)}
+                </tbody>
+            </table>
+            """
 
     # Build parameter significance table
     param_rows = []
@@ -1441,10 +1495,13 @@ def generate_identification_diagnostics_html(
 
         <h3>Eigenvalue Analysis</h3>
         {eigenvalue_html}
+        {eigen_detail_html}
 
         {param_table_html}
 
         {poorly_identified_html}
+
+        {correlation_html}
 
         <div class="stats-box" style="border-left-color: #95a5a6; margin-top: 1.5em;">
             <h4 style="margin-top:0;">ℹ️ Technical Notes</h4>
@@ -3279,7 +3336,23 @@ def _compute_and_update_standard_errors(
     
     # Symmetrize
     H = 0.5 * (H + H.T)
-    
+
+    # Eigenvalues and condition number (Hessian of negative log-likelihood)
+    eigenvalues = None
+    condition_number = None
+    n_negative = 0
+    try:
+        eigenvalues = np.linalg.eigvalsh(H)
+        n_negative = int(np.sum(eigenvalues < 0))
+        finite_eigs = eigenvalues[np.isfinite(eigenvalues)]
+        if finite_eigs.size:
+            min_ev = np.nanmin(finite_eigs)
+            max_ev = np.nanmax(finite_eigs)
+            if min_ev > 0:
+                condition_number = max_ev / min_ev
+    except Exception as exc:
+        LOGGER.warning(f"   Failed to compute Hessian eigenvalues: {exc}")
+
     # Compute SEs using pseudoinverse
     varcov = np.linalg.pinv(H, rcond=1e-10)
     se = np.sqrt(np.abs(np.diag(varcov)))
@@ -3293,6 +3366,28 @@ def _compute_and_update_standard_errors(
     with np.errstate(divide='ignore', invalid='ignore'):
         t_values = theta / se
         p_values = 2 * (1 - norm.cdf(np.abs(t_values)))
+
+    # Build top correlations (avoid dumping full matrix)
+    top_correlations = []
+    try:
+        denom = np.outer(se, se)
+        corr = np.divide(varcov, denom, out=np.full_like(varcov, np.nan), where=denom != 0)
+        n_params = len(spec.all_param_names)
+        pairs = []
+        for i in range(n_params):
+            for j in range(i + 1, n_params):
+                val = corr[i, j]
+                if not np.isfinite(val):
+                    continue
+                if abs(val) >= 0.90:
+                    pairs.append((abs(val), float(val), spec.all_param_names[i], spec.all_param_names[j]))
+        pairs.sort(reverse=True)
+        top_correlations = [
+            {'param_i': p_i, 'param_j': p_j, 'corr': corr_val}
+            for _, corr_val, p_i, p_j in pairs[:20]
+        ]
+    except Exception as exc:
+        LOGGER.warning(f"   Failed to compute correlation diagnostics: {exc}")
     
     # Update parsed
     parsed.std_errors = se
@@ -3306,11 +3401,31 @@ def _compute_and_update_standard_errors(
         data['results']['joint']['standard_errors'] = se_list
         data['results']['joint']['t_values'] = t_list
         data['results']['joint']['p_values'] = p_list
+
+        data['results']['joint']['hessian_diagnostics'] = {
+            'condition_number': float(condition_number) if condition_number is not None else None,
+            'min_eigenvalue': float(np.nanmin(eigenvalues)) if eigenvalues is not None else None,
+            'max_eigenvalue': float(np.nanmax(eigenvalues)) if eigenvalues is not None else None,
+            'n_negative_eigenvalues': n_negative,
+            'poorly_identified_params': [],
+            'eigenvalues': [float(x) if np.isfinite(x) else None for x in eigenvalues] if eigenvalues is not None else None,
+            'top_correlations': top_correlations
+        }
     
     data['standard_errors'] = {
         'se': se_list,
         't_values': t_list,
         'p_values': p_list,
+    }
+
+    data['hessian_diagnostics'] = {
+        'condition_number': float(condition_number) if condition_number is not None else None,
+        'min_eigenvalue': float(np.nanmin(eigenvalues)) if eigenvalues is not None else None,
+        'max_eigenvalue': float(np.nanmax(eigenvalues)) if eigenvalues is not None else None,
+        'n_negative_eigenvalues': n_negative,
+        'poorly_identified_params': [],
+        'eigenvalues': [float(x) if np.isfinite(x) else None for x in eigenvalues] if eigenvalues is not None else None,
+        'top_correlations': top_correlations
     }
     
     # Save updated JSON
@@ -3391,10 +3506,21 @@ def run_styled_post_estimation(
     LOGGER.info(f"   Found {len(parsed.groups)} groups: {parsed.groups}")
     LOGGER.info(f"   Preference groups: {parsed.preference_groups}")
 
-    # Check if SEs are missing and compute if requested
+    # Check if SEs or diagnostics are missing and compute if requested
     se_computed = False
-    if parsed.std_errors is None or np.all(np.isnan(parsed.std_errors)):
-        LOGGER.info("   Standard errors not found in results")
+    hess_diag = data.get('hessian_diagnostics')
+    needs_diag = (
+        hess_diag is None or
+        hess_diag.get('eigenvalues') is None or
+        hess_diag.get('top_correlations') is None
+    )
+    se_missing = parsed.std_errors is None or np.all(np.isnan(parsed.std_errors))
+
+    if se_missing or needs_diag:
+        if se_missing:
+            LOGGER.info("   Standard errors not found in results")
+        if needs_diag:
+            LOGGER.info("   Identification diagnostics are incomplete or missing")
         if compute_se:
             if mnl_base is None:
                 LOGGER.warning("   Cannot compute SEs: --mnl-base required")

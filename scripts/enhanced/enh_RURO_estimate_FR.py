@@ -178,6 +178,15 @@ def compute_standard_errors(
         cond = np.inf
         logger.warning("Could not compute condition number")
 
+    # Eigenvalues (Hessian of negative log-likelihood)
+    eigenvalues = None
+    n_negative = 0
+    try:
+        eigenvalues = np.linalg.eigvalsh(H)
+        n_negative = int(np.sum(eigenvalues < 0))
+    except Exception as exc:
+        logger.warning(f"Could not compute Hessian eigenvalues: {exc}")
+
     # Compute variance-covariance matrix with robust methods
     try:
         # First try regular inverse
@@ -189,6 +198,13 @@ def compute_standard_errors(
             varcov = np.linalg.pinv(H, rcond=1e-10)
 
         se = np.sqrt(np.abs(np.diag(varcov)))  # abs to handle numerical issues
+
+        # Correlation matrix
+        with np.errstate(divide='ignore', invalid='ignore'):
+            denom = np.outer(se, se)
+            corr = np.divide(varcov, denom, out=np.full_like(varcov, np.nan), where=denom != 0)
+        if corr.size:
+            np.fill_diagonal(corr, 1.0)
 
         # Check for negative variances (indicates identification problems)
         neg_var = np.diag(varcov) < 0
@@ -217,6 +233,10 @@ def compute_standard_errors(
             't_values': t_values,
             'p_values': p_values,
             'hessian': H,
+            'eigenvalues': eigenvalues,
+            'condition_number': cond,
+            'n_negative_eigenvalues': n_negative,
+            'correlation_matrix': corr,
         }
 
     except np.linalg.LinAlgError as e:
@@ -244,6 +264,10 @@ def compute_standard_errors(
                 't_values': t_values,
                 'p_values': p_values,
                 'hessian': H,
+                'eigenvalues': eigenvalues,
+                'condition_number': cond,
+                'n_negative_eigenvalues': n_negative,
+                'correlation_matrix': None,
             }
         except Exception as e2:
             logger.error(f"Pseudo-inverse also failed: {e2}")
@@ -255,6 +279,10 @@ def compute_standard_errors(
             't_values': np.full(n_params, np.nan),
             'p_values': np.full(n_params, np.nan),
             'hessian': H,
+            'eigenvalues': eigenvalues,
+            'condition_number': cond,
+            'n_negative_eigenvalues': n_negative,
+            'correlation_matrix': None,
         }
 
 
@@ -401,9 +429,14 @@ def save_results_json(
                 output['results'][group_name]['t_values'] = output['standard_errors']['t_values']
                 output['results'][group_name]['p_values'] = output['standard_errors']['p_values']
 
-    # Add Hessian diagnostics if available (from GAMSPy estimation)
-    if 'hessian_diagnostics' in results and results['hessian_diagnostics'] is not None:
-        hess_diag = results['hessian_diagnostics']
+    se_results_dict = results.get('standard_errors') if isinstance(results.get('standard_errors'), dict) else None
+
+    # Add Hessian diagnostics if available (from GAMSPy estimation or numerical Hessian)
+    hess_diag = results.get('hessian_diagnostics') if isinstance(results.get('hessian_diagnostics'), dict) else None
+    if hess_diag is None and se_results_dict is not None:
+        hess_diag = {}
+
+    if hess_diag is not None:
 
         # Convert numpy arrays to lists, handling None values
         def to_serializable(val):
@@ -421,14 +454,79 @@ def save_results_json(
             else:
                 return val
 
+        def build_top_correlations(varcov, param_names, min_abs=0.9, max_pairs=20):
+            if varcov is None or not isinstance(varcov, np.ndarray):
+                return []
+            n_params = len(param_names)
+            if varcov.shape[0] != n_params or varcov.shape[1] != n_params:
+                return []
+            se = np.sqrt(np.abs(np.diag(varcov)))
+            with np.errstate(divide='ignore', invalid='ignore'):
+                denom = np.outer(se, se)
+                corr = np.divide(varcov, denom, out=np.full_like(varcov, np.nan), where=denom != 0)
+            pairs = []
+            for i in range(n_params):
+                for j in range(i + 1, n_params):
+                    val = corr[i, j]
+                    if not np.isfinite(val):
+                        continue
+                    if abs(val) >= min_abs:
+                        pairs.append((abs(val), float(val), param_names[i], param_names[j]))
+            pairs.sort(reverse=True)
+            return [
+                {'param_i': p_i, 'param_j': p_j, 'corr': corr_val}
+                for _, corr_val, p_i, p_j in pairs[:max_pairs]
+            ]
+
+        eigenvalues = hess_diag.get('eigenvalues')
+        if eigenvalues is None and se_results_dict is not None:
+            eigenvalues = se_results_dict.get('eigenvalues')
+        eigenvalues_arr = np.array(eigenvalues, dtype=float) if eigenvalues is not None else None
+
+        condition_number = hess_diag.get('condition_number')
+        if condition_number is None and se_results_dict is not None:
+            condition_number = se_results_dict.get('condition_number')
+        if condition_number is None and eigenvalues_arr is not None and eigenvalues_arr.size:
+            finite_eigs = eigenvalues_arr[np.isfinite(eigenvalues_arr)]
+            if finite_eigs.size:
+                min_ev = np.nanmin(finite_eigs)
+                max_ev = np.nanmax(finite_eigs)
+                if min_ev > 0:
+                    condition_number = max_ev / min_ev
+
+        min_eigenvalue = hess_diag.get('min_eigenvalue')
+        max_eigenvalue = hess_diag.get('max_eigenvalue')
+        n_negative = hess_diag.get('n_negative_eigenvalues')
+        if eigenvalues_arr is not None and eigenvalues_arr.size:
+            if min_eigenvalue is None:
+                min_eigenvalue = float(np.nanmin(eigenvalues_arr))
+            if max_eigenvalue is None:
+                max_eigenvalue = float(np.nanmax(eigenvalues_arr))
+            if n_negative is None:
+                n_negative = int(np.sum(eigenvalues_arr < 0))
+        if n_negative is None:
+            n_negative = 0
+
+        poorly_identified = hess_diag.get('poorly_identified_params', [])
+        top_correlations = hess_diag.get('top_correlations')
+        if top_correlations is None and se_results_dict is not None:
+            top_correlations = build_top_correlations(
+                se_results_dict.get('varcov'),
+                spec.all_param_names
+            )
+
         # Build Hessian diagnostics output
         hessian_output = {
-            'condition_number': to_serializable(hess_diag.get('condition_number')),
-            'min_eigenvalue': to_serializable(hess_diag.get('min_eigenvalue')),
-            'max_eigenvalue': to_serializable(hess_diag.get('max_eigenvalue')),
-            'n_negative_eigenvalues': int(hess_diag.get('n_negative_eigenvalues', 0)),
-            'poorly_identified_params': hess_diag.get('poorly_identified_params', [])
+            'condition_number': to_serializable(condition_number),
+            'min_eigenvalue': to_serializable(min_eigenvalue),
+            'max_eigenvalue': to_serializable(max_eigenvalue),
+            'n_negative_eigenvalues': int(n_negative),
+            'poorly_identified_params': poorly_identified
         }
+        if eigenvalues_arr is not None:
+            hessian_output['eigenvalues'] = to_serializable(eigenvalues_arr)
+        if top_correlations:
+            hessian_output['top_correlations'] = to_serializable(top_correlations)
 
         output['hessian_diagnostics'] = hessian_output
 

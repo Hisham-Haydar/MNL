@@ -1553,7 +1553,8 @@ def estimate_joint_gamspy(
                     pexp = float(data_singles_male.pexp_years[global_idx])
                     pexp2 = float(data_singles_male.pexp_years2[global_idx])
                     mu_wage = mu_wage + param_vars['beta_pexp'] * pexp
-                    mu_wage = mu_wage + param_vars['beta_pexp2'] * pexp2
+                    if 'beta_pexp2' in param_vars:
+                        mu_wage = mu_wage + param_vars['beta_pexp2'] * pexp2
 
                 # Log-likelihood of observed wage
                 from gamspy.math import log as gp_log
@@ -1719,7 +1720,8 @@ def estimate_joint_gamspy(
                     pexp = float(data_singles_female.pexp_years[global_idx])
                     pexp2 = float(data_singles_female.pexp_years2[global_idx])
                     mu_wage = mu_wage + param_vars['beta_pexp'] * pexp
-                    mu_wage = mu_wage + param_vars['beta_pexp2'] * pexp2
+                    if 'beta_pexp2' in param_vars:
+                        mu_wage = mu_wage + param_vars['beta_pexp2'] * pexp2
 
                 # Log-likelihood of observed wage
                 from gamspy.math import log as gp_log
@@ -1977,7 +1979,8 @@ def estimate_joint_gamspy(
                     pexp_m = float(data_couples.pexp_years_male[global_idx])
                     pexp2_m = float(data_couples.pexp_years2_male[global_idx])
                     mu_wage_m = mu_wage_m + param_vars['beta_pexp'] * pexp_m
-                    mu_wage_m = mu_wage_m + param_vars['beta_pexp2'] * pexp2_m
+                    if 'beta_pexp2' in param_vars:
+                        mu_wage_m = mu_wage_m + param_vars['beta_pexp2'] * pexp2_m
 
                 from gamspy.math import log as gp_log
                 residual_m = log_wage_m - mu_wage_m
@@ -2003,7 +2006,8 @@ def estimate_joint_gamspy(
                     pexp_f = float(data_couples.pexp_years_female[global_idx])
                     pexp2_f = float(data_couples.pexp_years2_female[global_idx])
                     mu_wage_f = mu_wage_f + param_vars['beta_pexp'] * pexp_f
-                    mu_wage_f = mu_wage_f + param_vars['beta_pexp2'] * pexp2_f
+                    if 'beta_pexp2' in param_vars:
+                        mu_wage_f = mu_wage_f + param_vars['beta_pexp2'] * pexp2_f
 
                 from gamspy.math import log as gp_log
                 residual_f = log_wage_f - mu_wage_f

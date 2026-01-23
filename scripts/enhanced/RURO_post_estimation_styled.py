@@ -1513,6 +1513,11 @@ def generate_identification_diagnostics_html(
                 <strong>Eigenvalues:</strong> All eigenvalues of -H should be positive for a local maximum.
                 Near-zero eigenvalues indicate flat directions (weak identification).
             </p>
+            <p style="margin-bottom: 0.5em;">
+                <strong>Sign convention:</strong> Eigenvalues shown come from the Hessian used to compute SEs. When SEs are
+                computed numerically, this is the Hessian of the negative log-likelihood (H), so negative values indicate
+                H is not positive semidefinite (ill-conditioning or non-optimum).
+            </p>
             <p style="margin:0;">
                 <strong>Standard Errors:</strong> Computed as SE = √diag((-H)⁻¹), where H is the Hessian at the optimum.
                 Large SE indicates parameter is not precisely estimated.

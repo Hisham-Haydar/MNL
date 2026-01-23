@@ -1,0 +1,129 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - Minimal (VW) with Near-Fixed Thetas
+# ==============================================================================
+# Goal: diagnose ill-conditioning by effectively fixing Box-Cox thetas at 0.
+# NOTE: bounds require lower < upper, so we use a very tight interval [0, 1e-6]
+# to approximate fixing theta_* = 0 (log utility).
+# - No preference shifters
+# - Hours opportunity: working only
+# - Wage equation: intercept only
+# ==============================================================================
+
+specification:
+  name: "minimal_vw_theta0"
+  description: "Minimal VW spec with theta parameters tightly bounded near 0"
+  wage_spec: "vw"  # fw | vw | loc_empirical
+
+# ------------------------------------------------------------------------------
+# Utility Function (Preference Side)
+# ------------------------------------------------------------------------------
+utility:
+  functional_form: "box_cox"
+
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"
+
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: "theta_l"
+    shifters: []
+
+# ------------------------------------------------------------------------------
+# Hours Opportunity Density (log h(h|X))
+# ------------------------------------------------------------------------------
+hours_opportunity:
+  shifters:
+    - variable: "working"
+      coefficient: "beta_work"
+      description: "Working indicator (h>0)"
+
+# ------------------------------------------------------------------------------
+# Wage Opportunity Density (log w(w|X)) - Mincer Equation
+# ------------------------------------------------------------------------------
+wage_opportunity:
+  specification: "log_normal"
+
+  mean_shifters:
+    - variable: "intercept"
+      coefficient: "beta_w0"
+      description: "Log-wage intercept"
+
+  variance:
+    parameter: "sigma"
+    description: "Standard deviation of log-wage residual"
+    bounds: [0.1, 20.0]
+
+# ------------------------------------------------------------------------------
+# Singles/Couples sections (kept for compatibility)
+# ------------------------------------------------------------------------------
+singles:
+  gender_specific_leisure: true
+
+couples:
+  gender_specific_leisure: true
+  leisure_interaction:
+    coefficient: null
+
+# ------------------------------------------------------------------------------
+# Parameter Initialization
+# ------------------------------------------------------------------------------
+initial_values:
+  beta_l0_sm: 0.4179
+  beta_c_sm: 1.0399
+  theta_l_sm: 0.0
+  theta_c_sm: 0.0
+
+  beta_l0_sf: 0.6778
+  beta_c_sf: 0.7602
+  theta_l_sf: 0.0
+  theta_c_sf: 0.0
+
+  beta_l0_m: 0.2886
+  theta_l_m: 0.0
+
+  beta_l0_f: 1.3515
+  theta_l_f: 0.0
+
+  beta_c: 1.2740
+  theta_c: 0.0
+
+  beta_work: 1.3950
+
+  beta_w0: 2.1850
+  sigma: 0.4723
+
+# ------------------------------------------------------------------------------
+# Optimization Settings
+# ------------------------------------------------------------------------------
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 10000
+  tolerance: 1.0e-9
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+  bounds:
+    theta_l_sm: [0.0, 0.000001]
+    theta_c_sm: [0.0, 0.000001]
+    theta_l_sf: [0.0, 0.000001]
+    theta_c_sf: [0.0, 0.000001]
+    theta_l_m: [0.0, 0.000001]
+    theta_l_f: [0.0, 0.000001]
+    theta_c: [0.0, 0.000001]
+    sigma: [0.1, 20.0]
+
+# ------------------------------------------------------------------------------
+# Gradient Verification (Debugging/Validation)
+# ------------------------------------------------------------------------------
+gradient_verification:
+  enabled: true
+  method: "central"
+  epsilon: 1.0e-7
+  tolerance: 1.0e-4
+  check_at_init: true
+  check_random_points: 0
+  random_seed: 42
+  verbose: true

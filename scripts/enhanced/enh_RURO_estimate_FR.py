@@ -1216,7 +1216,8 @@ Examples:
                     data_couples=data_cou,
                     spec=spec,
                     n_jobs=args.n_jobs,
-                    use_gradient=spec.opt_analytical_gradient
+                    use_gradient=spec.opt_analytical_gradient,
+                    theta_init=theta_init
                 )
             else:
                 # Single group estimation

@@ -382,6 +382,7 @@ def estimate_joint(
     data_singles_female: Optional[PrecomputedDataSingles],
     data_couples: Optional[PrecomputedDataCouples],
     spec: EstimationSpec,
+    theta_init: Optional[np.ndarray] = None,
     n_jobs: int = -1,
     use_gradient: bool = True
 ) -> Dict[str, any]:
@@ -450,7 +451,8 @@ def estimate_joint(
     logger.info("="*80)
 
     # Get initial values
-    theta_init = spec.get_initial_vector()
+    if theta_init is None:
+        theta_init = spec.get_initial_vector()
 
     # Build objective function
     def objective(theta):

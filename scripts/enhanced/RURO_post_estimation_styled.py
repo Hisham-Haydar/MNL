@@ -2075,6 +2075,17 @@ def generate_html_report_styled(
     </div>
     """    # Build full parameter table - SEPARATED by preference vs opportunity
     param_df = parsed_params.to_dataframe()
+
+    bound_range_tol = 1e-6
+
+    def is_estimable_param(row):
+        lb = row.get('lower_bound')
+        ub = row.get('upper_bound')
+        if is_num(lb) and is_num(ub) and (float(ub) - float(lb)) <= bound_range_tol:
+            return False
+        return True
+
+    param_df = param_df[param_df.apply(is_estimable_param, axis=1)].copy()
     
     # Classify parameters into preference vs opportunity
     def classify_param(name):

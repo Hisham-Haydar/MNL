@@ -1545,15 +1545,17 @@ def estimate_joint_gamspy(
 
                 # Build wage mean
                 mu_wage = param_vars['beta_w0']
-                mu_wage = mu_wage + param_vars['beta_w_educL'] * educL
-                mu_wage = mu_wage + param_vars['beta_w_educH'] * educH
+                if 'beta_w_educL' in param_vars:
+                    mu_wage = mu_wage + param_vars['beta_w_educL'] * educL
+                if 'beta_w_educH' in param_vars:
+                    mu_wage = mu_wage + param_vars['beta_w_educH'] * educH
 
                 # Add experience terms if available
-                if data_singles_male.pexp_years is not None:
+                if data_singles_male.pexp_years is not None and 'beta_pexp' in param_vars:
                     pexp = float(data_singles_male.pexp_years[global_idx])
-                    pexp2 = float(data_singles_male.pexp_years2[global_idx])
                     mu_wage = mu_wage + param_vars['beta_pexp'] * pexp
-                    if 'beta_pexp2' in param_vars:
+                    if 'beta_pexp2' in param_vars and data_singles_male.pexp_years2 is not None:
+                        pexp2 = float(data_singles_male.pexp_years2[global_idx])
                         mu_wage = mu_wage + param_vars['beta_pexp2'] * pexp2
 
                 # Log-likelihood of observed wage
@@ -1712,15 +1714,17 @@ def estimate_joint_gamspy(
 
                 # Build wage mean
                 mu_wage = param_vars['beta_w0']
-                mu_wage = mu_wage + param_vars['beta_w_educL'] * educL
-                mu_wage = mu_wage + param_vars['beta_w_educH'] * educH
+                if 'beta_w_educL' in param_vars:
+                    mu_wage = mu_wage + param_vars['beta_w_educL'] * educL
+                if 'beta_w_educH' in param_vars:
+                    mu_wage = mu_wage + param_vars['beta_w_educH'] * educH
 
                 # Add experience terms if available
-                if data_singles_female.pexp_years is not None:
+                if data_singles_female.pexp_years is not None and 'beta_pexp' in param_vars:
                     pexp = float(data_singles_female.pexp_years[global_idx])
-                    pexp2 = float(data_singles_female.pexp_years2[global_idx])
                     mu_wage = mu_wage + param_vars['beta_pexp'] * pexp
-                    if 'beta_pexp2' in param_vars:
+                    if 'beta_pexp2' in param_vars and data_singles_female.pexp_years2 is not None:
+                        pexp2 = float(data_singles_female.pexp_years2[global_idx])
                         mu_wage = mu_wage + param_vars['beta_pexp2'] * pexp2
 
                 # Log-likelihood of observed wage
@@ -1971,15 +1975,17 @@ def estimate_joint_gamspy(
 
                 # Build wage mean - only include terms if data is available
                 mu_wage_m = param_vars['beta_w0']
-                mu_wage_m = mu_wage_m + param_vars['beta_w_educL'] * educL_m
-                mu_wage_m = mu_wage_m + param_vars['beta_w_educH'] * educH_m
+                if 'beta_w_educL' in param_vars:
+                    mu_wage_m = mu_wage_m + param_vars['beta_w_educL'] * educL_m
+                if 'beta_w_educH' in param_vars:
+                    mu_wage_m = mu_wage_m + param_vars['beta_w_educH'] * educH_m
 
                 # Add experience terms only if available
-                if data_couples.pexp_years_male is not None:
+                if data_couples.pexp_years_male is not None and 'beta_pexp' in param_vars:
                     pexp_m = float(data_couples.pexp_years_male[global_idx])
-                    pexp2_m = float(data_couples.pexp_years2_male[global_idx])
                     mu_wage_m = mu_wage_m + param_vars['beta_pexp'] * pexp_m
-                    if 'beta_pexp2' in param_vars:
+                    if 'beta_pexp2' in param_vars and data_couples.pexp_years2_male is not None:
+                        pexp2_m = float(data_couples.pexp_years2_male[global_idx])
                         mu_wage_m = mu_wage_m + param_vars['beta_pexp2'] * pexp2_m
 
                 from gamspy.math import log as gp_log
@@ -1998,15 +2004,17 @@ def estimate_joint_gamspy(
 
                 # Build wage mean - only include terms if data is available
                 mu_wage_f = param_vars['beta_w0']
-                mu_wage_f = mu_wage_f + param_vars['beta_w_educL'] * educL_f
-                mu_wage_f = mu_wage_f + param_vars['beta_w_educH'] * educH_f
+                if 'beta_w_educL' in param_vars:
+                    mu_wage_f = mu_wage_f + param_vars['beta_w_educL'] * educL_f
+                if 'beta_w_educH' in param_vars:
+                    mu_wage_f = mu_wage_f + param_vars['beta_w_educH'] * educH_f
 
                 # Add experience terms only if available
-                if data_couples.pexp_years_female is not None:
+                if data_couples.pexp_years_female is not None and 'beta_pexp' in param_vars:
                     pexp_f = float(data_couples.pexp_years_female[global_idx])
-                    pexp2_f = float(data_couples.pexp_years2_female[global_idx])
                     mu_wage_f = mu_wage_f + param_vars['beta_pexp'] * pexp_f
-                    if 'beta_pexp2' in param_vars:
+                    if 'beta_pexp2' in param_vars and data_couples.pexp_years2_female is not None:
+                        pexp2_f = float(data_couples.pexp_years2_female[global_idx])
                         mu_wage_f = mu_wage_f + param_vars['beta_pexp2'] * pexp2_f
 
                 from gamspy.math import log as gp_log

@@ -496,12 +496,14 @@ def estimate_joint(
         # Log every iteration or every 10 iterations based on verbosity
         if iter_num <= 10 or iter_num % 10 == 0:
             # Show a subset of key parameters
-            theta_l_sm = xk[0] if len(xk) > 0 else 0
-            theta_c_sm = xk[1] if len(xk) > 1 else 0
+            param0_name = spec.all_param_names[0] if len(spec.all_param_names) > 0 else "param0"
+            param1_name = spec.all_param_names[1] if len(spec.all_param_names) > 1 else "param1"
+            param0_val = xk[0] if len(xk) > 0 else 0
+            param1_val = xk[1] if len(xk) > 1 else 0
             logger.info(
                 f"Iter {iter_num:4d}: neg_LL = {current_f:14.4f}, "
                 f"LL = {-current_f:14.4f}, "
-                f"th_l_sm = {theta_l_sm:.4f}, th_c_sm = {theta_c_sm:.4f}"
+                f"{param0_name} = {param0_val:.4f}, {param1_name} = {param1_val:.4f}"
             )
         
         iteration_state['last_f'] = current_f

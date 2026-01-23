@@ -38,3 +38,17 @@ python .\scripts\enhanced\RURO_post_estimation_styled.py `
 --prefix "fr_2016_gamspy_" `
 --compute-se `
 --auto-timestamp
+
+
+
+
+
+python scripts/enhanced/enh_RURO_estimate_FR.py `
+  --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
+  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/minimal_theta0/2016_gamspy" `
+  --group joint `
+  --solver gamspy-conopt `
+  --spec-config "U:/Desktop/Nizam_Hisham/MNL/scripts/enhanced/estimation_spec_minimal_theta0.yaml" `
+--warm-start "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/minimal_theta0/2016_gamspy/run_2026-01-23_14-10-01/estimation_results.json" `
+  --auto-timestamp `
+  --verbose

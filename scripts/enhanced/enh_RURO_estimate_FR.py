@@ -361,7 +361,8 @@ def save_results_json(
     spec,
     metadata: dict,
     output_dir: Path,
-    args: argparse.Namespace
+    args: argparse.Namespace,
+    theta_init: Optional[np.ndarray] = None
 ) -> None:
     """
     Save estimation results to JSON file.
@@ -378,6 +379,8 @@ def save_results_json(
         Output directory
     args : Namespace
         CLI arguments
+    theta_init : np.ndarray, optional
+        Initial parameter vector actually used (warm-start or spec defaults)
     """
     logger = logging.getLogger(__name__)
 
@@ -403,11 +406,20 @@ def save_results_json(
     # Build bounds and initial values dicts for JSON
     bounds_dict = {}
     initial_dict = {}
-    for param_name in spec.all_param_names:
-        if param_name in spec.bounds:
-            lb, ub = spec.bounds[param_name]
-            bounds_dict[param_name] = [lb, ub]
-        initial_dict[param_name] = float(spec.initial_values.get(param_name, 0.0))    # Add group results - handle both separate groups and joint estimation
+    if theta_init is not None and len(theta_init) == len(spec.all_param_names):
+        for i, param_name in enumerate(spec.all_param_names):
+            if param_name in spec.bounds:
+                lb, ub = spec.bounds[param_name]
+                bounds_dict[param_name] = [lb, ub]
+            initial_dict[param_name] = float(theta_init[i])
+    else:
+        if theta_init is not None:
+            logger.warning("theta_init length mismatch; falling back to spec defaults for initial values")
+        for param_name in spec.all_param_names:
+            if param_name in spec.bounds:
+                lb, ub = spec.bounds[param_name]
+                bounds_dict[param_name] = [lb, ub]
+            initial_dict[param_name] = float(spec.initial_values.get(param_name, 0.0))
     group_keys = ['singles_male', 'singles_female', 'couples', 'joint']
     for group_name in group_keys:
         if group_name in results:
@@ -1397,7 +1409,7 @@ Examples:
         logger.info("Step 8: Saving Results")
         logger.info("="*80)
 
-        save_results_json(results, spec, metadata, output_dir, args)
+        save_results_json(results, spec, metadata, output_dir, args, theta_init=theta_init)
         save_results_csv(results, spec, output_dir)
         save_specification_copy(spec_path, output_dir)
 

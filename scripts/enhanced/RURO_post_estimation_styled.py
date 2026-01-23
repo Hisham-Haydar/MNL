@@ -2308,11 +2308,6 @@ def generate_html_report_styled(
     </section>
 
     <section>
-        <h2>⚙️ Group-Specific Parameters</h2>
-        <div class="param-groups">
-            {group_params_html}
-        </div>
-    </section>    <section>
         <h2>📋 Parameter Estimates by Category</h2>
         <p><em>Significance: *** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05</em></p>
         {color_legend}

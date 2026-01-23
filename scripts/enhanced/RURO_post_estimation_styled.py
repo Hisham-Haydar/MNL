@@ -1469,6 +1469,36 @@ def generate_identification_diagnostics_html(
         </table>
         """
 
+    eigenvector_html = ""
+    if eigenvector_diagnostics:
+        rows = ""
+        for item in eigenvector_diagnostics:
+            ev = item.get('eigenvalue')
+            ev_str = f"{ev:.2e}" if is_num(ev) else "N/A"
+            loadings = item.get('top_loadings', [])
+            loading_str = ", ".join([
+                f"<code>{l.get('param')}</code> ({l.get('loading'):.3f})"
+                for l in loadings
+            ])
+            rows += f"""
+            <tr>
+                <td>{ev_str}</td>
+                <td>{loading_str}</td>
+            </tr>
+            """
+        eigenvector_html = f"""
+        <h3>Smallest-Eigenvalue Directions</h3>
+        <p style="font-size: 0.9em; color: #666;">
+            Dominant loadings for the smallest eigenvalues (flat directions in the likelihood).
+        </p>
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr><th>Eigenvalue</th><th>Top Loadings</th></tr>
+            </thead>
+            <tbody>{rows}</tbody>
+        </table>
+        """
+
     # Build poorly identified params list
     poorly_identified_html = ""
     if poorly_identified:
@@ -1496,6 +1526,7 @@ def generate_identification_diagnostics_html(
         <h3>Eigenvalue Analysis</h3>
         {eigenvalue_html}
         {eigen_detail_html}
+        {eigenvector_html}
 
         {poorly_identified_html}
 
@@ -3388,11 +3419,12 @@ def _compute_and_update_standard_errors(
 
     # Eigenvalues and condition number (Hessian of negative log-likelihood)
     eigenvalues = None
+    eigenvector_diagnostics = []
     condition_number = None
     n_negative = 0
     if H is not None:
         try:
-            eigenvalues = np.linalg.eigvalsh(H)
+            eigenvalues, eigenvectors = np.linalg.eigh(H)
             n_negative = int(np.sum(eigenvalues < 0))
             finite_eigs = eigenvalues[np.isfinite(eigenvalues)]
             if finite_eigs.size:
@@ -3400,6 +3432,21 @@ def _compute_and_update_standard_errors(
                 max_ev = np.nanmax(finite_eigs)
                 if min_ev > 0:
                     condition_number = max_ev / min_ev
+            if eigenvectors is not None and n_free > 0:
+                param_names = [spec.all_param_names[i] for i in free_idx]
+                k = min(3, n_free)
+                for idx in range(k):
+                    ev = float(eigenvalues[idx]) if np.isfinite(eigenvalues[idx]) else None
+                    vec = eigenvectors[:, idx]
+                    order = np.argsort(np.abs(vec))[::-1][:5]
+                    top_loadings = [
+                        {'param': param_names[j], 'loading': float(vec[j])}
+                        for j in order
+                    ]
+                    eigenvector_diagnostics.append({
+                        'eigenvalue': ev,
+                        'top_loadings': top_loadings
+                    })
         except Exception as exc:
             LOGGER.warning(f"   Failed to compute Hessian eigenvalues: {exc}")
 
@@ -3471,6 +3518,7 @@ def _compute_and_update_standard_errors(
             'n_negative_eigenvalues': n_negative,
             'poorly_identified_params': [],
             'eigenvalues': [float(x) if np.isfinite(x) else None for x in eigenvalues] if eigenvalues is not None else None,
+            'eigenvector_diagnostics': eigenvector_diagnostics,
             'top_correlations': top_correlations
         }
     
@@ -3487,6 +3535,7 @@ def _compute_and_update_standard_errors(
         'n_negative_eigenvalues': n_negative,
         'poorly_identified_params': [],
         'eigenvalues': [float(x) if np.isfinite(x) else None for x in eigenvalues] if eigenvalues is not None else None,
+        'eigenvector_diagnostics': eigenvector_diagnostics,
         'top_correlations': top_correlations
     }
     

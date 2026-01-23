@@ -30,7 +30,7 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, List, Tuple
 
 # CRITICAL: Disable Numba debug logging BEFORE importing any numba-accelerated code
 # Numba's debug logging produces massive output that can hang the estimation
@@ -113,6 +113,9 @@ def compute_standard_errors(
     theta: np.ndarray,
     grad_func,
     eps: float = 1e-5,
+    bounds: Optional[List[Tuple[Optional[float], Optional[float]]]] = None,
+    bound_tol: float = 1e-6,
+    bound_range_tol: float = 1e-6,
     logger: logging.Logger = None
 ) -> Dict[str, Any]:
     """
@@ -129,6 +132,12 @@ def compute_standard_errors(
         Function that returns gradient of NEGATIVE log-likelihood
     eps : float
         Step size for numerical differentiation
+    bounds : list of tuple, optional
+        Parameter bounds (lb, ub) aligned with theta; used to exclude parameters at bounds
+    bound_tol : float
+        Absolute tolerance to treat a parameter as "at bound"
+    bound_range_tol : float
+        Treat parameters with very tight bounds (ub - lb <= bound_range_tol) as fixed
     logger : logging.Logger
         Logger for progress messages
         
@@ -145,25 +154,66 @@ def compute_standard_errors(
         logger = logging.getLogger(__name__)
     
     n_params = len(theta)
-    logger.info(f"Computing numerical Hessian ({n_params}x{n_params})...")
-    
-    # Compute Hessian numerically (central differences on gradient)
-    H = np.zeros((n_params, n_params))
-    
-    for i in range(n_params):
+
+    # Identify free parameters (exclude those at bounds)
+    free_mask = np.ones(n_params, dtype=bool)
+    if bounds is not None:
+        if len(bounds) != n_params:
+            logger.warning("Bounds length mismatch; ignoring bounds for SE computation")
+        else:
+            for i, (lb, ub) in enumerate(bounds):
+                if lb is None and ub is None:
+                    continue
+                if lb is not None and ub is not None and (ub - lb) <= bound_range_tol:
+                    free_mask[i] = False
+                    continue
+                if lb is not None and abs(theta[i] - lb) <= bound_tol:
+                    free_mask[i] = False
+                elif ub is not None and abs(theta[i] - ub) <= bound_tol:
+                    free_mask[i] = False
+
+    free_idx = np.where(free_mask)[0]
+    n_free = len(free_idx)
+    n_fixed = n_params - n_free
+    if n_fixed > 0:
+        logger.info(f"Computing Hessian for {n_free}/{n_params} free parameters ({n_fixed} at bounds/fixed)")
+    else:
+        logger.info(f"Computing Hessian for all {n_params} parameters")
+
+    if n_free == 0:
+        logger.warning("No free parameters for SE computation; returning NaN standard errors")
+        se_full = np.full(n_params, np.nan)
+        return {
+            'se': se_full,
+            'varcov': None,
+            't_values': np.full(n_params, np.nan),
+            'p_values': np.full(n_params, np.nan),
+            'hessian': None,
+            'eigenvalues': None,
+            'condition_number': None,
+            'n_negative_eigenvalues': 0,
+            'correlation_matrix': None,
+        }
+
+    logger.info(f"Computing numerical Hessian ({n_free}x{n_free})...")
+
+    # Compute Hessian numerically (central differences on gradient) for free params
+    H = np.zeros((n_free, n_free))
+
+    for col_idx, i in enumerate(free_idx):
         theta_plus = theta.copy()
         theta_minus = theta.copy()
         theta_plus[i] += eps
         theta_minus[i] -= eps
-        
+
         g_plus = grad_func(theta_plus)
         g_minus = grad_func(theta_minus)
-        
-        # Second derivative: (g(x+h) - g(x-h)) / 2h
-        H[:, i] = (g_plus - g_minus) / (2 * eps)
-        
-        if (i + 1) % 10 == 0:
-            logger.info(f"  Hessian column {i+1}/{n_params} computed")
+
+        # Second derivative: (g(x+h) - g(x-h)) / 2h, restricted to free params
+        H[:, col_idx] = (g_plus[free_idx] - g_minus[free_idx]) / (2 * eps)
+
+        if (col_idx + 1) % 10 == 0:
+            logger.info(f"  Hessian column {col_idx+1}/{n_free} computed")
     
     # Symmetrize
     H = 0.5 * (H + H.T)
@@ -191,52 +241,61 @@ def compute_standard_errors(
     try:
         # First try regular inverse
         if cond < 1e10:
-            varcov = np.linalg.inv(H)
+            varcov_free = np.linalg.inv(H)
         else:
             # Use pseudo-inverse for ill-conditioned matrices
             logger.info("Using Moore-Penrose pseudoinverse for robustness...")
-            varcov = np.linalg.pinv(H, rcond=1e-10)
+            varcov_free = np.linalg.pinv(H, rcond=1e-10)
 
-        se = np.sqrt(np.abs(np.diag(varcov)))  # abs to handle numerical issues
+        se_free = np.sqrt(np.abs(np.diag(varcov_free)))  # abs to handle numerical issues
 
-        # Correlation matrix
+        # Embed into full-size arrays (fixed params -> NaN)
+        varcov_full = np.full((n_params, n_params), np.nan)
+        varcov_full[np.ix_(free_idx, free_idx)] = varcov_free
+        se_full = np.full(n_params, np.nan)
+        se_full[free_idx] = se_free
+
+        # Correlation matrix (full)
         with np.errstate(divide='ignore', invalid='ignore'):
-            denom = np.outer(se, se)
-            corr = np.divide(varcov, denom, out=np.full_like(varcov, np.nan), where=denom != 0)
-        if corr.size:
-            np.fill_diagonal(corr, 1.0)
+            denom = np.outer(se_full, se_full)
+            corr_full = np.divide(varcov_full, denom, out=np.full_like(varcov_full, np.nan), where=denom != 0)
+        if corr_full.size:
+            np.fill_diagonal(corr_full, 1.0)
 
         # Check for negative variances (indicates identification problems)
-        neg_var = np.diag(varcov) < 0
+        neg_var = np.diag(varcov_free) < 0
         if np.any(neg_var):
             n_neg = np.sum(neg_var)
-            logger.warning(f"Warning: {n_neg} parameters have negative variance (identification issue)")
-            se[neg_var] = np.nan
+            logger.warning(f"Warning: {n_neg} free parameters have negative variance (identification issue)")
+            se_free[neg_var] = np.nan
+            se_full[free_idx] = se_free
 
         # Flag parameters with very large SEs (likely poorly identified)
-        large_se = se > 100 * np.abs(theta + 1e-10)
-        if np.any(large_se & ~np.isnan(se)):
-            n_large = np.sum(large_se & ~np.isnan(se))
+        large_se = se_full > 100 * np.abs(theta + 1e-10)
+        if np.any(large_se & ~np.isnan(se_full)):
+            n_large = np.sum(large_se & ~np.isnan(se_full))
             logger.warning(f"Warning: {n_large} parameters have very large SEs (poor identification)")
 
-        # Compute t-values and p-values
+        # Compute t-values and p-values (free params only)
+        t_values = np.full(n_params, np.nan)
+        p_values = np.full(n_params, np.nan)
         with np.errstate(divide='ignore', invalid='ignore'):
-            t_values = theta / se
-            p_values = 2 * (1 - norm.cdf(np.abs(t_values)))
+            t_values[free_idx] = theta[free_idx] / se_free
+            p_values[free_idx] = 2 * (1 - norm.cdf(np.abs(t_values[free_idx])))
 
-        n_valid = np.sum(np.isfinite(se))
+        n_valid = np.sum(np.isfinite(se_full))
         logger.info(f"Standard errors computed: {n_valid}/{n_params} valid")
 
         return {
-            'se': se,
-            'varcov': varcov,
+            'se': se_full,
+            'varcov': varcov_full,
             't_values': t_values,
             'p_values': p_values,
             'hessian': H,
             'eigenvalues': eigenvalues,
             'condition_number': cond,
             'n_negative_eigenvalues': n_negative,
-            'correlation_matrix': corr,
+            'correlation_matrix': corr_full,
         }
 
     except np.linalg.LinAlgError as e:
@@ -246,21 +305,28 @@ def compute_standard_errors(
         # Try pseudo-inverse as last resort
         try:
             logger.info("Attempting pseudo-inverse as fallback...")
-            varcov = np.linalg.pinv(H, rcond=1e-8)
-            se = np.sqrt(np.abs(np.diag(varcov)))
-            neg_var = np.diag(varcov) < 0
-            se[neg_var] = np.nan
+            varcov_free = np.linalg.pinv(H, rcond=1e-8)
+            se_free = np.sqrt(np.abs(np.diag(varcov_free)))
+            neg_var = np.diag(varcov_free) < 0
+            se_free[neg_var] = np.nan
 
+            varcov_full = np.full((n_params, n_params), np.nan)
+            varcov_full[np.ix_(free_idx, free_idx)] = varcov_free
+            se_full = np.full(n_params, np.nan)
+            se_full[free_idx] = se_free
+
+            t_values = np.full(n_params, np.nan)
+            p_values = np.full(n_params, np.nan)
             with np.errstate(divide='ignore', invalid='ignore'):
-                t_values = theta / se
-                p_values = 2 * (1 - norm.cdf(np.abs(t_values)))
+                t_values[free_idx] = theta[free_idx] / se_free
+                p_values[free_idx] = 2 * (1 - norm.cdf(np.abs(t_values[free_idx])))
 
-            n_valid = np.sum(np.isfinite(se))
+            n_valid = np.sum(np.isfinite(se_full))
             logger.info(f"Pseudo-inverse succeeded: {n_valid}/{n_params} valid SEs")
 
             return {
-                'se': se,
-                'varcov': varcov,
+                'se': se_full,
+                'varcov': varcov_full,
                 't_values': t_values,
                 'p_values': p_values,
                 'hessian': H,
@@ -1313,6 +1379,7 @@ Examples:
                     theta=theta_final,
                     grad_func=grad_func_for_se,
                     eps=1e-5,
+                    bounds=spec.get_bounds_tuple(),
                     logger=logger
                 )
 

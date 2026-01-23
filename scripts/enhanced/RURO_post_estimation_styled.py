@@ -3274,6 +3274,32 @@ def _compute_and_update_standard_errors(
         theta = parsed.theta
     
     LOGGER.info(f"   Loaded {len(theta)} parameters")
+
+    # Identify free parameters (exclude those at bounds)
+    n_params = len(theta)
+    bounds_list = spec.get_bounds_tuple()
+    bound_tol = 1e-6
+    bound_range_tol = 1e-6
+    free_mask = np.ones(n_params, dtype=bool)
+    if len(bounds_list) != n_params:
+        LOGGER.warning("   Bounds length mismatch; ignoring bounds for SE computation")
+    else:
+        for i, (lb, ub) in enumerate(bounds_list):
+            if lb is None and ub is None:
+                continue
+            if lb is not None and ub is not None and (ub - lb) <= bound_range_tol:
+                free_mask[i] = False
+                continue
+            if lb is not None and abs(theta[i] - lb) <= bound_tol:
+                free_mask[i] = False
+            elif ub is not None and abs(theta[i] - ub) <= bound_tol:
+                free_mask[i] = False
+
+    free_idx = np.where(free_mask)[0]
+    n_free = len(free_idx)
+    n_fixed = n_params - n_free
+    if n_fixed > 0:
+        LOGGER.info(f"   Computing Hessian for {n_free}/{n_params} free parameters ({n_fixed} at bounds/fixed)")
     
     # Load data
     singles_path = Path(str(mnl_base) + "__singles.parquet")
@@ -3320,85 +3346,101 @@ def _compute_and_update_standard_errors(
     def grad_func(theta_):
         return compute_gradient_joint(theta_, data_sm, data_sf, data_cou, spec)
     
-    # Compute Hessian numerically
-    n_params = len(theta)
+    # Compute Hessian numerically (free parameters only)
     eps = 1e-5
-    H = np.zeros((n_params, n_params))
-    
-    for i in range(n_params):
-        theta_plus = theta.copy()
-        theta_minus = theta.copy()
-        theta_plus[i] += eps
-        theta_minus[i] -= eps
-        
-        g_plus = grad_func(theta_plus)
-        g_minus = grad_func(theta_minus)
-        
-        H[:, i] = (g_plus - g_minus) / (2 * eps)
-        
-        if (i + 1) % 10 == 0:
-            LOGGER.info(f"   Hessian column {i+1}/{n_params}")
-    
-    # Symmetrize
-    H = 0.5 * (H + H.T)
+    if n_free == 0:
+        LOGGER.warning("   No free parameters for SE computation; returning NaN SEs")
+        H = None
+    else:
+        H = np.zeros((n_free, n_free))
+
+        for col_idx, i in enumerate(free_idx):
+            theta_plus = theta.copy()
+            theta_minus = theta.copy()
+            theta_plus[i] += eps
+            theta_minus[i] -= eps
+
+            g_plus = grad_func(theta_plus)
+            g_minus = grad_func(theta_minus)
+
+            H[:, col_idx] = (g_plus[free_idx] - g_minus[free_idx]) / (2 * eps)
+
+            if (col_idx + 1) % 10 == 0:
+                LOGGER.info(f"   Hessian column {col_idx+1}/{n_free}")
+
+        # Symmetrize
+        H = 0.5 * (H + H.T)
 
     # Eigenvalues and condition number (Hessian of negative log-likelihood)
     eigenvalues = None
     condition_number = None
     n_negative = 0
-    try:
-        eigenvalues = np.linalg.eigvalsh(H)
-        n_negative = int(np.sum(eigenvalues < 0))
-        finite_eigs = eigenvalues[np.isfinite(eigenvalues)]
-        if finite_eigs.size:
-            min_ev = np.nanmin(finite_eigs)
-            max_ev = np.nanmax(finite_eigs)
-            if min_ev > 0:
-                condition_number = max_ev / min_ev
-    except Exception as exc:
-        LOGGER.warning(f"   Failed to compute Hessian eigenvalues: {exc}")
+    if H is not None:
+        try:
+            eigenvalues = np.linalg.eigvalsh(H)
+            n_negative = int(np.sum(eigenvalues < 0))
+            finite_eigs = eigenvalues[np.isfinite(eigenvalues)]
+            if finite_eigs.size:
+                min_ev = np.nanmin(finite_eigs)
+                max_ev = np.nanmax(finite_eigs)
+                if min_ev > 0:
+                    condition_number = max_ev / min_ev
+        except Exception as exc:
+            LOGGER.warning(f"   Failed to compute Hessian eigenvalues: {exc}")
 
-    # Compute SEs using pseudoinverse
-    varcov = np.linalg.pinv(H, rcond=1e-10)
-    se = np.sqrt(np.abs(np.diag(varcov)))
-    
-    # Handle negative variances
-    neg_var = np.diag(varcov) < 0
-    if np.any(neg_var):
-        se[neg_var] = np.nan
-    
-    # Compute t-values and p-values
+    # Compute SEs using pseudoinverse (free params only)
+    if H is not None:
+        varcov_free = np.linalg.pinv(H, rcond=1e-10)
+        se_free = np.sqrt(np.abs(np.diag(varcov_free)))
+
+        # Handle negative variances
+        neg_var = np.diag(varcov_free) < 0
+        if np.any(neg_var):
+            se_free[neg_var] = np.nan
+
+        varcov_full = np.full((n_params, n_params), np.nan)
+        varcov_full[np.ix_(free_idx, free_idx)] = varcov_free
+        se_full = np.full(n_params, np.nan)
+        se_full[free_idx] = se_free
+    else:
+        varcov_full = None
+        se_full = np.full(n_params, np.nan)
+
+    # Compute t-values and p-values (free params only)
+    t_values = np.full(n_params, np.nan)
+    p_values = np.full(n_params, np.nan)
     with np.errstate(divide='ignore', invalid='ignore'):
-        t_values = theta / se
-        p_values = 2 * (1 - norm.cdf(np.abs(t_values)))
+        t_values[free_idx] = theta[free_idx] / se_full[free_idx]
+        p_values[free_idx] = 2 * (1 - norm.cdf(np.abs(t_values[free_idx])))
 
     # Build top correlations (avoid dumping full matrix)
     top_correlations = []
-    try:
-        denom = np.outer(se, se)
-        corr = np.divide(varcov, denom, out=np.full_like(varcov, np.nan), where=denom != 0)
-        n_params = len(spec.all_param_names)
-        pairs = []
-        for i in range(n_params):
-            for j in range(i + 1, n_params):
-                val = corr[i, j]
-                if not np.isfinite(val):
-                    continue
-                if abs(val) >= 0.90:
-                    pairs.append((abs(val), float(val), spec.all_param_names[i], spec.all_param_names[j]))
-        pairs.sort(reverse=True)
-        top_correlations = [
-            {'param_i': p_i, 'param_j': p_j, 'corr': corr_val}
-            for _, corr_val, p_i, p_j in pairs[:20]
-        ]
-    except Exception as exc:
-        LOGGER.warning(f"   Failed to compute correlation diagnostics: {exc}")
+    if varcov_full is not None:
+        try:
+            denom = np.outer(se_full, se_full)
+            corr = np.divide(varcov_full, denom, out=np.full_like(varcov_full, np.nan), where=denom != 0)
+            n_params = len(spec.all_param_names)
+            pairs = []
+            for i in range(n_params):
+                for j in range(i + 1, n_params):
+                    val = corr[i, j]
+                    if not np.isfinite(val):
+                        continue
+                    if abs(val) >= 0.90:
+                        pairs.append((abs(val), float(val), spec.all_param_names[i], spec.all_param_names[j]))
+            pairs.sort(reverse=True)
+            top_correlations = [
+                {'param_i': p_i, 'param_j': p_j, 'corr': corr_val}
+                for _, corr_val, p_i, p_j in pairs[:20]
+            ]
+        except Exception as exc:
+            LOGGER.warning(f"   Failed to compute correlation diagnostics: {exc}")
     
     # Update parsed
-    parsed.std_errors = se
+    parsed.std_errors = se_full
     
     # Update JSON data
-    se_list = [float(x) if not np.isnan(x) else None for x in se]
+    se_list = [float(x) if not np.isnan(x) else None for x in se_full]
     t_list = [float(x) if not np.isnan(x) else None for x in t_values]
     p_list = [float(x) if not np.isnan(x) else None for x in p_values]
     
@@ -3442,7 +3484,7 @@ def _compute_and_update_standard_errors(
     params_df = pd.DataFrame({
         'parameter': spec.all_param_names,
         'estimate': theta,
-        'std_error': se,
+        'std_error': se_full,
         't_value': t_values,
         'p_value': p_values,
     })

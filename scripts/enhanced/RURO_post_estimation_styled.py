@@ -1497,8 +1497,6 @@ def generate_identification_diagnostics_html(
         {eigenvalue_html}
         {eigen_detail_html}
 
-        {param_table_html}
-
         {poorly_identified_html}
 
         {correlation_html}
@@ -2022,6 +2020,15 @@ def generate_html_report_styled(
             </div>
             """
 
+    group_params_section = ""
+    if group_params_html:
+        group_params_section = f"""
+    <section>
+        <h2>Group-Specific Parameters</h2>
+        <div class="param-groups">{group_params_html}</div>
+    </section>
+    """
+
     # Build plots section
     plots_section = ""
     if plot_paths:
@@ -2306,6 +2313,8 @@ def generate_html_report_styled(
         <h2>🗺️ Utility Contours & Plots</h2>
         {plots_section}
     </section>
+
+    {group_params_section}
 
     <section>
         <h2>📋 Parameter Estimates by Category</h2>

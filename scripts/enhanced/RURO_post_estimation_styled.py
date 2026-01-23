@@ -1291,6 +1291,7 @@ def generate_identification_diagnostics_html(
     max_eigenvalue = hessian_diagnostics.get('max_eigenvalue')
     n_negative = hessian_diagnostics.get('n_negative_eigenvalues', 0)
     eigenvalues = hessian_diagnostics.get('eigenvalues')
+    eigenvector_diagnostics = hessian_diagnostics.get('eigenvector_diagnostics', [])
     top_correlations = hessian_diagnostics.get('top_correlations', [])
     poorly_identified = hessian_diagnostics.get('poorly_identified_params', [])
 

@@ -502,8 +502,7 @@ def save_results_json(
                 min_eigenvalue = float(np.nanmin(eigenvalues_arr))
             if max_eigenvalue is None:
                 max_eigenvalue = float(np.nanmax(eigenvalues_arr))
-            if n_negative is None:
-                n_negative = int(np.sum(eigenvalues_arr < 0))
+            n_negative = int(np.sum(eigenvalues_arr < 0))
         if n_negative is None:
             n_negative = 0
 

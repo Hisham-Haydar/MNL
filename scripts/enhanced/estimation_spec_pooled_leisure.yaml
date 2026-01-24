@@ -1,0 +1,80 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - Pooled Leisure by Gender
+# ==============================================================================
+# Test if marital status affects leisure preferences.
+# Pools leisure intercepts: single/couple males use same beta, single/couple females use same beta
+# This maintains gender heterogeneity but removes single vs couple distinction.
+# ==============================================================================
+
+specification:
+  name: "pooled_leisure_gender"
+  description: "Minimal spec with leisure pooled by gender (beta_l0_m for males, beta_l0_f for females)"
+  wage_spec: "vw"
+
+# Utility Function (Preference Side)
+utility:
+  functional_form: "log"  # Log utility only
+
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: null
+
+  leisure:
+    intercept: "beta_l0"  # Will be split by gender in demographic groups
+    box_cox_exponent: null
+    shifters: []
+
+# Hours Opportunity Density
+hours_opportunity:
+  shifters:
+    - variable: "working"
+      coefficient: "beta_work"
+      description: "Working indicator (h>0)"
+
+# Wage Opportunity Density
+wage_opportunity:
+  specification: "log_normal"
+
+  mean_shifters:
+    - variable: "intercept"
+      coefficient: "beta_w0"
+      description: "Log-wage intercept"
+
+  variance:
+    parameter: "sigma"
+    description: "Standard deviation of log-wage residual"
+    bounds: [0.1, 20.0]
+
+# Singles/Couples sections
+singles:
+  gender_specific_leisure: true
+
+couples:
+  gender_specific_leisure: true
+  leisure_interaction:
+    coefficient: null
+
+# Parameter Initialization
+initial_values:
+  # POOLED by gender: males use beta_l0_m, females use beta_l0_f
+  beta_l0_m: 0.35  # Average of sm (0.4179) and couple male (0.2886)
+  beta_l0_f: 1.01  # Average of sf (0.6778) and couple female (1.3515)
+
+  # Separate consumption for each group (keep this test isolated)
+  beta_c_sm: 1.0399
+  beta_c_sf: 0.7602
+  beta_c: 1.2740
+
+  beta_work: 1.3950
+  beta_w0: 2.1850
+  sigma: 0.4723
+
+# Optimization Settings
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 10000
+  tolerance: 1.0e-9
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1

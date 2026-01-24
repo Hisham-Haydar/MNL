@@ -1,0 +1,79 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - Pooled Consumption
+# ==============================================================================
+# Test if consumption utility differs by group type (single male/female vs couples)
+# This spec pools consumption across all demographics but keeps demographic-specific
+# leisure intercepts to test if the ill-conditioning comes from consumption params.
+# ==============================================================================
+
+specification:
+  name: "pooled_consumption"
+  description: "Minimal spec with pooled consumption (single beta_c for all groups)"
+  wage_spec: "vw"
+
+# Utility Function (Preference Side)
+utility:
+  functional_form: "log"  # Log utility only (no Box-Cox curvature)
+
+  consumption:
+    coefficient: "beta_c"  # POOLED: Same for all groups
+    box_cox_exponent: null
+
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: null
+    shifters: []
+
+# Hours Opportunity Density
+hours_opportunity:
+  shifters:
+    - variable: "working"
+      coefficient: "beta_work"
+      description: "Working indicator (h>0)"
+
+# Wage Opportunity Density
+wage_opportunity:
+  specification: "log_normal"
+
+  mean_shifters:
+    - variable: "intercept"
+      coefficient: "beta_w0"
+      description: "Log-wage intercept"
+
+  variance:
+    parameter: "sigma"
+    description: "Standard deviation of log-wage residual"
+    bounds: [0.1, 20.0]
+
+# Singles/Couples sections
+singles:
+  gender_specific_leisure: true
+
+couples:
+  gender_specific_leisure: true
+  leisure_interaction:
+    coefficient: null
+
+# Parameter Initialization
+initial_values:
+  beta_l0_sm: 0.4179
+  beta_l0_sf: 0.6778
+  beta_l0_m: 0.2886
+  beta_l0_f: 1.3515
+
+  beta_c: 1.0  # POOLED consumption
+  beta_work: 1.3950
+  beta_w0: 2.1850
+  sigma: 0.4723
+
+# Optimization Settings
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 10000
+  tolerance: 1.0e-9
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+# No theta bounds needed (log utility only)

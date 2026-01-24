@@ -95,3 +95,13 @@ python scripts/enhanced/enh_RURO_estimate_FR.py `
 Which spec + solver do yo
 
 
+
+python .\scripts\enhanced\RURO_post_estimation_styled.py `
+  --results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/minimal_theta0/2016_gamspy/run_2026-01-23_15-41-04/estimation_results.json" `
+  --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
+  --spec-config "U:/Desktop/Nizam_Hisham/MNL/scripts/enhanced/estimation_spec_minimal_theta0.yaml" `
+  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/minimal_theta0/2016_gamspy_styled" `
+  --prefix "fr_2016_gamspy_" `
+  --compute-se `
+  --auto-timestamp
+

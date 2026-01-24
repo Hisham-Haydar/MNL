@@ -55,13 +55,19 @@ couples:
     coefficient: null
 
 # Parameter Initialization
+# IMPORTANT: Must provide initial values for ALL parameters the parser will create,
+# including group-specific ones (parser creates them based on gender_specific_leisure: true)
 initial_values:
-  beta_l0_sm: 0.4179
-  beta_l0_sf: 0.6778
-  beta_l0_m: 0.2886
-  beta_l0_f: 1.3515
+  # Leisure intercepts - group specific because gender_specific_leisure: true
+  beta_l0_sm: 0.4179   # single male
+  beta_l0_sf: 0.6778   # single female
+  beta_l0_m: 0.2886    # couple male
+  beta_l0_f: 1.3515    # couple female
 
-  beta_c: 1.0  # POOLED consumption
+  # Consumption - POOLED (same for all groups)
+  beta_c: 1.0
+
+  # Hours opportunity and wage
   beta_work: 1.3950
   beta_w0: 2.1850
   sigma: 0.4723

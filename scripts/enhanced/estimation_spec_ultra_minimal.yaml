@@ -57,24 +57,31 @@ couples:
   leisure_interaction:
     coefficient: null
 
-# Parameter Initialization (7 total parameters)
+# Parameter Initialization
 # ==============================================================================
-# Parameters in this spec:
+# IMPORTANT: Must provide initial values for ALL parameters the parser will create,
+# including group-specific ones (parser creates them based on gender_specific_leisure: true)
+#
+# Parameters created by parser:
 # 1. beta_c         - consumption utility (pooled across all)
-# 2. beta_l0_m      - leisure intercept for males (single male + couple male)
-# 3. beta_l0_f      - leisure intercept for females (single female + couple female)
-# 4. beta_work      - hours opportunity (working indicator)
-# 5. beta_w0        - wage intercept
-# 6. sigma          - wage variance
-# 7. (implied by demographics - no extra params)
+# 2. beta_l0_sm     - leisure intercept for single males
+# 3. beta_l0_sf     - leisure intercept for single females
+# 4. beta_l0_m      - leisure intercept for couple males
+# 5. beta_l0_f      - leisure intercept for couple females
+# 6. beta_work      - hours opportunity (working indicator)
+# 7. beta_w0        - wage intercept
+# 8. sigma          - wage variance
 # ==============================================================================
 initial_values:
   # CONSUMPTION: Pooled across all groups
   beta_c: 1.1  # Average of: beta_c (1.2740), beta_c_sm (1.0399), beta_c_sf (0.7602)
 
-  # LEISURE: Pooled by gender only
-  beta_l0_m: 0.35  # Average for males: (0.4179 + 0.2886) / 2
-  beta_l0_f: 1.01  # Average for females: (0.6778 + 1.3515) / 2
+  # LEISURE: Pooled by gender (but parser still creates group-specific names!)
+  # We provide the same value for sm/m (males) and sf/f (females)
+  beta_l0_sm: 0.35  # Single male - pooled with couple male. Average: (0.4179 + 0.2886) / 2
+  beta_l0_sf: 1.01  # Single female - pooled with couple female. Average: (0.6778 + 1.3515) / 2
+  beta_l0_m: 0.35   # Couple male - same as single male
+  beta_l0_f: 1.01   # Couple female - same as single female
 
   # OPPORTUNITY & WAGE
   beta_work: 1.3950

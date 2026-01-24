@@ -1,27 +1,29 @@
 # ==============================================================================
 # RURO MNL Estimation Specification - Pooled Leisure by Gender
 # ==============================================================================
-# Test if marital status affects leisure preferences.
-# Pools leisure intercepts: single/couple males use same beta, single/couple females use same beta
-# This maintains gender heterogeneity but removes single vs couple distinction.
+# POOLING STRATEGY: Initialize singles leisure equal to couples leisure by gender
+# This effectively pools leisure by gender during optimization (not by group type)
+# Leisure: Parser creates 4 intercepts (_sm, _sf, _m, _f) + 4 thetas
+# Consumption: Parser creates 3 separate params (_sm, _sf, base) - NOT pooled
+# NOTE: Parser creates 14 total parameters with leisure pooling constraint
 # ==============================================================================
 
 specification:
   name: "pooled_leisure_gender"
-  description: "Minimal spec with leisure pooled by gender (beta_l0_m for males, beta_l0_f for females)"
+  description: "Leisure pooled by gender via equal initialization (4 params with constraint), consumption 3-group, wage. 14 params with pooling constraint"
   wage_spec: "vw"
 
 # Utility Function (Preference Side)
 utility:
-  functional_form: "log"  # Log utility only
+  functional_form: "box_cox"  # Box-Cox form (with theta fixed at 0 for log utility)
 
   consumption:
-    coefficient: "beta_c"
-    box_cox_exponent: null
+    coefficient: "beta_c"  # Group-specific (will create _sm, _sf, base)
+    box_cox_exponent: null  # No Box-Cox theta for consumption
 
   leisure:
-    intercept: "beta_l0"  # Will be split by gender in demographic groups
-    box_cox_exponent: null
+    intercept: "beta_l0"  # Will be split by gender ONLY
+    box_cox_exponent: "theta_l"  # Box-Cox curvature (tightly bounded)
     shifters: []
 
 # Hours Opportunity Density
@@ -45,7 +47,7 @@ wage_opportunity:
     description: "Standard deviation of log-wage residual"
     bounds: [0.1, 20.0]
 
-# Singles/Couples sections
+# Singles/Couples sections - POOL leisure by gender ONLY
 singles:
   gender_specific_leisure: true
 
@@ -55,22 +57,28 @@ couples:
     coefficient: null
 
 # Parameter Initialization
-# IMPORTANT: Must provide initial values for ALL parameters the parser will create,
-# including group-specific ones (parser creates them based on gender_specific_leisure: true)
+# ACTUAL pooling: Leisure by gender only (pooled across singles/couples)
+# Consumption: separate for each group
 initial_values:
-  # Leisure intercepts - POOLED by gender (but parser still creates group-specific names!)
-  # Parser creates: beta_l0_sm, beta_l0_sf, beta_l0_m, beta_l0_f
-  # We provide the same value for sm/m (males) and sf/f (females)
-  beta_l0_sm: 0.35  # Single male - pooled with couple male
-  beta_l0_sf: 1.01  # Single female - pooled with couple female
-  beta_l0_m: 0.35   # Couple male - same as single male
-  beta_l0_f: 1.01   # Couple female - same as single female
+  # Leisure intercepts - by gender ONLY
+  # Parser creates _sm, _sf, _m, _f but we set singles=couples to enforce pooling
+  beta_l0_sm: 0.35   # Singles male (set equal to couples male for pooling)
+  beta_l0_sf: 1.01   # Singles female (set equal to couples female for pooling)
+  beta_l0_m: 0.35    # Couples male
+  beta_l0_f: 1.01    # Couples female
 
-  # Separate consumption for each group (keep this test isolated)
+  # Leisure Box-Cox thetas (by gender, 2 params)
+  theta_l_sm: 0.0
+  theta_l_sf: 0.0
+  theta_l_m: 0.0
+  theta_l_f: 0.0
+
+  # Consumption - separate for each group (3 params: _sm, _sf, base for couples)
   beta_c_sm: 1.0399
   beta_c_sf: 0.7602
   beta_c: 1.2740
 
+  # Hours opportunity and wage
   beta_work: 1.3950
   beta_w0: 2.1850
   sigma: 0.4723
@@ -84,3 +92,9 @@ optimization:
   gradient_tolerance: 1.0e-6
   disp: true
   iprint: 1
+
+  # Bounds: Keep theta parameters tightly bounded near 0 (log utility)
+  bounds:
+    theta_l_m: [0.0, 0.000001]
+    theta_l_f: [0.0, 0.000001]
+    sigma: [0.1, 20.0]

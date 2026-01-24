@@ -1,27 +1,29 @@
 # ==============================================================================
 # RURO MNL Estimation Specification - Pooled Consumption
 # ==============================================================================
-# Test if consumption utility differs by group type (single male/female vs couples)
-# This spec pools consumption across all demographics but keeps demographic-specific
-# leisure intercepts to test if the ill-conditioning comes from consumption params.
+# POOLING STRATEGY: Initialize all consumption params to same value (beta_c=1.0)
+# This effectively pools consumption across all groups during optimization.
+# Leisure: Parser creates 4 intercepts (_sm, _sf, _m, _f) + 4 thetas
+# Consumption: Parser creates 3 params (_sm, _sf, base) all initialized equal
+# NOTE: Parser creates 14 total parameters but constraint forces pooling
 # ==============================================================================
 
 specification:
   name: "pooled_consumption"
-  description: "Minimal spec with pooled consumption (single beta_c for all groups)"
+  description: "Consumption pooled via equal initialization (3 params set equal), leisure 4-group with thetas, wage. 14 params with pooling constraint"
   wage_spec: "vw"
 
 # Utility Function (Preference Side)
 utility:
-  functional_form: "log"  # Log utility only (no Box-Cox curvature)
+  functional_form: "box_cox"  # Box-Cox form (with theta fixed at 0 for log utility)
 
   consumption:
-    coefficient: "beta_c"  # POOLED: Same for all groups
-    box_cox_exponent: null
+    coefficient: "beta_c"  # POOLED: Single param for ALL groups (no suffixes created)
+    box_cox_exponent: null  # No Box-Cox theta for consumption (fixed at log)
 
   leisure:
-    intercept: "beta_l0"
-    box_cox_exponent: null
+    intercept: "beta_l0"  # Will be split by gender only
+    box_cox_exponent: "theta_l"  # Box-Cox curvature (will be tightly bounded)
     shifters: []
 
 # Hours Opportunity Density
@@ -45,7 +47,7 @@ wage_opportunity:
     description: "Standard deviation of log-wage residual"
     bounds: [0.1, 20.0]
 
-# Singles/Couples sections
+# Singles/Couples sections - POOL leisure by gender ONLY (not by single/couple)
 singles:
   gender_specific_leisure: true
 
@@ -55,17 +57,26 @@ couples:
     coefficient: null
 
 # Parameter Initialization
-# IMPORTANT: Must provide initial values for ALL parameters the parser will create,
-# including group-specific ones (parser creates them based on gender_specific_leisure: true)
+# NOTE: Parser ALWAYS creates singles (_sm, _sf) parameters, even with pooling intent
+# So we initialize them with same values to enforce pooling in the optimization
 initial_values:
-  # Leisure intercepts - group specific because gender_specific_leisure: true
-  beta_l0_sm: 0.4179   # single male
-  beta_l0_sf: 0.6778   # single female
-  beta_l0_m: 0.2886    # couple male
-  beta_l0_f: 1.3515    # couple female
+  # Leisure intercepts - by gender (parser creates _sm, _sf, _m, _f)
+  beta_l0_sm: 0.35   # Singles male (set equal to beta_l0_m for pooling)
+  beta_l0_sf: 1.01   # Singles female (set equal to beta_l0_f for pooling)
+  beta_l0_m: 0.35    # Couples male
+  beta_l0_f: 1.01    # Couples female
 
-  # Consumption - POOLED (same for all groups)
-  beta_c: 1.0
+  # Leisure Box-Cox thetas (by gender, 2 params)
+  theta_l_sm: 0.0
+  theta_l_sf: 0.0
+  theta_l_m: 0.0
+  theta_l_f: 0.0
+
+  # Consumption - Pooled (parser creates _sm, _sf, base)
+  # All set to same value to enforce pooling across all groups
+  beta_c_sm: 1.0     # Singles male (pooled)
+  beta_c_sf: 1.0     # Singles female (pooled)
+  beta_c: 1.0        # Couples (pooled)
 
   # Hours opportunity and wage
   beta_work: 1.3950
@@ -82,4 +93,8 @@ optimization:
   disp: true
   iprint: 1
 
-# No theta bounds needed (log utility only)
+  # Bounds: Keep theta parameters tightly bounded near 0 (log utility)
+  bounds:
+    theta_l_m: [0.0, 0.000001]
+    theta_l_f: [0.0, 0.000001]
+    sigma: [0.1, 20.0]

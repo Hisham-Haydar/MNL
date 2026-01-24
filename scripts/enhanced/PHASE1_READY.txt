@@ -1,0 +1,164 @@
+================================================================================
+PHASE 1 TEST SUITE - READY TO EXECUTE
+================================================================================
+
+All 4 specifications have been fixed and are ready for Phase 1 testing.
+
+SPECIFICATIONS
+==============
+
+1. estimation_spec_minimal_theta0.yaml (BASELINE)
+   Params: 14 (all independent)
+   Purpose: Fully separate 4-group architecture
+   Test: Is full parameterization necessary?
+
+2. estimation_spec_pooled_consumption.yaml (TEST POOLING)
+   Params: 14 (consumption pooled via equal init)
+   Purpose: Pool consumption across all groups
+   Test: Can consumption utility be the same for all demographics?
+   Pooling constraints:
+     - beta_c_sm = beta_c_sf = beta_c = 1.0 (all equal)
+     - Leisure: independent (_sm ≠ _m, _sf ≠ _f)
+
+3. estimation_spec_pooled_leisure.yaml (TEST GENDER POOLING)
+   Params: 14 (leisure pooled by gender)
+   Purpose: Pool leisure by gender (not by single/couple status)
+   Test: Does marital status affect leisure preferences?
+   Pooling constraints:
+     - beta_l0_sm = beta_l0_m = 0.35 (males pooled)
+     - beta_l0_sf = beta_l0_f = 1.01 (females pooled)
+     - theta_l_sm = theta_l_m = 0.0 (males thetas equal)
+     - theta_l_sf = theta_l_f = 0.0 (females thetas equal)
+     - Consumption: independent (_sm ≠ _sf ≠ base)
+
+4. estimation_spec_ultra_minimal.yaml (TEST BOTH POOLINGS)
+   Params: 14 (both consumption and leisure pooled)
+   Purpose: Maximum simplification
+   Test: Can both poolings be applied simultaneously?
+   Pooling constraints:
+     - beta_c_sm = beta_c_sf = beta_c = 1.1 (consumption fully pooled)
+     - beta_l0_sm = beta_l0_m = 0.35 (males leisure pooled)
+     - beta_l0_sf = beta_l0_f = 1.01 (females leisure pooled)
+     - All leisure thetas equal by gender
+
+
+FIXES APPLIED
+=============
+
+✓ Added complete initial values for all 14 parser-created parameters
+✓ Fixed estimation_engine.py to handle None theta parameters
+✓ Updated spec headers with accurate documentation
+✓ Created pooling strategy explanation document
+
+
+COMMAND TEMPLATE
+================
+
+python scripts/enhanced/enh_RURO_estimate_FR.py `
+  --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
+  --output-dir "outputs/estimates/fr/spec_tests/SPEC_NAME" `
+  --group joint `
+  --solver scipy `
+  --method L-BFGS-B `
+  --maxiter 2000 `
+  --spec-config "scripts/enhanced/estimation_spec_SPEC_NAME.yaml" `
+  --warm-start "none" `
+  --auto-timestamp `
+  --verbose
+
+
+PARALLEL EXECUTION (RECOMMENDED)
+===============================
+
+All 4 specs can run in parallel if you have sufficient resources:
+
+Command 1: minimal_theta0 (BASELINE)
+  python scripts/enhanced/enh_RURO_estimate_FR.py `
+    --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
+    --output-dir "outputs/estimates/fr/spec_tests/1_minimal_theta0_scipy" `
+    --group joint --solver scipy --method L-BFGS-B --maxiter 2000 `
+    --spec-config "scripts/enhanced/estimation_spec_minimal_theta0.yaml" `
+    --warm-start "none" --auto-timestamp --verbose
+
+Command 2: pooled_consumption
+  python scripts/enhanced/enh_RURO_estimate_FR.py `
+    --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
+    --output-dir "outputs/estimates/fr/spec_tests/2_pooled_consumption_scipy" `
+    --group joint --solver scipy --method L-BFGS-B --maxiter 2000 `
+    --spec-config "scripts/enhanced/estimation_spec_pooled_consumption.yaml" `
+    --warm-start "none" --auto-timestamp --verbose
+
+Command 3: pooled_leisure
+  python scripts/enhanced/enh_RURO_estimate_FR.py `
+    --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
+    --output-dir "outputs/estimates/fr/spec_tests/3_pooled_leisure_scipy" `
+    --group joint --solver scipy --method L-BFGS-B --maxiter 2000 `
+    --spec-config "scripts/enhanced/estimation_spec_pooled_leisure.yaml" `
+    --warm-start "none" --auto-timestamp --verbose
+
+Command 4: ultra_minimal
+  python scripts/enhanced/enh_RURO_estimate_FR.py `
+    --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
+    --output-dir "outputs/estimates/fr/spec_tests/4_ultra_minimal_scipy" `
+    --group joint --solver scipy --method L-BFGS-B --maxiter 2000 `
+    --spec-config "scripts/enhanced/estimation_spec_ultra_minimal.yaml" `
+    --warm-start "none" --auto-timestamp --verbose
+
+
+EXPECTED OUTCOMES
+=================
+
+Each estimation will:
+  ✓ Load 14 parameters with pooling initialization constraints
+  ✓ Optimize for ~15-20 minutes (SciPy L-BFGS-B)
+  ✓ Produce log-likelihood and parameter estimates
+  ✓ Show whether optimizer keeps pooled params equal
+
+Interpretation:
+  If LL values are SIMILAR across specs:
+    → Pooling constraints are NOT binding
+    → Pooled parameters are unidentified
+    → Simpler specs are PREFERRED
+
+  If LL values DIFFER significantly:
+    → Pooling constraints ARE binding
+    → Pooled parameters lose fit
+    → More complex spec is NEEDED
+
+
+COMPARISON TABLE TEMPLATE
+=========================
+
+After all 4 estimations complete, create comparison:
+
+Spec Name               | LL      | AIC    | BIC    | LL vs Baseline | Preferred?
+────────────────────────┼─────────┼────────┼────────┼────────────────┼──────────
+minimal_theta0 (ref)    | -6954.2 | 13936  | 14468  | 0.0 (ref)      | BASELINE
+pooled_consumption      | ?       | ?      | ?      | LL diff        | ?
+pooled_leisure          | ?       | ?      | ?      | LL diff        | ?
+ultra_minimal           | ?       | ?      | ?      | LL diff        | ?
+
+Decision rule:
+  - LL difference < 10: pooling NOT significantly worse
+  - BIC improves: use simpler spec (better identified)
+  - All similar: ultra_minimal PREFERRED
+
+
+NEXT STEPS
+==========
+
+After Phase 1:
+  1. Extract LL, AIC, BIC for all 4 specs
+  2. Compare results and select best spec
+  3. Run Phase 2: Validate with GAMSPy CONOPT
+  4. Generate final identification diagnostics report
+
+
+DOCUMENTATION
+==============
+
+For detailed explanation, see:
+  - POOLING_STRATEGY_EXPLANATION.txt (comprehensive guide)
+  - FIXES_APPLIED_2026_01_24.txt (what was fixed and why)
+
+================================================================================

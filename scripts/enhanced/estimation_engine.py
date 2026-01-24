@@ -187,10 +187,18 @@ def _compute_utility_singles(
     gender_suffix = "_sm" if data.is_male else "_sf"
 
     # Box-Cox transformations with gender-specific exponents
-    theta_l_name = f"{spec.utility_leisure_theta}{gender_suffix}"
-    theta_c_name = f"{spec.utility_consumption_theta}{gender_suffix}"
-    theta_l = params[theta_l_name]
-    theta_c = params[theta_c_name]
+    # Handle optional theta parameters (can be None for log utility)
+    if spec.utility_leisure_theta:
+        theta_l_name = f"{spec.utility_leisure_theta}{gender_suffix}"
+        theta_l = params[theta_l_name]
+    else:
+        theta_l = 0.0  # Log utility if theta not specified
+
+    if spec.utility_consumption_theta:
+        theta_c_name = f"{spec.utility_consumption_theta}{gender_suffix}"
+        theta_c = params[theta_c_name]
+    else:
+        theta_c = 0.0  # Log utility if theta not specified
 
     bc_l = box_cox_transform(data.leisure, theta_l)
     bc_c = box_cox_transform(data.consumption, theta_c)
@@ -589,10 +597,18 @@ def _compute_utility_derivatives_singles(
     gender_suffix = "_sm" if data.is_male else "_sf"
 
     # Box-Cox transformations with gender-specific exponents
-    theta_l_name = f"{spec.utility_leisure_theta}{gender_suffix}"
-    theta_c_name = f"{spec.utility_consumption_theta}{gender_suffix}"
-    theta_l = params[theta_l_name]
-    theta_c = params[theta_c_name]
+    # Handle optional theta parameters (can be None for log utility)
+    if spec.utility_leisure_theta:
+        theta_l_name = f"{spec.utility_leisure_theta}{gender_suffix}"
+        theta_l = params[theta_l_name]
+    else:
+        theta_l = 0.0  # Log utility if theta not specified
+
+    if spec.utility_consumption_theta:
+        theta_c_name = f"{spec.utility_consumption_theta}{gender_suffix}"
+        theta_c = params[theta_c_name]
+    else:
+        theta_c = 0.0  # Log utility if theta not specified
 
     bc_l = box_cox_transform(data.leisure, theta_l)
     bc_c = box_cox_transform(data.consumption, theta_c)
@@ -640,15 +656,17 @@ def _compute_utility_derivatives_singles(
     idx_beta_c = spec.get_param_index(beta_c_name)
     dV_dtheta[:, idx_beta_c] = bc_c
 
-    # Derivative w.r.t. theta_l - gender-specific
-    idx_theta_l = spec.get_param_index(theta_l_name)
-    dbc_l_dtheta = box_cox_derivative_theta(data.leisure, theta_l)
-    dV_dtheta[:, idx_theta_l] = beta_l_coeff * dbc_l_dtheta
+    # Derivative w.r.t. theta_l - gender-specific (only if theta_l exists)
+    if spec.utility_leisure_theta:
+        idx_theta_l = spec.get_param_index(theta_l_name)
+        dbc_l_dtheta = box_cox_derivative_theta(data.leisure, theta_l)
+        dV_dtheta[:, idx_theta_l] = beta_l_coeff * dbc_l_dtheta
 
-    # Derivative w.r.t. theta_c - gender-specific
-    idx_theta_c = spec.get_param_index(theta_c_name)
-    dbc_c_dtheta = box_cox_derivative_theta(data.consumption, theta_c)
-    dV_dtheta[:, idx_theta_c] = beta_c * dbc_c_dtheta
+    # Derivative w.r.t. theta_c - gender-specific (only if theta_c exists)
+    if spec.utility_consumption_theta:
+        idx_theta_c = spec.get_param_index(theta_c_name)
+        dbc_c_dtheta = box_cox_derivative_theta(data.consumption, theta_c)
+        dV_dtheta[:, idx_theta_c] = beta_c * dbc_c_dtheta
 
 
 def _compute_hours_derivatives_singles(
@@ -965,18 +983,27 @@ def _compute_utility_couples(
     has_gender_specific = spec.has_couples_gender_specific_params()
 
     # Get Box-Cox exponents
-    if has_gender_specific:
-        # Use separate theta_l for male and female
-        theta_l_m_name = f"{spec.utility_leisure_theta}_m"
-        theta_l_f_name = f"{spec.utility_leisure_theta}_f"
-        theta_l_male = params[theta_l_m_name]
-        theta_l_female = params[theta_l_f_name]
+    # Handle optional theta parameters (can be None for log utility)
+    if spec.utility_leisure_theta:
+        if has_gender_specific:
+            # Use separate theta_l for male and female
+            theta_l_m_name = f"{spec.utility_leisure_theta}_m"
+            theta_l_f_name = f"{spec.utility_leisure_theta}_f"
+            theta_l_male = params[theta_l_m_name]
+            theta_l_female = params[theta_l_f_name]
+        else:
+            # Use shared theta_l (old behavior)
+            theta_l_male = params[spec.utility_leisure_theta]
+            theta_l_female = params[spec.utility_leisure_theta]
     else:
-        # Use shared theta_l (old behavior)
-        theta_l_male = params[spec.utility_leisure_theta]
-        theta_l_female = params[spec.utility_leisure_theta]
+        # Log utility if theta not specified
+        theta_l_male = 0.0
+        theta_l_female = 0.0
 
-    theta_c = params[spec.utility_consumption_theta]
+    if spec.utility_consumption_theta:
+        theta_c = params[spec.utility_consumption_theta]
+    else:
+        theta_c = 0.0  # Log utility if theta not specified
 
     # Box-Cox transformations with gender-specific exponents
     bc_l_male = box_cox_transform(data.leisure_male, theta_l_male)
@@ -1353,14 +1380,23 @@ def _compute_utility_derivatives_couples(
     has_gender_specific = spec.has_couples_gender_specific_params()
 
     # Get Box-Cox exponents
-    if has_gender_specific:
-        theta_l_male = params[f"{spec.utility_leisure_theta}_m"]
-        theta_l_female = params[f"{spec.utility_leisure_theta}_f"]
+    # Handle optional theta parameters (can be None for log utility)
+    if spec.utility_leisure_theta:
+        if has_gender_specific:
+            theta_l_male = params[f"{spec.utility_leisure_theta}_m"]
+            theta_l_female = params[f"{spec.utility_leisure_theta}_f"]
+        else:
+            theta_l_male = params[spec.utility_leisure_theta]
+            theta_l_female = params[spec.utility_leisure_theta]
     else:
-        theta_l_male = params[spec.utility_leisure_theta]
-        theta_l_female = params[spec.utility_leisure_theta]
+        # Log utility if theta not specified
+        theta_l_male = 0.0
+        theta_l_female = 0.0
 
-    theta_c = params[spec.utility_consumption_theta]
+    if spec.utility_consumption_theta:
+        theta_c = params[spec.utility_consumption_theta]
+    else:
+        theta_c = 0.0  # Log utility if theta not specified
 
     # Box-Cox transformations
     bc_l_male = box_cox_transform(data.leisure_male, theta_l_male)
@@ -1479,41 +1515,43 @@ def _compute_utility_derivatives_couples(
     idx_beta_c = spec.get_param_index(spec.utility_consumption_coef)
     dV_dtheta[:, idx_beta_c] = bc_c  # Once, not twice!
 
-    # Derivative w.r.t. theta_l - gender-specific handling
-    if has_gender_specific:
-        # Separate theta_l derivatives for male and female
-        idx_theta_l_m = spec.get_param_index(f"{spec.utility_leisure_theta}_m")
-        idx_theta_l_f = spec.get_param_index(f"{spec.utility_leisure_theta}_f")
-        dbc_l_male_dtheta = box_cox_derivative_theta(data.leisure_male, theta_l_male)
-        dbc_l_female_dtheta = box_cox_derivative_theta(data.leisure_female, theta_l_female)
-        dV_dtheta[:, idx_theta_l_m] = beta_l_coeff_male * dbc_l_male_dtheta
-        dV_dtheta[:, idx_theta_l_f] = beta_l_coeff_female * dbc_l_female_dtheta
-    else:
-        # Shared theta_l (old behavior - affects both male and female)
-        idx_theta_l = spec.get_param_index(spec.utility_leisure_theta)
-        dbc_l_male_dtheta = box_cox_derivative_theta(data.leisure_male, theta_l_male)
-        dbc_l_female_dtheta = box_cox_derivative_theta(data.leisure_female, theta_l_female)
-        dV_dtheta[:, idx_theta_l] = (beta_l_coeff_male * dbc_l_male_dtheta +
-                                      beta_l_coeff_female * dbc_l_female_dtheta)
+    # Derivative w.r.t. theta_l - gender-specific handling (only if theta_l exists)
+    if spec.utility_leisure_theta:
+        if has_gender_specific:
+            # Separate theta_l derivatives for male and female
+            idx_theta_l_m = spec.get_param_index(f"{spec.utility_leisure_theta}_m")
+            idx_theta_l_f = spec.get_param_index(f"{spec.utility_leisure_theta}_f")
+            dbc_l_male_dtheta = box_cox_derivative_theta(data.leisure_male, theta_l_male)
+            dbc_l_female_dtheta = box_cox_derivative_theta(data.leisure_female, theta_l_female)
+            dV_dtheta[:, idx_theta_l_m] = beta_l_coeff_male * dbc_l_male_dtheta
+            dV_dtheta[:, idx_theta_l_f] = beta_l_coeff_female * dbc_l_female_dtheta
+        else:
+            # Shared theta_l (old behavior - affects both male and female)
+            idx_theta_l = spec.get_param_index(spec.utility_leisure_theta)
+            dbc_l_male_dtheta = box_cox_derivative_theta(data.leisure_male, theta_l_male)
+            dbc_l_female_dtheta = box_cox_derivative_theta(data.leisure_female, theta_l_female)
+            dV_dtheta[:, idx_theta_l] = (beta_l_coeff_male * dbc_l_male_dtheta +
+                                          beta_l_coeff_female * dbc_l_female_dtheta)
 
-        # Add interaction term contribution to shared theta_l derivative
-        if spec.couples_interaction_coef:
+            # Add interaction term contribution to shared theta_l derivative
+            if spec.couples_interaction_coef:
+                beta_interact = params[spec.couples_interaction_coef]
+                dV_dtheta[:, idx_theta_l] += beta_interact * (
+                    dbc_l_male_dtheta * bc_l_female + bc_l_male * dbc_l_female_dtheta
+                )
+
+        # Add interaction term contribution to gender-specific theta_l derivatives
+        if has_gender_specific and spec.couples_interaction_coef:
             beta_interact = params[spec.couples_interaction_coef]
-            dV_dtheta[:, idx_theta_l] += beta_interact * (
-                dbc_l_male_dtheta * bc_l_female + bc_l_male * dbc_l_female_dtheta
-            )
+            dV_dtheta[:, idx_theta_l_m] += beta_interact * dbc_l_male_dtheta * bc_l_female
+            dV_dtheta[:, idx_theta_l_f] += beta_interact * bc_l_male * dbc_l_female_dtheta
 
-    # Add interaction term contribution to gender-specific theta_l derivatives
-    if has_gender_specific and spec.couples_interaction_coef:
-        beta_interact = params[spec.couples_interaction_coef]
-        dV_dtheta[:, idx_theta_l_m] += beta_interact * dbc_l_male_dtheta * bc_l_female
-        dV_dtheta[:, idx_theta_l_f] += beta_interact * bc_l_male * dbc_l_female_dtheta
-
-    # Derivative w.r.t. theta_c (consumption Box-Cox parameter)
+    # Derivative w.r.t. theta_c (consumption Box-Cox parameter) - only if theta_c exists
     # CRITICAL: Consumption is HOUSEHOLD-LEVEL (normalized sum already computed)
-    idx_theta_c = spec.get_param_index(spec.utility_consumption_theta)
-    dbc_c_dtheta = box_cox_derivative_theta(data.consumption, theta_c)
-    dV_dtheta[:, idx_theta_c] = beta_c * dbc_c_dtheta
+    if spec.utility_consumption_theta:
+        idx_theta_c = spec.get_param_index(spec.utility_consumption_theta)
+        dbc_c_dtheta = box_cox_derivative_theta(data.consumption, theta_c)
+        dV_dtheta[:, idx_theta_c] = beta_c * dbc_c_dtheta
 
     # Derivative w.r.t. interaction coefficient
     if spec.couples_interaction_coef:

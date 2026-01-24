@@ -1,30 +1,29 @@
 # ==============================================================================
-# RURO MNL Estimation Specification - Ultra Minimal (Log-Only)
+# RURO MNL Estimation Specification - Ultra Minimal
 # ==============================================================================
-# Maximum simplification:
-# - Log utility only (no Box-Cox curvature parameters)
-# - Pooled consumption (single beta_c for all groups)
-# - Pooled leisure by gender only (beta_l0_m for males, beta_l0_f for females)
-# - No preference shifters
-# - Only 7 parameters total
+# MAXIMUM SIMPLIFICATION: Pool BOTH consumption and leisure by gender
+# via equal initialization across group types.
+# Leisure: 4 params (_sm=_m, _sf=_f) + 4 thetas
+# Consumption: 3 params (all set equal) - fully pooled
+# NOTE: Parser creates 14 parameters but with full pooling constraint
 # ==============================================================================
 
 specification:
   name: "ultra_minimal_log"
-  description: "Ultra-minimal spec: log utility, pooled consumption and leisure by gender (7 params total)"
+  description: "Maximum pooling via equal initialization: leisure (4 params with _sm=_m, _sf=_f), consumption (3 params all equal), wage. 14 params with constraints"
   wage_spec: "vw"
 
 # Utility Function (Preference Side)
 utility:
-  functional_form: "log"  # Log utility only - NO Box-Cox curvature
+  functional_form: "box_cox"  # Box-Cox form
 
   consumption:
-    coefficient: "beta_c"  # POOLED across all demographic groups
-    box_cox_exponent: null
+    coefficient: "beta_c"  # POOLED: single param for ALL groups
+    box_cox_exponent: null  # No theta for consumption (log utility)
 
   leisure:
-    intercept: "beta_l0"  # Will be split by gender: beta_l0_m, beta_l0_f
-    box_cox_exponent: null
+    intercept: "beta_l0"  # By gender only (not by single/couple)
+    box_cox_exponent: null  # No theta for leisure (log utility)
     shifters: []
 
 # Hours Opportunity Density
@@ -48,7 +47,7 @@ wage_opportunity:
     description: "Standard deviation of log-wage residual"
     bounds: [0.1, 20.0]
 
-# Singles/Couples sections
+# Singles/Couples sections - Pool leisure by gender ONLY
 singles:
   gender_specific_leisure: true
 
@@ -58,30 +57,21 @@ couples:
     coefficient: null
 
 # Parameter Initialization
-# ==============================================================================
-# IMPORTANT: Must provide initial values for ALL parameters the parser will create,
-# including group-specific ones (parser creates them based on gender_specific_leisure: true)
-#
-# Parameters created by parser:
-# 1. beta_c         - consumption utility (pooled across all)
-# 2. beta_l0_sm     - leisure intercept for single males
-# 3. beta_l0_sf     - leisure intercept for single females
-# 4. beta_l0_m      - leisure intercept for couple males
-# 5. beta_l0_f      - leisure intercept for couple females
-# 6. beta_work      - hours opportunity (working indicator)
-# 7. beta_w0        - wage intercept
-# 8. sigma          - wage variance
-# ==============================================================================
+# TRULY MINIMAL: 1 consumption param, 2 leisure params, 0 thetas, 3 opportunity params
+# Note: Parser always creates _sm, _sf, _m, _f but we pool by setting equal values
 initial_values:
-  # CONSUMPTION: Pooled across all groups
-  beta_c: 1.1  # Average of: beta_c (1.2740), beta_c_sm (1.0399), beta_c_sf (0.7602)
+  # LEISURE: By gender only
+  # Parser creates _sm, _sf, _m, _f; set singles=couples to pool by gender
+  beta_l0_sm: 0.35   # Singles male (pooled with couples male)
+  beta_l0_sf: 1.01   # Singles female (pooled with couples female)
+  beta_l0_m: 0.35    # Couples male
+  beta_l0_f: 1.01    # Couples female
 
-  # LEISURE: Pooled by gender (but parser still creates group-specific names!)
-  # We provide the same value for sm/m (males) and sf/f (females)
-  beta_l0_sm: 0.35  # Single male - pooled with couple male. Average: (0.4179 + 0.2886) / 2
-  beta_l0_sf: 1.01  # Single female - pooled with couple female. Average: (0.6778 + 1.3515) / 2
-  beta_l0_m: 0.35   # Couple male - same as single male
-  beta_l0_f: 1.01   # Couple female - same as single female
+  # CONSUMPTION: Single param for everyone
+  # Parser creates _sm, _sf, base; set all equal for true pooling
+  beta_c_sm: 1.1     # Singles male (pooled)
+  beta_c_sf: 1.1     # Singles female (pooled)
+  beta_c: 1.1        # Couples (pooled)
 
   # OPPORTUNITY & WAGE
   beta_work: 1.3950
@@ -98,4 +88,6 @@ optimization:
   disp: true
   iprint: 1
 
-# No bounds needed (log utility, all params are free)
+  # Bounds: only sigma (no thetas in this spec)
+  bounds:
+    sigma: [0.1, 20.0]

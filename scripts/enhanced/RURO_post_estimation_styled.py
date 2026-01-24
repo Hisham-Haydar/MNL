@@ -1236,11 +1236,15 @@ def generate_specification_html(parsed_params: ParsedParameters) -> str:
                 <h5>🔢 Utility Function (Numerical)</h5>
                 <div class="math-block">"""
 
-        symbolic_html += f"U = {beta_c:.4f} · BC(C, {theta_c:.4f}) + ("
+        # Handle optional theta parameters (can be None for log utility)
+        theta_c_str = f"{theta_c:.4f}" if theta_c is not None else "0 (log)"
+        theta_l_str = f"{theta_l:.4f}" if theta_l is not None else "0 (log)"
+
+        symbolic_html += f"U = {beta_c:.4f} · BC(C, {theta_c_str}) + ("
         symbolic_html += f"{beta_l0:.4f}"
         for s, v in zip(shifters, shifter_vals):
             symbolic_html += f" + {v:+.4f}·{s}"
-        symbolic_html += f") · BC(L, {theta_l:.4f})"
+        symbolic_html += f") · BC(L, {theta_l_str})"
 
         symbolic_html += """
                 </div>

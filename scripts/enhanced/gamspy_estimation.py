@@ -510,15 +510,19 @@ def estimate_singles_gamspy(
 
             # Get group-specific consumption parameters
             beta_c_param = get_param_name('beta_c', group, param_vars)
-            theta_c_param = get_param_name('theta_c', group, param_vars)
 
-            # Box-Cox transform consumption
-            bc_c = boxcox_gamspy(c_scaled, param_vars[theta_c_param])
+            # Handle optional theta_c parameter (None = log utility)
+            if spec.utility_consumption_theta:
+                theta_c_param = get_param_name('theta_c', group, param_vars)
+                bc_c = boxcox_gamspy(c_scaled, param_vars[theta_c_param])
+                params_used.add(theta_c_param)
+            else:
+                # Log utility when theta=None
+                bc_c = gp_log(c_scaled)
 
             # Consumption utility component
             util_j = param_vars[beta_c_param] * bc_c
             params_used.add(beta_c_param)
-            params_used.add(theta_c_param)
 
             # === LEISURE UTILITY: β_l(Z) * BC(L / l_scale, θ_l) ===
             l_val = data.leisure[global_idx]
@@ -526,7 +530,6 @@ def estimate_singles_gamspy(
 
             # Get group-specific leisure parameters
             beta_l0_param = get_param_name('beta_l0', group, param_vars)
-            theta_l_param = get_param_name('theta_l', group, param_vars)
 
             # Build β_l(Z) = β_l0 + Σ β_k * Z_k
             beta_l_expr = param_vars[beta_l0_param]
@@ -553,9 +556,14 @@ def estimate_singles_gamspy(
                 beta_l_expr = beta_l_expr + param_vars[coef_param] * float(demo_val[global_idx])
                 params_used.add(coef_param)
 
-            # Box-Cox transform leisure
-            bc_l = boxcox_gamspy(l_scaled, param_vars[theta_l_param])
-            params_used.add(theta_l_param)
+            # Handle optional theta_l parameter (None = log utility)
+            if spec.utility_leisure_theta:
+                theta_l_param = get_param_name('theta_l', group, param_vars)
+                bc_l = boxcox_gamspy(l_scaled, param_vars[theta_l_param])
+                params_used.add(theta_l_param)
+            else:
+                # Log utility when theta=None
+                bc_l = gp_log(l_scaled)
 
             # Leisure utility component
             util_j = util_j + beta_l_expr * bc_l
@@ -793,10 +801,14 @@ def estimate_couples_gamspy(
 
             # Get household-level consumption parameters (shared between partners)
             beta_c_param = get_param_name('beta_c', 'couples_household', param_vars)
-            theta_c_param = get_param_name('theta_c', 'couples_household', param_vars)
 
-            # Box-Cox transform consumption
-            bc_c = boxcox_gamspy(c_scaled, param_vars[theta_c_param])
+            # Handle optional theta_c parameter (None = log utility)
+            if spec.utility_consumption_theta:
+                theta_c_param = get_param_name('theta_c', 'couples_household', param_vars)
+                bc_c = boxcox_gamspy(c_scaled, param_vars[theta_c_param])
+            else:
+                # Log utility when theta=None
+                bc_c = gp_log(c_scaled)
 
             # Consumption utility component (appears once, not twice!)
             util_j = param_vars[beta_c_param] * bc_c
@@ -807,7 +819,6 @@ def estimate_couples_gamspy(
 
             # Get female-specific leisure parameters
             beta_l0_f_param = get_param_name('beta_l0', 'couples_female', param_vars)
-            theta_l_f_param = get_param_name('theta_l', 'couples_female', param_vars)
 
             # Build female leisure coefficient β_l_f(Z) = β_l0_f + Σ β_k_f * Z_k
             beta_l_f_expr = param_vars[beta_l0_f_param]
@@ -829,8 +840,13 @@ def estimate_couples_gamspy(
 
                 beta_l_f_expr = beta_l_f_expr + param_vars[coef_param_f] * float(demo_val[global_idx])
 
-            # Box-Cox transform female leisure
-            bc_l_f = boxcox_gamspy(l_f_scaled, param_vars[theta_l_f_param])
+            # Handle optional theta_l parameter (None = log utility)
+            if spec.utility_leisure_theta:
+                theta_l_f_param = get_param_name('theta_l', 'couples_female', param_vars)
+                bc_l_f = boxcox_gamspy(l_f_scaled, param_vars[theta_l_f_param])
+            else:
+                # Log utility when theta=None
+                bc_l_f = gp_log(l_f_scaled)
 
             # Female leisure utility component
             util_j = util_j + beta_l_f_expr * bc_l_f
@@ -841,7 +857,6 @@ def estimate_couples_gamspy(
 
             # Get male-specific leisure parameters
             beta_l0_m_param = get_param_name('beta_l0', 'couples_male', param_vars)
-            theta_l_m_param = get_param_name('theta_l', 'couples_male', param_vars)
 
             # Build male leisure coefficient β_l_m(Z) = β_l0_m + Σ β_k_m * Z_k
             beta_l_m_expr = param_vars[beta_l0_m_param]
@@ -863,8 +878,13 @@ def estimate_couples_gamspy(
 
                 beta_l_m_expr = beta_l_m_expr + param_vars[coef_param_m] * float(demo_val[global_idx])
 
-            # Box-Cox transform male leisure
-            bc_l_m = boxcox_gamspy(l_m_scaled, param_vars[theta_l_m_param])
+            # Handle optional theta_l parameter (None = log utility)
+            if spec.utility_leisure_theta:
+                theta_l_m_param = get_param_name('theta_l', 'couples_male', param_vars)
+                bc_l_m = boxcox_gamspy(l_m_scaled, param_vars[theta_l_m_param])
+            else:
+                # Log utility when theta=None
+                bc_l_m = gp_log(l_m_scaled)
 
             # Male leisure utility component
             util_j = util_j + beta_l_m_expr * bc_l_m
@@ -1445,8 +1465,15 @@ def estimate_joint_gamspy(
             c_val = data_singles_male.consumption[global_idx]
 
             beta_c_param = get_param_name('beta_c', 'singles_male', param_vars)
-            theta_c_param = get_param_name('theta_c', 'singles_male', param_vars)
-            bc_c = boxcox_gamspy(c_val, param_vars[theta_c_param])
+
+            # Handle optional theta_c parameter (None = log utility)
+            if spec.utility_consumption_theta:
+                theta_c_param = get_param_name('theta_c', 'singles_male', param_vars)
+                bc_c = boxcox_gamspy(c_val, param_vars[theta_c_param])
+            else:
+                # Log utility when theta=None
+                bc_c = gp_log(c_val)
+
             util_j = param_vars[beta_c_param] * bc_c
 
             # Leisure utility: β_l(Z) * BC(L, θ_l)
@@ -1469,8 +1496,14 @@ def estimate_joint_gamspy(
                 if demo_val is not None:
                     beta_l_expr = beta_l_expr + param_vars[coef_param] * float(demo_val[global_idx])
 
-            theta_l_param = get_param_name('theta_l', 'singles_male', param_vars)
-            bc_l = boxcox_gamspy(l_val, param_vars[theta_l_param])
+            # Handle optional theta_l parameter (None = log utility)
+            if spec.utility_leisure_theta:
+                theta_l_param = get_param_name('theta_l', 'singles_male', param_vars)
+                bc_l = boxcox_gamspy(l_val, param_vars[theta_l_param])
+            else:
+                # Log utility when theta=None
+                bc_l = gp_log(l_val)
+
             util_j = util_j + beta_l_expr * bc_l
 
             # Hours opportunity density (log_h)
@@ -1614,8 +1647,15 @@ def estimate_joint_gamspy(
             c_val = data_singles_female.consumption[global_idx]
 
             beta_c_param = get_param_name('beta_c', 'singles_female', param_vars)
-            theta_c_param = get_param_name('theta_c', 'singles_female', param_vars)
-            bc_c = boxcox_gamspy(c_val, param_vars[theta_c_param])
+
+            # Handle optional theta_c parameter (None = log utility)
+            if spec.utility_consumption_theta:
+                theta_c_param = get_param_name('theta_c', 'singles_female', param_vars)
+                bc_c = boxcox_gamspy(c_val, param_vars[theta_c_param])
+            else:
+                # Log utility when theta=None
+                bc_c = gp_log(c_val)
+
             util_j = param_vars[beta_c_param] * bc_c
 
             # Leisure utility: β_l(Z) * BC(L, θ_l)
@@ -1638,8 +1678,14 @@ def estimate_joint_gamspy(
                 if demo_val is not None:
                     beta_l_expr = beta_l_expr + param_vars[coef_param] * float(demo_val[global_idx])
 
-            theta_l_param = get_param_name('theta_l', 'singles_female', param_vars)
-            bc_l = boxcox_gamspy(l_val, param_vars[theta_l_param])
+            # Handle optional theta_l parameter (None = log utility)
+            if spec.utility_leisure_theta:
+                theta_l_param = get_param_name('theta_l', 'singles_female', param_vars)
+                bc_l = boxcox_gamspy(l_val, param_vars[theta_l_param])
+            else:
+                # Log utility when theta=None
+                bc_l = gp_log(l_val)
+
             util_j = util_j + beta_l_expr * bc_l
 
             # Hours opportunity density (log_h)
@@ -1781,8 +1827,15 @@ def estimate_joint_gamspy(
             c_val = data_couples.consumption[global_idx]
 
             beta_c_param = get_param_name('beta_c', 'couples_household', param_vars)
-            theta_c_param = get_param_name('theta_c', 'couples_household', param_vars)
-            bc_c = boxcox_gamspy(c_val, param_vars[theta_c_param])
+
+            # Handle optional theta_c parameter (None = log utility)
+            if spec.utility_consumption_theta:
+                theta_c_param = get_param_name('theta_c', 'couples_household', param_vars)
+                bc_c = boxcox_gamspy(c_val, param_vars[theta_c_param])
+            else:
+                # Log utility when theta=None
+                bc_c = gp_log(c_val)
+
             util_j = param_vars[beta_c_param] * bc_c
 
             # Female leisure utility: β_l_f(Z) * BC(L_f, θ_l_f)
@@ -1805,8 +1858,14 @@ def estimate_joint_gamspy(
                 if demo_val is not None:
                     beta_l_f_expr = beta_l_f_expr + param_vars[coef_param_f] * float(demo_val[global_idx])
 
-            theta_l_f_param = get_param_name('theta_l', 'couples_female', param_vars)
-            bc_l_f = boxcox_gamspy(l_f_val, param_vars[theta_l_f_param])
+            # Handle optional theta_l parameter (None = log utility)
+            if spec.utility_leisure_theta:
+                theta_l_f_param = get_param_name('theta_l', 'couples_female', param_vars)
+                bc_l_f = boxcox_gamspy(l_f_val, param_vars[theta_l_f_param])
+            else:
+                # Log utility when theta=None
+                bc_l_f = gp_log(l_f_val)
+
             util_j = util_j + beta_l_f_expr * bc_l_f
 
             # Male leisure utility: β_l_m(Z) * BC(L_m, θ_l_m)
@@ -1829,8 +1888,14 @@ def estimate_joint_gamspy(
                 if demo_val is not None:
                     beta_l_m_expr = beta_l_m_expr + param_vars[coef_param_m] * float(demo_val[global_idx])
 
-            theta_l_m_param = get_param_name('theta_l', 'couples_male', param_vars)
-            bc_l_m = boxcox_gamspy(l_m_val, param_vars[theta_l_m_param])
+            # Handle optional theta_l parameter (None = log utility)
+            if spec.utility_leisure_theta:
+                theta_l_m_param = get_param_name('theta_l', 'couples_male', param_vars)
+                bc_l_m = boxcox_gamspy(l_m_val, param_vars[theta_l_m_param])
+            else:
+                # Log utility when theta=None
+                bc_l_m = gp_log(l_m_val)
+
             util_j = util_j + beta_l_m_expr * bc_l_m
 
             # Interaction term: β_interact * BC(L_m) * BC(L_f)

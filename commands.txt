@@ -32,10 +32,10 @@ python .\scripts\enhanced\RURO_post_estimation_styled.py `
 
 
 python .\scripts\enhanced\RURO_post_estimation_styled.py `
---results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/2016_gamspy/run_2026-01-20_15-30-09/estimation_results.json" `
+--results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec_tests/4_ultra_minimal_scipy/run_2026-01-24_12-18-20/estimation_results.json" `
 --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
---output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/2016_gamspy_styled" `
---prefix "fr_2016_gamspy_" `
+--output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec_tests/4_ultra_minimal_scipy" `
+--prefix "fr_2016_scipy_" `
 --compute-se `
 --auto-timestamp
 
@@ -52,56 +52,3 @@ python scripts/enhanced/enh_RURO_estimate_FR.py `
 --warm-start "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/minimal_theta0/2016_gamspy/run_2026-01-23_14-10-01/estimation_results.json" `
   --auto-timestamp `
   --verbose
-
-
-
- python scripts/enhanced/enh_RURO_estimate_FR.py `
->>   --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
->>   --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/minimal_theta0/2016_scipy" `
->>   --group joint `
->>   --solver scipy `
->>   --method L-BFGS-B `
->>   --maxiter 2000 `
->>   --spec-config "U:/Desktop/Nizam_Hisham/MNL/scripts/enhanced/estimation_spec_minimal_theta0.yaml" `
->>   --warm-start "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/minimal_theta0/2016_gamspy/run_2026-01-23_14-10-01/estimation_results.json" `
->>   --auto-timestamp `
->>   --verbose
-
-
-
-
-(.venv) python scripts/enhanced/enh_RURO_estimate_FR.py `
-  --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
-  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/minimal_theta0/2016_gamspy" `
-  --group joint `
-  --solver gamspy-conopt `
-  --spec-config "U:/Desktop/Nizam_Hisham/MNL/scripts/enhanced/estimation_spec_minimal_theta0.yaml" `
-  --warm-start "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/minimal_theta0/2016_gamspy/run_2026-01-23_14-49-16/estimation_results.json" `
-  --auto-timestamp `
-  --verbose
-
-
-(.venv) python scripts/enhanced/enh_RURO_estimate_FR.py `
-  --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
-  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/minimal_theta0/2016_scipy" `
-  --group joint `
-  --solver scipy `
-  --method L-BFGS-B `
-  --maxiter 2000 `
-  --spec-config "U:/Desktop/Nizam_Hisham/MNL/scripts/enhanced/estimation_spec_minimal_theta0.yaml" `
-  --warm-start $warm `
-  --auto-timestamp `
-  --verbose
-Which spec + solver do yo
-
-
-
-python .\scripts\enhanced\RURO_post_estimation_styled.py `
-  --results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/minimal_theta0/2016_gamspy/run_2026-01-23_15-41-04/estimation_results.json" `
-  --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
-  --spec-config "U:/Desktop/Nizam_Hisham/MNL/scripts/enhanced/estimation_spec_minimal_theta0.yaml" `
-  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/minimal_theta0/2016_gamspy_styled" `
-  --prefix "fr_2016_gamspy_" `
-  --compute-se `
-  --auto-timestamp
-

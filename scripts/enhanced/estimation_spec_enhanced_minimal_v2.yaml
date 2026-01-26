@@ -1,0 +1,226 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - Enhanced Minimal v2 (With Occupation)
+# ==============================================================================
+# Enhanced ultra_minimal with:
+# 1. Singles parameters SEPARATED by gender
+# 2. Theta for COUPLES consumption (Box-Cox curvature)
+# 3. OCCUPATION shifters for leisure utility (loc4_1, loc4_2, loc4_3)
+# 4. Focal hours indicators
+#
+# PARAMETERS: 25 total (28 created by parser, 3 fixed at bounds)
+# - Leisure intercepts: beta_l0_sm, beta_l0_sf, beta_l0_m, beta_l0_f (4)
+# - Leisure occupation shifters (3 dummies): beta_l_loc4_1, beta_l_loc4_2, beta_l_loc4_3
+#   x 4 groups = 12 params
+# - Consumption: beta_c_sm, beta_c_sf, beta_c (3)
+# - Theta params: theta_c_sm, theta_c_sf (FIXED at 0), theta_c (free) (3 created, 1 free)
+# - Opportunity: beta_work, beta_pt1, beta_pt2, beta_ft, beta_w0, sigma (6)
+# NOTE: Parser creates 28 params total, but theta_c_sm=theta_c_sf=0 (fixed), so 25 effective
+# ==============================================================================
+
+specification:
+  name: "enhanced_minimal_occupation"
+  description: "Enhanced ultra_minimal: gender-specific singles, theta_c for couples, occupation shifters. 25 free params"
+  wage_spec: "vw"
+
+# ==============================================================================
+# Utility Function (Preference Side)
+# ==============================================================================
+utility:
+  functional_form: "box_cox"
+
+  # Consumption utility
+  # Singles: Log utility (theta_c_sm = theta_c_sf = 0)
+  # Couples: Box-Cox curvature (beta_c, theta_c)
+  # NOTE: Parser creates theta_c_sm, theta_c_sf, theta_c for all groups
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"  # Parser creates theta_c_sm, theta_c_sf, theta_c
+
+  # Leisure utility: [β_l0 + β_loc1*loc4_1 + β_loc2*loc4_2 + β_loc3*loc4_3] * log(L)
+  # Log utility (no theta) for all groups
+  # loc4_4 (Clerks/Service) is reference category (omitted)
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: null  # Log utility (theta_l = 0)
+
+    shifters:
+      # Occupation effects (ISCO-08 4-category classification)
+      # loc4_4 (Clerks/Service workers) is reference category
+      - variable: "loc4_1"
+        coefficient: "beta_l_loc4_1"
+        description: "Managers occupation effect on leisure"
+
+      - variable: "loc4_2"
+        coefficient: "beta_l_loc4_2"
+        description: "Professionals occupation effect on leisure"
+
+      - variable: "loc4_3"
+        coefficient: "beta_l_loc4_3"
+        description: "Technicians occupation effect on leisure"
+
+      # loc4_4 is omitted (reference category)
+
+# ==============================================================================
+# Hours Opportunity Density
+# ==============================================================================
+hours_opportunity:
+  shifters:
+    - variable: "working"
+      coefficient: "beta_work"
+      description: "Working indicator (h>0)"
+
+    - variable: "working_pt1"
+      coefficient: "beta_pt1"
+      description: "Part-time 1 focal point (~20h)"
+
+    - variable: "working_pt2"
+      coefficient: "beta_pt2"
+      description: "Part-time 2 focal point (~30h)"
+
+    - variable: "working_ft"
+      coefficient: "beta_ft"
+      description: "Full-time focal point (~40h)"
+
+# ==============================================================================
+# Wage Opportunity Density
+# ==============================================================================
+wage_opportunity:
+  specification: "log_normal"
+
+  mean_shifters:
+    - variable: "intercept"
+      coefficient: "beta_w0"
+      description: "Log-wage intercept"
+
+  variance:
+    parameter: "sigma"
+    description: "Standard deviation of log-wage residual"
+    bounds: [0.1, 20.0]
+
+# ==============================================================================
+# Singles-Specific Parameters
+# ==============================================================================
+singles:
+  # CRITICAL: Singles have GENDER-SPECIFIC parameters
+  # Male (_sm): beta_l0_sm, beta_l_loc4_1_sm, beta_l_loc4_2_sm, beta_l_loc4_3_sm, beta_c_sm
+  # Female (_sf): beta_l0_sf, beta_l_loc4_1_sf, beta_l_loc4_2_sf, beta_l_loc4_3_sf, beta_c_sf
+  gender_specific_leisure: true
+
+# ==============================================================================
+# Couples-Specific Parameters
+# ==============================================================================
+couples:
+  # CRITICAL: Couples have GENDER-SPECIFIC LEISURE parameters
+  # Male (_m): beta_l0_m, beta_l_loc4_1_m, beta_l_loc4_2_m, beta_l_loc4_3_m
+  # Female (_f): beta_l0_f, beta_l_loc4_1_f, beta_l_loc4_2_f, beta_l_loc4_3_f
+  # Shared consumption: beta_c, theta_c (household level with Box-Cox)
+  gender_specific_leisure: true
+
+  leisure_interaction:
+    coefficient: null  # No cross-term for simplicity
+
+# ==============================================================================
+# Parameter Initialization
+# ==============================================================================
+# Start from ultra_minimal values, add occupation shifters at 0
+initial_values:
+  # ============================================================================
+  # Singles Male (_sm suffix)
+  # ============================================================================
+  beta_l0_sm: 0.35              # Leisure intercept (for loc4_4 reference)
+  beta_l_loc4_1_sm: 0.0         # Managers occupation shifter (NEW)
+  beta_l_loc4_2_sm: 0.0         # Professionals occupation shifter (NEW)
+  beta_l_loc4_3_sm: 0.0         # Technicians occupation shifter (NEW)
+  beta_c_sm: 1.1                # Consumption coefficient
+  theta_c_sm: 0.0               # Consumption theta (FIXED at 0 = log utility)
+
+  # ============================================================================
+  # Singles Female (_sf suffix)
+  # ============================================================================
+  beta_l0_sf: 1.01              # Leisure intercept (for loc4_4 reference)
+  beta_l_loc4_1_sf: 0.0         # Managers occupation shifter (NEW)
+  beta_l_loc4_2_sf: 0.0         # Professionals occupation shifter (NEW)
+  beta_l_loc4_3_sf: 0.0         # Technicians occupation shifter (NEW)
+  beta_c_sf: 1.1                # Consumption coefficient
+  theta_c_sf: 0.0               # Consumption theta (FIXED at 0 = log utility)
+
+  # ============================================================================
+  # Couples Male (_m suffix)
+  # ============================================================================
+  beta_l0_m: 0.35               # Leisure intercept (for loc4_4 reference)
+  beta_l_loc4_1_m: 0.0          # Managers occupation shifter (NEW)
+  beta_l_loc4_2_m: 0.0          # Professionals occupation shifter (NEW)
+  beta_l_loc4_3_m: 0.0          # Technicians occupation shifter (NEW)
+
+  # ============================================================================
+  # Couples Female (_f suffix)
+  # ============================================================================
+  beta_l0_f: 1.01               # Leisure intercept (for loc4_4 reference)
+  beta_l_loc4_1_f: 0.0          # Managers occupation shifter (NEW)
+  beta_l_loc4_2_f: 0.0          # Professionals occupation shifter (NEW)
+  beta_l_loc4_3_f: 0.0          # Technicians occupation shifter (NEW)
+
+  # ============================================================================
+  # Couples Household: Consumption (shared)
+  # ============================================================================
+  beta_c: 1.1                   # Consumption coefficient (household)
+  theta_c: 0.3                  # Box-Cox curvature for couples consumption
+
+  # ============================================================================
+  # Shared Opportunity: Hours (all groups)
+  # ============================================================================
+  beta_work: 1.395              # Working indicator
+  beta_pt1: 1.3                 # Part-time 1 focal (~20h)
+  beta_pt2: 1.9                 # Part-time 2 focal (~30h)
+  beta_ft: 2.9                  # Full-time focal (~40h)
+
+  # ============================================================================
+  # Shared Opportunity: Wages (all groups)
+  # ============================================================================
+  beta_w0: 2.185                # Log-wage intercept
+  sigma: 0.4723                 # Wage residual std dev
+
+# ==============================================================================
+# Optimization Settings
+# ==============================================================================
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 10000
+  tolerance: 1.0e-9
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+  # Bounds for constrained parameters
+  bounds:
+    theta_c_sm: [0.0, 1.0e-6]   # Singles male: FIXED at 0 (log utility)
+    theta_c_sf: [0.0, 1.0e-6]   # Singles female: FIXED at 0 (log utility)
+    theta_c: [0.0, 5.0]         # Couples consumption Box-Cox curvature
+    sigma: [0.1, 20.0]          # Wage residual variance
+
+# ==============================================================================
+# Notes
+# ==============================================================================
+# OCCUPATION CATEGORIES (loc4):
+# - loc4_1: Managers (ISCO-08 group 1) - Expected: Negative (high status → less leisure)
+# - loc4_2: Professionals (ISCO-08 group 2) - Expected: Negative (high skill → less leisure)
+# - loc4_3: Technicians (ISCO-08 group 3) - Expected: Slightly negative
+# - loc4_4: Clerks/Service (ISCO-08 groups 4-9) - REFERENCE (omitted)
+#
+# CHANGES FROM enhanced_minimal_v1:
+# - Replaced education (educL, educH) with occupation (loc4_1, loc4_2, loc4_3)
+# - Occupation is more granular and directly related to work behavior
+# - Total: 18 → 23 parameters (+5 params from education version)
+#
+# EXPECTED COEFFICIENTS:
+# - beta_l_loc4_1 (Managers): -0.3 to -0.5 (high status jobs → lower leisure value)
+# - beta_l_loc4_2 (Professionals): -0.2 to -0.4
+# - beta_l_loc4_3 (Technicians): -0.1 to -0.2
+# - Compared to loc4_4 (Clerks/Service) reference category
+#
+# IDENTIFICATION:
+# - Occupation has good variation in data
+# - Only 3 dummies (loc4_4 is reference), so not over-parameterized
+# - Expected condition number: 40,000-80,000
+# ==============================================================================

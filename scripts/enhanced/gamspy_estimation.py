@@ -1592,7 +1592,6 @@ def estimate_joint_gamspy(
                         mu_wage = mu_wage + param_vars['beta_pexp2'] * pexp2
 
                 # Log-likelihood of observed wage
-                from gamspy.math import log as gp_log
                 residual = log_wage_obs - mu_wage
                 sigma_param = param_vars['sigma']
 
@@ -1774,7 +1773,6 @@ def estimate_joint_gamspy(
                         mu_wage = mu_wage + param_vars['beta_pexp2'] * pexp2
 
                 # Log-likelihood of observed wage
-                from gamspy.math import log as gp_log
                 residual = log_wage_obs - mu_wage
                 sigma_param = param_vars['sigma']
 
@@ -2053,7 +2051,6 @@ def estimate_joint_gamspy(
                         pexp2_m = float(data_couples.pexp_years2_male[global_idx])
                         mu_wage_m = mu_wage_m + param_vars['beta_pexp2'] * pexp2_m
 
-                from gamspy.math import log as gp_log
                 residual_m = log_wage_m - mu_wage_m
                 sigma_param = param_vars['sigma']
 
@@ -2082,7 +2079,6 @@ def estimate_joint_gamspy(
                         pexp2_f = float(data_couples.pexp_years2_female[global_idx])
                         mu_wage_f = mu_wage_f + param_vars['beta_pexp2'] * pexp2_f
 
-                from gamspy.math import log as gp_log
                 residual_f = log_wage_f - mu_wage_f
                 sigma_param = param_vars['sigma']
 

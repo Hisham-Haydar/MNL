@@ -1,0 +1,201 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - Enhanced Minimal
+# ==============================================================================
+# Based on ultra_minimal (10 params) but with requested enhancements:
+# 1. Singles parameters SEPARATED by gender (already in ultra_minimal)
+# 2. Theta for COUPLES consumption (Box-Cox curvature)
+# 3. Occupation/education shifters for leisure utility
+#
+# PARAMETERS: 18 total
+# - Leisure intercepts by gender: beta_l0_sm, beta_l0_sf, beta_l0_m, beta_l0_f (4)
+# - Leisure education shifters (singles): beta_l_educL_sm, beta_l_educH_sm,
+#   beta_l_educL_sf, beta_l_educH_sf (4)
+# - Consumption by group: beta_c_sm, beta_c_sf, beta_c (3)
+# - Theta for couples consumption: theta_c (1)
+# - Opportunity parameters: beta_work, beta_pt1, beta_pt2, beta_ft, beta_w0, sigma (6)
+# ==============================================================================
+
+specification:
+  name: "enhanced_minimal"
+  description: "Enhanced ultra_minimal: gender-specific singles, theta_c for couples, education shifters. 18 params"
+  wage_spec: "vw"
+
+# ==============================================================================
+# Utility Function (Preference Side)
+# ==============================================================================
+utility:
+  functional_form: "box_cox"
+
+  # Consumption utility: β_c * log(C)
+  # Singles: Group-specific (beta_c_sm, beta_c_sf)
+  # Couples: Shared household with Box-Cox curvature (beta_c, theta_c)
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"  # Only for couples, singles will use log (theta=null in parser)
+
+  # Leisure utility: [β_l0 + β_educL*educL + β_educH*educH] * log(L)
+  # Log utility (no theta) for all groups
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: null  # Log utility for leisure (theta_l = 0)
+
+    shifters:
+      - variable: "educL"
+        coefficient: "beta_l_educL"
+        description: "Low education effect on leisure preference"
+
+      - variable: "educH"
+        coefficient: "beta_l_educH"
+        description: "High education effect on leisure preference"
+        # educM is reference category (omitted)
+
+# ==============================================================================
+# Hours Opportunity Density
+# ==============================================================================
+hours_opportunity:
+  shifters:
+    - variable: "working"
+      coefficient: "beta_work"
+      description: "Working indicator (h>0)"
+
+    - variable: "working_pt1"
+      coefficient: "beta_pt1"
+      description: "Part-time 1 focal point (~20h)"
+
+    - variable: "working_pt2"
+      coefficient: "beta_pt2"
+      description: "Part-time 2 focal point (~30h)"
+
+    - variable: "working_ft"
+      coefficient: "beta_ft"
+      description: "Full-time focal point (~40h)"
+
+# ==============================================================================
+# Wage Opportunity Density
+# ==============================================================================
+wage_opportunity:
+  specification: "log_normal"
+
+  mean_shifters:
+    - variable: "intercept"
+      coefficient: "beta_w0"
+      description: "Log-wage intercept"
+
+  variance:
+    parameter: "sigma"
+    description: "Standard deviation of log-wage residual"
+    bounds: [0.1, 20.0]
+
+# ==============================================================================
+# Singles-Specific Parameters
+# ==============================================================================
+singles:
+  # CRITICAL: Singles have GENDER-SPECIFIC parameters
+  # Male (_sm): beta_l0_sm, beta_l_educL_sm, beta_l_educH_sm, beta_c_sm
+  # Female (_sf): beta_l0_sf, beta_l_educL_sf, beta_l_educH_sf, beta_c_sf
+  gender_specific_leisure: true
+
+# ==============================================================================
+# Couples-Specific Parameters
+# ==============================================================================
+couples:
+  # CRITICAL: Couples have GENDER-SPECIFIC LEISURE parameters
+  # Male (_m): beta_l0_m, beta_l_educL_m, beta_l_educH_m
+  # Female (_f): beta_l0_f, beta_l_educL_f, beta_l_educH_f
+  # Shared consumption: beta_c, theta_c (household level with Box-Cox)
+  gender_specific_leisure: true
+
+  leisure_interaction:
+    coefficient: null  # No cross-term for simplicity
+
+# ==============================================================================
+# Parameter Initialization
+# ==============================================================================
+# Start from ultra_minimal values where possible, add education shifters at 0
+initial_values:
+  # ============================================================================
+  # Singles Male (_sm suffix)
+  # ============================================================================
+  beta_l0_sm: 0.35              # Leisure intercept
+  beta_l_educL_sm: 0.0          # Low education leisure shifter (NEW)
+  beta_l_educH_sm: 0.0          # High education leisure shifter (NEW)
+  beta_c_sm: 1.1                # Consumption coefficient
+
+  # ============================================================================
+  # Singles Female (_sf suffix)
+  # ============================================================================
+  beta_l0_sf: 1.01              # Leisure intercept
+  beta_l_educL_sf: 0.0          # Low education leisure shifter (NEW)
+  beta_l_educH_sf: 0.0          # High education leisure shifter (NEW)
+  beta_c_sf: 1.1                # Consumption coefficient
+
+  # ============================================================================
+  # Couples Male (_m suffix)
+  # ============================================================================
+  beta_l0_m: 0.35               # Leisure intercept
+  beta_l_educL_m: 0.0           # Low education leisure shifter (NEW)
+  beta_l_educH_m: 0.0           # High education leisure shifter (NEW)
+
+  # ============================================================================
+  # Couples Female (_f suffix)
+  # ============================================================================
+  beta_l0_f: 1.01               # Leisure intercept
+  beta_l_educL_f: 0.0           # Low education leisure shifter (NEW)
+  beta_l_educH_f: 0.0           # High education leisure shifter (NEW)
+
+  # ============================================================================
+  # Couples Household: Consumption (shared)
+  # ============================================================================
+  beta_c: 1.1                   # Consumption coefficient (household)
+  theta_c: 0.3                  # Box-Cox curvature for couples consumption (NEW)
+
+  # ============================================================================
+  # Shared Opportunity: Hours (all groups)
+  # ============================================================================
+  beta_work: 1.395              # Working indicator
+  beta_pt1: 1.3                 # Part-time 1 focal (~20h)
+  beta_pt2: 1.9                 # Part-time 2 focal (~30h)
+  beta_ft: 2.9                  # Full-time focal (~40h)
+
+  # ============================================================================
+  # Shared Opportunity: Wages (all groups)
+  # ============================================================================
+  beta_w0: 2.185                # Log-wage intercept
+  sigma: 0.4723                 # Wage residual std dev
+
+# ==============================================================================
+# Optimization Settings
+# ==============================================================================
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 10000
+  tolerance: 1.0e-9
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+  # Bounds for constrained parameters
+  bounds:
+    theta_c: [0.0, 5.0]         # Couples consumption Box-Cox curvature
+    sigma: [0.1, 20.0]           # Wage residual variance
+
+# ==============================================================================
+# Notes
+# ==============================================================================
+# CHANGES FROM ultra_minimal:
+# 1. Added education shifters for leisure (8 new params)
+# 2. Added theta_c for couples consumption (1 new param)
+# 3. Added focal hours indicators (3 new params)
+# Total: 10 → 18 parameters (+8 params, more flexible but still parsimonious)
+#
+# RATIONALE:
+# - Education likely affects leisure preferences (higher education → lower leisure value)
+# - Couples may have different consumption curvature than singles
+# - Focal hours capture observed clustering in work hours
+#
+# IDENTIFICATION:
+# - Education has variation in data (educL/educM/educH are dummies)
+# - Theta_c for couples only (not singles) limits parameter explosion
+# - Log leisure (theta_l=null) maintains stability from ultra_minimal
+# ==============================================================================

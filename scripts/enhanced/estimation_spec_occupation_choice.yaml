@@ -1,0 +1,392 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - Occupation Choice Model
+# ==============================================================================
+# Based on Aaberge & Colombino (2011) sector choice framework
+# This specification treats occupation as a CHOICE DIMENSION alongside hours and wages
+#
+# OCCUPATION STRUCTURE:
+# - loc4_1: Managers (reference category)
+# - loc4_2: Professionals
+# - loc4_3: Technicians
+# - loc4_4: Clerks/Service workers
+#
+# CHOICE SET: 400 alternatives = 100 hours × 4 occupations
+# Each occupation has its own wage and hour opportunity distributions
+# ==============================================================================
+
+specification:
+  name: "occupation_choice_ruro"
+  description: "Full occupation choice model with occupation-specific wage and hour opportunities"
+  wage_spec: "vw_occupation"  # Occupation-specific virtual wage
+  occupation_choice: true  # NEW FLAG: Enable occupation as choice dimension
+
+# Utility Function (Preference Side)
+utility:
+  functional_form: "box_cox"
+
+  consumption:
+    coefficient: "beta_c"  # Group-specific (will create _sm, _sf, _m, _f)
+    box_cox_exponent: null  # Log utility for consumption
+
+  leisure:
+    intercept: "beta_l0"  # Base leisure preference
+    box_cox_exponent: null  # Log utility for leisure
+    shifters:
+      # Occupation-specific leisure preferences (relative to Managers = loc4_1)
+      - variable: "loc4_2"
+        coefficient: "beta_l_prof"
+        description: "Leisure preference in Professional occupations"
+
+      - variable: "loc4_3"
+        coefficient: "beta_l_tech"
+        description: "Leisure preference in Technician occupations"
+
+      - variable: "loc4_4"
+        coefficient: "beta_l_service"
+        description: "Leisure preference in Clerk/Service occupations"
+
+# Occupation Preferences (direct occupation utility)
+occupation_preferences:
+  # Managers (loc4_1) is the reference category (utility = 0)
+
+  - occupation: "loc4_2"  # Professionals
+    coefficient: "alpha_prof"
+    description: "Base preference for Professional occupations"
+    interactions:
+      - variable: "education_high"  # 1 if tertiary education
+        coefficient: "alpha_prof_educ"
+        description: "Professionals more attractive with high education"
+
+      - variable: "age"
+        coefficient: "alpha_prof_age"
+        description: "Age effect on Professional preference"
+
+  - occupation: "loc4_3"  # Technicians
+    coefficient: "alpha_tech"
+    description: "Base preference for Technician occupations"
+    interactions:
+      - variable: "education_medium"  # 1 if secondary education
+        coefficient: "alpha_tech_educ"
+        description: "Technicians more attractive with medium education"
+
+      - variable: "age"
+        coefficient: "alpha_tech_age"
+        description: "Age effect on Technician preference"
+
+  - occupation: "loc4_4"  # Clerks/Service
+    coefficient: "alpha_service"
+    description: "Base preference for Clerk/Service occupations"
+    interactions:
+      - variable: "education_low"  # 1 if primary education only
+        coefficient: "alpha_service_educ"
+        description: "Service jobs more attractive with low education"
+
+      - variable: "age"
+        coefficient: "alpha_service_age"
+        description: "Age effect on Service preference"
+
+# Hours Opportunity Density (Occupation-Specific)
+hours_opportunity:
+  occupation_specific: true
+
+  # Full-time and part-time clustering parameters by occupation
+  occupations:
+    - occupation: "loc4_1"  # Managers
+      part_time_peak: "pi_pt_mgr"  # Peak at 18-20 hours/week
+      full_time_peak: "pi_ft_mgr"  # Peak at 37-40 hours/week
+      description: "Managers: high full-time, low part-time"
+
+    - occupation: "loc4_2"  # Professionals
+      part_time_peak: "pi_pt_prof"
+      full_time_peak: "pi_ft_prof"
+      description: "Professionals: high full-time, moderate part-time"
+
+    - occupation: "loc4_3"  # Technicians
+      part_time_peak: "pi_pt_tech"
+      full_time_peak: "pi_ft_tech"
+      description: "Technicians: moderate full-time, moderate part-time"
+
+    - occupation: "loc4_4"  # Service
+      part_time_peak: "pi_pt_service"
+      full_time_peak: "pi_ft_service"
+      description: "Service: moderate full-time, high part-time"
+
+  shifters:
+    - variable: "working"
+      coefficient: "beta_work"
+      description: "Working indicator (h>0)"
+
+# Wage Opportunity Density (Occupation-Specific Mincer Equations)
+wage_opportunity:
+  specification: "occupation_specific_log_normal"
+
+  occupations:
+    - occupation: "loc4_1"  # Managers
+      intercept: "beta_w0_mgr"
+      experience: "beta_w_exp_mgr"
+      experience_squared: "beta_w_exp2_mgr"
+      education: "beta_w_ed_mgr"
+      variance: "sigma_mgr"
+      description: "Highest wages, steep returns to education"
+
+    - occupation: "loc4_2"  # Professionals
+      intercept: "beta_w0_prof"
+      experience: "beta_w_exp_prof"
+      experience_squared: "beta_w_exp2_prof"
+      education: "beta_w_ed_prof"
+      variance: "sigma_prof"
+      description: "High wages, high returns to education"
+
+    - occupation: "loc4_3"  # Technicians
+      intercept: "beta_w0_tech"
+      experience: "beta_w_exp_tech"
+      experience_squared: "beta_w_exp2_tech"
+      education: "beta_w_ed_tech"
+      variance: "sigma_tech"
+      description: "Medium wages, moderate returns to education"
+
+    - occupation: "loc4_4"  # Service
+      intercept: "beta_w0_service"
+      experience: "beta_w_exp_service"
+      experience_squared: "beta_w_exp2_service"
+      education: "beta_w_ed_service"
+      variance: "sigma_service"
+      description: "Lower wages, low returns to education"
+
+# Market Opportunity (Occupation Availability)
+market_opportunity:
+  # Probability that occupation is available (relative odds)
+  occupation_availability:
+    - occupation: "loc4_1"  # Managers
+      parameter: "mu_mgr"
+      description: "Availability of managerial positions"
+
+    - occupation: "loc4_2"  # Professionals
+      parameter: "mu_prof"
+      description: "Availability of professional positions"
+
+    - occupation: "loc4_3"  # Technicians
+      parameter: "mu_tech"
+      description: "Availability of technician positions"
+
+    - occupation: "loc4_4"  # Service (reference)
+      parameter: null  # Reference category
+      description: "Availability of service positions (reference)"
+
+# Singles/Couples Configuration
+singles:
+  gender_specific_leisure: true
+  gender_specific_consumption: true
+  occupation_choice: true  # Both singles and couples choose occupation
+
+couples:
+  gender_specific_leisure: true
+  gender_specific_consumption: false  # Shared consumption
+  leisure_interaction:
+    coefficient: "alpha_leisure_interact"
+  occupation_choice: true  # Both spouses choose occupation independently
+
+# Parameter Initialization
+# Format: parameter_name_{occupation}_{gender}
+initial_values:
+  # === Leisure Intercepts (by gender) ===
+  beta_l0_sm: 0.35
+  beta_l0_sf: 1.01
+  beta_l0_m: 0.35
+  beta_l0_f: 1.01
+
+  # === Occupation-specific leisure shifters ===
+  # Professionals
+  beta_l_prof_sm: 0.0
+  beta_l_prof_sf: 0.0
+  beta_l_prof_m: 0.0
+  beta_l_prof_f: 0.0
+
+  # Technicians
+  beta_l_tech_sm: 0.0
+  beta_l_tech_sf: 0.0
+  beta_l_tech_m: 0.0
+  beta_l_tech_f: 0.0
+
+  # Service
+  beta_l_service_sm: 0.0
+  beta_l_service_sf: 0.0
+  beta_l_service_m: 0.0
+  beta_l_service_f: 0.0
+
+  # === Consumption ===
+  beta_c_sm: 1.0
+  beta_c_sf: 0.75
+  beta_c: 1.25  # Couples
+
+  # === Occupation Preferences (Singles Male) ===
+  alpha_prof_sm: 0.0
+  alpha_prof_educ_sm: 0.5
+  alpha_prof_age_sm: 0.0
+
+  alpha_tech_sm: 0.0
+  alpha_tech_educ_sm: 0.3
+  alpha_tech_age_sm: 0.0
+
+  alpha_service_sm: -0.5
+  alpha_service_educ_sm: 0.0
+  alpha_service_age_sm: 0.0
+
+  # === Occupation Preferences (Singles Female) ===
+  alpha_prof_sf: 0.0
+  alpha_prof_educ_sf: 0.5
+  alpha_prof_age_sf: 0.0
+
+  alpha_tech_sf: 0.0
+  alpha_tech_educ_sf: 0.3
+  alpha_tech_age_sf: 0.0
+
+  alpha_service_sf: 0.0
+  alpha_service_educ_sf: 0.0
+  alpha_service_age_sf: 0.0
+
+  # === Occupation Preferences (Couples) ===
+  alpha_prof_m: 0.0
+  alpha_prof_educ_m: 0.5
+  alpha_prof_age_m: 0.0
+
+  alpha_tech_m: 0.0
+  alpha_tech_educ_m: 0.3
+  alpha_tech_age_m: 0.0
+
+  alpha_service_m: -0.5
+  alpha_service_educ_m: 0.0
+  alpha_service_age_m: 0.0
+
+  alpha_prof_f: 0.0
+  alpha_prof_educ_f: 0.5
+  alpha_prof_age_f: 0.0
+
+  alpha_tech_f: 0.0
+  alpha_tech_educ_f: 0.3
+  alpha_tech_age_f: 0.0
+
+  alpha_service_f: 0.0
+  alpha_service_educ_f: 0.0
+  alpha_service_age_f: 0.0
+
+  # === Hours Opportunity (by occupation) ===
+  # Managers
+  pi_pt_mgr: 0.5
+  pi_ft_mgr: 2.0
+
+  # Professionals
+  pi_pt_prof: 0.8
+  pi_ft_prof: 1.8
+
+  # Technicians
+  pi_pt_tech: 1.0
+  pi_ft_tech: 1.5
+
+  # Service
+  pi_pt_service: 1.5
+  pi_ft_service: 1.5
+
+  beta_work: 1.395
+
+  # === Wage Opportunity (Managers - loc4_1) ===
+  beta_w0_mgr_sm: 3.6
+  beta_w_exp_mgr_sm: 2.8
+  beta_w_exp2_mgr_sm: -4.5
+  beta_w_ed_mgr_sm: 5.5
+  sigma_mgr_sm: 0.30
+
+  beta_w0_mgr_sf: 3.5
+  beta_w_exp_mgr_sf: 2.6
+  beta_w_exp2_mgr_sf: -4.2
+  beta_w_ed_mgr_sf: 5.2
+  sigma_mgr_sf: 0.28
+
+  # === Wage Opportunity (Professionals - loc4_2) ===
+  beta_w0_prof_sm: 3.5
+  beta_w_exp_prof_sm: 2.6
+  beta_w_exp2_prof_sm: -4.2
+  beta_w_ed_prof_sm: 5.0
+  sigma_prof_sm: 0.28
+
+  beta_w0_prof_sf: 3.4
+  beta_w_exp_prof_sf: 2.4
+  beta_w_exp2_prof_sf: -3.9
+  beta_w_ed_prof_sf: 4.8
+  sigma_prof_sf: 0.26
+
+  # === Wage Opportunity (Technicians - loc4_3) ===
+  beta_w0_tech_sm: 3.3
+  beta_w_exp_tech_sm: 2.4
+  beta_w_exp2_tech_sm: -4.0
+  beta_w_ed_tech_sm: 4.2
+  sigma_tech_sm: 0.26
+
+  beta_w0_tech_sf: 3.2
+  beta_w_exp_tech_sf: 2.2
+  beta_w_exp2_tech_sf: -3.7
+  beta_w_ed_tech_sf: 4.0
+  sigma_tech_sf: 0.24
+
+  # === Wage Opportunity (Service - loc4_4) ===
+  beta_w0_service_sm: 3.0
+  beta_w_exp_service_sm: 2.2
+  beta_w_exp2_service_sm: -3.8
+  beta_w_ed_service_sm: 3.5
+  sigma_service_sm: 0.24
+
+  beta_w0_service_sf: 2.9
+  beta_w_exp_service_sf: 2.0
+  beta_w_exp2_service_sf: -3.5
+  beta_w_ed_service_sf: 3.3
+  sigma_service_sf: 0.22
+
+  # === Market Opportunity (Occupation Availability) ===
+  mu_mgr_sm: -2.5  # Managers are rare
+  mu_prof_sm: -1.5  # Professionals somewhat common
+  mu_tech_sm: -1.0  # Technicians common
+  # mu_service is reference (= 0)
+
+  mu_mgr_sf: -2.8  # Female managers even rarer
+  mu_prof_sf: -1.3  # Female professionals common
+  mu_tech_sf: -1.2  # Female technicians moderately common
+
+  # === Couples Leisure Interaction ===
+  alpha_leisure_interact: 4.84
+
+# Optimization Settings
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 2000
+  tolerance: 1.0e-6
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+  bounds:
+    # Wage variances must be positive
+    sigma_mgr_sm: [0.1, 1.0]
+    sigma_mgr_sf: [0.1, 1.0]
+    sigma_prof_sm: [0.1, 1.0]
+    sigma_prof_sf: [0.1, 1.0]
+    sigma_tech_sm: [0.1, 1.0]
+    sigma_tech_sf: [0.1, 1.0]
+    sigma_service_sm: [0.1, 1.0]
+    sigma_service_sf: [0.1, 1.0]
+
+# McFadden Sampling Configuration
+sampling:
+  method: "mcfadden_occupation"
+  n_alternatives_per_occupation: 100  # 100 hour alternatives per occupation
+  total_alternatives: 400  # 100 hours × 4 occupations
+  include_observed: true
+  stratified_by_occupation: true
+
+  description: |
+    For each individual, create a choice set of 400 alternatives:
+    - 1 observed choice (h_obs, w_obs, occ_obs)
+    - 99 sampled alternatives in observed occupation
+    - 100 sampled alternatives in each of the other 3 occupations
+
+    Each alternative is sampled from occupation-specific (h, w) distributions.

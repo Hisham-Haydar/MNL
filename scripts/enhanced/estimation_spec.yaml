@@ -25,7 +25,7 @@ utility:
   consumption:
     coefficient: "beta_c"
     box_cox_exponent: "theta_c"
-    box_cox_bounds: [0.0, 5.0]  # Allow log utility (theta=0) and flexible curvature
+    box_cox_bounds: [-7.0, 1.0]  # Allow log utility (theta=0) and flexible curvature
 
   # Leisure utility: [β_l0 + Σ β_l_X * X] * BC(l; θ_l)
   leisure:
@@ -293,20 +293,19 @@ optimization:
   # Unbounded parameters should be omitted
   bounds:
     # Singles Male Box-Cox parameters
-    theta_l_sm: [0.0, 5.0]  # Singles male leisure curvature
-    theta_c_sm: [0.0, 5.0]  # Singles male consumption curvature
+    theta_l_sm: [-7.0, 1.0]  # Singles male leisure curvature
+    theta_c_sm: [-7.0, 1.0]  # Singles male consumption curvature
     # Singles Female Box-Cox parameters
-    theta_l_sf: [0.0, 5.0]  # Singles female leisure curvature
-    theta_c_sf: [0.0, 5.0]  # Singles female consumption curvature
+    theta_l_sf: [-7.0, 1.0]  # Singles female leisure curvature
+    theta_c_sf: [-7.0, 1.0]  # Singles female consumption curvature
     # Couples Male Box-Cox parameter
-    theta_l_m: [0.0, 5.0]  # Couples male leisure curvature
+    theta_l_m: [-7.0, 1.0]  # Couples male leisure curvature
     # Couples Female Box-Cox parameter
-    theta_l_f: [0.0, 5.0]  # Couples female leisure curvature
+    theta_l_f: [-7.0, 1.0]  # Couples female leisure curvature
     # Couples Household Consumption Box-Cox
-    theta_c: [0.0, 5.0]  # Couples household consumption curvature
+    theta_c: [-7.0, 1.0]  # Couples household consumption curvature
     # Wage parameters (shared)
     sigma: [0.1, 20.0]
-    beta_pexp2: [-10.0, 0.0]  # Must be negative (concave wage-experience profile)
     # Other beta parameters are unbounded
 
 # ------------------------------------------------------------------------------
@@ -319,7 +318,7 @@ gradient_verification:
   tolerance: 1.0e-4  # Max acceptable relative error
   check_at_init: true  # Check gradient at initial values
   check_random_points: 0  # Number of random points to test (0 = disabled)
-  random_seed: 42
+  random_seed: 137  # Seed for random points (if used)
   verbose: true  # Print detailed comparison
 
 # ------------------------------------------------------------------------------

@@ -31,11 +31,11 @@ utility:
 
   consumption:
     coefficient: "beta_c"  # Group-specific (will create _sm, _sf, _m, _f)
-    box_cox_exponent: null  # Log utility for consumption
+    box_cox_exponent: theta_c  # Utility for consumption
 
   leisure:
     intercept: "beta_l0"  # Base leisure preference
-    box_cox_exponent: null  # Log utility for leisure
+    box_cox_exponent: theta_l  # Utility for leisure
     shifters:
       # Occupation-specific leisure preferences (relative to Routine manual = loc4_1)
       - variable: "loc4_2"
@@ -228,6 +228,18 @@ initial_values:
   beta_c_sf: 0.75
   beta_c: 1.25  # Couples
 
+  # === Box-Cox Exponents ===
+  # Consumption Box-Cox exponents
+  theta_c_sm: 0.2628
+  theta_c_sf: 0.5345
+  theta_c: 0.2926
+
+  # Leisure Box-Cox exponents
+  theta_l_sm: 0.001
+  theta_l_sf: 0.0352
+  theta_l_m: 0.0968
+  theta_l_f: 0.001
+
   # === Occupation Preferences (Singles Male) ===
   alpha_nm_sm: 0.0
   alpha_nm_educ_sm: 0.0
@@ -393,6 +405,15 @@ optimization:
     sigma_rc_sf: [0.1, 1.0]
     sigma_nc_sm: [0.1, 1.0]
     sigma_nc_sf: [0.1, 1.0]
+
+    # Box-Cox exponents
+    theta_c_sm: [-7, 1]
+    theta_c_sf: [-7, 1]
+    theta_c: [-7, 1]
+    theta_l_sm: [-7, 1]
+    theta_l_sf: [-7, 1]
+    theta_l_m: [-7, 1]
+    theta_l_f: [-7, 1]
 
 # McFadden Sampling Configuration
 sampling:

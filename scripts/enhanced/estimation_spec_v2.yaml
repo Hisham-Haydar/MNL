@@ -24,13 +24,13 @@ utility:
   consumption:
     coefficient: "beta_c"
     box_cox_exponent: "theta_c"
-    box_cox_bounds: [0.0, 5.0]
+    box_cox_bounds: [-7.0, 1.0]
 
   # Leisure utility: [β_l0 + Σ β_l_X * X] * BC(l; θ_l)
   leisure:
     intercept: "beta_l0"
     box_cox_exponent: "theta_l"
-    box_cox_bounds: [0.001, 5.0]
+    box_cox_bounds: [-10.0, 1.0]
 
     shifters:
       - variable: "age_norm"
@@ -281,14 +281,14 @@ optimization:
 
   bounds:
     # Singles Box-Cox parameters
-    theta_l_sm: [0.0, 5.0]
-    theta_c_sm: [0.0, 5.0]
-    theta_l_sf: [0.0, 5.0]
-    theta_c_sf: [0.0, 5.0]
+    theta_l_sm: [-7.0, 1.0]
+    theta_c_sm: [-7.0, 1.0]
+    theta_l_sf: [-7.0, 1.0]
+    theta_c_sf: [-7.0, 1.0]
     # Couples Box-Cox parameters
-    theta_l_m: [0.0, 5.0]
-    theta_l_f: [0.0, 5.0]
-    theta_c: [0.0, 5.0]
+    theta_l_m: [-7.0, 1.0]
+    theta_l_f: [-7.0, 1.0]
+    theta_c: [-7.0, 1.0]
     # Wage parameters
     sigma: [0.1, 20.0]
     beta_pexp2: [-10.0, 0.0]
@@ -303,5 +303,5 @@ gradient_verification:
   tolerance: 1.0e-4
   check_at_init: true
   check_random_points: 0
-  random_seed: 42
+  random_seed: 13
   verbose: true

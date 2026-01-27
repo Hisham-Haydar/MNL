@@ -290,55 +290,60 @@ initial_values:
   beta_work: 1.395
 
   # === Wage Opportunity (Managers - loc4_1) ===
-  beta_w0_mgr_sm: 3.6
-  beta_w_exp_mgr_sm: 2.8
-  beta_w_exp2_mgr_sm: -4.5
-  beta_w_ed_mgr_sm: 5.5
+  # log(wage) ~ N(β0 + β_exp*(exp/10) + β_exp2*(exp/10)² + β_ed*ed, σ²)
+  # Expected wage for 15 yrs exp, tertiary ed (ed=3): exp(3.2 + 0.25*1.5 - 0.04*2.25 + 0.05*3) ≈ 32 NOK/hr
+  beta_w0_mgr_sm: 3.2
+  beta_w_exp_mgr_sm: 0.25
+  beta_w_exp2_mgr_sm: -0.04
+  beta_w_ed_mgr_sm: 0.05
   sigma_mgr_sm: 0.30
 
-  beta_w0_mgr_sf: 3.5
-  beta_w_exp_mgr_sf: 2.6
-  beta_w_exp2_mgr_sf: -4.2
-  beta_w_ed_mgr_sf: 5.2
+  beta_w0_mgr_sf: 3.1
+  beta_w_exp_mgr_sf: 0.23
+  beta_w_exp2_mgr_sf: -0.04
+  beta_w_ed_mgr_sf: 0.05
   sigma_mgr_sf: 0.28
 
   # === Wage Opportunity (Professionals - loc4_2) ===
-  beta_w0_prof_sm: 3.5
-  beta_w_exp_prof_sm: 2.6
-  beta_w_exp2_prof_sm: -4.2
-  beta_w_ed_prof_sm: 5.0
+  # Expected wage: exp(3.1 + 0.23*1.5 - 0.04*2.25 + 0.05*3) ≈ 28 NOK/hr
+  beta_w0_prof_sm: 3.1
+  beta_w_exp_prof_sm: 0.23
+  beta_w_exp2_prof_sm: -0.04
+  beta_w_ed_prof_sm: 0.05
   sigma_prof_sm: 0.28
 
-  beta_w0_prof_sf: 3.4
-  beta_w_exp_prof_sf: 2.4
-  beta_w_exp2_prof_sf: -3.9
-  beta_w_ed_prof_sf: 4.8
+  beta_w0_prof_sf: 3.0
+  beta_w_exp_prof_sf: 0.21
+  beta_w_exp2_prof_sf: -0.03
+  beta_w_ed_prof_sf: 0.05
   sigma_prof_sf: 0.26
 
   # === Wage Opportunity (Technicians - loc4_3) ===
-  beta_w0_tech_sm: 3.3
-  beta_w_exp_tech_sm: 2.4
-  beta_w_exp2_tech_sm: -4.0
-  beta_w_ed_tech_sm: 4.2
+  # Expected wage: exp(2.9 + 0.21*1.5 - 0.03*2.25 + 0.04*2) ≈ 22 NOK/hr
+  beta_w0_tech_sm: 2.9
+  beta_w_exp_tech_sm: 0.21
+  beta_w_exp2_tech_sm: -0.03
+  beta_w_ed_tech_sm: 0.04
   sigma_tech_sm: 0.26
 
-  beta_w0_tech_sf: 3.2
-  beta_w_exp_tech_sf: 2.2
-  beta_w_exp2_tech_sf: -3.7
-  beta_w_ed_tech_sf: 4.0
+  beta_w0_tech_sf: 2.8
+  beta_w_exp_tech_sf: 0.19
+  beta_w_exp2_tech_sf: -0.03
+  beta_w_ed_tech_sf: 0.04
   sigma_tech_sf: 0.24
 
   # === Wage Opportunity (Service - loc4_4) ===
-  beta_w0_service_sm: 3.0
-  beta_w_exp_service_sm: 2.2
-  beta_w_exp2_service_sm: -3.8
-  beta_w_ed_service_sm: 3.5
+  # Expected wage: exp(2.7 + 0.19*1.5 - 0.03*2.25 + 0.03*1) ≈ 17 NOK/hr
+  beta_w0_service_sm: 2.7
+  beta_w_exp_service_sm: 0.19
+  beta_w_exp2_service_sm: -0.03
+  beta_w_ed_service_sm: 0.03
   sigma_service_sm: 0.24
 
-  beta_w0_service_sf: 2.9
-  beta_w_exp_service_sf: 2.0
-  beta_w_exp2_service_sf: -3.5
-  beta_w_ed_service_sf: 3.3
+  beta_w0_service_sf: 2.6
+  beta_w_exp_service_sf: 0.17
+  beta_w_exp2_service_sf: -0.02
+  beta_w_ed_service_sf: 0.03
   sigma_service_sf: 0.22
 
   # === Market Opportunity (Occupation Availability) ===

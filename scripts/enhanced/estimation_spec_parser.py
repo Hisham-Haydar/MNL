@@ -35,15 +35,16 @@ class EstimationSpec:
     - Parameter names and structure
     - Initial values and bounds
     - Shifter configurations
-    
+
     Supports model versions:
     - "legacy": Original Stijn Van Houtven specification
     - "AC2013": Aaberge-Colombino (2013) aligned specification
+    - "occupation_choice": Occupation as choice dimension (Aaberge-Colombino 2011)
     """
     # Metadata (required fields - no defaults)
     name: str
     description: str
-    wage_spec: str  # fw | vw | loc_empirical
+    wage_spec: str  # fw | vw | vw_occupation | loc_empirical
 
     # Utility configuration (required fields)
     utility_form: str  # box_cox | log | linear
@@ -57,7 +58,7 @@ class EstimationSpec:
     hours_shifters: List[Dict[str, Any]]
 
     # Wage opportunity configuration
-    wage_form: str  # log_normal | occupation_groups
+    wage_form: str  # log_normal | occupation_specific_log_normal | occupation_groups
     wage_mean_shifters: List[Dict[str, Any]]
     wage_variance_param: Optional[str]
     wage_loc_groups: Optional[List[Dict[str, Any]]]  # For loc_empirical
@@ -66,9 +67,24 @@ class EstimationSpec:
     couples_interaction_coef: Optional[str]
 
     # === Fields with defaults below this line ===
-    
+
     # Model version (NEW: AC2013 support)
     model_version: str = "legacy"  # "legacy" or "AC2013"
+
+    # Occupation choice configuration (NEW)
+    occupation_choice: bool = False
+    occupation_preferences: List[Dict[str, Any]] = field(default_factory=list)
+    occupation_specific_hours: bool = False
+    occupation_hour_configs: List[Dict[str, Any]] = field(default_factory=list)
+    occupation_specific_wages: bool = False
+    occupation_wage_configs: List[Dict[str, Any]] = field(default_factory=list)
+    occupation_availability: List[Dict[str, Any]] = field(default_factory=list)
+
+    # McFadden sampling configuration
+    sampling_method: str = "standard"
+    sampling_n_alternatives_per_occ: int = 100
+    sampling_total_alternatives: int = 400
+    sampling_stratified_by_occ: bool = False
 
     # Parameter management
     all_param_names: List[str] = field(default_factory=list)
@@ -234,18 +250,7 @@ class EstimationSpec:
             param_map[f"{self.utility_leisure_theta}_female"] = f"{self.utility_leisure_theta}_f"
 
         return param_map
-    
-    def is_ac2013(self) -> bool:
-        """
-        Check if this specification uses A-C 2013 style.
-        
-        Returns
-        -------
-        bool
-            True if model_version is "AC2013"
-        """
-        return self.model_version == "AC2013"
-    
+
     def get_ac2013_features(self) -> Dict[str, bool]:
         """
         Get dictionary of which A-C 2013 features are enabled.
@@ -314,9 +319,13 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     logger.info(f"Description: {description}")
     logger.info(f"Wage specification: {wage_spec}")
 
+    # Check if occupation choice is enabled
+    occupation_choice = spec_meta.get("occupation_choice", False)
+    logger.info(f"Occupation choice enabled: {occupation_choice}")
+
     # Validate wage_spec
-    if wage_spec not in ["fw", "vw", "loc_empirical"]:
-        raise ValueError(f"Invalid wage_spec: {wage_spec}. Must be fw, vw, or loc_empirical")
+    if wage_spec not in ["fw", "vw", "vw_occupation", "loc_empirical"]:
+        raise ValueError(f"Invalid wage_spec: {wage_spec}. Must be fw, vw, vw_occupation, or loc_empirical")
 
     # Parse utility function
     utility_config = config.get("utility", {})
@@ -331,9 +340,16 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     utility_leisure_theta = leisure_config.get("box_cox_exponent", None)
     utility_leisure_shifters = leisure_config.get("shifters", [])
 
+    # Parse occupation preferences (NEW: occupation choice)
+    occupation_preferences = config.get("occupation_preferences", [])
+
     # Parse hours opportunity
     hours_config = config.get("hours_opportunity", {})
     hours_shifters = hours_config.get("shifters", [])
+
+    # Parse occupation-specific hours (NEW: occupation choice)
+    occupation_specific_hours = hours_config.get("occupation_specific", False)
+    occupation_hour_configs = hours_config.get("occupations", [])
 
     # Parse wage opportunity
     wage_config = config.get("wage_opportunity", {})
@@ -342,7 +358,11 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     wage_variance_param = None
     wage_loc_groups = None
 
-    if wage_spec in ["vw"]:
+    # Parse occupation-specific wages (NEW: occupation choice)
+    occupation_specific_wages = (wage_form == "occupation_specific_log_normal")
+    occupation_wage_configs = wage_config.get("occupations", [])
+
+    if wage_spec in ["vw", "vw_occupation"]:
         variance_config = wage_config.get("variance", {})
         wage_variance_param = variance_config.get("parameter", "sigma")
 
@@ -357,6 +377,17 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     if couples_config:
         interaction_config = couples_config.get("leisure_interaction", {})
         couples_interaction_coef = interaction_config.get("coefficient", "beta_interact")
+
+    # Parse market opportunity (NEW: occupation availability)
+    market_config = config.get("market_opportunity", {})
+    occupation_availability = market_config.get("occupation_availability", [])
+
+    # Parse sampling configuration (NEW: McFadden sampling)
+    sampling_config = config.get("sampling", {})
+    sampling_method = sampling_config.get("method", "standard")
+    sampling_n_alternatives_per_occ = sampling_config.get("n_alternatives_per_occupation", 100)
+    sampling_total_alternatives = sampling_config.get("total_alternatives", 400)
+    sampling_stratified_by_occ = sampling_config.get("stratified_by_occupation", False)
 
     # Parse initial values - support both flat and nested AC2013 formats
     initial_values = config.get("initial_values", {})
@@ -391,7 +422,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         all_param_names = list(initial_values.keys())
         logger.info(f"AC2013: Using {len(all_param_names)} parameters from YAML")
     else:
-        # Legacy: build parameter list from spec structure
+        # Legacy or occupation choice: build parameter list from spec structure
         all_param_names = _build_parameter_list(
             utility_form=utility_form,
             utility_consumption_coef=utility_consumption_coef,
@@ -405,7 +436,15 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
             wage_mean_shifters=wage_mean_shifters,
             wage_variance_param=wage_variance_param,
             wage_loc_groups=wage_loc_groups,
-            couples_interaction_coef=couples_interaction_coef
+            couples_interaction_coef=couples_interaction_coef,
+            # NEW: Occupation choice parameters
+            occupation_choice=occupation_choice,
+            occupation_preferences=occupation_preferences,
+            occupation_specific_hours=occupation_specific_hours,
+            occupation_hour_configs=occupation_hour_configs,
+            occupation_specific_wages=occupation_specific_wages,
+            occupation_wage_configs=occupation_wage_configs,
+            occupation_availability=occupation_availability
         )
 
     logger.info(f"Total parameters: {len(all_param_names)}")
@@ -454,9 +493,9 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         opt_analytical_gradient=opt_analytical_gradient,
         opt_max_iterations=opt_max_iterations,
         opt_tolerance=opt_tolerance,
-        opt_gradient_tolerance=opt_gradient_tolerance,  # NEW
-        opt_display_convergence=opt_display,  # NEW
-        opt_iprint=opt_iprint,  # NEW
+        opt_gradient_tolerance=opt_gradient_tolerance,
+        opt_display_convergence=opt_display,
+        opt_iprint=opt_iprint,
         grad_verify_enabled=grad_verify.get('enabled', False),
         grad_verify_method=grad_verify.get('method', 'central'),
         grad_verify_epsilon=float(grad_verify.get('epsilon', 1e-7)),
@@ -465,13 +504,25 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         grad_verify_random_points=int(grad_verify.get('check_random_points', 0)),
         grad_verify_seed=int(grad_verify.get('random_seed', 42)),
         grad_verify_verbose=grad_verify.get('verbose', False),
-        # NEW: AC2013 settings
+        # AC2013 settings
         model_version=model_version,
         ac2013_use_log_age=(model_version == "AC2013"),
         ac2013_children_age_groups=(model_version == "AC2013"),
         ac2013_experience_in_wage=(model_version == "AC2013"),
         ac2013_couples_cross_leisure=(model_version == "AC2013" and 'alpha_ll' in all_param_names),
         ac2013_couples_mu_0=(model_version == "AC2013" and 'mu_0' in all_param_names),
+        # NEW: Occupation choice settings
+        occupation_choice=occupation_choice,
+        occupation_preferences=occupation_preferences,
+        occupation_specific_hours=occupation_specific_hours,
+        occupation_hour_configs=occupation_hour_configs,
+        occupation_specific_wages=occupation_specific_wages,
+        occupation_wage_configs=occupation_wage_configs,
+        occupation_availability=occupation_availability,
+        sampling_method=sampling_method,
+        sampling_n_alternatives_per_occ=sampling_n_alternatives_per_occ,
+        sampling_total_alternatives=sampling_total_alternatives,
+        sampling_stratified_by_occ=sampling_stratified_by_occ,
     )
 
 
@@ -488,7 +539,15 @@ def _build_parameter_list(
     wage_mean_shifters: List[Dict[str, Any]],
     wage_variance_param: Optional[str],
     wage_loc_groups: Optional[List[Dict[str, Any]]],
-    couples_interaction_coef: Optional[str]
+    couples_interaction_coef: Optional[str],
+    # NEW: Occupation choice parameters
+    occupation_choice: bool = False,
+    occupation_preferences: Optional[List[Dict[str, Any]]] = None,
+    occupation_specific_hours: bool = False,
+    occupation_hour_configs: Optional[List[Dict[str, Any]]] = None,
+    occupation_specific_wages: bool = False,
+    occupation_wage_configs: Optional[List[Dict[str, Any]]] = None,
+    occupation_availability: Optional[List[Dict[str, Any]]] = None
 ) -> List[str]:
     """
     Build ordered list of all parameter names.
@@ -610,6 +669,18 @@ def _build_parameter_list(
         if wage_variance_param:
             params.append(wage_variance_param)  # sigma
 
+    elif wage_spec == "vw_occupation":
+        # Occupation-specific Mincer equations (NEW: occupation choice)
+        if occupation_wage_configs:
+            for occ_config in occupation_wage_configs:
+                # For each occupation, add gender-specific wage parameters
+                for gender_suffix in ["_sm", "_sf"]:
+                    params.append(f"{occ_config['intercept']}{gender_suffix}")
+                    params.append(f"{occ_config['experience']}{gender_suffix}")
+                    params.append(f"{occ_config['experience_squared']}{gender_suffix}")
+                    params.append(f"{occ_config['education']}{gender_suffix}")
+                    params.append(f"{occ_config['variance']}{gender_suffix}")
+
     elif wage_spec == "loc_empirical":
         # LOC-specific intercepts
         for group in wage_loc_groups:
@@ -622,6 +693,35 @@ def _build_parameter_list(
         # Common shifters
         for shifter in wage_mean_shifters:
             params.append(shifter["coefficient"])
+
+    # OCCUPATION CHOICE: Occupation preferences (NEW)
+    if occupation_choice and occupation_preferences:
+        for occ_pref in occupation_preferences:
+            # Base occupation preference for each gender group
+            for gender_suffix in ["_sm", "_sf", "_m", "_f"]:
+                params.append(f"{occ_pref['coefficient']}{gender_suffix}")
+
+            # Occupation-demographic interactions
+            if "interactions" in occ_pref:
+                for interaction in occ_pref["interactions"]:
+                    for gender_suffix in ["_sm", "_sf", "_m", "_f"]:
+                        params.append(f"{interaction['coefficient']}{gender_suffix}")
+
+    # OCCUPATION CHOICE: Occupation-specific hours (NEW)
+    if occupation_specific_hours and occupation_hour_configs:
+        for occ_hour in occupation_hour_configs:
+            # Part-time and full-time clustering parameters for each occupation
+            params.append(occ_hour["part_time_peak"])
+            params.append(occ_hour["full_time_peak"])
+
+    # OCCUPATION CHOICE: Occupation availability (NEW)
+    if occupation_choice and occupation_availability:
+        for occ_avail in occupation_availability:
+            # Only add parameter if not None (reference category has None)
+            if occ_avail.get("parameter") is not None:
+                # Gender-specific availability
+                for gender_suffix in ["_sm", "_sf"]:
+                    params.append(f"{occ_avail['parameter']}{gender_suffix}")
 
     # COUPLES ONLY: Interaction term
     if couples_interaction_coef:

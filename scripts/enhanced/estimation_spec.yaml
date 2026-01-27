@@ -31,7 +31,7 @@ utility:
   leisure:
     intercept: "beta_l0"
     box_cox_exponent: "theta_l"
-    box_cox_bounds: [0.001, 5.0]  # Allow near-log utility (theta→0) and flexible curvature
+    box_cox_bounds: [-7.0, 1.0]  # Allow near-log utility (theta→0) and flexible curvature
 
     shifters:
       - variable: "age_norm"

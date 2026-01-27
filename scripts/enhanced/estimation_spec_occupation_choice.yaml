@@ -4,11 +4,16 @@
 # Based on Aaberge & Colombino (2011) sector choice framework
 # This specification treats occupation as a CHOICE DIMENSION alongside hours and wages
 #
-# OCCUPATION STRUCTURE:
-# - loc4_1: Managers (reference category)
-# - loc4_2: Professionals
-# - loc4_3: Technicians
-# - loc4_4: Clerks/Service workers
+# OCCUPATION STRUCTURE (loc4 - France 2016 pipeline):
+# - loc4_1: Routine manual (reference category) - ISCO 6,7,8: Craft, Plant, Elementary
+# - loc4_2: Nonroutine manual - ISCO 5: Service/Sales workers
+# - loc4_3: Routine cognitive - ISCO 4: Clerical support workers
+# - loc4_4: Nonroutine cognitive - ISCO 1,2,3: Managers, Professionals, Technicians
+#
+# HOURS PEAKS (weekly hours matching base specification):
+# - PT1: 18.5-20.5 hours/week (focal point ~20h)
+# - PT2: 29.5-30.5 hours/week (focal point ~30h)
+# - FT: 37.5-40.5 hours/week (focal point ~40h)
 #
 # CHOICE SET: 400 alternatives = 100 hours × 4 occupations
 # Each occupation has its own wage and hour opportunity distributions
@@ -32,84 +37,88 @@ utility:
     intercept: "beta_l0"  # Base leisure preference
     box_cox_exponent: null  # Log utility for leisure
     shifters:
-      # Occupation-specific leisure preferences (relative to Managers = loc4_1)
+      # Occupation-specific leisure preferences (relative to Routine manual = loc4_1)
       - variable: "loc4_2"
-        coefficient: "beta_l_prof"
-        description: "Leisure preference in Professional occupations"
+        coefficient: "beta_l_nm"
+        description: "Leisure preference in Nonroutine manual occupations"
 
       - variable: "loc4_3"
-        coefficient: "beta_l_tech"
-        description: "Leisure preference in Technician occupations"
+        coefficient: "beta_l_rc"
+        description: "Leisure preference in Routine cognitive occupations"
 
       - variable: "loc4_4"
-        coefficient: "beta_l_service"
-        description: "Leisure preference in Clerk/Service occupations"
+        coefficient: "beta_l_nc"
+        description: "Leisure preference in Nonroutine cognitive occupations"
 
 # Occupation Preferences (direct occupation utility)
 occupation_preferences:
-  # Managers (loc4_1) is the reference category (utility = 0)
+  # Routine manual (loc4_1) is the reference category (utility = 0)
 
-  - occupation: "loc4_2"  # Professionals
-    coefficient: "alpha_prof"
-    description: "Base preference for Professional occupations"
+  - occupation: "loc4_2"  # Nonroutine manual
+    coefficient: "alpha_nm"
+    description: "Base preference for Nonroutine manual occupations"
     interactions:
-      - variable: "education_high"  # 1 if tertiary education
-        coefficient: "alpha_prof_educ"
-        description: "Professionals more attractive with high education"
+      - variable: "education"  # Years of schooling or education level
+        coefficient: "alpha_nm_educ"
+        description: "Education effect on Nonroutine manual preference"
 
       - variable: "age"
-        coefficient: "alpha_prof_age"
-        description: "Age effect on Professional preference"
+        coefficient: "alpha_nm_age"
+        description: "Age effect on Nonroutine manual preference"
 
-  - occupation: "loc4_3"  # Technicians
-    coefficient: "alpha_tech"
-    description: "Base preference for Technician occupations"
+  - occupation: "loc4_3"  # Routine cognitive
+    coefficient: "alpha_rc"
+    description: "Base preference for Routine cognitive occupations"
     interactions:
-      - variable: "education_medium"  # 1 if secondary education
-        coefficient: "alpha_tech_educ"
-        description: "Technicians more attractive with medium education"
+      - variable: "education"  # Years of schooling or education level
+        coefficient: "alpha_rc_educ"
+        description: "Education effect on Routine cognitive preference"
 
       - variable: "age"
-        coefficient: "alpha_tech_age"
-        description: "Age effect on Technician preference"
+        coefficient: "alpha_rc_age"
+        description: "Age effect on Routine cognitive preference"
 
-  - occupation: "loc4_4"  # Clerks/Service
-    coefficient: "alpha_service"
-    description: "Base preference for Clerk/Service occupations"
+  - occupation: "loc4_4"  # Nonroutine cognitive
+    coefficient: "alpha_nc"
+    description: "Base preference for Nonroutine cognitive occupations"
     interactions:
-      - variable: "education_low"  # 1 if primary education only
-        coefficient: "alpha_service_educ"
-        description: "Service jobs more attractive with low education"
+      - variable: "education"  # Years of schooling or education level
+        coefficient: "alpha_nc_educ"
+        description: "Education effect on Nonroutine cognitive preference"
 
       - variable: "age"
-        coefficient: "alpha_service_age"
-        description: "Age effect on Service preference"
+        coefficient: "alpha_nc_age"
+        description: "Age effect on Nonroutine cognitive preference"
 
 # Hours Opportunity Density (Occupation-Specific)
 hours_opportunity:
   occupation_specific: true
 
-  # Full-time and part-time clustering parameters by occupation
+  # Three focal peaks by occupation matching base specification
   occupations:
-    - occupation: "loc4_1"  # Managers
-      part_time_peak: "pi_pt_mgr"  # Peak at 18-20 hours/week
-      full_time_peak: "pi_ft_mgr"  # Peak at 37-40 hours/week
-      description: "Managers: high full-time, low part-time"
+    - occupation: "loc4_1"  # Routine manual
+      part_time_1_peak: "pi_pt1_rm"  # Peak at ~20h/week (18.5-20.5)
+      part_time_2_peak: "pi_pt2_rm"  # Peak at ~30h/week (29.5-30.5)
+      full_time_peak: "pi_ft_rm"      # Peak at ~40h/week (37.5-40.5)
+      description: "Routine manual: high PT1/PT2, moderate FT"
 
-    - occupation: "loc4_2"  # Professionals
-      part_time_peak: "pi_pt_prof"
-      full_time_peak: "pi_ft_prof"
-      description: "Professionals: high full-time, moderate part-time"
+    - occupation: "loc4_2"  # Nonroutine manual
+      part_time_1_peak: "pi_pt1_nm"
+      part_time_2_peak: "pi_pt2_nm"
+      full_time_peak: "pi_ft_nm"
+      description: "Nonroutine manual: high PT1/PT2, moderate FT"
 
-    - occupation: "loc4_3"  # Technicians
-      part_time_peak: "pi_pt_tech"
-      full_time_peak: "pi_ft_tech"
-      description: "Technicians: moderate full-time, moderate part-time"
+    - occupation: "loc4_3"  # Routine cognitive
+      part_time_1_peak: "pi_pt1_rc"
+      part_time_2_peak: "pi_pt2_rc"
+      full_time_peak: "pi_ft_rc"
+      description: "Routine cognitive: moderate PT1/PT2, high FT"
 
-    - occupation: "loc4_4"  # Service
-      part_time_peak: "pi_pt_service"
-      full_time_peak: "pi_ft_service"
-      description: "Service: moderate full-time, high part-time"
+    - occupation: "loc4_4"  # Nonroutine cognitive
+      part_time_1_peak: "pi_pt1_nc"
+      part_time_2_peak: "pi_pt2_nc"
+      full_time_peak: "pi_ft_nc"
+      description: "Nonroutine cognitive: low PT1/PT2, very high FT"
 
   shifters:
     - variable: "working"
@@ -121,57 +130,57 @@ wage_opportunity:
   specification: "occupation_specific_log_normal"
 
   occupations:
-    - occupation: "loc4_1"  # Managers
-      intercept: "beta_w0_mgr"
-      experience: "beta_w_exp_mgr"
-      experience_squared: "beta_w_exp2_mgr"
-      education: "beta_w_ed_mgr"
-      variance: "sigma_mgr"
-      description: "Highest wages, steep returns to education"
+    - occupation: "loc4_1"  # Routine manual
+      intercept: "beta_w0_rm"
+      experience: "beta_w_exp_rm"
+      experience_squared: "beta_w_exp2_rm"
+      education: "beta_w_ed_rm"
+      variance: "sigma_rm"
+      description: "Lowest wages, low returns to education"
 
-    - occupation: "loc4_2"  # Professionals
-      intercept: "beta_w0_prof"
-      experience: "beta_w_exp_prof"
-      experience_squared: "beta_w_exp2_prof"
-      education: "beta_w_ed_prof"
-      variance: "sigma_prof"
-      description: "High wages, high returns to education"
+    - occupation: "loc4_2"  # Nonroutine manual
+      intercept: "beta_w0_nm"
+      experience: "beta_w_exp_nm"
+      experience_squared: "beta_w_exp2_nm"
+      education: "beta_w_ed_nm"
+      variance: "sigma_nm"
+      description: "Low-medium wages, moderate returns to education"
 
-    - occupation: "loc4_3"  # Technicians
-      intercept: "beta_w0_tech"
-      experience: "beta_w_exp_tech"
-      experience_squared: "beta_w_exp2_tech"
-      education: "beta_w_ed_tech"
-      variance: "sigma_tech"
+    - occupation: "loc4_3"  # Routine cognitive
+      intercept: "beta_w0_rc"
+      experience: "beta_w_exp_rc"
+      experience_squared: "beta_w_exp2_rc"
+      education: "beta_w_ed_rc"
+      variance: "sigma_rc"
       description: "Medium wages, moderate returns to education"
 
-    - occupation: "loc4_4"  # Service
-      intercept: "beta_w0_service"
-      experience: "beta_w_exp_service"
-      experience_squared: "beta_w_exp2_service"
-      education: "beta_w_ed_service"
-      variance: "sigma_service"
-      description: "Lower wages, low returns to education"
+    - occupation: "loc4_4"  # Nonroutine cognitive
+      intercept: "beta_w0_nc"
+      experience: "beta_w_exp_nc"
+      experience_squared: "beta_w_exp2_nc"
+      education: "beta_w_ed_nc"
+      variance: "sigma_nc"
+      description: "Highest wages, high returns to education"
 
 # Market Opportunity (Occupation Availability)
 market_opportunity:
   # Probability that occupation is available (relative odds)
   occupation_availability:
-    - occupation: "loc4_1"  # Managers
-      parameter: "mu_mgr"
-      description: "Availability of managerial positions"
+    - occupation: "loc4_1"  # Routine manual (reference)
+      parameter: null  # Reference category (μ_rm = 0)
+      description: "Availability of routine manual positions (reference)"
 
-    - occupation: "loc4_2"  # Professionals
-      parameter: "mu_prof"
-      description: "Availability of professional positions"
+    - occupation: "loc4_2"  # Nonroutine manual
+      parameter: "mu_nm"
+      description: "Availability of nonroutine manual positions"
 
-    - occupation: "loc4_3"  # Technicians
-      parameter: "mu_tech"
-      description: "Availability of technician positions"
+    - occupation: "loc4_3"  # Routine cognitive
+      parameter: "mu_rc"
+      description: "Availability of routine cognitive positions"
 
-    - occupation: "loc4_4"  # Service (reference)
-      parameter: null  # Reference category
-      description: "Availability of service positions (reference)"
+    - occupation: "loc4_4"  # Nonroutine cognitive
+      parameter: "mu_nc"
+      description: "Availability of nonroutine cognitive positions"
 
 # Singles/Couples Configuration
 singles:
@@ -183,7 +192,7 @@ couples:
   gender_specific_leisure: true
   gender_specific_consumption: false  # Shared consumption
   leisure_interaction:
-    coefficient: "alpha_leisure_interact"
+    coefficient: "beta_interact"  # Matches base specification
   occupation_choice: true  # Both spouses choose occupation independently
 
 # Parameter Initialization
@@ -196,23 +205,23 @@ initial_values:
   beta_l0_f: 1.01
 
   # === Occupation-specific leisure shifters ===
-  # Professionals
-  beta_l_prof_sm: 0.0
-  beta_l_prof_sf: 0.0
-  beta_l_prof_m: 0.0
-  beta_l_prof_f: 0.0
+  # Nonroutine manual (loc4_2)
+  beta_l_nm_sm: 0.0
+  beta_l_nm_sf: 0.0
+  beta_l_nm_m: 0.0
+  beta_l_nm_f: 0.0
 
-  # Technicians
-  beta_l_tech_sm: 0.0
-  beta_l_tech_sf: 0.0
-  beta_l_tech_m: 0.0
-  beta_l_tech_f: 0.0
+  # Routine cognitive (loc4_3)
+  beta_l_rc_sm: 0.0
+  beta_l_rc_sf: 0.0
+  beta_l_rc_m: 0.0
+  beta_l_rc_f: 0.0
 
-  # Service
-  beta_l_service_sm: 0.0
-  beta_l_service_sf: 0.0
-  beta_l_service_m: 0.0
-  beta_l_service_f: 0.0
+  # Nonroutine cognitive (loc4_4)
+  beta_l_nc_sm: 0.0
+  beta_l_nc_sf: 0.0
+  beta_l_nc_m: 0.0
+  beta_l_nc_f: 0.0
 
   # === Consumption ===
   beta_c_sm: 1.0
@@ -220,144 +229,149 @@ initial_values:
   beta_c: 1.25  # Couples
 
   # === Occupation Preferences (Singles Male) ===
-  alpha_prof_sm: 0.0
-  alpha_prof_educ_sm: 0.5
-  alpha_prof_age_sm: 0.0
+  alpha_nm_sm: 0.0
+  alpha_nm_educ_sm: 0.0
+  alpha_nm_age_sm: 0.0
 
-  alpha_tech_sm: 0.0
-  alpha_tech_educ_sm: 0.3
-  alpha_tech_age_sm: 0.0
+  alpha_rc_sm: 0.0
+  alpha_rc_educ_sm: 0.3
+  alpha_rc_age_sm: 0.0
 
-  alpha_service_sm: -0.5
-  alpha_service_educ_sm: 0.0
-  alpha_service_age_sm: 0.0
+  alpha_nc_sm: 0.0
+  alpha_nc_educ_sm: 0.5
+  alpha_nc_age_sm: 0.0
 
   # === Occupation Preferences (Singles Female) ===
-  alpha_prof_sf: 0.0
-  alpha_prof_educ_sf: 0.5
-  alpha_prof_age_sf: 0.0
+  alpha_nm_sf: 0.0
+  alpha_nm_educ_sf: 0.0
+  alpha_nm_age_sf: 0.0
 
-  alpha_tech_sf: 0.0
-  alpha_tech_educ_sf: 0.3
-  alpha_tech_age_sf: 0.0
+  alpha_rc_sf: 0.0
+  alpha_rc_educ_sf: 0.3
+  alpha_rc_age_sf: 0.0
 
-  alpha_service_sf: 0.0
-  alpha_service_educ_sf: 0.0
-  alpha_service_age_sf: 0.0
+  alpha_nc_sf: 0.0
+  alpha_nc_educ_sf: 0.5
+  alpha_nc_age_sf: 0.0
 
-  # === Occupation Preferences (Couples) ===
-  alpha_prof_m: 0.0
-  alpha_prof_educ_m: 0.5
-  alpha_prof_age_m: 0.0
+  # === Occupation Preferences (Couples Male) ===
+  alpha_nm_m: 0.0
+  alpha_nm_educ_m: 0.0
+  alpha_nm_age_m: 0.0
 
-  alpha_tech_m: 0.0
-  alpha_tech_educ_m: 0.3
-  alpha_tech_age_m: 0.0
+  alpha_rc_m: 0.0
+  alpha_rc_educ_m: 0.3
+  alpha_rc_age_m: 0.0
 
-  alpha_service_m: -0.5
-  alpha_service_educ_m: 0.0
-  alpha_service_age_m: 0.0
+  alpha_nc_m: 0.0
+  alpha_nc_educ_m: 0.5
+  alpha_nc_age_m: 0.0
 
-  alpha_prof_f: 0.0
-  alpha_prof_educ_f: 0.5
-  alpha_prof_age_f: 0.0
+  # === Occupation Preferences (Couples Female) ===
+  alpha_nm_f: 0.0
+  alpha_nm_educ_f: 0.0
+  alpha_nm_age_f: 0.0
 
-  alpha_tech_f: 0.0
-  alpha_tech_educ_f: 0.3
-  alpha_tech_age_f: 0.0
+  alpha_rc_f: 0.0
+  alpha_rc_educ_f: 0.3
+  alpha_rc_age_f: 0.0
 
-  alpha_service_f: 0.0
-  alpha_service_educ_f: 0.0
-  alpha_service_age_f: 0.0
+  alpha_nc_f: 0.0
+  alpha_nc_educ_f: 0.5
+  alpha_nc_age_f: 0.0
 
   # === Hours Opportunity (by occupation) ===
-  # Managers
-  pi_pt_mgr: 0.5
-  pi_ft_mgr: 2.0
+  # Routine manual (loc4_1)
+  pi_pt1_rm: 1.5
+  pi_pt2_rm: 1.8
+  pi_ft_rm: 1.2
 
-  # Professionals
-  pi_pt_prof: 0.8
-  pi_ft_prof: 1.8
+  # Nonroutine manual (loc4_2)
+  pi_pt1_nm: 1.5
+  pi_pt2_nm: 1.8
+  pi_ft_nm: 1.3
 
-  # Technicians
-  pi_pt_tech: 1.0
-  pi_ft_tech: 1.5
+  # Routine cognitive (loc4_3)
+  pi_pt1_rc: 1.0
+  pi_pt2_rc: 1.3
+  pi_ft_rc: 1.8
 
-  # Service
-  pi_pt_service: 1.5
-  pi_ft_service: 1.5
+  # Nonroutine cognitive (loc4_4)
+  pi_pt1_nc: 0.3
+  pi_pt2_nc: 0.5
+  pi_ft_nc: 2.0
 
   beta_work: 1.395
 
-  # === Wage Opportunity (Managers - loc4_1) ===
+  # === Wage Opportunity (Routine manual - loc4_1) ===
   # log(wage) ~ N(β0 + β_exp*(exp/10) + β_exp2*(exp/10)² + β_ed*ed, σ²)
-  # Expected wage for 15 yrs exp, tertiary ed (ed=3): exp(3.2 + 0.25*1.5 - 0.04*2.25 + 0.05*3) ≈ 32 NOK/hr
-  beta_w0_mgr_sm: 3.2
-  beta_w_exp_mgr_sm: 0.25
-  beta_w_exp2_mgr_sm: -0.04
-  beta_w_ed_mgr_sm: 0.05
-  sigma_mgr_sm: 0.30
+  # Expected wage: exp(2.7 + 0.19*1.5 - 0.03*2.25 + 0.03*1) ≈ 17 EUR/hr
+  beta_w0_rm_sm: 2.7
+  beta_w_exp_rm_sm: 0.19
+  beta_w_exp2_rm_sm: -0.03
+  beta_w_ed_rm_sm: 0.03
+  sigma_rm_sm: 0.24
 
-  beta_w0_mgr_sf: 3.1
-  beta_w_exp_mgr_sf: 0.23
-  beta_w_exp2_mgr_sf: -0.04
-  beta_w_ed_mgr_sf: 0.05
-  sigma_mgr_sf: 0.28
+  beta_w0_rm_sf: 2.6
+  beta_w_exp_rm_sf: 0.17
+  beta_w_exp2_rm_sf: -0.02
+  beta_w_ed_rm_sf: 0.03
+  sigma_rm_sf: 0.22
 
-  # === Wage Opportunity (Professionals - loc4_2) ===
-  # Expected wage: exp(3.1 + 0.23*1.5 - 0.04*2.25 + 0.05*3) ≈ 28 NOK/hr
-  beta_w0_prof_sm: 3.1
-  beta_w_exp_prof_sm: 0.23
-  beta_w_exp2_prof_sm: -0.04
-  beta_w_ed_prof_sm: 0.05
-  sigma_prof_sm: 0.28
+  # === Wage Opportunity (Nonroutine manual - loc4_2) ===
+  # Expected wage: exp(2.8 + 0.20*1.5 - 0.03*2.25 + 0.04*2) ≈ 19 EUR/hr
+  beta_w0_nm_sm: 2.8
+  beta_w_exp_nm_sm: 0.20
+  beta_w_exp2_nm_sm: -0.03
+  beta_w_ed_nm_sm: 0.04
+  sigma_nm_sm: 0.25
 
-  beta_w0_prof_sf: 3.0
-  beta_w_exp_prof_sf: 0.21
-  beta_w_exp2_prof_sf: -0.03
-  beta_w_ed_prof_sf: 0.05
-  sigma_prof_sf: 0.26
+  beta_w0_nm_sf: 2.7
+  beta_w_exp_nm_sf: 0.18
+  beta_w_exp2_nm_sf: -0.03
+  beta_w_ed_nm_sf: 0.04
+  sigma_nm_sf: 0.23
 
-  # === Wage Opportunity (Technicians - loc4_3) ===
-  # Expected wage: exp(2.9 + 0.21*1.5 - 0.03*2.25 + 0.04*2) ≈ 22 NOK/hr
-  beta_w0_tech_sm: 2.9
-  beta_w_exp_tech_sm: 0.21
-  beta_w_exp2_tech_sm: -0.03
-  beta_w_ed_tech_sm: 0.04
-  sigma_tech_sm: 0.26
+  # === Wage Opportunity (Routine cognitive - loc4_3) ===
+  # Expected wage: exp(2.9 + 0.21*1.5 - 0.03*2.25 + 0.04*2) ≈ 22 EUR/hr
+  beta_w0_rc_sm: 2.9
+  beta_w_exp_rc_sm: 0.21
+  beta_w_exp2_rc_sm: -0.03
+  beta_w_ed_rc_sm: 0.04
+  sigma_rc_sm: 0.26
 
-  beta_w0_tech_sf: 2.8
-  beta_w_exp_tech_sf: 0.19
-  beta_w_exp2_tech_sf: -0.03
-  beta_w_ed_tech_sf: 0.04
-  sigma_tech_sf: 0.24
+  beta_w0_rc_sf: 2.8
+  beta_w_exp_rc_sf: 0.19
+  beta_w_exp2_rc_sf: -0.03
+  beta_w_ed_rc_sf: 0.04
+  sigma_rc_sf: 0.24
 
-  # === Wage Opportunity (Service - loc4_4) ===
-  # Expected wage: exp(2.7 + 0.19*1.5 - 0.03*2.25 + 0.03*1) ≈ 17 NOK/hr
-  beta_w0_service_sm: 2.7
-  beta_w_exp_service_sm: 0.19
-  beta_w_exp2_service_sm: -0.03
-  beta_w_ed_service_sm: 0.03
-  sigma_service_sm: 0.24
+  # === Wage Opportunity (Nonroutine cognitive - loc4_4) ===
+  # Expected wage: exp(3.1 + 0.23*1.5 - 0.04*2.25 + 0.05*3) ≈ 28 EUR/hr
+  beta_w0_nc_sm: 3.1
+  beta_w_exp_nc_sm: 0.23
+  beta_w_exp2_nc_sm: -0.04
+  beta_w_ed_nc_sm: 0.05
+  sigma_nc_sm: 0.28
 
-  beta_w0_service_sf: 2.6
-  beta_w_exp_service_sf: 0.17
-  beta_w_exp2_service_sf: -0.02
-  beta_w_ed_service_sf: 0.03
-  sigma_service_sf: 0.22
+  beta_w0_nc_sf: 3.0
+  beta_w_exp_nc_sf: 0.21
+  beta_w_exp2_nc_sf: -0.03
+  beta_w_ed_nc_sf: 0.05
+  sigma_nc_sf: 0.26
 
   # === Market Opportunity (Occupation Availability) ===
-  mu_mgr_sm: -2.5  # Managers are rare
-  mu_prof_sm: -1.5  # Professionals somewhat common
-  mu_tech_sm: -1.0  # Technicians common
-  # mu_service is reference (= 0)
+  # mu_rm is reference (= 0) - Routine manual is most common
+  mu_nm_sm: -0.5  # Nonroutine manual somewhat common
+  mu_rc_sm: -1.0  # Routine cognitive moderately rare
+  mu_nc_sm: -1.5  # Nonroutine cognitive rarest
 
-  mu_mgr_sf: -2.8  # Female managers even rarer
-  mu_prof_sf: -1.3  # Female professionals common
-  mu_tech_sf: -1.2  # Female technicians moderately common
+  mu_nm_sf: -0.3  # Female nonroutine manual more common
+  mu_rc_sf: -0.8  # Female routine cognitive moderately rare
+  mu_nc_sf: -1.2  # Female nonroutine cognitive rare
 
   # === Couples Leisure Interaction ===
-  alpha_leisure_interact: 4.84
+  beta_interact: -0.5534  # Matches base specification (negative = substitutes)
 
 # Optimization Settings
 optimization:
@@ -371,14 +385,14 @@ optimization:
 
   bounds:
     # Wage variances must be positive
-    sigma_mgr_sm: [0.1, 1.0]
-    sigma_mgr_sf: [0.1, 1.0]
-    sigma_prof_sm: [0.1, 1.0]
-    sigma_prof_sf: [0.1, 1.0]
-    sigma_tech_sm: [0.1, 1.0]
-    sigma_tech_sf: [0.1, 1.0]
-    sigma_service_sm: [0.1, 1.0]
-    sigma_service_sf: [0.1, 1.0]
+    sigma_rm_sm: [0.1, 1.0]
+    sigma_rm_sf: [0.1, 1.0]
+    sigma_nm_sm: [0.1, 1.0]
+    sigma_nm_sf: [0.1, 1.0]
+    sigma_rc_sm: [0.1, 1.0]
+    sigma_rc_sf: [0.1, 1.0]
+    sigma_nc_sm: [0.1, 1.0]
+    sigma_nc_sf: [0.1, 1.0]
 
 # McFadden Sampling Configuration
 sampling:

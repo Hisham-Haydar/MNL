@@ -118,9 +118,19 @@ def box_cox_transform(x, theta, eps=LOG_EPS):
 
     Handles θ ≈ 0 case: BC(x, 0) = log(x)
     """
-    # GAMS POWER requires constant exponent; use exp(theta*log(x)) instead
-    # Using eps in denominator provides a smooth approximation around theta=0
-    return (gp_exp(theta * gp_log(x + eps)) - 1.0) / (theta + eps)
+    # Use Taylor expansion around theta=0 for correct limit and smoothness.
+    # Matches boxcox_gamspy (non-vectorized) and SciPy behavior.
+    log_x = gp_log(x + eps)
+    log_x2 = log_x * log_x
+    log_x3 = log_x2 * log_x
+    log_x4 = log_x3 * log_x
+    return log_x * (
+        1.0
+        + theta * log_x / 2.0
+        + theta * theta * log_x2 / 6.0
+        + theta * theta * theta * log_x3 / 24.0
+        + theta * theta * theta * theta * log_x4 / 120.0
+    )
 
 
 def _extract_var_level(var) -> float:

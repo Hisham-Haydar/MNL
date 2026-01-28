@@ -809,6 +809,11 @@ Examples:
         help="Optimization solver: scipy (L-BFGS-B), gamspy-conopt (2-3x faster), "
              "gamspy-ipopt, or gamspy-knitro (default: scipy)"
     )
+    parser.add_argument(
+        "--vectorized",
+        action="store_true",
+        help="Use vectorized GAMSPy implementation (3-5x faster, only for GAMSPy solvers)"
+    )
 
     # Optimization (SciPy-specific)
     parser.add_argument(
@@ -1148,14 +1153,24 @@ Examples:
 
             # Import GAMSPy estimation functions
             try:
-                from gamspy_estimation import (
-                    estimate_singles_gamspy, 
-                    estimate_couples_gamspy,
-                    estimate_joint_gamspy
-                )
+                if args.vectorized:
+                    logger.info("Using VECTORIZED GAMSPy implementation (3-5x faster)")
+                    from gamspy_estimation_vectorized import (
+                        estimate_singles_vectorized_gamspy as estimate_singles_gamspy,
+                        estimate_joint_vectorized_gamspy as estimate_joint_gamspy
+                    )
+                    # Couples vectorized not yet implemented
+                    from gamspy_estimation import estimate_couples_gamspy
+                else:
+                    logger.info("Using standard GAMSPy implementation")
+                    from gamspy_estimation import (
+                        estimate_singles_gamspy,
+                        estimate_couples_gamspy,
+                        estimate_joint_gamspy
+                    )
             except ImportError as e:
                 logger.error(f"Failed to import GAMSPy estimation module: {e}")
-                logger.error("Make sure gamspy_estimation.py is in scripts/enhanced/")
+                logger.error("Make sure gamspy_estimation.py (or gamspy_estimation_vectorized.py) is in scripts/enhanced/")
                 raise
             
             # Run estimation with GAMSPy

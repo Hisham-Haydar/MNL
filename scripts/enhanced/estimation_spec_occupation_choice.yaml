@@ -397,14 +397,14 @@ optimization:
 
   bounds:
     # Wage variances must be positive
-    sigma_rm_sm: [0.1, 1.0]
-    sigma_rm_sf: [0.1, 1.0]
-    sigma_nm_sm: [0.1, 1.0]
-    sigma_nm_sf: [0.1, 1.0]
-    sigma_rc_sm: [0.1, 1.0]
-    sigma_rc_sf: [0.1, 1.0]
-    sigma_nc_sm: [0.1, 1.0]
-    sigma_nc_sf: [0.1, 1.0]
+    sigma_rm_sm: [0.1, 10.0]
+    sigma_rm_sf: [0.1, 10.0]
+    sigma_nm_sm: [0.1, 10.0]
+    sigma_nm_sf: [0.1, 10.0]
+    sigma_rc_sm: [0.1, 10.0]
+    sigma_rc_sf: [0.1, 10.0]
+    sigma_nc_sm: [0.1, 10.0]
+    sigma_nc_sf: [0.1, 10.0]
 
     # Box-Cox exponents
     theta_c_sm: [-7, 1]

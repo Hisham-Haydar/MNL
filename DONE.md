@@ -1,9 +1,53 @@
 # DONE - Completed Work
 
-**Last Updated:** 2026-01-28
+**Last Updated:** 2026-01-28 (Post-Estimation Improvements)
 **Project:** RURO Labor Supply Model - France
 
 This document consolidates all completed work, fixes, and implementations.
+
+---
+
+## 0. Post-Estimation Report Improvements ✅
+
+**Date:** 2026-01-28
+**File:** `scripts/enhanced/RURO_post_estimation_styled.py`
+
+### Improvements Implemented (5 total):
+
+1. **Number of Iterations Display**
+   - Added `n_iterations` parameter to report generation
+   - Displays as 4th component in "Elapsed Time" section
+   - Automatic extraction from estimation JSON results
+
+2. **Flipped Indifference Curve Axes**
+   - Changed plot orientation: Leisure on x-axis, Consumption on y-axis
+   - Improves readability (standard labor-leisure trade-off convention)
+   - Technical: Swapped axes and transposed utility matrix (U.T)
+
+3. **Specification-Agnostic Model Sections**
+   - Created dynamic HTML builders for Hours and Wage equations
+   - Automatically adapts to any parameter configuration
+   - Shows only parameters actually used in the specification
+   - Both symbolic and numeric equations generated on-the-fly
+
+4. **Hours Distribution Histogram Plots**
+   - Side-by-side histograms: Observed vs Predicted
+   - Bins: [0, 10, 18.5, 20.5, 29.5, 30.5, 37.5, 40.5, 50, 60+]
+   - Highlights focal peaks (PT1, PT2, FT)
+   - Total + per-group breakdowns (Singles/Couples)
+
+5. **Wage Distribution Density Curves**
+   - Smooth KDE density curves: Observed vs Predicted
+   - Working alternatives only (hours > 0)
+   - Probability-weighted predicted distributions
+   - Total + per-group breakdowns (Singles/Couples)
+
+### Technical Implementation:
+- **New functions:** `build_wage_equation_html_dynamic()`, `build_hours_opportunity_html_dynamic()`, `plot_hours_distribution_comparison()`, `plot_wage_distribution_comparison()`
+- **Lines added:** ~500 lines of new code
+- **Integration:** Automatically called in plotting workflow, plots displayed in HTML report
+- **Performance impact:** +2-5 seconds (KDE computation)
+- **Status:** ✅ Complete and integrated
 
 ---
 

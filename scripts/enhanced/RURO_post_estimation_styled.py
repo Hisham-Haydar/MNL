@@ -847,13 +847,13 @@ def plot_utility_contours_all_groups(parsed_params: ParsedParameters, output_dir
             levels = np.unique(levels)
 
             fig, ax = plt.subplots(figsize=(8, 6))
-            cf = ax.contourf(C, L, U, levels=20, cmap='RdYlGn', alpha=0.7)
+            cf = ax.contourf(L, C, U.T, levels=20, cmap='RdYlGn', alpha=0.7)
             plt.colorbar(cf, ax=ax, label='Utility')
-            cs = ax.contour(C, L, U, levels=levels, colors='black', linewidths=1.0)
+            cs = ax.contour(L, C, U.T, levels=levels, colors='black', linewidths=1.0)
             ax.clabel(cs, inline=True, fontsize=9)
 
-            ax.set_xlabel('Normalized Consumption (c/c̄)')
-            ax.set_ylabel('Normalized Leisure (l/l̄)')
+            ax.set_xlabel('Normalized Leisure (l/l̄)')
+            ax.set_ylabel('Normalized Consumption (c/c̄)')
             ax.set_title(f'Utility Indifference Curves\n{group_labels.get(group, group)}')
             ax.grid(True, alpha=0.3)
 
@@ -1561,6 +1561,564 @@ def generate_identification_diagnostics_html(
     """
 
 
+def build_wage_equation_html_dynamic(wage_params: Dict[str, float]) -> str:
+    """
+    Build wage equation HTML dynamically based on actual parameters in wage_params.
+    Only includes parameters that exist in the dictionary.
+    """
+    if not wage_params:
+        return ""
+
+    # Core wage parameters (always include if present)
+    core_params = ['beta_w0', 'beta_w_educL', 'beta_w_educH', 'beta_pexp', 'beta_pexp2']
+
+    # Additional demographic shifters
+    demographic_params = ['beta_w_female', 'beta_w_couple', 'beta_w_age',
+                         'beta_w_age2', 'beta_w_nc', 'beta_w_idf']
+
+    # Build symbolic equation
+    symbolic_parts = []
+    if 'beta_w0' in wage_params:
+        symbolic_parts.append('β<sub>w0</sub>')
+    if 'beta_w_educL' in wage_params:
+        symbolic_parts.append('β<sub>w,educL</sub> · educL')
+    if 'beta_w_educH' in wage_params:
+        symbolic_parts.append('β<sub>w,educH</sub> · educH')
+    if 'beta_pexp' in wage_params:
+        symbolic_parts.append('β<sub>pexp</sub> · experience')
+    if 'beta_pexp2' in wage_params:
+        symbolic_parts.append('β<sub>pexp²</sub> · experience²')
+
+    # Add demographic shifters
+    for param in demographic_params:
+        if param in wage_params:
+            var_name = param.replace('beta_w_', '')
+            symbolic_parts.append(f'β<sub>w,{var_name}</sub> · {var_name}')
+
+    symbolic_eq = ' + '.join(symbolic_parts) if symbolic_parts else '(no wage parameters)'
+
+    # Build numerical equation
+    numerical_parts = []
+    if 'beta_w0' in wage_params:
+        numerical_parts.append(f"{wage_params['beta_w0']:.4f}")
+    if 'beta_w_educL' in wage_params:
+        numerical_parts.append(f"{wage_params['beta_w_educL']:+.4f} · educL")
+    if 'beta_w_educH' in wage_params:
+        numerical_parts.append(f"{wage_params['beta_w_educH']:+.4f} · educH")
+    if 'beta_pexp' in wage_params:
+        numerical_parts.append(f"{wage_params['beta_pexp']:+.4f} · experience")
+    if 'beta_pexp2' in wage_params:
+        numerical_parts.append(f"{wage_params['beta_pexp2']:+.6f} · experience²")
+
+    # Add demographic shifters
+    for param in demographic_params:
+        if param in wage_params:
+            var_name = param.replace('beta_w_', '')
+            numerical_parts.append(f"{wage_params[param]:+.4f} · {var_name}")
+
+    numerical_eq = ' + '.join(numerical_parts) if numerical_parts else '(no wage parameters)'
+
+    # Sigma
+    sigma_html = ""
+    if 'sigma' in wage_params:
+        sigma_html = f"<br><br>σ = {wage_params['sigma']:.4f}"
+
+    return f"""
+    <div class="stats-box" style="margin-top: 1em;">
+        <h4>Log-Wage Equation (Mincer Style)</h4>
+        <div class="math-block symbolic">
+            log(wage) = {symbolic_eq} + ε
+            <br><br>
+            where ε ~ N(0, σ²)
+        </div>
+        <div class="math-block numerical" style="margin-top: 1em;">
+            log(wage) = {numerical_eq} + ε
+            {sigma_html}
+        </div>
+    </div>
+    """
+
+
+def build_hours_opportunity_html_dynamic(wage_params: Dict[str, float]) -> str:
+    """
+    Build hours opportunity function HTML dynamically based on actual parameters.
+    Only includes parameters that exist in wage_params dictionary.
+    """
+    if not wage_params:
+        return ""
+
+    # Core hours parameters (focal peaks)
+    core_params = ['beta_work', 'beta_pt1', 'beta_pt2', 'beta_ft']
+
+    # Additional shifters
+    shifter_params = ['beta_gsur', 'beta_work_educL', 'beta_work_educH',
+                     'beta_work_female', 'beta_work_couple', 'beta_work_idf',
+                     'beta_work_age', 'beta_work_age2', 'beta_work_nc']
+
+    # Build symbolic equation
+    symbolic_parts = []
+    if 'beta_work' in wage_params:
+        symbolic_parts.append('β<sub>work</sub> · I(h>0)')
+    if 'beta_pt1' in wage_params:
+        symbolic_parts.append('β<sub>pt1</sub> · I(h∈[18.5,20.5])')
+    if 'beta_pt2' in wage_params:
+        symbolic_parts.append('β<sub>pt2</sub> · I(h∈[29.5,30.5])')
+    if 'beta_ft' in wage_params:
+        symbolic_parts.append('β<sub>ft</sub> · I(h∈[37.5,40.5])')
+
+    # Add shifters
+    if 'beta_gsur' in wage_params:
+        symbolic_parts.append('β<sub>gsur</sub> · gsur')
+    if 'beta_work_educL' in wage_params:
+        symbolic_parts.append('β<sub>work,educL</sub> · educL')
+    if 'beta_work_educH' in wage_params:
+        symbolic_parts.append('β<sub>work,educH</sub> · educH')
+
+    for param in ['beta_work_female', 'beta_work_couple', 'beta_work_idf',
+                  'beta_work_age', 'beta_work_age2', 'beta_work_nc']:
+        if param in wage_params:
+            var_name = param.replace('beta_work_', '')
+            symbolic_parts.append(f'β<sub>work,{var_name}</sub> · {var_name}')
+
+    symbolic_eq = ' + '.join(symbolic_parts) if symbolic_parts else '(no hours parameters)'
+
+    # Build numerical equation - split into lines for readability
+    numerical_lines = []
+
+    # Line 1: Core parameters
+    line1_parts = []
+    if 'beta_work' in wage_params:
+        line1_parts.append(f"{wage_params['beta_work']:.4f} · I(h>0)")
+    if 'beta_pt1' in wage_params:
+        line1_parts.append(f"{wage_params['beta_pt1']:+.4f} · I(h∈[18.5,20.5])")
+    if 'beta_pt2' in wage_params:
+        line1_parts.append(f"{wage_params['beta_pt2']:+.4f} · I(h∈[29.5,30.5])")
+    if 'beta_ft' in wage_params:
+        line1_parts.append(f"{wage_params['beta_ft']:+.4f} · I(h∈[37.5,40.5])")
+
+    if line1_parts:
+        numerical_lines.append(' + '.join(line1_parts))
+
+    # Line 2: Shifters
+    line2_parts = []
+    if 'beta_gsur' in wage_params:
+        line2_parts.append(f"{wage_params['beta_gsur']:+.4f} · gsur")
+    if 'beta_work_educL' in wage_params:
+        line2_parts.append(f"{wage_params['beta_work_educL']:+.4f} · educL")
+    if 'beta_work_educH' in wage_params:
+        line2_parts.append(f"{wage_params['beta_work_educH']:+.4f} · educH")
+    if 'beta_work_female' in wage_params:
+        line2_parts.append(f"{wage_params['beta_work_female']:+.4f} · female")
+    if 'beta_work_couple' in wage_params:
+        line2_parts.append(f"{wage_params['beta_work_couple']:+.4f} · couple")
+    if 'beta_work_idf' in wage_params:
+        line2_parts.append(f"{wage_params['beta_work_idf']:+.4f} · idf")
+
+    for param in ['beta_work_age', 'beta_work_age2', 'beta_work_nc']:
+        if param in wage_params:
+            var_name = param.replace('beta_work_', '')
+            line2_parts.append(f"{wage_params[param]:+.4f} · {var_name}")
+
+    if line2_parts:
+        numerical_lines.append(' + '.join(line2_parts))
+
+    numerical_eq = '<br>                           + '.join(numerical_lines) if numerical_lines else '(no hours parameters)'
+
+    return f"""
+    <div class="stats-box" style="margin-top: 1em;">
+        <h4>Hours Opportunity Function</h4>
+        <div class="math-block symbolic">
+            log h(h|X) = {symbolic_eq}
+        </div>
+        <div class="math-block numerical" style="margin-top: 1em;">
+            log h(h|X) = {numerical_eq}
+        </div>
+    </div>
+    """
+
+
+def _add_predicted_probabilities(
+    df: pd.DataFrame,
+    params: Dict[str, float],
+    is_couples: bool = False,
+    group_suffix: str = '',
+) -> pd.DataFrame:
+    """
+    Compute predicted choice probabilities for a DataFrame and add 'pred_prob'.
+    """
+    df = df.copy()
+
+    beta_c = params.get(f'beta_c{group_suffix}', params.get('beta_c', 1.0))
+    theta_c = params.get(f'theta_c{group_suffix}', params.get('theta_c', 0.5))
+
+    c = df['consumption'].values
+    V = beta_c * boxcox_transform(c, theta_c)
+
+    if is_couples:
+        theta_l_m = params.get('theta_l_m', params.get('theta_l', 0.5))
+        theta_l_f = params.get('theta_l_f', params.get('theta_l', 0.5))
+        l_m = df['leisure_male'].values
+        l_f = df['leisure_female'].values
+        beta_l_m = compute_beta_l_full(df, params, '_m')
+        beta_l_f = compute_beta_l_full(df, params, '_f')
+        V += beta_l_m * boxcox_transform(l_m, theta_l_m)
+        V += beta_l_f * boxcox_transform(l_f, theta_l_f)
+
+        for col in [
+            'log_q_total_male', 'log_opp_male',
+            'log_q_total_female', 'log_opp_female',
+            'log_q_total', 'log_opp',
+        ]:
+            if col in df.columns:
+                V += df[col].values
+    else:
+        theta_l = params.get(f'theta_l{group_suffix}', params.get('theta_l', 0.5))
+        l = df['leisure'].values
+        beta_l = compute_beta_l_full(df, params, group_suffix)
+        V += beta_l * boxcox_transform(l, theta_l)
+
+        for col in ['log_q_total', 'log_opp']:
+            if col in df.columns:
+                V += df[col].values
+                break
+
+    for prior_col in ['prior', 'log_prior']:
+        if prior_col in df.columns:
+            V -= df[prior_col].values
+            break
+
+    df['V'] = V
+    df['pred_prob'] = 0.0
+
+    for idhh, grp in df.groupby('idhh'):
+        V_grp = grp['V'].values
+        V_shifted = V_grp - V_grp.max()
+        exp_V = np.exp(V_shifted)
+        probs = exp_V / exp_V.sum()
+        df.loc[grp.index, 'pred_prob'] = probs
+
+    return df
+
+
+def plot_hours_distribution_comparison(parsed_params: ParsedParameters, mnl_base: Path, output_dir: Path, prefix: str = '') -> Dict[str, Path]:
+    """
+    Generate histograms comparing observed vs predicted hours distributions.
+    Returns dict mapping plot keys to file paths.
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        LOGGER.warning("Matplotlib not available, skipping hours distribution plots")
+        return {}
+
+    plot_paths = {}
+
+    # Define bins for hours (0, 10, 18.5, 20.5, 29.5, 30.5, 37.5, 40.5, 50, 60+)
+    bins = [0, 10, 18.5, 20.5, 29.5, 30.5, 37.5, 40.5, 50, 60, 100]
+    bin_labels = ['0', '0-10', '10-18.5', 'PT1\n(18.5-20.5)', '20.5-29.5', 'PT2\n(29.5-30.5)', '30.5-37.5', 'FT\n(37.5-40.5)', '40.5-50', '50+']
+
+    try:
+        # Load data
+        singles_path = Path(str(mnl_base) + '__singles.parquet')
+        couples_path = Path(str(mnl_base) + '__couples.parquet')
+
+        df_all_parts = []
+        group_labels = []
+
+        if singles_path.exists():
+            df_singles = pd.read_parquet(singles_path)
+            gender_col = 'dgn' if 'dgn' in df_singles.columns else 'gender'
+            for gender_code, group_key in [(1, 'sm'), (0, 'sf')]:
+                df_g = df_singles[df_singles[gender_col] == gender_code].copy()
+                if len(df_g) == 0:
+                    continue
+                params = None
+                for try_key in [group_key, group_key.upper()]:
+                    if try_key in parsed_params.params_by_group:
+                        params = parsed_params.get_all_params_for_group(try_key)
+                        break
+                if not params:
+                    continue
+                df_g = _add_predicted_probabilities(df_g, params, is_couples=False, group_suffix=f'_{group_key}')
+                df_g['group'] = 'Singles'
+                df_all_parts.append(df_g)
+            if df_all_parts:
+                group_labels.append('Singles')
+
+        if couples_path.exists():
+            df_couples = pd.read_parquet(couples_path)
+            params = None
+            for try_key in ['m', 'cou', 'couples']:
+                if try_key in parsed_params.params_by_group:
+                    params = parsed_params.get_all_params_for_group(try_key)
+                    break
+            if params:
+                df_c = _add_predicted_probabilities(df_couples, params, is_couples=True)
+                df_c['group'] = 'Couples'
+                df_all_parts.append(df_c)
+                group_labels.append('Couples')
+
+        if not df_all_parts:
+            LOGGER.warning("No MNL data files found for hours distribution plot")
+            return {}
+
+        # Combine all data
+        df_all = pd.concat(df_all_parts, ignore_index=True)
+        chosen_col = 'chosen' if 'chosen' in df_all.columns else 'is_chosen'
+
+        # Extract observed hours (from chosen alternatives)
+        df_chosen = df_all[df_all[chosen_col] == 1].copy()
+
+        # Extract predicted hours (weighted by predicted probabilities)
+        # For predicted, we use all alternatives weighted by their probability
+
+        # Total plot
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        # Observed distribution
+        obs_counts, _ = np.histogram(df_chosen['hours'].values, bins=bins)
+        obs_freq = obs_counts / obs_counts.sum() * 100
+
+        # Predicted distribution (probability-weighted)
+        pred_counts = np.zeros(len(bins) - 1)
+        for i in range(len(bins) - 1):
+            mask = (df_all['hours'] >= bins[i]) & (df_all['hours'] < bins[i+1])
+            pred_counts[i] = df_all.loc[mask, 'pred_prob'].sum()
+        pred_freq = pred_counts / pred_counts.sum() * 100
+
+        # Plot side-by-side bars
+        x = np.arange(len(bin_labels))
+        width = 0.35
+
+        ax.bar(x - width/2, obs_freq, width, label='Observed', alpha=0.8, color='steelblue')
+        ax.bar(x + width/2, pred_freq, width, label='Predicted', alpha=0.8, color='coral')
+
+        ax.set_xlabel('Weekly Hours')
+        ax.set_ylabel('Percentage (%)')
+        ax.set_title('Hours Distribution: Observed vs Predicted (Total)')
+        ax.set_xticks(x)
+        ax.set_xticklabels(bin_labels, rotation=45, ha='right')
+        ax.legend()
+        ax.grid(True, alpha=0.3, axis='y')
+
+        fig.tight_layout()
+        output_path = output_dir / f'{prefix}hours_distribution_total.png'
+        fig.savefig(output_path, dpi=150)
+        plt.close(fig)
+        plot_paths['hours_dist_total'] = output_path
+
+        # Per-group plots
+        for group_name in group_labels:
+            df_group = df_all[df_all['group'] == group_name]
+            df_chosen_group = df_chosen[df_chosen['group'] == group_name]
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+
+            # Observed
+            obs_counts_g, _ = np.histogram(df_chosen_group['hours'].values, bins=bins)
+            obs_freq_g = obs_counts_g / obs_counts_g.sum() * 100 if obs_counts_g.sum() > 0 else obs_counts_g
+
+            # Predicted
+            pred_counts_g = np.zeros(len(bins) - 1)
+            for i in range(len(bins) - 1):
+                mask = (df_group['hours'] >= bins[i]) & (df_group['hours'] < bins[i+1])
+                pred_counts_g[i] = df_group.loc[mask, 'pred_prob'].sum()
+            pred_freq_g = pred_counts_g / pred_counts_g.sum() * 100 if pred_counts_g.sum() > 0 else pred_counts_g
+
+            ax.bar(x - width/2, obs_freq_g, width, label='Observed', alpha=0.8, color='steelblue')
+            ax.bar(x + width/2, pred_freq_g, width, label='Predicted', alpha=0.8, color='coral')
+
+            ax.set_xlabel('Weekly Hours')
+            ax.set_ylabel('Percentage (%)')
+            ax.set_title(f'Hours Distribution: Observed vs Predicted ({group_name})')
+            ax.set_xticks(x)
+            ax.set_xticklabels(bin_labels, rotation=45, ha='right')
+            ax.legend()
+            ax.grid(True, alpha=0.3, axis='y')
+
+            fig.tight_layout()
+            output_path_g = output_dir / f'{prefix}hours_distribution_{group_name.lower()}.png'
+            fig.savefig(output_path_g, dpi=150)
+            plt.close(fig)
+            plot_paths[f'hours_dist_{group_name.lower()}'] = output_path_g
+
+        LOGGER.info(f"   Generated {len(plot_paths)} hours distribution plots")
+
+    except Exception as e:
+        LOGGER.error(f"Error generating hours distribution plots: {e}")
+        import traceback
+        traceback.print_exc()
+
+    return plot_paths
+
+
+def plot_wage_distribution_comparison(parsed_params: ParsedParameters, mnl_base: Path, output_dir: Path, prefix: str = '') -> Dict[str, Path]:
+    """
+    Generate smooth density curves comparing observed vs predicted wage distributions.
+    Returns dict mapping plot keys to file paths.
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        LOGGER.warning("Matplotlib not available, skipping wage distribution plots")
+        return {}
+
+    try:
+        from scipy.stats import gaussian_kde
+    except ImportError:
+        LOGGER.warning("scipy.stats not available, skipping wage distribution plots")
+        return {}
+
+    plot_paths = {}
+
+    try:
+        # Load data
+        singles_path = Path(str(mnl_base) + '__singles.parquet')
+        couples_path = Path(str(mnl_base) + '__couples.parquet')
+
+        df_all_parts = []
+        group_labels = []
+
+        if singles_path.exists():
+            df_singles = pd.read_parquet(singles_path)
+            gender_col = 'dgn' if 'dgn' in df_singles.columns else 'gender'
+            for gender_code, group_key in [(1, 'sm'), (0, 'sf')]:
+                df_g = df_singles[df_singles[gender_col] == gender_code].copy()
+                if len(df_g) == 0:
+                    continue
+                params = None
+                for try_key in [group_key, group_key.upper()]:
+                    if try_key in parsed_params.params_by_group:
+                        params = parsed_params.get_all_params_for_group(try_key)
+                        break
+                if not params:
+                    continue
+                df_g = _add_predicted_probabilities(df_g, params, is_couples=False, group_suffix=f'_{group_key}')
+                df_g['group'] = 'Singles'
+                df_all_parts.append(df_g)
+            if df_all_parts:
+                group_labels.append('Singles')
+
+        if couples_path.exists():
+            df_couples = pd.read_parquet(couples_path)
+            params = None
+            for try_key in ['m', 'cou', 'couples']:
+                if try_key in parsed_params.params_by_group:
+                    params = parsed_params.get_all_params_for_group(try_key)
+                    break
+            if params:
+                df_c = _add_predicted_probabilities(df_couples, params, is_couples=True)
+                df_c['group'] = 'Couples'
+                df_all_parts.append(df_c)
+                group_labels.append('Couples')
+
+        if not df_all_parts:
+            LOGGER.warning("No MNL data files found for wage distribution plot")
+            return {}
+
+        # Combine all data
+        df_all = pd.concat(df_all_parts, ignore_index=True)
+        chosen_col = 'chosen' if 'chosen' in df_all.columns else 'is_chosen'
+
+        # Filter working alternatives (hours > 0)
+        df_working = df_all[df_all['hours'] > 0].copy()
+        df_chosen_working = df_working[df_working[chosen_col] == 1].copy()
+
+        # Total plot
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        # Observed wages
+        obs_wages = df_chosen_working['wage'].values
+        obs_wages = obs_wages[np.isfinite(obs_wages)]
+
+        if len(obs_wages) > 10:
+            kde_obs = gaussian_kde(obs_wages)
+            wage_range = np.linspace(obs_wages.min(), obs_wages.max(), 200)
+            density_obs = kde_obs(wage_range)
+            ax.plot(wage_range, density_obs, label='Observed', color='steelblue', linewidth=2)
+
+        # Predicted wages (probability-weighted KDE)
+        pred_wages = df_working['wage'].values
+        pred_probs = df_working['pred_prob'].values
+        mask_finite = np.isfinite(pred_wages) & (pred_probs > 0)
+        pred_wages = pred_wages[mask_finite]
+        pred_probs = pred_probs[mask_finite]
+
+        if len(pred_wages) > 10:
+            # Weighted KDE approximation: sample according to probabilities
+            sample_size = min(10000, len(pred_wages))
+            idx_sample = np.random.choice(len(pred_wages), size=sample_size, p=pred_probs / pred_probs.sum())
+            pred_wages_sampled = pred_wages[idx_sample]
+
+            kde_pred = gaussian_kde(pred_wages_sampled)
+            wage_range_pred = np.linspace(pred_wages.min(), pred_wages.max(), 200)
+            density_pred = kde_pred(wage_range_pred)
+            ax.plot(wage_range_pred, density_pred, label='Predicted', color='coral', linewidth=2)
+
+        ax.set_xlabel('Hourly Wage')
+        ax.set_ylabel('Density')
+        ax.set_title('Wage Distribution: Observed vs Predicted (Total, Working Only)')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+
+        fig.tight_layout()
+        output_path = output_dir / f'{prefix}wage_distribution_total.png'
+        fig.savefig(output_path, dpi=150)
+        plt.close(fig)
+        plot_paths['wage_dist_total'] = output_path
+
+        # Per-group plots
+        for group_name in group_labels:
+            df_group_working = df_working[df_working['group'] == group_name]
+            df_chosen_group_working = df_chosen_working[df_chosen_working['group'] == group_name]
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+
+            # Observed
+            obs_wages_g = df_chosen_group_working['wage'].values
+            obs_wages_g = obs_wages_g[np.isfinite(obs_wages_g)]
+
+            if len(obs_wages_g) > 10:
+                kde_obs_g = gaussian_kde(obs_wages_g)
+                wage_range_g = np.linspace(obs_wages_g.min(), obs_wages_g.max(), 200)
+                density_obs_g = kde_obs_g(wage_range_g)
+                ax.plot(wage_range_g, density_obs_g, label='Observed', color='steelblue', linewidth=2)
+
+            # Predicted
+            pred_wages_g = df_group_working['wage'].values
+            pred_probs_g = df_group_working['pred_prob'].values
+            mask_finite_g = np.isfinite(pred_wages_g) & (pred_probs_g > 0)
+            pred_wages_g = pred_wages_g[mask_finite_g]
+            pred_probs_g = pred_probs_g[mask_finite_g]
+
+            if len(pred_wages_g) > 10 and pred_probs_g.sum() > 0:
+                sample_size_g = min(10000, len(pred_wages_g))
+                idx_sample_g = np.random.choice(len(pred_wages_g), size=sample_size_g, p=pred_probs_g / pred_probs_g.sum())
+                pred_wages_sampled_g = pred_wages_g[idx_sample_g]
+
+                kde_pred_g = gaussian_kde(pred_wages_sampled_g)
+                wage_range_pred_g = np.linspace(pred_wages_g.min(), pred_wages_g.max(), 200)
+                density_pred_g = kde_pred_g(wage_range_pred_g)
+                ax.plot(wage_range_pred_g, density_pred_g, label='Predicted', color='coral', linewidth=2)
+
+            ax.set_xlabel('Hourly Wage')
+            ax.set_ylabel('Density')
+            ax.set_title(f'Wage Distribution: Observed vs Predicted ({group_name}, Working Only)')
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+
+            fig.tight_layout()
+            output_path_g = output_dir / f'{prefix}wage_distribution_{group_name.lower()}.png'
+            fig.savefig(output_path_g, dpi=150)
+            plt.close(fig)
+            plot_paths[f'wage_dist_{group_name.lower()}'] = output_path_g
+
+        LOGGER.info(f"   Generated {len(plot_paths)} wage distribution plots")
+
+    except Exception as e:
+        LOGGER.error(f"Error generating wage distribution plots: {e}")
+        import traceback
+        traceback.print_exc()
+
+    return plot_paths
+
+
 def generate_html_report_styled(
     parsed_params: ParsedParameters,
     fit_results: Dict[str, Dict[str, Any]],
@@ -1573,6 +2131,7 @@ def generate_html_report_styled(
     estimation_time_seconds: float = None,
     post_estimation_time_seconds: float = None,
     total_elapsed_seconds: float = None,
+    n_iterations: int = None,
     prob_diagnostics: Dict[str, Any] = None,
     bound_diagnostics: List[Dict[str, Any]] = None,
     hessian_diagnostics: Dict[str, Any] = None,
@@ -1740,7 +2299,7 @@ def generate_html_report_styled(
         time_section = f"""
     <div class="time-box">
       <h4>⏱️ Elapsed Time</h4>
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; text-align: center;">
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1em; text-align: center;">
         <div>
           <div style="font-size: 0.9em; opacity: 0.8;">Estimation</div>
           <div class="time-value">{format_time(estimation_time_seconds)}</div>
@@ -1752,6 +2311,10 @@ def generate_html_report_styled(
         <div>
           <div style="font-size: 0.9em; opacity: 0.8;">Total</div>
           <div class="time-value">{format_time(total_elapsed_seconds)}</div>
+        </div>
+        <div>
+          <div style="font-size: 0.9em; opacity: 0.8;">Iterations</div>
+          <div class="time-value">{n_iterations if n_iterations is not None else 'N/A'}</div>
         </div>
       </div>
     </div>
@@ -1770,65 +2333,9 @@ def generate_html_report_styled(
             wage_params = params
             break
 
-    if wage_params:
-        beta_w0 = wage_params.get('beta_w0', 0.0)
-        beta_w_educL = wage_params.get('beta_w_educL', 0.0)
-        beta_w_educH = wage_params.get('beta_w_educH', 0.0)
-        beta_pexp = wage_params.get('beta_pexp', 0.0)
-        beta_pexp2 = wage_params.get('beta_pexp2', 0.0)
-        sigma = wage_params.get('sigma', 0.0)
-
-        wage_equation_html = f"""
-        <div class="stats-box" style="margin-top: 1em;">
-            <h4>Log-Wage Equation (Mincer Style)</h4>
-            <div class="math-block symbolic">
-                log(wage) = β<sub>w0</sub> + β<sub>w,educL</sub> · educL + β<sub>w,educH</sub> · educH
-                           + β<sub>pexp</sub> · experience + β<sub>pexp²</sub> · experience² + ε
-                <br><br>
-                where ε ~ N(0, σ²)
-            </div>
-            <div class="math-block numerical" style="margin-top: 1em;">
-                log(wage) = {beta_w0:.4f} + {beta_w_educL:+.4f} · educL + {beta_w_educH:+.4f} · educH
-                           + {beta_pexp:+.4f} · experience + {beta_pexp2:+.6f} · experience² + ε
-                <br><br>
-                σ = {sigma:.4f}
-            </div>
-        </div>
-        """
-
-    # Build hours opportunity HTML
-    hours_opportunity_html = ""
-    if wage_params:  # Same params dict contains opportunity parameters
-        beta_work = wage_params.get('beta_work', 0.0)
-        beta_pt1 = wage_params.get('beta_pt1', 0.0)
-        beta_pt2 = wage_params.get('beta_pt2', 0.0)
-        beta_ft = wage_params.get('beta_ft', 0.0)
-        beta_gsur = wage_params.get('beta_gsur', 0.0)
-        beta_work_educL = wage_params.get('beta_work_educL', 0.0)
-        beta_work_educH = wage_params.get('beta_work_educH', 0.0)
-        beta_work_female = wage_params.get('beta_work_female', 0.0)
-        beta_work_couple = wage_params.get('beta_work_couple', 0.0)
-        beta_work_idf = wage_params.get('beta_work_idf', 0.0)
-
-        hours_opportunity_html = f"""
-        <div class="stats-box" style="margin-top: 1em;">
-            <h4>Hours Opportunity Function</h4>
-            <div class="math-block symbolic">
-                log h(h|X) = β<sub>work</sub> · I(h>0) + β<sub>pt1</sub> · I(h∈[18.5,20.5])
-                           + β<sub>pt2</sub> · I(h∈[29.5,30.5]) + β<sub>ft</sub> · I(h∈[37.5,40.5])
-                           + β<sub>gsur</sub> · gsur + β<sub>work,educL</sub> · educL + β<sub>work,educH</sub> · educH
-                           + β<sub>work,female</sub> · female + β<sub>work,couple</sub> · couple + β<sub>work,idf</sub> · idf
-            </div>
-            <div class="math-block numerical" style="margin-top: 1em;">
-                log h(h|X) = {beta_work:.4f} · I(h>0) + {beta_pt1:+.4f} · I(h∈[18.5,20.5])
-                           + {beta_pt2:+.4f} · I(h∈[29.5,30.5]) + {beta_ft:+.4f} · I(h∈[37.5,40.5])
-                <br>
-                           + {beta_gsur:+.4f} · gsur + {beta_work_educL:+.4f} · educL + {beta_work_educH:+.4f} · educH
-                <br>
-                           + {beta_work_female:+.4f} · female + {beta_work_couple:+.4f} · couple + {beta_work_idf:+.4f} · idf
-            </div>
-        </div>
-        """
+    # Use dynamic builders for specification-agnostic equations
+    wage_equation_html = build_wage_equation_html_dynamic(wage_params)
+    hours_opportunity_html = build_hours_opportunity_html_dynamic(wage_params)
 
     # Build MUC analysis table
     muc_analysis_html = ""
@@ -2099,6 +2606,28 @@ def generate_html_report_styled(
             plots_section += f'<h3>Utility Indifference Curves by Group</h3><div class="contour-grid">{"".join(contour_plots)}</div>'
         if fit_plots:
             plots_section += f'<div class="two-col">{"".join(fit_plots)}</div>'
+
+        # Hours distribution plots
+        hours_dist_plots = []
+        if 'hours_dist_total' in plot_paths:
+            hours_dist_plots.append(f'<div class="plot-box"><img src="{plot_paths["hours_dist_total"].name}" alt="Hours Distribution (Total)"></div>')
+        for group in ['singles', 'couples']:
+            key = f'hours_dist_{group}'
+            if key in plot_paths:
+                hours_dist_plots.append(f'<div class="plot-box"><img src="{plot_paths[key].name}" alt="Hours Distribution ({group.capitalize()})"></div>')
+        if hours_dist_plots:
+            plots_section += f'<h3>📊 Hours Distribution: Observed vs Predicted</h3><div class="contour-grid">{"".join(hours_dist_plots)}</div>'
+
+        # Wage distribution plots
+        wage_dist_plots = []
+        if 'wage_dist_total' in plot_paths:
+            wage_dist_plots.append(f'<div class="plot-box"><img src="{plot_paths["wage_dist_total"].name}" alt="Wage Distribution (Total)"></div>')
+        for group in ['singles', 'couples']:
+            key = f'wage_dist_{group}'
+            if key in plot_paths:
+                wage_dist_plots.append(f'<div class="plot-box"><img src="{plot_paths[key].name}" alt="Wage Distribution ({group.capitalize()})"></div>')
+        if wage_dist_plots:
+            plots_section += f'<h3>📈 Wage Distribution: Observed vs Predicted (Working Only)</h3><div class="contour-grid">{"".join(wage_dist_plots)}</div>'
 
     # Color legend
     color_legend = """
@@ -3665,10 +4194,19 @@ def run_styled_post_estimation(
 
     # Extract timing info from results
     estimation_time = None
+    n_iterations = None
     if 'summary' in data:
         estimation_time = data['summary'].get('total_walltime_seconds')
+        n_iterations = data['summary'].get('n_iterations')
     elif 'estimation_time_seconds' in data:
         estimation_time = data['estimation_time_seconds']
+
+    # Fallback: Try to extract from results groups
+    if n_iterations is None and 'results' in data:
+        for group_data in data['results'].values():
+            if 'n_iterations' in group_data:
+                n_iterations = group_data['n_iterations']
+                break
 
     # Compute fit statistics
     fit_stats = {}
@@ -3786,6 +4324,13 @@ def run_styled_post_estimation(
     plot_paths.update(plot_mu_distributions_by_group(mu_results, mnl_base, parsed, output_dir, prefix))
     plot_paths.update(plot_negative_mu_diagnostics(mu_results, output_dir, prefix))
 
+    # NEW: Hours and Wage distribution comparisons
+    if mnl_base is not None:
+        LOGGER.info("  Generating hours distribution plots...")
+        plot_paths.update(plot_hours_distribution_comparison(parsed, mnl_base, output_dir, prefix))
+        LOGGER.info("  Generating wage distribution plots...")
+        plot_paths.update(plot_wage_distribution_comparison(parsed, mnl_base, output_dir, prefix))
+
     # Generate HTML report
     LOGGER.info("\n6. Generating HTML report...")
 
@@ -3818,6 +4363,7 @@ def run_styled_post_estimation(
         estimation_time_seconds=estimation_time,
         post_estimation_time_seconds=post_estimation_time,
         total_elapsed_seconds=total_time if estimation_time else None,
+        n_iterations=n_iterations,
         prob_diagnostics=prob_diagnostics,
         bound_diagnostics=bound_diagnostics,
         hessian_diagnostics=hessian_diagnostics,

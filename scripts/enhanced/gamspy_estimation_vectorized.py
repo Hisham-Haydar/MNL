@@ -91,6 +91,30 @@ def box_cox_transform(x, theta, eps=LOG_EPS):
     return (gp_exp(theta * gp_log(x + eps)) - 1.0) / (theta + eps)
 
 
+def _extract_var_level(var) -> float:
+    """
+    Extract scalar level from a GAMSPy Variable across versions.
+    """
+    if hasattr(var, "records") and var.records is not None:
+        if hasattr(var.records, "level"):
+            level_series = var.records.level
+            if hasattr(level_series, "iloc") and len(level_series) > 0:
+                return float(level_series.iloc[0])
+    if hasattr(var, "level"):
+        return float(var.level)
+    if hasattr(var, "l"):
+        try:
+            return float(var.l)
+        except Exception:
+            pass
+    if hasattr(var, "records") and hasattr(var.records, "iloc"):
+        if len(var.records) > 0:
+            last_col = var.records.columns[-1]
+            return float(var.records.iloc[0][last_col])
+    logging.warning(f"Could not extract level for variable {getattr(var, 'name', '<unknown>')}, defaulting to 0.0")
+    return 0.0
+
+
 # ==============================================================================
 # Vectorized Singles Estimation
 # ==============================================================================
@@ -541,9 +565,9 @@ def estimate_singles_vectorized_gamspy(
     # Solve
     if solver_options:
         logger.info(f"  Solver options: {solver_options}")
-        result = model.solve(solver=solver_name, solver_options=solver_options)
+        solve_result = model.solve(solver=solver_name, solver_options=solver_options)
     else:
-        result = model.solve(solver=solver_name)
+        solve_result = model.solve(solver=solver_name)
 
     walltime = time.time() - start_time
 
@@ -551,25 +575,52 @@ def estimate_singles_vectorized_gamspy(
     # 6. Extract results
     # ========================================================================
 
-    theta_final = np.array([param_vars[pname].l for pname in spec.all_param_names])
+    theta_final = np.array([
+        _extract_var_level(param_vars[pname])
+        for pname in spec.all_param_names
+    ])
+
+    ll_final = getattr(model, "objective_value", None)
+    if ll_final is None:
+        ll_final = getattr(solve_result, "objective_value", None)
+
+    solve_status_enum = getattr(model, "solve_status", None)
+    model_status_enum = getattr(model, "status", None)
+
+    solver_status = str(solve_status_enum) if solve_status_enum else "Unknown"
+    model_status = str(model_status_enum) if model_status_enum else "Unknown"
+
+    n_iterations = getattr(model, "iteration_count", None)
+    if n_iterations is None:
+        n_iterations = getattr(model, "iter_used", None)
+    if n_iterations is None:
+        n_iterations = getattr(solve_result, "iteration_count", None)
+    if n_iterations is None:
+        n_iterations = getattr(solve_result, "iter_used", None)
 
     logger.info("=" * 80)
     logger.info("VECTORIZED ESTIMATION COMPLETE")
     logger.info("=" * 80)
-    logger.info(f"  Status: {result.status}")
-    logger.info(f"  Objective value (LL): {result.objective_value:.4f}")
+    logger.info(f"  Solver status: {solver_status}")
+    logger.info(f"  Model status: {model_status}")
+    if ll_final is not None:
+        logger.info(f"  Objective value (LL): {ll_final:.4f}")
     logger.info(f"  Wall time: {walltime:.2f} seconds")
 
     return {
         "theta": theta_final,
-        "ll": result.objective_value,
-        "status": str(result.status),
+        "log_likelihood": ll_final,
+        "solver_status": solver_status,
+        "model_status": model_status,
         "walltime": walltime,
+        "n_iterations": n_iterations,
+        "gamspy_result": solve_result,
         "solver": solver_name,
         "n_obs": data.n_obs,
         "n_groups": data.n_groups,
         "n_alts": n_alts,
         "spec_name": spec.name,
+        "ll": ll_final,
     }
 
 

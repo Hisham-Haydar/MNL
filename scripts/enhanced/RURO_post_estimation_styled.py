@@ -2573,7 +2573,8 @@ def compute_fit_diagnostics_from_data(
             
             # Predicted participation
             pred_participation = (df_g.groupby('idhh').apply(
-                lambda x: (x['prob'] * (x['hours'] > 0).astype(float)).sum()
+                lambda x: (x['prob'] * (x['hours'] > 0).astype(float)).sum(),
+                include_groups=False
             )).mean()
             
             # Predicted mean hours among workers
@@ -2585,7 +2586,10 @@ def compute_fit_diagnostics_from_data(
                 denominator = (x['prob'].values * working_mask).sum()
                 return numerator / denominator if denominator > 0 else 0.0
             
-            pred_hours = df_g.groupby('idhh').apply(household_pred_hours).mean()
+            pred_hours = df_g.groupby('idhh').apply(
+                household_pred_hours,
+                include_groups=False
+            ).mean()
             
             # Hours distribution (binned) for observed
             bins = [0, 5, 15, 25, 35, 45, 55, 65, 100]
@@ -2702,7 +2706,8 @@ def compute_fit_diagnostics_from_data(
                     
                     # Predicted participation
                     pred_participation = (df_cou.groupby('idhh').apply(
-                        lambda x: (x['prob'] * (x[hours_col] > 0).astype(float)).sum()
+                        lambda x: (x['prob'] * (x[hours_col] > 0).astype(float)).sum(),
+                        include_groups=False
                     )).mean()
                     
                     # Predicted hours among workers
@@ -2714,7 +2719,10 @@ def compute_fit_diagnostics_from_data(
                         denominator = (x['prob'].values * working_mask).sum()
                         return numerator / denominator if denominator > 0 else 0.0
                     
-                    pred_hours = df_cou.groupby('idhh').apply(household_pred_hours).mean()
+                    pred_hours = df_cou.groupby('idhh').apply(
+                        household_pred_hours,
+                        include_groups=False
+                    ).mean()
                     
                     # Hours distribution (binned) for observed
                     bins = [0, 5, 15, 25, 35, 45, 55, 65, 100]

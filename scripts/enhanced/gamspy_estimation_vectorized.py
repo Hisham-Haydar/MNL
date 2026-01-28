@@ -30,7 +30,7 @@ import numpy as np
 
 try:
     from gamspy import Container, Model, Variable, Set, Parameter, Sum as GamsSum
-    from gamspy.math import exp as gp_exp, log as gp_log, power as gp_power
+    from gamspy.math import exp as gp_exp, log as gp_log
     HAS_GAMSPY = True
 except ImportError:
     HAS_GAMSPY = False
@@ -63,8 +63,20 @@ SOLVER_MAP = {
 def ensure_local_workdir():
     """Ensure GAMSPy uses local working directory, not network drives."""
     import os
-    local_dir = Path.cwd() / "_gams_work"
-    local_dir.mkdir(exist_ok=True)
+    cwd = Path.cwd()
+    if str(cwd).startswith("\\\\"):
+        base = (
+            os.environ.get("LOCALAPPDATA")
+            or os.environ.get("TEMP")
+            or os.environ.get("TMP")
+            or str(Path.home())
+        )
+        local_dir = Path(base) / "gams_work"
+        local_dir.mkdir(parents=True, exist_ok=True)
+        os.chdir(local_dir)
+    else:
+        local_dir = cwd / "_gams_work"
+        local_dir.mkdir(exist_ok=True)
     os.environ["GAMSPY_WORKING_DIR"] = str(local_dir)
 
 
@@ -74,10 +86,9 @@ def box_cox_transform(x, theta, eps=LOG_EPS):
 
     Handles θ ≈ 0 case: BC(x, 0) = log(x)
     """
-    # For GAMSPy expressions, we need to handle both cases
-    # When theta is very small, use log approximation
-    # Otherwise use power transformation
-    return gp_power(x + eps, theta) / (theta + eps)
+    # GAMS POWER requires constant exponent; use exp(theta*log(x)) instead
+    # Using eps in denominator provides a smooth approximation around theta=0
+    return (gp_exp(theta * gp_log(x + eps)) - 1.0) / (theta + eps)
 
 
 # ==============================================================================
@@ -176,44 +187,28 @@ def estimate_singles_vectorized_gamspy(
         container,
         name="consumption",
         domain=[i_set, j_set],
-        records=np.column_stack([
-            np.repeat(range(n_groups), n_alts),
-            np.tile(range(n_alts), n_groups),
-            consumption_2d.flatten()
-        ])
+        records=consumption_2d
     )
 
     leisure_param = Parameter(
         container,
         name="leisure",
         domain=[i_set, j_set],
-        records=np.column_stack([
-            np.repeat(range(n_groups), n_alts),
-            np.tile(range(n_alts), n_groups),
-            leisure_2d.flatten()
-        ])
+        records=leisure_2d
     )
 
     chosen_param = Parameter(
         container,
         name="chosen",
         domain=[i_set, j_set],
-        records=np.column_stack([
-            np.repeat(range(n_groups), n_alts),
-            np.tile(range(n_alts), n_groups),
-            chosen_2d.flatten()
-        ])
+        records=chosen_2d
     )
 
     prior_param = Parameter(
         container,
         name="prior",
         domain=[i_set, j_set],
-        records=np.column_stack([
-            np.repeat(range(n_groups), n_alts),
-            np.tile(range(n_alts), n_groups),
-            prior_2d.flatten()
-        ])
+        records=prior_2d
     )
 
     # Scaling constants
@@ -286,7 +281,7 @@ def estimate_singles_vectorized_gamspy(
             container,
             name="age_norm",
             domain=[i_set],
-            records=np.column_stack([range(n_groups), age_norm_data])
+            records=age_norm_data
         )
         beta_l_age = param_vars[f'beta_l_age_norm_{gender_suffix}']
         # Age shifter multiplies the BC(leisure) term
@@ -298,7 +293,7 @@ def estimate_singles_vectorized_gamspy(
             container,
             name="age_norm2",
             domain=[i_set],
-            records=np.column_stack([range(n_groups), age_norm2_data])
+            records=age_norm2_data
         )
         beta_l_age2 = param_vars[f'beta_l_age_norm2_{gender_suffix}']
         u_leisure = u_leisure + beta_l_age2 * age_norm2_param * bc_leisure
@@ -310,7 +305,7 @@ def estimate_singles_vectorized_gamspy(
             container,
             name="educL",
             domain=[i_set],
-            records=np.column_stack([range(n_groups), educL_data])
+            records=educL_data
         )
         beta_l_educL = param_vars[f'beta_l_educL_{gender_suffix}']
         u_leisure = u_leisure + beta_l_educL * educL_param * bc_leisure
@@ -321,7 +316,7 @@ def estimate_singles_vectorized_gamspy(
             container,
             name="educH",
             domain=[i_set],
-            records=np.column_stack([range(n_groups), educH_data])
+            records=educH_data
         )
         beta_l_educH = param_vars[f'beta_l_educH_{gender_suffix}']
         u_leisure = u_leisure + beta_l_educH * educH_param * bc_leisure
@@ -333,7 +328,7 @@ def estimate_singles_vectorized_gamspy(
             container,
             name="n_children",
             domain=[i_set],
-            records=np.column_stack([range(n_groups), n_children_data])
+            records=n_children_data
         )
         beta_l_children = param_vars[f'beta_l_n_children_{gender_suffix}']
         u_leisure = u_leisure + beta_l_children * n_children_param * bc_leisure
@@ -343,6 +338,7 @@ def estimate_singles_vectorized_gamspy(
     # ========================================================================
 
     log_h = 0.0
+    working_param = None
 
     # Build hours opportunity from specification
     if spec.hours_shifters:
@@ -356,55 +352,35 @@ def estimate_singles_vectorized_gamspy(
         # Create Parameters for shifter variables
         working_param = Parameter(
             container, name="working", domain=[i_set, j_set],
-            records=np.column_stack([
-                np.repeat(range(n_groups), n_alts),
-                np.tile(range(n_alts), n_groups),
-                working_2d.flatten()
-            ])
+            records=working_2d
         )
         pt1_param = Parameter(
             container, name="working_pt1", domain=[i_set, j_set],
-            records=np.column_stack([
-                np.repeat(range(n_groups), n_alts),
-                np.tile(range(n_alts), n_groups),
-                pt1_2d.flatten()
-            ])
+            records=pt1_2d
         )
         pt2_param = Parameter(
             container, name="working_pt2", domain=[i_set, j_set],
-            records=np.column_stack([
-                np.repeat(range(n_groups), n_alts),
-                np.tile(range(n_alts), n_groups),
-                pt2_2d.flatten()
-            ])
+            records=pt2_2d
         )
         ft_param = Parameter(
             container, name="working_ft", domain=[i_set, j_set],
-            records=np.column_stack([
-                np.repeat(range(n_groups), n_alts),
-                np.tile(range(n_alts), n_groups),
-                ft_2d.flatten()
-            ])
+            records=ft_2d
         )
         gsur_param = Parameter(
             container, name="gsur", domain=[i_set, j_set],
-            records=np.column_stack([
-                np.repeat(range(n_groups), n_alts),
-                np.tile(range(n_alts), n_groups),
-                gsur_2d.flatten()
-            ])
+            records=gsur_2d
         )
 
         # Education Parameters (1D - same across alternatives)
         educL_data = data.educL.reshape(n_groups, n_alts)[:, 0]
         educL_param_1d = Parameter(
             container, name="educL_1d", domain=[i_set],
-            records=np.column_stack([range(n_groups), educL_data])
+            records=educL_data
         )
         educH_data = data.educH.reshape(n_groups, n_alts)[:, 0]
         educH_param_1d = Parameter(
             container, name="educH_1d", domain=[i_set],
-            records=np.column_stack([range(n_groups), educH_data])
+            records=educH_data
         )
 
         # Build log_h from specification
@@ -468,11 +444,7 @@ def estimate_singles_vectorized_gamspy(
         # Create wage parameter
         log_wage_param = Parameter(
             container, name="log_wage", domain=[i_set, j_set],
-            records=np.column_stack([
-                np.repeat(range(n_groups), n_alts),
-                np.tile(range(n_alts), n_groups),
-                log_wage_2d.flatten()
-            ])
+            records=log_wage_2d
         )
 
         # Build wage mean (Mincer equation): μ_w = β_w0 + β_educL*educL + β_educH*educH + β_pexp*pexp + β_pexp2*pexp²
@@ -489,7 +461,7 @@ def estimate_singles_vectorized_gamspy(
             pexp_data = data.pexp_years.reshape(n_groups, n_alts)[:, 0]
             pexp_param = Parameter(
                 container, name="pexp_years", domain=[i_set],
-                records=np.column_stack([range(n_groups), pexp_data])
+                records=pexp_data
             )
             mu_wage = mu_wage + param_vars['beta_pexp'] * pexp_param
 
@@ -497,7 +469,7 @@ def estimate_singles_vectorized_gamspy(
                 pexp2_data = data.pexp_years2.reshape(n_groups, n_alts)[:, 0]
                 pexp2_param = Parameter(
                     container, name="pexp_years2", domain=[i_set],
-                    records=np.column_stack([range(n_groups), pexp2_data])
+                    records=pexp2_data
                 )
                 mu_wage = mu_wage + param_vars['beta_pexp2'] * pexp2_param
 
@@ -515,16 +487,12 @@ def estimate_singles_vectorized_gamspy(
 
         # Only add wage likelihood for working alternatives (working=1)
         # For non-working alternatives (working=0), log_w contribution is 0
-        if not working_param:
+        if working_param is None:
             # If working_param wasn't created earlier, create it now
             working_2d_check = data.working.reshape(n_groups, n_alts)
             working_param = Parameter(
                 container, name="working_check", domain=[i_set, j_set],
-                records=np.column_stack([
-                    np.repeat(range(n_groups), n_alts),
-                    np.tile(range(n_alts), n_groups),
-                    working_2d_check.flatten()
-                ])
+                records=working_2d_check
             )
 
         log_w = working_param * log_w_density

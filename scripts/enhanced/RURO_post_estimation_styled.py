@@ -102,6 +102,31 @@ def safe_format(x: Any, fmt: str = ".4f", fallback: str = "N/A") -> str:
     return fallback
 
 
+def _format_signed_value(value: float, fmt: str = ".4f") -> str:
+    """Format a signed numeric value with explicit +/− and spacing."""
+    if value < 0:
+        return f"- {abs(value):{fmt}}"
+    return f"+ {value:{fmt}}"
+
+
+def _format_signed_term(value: float, term: str, fmt: str = ".4f") -> str:
+    """Format a signed coefficient with a term."""
+    return f"{_format_signed_value(value, fmt)} · {term}"
+
+
+def _join_signed_terms(terms: List[str]) -> str:
+    """Join signed terms, removing a leading '+' if present."""
+    if not terms:
+        return ""
+    cleaned = []
+    for i, term in enumerate(terms):
+        if i == 0 and term.startswith("+ "):
+            cleaned.append(term[2:])
+        else:
+            cleaned.append(term)
+    return " ".join(cleaned)
+
+
 def canonicalize_group_name(group: str) -> str:
     """
     Normalize group names to canonical form: 'sm', 'sf', 'cou'.
@@ -1241,10 +1266,10 @@ def generate_specification_html(parsed_params: ParsedParameters) -> str:
         theta_l_str = f"{theta_l:.4f}" if theta_l is not None else "0 (log)"
 
         symbolic_html += f"U = {beta_c:.4f} · BC(C, {theta_c_str}) + ("
-        symbolic_html += f"{beta_l0:.4f}"
+        inner_terms = [f"{beta_l0:.4f}"]
         for s, v in zip(shifters, shifter_vals):
-            symbolic_html += f" + {v:+.4f}·{s}"
-        symbolic_html += f") · BC(L, {theta_l_str})"
+            inner_terms.append(f"{_format_signed_value(v, '.4f')}·{s}")
+        symbolic_html += f"{' '.join(inner_terms)}) · BC(L, {theta_l_str})"
 
         symbolic_html += """
                 </div>
@@ -1602,21 +1627,21 @@ def build_wage_equation_html_dynamic(wage_params: Dict[str, float]) -> str:
     if 'beta_w0' in wage_params:
         numerical_parts.append(f"{wage_params['beta_w0']:.4f}")
     if 'beta_w_educL' in wage_params:
-        numerical_parts.append(f"{wage_params['beta_w_educL']:+.4f} · educL")
+        numerical_parts.append(_format_signed_term(wage_params['beta_w_educL'], "educL", ".4f"))
     if 'beta_w_educH' in wage_params:
-        numerical_parts.append(f"{wage_params['beta_w_educH']:+.4f} · educH")
+        numerical_parts.append(_format_signed_term(wage_params['beta_w_educH'], "educH", ".4f"))
     if 'beta_pexp' in wage_params:
-        numerical_parts.append(f"{wage_params['beta_pexp']:+.4f} · experience")
+        numerical_parts.append(_format_signed_term(wage_params['beta_pexp'], "experience", ".4f"))
     if 'beta_pexp2' in wage_params:
-        numerical_parts.append(f"{wage_params['beta_pexp2']:+.6f} · experience²")
+        numerical_parts.append(_format_signed_term(wage_params['beta_pexp2'], "experience²", ".6f"))
 
     # Add demographic shifters
     for param in demographic_params:
         if param in wage_params:
             var_name = param.replace('beta_w_', '')
-            numerical_parts.append(f"{wage_params[param]:+.4f} · {var_name}")
+            numerical_parts.append(_format_signed_term(wage_params[param], var_name, ".4f"))
 
-    numerical_eq = ' + '.join(numerical_parts) if numerical_parts else '(no wage parameters)'
+    numerical_eq = _join_signed_terms(numerical_parts) if numerical_parts else '(no wage parameters)'
 
     # Sigma
     sigma_html = ""
@@ -1688,39 +1713,39 @@ def build_hours_opportunity_html_dynamic(wage_params: Dict[str, float]) -> str:
     # Line 1: Core parameters
     line1_parts = []
     if 'beta_work' in wage_params:
-        line1_parts.append(f"{wage_params['beta_work']:.4f} · I(h>0)")
+        line1_parts.append(_format_signed_term(wage_params['beta_work'], "I(h>0)", ".4f"))
     if 'beta_pt1' in wage_params:
-        line1_parts.append(f"{wage_params['beta_pt1']:+.4f} · I(h∈[18.5,20.5])")
+        line1_parts.append(_format_signed_term(wage_params['beta_pt1'], "I(h∈[18.5,20.5])", ".4f"))
     if 'beta_pt2' in wage_params:
-        line1_parts.append(f"{wage_params['beta_pt2']:+.4f} · I(h∈[29.5,30.5])")
+        line1_parts.append(_format_signed_term(wage_params['beta_pt2'], "I(h∈[29.5,30.5])", ".4f"))
     if 'beta_ft' in wage_params:
-        line1_parts.append(f"{wage_params['beta_ft']:+.4f} · I(h∈[37.5,40.5])")
+        line1_parts.append(_format_signed_term(wage_params['beta_ft'], "I(h∈[37.5,40.5])", ".4f"))
 
     if line1_parts:
-        numerical_lines.append(' + '.join(line1_parts))
+        numerical_lines.append(_join_signed_terms(line1_parts))
 
     # Line 2: Shifters
     line2_parts = []
     if 'beta_gsur' in wage_params:
-        line2_parts.append(f"{wage_params['beta_gsur']:+.4f} · gsur")
+        line2_parts.append(_format_signed_term(wage_params['beta_gsur'], "gsur", ".4f"))
     if 'beta_work_educL' in wage_params:
-        line2_parts.append(f"{wage_params['beta_work_educL']:+.4f} · educL")
+        line2_parts.append(_format_signed_term(wage_params['beta_work_educL'], "educL", ".4f"))
     if 'beta_work_educH' in wage_params:
-        line2_parts.append(f"{wage_params['beta_work_educH']:+.4f} · educH")
+        line2_parts.append(_format_signed_term(wage_params['beta_work_educH'], "educH", ".4f"))
     if 'beta_work_female' in wage_params:
-        line2_parts.append(f"{wage_params['beta_work_female']:+.4f} · female")
+        line2_parts.append(_format_signed_term(wage_params['beta_work_female'], "female", ".4f"))
     if 'beta_work_couple' in wage_params:
-        line2_parts.append(f"{wage_params['beta_work_couple']:+.4f} · couple")
+        line2_parts.append(_format_signed_term(wage_params['beta_work_couple'], "couple", ".4f"))
     if 'beta_work_idf' in wage_params:
-        line2_parts.append(f"{wage_params['beta_work_idf']:+.4f} · idf")
+        line2_parts.append(_format_signed_term(wage_params['beta_work_idf'], "idf", ".4f"))
 
     for param in ['beta_work_age', 'beta_work_age2', 'beta_work_nc']:
         if param in wage_params:
             var_name = param.replace('beta_work_', '')
-            line2_parts.append(f"{wage_params[param]:+.4f} · {var_name}")
+            line2_parts.append(_format_signed_term(wage_params[param], var_name, ".4f"))
 
     if line2_parts:
-        numerical_lines.append(' + '.join(line2_parts))
+        numerical_lines.append(_join_signed_terms(line2_parts))
 
     numerical_eq = '<br>                           + '.join(numerical_lines) if numerical_lines else '(no hours parameters)'
 
@@ -1737,9 +1762,267 @@ def build_hours_opportunity_html_dynamic(wage_params: Dict[str, float]) -> str:
     """
 
 
+def _get_param_value(params: Dict[str, float], base: str, suffixes: Tuple[str, ...] = ()) -> Optional[float]:
+    """Fetch parameter value with optional suffix fallbacks."""
+    for suf in suffixes:
+        key = f"{base}{suf}"
+        if key in params:
+            return params[key]
+    if base in params:
+        return params[base]
+    return None
+
+
+def _resolve_column(df: pd.DataFrame, base: str, gender: Optional[str] = None) -> Optional[np.ndarray]:
+    """Resolve a covariate column for a base name with optional gender suffix."""
+    alias_map = {
+        'age': ['age_norm'],
+        'age2': ['age_norm2'],
+        'age_norm': ['age_norm'],
+        'age_norm2': ['age_norm2'],
+        'n_children': ['n_children'],
+        'nc': ['n_children'],
+        'educL': ['educL'],
+        'educH': ['educH'],
+        'educM': ['educM'],
+        'pexp': ['pexp_years'],
+        'pexp2': ['pexp_years2'],
+        'pexp_years': ['pexp_years'],
+        'pexp_years2': ['pexp_years2'],
+        'gsur': ['gsur', 'u_rate'],
+    }
+
+    bases = alias_map.get(base, [base])
+    candidates = []
+    for b in bases:
+        if gender:
+            candidates.extend([f"{b}_{gender}", f"{b}_{gender[0]}"])
+        candidates.append(b)
+
+    for col in candidates:
+        if col in df.columns:
+            return df[col].values
+
+    if base.startswith('reg') and len(base) == 4 and base[3].isdigit():
+        idx = int(base[3])
+        reg_col = f"reg_nuts1_{idx}"
+        if reg_col in df.columns:
+            return df[reg_col].values
+        if 'drgn1' in df.columns:
+            return (df['drgn1'].values == idx).astype(float)
+
+    if base in ('idf', 'reg1'):
+        if 'reg_nuts1_1' in df.columns:
+            return df['reg_nuts1_1'].values
+        if 'drgn1' in df.columns:
+            return (df['drgn1'].values == 1).astype(float)
+
+    return None
+
+
+def _compute_log_h(
+    df: pd.DataFrame,
+    params: Dict[str, float],
+    hours_col: str,
+    gender: Optional[str] = None,
+    group_suffix: str = '',
+    is_couple: bool = False,
+    spec: Optional['EstimationSpec'] = None,
+) -> np.ndarray:
+    """Compute hours opportunity log-density using spec when available."""
+    hours = df[hours_col].values
+    working = (hours > 0).astype(float)
+    pt1 = ((hours >= 18.5) & (hours <= 20.5)).astype(float)
+    pt2 = ((hours >= 29.5) & (hours <= 30.5)).astype(float)
+    ft = ((hours >= 37.5) & (hours <= 40.5)).astype(float)
+
+    log_h = np.zeros(len(df))
+
+    if spec is not None and spec.hours_shifters:
+        suffixes = []
+        if group_suffix:
+            suffixes.append(group_suffix)
+        if gender:
+            suffixes.extend([f"_{gender}", f"_{gender[0]}"])
+
+        for shifter in spec.hours_shifters:
+            var_name = shifter.get('variable')
+            coef_name = shifter.get('coefficient')
+            interaction = shifter.get('interaction')
+            if not var_name or not coef_name:
+                continue
+            coef_val = _get_param_value(params, coef_name, tuple(suffixes))
+            if coef_val is None:
+                continue
+
+            if var_name == 'working':
+                var = working
+            elif var_name == 'working_pt1':
+                var = pt1
+            elif var_name == 'working_pt2':
+                var = pt2
+            elif var_name == 'working_ft':
+                var = ft
+            else:
+                var = _resolve_column(df, var_name, gender=gender)
+                if var is None:
+                    continue
+
+            if interaction == 'working':
+                var = var * working
+
+            log_h += coef_val * var
+
+        return log_h
+
+    beta_work = _get_param_value(params, 'beta_work', (group_suffix,))
+    if beta_work is not None:
+        log_h += beta_work * working
+
+    beta_pt1 = _get_param_value(params, 'beta_pt1', (group_suffix,))
+    if beta_pt1 is not None:
+        log_h += beta_pt1 * pt1
+
+    beta_pt2 = _get_param_value(params, 'beta_pt2', (group_suffix,))
+    if beta_pt2 is not None:
+        log_h += beta_pt2 * pt2
+
+    beta_ft = _get_param_value(params, 'beta_ft', (group_suffix,))
+    if beta_ft is not None:
+        log_h += beta_ft * ft
+
+    beta_gsur = _get_param_value(params, 'beta_gsur', (group_suffix,))
+    if beta_gsur is not None:
+        gsur = _resolve_column(df, 'gsur', gender=gender)
+        if gsur is not None:
+            log_h += beta_gsur * gsur * working
+
+    female_flag = 1.0 if gender == 'female' else 0.0
+    couple_flag = 1.0 if is_couple else 0.0
+
+    for name, val in params.items():
+        if not name.startswith('beta_work_'):
+            continue
+        base = name.replace('beta_work_', '')
+        if base in ('work', 'pt1', 'pt2', 'ft'):
+            continue
+
+        if base in ('female', 'f'):
+            var = female_flag
+        elif base in ('couple', 'in_couple'):
+            var = couple_flag
+        else:
+            var = _resolve_column(df, base, gender=gender)
+
+        if var is not None:
+            log_h += val * var * working
+
+    return log_h
+
+
+def _compute_log_w(
+    df: pd.DataFrame,
+    params: Dict[str, float],
+    wage_col: str,
+    hours_col: str,
+    gender: Optional[str] = None,
+    group_suffix: str = '',
+    is_couple: bool = False,
+    spec: Optional['EstimationSpec'] = None,
+) -> np.ndarray:
+    """Compute wage log-density using spec when available."""
+    if wage_col not in df.columns:
+        return np.zeros(len(df))
+
+    if spec is not None and spec.wage_spec not in ('vw', 'vw_occupation', 'loc_empirical'):
+        return np.zeros(len(df))
+
+    sigma = _get_param_value(params, 'sigma', (group_suffix,))
+    if sigma is None:
+        return np.zeros(len(df))
+
+    sigma = float(abs(sigma)) if abs(sigma) > 1e-12 else 1e-12
+    wage = np.maximum(df[wage_col].values, 1e-12)
+    log_wage = np.log(wage)
+    working = (df[hours_col].values > 0).astype(float)
+
+    mu_w = np.zeros(len(df))
+    female_flag = 1.0 if gender == 'female' else 0.0
+    couple_flag = 1.0 if is_couple else 0.0
+
+    if spec is not None:
+        suffixes = []
+        if group_suffix:
+            suffixes.append(group_suffix)
+        if gender:
+            suffixes.extend([f"_{gender}", f"_{gender[0]}"])
+
+        for shifter in spec.wage_mean_shifters:
+            var_name = shifter.get('variable')
+            coef_name = shifter.get('coefficient')
+            if not var_name or not coef_name:
+                continue
+            coef_val = _get_param_value(params, coef_name, tuple(suffixes))
+            if coef_val is None:
+                continue
+            if var_name == 'intercept':
+                mu_w += coef_val
+                continue
+            if var_name in ('female', 'f'):
+                var = female_flag
+            elif var_name in ('couple', 'in_couple'):
+                var = couple_flag
+            else:
+                var = _resolve_column(df, var_name, gender=gender)
+            if var is None:
+                continue
+            mu_w += coef_val * var
+    else:
+        beta_w0 = _get_param_value(params, 'beta_w0', (group_suffix,))
+        if beta_w0 is not None:
+            mu_w += beta_w0
+
+        for name, val in params.items():
+            if not name.startswith('beta_w_'):
+                continue
+            if name == 'beta_w0':
+                continue
+            base = name.replace('beta_w_', '')
+            if base in ('female', 'f'):
+                var = female_flag
+            elif base in ('couple', 'in_couple'):
+                var = couple_flag
+            else:
+                var = _resolve_column(df, base, gender=gender)
+            if var is not None:
+                mu_w += val * var
+
+        beta_pexp = _get_param_value(params, 'beta_pexp', (group_suffix,))
+        if beta_pexp is not None:
+            pexp = _resolve_column(df, 'pexp', gender=gender)
+            if pexp is not None:
+                mu_w += beta_pexp * pexp
+
+        beta_pexp2 = _get_param_value(params, 'beta_pexp2', (group_suffix,))
+        if beta_pexp2 is not None:
+            pexp2 = _resolve_column(df, 'pexp2', gender=gender)
+            if pexp2 is not None:
+                mu_w += beta_pexp2 * pexp2
+
+    residual = log_wage - mu_w
+    log_w_density = (
+        -0.5 * (residual * residual) / (sigma * sigma)
+        - np.log(sigma)
+        - 0.5 * np.log(2.0 * np.pi)
+    )
+
+    return working * log_w_density
+
+
 def _add_predicted_probabilities(
     df: pd.DataFrame,
     params: Dict[str, float],
+    spec: Optional['EstimationSpec'] = None,
     is_couples: bool = False,
     group_suffix: str = '',
 ) -> pd.DataFrame:
@@ -1751,19 +2034,29 @@ def _add_predicted_probabilities(
     beta_c = params.get(f'beta_c{group_suffix}', params.get('beta_c', 1.0))
     theta_c = params.get(f'theta_c{group_suffix}', params.get('theta_c', 0.5))
 
-    c = df['consumption'].values
+    if 'c_norm' in df.columns:
+        c = df['c_norm'].values
+    else:
+        c = df['consumption'].values
     V = beta_c * boxcox_transform(c, theta_c)
 
     if is_couples:
         theta_l_m = params.get('theta_l_m', params.get('theta_l', 0.5))
         theta_l_f = params.get('theta_l_f', params.get('theta_l', 0.5))
-        l_m = df['leisure_male'].values
-        l_f = df['leisure_female'].values
+        if 'l_norm_male' in df.columns:
+            l_m = df['l_norm_male'].values
+        else:
+            l_m = df['leisure_male'].values
+        if 'l_norm_female' in df.columns:
+            l_f = df['l_norm_female'].values
+        else:
+            l_f = df['leisure_female'].values
         beta_l_m = compute_beta_l_full(df, params, '_m')
         beta_l_f = compute_beta_l_full(df, params, '_f')
         V += beta_l_m * boxcox_transform(l_m, theta_l_m)
         V += beta_l_f * boxcox_transform(l_f, theta_l_f)
 
+        opp_added = False
         for col in [
             'log_q_total_male', 'log_opp_male',
             'log_q_total_female', 'log_opp_female',
@@ -1771,16 +2064,35 @@ def _add_predicted_probabilities(
         ]:
             if col in df.columns:
                 V += df[col].values
+                opp_added = True
+
+        if not opp_added:
+            log_h_m = _compute_log_h(df, params, 'hours_male', gender='male', is_couple=True, spec=spec)
+            log_h_f = _compute_log_h(df, params, 'hours_female', gender='female', is_couple=True, spec=spec)
+            log_w_m = _compute_log_w(df, params, 'wage_male', 'hours_male', gender='male', is_couple=True, spec=spec)
+            log_w_f = _compute_log_w(df, params, 'wage_female', 'hours_female', gender='female', is_couple=True, spec=spec)
+            V += log_h_m + log_h_f + log_w_m + log_w_f
     else:
         theta_l = params.get(f'theta_l{group_suffix}', params.get('theta_l', 0.5))
-        l = df['leisure'].values
+        if 'l_norm' in df.columns:
+            l = df['l_norm'].values
+        else:
+            l = df['leisure'].values
         beta_l = compute_beta_l_full(df, params, group_suffix)
         V += beta_l * boxcox_transform(l, theta_l)
 
+        opp_added = False
         for col in ['log_q_total', 'log_opp']:
             if col in df.columns:
                 V += df[col].values
+                opp_added = True
                 break
+
+        if not opp_added:
+            gender = 'female' if group_suffix in ('_sf', '_f') else 'male'
+            log_h = _compute_log_h(df, params, 'hours', gender=gender, group_suffix=group_suffix, spec=spec)
+            log_w = _compute_log_w(df, params, 'wage', 'hours', gender=gender, group_suffix=group_suffix, spec=spec)
+            V += log_h + log_w
 
     for prior_col in ['prior', 'log_prior']:
         if prior_col in df.columns:
@@ -1800,7 +2112,13 @@ def _add_predicted_probabilities(
     return df
 
 
-def plot_hours_distribution_comparison(parsed_params: ParsedParameters, mnl_base: Path, output_dir: Path, prefix: str = '') -> Dict[str, Path]:
+def plot_hours_distribution_comparison(
+    parsed_params: ParsedParameters,
+    mnl_base: Path,
+    output_dir: Path,
+    prefix: str = '',
+    spec: Optional['EstimationSpec'] = None,
+) -> Dict[str, Path]:
     """
     Generate histograms comparing observed vs predicted hours distributions.
     Returns dict mapping plot keys to file paths.
@@ -1821,7 +2139,7 @@ def plot_hours_distribution_comparison(parsed_params: ParsedParameters, mnl_base
         couples_path = Path(str(mnl_base) + '__couples.parquet')
 
         df_all_parts = []
-        group_labels = []
+        group_defs = []
 
         if singles_path.exists():
             df_singles = pd.read_parquet(singles_path)
@@ -1837,108 +2155,96 @@ def plot_hours_distribution_comparison(parsed_params: ParsedParameters, mnl_base
                         break
                 if not params:
                     continue
-                df_g = _add_predicted_probabilities(df_g, params, is_couples=False, group_suffix=f'_{group_key}')
-                df_g['group'] = 'Singles'
+                df_g = _add_predicted_probabilities(
+                    df_g,
+                    params,
+                    spec=spec,
+                    is_couples=False,
+                    group_suffix=f'_{group_key}'
+                )
+                df_g['group'] = group_key
                 df_all_parts.append(df_g)
-            if df_all_parts:
-                group_labels.append('Singles')
+                group_defs.append((f'singles_{"male" if group_key == "sm" else "female"}', df_g, 'hours'))
 
         if couples_path.exists():
             df_couples = pd.read_parquet(couples_path)
             params = None
-            for try_key in ['m', 'cou', 'couples']:
+            for try_key in ['joint', 'cou', 'couples', 'm']:
                 if try_key in parsed_params.params_by_group:
                     params = parsed_params.get_all_params_for_group(try_key)
                     break
             if params:
-                df_c = _add_predicted_probabilities(df_couples, params, is_couples=True)
-                df_c['group'] = 'Couples'
+                df_c = _add_predicted_probabilities(
+                    df_couples,
+                    params,
+                    spec=spec,
+                    is_couples=True
+                )
+                df_c['group'] = 'couples'
                 df_all_parts.append(df_c)
-                group_labels.append('Couples')
+                group_defs.append(('couples_male', df_c, 'hours_male'))
+                group_defs.append(('couples_female', df_c, 'hours_female'))
 
         if not df_all_parts:
             LOGGER.warning("No MNL data files found for hours distribution plot")
             return {}
 
-        # Combine all data
         df_all = pd.concat(df_all_parts, ignore_index=True)
         chosen_col = 'chosen' if 'chosen' in df_all.columns else 'is_chosen'
 
-        # Extract observed hours (from chosen alternatives)
-        df_chosen = df_all[df_all[chosen_col] == 1].copy()
-
-        # Extract predicted hours (weighted by predicted probabilities)
-        # For predicted, we use all alternatives weighted by their probability
-
-        # Total plot
-        fig, ax = plt.subplots(figsize=(10, 6))
-
-        # Observed distribution
-        obs_counts, _ = np.histogram(df_chosen['hours'].values, bins=bins)
-        obs_freq = obs_counts / obs_counts.sum() * 100
-
-        # Predicted distribution (probability-weighted)
-        pred_counts = np.zeros(len(bins) - 1)
-        for i in range(len(bins) - 1):
-            mask = (df_all['hours'] >= bins[i]) & (df_all['hours'] < bins[i+1])
-            pred_counts[i] = df_all.loc[mask, 'pred_prob'].sum()
-        pred_freq = pred_counts / pred_counts.sum() * 100
-
-        # Plot side-by-side bars
-        x = np.arange(len(bin_labels))
-        width = 0.35
-
-        ax.bar(x - width/2, obs_freq, width, label='Observed', alpha=0.8, color='steelblue')
-        ax.bar(x + width/2, pred_freq, width, label='Predicted', alpha=0.8, color='coral')
-
-        ax.set_xlabel('Weekly Hours')
-        ax.set_ylabel('Percentage (%)')
-        ax.set_title('Hours Distribution: Observed vs Predicted (Total)')
-        ax.set_xticks(x)
-        ax.set_xticklabels(bin_labels, rotation=45, ha='right')
-        ax.legend()
-        ax.grid(True, alpha=0.3, axis='y')
-
-        fig.tight_layout()
-        output_path = output_dir / f'{prefix}hours_distribution_total.png'
-        fig.savefig(output_path, dpi=150)
-        plt.close(fig)
-        plot_paths['hours_dist_total'] = output_path
-
-        # Per-group plots
-        for group_name in group_labels:
-            df_group = df_all[df_all['group'] == group_name]
-            df_chosen_group = df_chosen[df_chosen['group'] == group_name]
-
-            fig, ax = plt.subplots(figsize=(10, 6))
-
-            # Observed
-            obs_counts_g, _ = np.histogram(df_chosen_group['hours'].values, bins=bins)
-            obs_freq_g = obs_counts_g / obs_counts_g.sum() * 100 if obs_counts_g.sum() > 0 else obs_counts_g
-
-            # Predicted
-            pred_counts_g = np.zeros(len(bins) - 1)
+        def _build_obs_pred(df: pd.DataFrame, hours_col: str) -> Tuple[np.ndarray, np.ndarray]:
+            obs_counts, _ = np.histogram(df.loc[df[chosen_col] == 1, hours_col].values, bins=bins)
+            obs_freq = obs_counts / obs_counts.sum() * 100 if obs_counts.sum() > 0 else obs_counts
+            pred_counts = np.zeros(len(bins) - 1)
             for i in range(len(bins) - 1):
-                mask = (df_group['hours'] >= bins[i]) & (df_group['hours'] < bins[i+1])
-                pred_counts_g[i] = df_group.loc[mask, 'pred_prob'].sum()
-            pred_freq_g = pred_counts_g / pred_counts_g.sum() * 100 if pred_counts_g.sum() > 0 else pred_counts_g
+                mask = (df[hours_col] >= bins[i]) & (df[hours_col] < bins[i+1])
+                pred_counts[i] = df.loc[mask, 'pred_prob'].sum()
+            pred_freq = pred_counts / pred_counts.sum() * 100 if pred_counts.sum() > 0 else pred_counts
+            return obs_freq, pred_freq
 
-            ax.bar(x - width/2, obs_freq_g, width, label='Observed', alpha=0.8, color='steelblue')
-            ax.bar(x + width/2, pred_freq_g, width, label='Predicted', alpha=0.8, color='coral')
+        def _plot_dist(obs_freq: np.ndarray, pred_freq: np.ndarray, title: str, out_key: str) -> None:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            x = np.arange(len(bin_labels))
+            width = 0.35
+
+            ax.bar(x - width/2, obs_freq, width, label='Observed', alpha=0.8, color='steelblue')
+            ax.bar(x + width/2, pred_freq, width, label='Predicted', alpha=0.8, color='coral')
 
             ax.set_xlabel('Weekly Hours')
             ax.set_ylabel('Percentage (%)')
-            ax.set_title(f'Hours Distribution: Observed vs Predicted ({group_name})')
+            ax.set_title(title)
             ax.set_xticks(x)
             ax.set_xticklabels(bin_labels, rotation=45, ha='right')
             ax.legend()
             ax.grid(True, alpha=0.3, axis='y')
 
             fig.tight_layout()
-            output_path_g = output_dir / f'{prefix}hours_distribution_{group_name.lower()}.png'
-            fig.savefig(output_path_g, dpi=150)
+            output_path = output_dir / f'{prefix}{out_key}.png'
+            fig.savefig(output_path, dpi=150)
             plt.close(fig)
-            plot_paths[f'hours_dist_{group_name.lower()}'] = output_path_g
+            plot_paths[out_key] = output_path
+
+        total_parts = []
+        for _, df_src, hours_col in group_defs:
+            total_parts.append(df_src[[hours_col, 'pred_prob', chosen_col]].rename(columns={hours_col: 'hours'}))
+        df_total = pd.concat(total_parts, ignore_index=True)
+        obs_total, pred_total = _build_obs_pred(df_total, 'hours')
+        _plot_dist(obs_total, pred_total, 'Hours Distribution: Observed vs Predicted (Total)', 'hours_distribution_total')
+
+        label_map = {
+            'singles_male': 'Singles Male',
+            'singles_female': 'Singles Female',
+            'couples_male': 'Couples Male',
+            'couples_female': 'Couples Female',
+        }
+        for key, df_src, hours_col in group_defs:
+            obs_freq_g, pred_freq_g = _build_obs_pred(df_src, hours_col)
+            _plot_dist(
+                obs_freq_g,
+                pred_freq_g,
+                f'Hours Distribution: Observed vs Predicted ({label_map.get(key, key)})',
+                f'hours_distribution_{key}'
+            )
 
         LOGGER.info(f"   Generated {len(plot_paths)} hours distribution plots")
 
@@ -1950,7 +2256,13 @@ def plot_hours_distribution_comparison(parsed_params: ParsedParameters, mnl_base
     return plot_paths
 
 
-def plot_wage_distribution_comparison(parsed_params: ParsedParameters, mnl_base: Path, output_dir: Path, prefix: str = '') -> Dict[str, Path]:
+def plot_wage_distribution_comparison(
+    parsed_params: ParsedParameters,
+    mnl_base: Path,
+    output_dir: Path,
+    prefix: str = '',
+    spec: Optional['EstimationSpec'] = None,
+) -> Dict[str, Path]:
     """
     Generate smooth density curves comparing observed vs predicted wage distributions.
     Returns dict mapping plot keys to file paths.
@@ -1968,12 +2280,10 @@ def plot_wage_distribution_comparison(parsed_params: ParsedParameters, mnl_base:
     plot_paths = {}
 
     try:
-        # Load data
         singles_path = Path(str(mnl_base) + '__singles.parquet')
         couples_path = Path(str(mnl_base) + '__couples.parquet')
 
-        df_all_parts = []
-        group_labels = []
+        group_defs = []
 
         if singles_path.exists():
             df_singles = pd.read_parquet(singles_path)
@@ -1987,127 +2297,134 @@ def plot_wage_distribution_comparison(parsed_params: ParsedParameters, mnl_base:
                     if try_key in parsed_params.params_by_group:
                         params = parsed_params.get_all_params_for_group(try_key)
                         break
+                if not params and 'joint' in parsed_params.params_by_group:
+                    params = parsed_params.get_all_params_for_group('joint')
                 if not params:
                     continue
-                df_g = _add_predicted_probabilities(df_g, params, is_couples=False, group_suffix=f'_{group_key}')
-                df_g['group'] = 'Singles'
-                df_all_parts.append(df_g)
-            if df_all_parts:
-                group_labels.append('Singles')
+                df_g = _add_predicted_probabilities(
+                    df_g,
+                    params,
+                    spec=spec,
+                    is_couples=False,
+                    group_suffix=f'_{group_key}'
+                )
+                df_g['group'] = group_key
+                group_defs.append((f'singles_{"male" if group_key == "sm" else "female"}', df_g, 'wage', 'hours'))
 
         if couples_path.exists():
             df_couples = pd.read_parquet(couples_path)
             params = None
-            for try_key in ['m', 'cou', 'couples']:
+            for try_key in ['joint', 'cou', 'couples', 'm']:
                 if try_key in parsed_params.params_by_group:
                     params = parsed_params.get_all_params_for_group(try_key)
                     break
             if params:
-                df_c = _add_predicted_probabilities(df_couples, params, is_couples=True)
-                df_c['group'] = 'Couples'
-                df_all_parts.append(df_c)
-                group_labels.append('Couples')
+                df_c = _add_predicted_probabilities(
+                    df_couples,
+                    params,
+                    spec=spec,
+                    is_couples=True
+                )
+                df_c['group'] = 'couples'
+                group_defs.append(('couples_male', df_c, 'wage_male', 'hours_male'))
+                group_defs.append(('couples_female', df_c, 'wage_female', 'hours_female'))
 
-        if not df_all_parts:
+        if not group_defs:
             LOGGER.warning("No MNL data files found for wage distribution plot")
             return {}
 
-        # Combine all data
-        df_all = pd.concat(df_all_parts, ignore_index=True)
-        chosen_col = 'chosen' if 'chosen' in df_all.columns else 'is_chosen'
+        def _extract_obs_pred(df: pd.DataFrame, wage_col: str, hours_col: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+            chosen_col = 'chosen' if 'chosen' in df.columns else 'is_chosen'
+            if hours_col not in df.columns or wage_col not in df.columns:
+                return np.array([]), np.array([]), np.array([])
+            df_working = df[df[hours_col] > 0].copy()
+            obs_wages = df_working[df_working[chosen_col] == 1][wage_col].values
+            obs_wages = obs_wages[np.isfinite(obs_wages)]
+            pred_wages = df_working[wage_col].values
+            pred_probs = df_working['pred_prob'].values
+            mask = np.isfinite(pred_wages) & (pred_probs > 0)
+            return obs_wages, pred_wages[mask], pred_probs[mask]
 
-        # Filter working alternatives (hours > 0)
-        df_working = df_all[df_all['hours'] > 0].copy()
-        df_chosen_working = df_working[df_working[chosen_col] == 1].copy()
-
-        # Total plot
-        fig, ax = plt.subplots(figsize=(10, 6))
-
-        # Observed wages
-        obs_wages = df_chosen_working['wage'].values
-        obs_wages = obs_wages[np.isfinite(obs_wages)]
-
-        if len(obs_wages) > 10:
-            kde_obs = gaussian_kde(obs_wages)
-            wage_range = np.linspace(obs_wages.min(), obs_wages.max(), 200)
-            density_obs = kde_obs(wage_range)
-            ax.plot(wage_range, density_obs, label='Observed', color='steelblue', linewidth=2)
-
-        # Predicted wages (probability-weighted KDE)
-        pred_wages = df_working['wage'].values
-        pred_probs = df_working['pred_prob'].values
-        mask_finite = np.isfinite(pred_wages) & (pred_probs > 0)
-        pred_wages = pred_wages[mask_finite]
-        pred_probs = pred_probs[mask_finite]
-
-        if len(pred_wages) > 10:
-            # Weighted KDE approximation: sample according to probabilities
-            sample_size = min(10000, len(pred_wages))
-            idx_sample = np.random.choice(len(pred_wages), size=sample_size, p=pred_probs / pred_probs.sum())
-            pred_wages_sampled = pred_wages[idx_sample]
-
-            kde_pred = gaussian_kde(pred_wages_sampled)
-            wage_range_pred = np.linspace(pred_wages.min(), pred_wages.max(), 200)
-            density_pred = kde_pred(wage_range_pred)
-            ax.plot(wage_range_pred, density_pred, label='Predicted', color='coral', linewidth=2)
-
-        ax.set_xlabel('Hourly Wage')
-        ax.set_ylabel('Density')
-        ax.set_title('Wage Distribution: Observed vs Predicted (Total, Working Only)')
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-
-        fig.tight_layout()
-        output_path = output_dir / f'{prefix}wage_distribution_total.png'
-        fig.savefig(output_path, dpi=150)
-        plt.close(fig)
-        plot_paths['wage_dist_total'] = output_path
-
-        # Per-group plots
-        for group_name in group_labels:
-            df_group_working = df_working[df_working['group'] == group_name]
-            df_chosen_group_working = df_chosen_working[df_chosen_working['group'] == group_name]
-
+        def _plot_kde(obs_wages: np.ndarray, pred_wages: np.ndarray, pred_probs: np.ndarray,
+                      title: str, out_key: str) -> None:
             fig, ax = plt.subplots(figsize=(10, 6))
 
-            # Observed
-            obs_wages_g = df_chosen_group_working['wage'].values
-            obs_wages_g = obs_wages_g[np.isfinite(obs_wages_g)]
+            wage_min = None
+            wage_max = None
+            if obs_wages.size > 0:
+                wage_min = obs_wages.min()
+                wage_max = obs_wages.max()
+            if pred_wages.size > 0:
+                wage_min = pred_wages.min() if wage_min is None else min(wage_min, pred_wages.min())
+                wage_max = pred_wages.max() if wage_max is None else max(wage_max, pred_wages.max())
 
-            if len(obs_wages_g) > 10:
-                kde_obs_g = gaussian_kde(obs_wages_g)
-                wage_range_g = np.linspace(obs_wages_g.min(), obs_wages_g.max(), 200)
-                density_obs_g = kde_obs_g(wage_range_g)
-                ax.plot(wage_range_g, density_obs_g, label='Observed', color='steelblue', linewidth=2)
+            if obs_wages.size > 10:
+                kde_obs = gaussian_kde(obs_wages)
+                wage_range = np.linspace(obs_wages.min(), obs_wages.max(), 200)
+                density_obs = kde_obs(wage_range)
+                ax.plot(wage_range, density_obs, label='Observed', color='steelblue', linewidth=2)
 
-            # Predicted
-            pred_wages_g = df_group_working['wage'].values
-            pred_probs_g = df_group_working['pred_prob'].values
-            mask_finite_g = np.isfinite(pred_wages_g) & (pred_probs_g > 0)
-            pred_wages_g = pred_wages_g[mask_finite_g]
-            pred_probs_g = pred_probs_g[mask_finite_g]
+            if pred_wages.size > 10 and pred_probs.sum() > 0:
+                sample_size = min(10000, len(pred_wages))
+                idx_sample = np.random.choice(len(pred_wages), size=sample_size, p=pred_probs / pred_probs.sum())
+                pred_wages_sampled = pred_wages[idx_sample]
+                kde_pred = gaussian_kde(pred_wages_sampled)
+                wage_range_pred = np.linspace(pred_wages_sampled.min(), pred_wages_sampled.max(), 200)
+                density_pred = kde_pred(wage_range_pred)
+                ax.plot(wage_range_pred, density_pred, label='Predicted', color='coral', linewidth=2)
 
-            if len(pred_wages_g) > 10 and pred_probs_g.sum() > 0:
-                sample_size_g = min(10000, len(pred_wages_g))
-                idx_sample_g = np.random.choice(len(pred_wages_g), size=sample_size_g, p=pred_probs_g / pred_probs_g.sum())
-                pred_wages_sampled_g = pred_wages_g[idx_sample_g]
-
-                kde_pred_g = gaussian_kde(pred_wages_sampled_g)
-                wage_range_pred_g = np.linspace(pred_wages_g.min(), pred_wages_g.max(), 200)
-                density_pred_g = kde_pred_g(wage_range_pred_g)
-                ax.plot(wage_range_pred_g, density_pred_g, label='Predicted', color='coral', linewidth=2)
+            if wage_min is not None and wage_max is not None and wage_min != wage_max:
+                ax.set_xlim(wage_min, wage_max)
 
             ax.set_xlabel('Hourly Wage')
             ax.set_ylabel('Density')
-            ax.set_title(f'Wage Distribution: Observed vs Predicted ({group_name}, Working Only)')
+            ax.set_title(title)
             ax.legend()
             ax.grid(True, alpha=0.3)
 
             fig.tight_layout()
-            output_path_g = output_dir / f'{prefix}wage_distribution_{group_name.lower()}.png'
-            fig.savefig(output_path_g, dpi=150)
+            output_path = output_dir / f'{prefix}{out_key}.png'
+            fig.savefig(output_path, dpi=150)
             plt.close(fig)
-            plot_paths[f'wage_dist_{group_name.lower()}'] = output_path_g
+            plot_paths[out_key] = output_path
+
+        obs_total_parts = []
+        pred_w_total_parts = []
+        pred_p_total_parts = []
+        for _, df_src, wage_col, hours_col in group_defs:
+            obs_w, pred_w, pred_p = _extract_obs_pred(df_src, wage_col, hours_col)
+            if obs_w.size > 0:
+                obs_total_parts.append(obs_w)
+            if pred_w.size > 0:
+                pred_w_total_parts.append(pred_w)
+                pred_p_total_parts.append(pred_p)
+
+        obs_total = np.concatenate(obs_total_parts) if obs_total_parts else np.array([])
+        pred_w_total = np.concatenate(pred_w_total_parts) if pred_w_total_parts else np.array([])
+        pred_p_total = np.concatenate(pred_p_total_parts) if pred_p_total_parts else np.array([])
+        _plot_kde(
+            obs_total,
+            pred_w_total,
+            pred_p_total,
+            'Wage Distribution: Observed vs Predicted (Total, Working Only)',
+            'wage_distribution_total',
+        )
+
+        label_map = {
+            'singles_male': 'Singles Male',
+            'singles_female': 'Singles Female',
+            'couples_male': 'Couples Male',
+            'couples_female': 'Couples Female',
+        }
+        for key, df_src, wage_col, hours_col in group_defs:
+            obs_w, pred_w, pred_p = _extract_obs_pred(df_src, wage_col, hours_col)
+            _plot_kde(
+                obs_w,
+                pred_w,
+                pred_p,
+                f'Wage Distribution: Observed vs Predicted ({label_map.get(key, key)}, Working Only)',
+                f'wage_distribution_{key}',
+            )
 
         LOGGER.info(f"   Generated {len(plot_paths)} wage distribution plots")
 
@@ -2609,25 +2926,37 @@ def generate_html_report_styled(
 
         # Hours distribution plots
         hours_dist_plots = []
-        if 'hours_dist_total' in plot_paths:
-            hours_dist_plots.append(f'<div class="plot-box"><img src="{plot_paths["hours_dist_total"].name}" alt="Hours Distribution (Total)"></div>')
-        for group in ['singles', 'couples']:
-            key = f'hours_dist_{group}'
+        hours_plot_order = [
+            ('hours_distribution_total', 'Total'),
+            ('hours_distribution_singles_male', 'Singles Male'),
+            ('hours_distribution_singles_female', 'Singles Female'),
+            ('hours_distribution_couples_male', 'Couples Male'),
+            ('hours_distribution_couples_female', 'Couples Female'),
+        ]
+        for key, label in hours_plot_order:
             if key in plot_paths:
-                hours_dist_plots.append(f'<div class="plot-box"><img src="{plot_paths[key].name}" alt="Hours Distribution ({group.capitalize()})"></div>')
+                hours_dist_plots.append(
+                    f'<div class="plot-box"><img src="{plot_paths[key].name}" alt="Hours Distribution ({label})"></div>'
+                )
         if hours_dist_plots:
-            plots_section += f'<h3>📊 Hours Distribution: Observed vs Predicted</h3><div class="contour-grid">{"".join(hours_dist_plots)}</div>'
+            plots_section += f'<h3>?? Hours Distribution: Observed vs Predicted</h3><div class="contour-grid">{"".join(hours_dist_plots)}</div>'
 
         # Wage distribution plots
         wage_dist_plots = []
-        if 'wage_dist_total' in plot_paths:
-            wage_dist_plots.append(f'<div class="plot-box"><img src="{plot_paths["wage_dist_total"].name}" alt="Wage Distribution (Total)"></div>')
-        for group in ['singles', 'couples']:
-            key = f'wage_dist_{group}'
+        wage_plot_order = [
+            ('wage_distribution_total', 'Total'),
+            ('wage_distribution_singles_male', 'Singles Male'),
+            ('wage_distribution_singles_female', 'Singles Female'),
+            ('wage_distribution_couples_male', 'Couples Male'),
+            ('wage_distribution_couples_female', 'Couples Female'),
+        ]
+        for key, label in wage_plot_order:
             if key in plot_paths:
-                wage_dist_plots.append(f'<div class="plot-box"><img src="{plot_paths[key].name}" alt="Wage Distribution ({group.capitalize()})"></div>')
+                wage_dist_plots.append(
+                    f'<div class="plot-box"><img src="{plot_paths[key].name}" alt="Wage Distribution ({label})"></div>'
+                )
         if wage_dist_plots:
-            plots_section += f'<h3>📈 Wage Distribution: Observed vs Predicted (Working Only)</h3><div class="contour-grid">{"".join(wage_dist_plots)}</div>'
+            plots_section += f'<h3>?? Wage Distribution: Observed vs Predicted (Working Only)</h3><div class="contour-grid">{"".join(wage_dist_plots)}</div>'
 
     # Color legend
     color_legend = """
@@ -3550,6 +3879,7 @@ def compute_marginal_utilities_at_chosen(
 def compute_probability_diagnostics(
     parsed_params: ParsedParameters,
     mnl_base: Path,
+    spec: Optional['EstimationSpec'] = None,
 ) -> Dict[str, Any]:
     """
     Compute probability sanity diagnostics and worst-fit households.
@@ -3584,63 +3914,20 @@ def compute_probability_diagnostics(
     all_p_chosen = []
     all_ll_i = []  # (ll_i, idhh, group, p_chosen)
     
-    # Helper to compute logit probabilities
+    # Helper to compute logit probabilities using shared routine
     def compute_probs_for_df(df, params, is_couples=False, group_suffix=''):
-        """Compute choice probabilities for a DataFrame."""
-        df = df.copy()
-
-        # Try with suffix first (for sm, sf groups)
-        beta_c = params.get(f'beta_c{group_suffix}', params.get('beta_c', 1.0))
-        theta_c = params.get(f'theta_c{group_suffix}', params.get('theta_c', 0.5))
-        
-        c = df['consumption'].values
-        V = beta_c * boxcox_transform(c, theta_c)
-        
-        if is_couples:
-            theta_l_m = params.get('theta_l_m', params.get('theta_l', 0.5))
-            theta_l_f = params.get('theta_l_f', params.get('theta_l', 0.5))
-            l_m = df['leisure_male'].values
-            l_f = df['leisure_female'].values
-            beta_l_m = compute_beta_l_full(df, params, '_m')
-            beta_l_f = compute_beta_l_full(df, params, '_f')
-            V += beta_l_m * boxcox_transform(l_m, theta_l_m)
-            V += beta_l_f * boxcox_transform(l_f, theta_l_f)
-              # Add opportunity terms - check multiple possible column names
-            for col in ['log_q_total_male', 'log_opp_male', 'log_q_total_female', 'log_opp_female', 'log_q_total', 'log_opp']:
-                if col in df.columns:
-                    V += df[col].values
-        else:
-            theta_l = params.get(f'theta_l{group_suffix}', params.get('theta_l', 0.5))
-            l = df['leisure'].values
-            beta_l = compute_beta_l_full(df, params, group_suffix)
-            V += beta_l * boxcox_transform(l, theta_l)
-            
-            # Add opportunity terms - check multiple possible column names
-            for col in ['log_q_total', 'log_opp']:
-                if col in df.columns:
-                    V += df[col].values
-                    break
-        
-        # Subtract prior - check multiple possible column names
-        for prior_col in ['prior', 'log_prior']:
-            if prior_col in df.columns:
-                # 'prior' is already log_prior in some datasets
-                V -= df[prior_col].values
-                break
-        
-        df['V'] = V
-        df['prob'] = 0.0
-        
-        for idhh, grp in df.groupby('idhh'):
-            V_grp = grp['V'].values
-            V_shifted = V_grp - V_grp.max()
-            exp_V = np.exp(V_shifted)
-            probs = exp_V / exp_V.sum()
-            df.loc[grp.index, 'prob'] = probs
-        
+        df = _add_predicted_probabilities(
+            df,
+            params,
+            spec=spec,
+            is_couples=is_couples,
+            group_suffix=group_suffix,
+        )
+        df['prob'] = df['pred_prob']
         return df
-    
-    # Process singles    if df_singles is not None and len(df_singles) > 0:
+
+    # Process singles
+    if df_singles is not None and len(df_singles) > 0:
         # dgn=1 means male, dgn=0 means female
         for gender_code, group_key in [(1, 'sm'), (0, 'sf')]:
             gender_col = 'dgn' if 'dgn' in df_singles.columns else 'gender'
@@ -3653,6 +3940,8 @@ def compute_probability_diagnostics(
                 if try_key in parsed_params.params_by_group:
                     params = parsed_params.get_all_params_for_group(try_key)
                     break
+            if params is None and 'joint' in parsed_params.params_by_group:
+                params = parsed_params.get_all_params_for_group('joint')
             
             if params is None:
                 continue
@@ -3683,7 +3972,7 @@ def compute_probability_diagnostics(
     if df_couples is not None and len(df_couples) > 0:
         # Try to find couples parameters - check multiple possible group names
         params = None
-        for try_key in ['m', 'cou', 'couples']:
+        for try_key in ['joint', 'm', 'cou', 'couples']:
             if try_key in parsed_params.params_by_group:
                 params = parsed_params.get_all_params_for_group(try_key)
                 break
@@ -4159,6 +4448,14 @@ def run_styled_post_estimation(
     LOGGER.info(f"   Found {len(parsed.groups)} groups: {parsed.groups}")
     LOGGER.info(f"   Preference groups: {parsed.preference_groups}")
 
+    spec = None
+    if spec_config is not None:
+        try:
+            spec = parse_specification(spec_config)
+            LOGGER.info(f"   Loaded specification for diagnostics: {spec.name}")
+        except Exception as e:
+            LOGGER.warning(f"   Failed to parse spec config ({spec_config}): {e}")
+
     # Check if SEs or diagnostics are missing and compute if requested
     se_computed = False
     hess_diag = data.get('hessian_diagnostics')
@@ -4306,7 +4603,7 @@ def run_styled_post_estimation(
     if mnl_base is not None:
         LOGGER.info("\n4b. Computing probability diagnostics...")
         try:
-            prob_diagnostics = compute_probability_diagnostics(parsed, mnl_base)
+            prob_diagnostics = compute_probability_diagnostics(parsed, mnl_base, spec=spec)
         except Exception as e:
             LOGGER.warning(f"Could not compute probability diagnostics: {e}")
     
@@ -4327,9 +4624,9 @@ def run_styled_post_estimation(
     # NEW: Hours and Wage distribution comparisons
     if mnl_base is not None:
         LOGGER.info("  Generating hours distribution plots...")
-        plot_paths.update(plot_hours_distribution_comparison(parsed, mnl_base, output_dir, prefix))
+        plot_paths.update(plot_hours_distribution_comparison(parsed, mnl_base, output_dir, prefix, spec=spec))
         LOGGER.info("  Generating wage distribution plots...")
-        plot_paths.update(plot_wage_distribution_comparison(parsed, mnl_base, output_dir, prefix))
+        plot_paths.update(plot_wage_distribution_comparison(parsed, mnl_base, output_dir, prefix, spec=spec))
 
     # Generate HTML report
     LOGGER.info("\n6. Generating HTML report...")

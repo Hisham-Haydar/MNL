@@ -87,6 +87,11 @@ def setup_logging(output_dir: Path, verbose: bool = False) -> None:
     # Root logger
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG if verbose else logging.INFO)
+    # Remove any existing handlers to avoid duplicate logs
+    if logger.handlers:
+        for handler in list(logger.handlers):
+            logger.removeHandler(handler)
+            handler.close()
 
     # File handler
     fh = logging.FileHandler(log_file, mode='w')

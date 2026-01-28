@@ -157,6 +157,27 @@ def _extract_var_level(var) -> float:
     return 0.0
 
 
+def _extract_num_iterations(model: Optional[Model] = None, solve_result: Any = None) -> Optional[int]:
+    """
+    Extract iteration count from GAMSPy model/solve result across versions.
+    """
+    for obj in (model, solve_result):
+        if obj is None:
+            continue
+        for attr in ("num_iterations", "iteration_count", "iter_used", "_num_iterations"):
+            val = getattr(obj, attr, None)
+            if val is None:
+                continue
+            try:
+                return int(val)
+            except Exception:
+                try:
+                    return int(float(val))
+                except Exception:
+                    continue
+    return None
+
+
 def _build_singles_ll_vectorized(
     container: Container,
     data: PrecomputedDataSingles,
@@ -1164,13 +1185,7 @@ def estimate_singles_vectorized_gamspy(
     solver_status = str(solve_status_enum) if solve_status_enum else "Unknown"
     model_status = str(model_status_enum) if model_status_enum else "Unknown"
 
-    n_iterations = getattr(model, "iteration_count", None)
-    if n_iterations is None:
-        n_iterations = getattr(model, "iter_used", None)
-    if n_iterations is None:
-        n_iterations = getattr(solve_result, "iteration_count", None)
-    if n_iterations is None:
-        n_iterations = getattr(solve_result, "iter_used", None)
+    n_iterations = _extract_num_iterations(model, solve_result)
 
     logger.info("=" * 80)
     logger.info("VECTORIZED ESTIMATION COMPLETE")
@@ -1311,13 +1326,7 @@ def estimate_couples_vectorized_gamspy(
     solver_status = str(solve_status_enum) if solve_status_enum else "Unknown"
     model_status = str(model_status_enum) if model_status_enum else "Unknown"
 
-    n_iterations = getattr(model, "iteration_count", None)
-    if n_iterations is None:
-        n_iterations = getattr(model, "iter_used", None)
-    if n_iterations is None:
-        n_iterations = getattr(solve_result, "iteration_count", None)
-    if n_iterations is None:
-        n_iterations = getattr(solve_result, "iter_used", None)
+    n_iterations = _extract_num_iterations(model, solve_result)
 
     logger.info("=" * 80)
     logger.info("VECTORIZED COUPLES ESTIMATION COMPLETE")
@@ -1512,13 +1521,7 @@ def estimate_joint_vectorized_gamspy(
     solver_status = str(solve_status_enum) if solve_status_enum else "Unknown"
     model_status = str(model_status_enum) if model_status_enum else "Unknown"
 
-    n_iterations = getattr(model, "iteration_count", None)
-    if n_iterations is None:
-        n_iterations = getattr(model, "iter_used", None)
-    if n_iterations is None:
-        n_iterations = getattr(solve_result, "iteration_count", None)
-    if n_iterations is None:
-        n_iterations = getattr(solve_result, "iter_used", None)
+    n_iterations = _extract_num_iterations(model, solve_result)
 
     logger.info("=" * 80)
     logger.info("VECTORIZED JOINT ESTIMATION COMPLETE")

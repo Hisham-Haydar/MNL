@@ -143,6 +143,27 @@ def boxcox_gamspy(value: float, theta_var, epsilon: float = 1e-12):
     return bc_value
 
 
+def _extract_num_iterations(model=None, solve_result=None):
+    """
+    Extract iteration count from GAMSPy model/solve result across versions.
+    """
+    for obj in (model, solve_result):
+        if obj is None:
+            continue
+        for attr in ("num_iterations", "iteration_count", "iter_used", "_num_iterations"):
+            val = getattr(obj, attr, None)
+            if val is None:
+                continue
+            try:
+                return int(val)
+            except Exception:
+                try:
+                    return int(float(val))
+                except Exception:
+                    continue
+    return None
+
+
 def get_param_name(base_name: str, group: str, param_vars: dict) -> str:
     """
     Get actual parameter name for a group-specific context.
@@ -645,10 +666,7 @@ def estimate_singles_gamspy(
     model_status = str(model_status_enum) if model_status_enum else 'Unknown'
     
     # Try to get iteration count
-    n_iterations = getattr(result, 'iteration_count', None)
-    if n_iterations is None:
-        # Try alternative attributes
-        n_iterations = getattr(result, 'iter_used', None)
+    n_iterations = _extract_num_iterations(model, result)
     
     logger.info(f"  [OK] Solved in {walltime:.1f} seconds")
     logger.info(f"  Final LL: {ll_final:.4f}")
@@ -948,7 +966,7 @@ def estimate_couples_gamspy(
 
     solver_status = str(solve_status_enum) if solve_status_enum else 'Unknown'
     model_status = str(model_status_enum) if model_status_enum else 'Unknown'
-    n_iterations = getattr(result, 'iteration_count', getattr(result, 'iter_used', None))
+    n_iterations = _extract_num_iterations(model, result)
     
     logger.info(f"  [OK] Solved in {walltime:.1f} seconds")
     logger.info(f"  Final LL: {ll_final:.4f}")
@@ -2181,7 +2199,7 @@ def estimate_joint_gamspy(
 
     solver_status = str(solve_status_enum) if solve_status_enum else 'Unknown'
     model_status = str(model_status_enum) if model_status_enum else 'Unknown'
-    n_iterations = getattr(model, 'iteration_count', getattr(model, 'iter_used', None))
+    n_iterations = _extract_num_iterations(model, result)
     
     logger.info("="*80)
     logger.info("JOINT ESTIMATION COMPLETE")

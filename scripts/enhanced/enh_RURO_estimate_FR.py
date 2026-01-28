@@ -1157,10 +1157,9 @@ Examples:
                     logger.info("Using VECTORIZED GAMSPy implementation (3-5x faster)")
                     from gamspy_estimation_vectorized import (
                         estimate_singles_vectorized_gamspy as estimate_singles_gamspy,
+                        estimate_couples_vectorized_gamspy as estimate_couples_gamspy,
                         estimate_joint_vectorized_gamspy as estimate_joint_gamspy
                     )
-                    # Couples vectorized not yet implemented
-                    from gamspy_estimation import estimate_couples_gamspy
                 else:
                     logger.info("Using standard GAMSPy implementation")
                     from gamspy_estimation import (

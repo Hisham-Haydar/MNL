@@ -55,6 +55,38 @@ SOLVER_MAP = {
     "snopt": "snopt",
 }
 
+# Group to parameter suffix mapping (4-group architecture)
+SUFFIX_MAP = {
+    "singles_male": "_sm",
+    "singles_female": "_sf",
+    "singles_pooled": "_sm",
+    "couples_male": "_m",
+    "couples_female": "_f",
+    "couples_household": "",  # No suffix for household-level parameters
+}
+
+
+def get_param_name(base_name: str, group: str, param_vars: dict) -> str:
+    """
+    Resolve parameter name for a group-specific context.
+
+    Strategy:
+    1) Try group-specific suffix (if any)
+    2) Fall back to base name
+    """
+    suffix = SUFFIX_MAP.get(group, "")
+    if suffix:
+        param_with_suffix = f"{base_name}{suffix}"
+        if param_with_suffix in param_vars:
+            return param_with_suffix
+    if base_name in param_vars:
+        return base_name
+    tried_names = [f"{base_name}{suffix}", base_name] if suffix else [base_name]
+    raise ValueError(
+        f"Parameter '{base_name}' for group '{group}' not found. "
+        f"Tried: {', '.join(tried_names)}"
+    )
+
 
 # ==============================================================================
 # Utility Functions
@@ -113,6 +145,538 @@ def _extract_var_level(var) -> float:
             return float(var.records.iloc[0][last_col])
     logging.warning(f"Could not extract level for variable {getattr(var, 'name', '<unknown>')}, defaulting to 0.0")
     return 0.0
+
+
+def _build_singles_ll_vectorized(
+    container: Container,
+    data: PrecomputedDataSingles,
+    spec: EstimationSpec,
+    param_vars: Dict[str, Variable],
+    group: str,
+    prefix: str,
+    logger: Optional[logging.Logger] = None,
+) -> Tuple[Any, int]:
+    """
+    Build vectorized log-likelihood expression for singles group.
+    Returns (ll_expr, n_alts).
+    """
+    n_groups = data.n_groups
+    n_alts = data.n_obs // n_groups
+
+    if logger:
+        logger.info("  Building indexed data structure...")
+
+    i_set = Set(container, name=f"{prefix}i", records=[str(i) for i in range(n_groups)])
+    j_set = Set(container, name=f"{prefix}j", records=[str(j) for j in range(n_alts)])
+
+    def _reshape(arr: np.ndarray) -> np.ndarray:
+        return arr.reshape(n_groups, n_alts)
+
+    def _param2d(name: str, arr2d: np.ndarray) -> Parameter:
+        return Parameter(container, name=f"{prefix}{name}", domain=[i_set, j_set], records=arr2d)
+
+    # Core data parameters
+    consumption_param = _param2d("consumption", _reshape(data.consumption))
+    leisure_param = _param2d("leisure", _reshape(data.leisure))
+    chosen_param = _param2d("chosen", _reshape(data.actual_choice))
+    prior_param = _param2d("prior", _reshape(data.prior))
+
+    var_cache: Dict[str, Parameter] = {
+        "consumption": consumption_param,
+        "leisure": leisure_param,
+        "chosen": chosen_param,
+        "prior": prior_param,
+    }
+
+    def get_var_param(var_name: str) -> Optional[Parameter]:
+        if var_name in var_cache:
+            return var_cache[var_name]
+        if not hasattr(data, var_name):
+            return None
+        arr = getattr(data, var_name)
+        if arr is None:
+            return None
+        param = _param2d(var_name, _reshape(arr))
+        var_cache[var_name] = param
+        return param
+
+    if logger:
+        logger.info(f"    Created indexed data: {n_groups} individuals × {n_alts} alternatives")
+
+    if spec.utility_form != "box_cox":
+        raise NotImplementedError(f"Utility form {spec.utility_form} not implemented in vectorized GAMSPy")
+
+    # === Consumption utility ===
+    beta_c_name = get_param_name(spec.utility_consumption_coef, group, param_vars)
+    beta_c = param_vars[beta_c_name]
+
+    if spec.utility_consumption_theta:
+        theta_c_name = get_param_name(spec.utility_consumption_theta, group, param_vars)
+        theta_c = param_vars[theta_c_name]
+        bc_c = box_cox_transform(consumption_param, theta_c)
+    else:
+        bc_c = gp_log(consumption_param + LOG_EPS)
+
+    u_consumption = beta_c * bc_c
+
+    # === Leisure utility (with shifters) ===
+    beta_l0_name = get_param_name(spec.utility_leisure_intercept, group, param_vars)
+    beta_l_coeff = param_vars[beta_l0_name]
+
+    for shifter in spec.utility_leisure_shifters:
+        var_name = shifter["variable"]
+        if shifter.get("gender_specific") and var_name == "n_children":
+            if group in ("singles_male", "singles_pooled"):
+                continue
+        coef_base = shifter["coefficient"]
+        try:
+            coef_name = get_param_name(coef_base, group, param_vars)
+        except ValueError:
+            continue
+        var_param = get_var_param(var_name)
+        if var_param is None:
+            continue
+        beta_l_coeff = beta_l_coeff + param_vars[coef_name] * var_param
+
+    if spec.utility_leisure_theta:
+        theta_l_name = get_param_name(spec.utility_leisure_theta, group, param_vars)
+        theta_l = param_vars[theta_l_name]
+        bc_l = box_cox_transform(leisure_param, theta_l)
+    else:
+        bc_l = gp_log(leisure_param + LOG_EPS)
+
+    u_leisure = beta_l_coeff * bc_l
+
+    # === Hours opportunity density ===
+    log_h = 0.0
+    working_param = None
+
+    if spec.hours_shifters:
+        if group in ("singles_male", "singles_pooled"):
+            hours_suffix = "_male"
+        elif group == "singles_female":
+            hours_suffix = "_female"
+        else:
+            hours_suffix = ""
+
+        for shifter in spec.hours_shifters:
+            var_name = shifter["variable"]
+            coef_name = shifter["coefficient"]
+            interaction = shifter.get("interaction", None)
+
+            coef_name_gender = f"{coef_name}{hours_suffix}" if hours_suffix else coef_name
+            if coef_name_gender in param_vars:
+                param = param_vars[coef_name_gender]
+            elif coef_name in param_vars:
+                param = param_vars[coef_name]
+            else:
+                continue
+
+            var_param = get_var_param(var_name)
+            if var_param is None:
+                continue
+
+            if interaction == "working":
+                if working_param is None:
+                    working_param = get_var_param("working")
+                if working_param is not None:
+                    var_param = var_param * working_param
+
+            log_h = log_h + param * var_param
+
+    # === Wage opportunity density ===
+    log_w = 0.0
+    if spec.wage_spec == "vw" and data.log_wage is not None and spec.wage_variance_param in param_vars:
+        log_wage_param = get_var_param("log_wage")
+        if log_wage_param is not None:
+            mu_w = 0.0
+            for shifter in spec.wage_mean_shifters:
+                var_name = shifter["variable"]
+                coef_name = shifter["coefficient"]
+                if coef_name not in param_vars:
+                    continue
+                if var_name == "intercept":
+                    mu_w = mu_w + param_vars[coef_name]
+                else:
+                    var_param = get_var_param(var_name)
+                    if var_param is None:
+                        continue
+                    mu_w = mu_w + param_vars[coef_name] * var_param
+
+            sigma_param = param_vars[spec.wage_variance_param]
+            residual = log_wage_param - mu_w
+
+            log_w_density = (
+                -0.5 * (residual * residual) / (sigma_param * sigma_param + LOG_EPS)
+                - gp_log(sigma_param + LOG_EPS)
+                - 0.5 * gp_log(2.0 * 3.141592653589793)
+            )
+
+            if working_param is None:
+                working_param = get_var_param("working")
+            if working_param is not None:
+                log_w = working_param * log_w_density
+
+    elif spec.wage_spec == "loc_empirical" and data.log_wage is not None and spec.wage_loc_groups:
+        log_wage_param = get_var_param("log_wage")
+        if log_wage_param is not None:
+            common_shift = 0.0
+            for shifter in spec.wage_mean_shifters:
+                var_name = shifter["variable"]
+                coef_name = shifter["coefficient"]
+                if coef_name not in param_vars:
+                    continue
+                if var_name == "intercept":
+                    common_shift = common_shift + param_vars[coef_name]
+                else:
+                    var_param = get_var_param(var_name)
+                    if var_param is None:
+                        continue
+                    common_shift = common_shift + param_vars[coef_name] * var_param
+
+            log_w_total = 0.0
+            for group_cfg in spec.wage_loc_groups:
+                loc_var = group_cfg["variable"]
+                intercept_name = group_cfg["intercept"]
+                sigma_name = group_cfg["sigma"]
+                if intercept_name not in param_vars or sigma_name not in param_vars:
+                    continue
+                loc_param = get_var_param(loc_var)
+                if loc_param is None:
+                    continue
+                mu_g = param_vars[intercept_name] + common_shift
+                sigma_g = param_vars[sigma_name]
+                residual = log_wage_param - mu_g
+                log_w_g = (
+                    -0.5 * (residual * residual) / (sigma_g * sigma_g + LOG_EPS)
+                    - gp_log(sigma_g + LOG_EPS)
+                    - 0.5 * gp_log(2.0 * 3.141592653589793)
+                )
+                log_w_total = log_w_total + loc_param * log_w_g
+
+            if working_param is None:
+                working_param = get_var_param("working")
+            if working_param is not None:
+                log_w = working_param * log_w_total
+
+    # Composite utility
+    utility = u_consumption + u_leisure + log_h + log_w - gp_log(prior_param + LOG_EPS)
+
+    if logger:
+        logger.info("    Utility expression built (vectorized)")
+
+    # Log-likelihood
+    if logger:
+        logger.info("  Building vectorized log-likelihood...")
+
+    chosen_utility = GamsSum(j_set, chosen_param * utility)
+    denom = GamsSum(j_set, gp_exp(utility))
+    ll_expr = GamsSum(i_set, chosen_utility - gp_log(denom + LOG_EPS))
+
+    if logger:
+        logger.info("    Log-likelihood expression built (vectorized)")
+
+    return ll_expr, n_alts
+
+
+def _build_couples_ll_vectorized(
+    container: Container,
+    data: PrecomputedDataCouples,
+    spec: EstimationSpec,
+    param_vars: Dict[str, Variable],
+    prefix: str,
+    logger: Optional[logging.Logger] = None,
+) -> Tuple[Any, int]:
+    """
+    Build vectorized log-likelihood expression for couples group.
+    Returns (ll_expr, n_alts).
+    """
+    n_groups = data.n_groups
+    n_alts = data.n_obs // n_groups
+
+    if logger:
+        logger.info("  Building indexed data structure for couples...")
+
+    i_set = Set(container, name=f"{prefix}i", records=[str(i) for i in range(n_groups)])
+    j_set = Set(container, name=f"{prefix}j", records=[str(j) for j in range(n_alts)])
+
+    def _reshape(arr: np.ndarray) -> np.ndarray:
+        return arr.reshape(n_groups, n_alts)
+
+    def _param2d(name: str, arr2d: np.ndarray) -> Parameter:
+        return Parameter(container, name=f"{prefix}{name}", domain=[i_set, j_set], records=arr2d)
+
+    consumption_param = _param2d("consumption", _reshape(data.consumption))
+    leisure_m_param = _param2d("leisure_male", _reshape(data.leisure_male))
+    leisure_f_param = _param2d("leisure_female", _reshape(data.leisure_female))
+    chosen_param = _param2d("chosen", _reshape(data.actual_choice))
+    prior_param = _param2d("prior", _reshape(data.prior))
+
+    var_cache: Dict[str, Parameter] = {
+        "consumption": consumption_param,
+        "leisure_male": leisure_m_param,
+        "leisure_female": leisure_f_param,
+        "chosen": chosen_param,
+        "prior": prior_param,
+    }
+
+    def get_var_param(base_name: str, gender: Optional[str] = None) -> Optional[Parameter]:
+        if gender:
+            if base_name == "female":
+                attr = f"female_{gender}"
+            elif base_name in ("couple", "in_couple"):
+                attr = f"in_couple_{gender}"
+            else:
+                attr_candidate = f"{base_name}_{gender}"
+                attr = attr_candidate if hasattr(data, attr_candidate) else base_name
+        else:
+            attr = base_name
+
+        if attr in var_cache:
+            return var_cache[attr]
+        if not hasattr(data, attr):
+            return None
+        arr = getattr(data, attr)
+        if arr is None:
+            return None
+        param = _param2d(attr, _reshape(arr))
+        var_cache[attr] = param
+        return param
+
+    if logger:
+        logger.info(f"    Created indexed data: {n_groups} households × {n_alts} alternatives")
+
+    if spec.utility_form != "box_cox":
+        raise NotImplementedError(f"Utility form {spec.utility_form} not implemented in vectorized GAMSPy")
+
+    # Consumption utility (household-level)
+    beta_c_name = get_param_name(spec.utility_consumption_coef, "couples_household", param_vars)
+    beta_c = param_vars[beta_c_name]
+
+    if spec.utility_consumption_theta:
+        theta_c_name = get_param_name(spec.utility_consumption_theta, "couples_household", param_vars)
+        theta_c = param_vars[theta_c_name]
+        bc_c = box_cox_transform(consumption_param, theta_c)
+    else:
+        bc_c = gp_log(consumption_param + LOG_EPS)
+
+    u_consumption = beta_c * bc_c
+
+    # Leisure utility - male
+    beta_l0_m_name = get_param_name(spec.utility_leisure_intercept, "couples_male", param_vars)
+    beta_l_coeff_m = param_vars[beta_l0_m_name]
+
+    for shifter in spec.utility_leisure_shifters:
+        var_name = shifter["variable"]
+        if shifter.get("gender_specific") and var_name == "n_children":
+            continue
+        coef_base = shifter["coefficient"]
+        try:
+            coef_name = get_param_name(coef_base, "couples_male", param_vars)
+        except ValueError:
+            continue
+        var_param = get_var_param(var_name, gender="male")
+        if var_param is None:
+            continue
+        beta_l_coeff_m = beta_l_coeff_m + param_vars[coef_name] * var_param
+
+    if spec.utility_leisure_theta:
+        theta_l_m_name = get_param_name(spec.utility_leisure_theta, "couples_male", param_vars)
+        theta_l_m = param_vars[theta_l_m_name]
+        bc_l_m = box_cox_transform(leisure_m_param, theta_l_m)
+    else:
+        bc_l_m = gp_log(leisure_m_param + LOG_EPS)
+
+    u_leisure_m = beta_l_coeff_m * bc_l_m
+
+    # Leisure utility - female
+    beta_l0_f_name = get_param_name(spec.utility_leisure_intercept, "couples_female", param_vars)
+    beta_l_coeff_f = param_vars[beta_l0_f_name]
+
+    for shifter in spec.utility_leisure_shifters:
+        var_name = shifter["variable"]
+        coef_base = shifter["coefficient"]
+        try:
+            coef_name = get_param_name(coef_base, "couples_female", param_vars)
+        except ValueError:
+            continue
+        if var_name == "n_children":
+            var_param = get_var_param("n_children")
+        else:
+            var_param = get_var_param(var_name, gender="female")
+        if var_param is None:
+            continue
+        beta_l_coeff_f = beta_l_coeff_f + param_vars[coef_name] * var_param
+
+    if spec.utility_leisure_theta:
+        theta_l_f_name = get_param_name(spec.utility_leisure_theta, "couples_female", param_vars)
+        theta_l_f = param_vars[theta_l_f_name]
+        bc_l_f = box_cox_transform(leisure_f_param, theta_l_f)
+    else:
+        bc_l_f = gp_log(leisure_f_param + LOG_EPS)
+
+    u_leisure_f = beta_l_coeff_f * bc_l_f
+
+    # Interaction term (if specified)
+    u_interact = 0.0
+    if spec.couples_interaction_coef and spec.couples_interaction_coef in param_vars:
+        u_interact = param_vars[spec.couples_interaction_coef] * bc_l_m * bc_l_f
+
+    utility = u_consumption + u_leisure_m + u_leisure_f + u_interact
+
+    # Hours opportunity - male and female
+    log_h_m = 0.0
+    log_h_f = 0.0
+    working_m = get_var_param("working", gender="male")
+    working_f = get_var_param("working", gender="female")
+
+    if spec.hours_shifters:
+        for shifter in spec.hours_shifters:
+            var_name = shifter["variable"]
+            coef_name = shifter["coefficient"]
+            interaction = shifter.get("interaction", None)
+
+            coef_m = f"{coef_name}_male"
+            if coef_m in param_vars:
+                param_m = param_vars[coef_m]
+            elif coef_name in param_vars:
+                param_m = param_vars[coef_name]
+            else:
+                param_m = None
+
+            if param_m is not None:
+                var_param_m = get_var_param(var_name, gender="male")
+                if var_param_m is not None:
+                    if interaction == "working" and working_m is not None:
+                        var_param_m = var_param_m * working_m
+                    log_h_m = log_h_m + param_m * var_param_m
+
+            coef_f = f"{coef_name}_female"
+            if coef_f in param_vars:
+                param_f = param_vars[coef_f]
+            elif coef_name in param_vars:
+                param_f = param_vars[coef_name]
+            else:
+                param_f = None
+
+            if param_f is not None:
+                var_param_f = get_var_param(var_name, gender="female")
+                if var_param_f is not None:
+                    if interaction == "working" and working_f is not None:
+                        var_param_f = var_param_f * working_f
+                    log_h_f = log_h_f + param_f * var_param_f
+
+    # Wage opportunity - male and female
+    log_w = 0.0
+    if spec.wage_spec == "vw" and spec.wage_variance_param in param_vars:
+        sigma_param = param_vars[spec.wage_variance_param]
+
+        def build_mu_w(gender: str) -> Any:
+            mu_w = 0.0
+            for shifter in spec.wage_mean_shifters:
+                var_name = shifter["variable"]
+                coef_name = shifter["coefficient"]
+                if coef_name not in param_vars:
+                    continue
+                if var_name == "intercept":
+                    mu_w = mu_w + param_vars[coef_name]
+                else:
+                    var_param = get_var_param(var_name, gender=gender)
+                    if var_param is None:
+                        continue
+                    mu_w = mu_w + param_vars[coef_name] * var_param
+            return mu_w
+
+        log_w_m = 0.0
+        log_w_f = 0.0
+
+        log_wage_m = get_var_param("log_wage", gender="male")
+        if log_wage_m is not None and working_m is not None:
+            mu_w_m = build_mu_w("male")
+            residual_m = log_wage_m - mu_w_m
+            log_w_density_m = (
+                -0.5 * (residual_m * residual_m) / (sigma_param * sigma_param + LOG_EPS)
+                - gp_log(sigma_param + LOG_EPS)
+                - 0.5 * gp_log(2.0 * 3.141592653589793)
+            )
+            log_w_m = working_m * log_w_density_m
+
+        log_wage_f = get_var_param("log_wage", gender="female")
+        if log_wage_f is not None and working_f is not None:
+            mu_w_f = build_mu_w("female")
+            residual_f = log_wage_f - mu_w_f
+            log_w_density_f = (
+                -0.5 * (residual_f * residual_f) / (sigma_param * sigma_param + LOG_EPS)
+                - gp_log(sigma_param + LOG_EPS)
+                - 0.5 * gp_log(2.0 * 3.141592653589793)
+            )
+            log_w_f = working_f * log_w_density_f
+
+        log_w = log_w_m + log_w_f
+
+    elif spec.wage_spec == "loc_empirical" and data.log_wage_male is not None and spec.wage_loc_groups:
+        # Occupation-specific wages for couples (male + female)
+        def build_common_shift(gender: str) -> Any:
+            common_shift = 0.0
+            for shifter in spec.wage_mean_shifters:
+                var_name = shifter["variable"]
+                coef_name = shifter["coefficient"]
+                if coef_name not in param_vars:
+                    continue
+                if var_name == "intercept":
+                    common_shift = common_shift + param_vars[coef_name]
+                else:
+                    var_param = get_var_param(var_name, gender=gender)
+                    if var_param is None:
+                        continue
+                    common_shift = common_shift + param_vars[coef_name] * var_param
+            return common_shift
+
+        def build_loc_logw(gender: str, working_param: Optional[Parameter]) -> Any:
+            log_wage_param = get_var_param("log_wage", gender=gender)
+            if log_wage_param is None or working_param is None:
+                return 0.0
+            common_shift = build_common_shift(gender)
+            log_w_total = 0.0
+            for group_cfg in spec.wage_loc_groups:
+                loc_var = group_cfg["variable"]
+                intercept_name = group_cfg["intercept"]
+                sigma_name = group_cfg["sigma"]
+                if intercept_name not in param_vars or sigma_name not in param_vars:
+                    continue
+                loc_param = get_var_param(loc_var, gender=gender)
+                if loc_param is None:
+                    continue
+                mu_g = param_vars[intercept_name] + common_shift
+                sigma_g = param_vars[sigma_name]
+                residual = log_wage_param - mu_g
+                log_w_g = (
+                    -0.5 * (residual * residual) / (sigma_g * sigma_g + LOG_EPS)
+                    - gp_log(sigma_g + LOG_EPS)
+                    - 0.5 * gp_log(2.0 * 3.141592653589793)
+                )
+                log_w_total = log_w_total + loc_param * log_w_g
+            return working_param * log_w_total
+
+        log_w = build_loc_logw("male", working_m) + build_loc_logw("female", working_f)
+
+    # Composite utility
+    utility = utility + log_h_m + log_h_f + log_w - gp_log(prior_param + LOG_EPS)
+
+    if logger:
+        logger.info("    Couples utility expression built (vectorized)")
+
+    if logger:
+        logger.info("  Building vectorized log-likelihood for couples...")
+
+    chosen_utility = GamsSum(j_set, chosen_param * utility)
+    denom = GamsSum(j_set, gp_exp(utility))
+    ll_expr = GamsSum(i_set, chosen_utility - gp_log(denom + LOG_EPS))
+
+    if logger:
+        logger.info("    Couples log-likelihood expression built (vectorized)")
+
+    return ll_expr, n_alts
 
 
 # ==============================================================================
@@ -625,6 +1189,153 @@ def estimate_singles_vectorized_gamspy(
 
 
 # ==============================================================================
+# Vectorized Couples Estimation
+# ==============================================================================
+
+def estimate_couples_vectorized_gamspy(
+    data: PrecomputedDataCouples,
+    spec: EstimationSpec,
+    theta_init: np.ndarray,
+    solver: str = "conopt",
+    verbose: bool = True,
+    solver_options: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    Estimate couples MNL model using vectorized GAMSPy operations.
+
+    This uses indexed Sets and Parameters for fast expression building.
+    """
+    if not HAS_GAMSPY:
+        raise ImportError("GAMSPy not installed. Run: pip install gamspy")
+
+    logger = logging.getLogger(__name__)
+
+    if solver not in SOLVER_MAP:
+        raise ValueError(f"Unknown solver '{solver}'. Choose from: {list(SOLVER_MAP.keys())}")
+
+    solver_name = SOLVER_MAP[solver]
+    n_alts = data.n_obs // data.n_groups
+
+    logger.info(f"Starting VECTORIZED GAMSPy couples estimation (solver={solver_name.upper()})")
+    logger.info(f"  Observations: {data.n_obs:,}")
+    logger.info(f"  Groups: {data.n_groups:,}")
+    logger.info(f"  Alternatives: {n_alts}")
+    logger.info(f"  Parameters: {len(spec.all_param_names)}")
+
+    start_time = time.time()
+
+    # Ensure local working directory
+    ensure_local_workdir()
+
+    # Create GAMSPy container
+    container = Container()
+
+    # ========================================================================
+    # 1. Create parameter variables
+    # ========================================================================
+    param_vars: Dict[str, Variable] = {}
+
+    for i, param_name in enumerate(spec.all_param_names):
+        var = Variable(container, param_name, type="free")
+        var.l = float(theta_init[i])
+
+        if param_name in spec.bounds:
+            lb, ub = spec.bounds[param_name]
+            if lb is not None:
+                var.lo = float(lb)
+            if ub is not None:
+                var.up = float(ub)
+
+        param_vars[param_name] = var
+
+    logger.info(f"  Created {len(param_vars)} parameter variables")
+
+    # ========================================================================
+    # 2. Build log-likelihood expression (vectorized)
+    # ========================================================================
+    ll_expr, _ = _build_couples_ll_vectorized(
+        container=container,
+        data=data,
+        spec=spec,
+        param_vars=param_vars,
+        prefix="cou_",
+        logger=logger,
+    )
+
+    # ========================================================================
+    # 3. Create model and solve
+    # ========================================================================
+    model = Model(
+        container,
+        name="ruro_couples_mnl_vectorized",
+        problem="nlp",
+        sense="max",
+        objective=ll_expr
+    )
+
+    logger.info(f"  Solving with {solver_name.upper()}...")
+    logger.info("  (Vectorized approach should be 3-5x faster than line-by-line)")
+
+    if solver_options:
+        logger.info(f"  Solver options: {solver_options}")
+        solve_result = model.solve(solver=solver_name, solver_options=solver_options)
+    else:
+        solve_result = model.solve(solver=solver_name)
+
+    walltime = time.time() - start_time
+
+    # ========================================================================
+    # 4. Extract results
+    # ========================================================================
+    theta_final = np.array([
+        _extract_var_level(param_vars[pname])
+        for pname in spec.all_param_names
+    ])
+
+    ll_final = getattr(model, "objective_value", None)
+    if ll_final is None:
+        ll_final = getattr(solve_result, "objective_value", None)
+
+    solve_status_enum = getattr(model, "solve_status", None)
+    model_status_enum = getattr(model, "status", None)
+    solver_status = str(solve_status_enum) if solve_status_enum else "Unknown"
+    model_status = str(model_status_enum) if model_status_enum else "Unknown"
+
+    n_iterations = getattr(model, "iteration_count", None)
+    if n_iterations is None:
+        n_iterations = getattr(model, "iter_used", None)
+    if n_iterations is None:
+        n_iterations = getattr(solve_result, "iteration_count", None)
+    if n_iterations is None:
+        n_iterations = getattr(solve_result, "iter_used", None)
+
+    logger.info("=" * 80)
+    logger.info("VECTORIZED COUPLES ESTIMATION COMPLETE")
+    logger.info("=" * 80)
+    logger.info(f"  Solver status: {solver_status}")
+    logger.info(f"  Model status: {model_status}")
+    if ll_final is not None:
+        logger.info(f"  Objective value (LL): {ll_final:.4f}")
+    logger.info(f"  Wall time: {walltime:.2f} seconds")
+
+    return {
+        "theta": theta_final,
+        "log_likelihood": ll_final,
+        "solver_status": solver_status,
+        "model_status": model_status,
+        "walltime": walltime,
+        "n_iterations": n_iterations,
+        "gamspy_result": solve_result,
+        "solver": solver_name,
+        "n_obs": data.n_obs,
+        "n_groups": data.n_groups,
+        "n_alts": n_alts,
+        "spec_name": spec.name,
+        "ll": ll_final,
+    }
+
+
+# ==============================================================================
 # Joint Estimation (Singles + Couples) - VECTORIZED
 # ==============================================================================
 
@@ -683,20 +1394,149 @@ def estimate_joint_vectorized_gamspy(
     logger.info(f"  Couples: {data_couples.n_groups:,} households")
     logger.info(f"  Alternatives: {data_singles_male.n_obs // data_singles_male.n_groups}")
     logger.info(f"  Parameters: {len(spec.all_param_names)}")
-    logger.info(f"  Solver: {SOLVER_MAP[solver].upper()}")
+    if solver not in SOLVER_MAP:
+        raise ValueError(f"Unknown solver '{solver}'. Choose from: {list(SOLVER_MAP.keys())}")
+    solver_name = SOLVER_MAP[solver]
+    logger.info(f"  Solver: {solver_name.upper()}")
 
-    # TODO: Implement full joint estimation with vectorized approach
-    # This requires:
-    # 1. Create separate Sets for each group (i_sm, i_sf, i_cou)
-    # 2. Build three separate utility expressions
-    # 3. Combine log-likelihoods: ll_joint = ll_sm + ll_sf + ll_cou
-    # 4. Solve single model
+    start_time = time.time()
 
-    raise NotImplementedError(
-        "Vectorized joint estimation not yet implemented. "
-        "Use estimate_singles_vectorized_gamspy for now, "
-        "or fall back to gamspy_estimation.estimate_joint_gamspy"
+    # Ensure local working directory
+    ensure_local_workdir()
+
+    # Create GAMSPy container
+    container = Container()
+
+    # ========================================================================
+    # 1. Create shared parameter variables
+    # ========================================================================
+    param_vars: Dict[str, Variable] = {}
+
+    for i, param_name in enumerate(spec.all_param_names):
+        var = Variable(container, param_name, type="free")
+        var.l = float(theta_init[i])
+
+        if param_name in spec.bounds:
+            lb, ub = spec.bounds[param_name]
+            if lb is not None:
+                var.lo = float(lb)
+            if ub is not None:
+                var.up = float(ub)
+
+        param_vars[param_name] = var
+
+    logger.info(f"  Created {len(param_vars)} shared parameter variables")
+
+    # ========================================================================
+    # 2. Build log-likelihood expressions (vectorized)
+    # ========================================================================
+    ll_sm, n_alts_sm = _build_singles_ll_vectorized(
+        container=container,
+        data=data_singles_male,
+        spec=spec,
+        param_vars=param_vars,
+        group="singles_male",
+        prefix="sm_",
+        logger=logger,
     )
+    ll_sf, n_alts_sf = _build_singles_ll_vectorized(
+        container=container,
+        data=data_singles_female,
+        spec=spec,
+        param_vars=param_vars,
+        group="singles_female",
+        prefix="sf_",
+        logger=logger,
+    )
+    ll_cou, n_alts_cou = _build_couples_ll_vectorized(
+        container=container,
+        data=data_couples,
+        spec=spec,
+        param_vars=param_vars,
+        prefix="cou_",
+        logger=logger,
+    )
+
+    if len({n_alts_sm, n_alts_sf, n_alts_cou}) != 1:
+        logger.warning(
+            f"Different number of alternatives across groups: "
+            f"sm={n_alts_sm}, sf={n_alts_sf}, cou={n_alts_cou}"
+        )
+
+    ll_joint = ll_sm + ll_sf + ll_cou
+
+    # ========================================================================
+    # 3. Create model and solve
+    # ========================================================================
+    model = Model(
+        container,
+        name="ruro_joint_mnl_vectorized",
+        problem="nlp",
+        sense="max",
+        objective=ll_joint
+    )
+
+    logger.info("  Solving joint model...")
+    if solver_options:
+        logger.info(f"  Solver options: {solver_options}")
+        solve_result = model.solve(solver=solver_name, solver_options=solver_options)
+    else:
+        solve_result = model.solve(solver=solver_name)
+
+    walltime = time.time() - start_time
+
+    # ========================================================================
+    # 4. Extract results
+    # ========================================================================
+    theta_final = np.array([
+        _extract_var_level(param_vars[pname])
+        for pname in spec.all_param_names
+    ])
+
+    ll_final = getattr(model, "objective_value", None)
+    if ll_final is None:
+        ll_final = getattr(solve_result, "objective_value", None)
+
+    solve_status_enum = getattr(model, "solve_status", None)
+    model_status_enum = getattr(model, "status", None)
+    solver_status = str(solve_status_enum) if solve_status_enum else "Unknown"
+    model_status = str(model_status_enum) if model_status_enum else "Unknown"
+
+    n_iterations = getattr(model, "iteration_count", None)
+    if n_iterations is None:
+        n_iterations = getattr(model, "iter_used", None)
+    if n_iterations is None:
+        n_iterations = getattr(solve_result, "iteration_count", None)
+    if n_iterations is None:
+        n_iterations = getattr(solve_result, "iter_used", None)
+
+    logger.info("=" * 80)
+    logger.info("VECTORIZED JOINT ESTIMATION COMPLETE")
+    logger.info("=" * 80)
+    logger.info(f"  Solver status: {solver_status}")
+    logger.info(f"  Model status: {model_status}")
+    if ll_final is not None:
+        logger.info(f"  Objective value (LL): {ll_final:.4f}")
+    logger.info(f"  Wall time: {walltime:.2f} seconds")
+
+    return {
+        "theta": theta_final,
+        "log_likelihood": ll_final,
+        "solver_status": solver_status,
+        "model_status": model_status,
+        "walltime": walltime,
+        "n_iterations": n_iterations,
+        "gamspy_result": solve_result,
+        "solver": solver_name,
+        "n_obs": data_singles_male.n_obs + data_singles_female.n_obs + data_couples.n_obs,
+        "n_groups": data_singles_male.n_groups + data_singles_female.n_groups + data_couples.n_groups,
+        "n_alts": n_alts_sm,
+        "spec_name": spec.name,
+        "ll": ll_final,
+        "ll_singles_male": None,
+        "ll_singles_female": None,
+        "ll_couples": None,
+    }
 
 
 # ==============================================================================

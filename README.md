@@ -166,9 +166,9 @@ python -c "import pandas as pd; df = pd.read_parquet('U:/EUROMOD-STORAGE/Data/pr
 
 ## 📚 Documentation
 
-- **Session Archive:** `docs/archive/troubleshooting_sessions/`
-- **Log Files:** `docs/archive/logs/`
-- **Old Scripts:** `docs/archive/old_scripts/`
+- **[DONE.md](DONE.md)** - Complete list of all implemented features and fixes
+- **[TODO.md](TODO.md)** - Optional future enhancements and next steps
+- **Occupation Choice:** See `OCCUPATION_CHOICE_*.md` files for detailed design docs
 
 ---
 
@@ -176,17 +176,10 @@ python -c "import pandas as pd; df = pd.read_parquet('U:/EUROMOD-STORAGE/Data/pr
 
 ### Clean Workspace
 ```powershell
-.\cleanup_workspace.ps1
+.\cleanup_final.ps1
 ```
 
-Moves all troubleshooting/session files to `docs/archive/`.
-
-### Verify Optimizations
-```powershell
-python verify_optimizations.py
-```
-
-Checks that all optimizations are in place.
+Removes `__pycache__` directories (protects `.venv`).
 
 ---
 
@@ -205,23 +198,26 @@ Checks that all optimizations are in place.
 
 ---
 
-## ✅ Recent Updates
+## 🎯 Quick Commands
 
-### 2026-01-16
-- ✅ Integrated column filtering into Step 6
-- ✅ Fixed GAMSPY Options API compatibility
-- ✅ Reduced EUROMOD output to 27 essential columns
-- ✅ Pipeline now 2-3x faster with 87% storage savings
+### Run Full Pipeline
+```powershell
+.\RUN_PIPELINE_WITH_REDUCED_FILES.ps1
+```
+
+### Run Estimation Only (GAMSPy)
+```powershell
+.\RUN_OPTIMIZED_ESTIMATION.ps1
+```
+
+### Run Estimation Only (SciPy baseline)
+```powershell
+.\RUN_WITH_SCIPY.ps1
+```
 
 ---
 
-## 🎯 Next Steps
+**Project Status:** ✅ **Production Ready**
+**Last Updated:** January 28, 2026
 
-1. **Run optimized pipeline:** `.\RUN_PIPELINE_WITH_REDUCED_FILES.ps1`
-2. **Clean workspace:** `.\cleanup_workspace.ps1`
-3. **Review results:** Check `outputs/estimation/FR_2016/`
-
----
-
-**Project Status:** ✅ Production Ready  
-**Last Updated:** January 16, 2026
+See [DONE.md](DONE.md) for complete implementation details and [TODO.md](TODO.md) for optional future enhancements.

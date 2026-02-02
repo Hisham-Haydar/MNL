@@ -149,6 +149,91 @@ def _write_dataframe(
     return {"parquet": parquet_path}
 
 
+def _canonicalize_baseline_column(
+    df: pd.DataFrame,
+    canonical_cols: list[str],
+    baseline_col: str,
+    raw_backup_col: str,
+    variable_label: str
+) -> None:
+    """
+    Canonicalize a baseline column by ensuring it matches the current canonical value.
+
+    This helper consolidates duplicate logic for hours and wage baseline canonicalization.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to modify in-place
+    canonical_cols : list[str]
+        List of column names to check for canonical value (first found is used)
+    baseline_col : str
+        Name of baseline column to canonicalize (e.g., "lhw_base", "yivwg_base")
+    raw_backup_col : str
+        Name of column to store raw baseline before overwriting
+    variable_label : str
+        Human-readable label for logging (e.g., "hours", "wage")
+
+    Notes
+    -----
+    Modifies df in-place. Creates baseline_col if missing, overwrites if different
+    from canonical value. Preserves raw baseline in raw_backup_col for diagnostics.
+    """
+    # Find canonical current value
+    cur_value = None
+    for col in canonical_cols:
+        if col in df.columns:
+            cur_value = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+            break
+
+    if cur_value is None:
+        cur_value = pd.Series(0.0, index=df.index)
+
+    # Check if baseline column exists
+    if baseline_col in df.columns:
+        old_value = pd.to_numeric(df[baseline_col], errors="coerce").fillna(0.0)
+
+        # Check if baseline differs materially from canonical
+        if not np.allclose(old_value.values, cur_value.values, atol=1e-9, rtol=0.0):
+            # Preserve raw baseline for diagnostics
+            if raw_backup_col not in df.columns:
+                df[raw_backup_col] = old_value.copy()
+
+            # Count differences
+            n_changed = (np.abs(old_value.values - cur_value.values) > 1e-9).sum()
+
+            # Stats for positive values only (working deciders)
+            working_mask_old = old_value > 0
+            working_mask_cur = cur_value > 0
+
+            if working_mask_old.any():
+                old_stats = old_value[working_mask_old].describe(percentiles=[])
+                old_str = f"min={old_stats['min']:.2f}, median={old_stats['50%']:.2f}, max={old_stats['max']:.2f}"
+            else:
+                old_str = f"no positive {variable_label}"
+
+            if working_mask_cur.any():
+                cur_stats = cur_value[working_mask_cur].describe(percentiles=[])
+                cur_str = f"min={cur_stats['min']:.2f}, median={cur_stats['50%']:.2f}, max={cur_stats['max']:.2f}"
+            else:
+                cur_str = f"no positive {variable_label}"
+
+            logging.warning(
+                f"RURO_draws: {baseline_col} differs from canonical {variable_label} in {n_changed} rows. "
+                f"Overwriting {baseline_col} with canonical {variable_label} to prevent stale baseline issues.\n"
+                f"  Old {baseline_col} (positive): {old_str}\n"
+                f"  New {baseline_col} (positive): {cur_str}\n"
+                f"  Raw baseline preserved in '{raw_backup_col}' column."
+            )
+
+            # Overwrite with canonical
+            df[baseline_col] = cur_value.copy()
+    else:
+        # No baseline column exists - create from canonical
+        df[baseline_col] = cur_value.copy()
+        logging.info(f"Created {baseline_col} from canonical {variable_label} for draw=0 baseline compliance")
+
+
 def _write_draws_metadata(
     output_path: Path,
     metadata: Dict[str, Any],
@@ -699,102 +784,24 @@ def generate_draws_long(
     # after capping/harmonization in prep stage.
 
     # A) Hours baseline canonicalization
-    h_cur = pd.to_numeric(df["lhw"], errors="coerce").fillna(0.0)
-
-    if "lhw_base" in df.columns:
-        h_old = pd.to_numeric(df["lhw_base"], errors="coerce").fillna(0.0)
-
-        # Check if baseline differs materially from canonical
-        if not np.allclose(h_old.values, h_cur.values, atol=1e-9, rtol=0.0):
-            # Preserve raw baseline for diagnostics
-            if "lhw_base_raw" not in df.columns:
-                df["lhw_base_raw"] = h_old.copy()
-
-            # Count differences
-            n_changed = (np.abs(h_old.values - h_cur.values) > 1e-9).sum()
-
-            # Stats for positive hours only (working deciders)
-            working_mask_old = h_old > 0
-            working_mask_cur = h_cur > 0
-
-            if working_mask_old.any():
-                old_stats = h_old[working_mask_old].describe(percentiles=[])
-                old_str = f"min={old_stats['min']:.2f}, median={old_stats['50%']:.2f}, max={old_stats['max']:.2f}"
-            else:
-                old_str = "no positive hours"
-
-            if working_mask_cur.any():
-                cur_stats = h_cur[working_mask_cur].describe(percentiles=[])
-                cur_str = f"min={cur_stats['min']:.2f}, median={cur_stats['50%']:.2f}, max={cur_stats['max']:.2f}"
-            else:
-                cur_str = "no positive hours"
-
-            logging.warning(
-                f"RURO_draws: lhw_base differs from canonical lhw in {n_changed} rows. "
-                f"Overwriting lhw_base with canonical lhw to prevent stale baseline issues.\n"
-                f"  Old lhw_base (positive): {old_str}\n"
-                f"  New lhw_base (positive): {cur_str}\n"
-                f"  Raw baseline preserved in 'lhw_base_raw' column."
-            )
-
-            # Overwrite with canonical
-            df["lhw_base"] = h_cur.copy()
-    else:
-        # No baseline column exists - create from canonical
-        df["lhw_base"] = h_cur.copy()
-        logging.info("Created lhw_base from canonical lhw for draw=0 baseline compliance")
+    # Canonical hours: always lhw (this file guarantees lhw is filled)
+    _canonicalize_baseline_column(
+        df=df,
+        canonical_cols=["lhw"],
+        baseline_col="lhw_base",
+        raw_backup_col="lhw_base_raw",
+        variable_label="hours"
+    )
 
     # B) Wage baseline canonicalization
     # Canonical wage: prefer yivwg, fallback to wage_final
-    if "yivwg" in df.columns:
-        y_cur = pd.to_numeric(df["yivwg"], errors="coerce").fillna(0.0)
-    elif "wage_final" in df.columns:
-        y_cur = pd.to_numeric(df["wage_final"], errors="coerce").fillna(0.0)
-    else:
-        y_cur = pd.Series(0.0, index=df.index)
-
-    if "yivwg_base" in df.columns:
-        y_old = pd.to_numeric(df["yivwg_base"], errors="coerce").fillna(0.0)
-
-        # Check if baseline differs materially from canonical
-        if not np.allclose(y_old.values, y_cur.values, atol=1e-9, rtol=0.0):
-            # Preserve raw baseline for diagnostics
-            if "yivwg_base_raw" not in df.columns:
-                df["yivwg_base_raw"] = y_old.copy()
-
-            # Count differences
-            n_changed = (np.abs(y_old.values - y_cur.values) > 1e-9).sum()
-
-            # Stats for positive wages only (working deciders)
-            working_mask_old = y_old > 0
-            working_mask_cur = y_cur > 0
-
-            if working_mask_old.any():
-                old_stats = y_old[working_mask_old].describe(percentiles=[])
-                old_str = f"min={old_stats['min']:.2f}, median={old_stats['50%']:.2f}, max={old_stats['max']:.2f}"
-            else:
-                old_str = "no positive wages"
-
-            if working_mask_cur.any():
-                cur_stats = y_cur[working_mask_cur].describe(percentiles=[])
-                cur_str = f"min={cur_stats['min']:.2f}, median={cur_stats['50%']:.2f}, max={cur_stats['max']:.2f}"
-            else:
-                cur_str = "no positive wages"
-
-            logging.warning(
-                f"RURO_draws: yivwg_base differs from canonical wage in {n_changed} rows. "
-                f"Overwriting yivwg_base with canonical wage to prevent stale baseline issues.\n"
-                f"  Old yivwg_base (positive): {old_str}\n"
-                f"  New yivwg_base (positive): {cur_str}\n"
-                f"  Raw baseline preserved in 'yivwg_base_raw' column."
-            )
-
-            # Overwrite with canonical
-            df["yivwg_base"] = y_cur.copy()
-    else:
-        # No baseline column exists - create from canonical
-        df["yivwg_base"] = y_cur.copy()
-        logging.info("Created yivwg_base from canonical wage for draw=0 baseline compliance")
+    _canonicalize_baseline_column(
+        df=df,
+        canonical_cols=["yivwg", "wage_final"],
+        baseline_col="yivwg_base",
+        raw_backup_col="yivwg_base_raw",
+        variable_label="wage"
+    )
 
     # Prefer yivwg as requested; but if missing/unreliable for some, fallback to wage_final
     if "yivwg" in df.columns:

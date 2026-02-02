@@ -111,7 +111,8 @@
       "Bash(Select-String -Pattern \"Starting GAMSPy|LL expression built|Solving joint|COMPLETE|Final LL|Iterations|ERROR|WARNING\" -Context 0,1)",
       "Read(//u/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/2016_gamspy/run_2026-01-19_18-28-33/**)",
       "Bash(cmd /c \"cd /d U:\\\\Desktop\\\\Nizam_Hisham\\\\MNL\\\\scripts\\\\enhanced && C:\\\\Program Files\\\\Python312\\\\python.exe -c \"\"from estimation_spec_parser import parse_specification; spec = parse_specification\\(''estimation_spec.yaml''\\); print\\(''Total parameters:'', len\\(spec.all_param_names\\)\\); [print\\(p\\) for p in spec.all_param_names]\"\"\")",
-      "Bash(conda run -n GAMSPy_env python:*)"
+      "Bash(conda run -n GAMSPy_env python:*)",
+      "Bash(iconv:*)"
     ],
     "deny": [],
     "ask": []

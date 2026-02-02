@@ -133,6 +133,110 @@ def _load_drawsmeta(path: Path) -> Dict[str, Any]:
         return json.load(f)
 
 
+def _ensure_year_column(df: pd.DataFrame) -> None:
+    """
+    Ensure 'year' column exists in DataFrame, deriving from fallback columns if needed.
+
+    This helper consolidates duplicate year column normalization logic.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to modify in-place
+
+    Raises
+    ------
+    KeyError
+        If no year column can be derived
+
+    Notes
+    -----
+    Modifies df in-place. Checks in order: year, year_for_ruro, data_year.
+    """
+    if "year" not in df.columns:
+        if "year_for_ruro" in df.columns:
+            df["year"] = df["year_for_ruro"]
+        elif "data_year" in df.columns:
+            df["year"] = df["data_year"]
+        else:
+            raise KeyError("GSUR merge requires 'year' column")
+
+
+def _derive_educ3_from_deh(df: pd.DataFrame, deh_col: str = "deh", educ3_col: str = "educ3") -> None:
+    """
+    Derive educ3 (3-level education) from deh column if not present.
+
+    This helper consolidates duplicate deh→educ3 conversion logic.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame to modify in-place
+    deh_col : str, default="deh"
+        Source column name (detailed education harmonized)
+    educ3_col : str, default="educ3"
+        Target column name (3-level education)
+
+    Raises
+    ------
+    KeyError
+        If neither educ3_col nor deh_col exists
+
+    Notes
+    -----
+    Modifies df in-place. Mapping: deh ∈ {0,1,2} → 0 (low), {3,4} → 1 (medium), 5 → 2 (high).
+    """
+    if educ3_col not in df.columns:
+        if deh_col not in df.columns:
+            raise KeyError(f"GSUR merge requires '{educ3_col}' or '{deh_col}'")
+
+        deh = pd.to_numeric(df[deh_col], errors="coerce")
+        # Map deh to educ3: 0-2=low(0), 3-4=medium(1), 5=high(2)
+        educ3 = pd.Series(-1, index=df.index, dtype="Int64")
+        educ3.loc[deh.isin([0, 1, 2])] = 0
+        educ3.loc[deh.isin([3, 4])] = 1
+        educ3.loc[deh == 5] = 2
+        df[educ3_col] = educ3
+
+
+def _apply_decider_filter_couples(
+    df: pd.DataFrame,
+    decider_mask: pd.Series,
+    filter_name: str
+) -> pd.DataFrame:
+    """
+    Apply decider filtering for couples data at household-draw level.
+
+    This helper consolidates duplicate couples filtering logic across multiple fallback branches.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Couples DataFrame with idhh and draw columns
+    decider_mask : pd.Series
+        Boolean mask indicating decider rows
+    filter_name : str
+        Name of filter being applied (for logging)
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered DataFrame containing only household-draws with at least one decider
+
+    Notes
+    -----
+    For couples, we filter at household-draw level: if a household-draw contains at least one
+    decider, we keep all members of that household-draw (needed for joint estimation).
+    """
+    decider_hh_draws = df.loc[decider_mask, ["idhh", "draw"]].drop_duplicates()
+    out = df.merge(decider_hh_draws, on=["idhh", "draw"], how="inner")
+    logging.info(
+        f"Decider restriction (couples, household-level): kept {out.shape[0]}/{df.shape[0]} rows using {filter_name} "
+        f"({len(decider_hh_draws)} household-draws)"
+    )
+    return out
+
+
 # =========================================================================
 # EUROMOD MERGE & DECIDER RESTRICTION
 # =========================================================================
@@ -252,15 +356,7 @@ def _restrict_to_deciders(df: pd.DataFrame) -> pd.DataFrame:
 
         if is_couples and "idhh" in df.columns and "draw" in df.columns:
             # Couples: household-draw level
-            decider_hh_draws = df.loc[decider_mask, ["idhh", "draw"]].drop_duplicates()
-            out = df.merge(decider_hh_draws, on=["idhh", "draw"], how="inner")
-            logging.info(
-                "Decider restriction (couples, household-level): kept %d/%d rows using ruro_decider "
-                "(%d household-draws)",
-                out.shape[0],
-                df.shape[0],
-                len(decider_hh_draws)
-            )
+            out = _apply_decider_filter_couples(df, decider_mask, "ruro_decider")
         else:
             # Singles: row-level
             out = df.loc[decider_mask].copy()
@@ -278,15 +374,7 @@ def _restrict_to_deciders(df: pd.DataFrame) -> pd.DataFrame:
 
         if is_couples and "idhh" in df.columns and "draw" in df.columns:
             # Couples: household-draw level
-            decider_hh_draws = df.loc[decider_mask, ["idhh", "draw"]].drop_duplicates()
-            out = df.merge(decider_hh_draws, on=["idhh", "draw"], how="inner")
-            logging.info(
-                "Decider restriction (couples, household-level): kept %d/%d rows using lma==1 "
-                "(%d household-draws)",
-                out.shape[0],
-                df.shape[0],
-                len(decider_hh_draws)
-            )
+            out = _apply_decider_filter_couples(df, decider_mask, "lma==1")
         else:
             # Singles: row-level
             out = df.loc[decider_mask].copy()
@@ -328,26 +416,10 @@ def _merge_gsur_singles(
     df = df.copy()
 
     # Ensure year column
-    if "year" not in df.columns:
-        if "year_for_ruro" in df.columns:
-            df["year"] = df["year_for_ruro"]
-        elif "data_year" in df.columns:
-            df["year"] = df["data_year"]
-        else:
-            raise KeyError("GSUR merge requires 'year' column")
+    _ensure_year_column(df)
 
     # Derive educ3 from deh if not present
-    if "educ3" not in df.columns:
-        if "deh" not in df.columns:
-            raise KeyError("GSUR merge requires 'educ3' or 'deh'")
-
-        deh = pd.to_numeric(df["deh"], errors="coerce")
-        # Map deh to educ3: 0-2=low(0), 3-4=medium(1), 5=high(2)
-        educ3 = pd.Series(-1, index=df.index, dtype="Int64")
-        educ3.loc[deh.isin([0, 1, 2])] = 0
-        educ3.loc[deh.isin([3, 4])] = 1
-        educ3.loc[deh == 5] = 2
-        df["educ3"] = educ3
+    _derive_educ3_from_deh(df, deh_col="deh", educ3_col="educ3")
 
     # Merge on (year, drgn1, dgn, educ3)
     merge_keys = ["year", "drgn1", "dgn", "educ3"]
@@ -403,13 +475,7 @@ def _merge_gsur_couples_wide(
     df = df.copy()
 
     # Ensure year column
-    if "year" not in df.columns:
-        if "year_for_ruro" in df.columns:
-            df["year"] = df["year_for_ruro"]
-        elif "data_year" in df.columns:
-            df["year"] = df["data_year"]
-        else:
-            raise KeyError("GSUR merge requires 'year' column")
+    _ensure_year_column(df)
 
     # Derive educ3_male, educ3_female from deh_male, deh_female
     for gender in ["male", "female"]:
@@ -433,13 +499,8 @@ def _merge_gsur_couples_wide(
                         f"(or educL/M/H_{gender} dummies). None found in couples data."
                     )
             else:
-                # Derive from deh column
-                deh = pd.to_numeric(df[deh_col], errors="coerce")
-                educ3 = pd.Series(-1, index=df.index, dtype="Int64")
-                educ3.loc[deh.isin([0, 1, 2])] = 0
-                educ3.loc[deh.isin([3, 4])] = 1
-                educ3.loc[deh == 5] = 2
-                df[educ3_col] = educ3
+                # Derive from deh column using helper
+                _derive_educ3_from_deh(df, deh_col=deh_col, educ3_col=educ3_col)
 
     # Male merge: dgn=1
     gsur_male = gsur_df[gsur_df["dgn"] == 1].copy()

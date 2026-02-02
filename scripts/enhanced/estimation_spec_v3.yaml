@@ -1,0 +1,332 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - V3 with Consumption-Leisure Interaction
+# ==============================================================================
+# Enhanced specification with:
+# - Warm-start values from V2 estimation
+# - Region dummy interactions (Île-de-France = reference)
+# - Gender and couple status interactions
+# - NEW: Consumption-leisure interaction (beta_cl)
+#
+# Based on V2, adding the consumption-leisure cross-term
+# ==============================================================================
+
+specification:
+  name: "base_vw_v3_with_interaction"
+  description: "V2 + consumption-leisure interaction term (beta_cl)"
+  wage_spec: "vw"  # fw | vw | loc_empirical
+
+# ------------------------------------------------------------------------------
+# Utility Function (Preference Side)
+# ------------------------------------------------------------------------------
+utility:
+  functional_form: "box_cox"  # box_cox | log | linear
+
+  # Consumption utility: β_c * BC(c; θ_c)
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"
+    box_cox_bounds: [-7.0, 1.0]
+
+  # NEW: Consumption-Leisure Interaction
+  # beta_cl * BC(C, theta_c) * BC(L, theta_l)
+  # Group-specific: beta_cl_sm, beta_cl_sf, beta_cl_m, beta_cl_f
+  consumption_leisure_interaction:
+    coefficient: "beta_cl"
+    description: "Consumption-leisure interaction (complementarity/substitutability)"
+
+  # Leisure utility: [β_l0 + Σ β_l_X * X] * BC(l; θ_l)
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: "theta_l"
+    box_cox_bounds: [-10.0, 1.0]
+
+    shifters:
+      - variable: "age_norm"
+        coefficient: "beta_l_age_norm"
+        description: "Age effect (demeaned)"
+
+      - variable: "age_norm2"
+        coefficient: "beta_l_age_norm2"
+        description: "Age squared (quadratic aging effect)"
+
+      - variable: "n_children"
+        coefficient: "beta_l_n_children"
+        description: "Number of children effect"
+        gender_specific: true  # Only for females
+
+      - variable: "educL"
+        coefficient: "beta_l_educL"
+        description: "Low education dummy"
+
+      - variable: "educH"
+        coefficient: "beta_l_educH"
+        description: "High education dummy"
+
+# ------------------------------------------------------------------------------
+# Hours Opportunity Density (log h(h|X))
+# ------------------------------------------------------------------------------
+hours_opportunity:
+  shifters:
+    # Base hours shifters
+    - variable: "working"
+      coefficient: "beta_work"
+      description: "Working indicator (h>0)"
+
+    - variable: "working_pt1"
+      coefficient: "beta_pt1"
+      description: "Part-time 1 focal point (~20h)"
+
+    - variable: "working_pt2"
+      coefficient: "beta_pt2"
+      description: "Part-time 2 focal point (~30h)"
+
+    - variable: "working_ft"
+      coefficient: "beta_ft"
+      description: "Full-time focal point (~40h)"
+
+    - variable: "gsur"
+      coefficient: "beta_gsur"
+      description: "Group-specific unemployment rate"
+      interaction: "working"
+
+    # Education × working interactions
+    - variable: "educL"
+      coefficient: "beta_work_educL"
+      description: "Low education × working interaction"
+      interaction: "working"
+
+    - variable: "educH"
+      coefficient: "beta_work_educH"
+      description: "High education × working interaction"
+      interaction: "working"
+
+    # Region interactions (Île-de-France = region 1 is reference)
+    - variable: "reg2"
+      coefficient: "beta_work_reg2"
+      description: "Region 2 × working interaction"
+      interaction: "working"
+
+    - variable: "reg3"
+      coefficient: "beta_work_reg3"
+      description: "Region 3 × working interaction"
+      interaction: "working"
+
+    - variable: "reg4"
+      coefficient: "beta_work_reg4"
+      description: "Region 4 × working interaction"
+      interaction: "working"
+
+    - variable: "reg5"
+      coefficient: "beta_work_reg5"
+      description: "Region 5 × working interaction"
+      interaction: "working"
+
+    - variable: "reg6"
+      coefficient: "beta_work_reg6"
+      description: "Region 6 × working interaction"
+      interaction: "working"
+
+    - variable: "reg7"
+      coefficient: "beta_work_reg7"
+      description: "Region 7 × working interaction"
+      interaction: "working"
+
+    - variable: "reg8"
+      coefficient: "beta_work_reg8"
+      description: "Region 8 × working interaction"
+      interaction: "working"
+
+# ------------------------------------------------------------------------------
+# Wage Opportunity Density (log w(w|X)) - Mincer Equation
+# ------------------------------------------------------------------------------
+wage_opportunity:
+  specification: "log_normal"
+
+  mean_shifters:
+    - variable: "intercept"
+      coefficient: "beta_w0"
+      description: "Log-wage intercept"
+
+    - variable: "educL"
+      coefficient: "beta_w_educL"
+      description: "Low education wage penalty"
+
+    - variable: "educH"
+      coefficient: "beta_w_educH"
+      description: "High education wage premium"
+
+    - variable: "pexp_years"
+      coefficient: "beta_pexp"
+      description: "Experience (linear term)"
+
+    - variable: "pexp_years2"
+      coefficient: "beta_pexp2"
+      description: "Experience squared (concave returns)"
+
+  variance:
+    parameter: "sigma"
+    description: "Standard deviation of log-wage residual"
+    bounds: [0.1, 20.0]
+
+# ------------------------------------------------------------------------------
+# Singles-Specific Parameters
+# ------------------------------------------------------------------------------
+singles:
+  gender_specific_leisure: true
+
+# ------------------------------------------------------------------------------
+# Couples-Specific Parameters
+# ------------------------------------------------------------------------------
+couples:
+  gender_specific_leisure: true
+
+  leisure_interaction:
+    coefficient: "beta_interact"
+    description: "Male-female leisure cross-term (complementarity)"
+
+# ------------------------------------------------------------------------------
+# Parameter Initialization (WARM-START from V2 + NEW beta_cl params)
+# ------------------------------------------------------------------------------
+initial_values:
+  # ============================================================================
+  # GROUP 1: Singles Male (_sm suffix) - WARM START
+  # ============================================================================
+  beta_l0_sm: 0.4179
+  beta_l_age_norm_sm: -0.0076
+  beta_l_age_norm2_sm: -0.0017
+  beta_l_educL_sm: 0.1389
+  beta_l_educH_sm: -0.3457
+  beta_c_sm: 1.0399
+  theta_l_sm: 0.001
+  theta_c_sm: 0.2628
+
+  # NEW: Consumption-leisure interaction for singles male
+  beta_cl_sm: 0.0
+
+  # ============================================================================
+  # GROUP 2: Singles Female (_sf suffix) - WARM START
+  # ============================================================================
+  beta_l0_sf: 0.6778
+  beta_l_age_norm_sf: -0.0208
+  beta_l_age_norm2_sf: -0.0006
+  beta_l_n_children_sf: 0.2244
+  beta_l_educL_sf: 0.1394
+  beta_l_educH_sf: -0.4689
+  beta_c_sf: 0.7602
+  theta_l_sf: 0.0352
+  theta_c_sf: 0.5345
+
+  # NEW: Consumption-leisure interaction for singles female
+  beta_cl_sf: 0.0
+
+  # ============================================================================
+  # GROUP 3: Couples Male (_m suffix) - WARM START
+  # ============================================================================
+  beta_l0_m: 0.2886
+  beta_l_age_norm_m: -0.0031
+  beta_l_age_norm2_m: -0.0027
+  beta_l_educL_m: 0.1749
+  beta_l_educH_m: -0.7092
+  theta_l_m: 0.0968
+
+  # NEW: Consumption-leisure interaction for couples male
+  beta_cl_m: 0.0
+
+  # ============================================================================
+  # GROUP 4: Couples Female (_f suffix) - WARM START
+  # ============================================================================
+  beta_l0_f: 1.3515
+  beta_l_age_norm_f: -0.0334
+  beta_l_age_norm2_f: -0.0006
+  beta_l_n_children_f: 0.1
+  beta_l_educL_f: 0.1644
+  beta_l_educH_f: -0.2558
+  theta_l_f: 0.001
+
+  # NEW: Consumption-leisure interaction for couples female
+  beta_cl_f: 0.0
+
+  # ============================================================================
+  # COUPLES HOUSEHOLD: Consumption (shared) - WARM START
+  # ============================================================================
+  beta_c: 1.2740
+  theta_c: 0.2926
+
+  # ============================================================================
+  # SHARED OPPORTUNITY: Hours (all groups) - WARM START
+  # ============================================================================
+  beta_work: 1.3950
+  beta_pt1: 1.3308
+  beta_pt2: 1.9189
+  beta_ft: 2.9088
+  beta_gsur: 0.0
+  beta_work_educL: -0.4419
+  beta_work_educH: 0.7037
+
+  # Region interactions (start at 0)
+  beta_work_reg2: 0.0
+  beta_work_reg3: 0.0
+  beta_work_reg4: 0.0
+  beta_work_reg5: 0.0
+  beta_work_reg6: 0.0
+  beta_work_reg7: 0.0
+  beta_work_reg8: 0.0
+
+  # ============================================================================
+  # SHARED OPPORTUNITY: Wages (all groups) - WARM START
+  # ============================================================================
+  beta_w0: 2.1850
+  beta_w_educL: -0.0332
+  beta_w_educH: 0.2865
+  beta_pexp: 0.0032
+  beta_pexp2: 0.0
+  sigma: 0.4723
+
+  # ============================================================================
+  # COUPLES ONLY: Interaction - WARM START
+  # ============================================================================
+  beta_interact: -0.5534
+
+# ------------------------------------------------------------------------------
+# Optimization Settings
+# ------------------------------------------------------------------------------
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 10000
+  tolerance: 1.0e-9
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+  bounds:
+    # Singles Box-Cox parameters
+    theta_l_sm: [-7.0, 1.0]
+    theta_c_sm: [-7.0, 1.0]
+    theta_l_sf: [-7.0, 1.0]
+    theta_c_sf: [-7.0, 1.0]
+    # Couples Box-Cox parameters
+    theta_l_m: [-7.0, 1.0]
+    theta_l_f: [-7.0, 1.0]
+    theta_c: [-7.0, 1.0]
+    # Wage parameters
+    sigma: [0.1, 20.0]
+    beta_pexp2: [-10.0, 0.0]
+    # NEW: Consumption-leisure interaction bounds (allow negative for substitutes)
+    beta_cl_sm: [-5.0, 5.0]
+    beta_cl_sf: [-5.0, 5.0]
+    beta_cl_m: [-5.0, 5.0]
+    beta_cl_f: [-5.0, 5.0]
+
+# ------------------------------------------------------------------------------
+# Gradient Verification
+# ------------------------------------------------------------------------------
+gradient_verification:
+  enabled: false
+  method: "central"
+  epsilon: 1.0e-7
+  tolerance: 1.0e-4
+  check_at_init: true
+  check_random_points: 0
+  random_seed: 13
+  verbose: true

@@ -60,23 +60,13 @@ import argparse
 import logging
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 LOGGER = logging.getLogger(__name__)
-
-# Sheet metadata mapping from your description
-SHEET_INFO = {
-    # Sheet name pattern: (education, sex, age_group)
-    # Education codes
-    "TOTAL": "TOTAL",      # All ISCED 2011 levels
-    "ED0-2": "ED0-2",      # Less than primary, primary and lower secondary (low)
-    "ED3_4": "ED3_4",      # Upper secondary and post-secondary non-tertiary (medium)
-    "ED5-8": "ED5-8",      # Tertiary education (high)
-}
 
 # Age group mapping (from sheet names to codes)
 AGE_GROUP_MAP = {

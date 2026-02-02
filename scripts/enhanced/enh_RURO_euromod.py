@@ -183,19 +183,6 @@ def _euromod_root(explicit: Path | None = None) -> Path:
 # EUROMOD runners
 # ---------------------------------------------------------------------------
 
-def _read_microdata_file(path: Path) -> pd.DataFrame:
-    suf = path.suffix.lower()
-    if suf in {".txt", ".dat"}:
-        return pd.read_csv(path, sep="\t")
-    if suf == ".csv":
-        return pd.read_csv(path)
-    if suf == ".parquet":
-        return pd.read_parquet(path)  # type: ignore[arg-type]
-    if suf == ".pkl":
-        return pd.read_pickle(path)
-    raise ValueError(f"Unsupported microdata format for EUROMOD: {path}")
-
-
 class EuromodRunner:
     """Thin wrapper around the euromod API (imports locally)."""
 
@@ -256,11 +243,18 @@ class EuromodRunner:
 # ---------------------------------------------------------------------------
 
 def _read_dataframe(path: Path) -> pd.DataFrame:
+    """
+    Read DataFrame from various formats (consolidated from _read_microdata_file).
+
+    Supports: .parquet, .csv, .txt, .dat (tab-delimited), .pkl, .pickle
+    """
     suf = path.suffix.lower()
     if suf == ".parquet":
         return pd.read_parquet(path)  # type: ignore[arg-type]
     if suf == ".csv":
         return pd.read_csv(path)
+    if suf in {".txt", ".dat"}:
+        return pd.read_csv(path, sep="\t")
     if suf in {".pkl", ".pickle"}:
         return pd.read_pickle(path)
     raise ValueError(f"Unsupported dataset format: {path}")
@@ -412,7 +406,7 @@ def run_euromod_for_draws(
     # -------------------------------------------------------------------------
     # 1. Load EUROMOD baseline microdata and store original columns
     # -------------------------------------------------------------------------
-    em_input = _read_microdata_file(micro_template_path)
+    em_input = _read_dataframe(micro_template_path)
 
     # Store original EUROMOD template columns for later filtering
     # CRITICAL: Only columns that exist in the original dataset should be sent to EUROMOD

@@ -241,8 +241,17 @@ def _compute_utility_singles(
     beta_c_name = f"{spec.utility_consumption_coef}{gender_suffix}"
     beta_c = params[beta_c_name]
 
+    # Optional consumption-leisure interaction (group-specific if available)
+    beta_cl = 0.0
+    if spec.utility_consumption_leisure_interaction_coef:
+        beta_cl_name = f"{spec.utility_consumption_leisure_interaction_coef}{gender_suffix}"
+        if beta_cl_name in params:
+            beta_cl = params[beta_cl_name]
+        elif spec.utility_consumption_leisure_interaction_coef in params:
+            beta_cl = params[spec.utility_consumption_leisure_interaction_coef]
+
     # Total utility
-    u = beta_l_coeff * bc_l + beta_c * bc_c
+    u = beta_l_coeff * bc_l + beta_c * bc_c + beta_cl * bc_c * bc_l
 
     return u
 
@@ -634,6 +643,18 @@ def _compute_utility_derivatives_singles(
     beta_c_name = f"{spec.utility_consumption_coef}{gender_suffix}"
     beta_c = params[beta_c_name]
 
+    # Optional consumption-leisure interaction coefficient
+    beta_cl = 0.0
+    beta_cl_name: Optional[str] = None
+    if spec.utility_consumption_leisure_interaction_coef:
+        candidate_name = f"{spec.utility_consumption_leisure_interaction_coef}{gender_suffix}"
+        if candidate_name in params:
+            beta_cl_name = candidate_name
+        elif spec.utility_consumption_leisure_interaction_coef in params:
+            beta_cl_name = spec.utility_consumption_leisure_interaction_coef
+        if beta_cl_name is not None:
+            beta_cl = params[beta_cl_name]
+
     # Derivative w.r.t. leisure intercept - gender-specific
     idx_beta_l0 = spec.get_param_index(beta_l0_name)
     dV_dtheta[:, idx_beta_l0] = bc_l
@@ -656,17 +677,22 @@ def _compute_utility_derivatives_singles(
     idx_beta_c = spec.get_param_index(beta_c_name)
     dV_dtheta[:, idx_beta_c] = bc_c
 
+    # Derivative w.r.t. consumption-leisure interaction coefficient (if present)
+    if beta_cl_name is not None:
+        idx_beta_cl = spec.get_param_index(beta_cl_name)
+        dV_dtheta[:, idx_beta_cl] = bc_c * bc_l
+
     # Derivative w.r.t. theta_l - gender-specific (only if theta_l exists)
     if spec.utility_leisure_theta:
         idx_theta_l = spec.get_param_index(theta_l_name)
         dbc_l_dtheta = box_cox_derivative_theta(data.leisure, theta_l)
-        dV_dtheta[:, idx_theta_l] = beta_l_coeff * dbc_l_dtheta
+        dV_dtheta[:, idx_theta_l] = (beta_l_coeff + beta_cl * bc_c) * dbc_l_dtheta
 
     # Derivative w.r.t. theta_c - gender-specific (only if theta_c exists)
     if spec.utility_consumption_theta:
         idx_theta_c = spec.get_param_index(theta_c_name)
         dbc_c_dtheta = box_cox_derivative_theta(data.consumption, theta_c)
-        dV_dtheta[:, idx_theta_c] = beta_c * dbc_c_dtheta
+        dV_dtheta[:, idx_theta_c] = (beta_c + beta_cl * bc_l) * dbc_c_dtheta
 
 
 def _compute_hours_derivatives_singles(
@@ -1076,6 +1102,41 @@ def _compute_utility_couples(
     u_female_leisure = beta_l_coeff_female * bc_l_female
     u_consumption = beta_c * bc_c  # Consumption is household public good, added once
 
+    # Optional consumption-leisure interactions
+    beta_cl_male = 0.0
+    beta_cl_female = 0.0
+    beta_cl_name_m: Optional[str] = None
+    beta_cl_name_f: Optional[str] = None
+    if spec.utility_consumption_leisure_interaction_coef:
+        base_name = spec.utility_consumption_leisure_interaction_coef
+        if has_gender_specific:
+            candidate_m = f"{base_name}_m"
+            candidate_f = f"{base_name}_f"
+            if candidate_m in params:
+                beta_cl_name_m = candidate_m
+            elif base_name in params:
+                beta_cl_name_m = base_name
+            if candidate_f in params:
+                beta_cl_name_f = candidate_f
+            elif base_name in params:
+                beta_cl_name_f = base_name
+        else:
+            if base_name in params:
+                beta_cl_name_m = base_name
+                beta_cl_name_f = base_name
+            else:
+                if f"{base_name}_m" in params:
+                    beta_cl_name_m = f"{base_name}_m"
+                if f"{base_name}_f" in params:
+                    beta_cl_name_f = f"{base_name}_f"
+
+        if beta_cl_name_m is not None:
+            beta_cl_male = params[beta_cl_name_m]
+        if beta_cl_name_f is not None:
+            beta_cl_female = params[beta_cl_name_f]
+
+    u_consumption_leisure = beta_cl_male * bc_c * bc_l_male + beta_cl_female * bc_c * bc_l_female
+
     # Interaction term (if specified)
     if spec.couples_interaction_coef:
         beta_interact = params[spec.couples_interaction_coef]
@@ -1085,7 +1146,7 @@ def _compute_utility_couples(
 
     # Total utility: male_leisure + female_leisure + consumption + interaction
     # (NOT male_total + female_total which would double-count consumption)
-    return u_male_leisure + u_female_leisure + u_consumption + u_interact
+    return u_male_leisure + u_female_leisure + u_consumption + u_consumption_leisure + u_interact
 
 
 def _compute_hours_opportunity_couples_gender(
@@ -1444,6 +1505,39 @@ def _compute_utility_derivatives_couples(
 
     beta_c = params[spec.utility_consumption_coef]
 
+    # Optional consumption-leisure interaction coefficients
+    beta_cl_male = 0.0
+    beta_cl_female = 0.0
+    beta_cl_name_m: Optional[str] = None
+    beta_cl_name_f: Optional[str] = None
+    if spec.utility_consumption_leisure_interaction_coef:
+        base_name = spec.utility_consumption_leisure_interaction_coef
+        if has_gender_specific:
+            candidate_m = f"{base_name}_m"
+            candidate_f = f"{base_name}_f"
+            if candidate_m in params:
+                beta_cl_name_m = candidate_m
+            elif base_name in params:
+                beta_cl_name_m = base_name
+            if candidate_f in params:
+                beta_cl_name_f = candidate_f
+            elif base_name in params:
+                beta_cl_name_f = base_name
+        else:
+            if base_name in params:
+                beta_cl_name_m = base_name
+                beta_cl_name_f = base_name
+            else:
+                if f"{base_name}_m" in params:
+                    beta_cl_name_m = f"{base_name}_m"
+                if f"{base_name}_f" in params:
+                    beta_cl_name_f = f"{base_name}_f"
+
+        if beta_cl_name_m is not None:
+            beta_cl_male = params[beta_cl_name_m]
+        if beta_cl_name_f is not None:
+            beta_cl_female = params[beta_cl_name_f]
+
     # DERIVATIVES - Gender-specific handling
     if has_gender_specific:
         # Separate derivatives for male and female intercepts
@@ -1515,6 +1609,18 @@ def _compute_utility_derivatives_couples(
     idx_beta_c = spec.get_param_index(spec.utility_consumption_coef)
     dV_dtheta[:, idx_beta_c] = bc_c  # Once, not twice!
 
+    # Derivatives w.r.t. consumption-leisure interaction coefficients
+    if beta_cl_name_m is not None and beta_cl_name_f is not None and beta_cl_name_m == beta_cl_name_f:
+        idx_beta_cl = spec.get_param_index(beta_cl_name_m)
+        dV_dtheta[:, idx_beta_cl] = bc_c * (bc_l_male + bc_l_female)
+    else:
+        if beta_cl_name_m is not None:
+            idx_beta_cl_m = spec.get_param_index(beta_cl_name_m)
+            dV_dtheta[:, idx_beta_cl_m] = bc_c * bc_l_male
+        if beta_cl_name_f is not None:
+            idx_beta_cl_f = spec.get_param_index(beta_cl_name_f)
+            dV_dtheta[:, idx_beta_cl_f] = bc_c * bc_l_female
+
     # Derivative w.r.t. theta_l - gender-specific handling (only if theta_l exists)
     if spec.utility_leisure_theta:
         if has_gender_specific:
@@ -1525,6 +1631,10 @@ def _compute_utility_derivatives_couples(
             dbc_l_female_dtheta = box_cox_derivative_theta(data.leisure_female, theta_l_female)
             dV_dtheta[:, idx_theta_l_m] = beta_l_coeff_male * dbc_l_male_dtheta
             dV_dtheta[:, idx_theta_l_f] = beta_l_coeff_female * dbc_l_female_dtheta
+            if beta_cl_name_m is not None:
+                dV_dtheta[:, idx_theta_l_m] += beta_cl_male * bc_c * dbc_l_male_dtheta
+            if beta_cl_name_f is not None:
+                dV_dtheta[:, idx_theta_l_f] += beta_cl_female * bc_c * dbc_l_female_dtheta
         else:
             # Shared theta_l (old behavior - affects both male and female)
             idx_theta_l = spec.get_param_index(spec.utility_leisure_theta)
@@ -1532,6 +1642,10 @@ def _compute_utility_derivatives_couples(
             dbc_l_female_dtheta = box_cox_derivative_theta(data.leisure_female, theta_l_female)
             dV_dtheta[:, idx_theta_l] = (beta_l_coeff_male * dbc_l_male_dtheta +
                                           beta_l_coeff_female * dbc_l_female_dtheta)
+            dV_dtheta[:, idx_theta_l] += (
+                beta_cl_male * bc_c * dbc_l_male_dtheta +
+                beta_cl_female * bc_c * dbc_l_female_dtheta
+            )
 
             # Add interaction term contribution to shared theta_l derivative
             if spec.couples_interaction_coef:
@@ -1551,7 +1665,9 @@ def _compute_utility_derivatives_couples(
     if spec.utility_consumption_theta:
         idx_theta_c = spec.get_param_index(spec.utility_consumption_theta)
         dbc_c_dtheta = box_cox_derivative_theta(data.consumption, theta_c)
-        dV_dtheta[:, idx_theta_c] = beta_c * dbc_c_dtheta
+        dV_dtheta[:, idx_theta_c] = (
+            beta_c + beta_cl_male * bc_l_male + beta_cl_female * bc_l_female
+        ) * dbc_c_dtheta
 
     # Derivative w.r.t. interaction coefficient
     if spec.couples_interaction_coef:

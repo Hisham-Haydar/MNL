@@ -111,6 +111,28 @@ def setup_logging(output_dir: Path, verbose: bool = False) -> None:
 
 
 # ==============================================================================
+# GAMSPy Result Wrapper
+# ==============================================================================
+
+class GAMSPyOptimizeResult:
+    """
+    Wrapper for GAMSPy solver results to match scipy.optimize.OptimizeResult interface.
+
+    This allows GAMSPy results to be used interchangeably with SciPy L-BFGS-B results
+    in the estimation pipeline.
+    """
+    def __init__(self, gamspy_dict: Dict[str, Any]):
+        self.x = gamspy_dict['theta']
+        self.fun = -gamspy_dict['log_likelihood']  # Negative LL (minimization convention)
+        self.success = ('Optimal' in gamspy_dict['solver_status'] or
+                        'Normal' in gamspy_dict['solver_status'])
+        self.message = f"{gamspy_dict['solver_status']} ({gamspy_dict['model_status']})"
+        self.nit = gamspy_dict['n_iterations'] or 0
+        self.nfev = self.nit  # Approximate (GAMSPy doesn't track function evals separately)
+        self.jac = None  # GAMSPy uses automatic differentiation, doesn't return gradient
+
+
+# ==============================================================================
 # Standard Error Computation
 # ==============================================================================
 
@@ -1199,18 +1221,7 @@ Examples:
                 )
                 
                 # Convert to format compatible with downstream code
-                class GAMSPyJointResult:
-                    def __init__(self, gamspy_dict):
-                        self.x = gamspy_dict['theta']
-                        self.fun = -gamspy_dict['log_likelihood']
-                        self.success = ('Optimal' in gamspy_dict['solver_status'] or 
-                                      'Normal' in gamspy_dict['solver_status'])
-                        self.message = f"{gamspy_dict['solver_status']} ({gamspy_dict['model_status']})"
-                        self.nit = gamspy_dict['n_iterations'] or 0
-                        self.nfev = self.nit
-                        self.jac = None
-                
-                opt_result = GAMSPyJointResult(gamspy_result)
+                opt_result = GAMSPyOptimizeResult(gamspy_result)
                 walltime = gamspy_result['walltime']
                 
                 # Create results dict in joint format
@@ -1273,18 +1284,7 @@ Examples:
                 
                 # Convert GAMSPy result to SciPy-like OptimizeResult format
                 # (for compatibility with downstream code)
-                class GAMSPyResult:
-                    def __init__(self, gamspy_dict):
-                        self.x = gamspy_dict['theta']
-                        self.fun = -gamspy_dict['log_likelihood']  # Negative LL
-                        self.success = ('Optimal' in gamspy_dict['solver_status'] or 
-                                      'Normal' in gamspy_dict['solver_status'])
-                        self.message = f"{gamspy_dict['solver_status']} ({gamspy_dict['model_status']})"
-                        self.nit = gamspy_dict['n_iterations'] or 0
-                        self.nfev = self.nit  # Approximate
-                        self.jac = None  # GAMSPy doesn't return gradient
-                
-                opt_result = GAMSPyResult(gamspy_result)
+                opt_result = GAMSPyOptimizeResult(gamspy_result)
                 walltime = gamspy_result['walltime']
                 
                 # Format results

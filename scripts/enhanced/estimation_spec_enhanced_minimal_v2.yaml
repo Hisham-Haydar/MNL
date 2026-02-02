@@ -7,19 +7,20 @@
 # 3. OCCUPATION shifters for leisure utility (loc4_1, loc4_2, loc4_3)
 # 4. Focal hours indicators
 #
-# PARAMETERS: 25 total (28 created by parser, 3 fixed at bounds)
+# PARAMETERS: 29 total (32 created by parser, 3 fixed at bounds)
 # - Leisure intercepts: beta_l0_sm, beta_l0_sf, beta_l0_m, beta_l0_f (4)
 # - Leisure occupation shifters (3 dummies): beta_l_loc4_1, beta_l_loc4_2, beta_l_loc4_3
 #   x 4 groups = 12 params
 # - Consumption: beta_c_sm, beta_c_sf, beta_c (3)
+# - Consumption-Leisure interaction: beta_cl_sm, beta_cl_sf, beta_cl_m, beta_cl_f (4)
 # - Theta params: theta_c_sm, theta_c_sf (FIXED at 0), theta_c (free) (3 created, 1 free)
 # - Opportunity: beta_work, beta_pt1, beta_pt2, beta_ft, beta_w0, sigma (6)
-# NOTE: Parser creates 28 params total, but theta_c_sm=theta_c_sf=0 (fixed), so 25 effective
+# NOTE: Parser creates 32 params total, but theta_c_sm=theta_c_sf=0 (fixed), so 29 effective
 # ==============================================================================
 
 specification:
   name: "enhanced_minimal_occupation"
-  description: "Enhanced ultra_minimal: gender-specific singles, theta_c for couples, occupation shifters. 25 free params"
+  description: "Enhanced ultra_minimal: gender-specific singles, theta_c for couples, occupation shifters, and consumption-leisure interaction. 29 free params"
   wage_spec: "vw"
 
 # ==============================================================================
@@ -35,6 +36,12 @@ utility:
   consumption:
     coefficient: "beta_c"
     box_cox_exponent: "theta_c"  # Parser creates theta_c_sm, theta_c_sf, theta_c
+
+  # Consumption-leisure interaction:
+  # beta_cl * BC(C, theta_c) * BC(L, theta_l)
+  # with gender-specific coefficients across the 4-group architecture
+  consumption_leisure_interaction:
+    coefficient: "beta_cl"
 
   # Leisure utility: [β_l0 + β_loc1*loc4_1 + β_loc2*loc4_2 + β_loc3*loc4_3] * log(L)
   # Log utility (no theta) for all groups
@@ -132,6 +139,7 @@ initial_values:
   beta_l_loc4_2_sm: 0.0         # Professionals occupation shifter (NEW)
   beta_l_loc4_3_sm: 0.0         # Technicians occupation shifter (NEW)
   beta_c_sm: 1.1                # Consumption coefficient
+  beta_cl_sm: 0.0               # Consumption-leisure interaction
   theta_c_sm: 0.0               # Consumption theta (FIXED at 0 = log utility)
 
   # ============================================================================
@@ -142,6 +150,7 @@ initial_values:
   beta_l_loc4_2_sf: 0.0         # Professionals occupation shifter (NEW)
   beta_l_loc4_3_sf: 0.0         # Technicians occupation shifter (NEW)
   beta_c_sf: 1.1                # Consumption coefficient
+  beta_cl_sf: 0.0               # Consumption-leisure interaction
   theta_c_sf: 0.0               # Consumption theta (FIXED at 0 = log utility)
 
   # ============================================================================
@@ -151,6 +160,7 @@ initial_values:
   beta_l_loc4_1_m: 0.0          # Managers occupation shifter (NEW)
   beta_l_loc4_2_m: 0.0          # Professionals occupation shifter (NEW)
   beta_l_loc4_3_m: 0.0          # Technicians occupation shifter (NEW)
+  beta_cl_m: 0.0                # Consumption-leisure interaction
 
   # ============================================================================
   # Couples Female (_f suffix)
@@ -159,6 +169,7 @@ initial_values:
   beta_l_loc4_1_f: 0.0          # Managers occupation shifter (NEW)
   beta_l_loc4_2_f: 0.0          # Professionals occupation shifter (NEW)
   beta_l_loc4_3_f: 0.0          # Technicians occupation shifter (NEW)
+  beta_cl_f: 0.0                # Consumption-leisure interaction
 
   # ============================================================================
   # Couples Household: Consumption (shared)

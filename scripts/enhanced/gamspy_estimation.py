@@ -231,6 +231,20 @@ def get_param_name(base_name: str, group: str, param_vars: dict) -> str:
     )
 
 
+def get_optional_param_name(base_name: Optional[str], group: str, param_vars: dict) -> Optional[str]:
+    """
+    Resolve optional parameter name for a group.
+
+    Returns None when base_name is not configured or parameter is absent.
+    """
+    if not base_name:
+        return None
+    try:
+        return get_param_name(base_name, group, param_vars)
+    except ValueError:
+        return None
+
+
 def validate_gamspy_result(model, ll_final: float, theta_final: np.ndarray,
                           expected_ll_range: tuple = (-20000, -1000),
                           logger=None) -> None:
@@ -588,6 +602,13 @@ def estimate_singles_gamspy(
 
             # Leisure utility component
             util_j = util_j + beta_l_expr * bc_l
+
+            # Optional consumption-leisure interaction: beta_cl * BC(C) * BC(L)
+            beta_cl_param = get_optional_param_name(
+                spec.utility_consumption_leisure_interaction_coef, group, param_vars
+            )
+            if beta_cl_param is not None:
+                util_j = util_j + param_vars[beta_cl_param] * bc_c * bc_l
             
             # Add ASC if applicable (not for base alternative)
             # ASCs are alternative-specific, check if this alt has one
@@ -906,6 +927,24 @@ def estimate_couples_gamspy(
 
             # Male leisure utility component
             util_j = util_j + beta_l_m_expr * bc_l_m
+
+            # Optional consumption-leisure interaction terms:
+            # beta_cl_m * BC(C) * BC(L_m) + beta_cl_f * BC(C) * BC(L_f)
+            beta_cl_m_param = get_optional_param_name(
+                spec.utility_consumption_leisure_interaction_coef, 'couples_male', param_vars
+            )
+            if beta_cl_m_param is not None:
+                util_j = util_j + param_vars[beta_cl_m_param] * bc_c * bc_l_m
+
+            beta_cl_f_param = get_optional_param_name(
+                spec.utility_consumption_leisure_interaction_coef, 'couples_female', param_vars
+            )
+            if beta_cl_f_param is not None:
+                util_j = util_j + param_vars[beta_cl_f_param] * bc_c * bc_l_f
+
+            # Optional leisure-leisure interaction term
+            if spec.couples_interaction_coef and spec.couples_interaction_coef in param_vars:
+                util_j = util_j + param_vars[spec.couples_interaction_coef] * bc_l_m * bc_l_f
             
             utilities.append(util_j)
         
@@ -1524,6 +1563,13 @@ def estimate_joint_gamspy(
 
             util_j = util_j + beta_l_expr * bc_l
 
+            # Optional consumption-leisure interaction: beta_cl * BC(C) * BC(L)
+            beta_cl_param = get_optional_param_name(
+                spec.utility_consumption_leisure_interaction_coef, 'singles_male', param_vars
+            )
+            if beta_cl_param is not None:
+                util_j = util_j + param_vars[beta_cl_param] * bc_c * bc_l
+
             # Hours opportunity density (log_h)
             # Use pre-computed variables from data
             working = float(data_singles_male.working[global_idx])  # 0/1 indicator
@@ -1704,6 +1750,13 @@ def estimate_joint_gamspy(
                 bc_l = gp_log(l_val)
 
             util_j = util_j + beta_l_expr * bc_l
+
+            # Optional consumption-leisure interaction: beta_cl * BC(C) * BC(L)
+            beta_cl_param = get_optional_param_name(
+                spec.utility_consumption_leisure_interaction_coef, 'singles_female', param_vars
+            )
+            if beta_cl_param is not None:
+                util_j = util_j + param_vars[beta_cl_param] * bc_c * bc_l
 
             # Hours opportunity density (log_h)
             # Use pre-computed variables from data
@@ -1914,10 +1967,23 @@ def estimate_joint_gamspy(
 
             util_j = util_j + beta_l_m_expr * bc_l_m
 
-            # Interaction term: β_interact * BC(L_m) * BC(L_f)
-            if 'beta_interact' in param_vars:
-                interact_term = param_vars['beta_interact'] * bc_l_m * bc_l_f
-                util_j = util_j + interact_term
+            # Optional consumption-leisure interaction terms:
+            # beta_cl_m * BC(C) * BC(L_m) + beta_cl_f * BC(C) * BC(L_f)
+            beta_cl_m_param = get_optional_param_name(
+                spec.utility_consumption_leisure_interaction_coef, 'couples_male', param_vars
+            )
+            if beta_cl_m_param is not None:
+                util_j = util_j + param_vars[beta_cl_m_param] * bc_c * bc_l_m
+
+            beta_cl_f_param = get_optional_param_name(
+                spec.utility_consumption_leisure_interaction_coef, 'couples_female', param_vars
+            )
+            if beta_cl_f_param is not None:
+                util_j = util_j + param_vars[beta_cl_f_param] * bc_c * bc_l_f
+
+            # Optional leisure-leisure interaction term
+            if spec.couples_interaction_coef and spec.couples_interaction_coef in param_vars:
+                util_j = util_j + param_vars[spec.couples_interaction_coef] * bc_l_m * bc_l_f
 
             # Hours opportunity density for MALE (log_h_m)
             working_m = float(data_couples.working_male[global_idx])

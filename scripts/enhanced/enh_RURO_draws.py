@@ -146,8 +146,6 @@ def _write_dataframe(
     parquet_path = out_dir / f"{base}.parquet"
 
     df.to_parquet(parquet_path, index=False, engine="pyarrow")  # type: ignore[arg-type]
-    # CSV export temporarily disabled because it is unused and costly.
-    # df.to_csv(csv_path, index=False)
     return {"parquet": parquet_path}
 
 

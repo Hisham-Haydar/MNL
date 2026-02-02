@@ -200,6 +200,27 @@ LOGGER = logging.getLogger(__name__)
 
 
 # =============================================================================
+# MODULE-LEVEL CONSTANTS
+# =============================================================================
+
+GROUP_LABELS = {
+    'sm': 'Single Males',
+    'sf': 'Single Females',
+    'm': 'Males in Couples',
+    'f': 'Females in Couples',
+    'cou': 'Couples',
+    'cou_m': 'Males in Couples',
+    'cou_f': 'Females in Couples',
+    'singles_male': 'Single Males',
+    'singles_female': 'Single Females',
+    'couples': 'Couples',
+    'couples_m': 'Males in Couples',
+    'couples_f': 'Females in Couples',
+    'joint': 'Joint (All Groups)'
+}
+
+
+# =============================================================================
 # CORE MATHEMATICAL FUNCTIONS
 # =============================================================================
 
@@ -615,14 +636,7 @@ def analyze_muc_behavior(parsed_params: ParsedParameters) -> List[Dict[str, Any]
         elif not muc_diminishing:
             notes.append(f"MUC is increasing (θ_c = {theta_c:.2f} > 1)")
 
-        group_label = {
-            'sm': 'Single Males', 'sf': 'Single Females',
-            'm': 'Males in Couples', 'f': 'Females in Couples',
-            'cou': 'Couples', 'cou_m': 'Males in Couples', 'cou_f': 'Females in Couples',
-            'singles_male': 'Single Males', 'singles_female': 'Single Females',
-            'couples': 'Couples', 'couples_m': 'Males in Couples', 'couples_f': 'Females in Couples',
-            'joint': 'Joint (All Groups)'
-        }.get(group, group)
+        group_label = GROUP_LABELS.get(group, group)
 
         rows.append({
             'Group': group_label,
@@ -647,13 +661,7 @@ def analyze_muc_behavior(parsed_params: ParsedParameters) -> List[Dict[str, Any]
 def compute_structural_elasticities(parsed_params: ParsedParameters) -> pd.DataFrame:
     """Compute structural labor supply elasticities."""
     rows = []
-    group_labels = {
-        'sm': 'Single Males', 'sf': 'Single Females',
-        'm': 'Males in Couples', 'f': 'Females in Couples',
-        'cou_m': 'Males in Couples', 'cou_f': 'Females in Couples',
-        'singles_male': 'Single Males', 'singles_female': 'Single Females',
-        'couples': 'Couples', 'joint': 'Joint (All)'
-    }
+    group_labels = GROUP_LABELS
 
     for group in parsed_params.preference_groups:
         params = parsed_params.get_all_params_for_group(group)
@@ -795,13 +803,7 @@ def plot_utility_contours_all_groups(parsed_params: ParsedParameters, output_dir
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     plot_paths = {}
-    group_labels = {
-        'sm': 'Single Males', 'sf': 'Single Females',
-        'm': 'Males in Couples', 'f': 'Females in Couples',
-        'cou_m': 'Males in Couples', 'cou_f': 'Females in Couples',
-        'singles_male': 'Single Males', 'singles_female': 'Single Females',
-        'couples_m': 'Males in Couples', 'couples_f': 'Females in Couples',
-    }
+    group_labels = GROUP_LABELS
 
     c_grid = np.linspace(0.05, 2.5, 100)
     l_grid = np.linspace(0.1, 2.5, 100)
@@ -910,13 +912,7 @@ def plot_mu_comparison(parsed_params: ParsedParameters, output_dir: Path, prefix
         'singles_male': '#1f77b4', 'singles_female': '#ff7f0e',
         'couples_m': '#2ca02c', 'couples_f': '#d62728', 'cou': '#9467bd', 'couples': '#9467bd'
     }
-    group_labels = {
-        'sm': 'Single Males', 'sf': 'Single Females',
-        'cou_m': 'Males in Couples', 'cou_f': 'Females in Couples',
-        'm': 'Males in Couples', 'f': 'Females in Couples',
-        'singles_male': 'Single Males', 'singles_female': 'Single Females',
-        'couples': 'Couples (shared)', 'cou': 'Couples (shared)'
-    }
+    group_labels = GROUP_LABELS
 
     # MUC comparison
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -1060,12 +1056,8 @@ def plot_mu_distributions_by_group(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     plot_paths = {}
-    group_labels = {
-        'sm': 'Single Males', 'sf': 'Single Females',
-        'm': 'Males in Couples', 'f': 'Females in Couples',
-        'cou_m': 'Males in Couples', 'cou_f': 'Females in Couples'
-    }
-    
+    group_labels = GROUP_LABELS
+
     group_colors = {
         'sm': '#1f77b4', 'sf': '#ff7f0e',
         'm': '#2ca02c', 'f': '#d62728',
@@ -2460,14 +2452,7 @@ def generate_html_report_styled(
     """
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
-    group_labels = {
-        'sm': 'Single Males', 'sf': 'Single Females',
-        'm': 'Males in Couples', 'f': 'Females in Couples',
-        'cou': 'Couples', 'cou_m': 'Males in Couples', 'cou_f': 'Females in Couples',
-        'singles_male': 'Single Males', 'singles_female': 'Single Females',
-        'couples': 'Couples', 'couples_m': 'Males in Couples', 'couples_f': 'Females in Couples',
-        'joint': 'Joint (All Groups)',
-    }
+    group_labels = GROUP_LABELS
 
     if fit_stats is None:
         fit_stats = {}

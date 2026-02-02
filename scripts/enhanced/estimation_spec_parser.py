@@ -53,6 +53,7 @@ class EstimationSpec:
     utility_leisure_intercept: str
     utility_leisure_theta: Optional[str]
     utility_leisure_shifters: List[Dict[str, Any]]
+    utility_consumption_leisure_interaction_coef: Optional[str]
 
     # Hours opportunity configuration
     hours_shifters: List[Dict[str, Any]]
@@ -334,6 +335,11 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     consumption_config = utility_config.get("consumption", {})
     utility_consumption_coef = consumption_config.get("coefficient", "beta_c")
     utility_consumption_theta = consumption_config.get("box_cox_exponent", None)
+    consumption_leisure_interaction_config = utility_config.get("consumption_leisure_interaction", {})
+    if isinstance(consumption_leisure_interaction_config, dict):
+        utility_consumption_leisure_interaction_coef = consumption_leisure_interaction_config.get("coefficient", None)
+    else:
+        utility_consumption_leisure_interaction_coef = None
 
     leisure_config = utility_config.get("leisure", {})
     utility_leisure_intercept = leisure_config.get("intercept", "beta_l0")
@@ -430,6 +436,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
             utility_leisure_intercept=utility_leisure_intercept,
             utility_leisure_theta=utility_leisure_theta,
             utility_leisure_shifters=utility_leisure_shifters,
+            utility_consumption_leisure_interaction_coef=utility_consumption_leisure_interaction_coef,
             hours_shifters=hours_shifters,
             wage_spec=wage_spec,
             wage_form=wage_form,
@@ -480,6 +487,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         utility_leisure_intercept=utility_leisure_intercept,
         utility_leisure_theta=utility_leisure_theta,
         utility_leisure_shifters=utility_leisure_shifters,
+        utility_consumption_leisure_interaction_coef=utility_consumption_leisure_interaction_coef,
         hours_shifters=hours_shifters,
         wage_form=wage_form,
         wage_mean_shifters=wage_mean_shifters,
@@ -533,6 +541,7 @@ def _build_parameter_list(
     utility_leisure_intercept: str,
     utility_leisure_theta: Optional[str],
     utility_leisure_shifters: List[Dict[str, Any]],
+    utility_consumption_leisure_interaction_coef: Optional[str],
     hours_shifters: List[Dict[str, Any]],
     wage_spec: str,
     wage_form: str,
@@ -556,7 +565,8 @@ def _build_parameter_list(
     1. Preference parameters (leisure shifters, consumption coef, Box-Cox exponents)
     2. Hours opportunity parameters
     3. Wage opportunity parameters
-    4. Couples interaction (if applicable)
+    4. Consumption-leisure interaction (if applicable)
+    5. Couples interaction (if applicable)
 
     This matches the order in the old script for backward compatibility.
 
@@ -598,6 +608,8 @@ def _build_parameter_list(
         singles_male_params.append(f"{shifter['coefficient']}_sm")
 
     singles_male_params.append(f"{utility_consumption_coef}_sm")  # beta_c_sm
+    if utility_consumption_leisure_interaction_coef:
+        singles_male_params.append(f"{utility_consumption_leisure_interaction_coef}_sm")
 
     if utility_form == "box_cox":
         if utility_leisure_theta:
@@ -615,6 +627,8 @@ def _build_parameter_list(
         singles_female_params.append(f"{shifter['coefficient']}_sf")
 
     singles_female_params.append(f"{utility_consumption_coef}_sf")  # beta_c_sf
+    if utility_consumption_leisure_interaction_coef:
+        singles_female_params.append(f"{utility_consumption_leisure_interaction_coef}_sf")
 
     if utility_form == "box_cox":
         if utility_leisure_theta:
@@ -636,6 +650,8 @@ def _build_parameter_list(
 
     if utility_form == "box_cox" and utility_leisure_theta:
         couples_male_params.append(f"{utility_leisure_theta}_m")  # theta_l_m
+    if utility_consumption_leisure_interaction_coef:
+        couples_male_params.append(f"{utility_consumption_leisure_interaction_coef}_m")
 
     params.extend(couples_male_params)
 
@@ -648,6 +664,8 @@ def _build_parameter_list(
 
     if utility_form == "box_cox" and utility_leisure_theta:
         couples_female_params.append(f"{utility_leisure_theta}_f")  # theta_l_f
+    if utility_consumption_leisure_interaction_coef:
+        couples_female_params.append(f"{utility_consumption_leisure_interaction_coef}_f")
 
     params.extend(couples_female_params)
 

@@ -52,6 +52,42 @@ NORMALIZATION_TOLERANCE = 1e-6
 NORMALIZATION_ERROR_THRESHOLD = 1e-4
 
 # ==============================================================================
+# Helper Functions for Data Preparation
+# ==============================================================================
+
+def to_safe_numeric(
+    series: pd.Series,
+    fill_value: float = 0.0,
+    dtype: type = float
+) -> pd.Series:
+    """
+    Safely convert Series to numeric with coercion, fillna, and dtype conversion.
+
+    This helper consolidates a common pattern used throughout the pipeline:
+    pd.to_numeric(series, errors="coerce").fillna(fill_value).astype(dtype)
+
+    Parameters
+    ----------
+    series : pd.Series
+        Series to convert to numeric
+    fill_value : float, default=0.0
+        Value to use for filling NaN/invalid values
+    dtype : type, default=float
+        Target dtype (int, float, np.int64, etc.)
+
+    Returns
+    -------
+    pd.Series
+        Numeric series with specified dtype
+
+    Examples
+    --------
+    >>> to_safe_numeric(df["age"], fill_value=0, dtype=int)
+    >>> to_safe_numeric(df["wage"], fill_value=0.0, dtype=float)
+    """
+    return pd.to_numeric(series, errors="coerce").fillna(fill_value).astype(dtype)
+
+# ==============================================================================
 # Data Loading & Validation
 # ==============================================================================
 

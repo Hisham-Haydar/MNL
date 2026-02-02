@@ -278,6 +278,17 @@ def _build_singles_ll_vectorized(
 
     u_leisure = beta_l_coeff * bc_l
 
+    # Optional consumption-leisure interaction: beta_cl * BC(C) * BC(L)
+    u_consumption_leisure = 0.0
+    if spec.utility_consumption_leisure_interaction_coef:
+        try:
+            beta_cl_name = get_param_name(
+                spec.utility_consumption_leisure_interaction_coef, group, param_vars
+            )
+            u_consumption_leisure = param_vars[beta_cl_name] * bc_c * bc_l
+        except ValueError:
+            pass
+
     # === Hours opportunity density ===
     log_h = 0.0
     working_param = None
@@ -391,7 +402,7 @@ def _build_singles_ll_vectorized(
                 log_w = working_param * log_w_total
 
     # Composite utility
-    utility = u_consumption + u_leisure + log_h + log_w - gp_log(prior_param + LOG_EPS)
+    utility = u_consumption + u_leisure + u_consumption_leisure + log_h + log_w - gp_log(prior_param + LOG_EPS)
 
     if logger:
         logger.info("    Utility expression built (vectorized)")
@@ -548,12 +559,31 @@ def _build_couples_ll_vectorized(
 
     u_leisure_f = beta_l_coeff_f * bc_l_f
 
+    # Optional consumption-leisure interaction terms:
+    # beta_cl_m * BC(C) * BC(L_m) + beta_cl_f * BC(C) * BC(L_f)
+    u_consumption_leisure = 0.0
+    if spec.utility_consumption_leisure_interaction_coef:
+        try:
+            beta_cl_m_name = get_param_name(
+                spec.utility_consumption_leisure_interaction_coef, "couples_male", param_vars
+            )
+            u_consumption_leisure = u_consumption_leisure + param_vars[beta_cl_m_name] * bc_c * bc_l_m
+        except ValueError:
+            pass
+        try:
+            beta_cl_f_name = get_param_name(
+                spec.utility_consumption_leisure_interaction_coef, "couples_female", param_vars
+            )
+            u_consumption_leisure = u_consumption_leisure + param_vars[beta_cl_f_name] * bc_c * bc_l_f
+        except ValueError:
+            pass
+
     # Interaction term (if specified)
     u_interact = 0.0
     if spec.couples_interaction_coef and spec.couples_interaction_coef in param_vars:
         u_interact = param_vars[spec.couples_interaction_coef] * bc_l_m * bc_l_f
 
-    utility = u_consumption + u_leisure_m + u_leisure_f + u_interact
+    utility = u_consumption + u_leisure_m + u_leisure_f + u_consumption_leisure + u_interact
 
     # Hours opportunity - male and female
     log_h_m = 0.0
@@ -882,12 +912,20 @@ def estimate_singles_vectorized_gamspy(
 
     # Consumption utility
     c_scaled = consumption_param / c_scale
-    u_consumption = beta_c * box_cox_transform(c_scaled, theta_c)
+    bc_consumption = box_cox_transform(c_scaled, theta_c)
+    u_consumption = beta_c * bc_consumption
 
     # Leisure utility (base)
     l_scaled = leisure_param / l_scale
     bc_leisure = box_cox_transform(l_scaled, theta_l)
     u_leisure = beta_l0 * bc_leisure
+
+    # Optional consumption-leisure interaction (group-specific)
+    u_consumption_leisure = 0.0
+    if spec.utility_consumption_leisure_interaction_coef:
+        beta_cl_name = f"{spec.utility_consumption_leisure_interaction_coef}_{gender_suffix}"
+        if beta_cl_name in param_vars:
+            u_consumption_leisure = param_vars[beta_cl_name] * bc_consumption * bc_leisure
 
     # ========================================================================
     # 3a. Add leisure shifters (demographics)
@@ -1117,7 +1155,7 @@ def estimate_singles_vectorized_gamspy(
         log_w = working_param * log_w_density
 
     # Total utility = consumption + leisure + hours opportunity + wage opportunity - prior
-    utility = u_consumption + u_leisure + log_h + log_w
+    utility = u_consumption + u_leisure + u_consumption_leisure + log_h + log_w
 
     # Subtract log prior (importance sampling correction)
     utility = utility - gp_log(prior_param + LOG_EPS)

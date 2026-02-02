@@ -140,6 +140,19 @@ def _at_value(at: Dict[str, float], key: str, default: float) -> float:
     return float(at.get(key, default))
 
 
+def _coalesce_none(value: Optional[Any], default: Any = 0.0) -> Any:
+    """Return value unless it is None (safe for symbolic objects)."""
+    return default if value is None else value
+
+
+def _first_non_none(*values: Optional[Any], default: Any = 0.0) -> Any:
+    """Return first value that is not None (safe for symbolic objects)."""
+    for value in values:
+        if value is not None:
+            return value
+    return default
+
+
 def _utility_component_scalar(
     x: float,
     theta: Optional[float],
@@ -269,12 +282,12 @@ def evaluate_constraint_value_numpy(
         dbc_l = _utility_derivative_scalar(l, theta_l, spec.utility_form)
         beta_cl = 0.0
         if spec.utility_consumption_leisure_interaction_coef:
-            beta_cl = _resolve_param_value(
+            beta_cl = _coalesce_none(_resolve_param_value(
                 params,
                 spec.utility_consumption_leisure_interaction_coef,
                 group,
                 required=False,
-            ) or 0.0
+            ))
         beta_l = _resolve_single_leisure_beta_numpy(params, spec, group, at)
         if expression == "muc":
             return float((beta_c + beta_cl * bc_l) * dbc_c)
@@ -311,18 +324,18 @@ def evaluate_constraint_value_numpy(
     beta_cl_m = 0.0
     beta_cl_f = 0.0
     if spec.utility_consumption_leisure_interaction_coef:
-        beta_cl_m = _resolve_param_value(
+        beta_cl_m = _coalesce_none(_resolve_param_value(
             params,
             spec.utility_consumption_leisure_interaction_coef,
             "couples_male",
             required=False,
-        ) or 0.0
-        beta_cl_f = _resolve_param_value(
+        ))
+        beta_cl_f = _coalesce_none(_resolve_param_value(
             params,
             spec.utility_consumption_leisure_interaction_coef,
             "couples_female",
             required=False,
-        ) or 0.0
+        ))
 
     if expression == "muc":
         return float((beta_c + beta_cl_m * bc_l_m + beta_cl_f * bc_l_f) * dbc_c)
@@ -347,11 +360,14 @@ def evaluate_constraint_value_numpy(
     beta_cl_own = beta_cl_m if own_group == "couples_male" else beta_cl_f
     beta_interact = 0.0
     if spec.couples_interaction_coef:
-        beta_interact = _resolve_param_value(
-            params, spec.couples_interaction_coef, partner_group, required=False
-        ) or _resolve_param_value(
-            params, spec.couples_interaction_coef, "couples_household", required=False
-        ) or 0.0
+        beta_interact = _first_non_none(
+            _resolve_param_value(
+                params, spec.couples_interaction_coef, partner_group, required=False
+            ),
+            _resolve_param_value(
+                params, spec.couples_interaction_coef, "couples_household", required=False
+            ),
+        )
     pref_term = beta_l_own + beta_cl_own * bc_c + beta_interact * bc_l_partner
     if expression == "mul":
         return float(pref_term * dbc_l_own)
@@ -509,12 +525,12 @@ def evaluate_constraint_value_gamspy(
         dbc_l = _utility_derivative_symbol(l, theta_l, spec.utility_form, gp_exp, gp_log, log_eps)
         beta_cl = 0.0
         if spec.utility_consumption_leisure_interaction_coef:
-            beta_cl = _resolve_param_symbol(
+            beta_cl = _coalesce_none(_resolve_param_symbol(
                 param_vars,
                 spec.utility_consumption_leisure_interaction_coef,
                 group,
                 required=False,
-            ) or 0.0
+            ))
         beta_l = _resolve_single_leisure_beta_symbol(param_vars, spec, group, at)
         if expression == "muc":
             return (beta_c + beta_cl * bc_l) * dbc_c
@@ -555,18 +571,18 @@ def evaluate_constraint_value_gamspy(
     beta_cl_m = 0.0
     beta_cl_f = 0.0
     if spec.utility_consumption_leisure_interaction_coef:
-        beta_cl_m = _resolve_param_symbol(
+        beta_cl_m = _coalesce_none(_resolve_param_symbol(
             param_vars,
             spec.utility_consumption_leisure_interaction_coef,
             "couples_male",
             required=False,
-        ) or 0.0
-        beta_cl_f = _resolve_param_symbol(
+        ))
+        beta_cl_f = _coalesce_none(_resolve_param_symbol(
             param_vars,
             spec.utility_consumption_leisure_interaction_coef,
             "couples_female",
             required=False,
-        ) or 0.0
+        ))
 
     if expression == "muc":
         return (beta_c + beta_cl_m * bc_l_m + beta_cl_f * bc_l_f) * dbc_c
@@ -595,11 +611,14 @@ def evaluate_constraint_value_gamspy(
     beta_cl_own = beta_cl_m if own_group == "couples_male" else beta_cl_f
     beta_interact = 0.0
     if spec.couples_interaction_coef:
-        beta_interact = _resolve_param_symbol(
-            param_vars, spec.couples_interaction_coef, partner_group, required=False
-        ) or _resolve_param_symbol(
-            param_vars, spec.couples_interaction_coef, "couples_household", required=False
-        ) or 0.0
+        beta_interact = _first_non_none(
+            _resolve_param_symbol(
+                param_vars, spec.couples_interaction_coef, partner_group, required=False
+            ),
+            _resolve_param_symbol(
+                param_vars, spec.couples_interaction_coef, "couples_household", required=False
+            ),
+        )
     pref_term = beta_l_own + beta_cl_own * bc_c + beta_interact * bc_l_partner
     if expression == "mul":
         return pref_term * dbc_l_own

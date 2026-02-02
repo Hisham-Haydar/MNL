@@ -34,6 +34,7 @@ import json
 import sys
 import argparse
 import time
+from html import escape
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple, Callable, Union
 from dataclasses import dataclass, field
@@ -2612,6 +2613,7 @@ def generate_html_report_styled(
     prob_diagnostics: Dict[str, Any] = None,
     bound_diagnostics: List[Dict[str, Any]] = None,
     hessian_diagnostics: Dict[str, Any] = None,
+    estimation_results_path: Optional[Path] = None,
 ) -> Path:
     """
     Generate comprehensive HTML report with professional styling.
@@ -2628,6 +2630,13 @@ def generate_html_report_styled(
         elasticities_df = compute_structural_elasticities(parsed_params)
     if muc_analysis is None:
         muc_analysis = analyze_muc_behavior(parsed_params)
+
+    estimation_results_info = ""
+    if estimation_results_path is not None:
+        estimation_results_info = (
+            f"<p><strong>Estimation Results Source:</strong> "
+            f"<code>{escape(str(estimation_results_path))}</code></p>"
+        )
 
     # Calculate bounded parameter statistics
     param_bounds = {}
@@ -3290,6 +3299,7 @@ def generate_html_report_styled(
     <div class="header-info">
         <p><strong>Generated:</strong> {timestamp}</p>
         <p><strong>Total Parameters:</strong> {len(parsed_params.param_names)} | <strong>Groups:</strong> {', '.join(parsed_params.groups)}</p>
+        {estimation_results_info}
         <div class="group-legend">
             <div class="legend-item"><div class="legend-color" style="background:var(--sm-color)"></div>Single Males</div>
             <div class="legend-item"><div class="legend-color" style="background:var(--sf-color)"></div>Single Females</div>
@@ -4889,6 +4899,7 @@ def run_styled_post_estimation(
         prob_diagnostics=prob_diagnostics,
         bound_diagnostics=bound_diagnostics,
         hessian_diagnostics=hessian_diagnostics,
+        estimation_results_path=results_json_path,
     )
 
     # Save CSV outputs

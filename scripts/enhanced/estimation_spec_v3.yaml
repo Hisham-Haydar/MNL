@@ -313,7 +313,7 @@ optimization:
 
     # Wage parameters
     sigma: [0.1, 20.0]
-    beta_pexp2: [-10.0, 0.0]
+    beta_pexp2: [-10.0, 10.0]
 
     # Consumption parameters (household and group-specific)
     beta_c: [0.001, 20.0]

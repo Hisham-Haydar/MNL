@@ -16,7 +16,7 @@ import numpy as np
 from estimation_spec_parser import EstimationSpec
 
 
-SUPPORTED_EXPRESSIONS = {"muc", "mul"}
+SUPPORTED_EXPRESSIONS = {"muc", "mul", "dmuc_dc", "dmul_dl"}
 SUPPORTED_GROUPS = {
     "singles_male",
     "singles_female",
@@ -131,6 +131,11 @@ def _dbc_dx_scalar(x: float, theta: float) -> float:
     return math.exp((theta - 1.0) * math.log(x_safe))
 
 
+def _d2bc_dx2_scalar(x: float, theta: float) -> float:
+    x_safe = max(float(x), LOG_EPS)
+    return (theta - 1.0) * math.exp((theta - 2.0) * math.log(x_safe))
+
+
 def _at_value(at: Dict[str, float], key: str, default: float) -> float:
     return float(at.get(key, default))
 
@@ -165,6 +170,21 @@ def _utility_derivative_scalar(
     if theta is None:
         return 1.0 / x_safe
     return _dbc_dx_scalar(x_safe, float(theta))
+
+
+def _utility_second_derivative_scalar(
+    x: float,
+    theta: Optional[float],
+    utility_form: str,
+) -> float:
+    x_safe = max(float(x), LOG_EPS)
+    if utility_form == "linear":
+        return 0.0
+    if utility_form == "log":
+        return -1.0 / (x_safe * x_safe)
+    if theta is None:
+        return -1.0 / (x_safe * x_safe)
+    return _d2bc_dx2_scalar(x_safe, float(theta))
 
 
 def _resolve_single_leisure_beta_numpy(
@@ -258,7 +278,13 @@ def evaluate_constraint_value_numpy(
         beta_l = _resolve_single_leisure_beta_numpy(params, spec, group, at)
         if expression == "muc":
             return float((beta_c + beta_cl * bc_l) * dbc_c)
-        return float((beta_l + beta_cl * bc_c) * dbc_l)
+        if expression == "dmuc_dc":
+            d2bc_c = _utility_second_derivative_scalar(c, theta_c, spec.utility_form)
+            return float((beta_c + beta_cl * bc_l) * d2bc_c)
+        if expression == "mul":
+            return float((beta_l + beta_cl * bc_c) * dbc_l)
+        d2bc_l = _utility_second_derivative_scalar(l, theta_l, spec.utility_form)
+        return float((beta_l + beta_cl * bc_c) * d2bc_l)
 
     # Couples
     l_m = _at_value(at, "leisure_male", _at_value(at, "leisure", 1.0))
@@ -300,10 +326,13 @@ def evaluate_constraint_value_numpy(
 
     if expression == "muc":
         return float((beta_c + beta_cl_m * bc_l_m + beta_cl_f * bc_l_f) * dbc_c)
+    if expression == "dmuc_dc":
+        d2bc_c = _utility_second_derivative_scalar(c, theta_c, spec.utility_form)
+        return float((beta_c + beta_cl_m * bc_l_m + beta_cl_f * bc_l_f) * d2bc_c)
 
     if group not in {"couples_male", "couples_female"}:
         raise ValueError(
-            "MUL constraints for couples must use group 'couples_male' or 'couples_female'."
+            "MUL/DMUL constraints for couples must use group 'couples_male' or 'couples_female'."
         )
 
     own_group = group
@@ -323,7 +352,11 @@ def evaluate_constraint_value_numpy(
         ) or _resolve_param_value(
             params, spec.couples_interaction_coef, "couples_household", required=False
         ) or 0.0
-    return float((beta_l_own + beta_cl_own * bc_c + beta_interact * bc_l_partner) * dbc_l_own)
+    pref_term = beta_l_own + beta_cl_own * bc_c + beta_interact * bc_l_partner
+    if expression == "mul":
+        return float(pref_term * dbc_l_own)
+    d2bc_l_own = _utility_second_derivative_scalar(l_own, theta_l_own, spec.utility_form)
+    return float(pref_term * d2bc_l_own)
 
 
 def compute_expression_constraints_penalty_numpy(
@@ -368,6 +401,11 @@ def _dbc_dx_symbol(x_value: float, theta_symbol: Any, gp_exp: Any, gp_log: Any, 
     return gp_exp((theta_symbol - 1.0) * gp_log(float(x_value) + log_eps))
 
 
+def _d2bc_dx2_symbol(x_value: float, theta_symbol: Any, gp_exp: Any, gp_log: Any, log_eps: float) -> Any:
+    # (theta-1) * x^(theta-2)
+    return (theta_symbol - 1.0) * gp_exp((theta_symbol - 2.0) * gp_log(float(x_value) + log_eps))
+
+
 def _utility_component_symbol(
     x_value: float,
     theta_symbol: Optional[Any],
@@ -402,6 +440,24 @@ def _utility_derivative_symbol(
     if theta_symbol is None:
         return 1.0 / x_safe
     return _dbc_dx_symbol(float(x_value), theta_symbol, gp_exp, gp_log, log_eps)
+
+
+def _utility_second_derivative_symbol(
+    x_value: float,
+    theta_symbol: Optional[Any],
+    utility_form: str,
+    gp_exp: Any,
+    gp_log: Any,
+    log_eps: float,
+) -> Any:
+    x_safe = float(x_value) + log_eps
+    if utility_form == "linear":
+        return 0.0
+    if utility_form == "log":
+        return -1.0 / (x_safe * x_safe)
+    if theta_symbol is None:
+        return -1.0 / (x_safe * x_safe)
+    return _d2bc_dx2_symbol(float(x_value), theta_symbol, gp_exp, gp_log, log_eps)
 
 
 def evaluate_constraint_value_gamspy(
@@ -462,7 +518,13 @@ def evaluate_constraint_value_gamspy(
         beta_l = _resolve_single_leisure_beta_symbol(param_vars, spec, group, at)
         if expression == "muc":
             return (beta_c + beta_cl * bc_l) * dbc_c
-        return (beta_l + beta_cl * bc_c) * dbc_l
+        if expression == "dmuc_dc":
+            d2bc_c = _utility_second_derivative_symbol(c, theta_c, spec.utility_form, gp_exp, gp_log, log_eps)
+            return (beta_c + beta_cl * bc_l) * d2bc_c
+        if expression == "mul":
+            return (beta_l + beta_cl * bc_c) * dbc_l
+        d2bc_l = _utility_second_derivative_symbol(l, theta_l, spec.utility_form, gp_exp, gp_log, log_eps)
+        return (beta_l + beta_cl * bc_c) * d2bc_l
 
     # Couples
     l_m = _at_value(at, "leisure_male", _at_value(at, "leisure", 1.0))
@@ -508,10 +570,13 @@ def evaluate_constraint_value_gamspy(
 
     if expression == "muc":
         return (beta_c + beta_cl_m * bc_l_m + beta_cl_f * bc_l_f) * dbc_c
+    if expression == "dmuc_dc":
+        d2bc_c = _utility_second_derivative_symbol(c, theta_c, spec.utility_form, gp_exp, gp_log, log_eps)
+        return (beta_c + beta_cl_m * bc_l_m + beta_cl_f * bc_l_f) * d2bc_c
 
     if group not in {"couples_male", "couples_female"}:
         raise ValueError(
-            "MUL constraints for couples must use group 'couples_male' or 'couples_female'."
+            "MUL/DMUL constraints for couples must use group 'couples_male' or 'couples_female'."
         )
 
     own_group = group
@@ -535,7 +600,13 @@ def evaluate_constraint_value_gamspy(
         ) or _resolve_param_symbol(
             param_vars, spec.couples_interaction_coef, "couples_household", required=False
         ) or 0.0
-    return (beta_l_own + beta_cl_own * bc_c + beta_interact * bc_l_partner) * dbc_l_own
+    pref_term = beta_l_own + beta_cl_own * bc_c + beta_interact * bc_l_partner
+    if expression == "mul":
+        return pref_term * dbc_l_own
+    d2bc_l_own = _utility_second_derivative_symbol(
+        l_own, theta_l_own, spec.utility_form, gp_exp, gp_log, log_eps
+    )
+    return pref_term * d2bc_l_own
 
 
 def build_expression_constraints_gamspy(

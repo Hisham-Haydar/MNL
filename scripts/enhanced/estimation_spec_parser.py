@@ -613,7 +613,7 @@ def _parse_expression_constraints(
             "optimization.expression_constraints.constraints must be a list."
         )
 
-    valid_exprs = {"muc", "mul"}
+    valid_exprs = {"muc", "mul", "dmuc_dc", "dmul_dl"}
     valid_groups = {
         "singles_male",
         "singles_female",
@@ -643,9 +643,9 @@ def _parse_expression_constraints(
                 f"expression_constraints[{i}].group must be one of "
                 f"{sorted(valid_groups)}, got '{raw.get('group')}'"
             )
-        if expr_name == "mul" and group in {"couples", "couples_household"}:
+        if expr_name in {"mul", "dmul_dl"} and group in {"couples", "couples_household"}:
             raise ValueError(
-                f"expression_constraints[{i}] with expression='mul' must use "
+                f"expression_constraints[{i}] with expression='{expr_name}' must use "
                 "group 'couples_male' or 'couples_female' (not household/alias)."
             )
 

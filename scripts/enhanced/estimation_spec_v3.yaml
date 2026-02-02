@@ -332,6 +332,100 @@ optimization:
     beta_cl_m: [-15.0, 15.0]
     beta_cl_f: [-15.0, 15.0]
 
+  # Expression-level shape constraints (spec-agnostic hooks):
+  # - MUC > 0
+  # - dMUC/dc < 0 (decreasing in consumption)
+  # - MUL > 0
+  # - dMUL/dl < 0 (decreasing in leisure)
+  #
+  # NOTE: These are local checks at representative points (the `at:` block).
+  # Keep as soft penalties to avoid large runtime/feasibility issues; switch
+  # selected constraints to mode: hard if strict enforcement is needed.
+  expression_constraints:
+    enabled: true
+    default_mode: soft
+    default_weight: 10000.0
+    constraints:
+      # Singles male
+      - name: muc_sm_positive
+        expression: muc
+        group: singles_male
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        lower: 1.0e-6
+      - name: muc_sm_decreasing
+        expression: dmuc_dc
+        group: singles_male
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        upper: -1.0e-6
+      - name: mul_sm_positive
+        expression: mul
+        group: singles_male
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        lower: 1.0e-6
+      - name: mul_sm_decreasing
+        expression: dmul_dl
+        group: singles_male
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        upper: -1.0e-6
+
+      # Singles female
+      - name: muc_sf_positive
+        expression: muc
+        group: singles_female
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, n_children: 1.0, educL: 0.0, educH: 0.0}
+        lower: 1.0e-6
+      - name: muc_sf_decreasing
+        expression: dmuc_dc
+        group: singles_female
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, n_children: 1.0, educL: 0.0, educH: 0.0}
+        upper: -1.0e-6
+      - name: mul_sf_positive
+        expression: mul
+        group: singles_female
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, n_children: 1.0, educL: 0.0, educH: 0.0}
+        lower: 1.0e-6
+      - name: mul_sf_decreasing
+        expression: dmul_dl
+        group: singles_female
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, n_children: 1.0, educL: 0.0, educH: 0.0}
+        upper: -1.0e-6
+
+      # Couples household MUC
+      - name: muc_cou_positive
+        expression: muc
+        group: couples_household
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        lower: 1.0e-6
+      - name: muc_cou_decreasing
+        expression: dmuc_dc
+        group: couples_household
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        upper: -1.0e-6
+
+      # Couples male MUL
+      - name: mul_cou_m_positive
+        expression: mul
+        group: couples_male
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        lower: 1.0e-6
+      - name: mul_cou_m_decreasing
+        expression: dmul_dl
+        group: couples_male
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        upper: -1.0e-6
+
+      # Couples female MUL
+      - name: mul_cou_f_positive
+        expression: mul
+        group: couples_female
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0, n_children: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        lower: 1.0e-6
+      - name: mul_cou_f_decreasing
+        expression: dmul_dl
+        group: couples_female
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0, n_children: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        upper: -1.0e-6
+
 # ------------------------------------------------------------------------------
 # Gradient Verification
 # ------------------------------------------------------------------------------

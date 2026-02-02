@@ -305,18 +305,32 @@ optimization:
     theta_c_sm: [-7.0, 1.0]
     theta_l_sf: [-7.0, 1.0]
     theta_c_sf: [-7.0, 1.0]
+
     # Couples Box-Cox parameters
     theta_l_m: [-7.0, 1.0]
     theta_l_f: [-7.0, 1.0]
     theta_c: [-7.0, 1.0]
+
     # Wage parameters
     sigma: [0.1, 20.0]
     beta_pexp2: [-10.0, 0.0]
+
+    # Consumption parameters (household and group-specific)
+    beta_c: [0.001, 20.0]
+    beta_c_sf: [0.001, 20.0]
+    beta_c_sm: [0.001, 20.0]
+
+    # Leisure intercepts bounds
+    beta_l0_f: [0.001, 20.0]
+    beta_l0_sf: [0.001, 20.0]
+    beta_l0_m: [0.001, 20.0]
+    beta_l0_sm: [0.001, 20.0]
+
     # NEW: Consumption-leisure interaction bounds (allow negative for substitutes)
-    beta_cl_sm: [-5.0, 5.0]
-    beta_cl_sf: [-5.0, 5.0]
-    beta_cl_m: [-5.0, 5.0]
-    beta_cl_f: [-5.0, 5.0]
+    beta_cl_sm: [-15.0, 15.0]
+    beta_cl_sf: [-15.0, 15.0]
+    beta_cl_m: [-15.0, 15.0]
+    beta_cl_f: [-15.0, 15.0]
 
 # ------------------------------------------------------------------------------
 # Gradient Verification

@@ -219,6 +219,24 @@ GROUP_LABELS = {
     'joint': 'Joint (All Groups)'
 }
 
+GROUP_SUFFIX_HINTS = {
+    'sm': '_sm',
+    'sf': '_sf',
+    'm': '_m',
+    'f': '_f',
+    'singles_male': '_sm',
+    'singles_female': '_sf',
+    'cou_m': '_m',
+    'cou_f': '_f',
+    'couples_m': '_m',
+    'couples_f': '_f',
+}
+
+
+def _infer_group_suffix(group: str) -> str:
+    """Best-effort mapping from group label to parameter suffix."""
+    return GROUP_SUFFIX_HINTS.get(group, '')
+
 
 # =============================================================================
 # CORE MATHEMATICAL FUNCTIONS
@@ -241,14 +259,48 @@ def d_boxcox_dx(x: np.ndarray, theta: float, eps: float = 1e-10) -> np.ndarray:
     return np.power(x, theta - 1.0)
 
 
-def compute_marginal_utility_consumption(c: np.ndarray, beta_c: float, theta_c: float) -> np.ndarray:
-    """MUC = β_c × c^(θ_c - 1)"""
-    return beta_c * d_boxcox_dx(c, theta_c)
+def compute_marginal_utility_consumption(
+    c: np.ndarray,
+    beta_c: float,
+    theta_c: float,
+    beta_cl: float = 0.0,
+    bc_l: Optional[np.ndarray] = None,
+) -> np.ndarray:
+    """
+    Marginal utility of consumption.
+
+    Separable case:
+        MUC = β_c * dBC(c, θ_c)/dc
+
+    With consumption-leisure interaction:
+        U += β_cl * BC(c, θ_c) * BC(l, θ_l)
+        MUC = [β_c + β_cl * BC(l, θ_l)] * dBC(c, θ_c)/dc
+    """
+    if bc_l is None:
+        return beta_c * d_boxcox_dx(c, theta_c)
+    return (beta_c + beta_cl * bc_l) * d_boxcox_dx(c, theta_c)
 
 
-def compute_marginal_utility_leisure(l: np.ndarray, beta_l: np.ndarray, theta_l: float) -> np.ndarray:
-    """MUL = β_l(X) × l^(θ_l - 1)"""
-    return beta_l * d_boxcox_dx(l, theta_l)
+def compute_marginal_utility_leisure(
+    l: np.ndarray,
+    beta_l: np.ndarray,
+    theta_l: float,
+    beta_cl: float = 0.0,
+    bc_c: Optional[np.ndarray] = None,
+) -> np.ndarray:
+    """
+    Marginal utility of leisure.
+
+    Separable case:
+        MUL = β_l(X) * dBC(l, θ_l)/dl
+
+    With consumption-leisure interaction:
+        U += β_cl * BC(c, θ_c) * BC(l, θ_l)
+        MUL = [β_l(X) + β_cl * BC(c, θ_c)] * dBC(l, θ_l)/dl
+    """
+    if bc_c is None:
+        return beta_l * d_boxcox_dx(l, theta_l)
+    return (beta_l + beta_cl * bc_c) * d_boxcox_dx(l, theta_l)
 
 
 # =============================================================================
@@ -612,15 +664,25 @@ def analyze_muc_behavior(parsed_params: ParsedParameters) -> List[Dict[str, Any]
 
     for group in parsed_params.preference_groups:
         params = parsed_params.get_all_params_for_group(group)
-        # For singles groups, try with suffix first (beta_c_sm, beta_c_sf)
-        suffix = f'_{group}' if group in ['sm', 'sf', 'm', 'f'] else ''
-        beta_c = params.get(f'beta_c{suffix}', params.get('beta_c', 1.0))
-        theta_c = params.get(f'theta_c{suffix}', params.get('theta_c', 0.5))
+        suffix = _infer_group_suffix(group)
+        beta_c = _get_param_value(params, 'beta_c', (suffix,)) if suffix else _get_param_value(params, 'beta_c')
+        theta_c = _get_param_value(params, 'theta_c', (suffix,)) if suffix else _get_param_value(params, 'theta_c')
+        theta_l = _get_param_value(params, 'theta_l', (suffix,)) if suffix else _get_param_value(params, 'theta_l')
+        beta_cl = _get_param_value(params, 'beta_cl', (suffix,)) if suffix else _get_param_value(params, 'beta_cl')
 
-        muc_positive = beta_c > 0
+        beta_c = 1.0 if beta_c is None else beta_c
+        theta_c = 0.5 if theta_c is None else theta_c
+        theta_l = 0.5 if theta_l is None else theta_l
+        beta_cl = 0.0 if beta_cl is None else beta_cl
+
+        # With interaction, MUC sign depends on leisure via (beta_c + beta_cl * BC(l)).
+        l_grid = np.linspace(0.1, 2.5, 200)
+        beta_c_eff = beta_c + beta_cl * boxcox_transform(l_grid, theta_l)
+        muc_positive = bool(np.all(beta_c_eff > 0.0))
         muc_diminishing = theta_c < 1
         well_behaved = muc_positive and muc_diminishing
 
+        # At normalized medians c=1,l=1, BC(1,theta)=0 so interaction drops out.
         muc_median = beta_c * (1.0 ** (theta_c - 1)) if beta_c > 0 else beta_c
 
         c_muc_1 = None
@@ -632,9 +694,11 @@ def analyze_muc_behavior(parsed_params: ParsedParameters) -> List[Dict[str, Any]
 
         notes = []
         if not muc_positive:
-            notes.append("WARNING: β_c ≤ 0, MUC is non-positive everywhere")
+            notes.append("WARNING: β_c + β_cl·BC(l) ≤ 0 for some l, MUC can be non-positive")
         elif not muc_diminishing:
             notes.append(f"MUC is increasing (θ_c = {theta_c:.2f} > 1)")
+        if abs(beta_cl) > 1e-12:
+            notes.append("MUC varies with leisure due to β_cl interaction")
 
         group_label = GROUP_LABELS.get(group, group)
 
@@ -814,10 +878,13 @@ def plot_utility_contours_all_groups(parsed_params: ParsedParameters, output_dir
     for g in ['sm', 'sf', 'singles_male', 'singles_female']:
         if g in parsed_params.params_by_group:
             params = parsed_params.get_all_params_for_group(g)
-            groups_to_plot.append((g, {                'beta_c': params.get('beta_c', 1.0),
-                'theta_c': params.get('theta_c', 0.5),
-                'beta_l0': params.get('beta_l0', 0.0),
-                'theta_l': params.get('theta_l', 0.5),
+            suffix = _infer_group_suffix(g)
+            groups_to_plot.append((g, {
+                'beta_c': _get_param_value(params, 'beta_c', (suffix,)) if suffix else params.get('beta_c', 1.0),
+                'theta_c': _get_param_value(params, 'theta_c', (suffix,)) if suffix else params.get('theta_c', 0.5),
+                'beta_l0': _get_param_value(params, 'beta_l0', (suffix,)) if suffix else params.get('beta_l0', 0.0),
+                'theta_l': _get_param_value(params, 'theta_l', (suffix,)) if suffix else params.get('theta_l', 0.5),
+                'beta_cl': _get_param_value(params, 'beta_cl', (suffix,)) if suffix else params.get('beta_cl', 0.0),
             }))
     for g in ['cou', 'couples']:
         if g in parsed_params.params_by_group:
@@ -827,12 +894,14 @@ def plot_utility_contours_all_groups(parsed_params: ParsedParameters, output_dir
                 'theta_c': params.get('theta_c', 0.5),
                 'beta_l0': params.get('beta_l0_m', params.get('beta_l0', 0.0)),
                 'theta_l': params.get('theta_l_m', params.get('theta_l', 0.5)),
+                'beta_cl': params.get('beta_cl_m', params.get('beta_cl', 0.0)),
             }))
             groups_to_plot.append((f'{g}_f', {
                 'beta_c': params.get('beta_c', 1.0),
                 'theta_c': params.get('theta_c', 0.5),
                 'beta_l0': params.get('beta_l0_f', params.get('beta_l0', 0.0)),
                 'theta_l': params.get('theta_l_f', params.get('theta_l', 0.5)),
+                'beta_cl': params.get('beta_cl_f', params.get('beta_cl', 0.0)),
             }))
             break  # Only process once
     else:
@@ -844,6 +913,7 @@ def plot_utility_contours_all_groups(parsed_params: ParsedParameters, output_dir
                 'theta_c': params.get('theta_c', 0.5),
                 'beta_l0': params.get('beta_l0', 0.0),
                 'theta_l': params.get('theta_l', 0.5),
+                'beta_cl': params.get('beta_cl', 0.0),
             }))
         if 'f' in parsed_params.params_by_group:
             params = parsed_params.get_all_params_for_group('f')
@@ -852,6 +922,7 @@ def plot_utility_contours_all_groups(parsed_params: ParsedParameters, output_dir
                 'theta_c': params.get('theta_c', 0.5),
                 'beta_l0': params.get('beta_l0', 0.0),
                 'theta_l': params.get('theta_l', 0.5),
+                'beta_cl': params.get('beta_cl', 0.0),
             }))
 
     for group, params in groups_to_plot:
@@ -860,10 +931,15 @@ def plot_utility_contours_all_groups(parsed_params: ParsedParameters, output_dir
             theta_l = params['theta_l']
             beta_c = params['beta_c']
             beta_l0 = params['beta_l0']
+            beta_cl = params.get('beta_cl', 0.0) or 0.0
+            theta_c = 0.5 if theta_c is None else theta_c
+            theta_l = 0.5 if theta_l is None else theta_l
+            beta_c = 1.0 if beta_c is None else beta_c
+            beta_l0 = 0.0 if beta_l0 is None else beta_l0
 
             c_bc = boxcox_transform(C, theta_c)
             l_bc = boxcox_transform(L, theta_l)
-            U = beta_l0 * l_bc + beta_c * c_bc
+            U = beta_l0 * l_bc + beta_c * c_bc + beta_cl * c_bc * l_bc
 
             finite_mask = np.isfinite(U)
             if not finite_mask.any():
@@ -916,11 +992,29 @@ def plot_mu_comparison(parsed_params: ParsedParameters, output_dir: Path, prefix
 
     # MUC comparison
     fig, ax = plt.subplots(figsize=(10, 6))
+    # Reference point for interaction slices.
+    l_ref = float(np.median(l_grid))
     for group in parsed_params.preference_groups:
         params = parsed_params.get_all_params_for_group(group)
-        beta_c = params.get('beta_c', 1.0)
-        theta_c = params.get('theta_c', 0.5)
-        muc = compute_marginal_utility_consumption(c_grid, beta_c, theta_c)
+        suffix = _infer_group_suffix(group)
+        beta_c = _get_param_value(params, 'beta_c', (suffix,)) if suffix else params.get('beta_c', 1.0)
+        theta_c = _get_param_value(params, 'theta_c', (suffix,)) if suffix else params.get('theta_c', 0.5)
+        theta_l = _get_param_value(params, 'theta_l', (suffix,)) if suffix else params.get('theta_l', 0.5)
+        beta_cl = _get_param_value(params, 'beta_cl', (suffix,)) if suffix else params.get('beta_cl', 0.0)
+
+        beta_c = 1.0 if beta_c is None else beta_c
+        theta_c = 0.5 if theta_c is None else theta_c
+        theta_l = 0.5 if theta_l is None else theta_l
+        beta_cl = 0.0 if beta_cl is None else beta_cl
+
+        bc_l_ref = boxcox_transform(np.array([l_ref]), theta_l)[0]
+        muc = compute_marginal_utility_consumption(
+            c_grid,
+            beta_c,
+            theta_c,
+            beta_cl=beta_cl,
+            bc_l=np.full_like(c_grid, bc_l_ref),
+        )
         ax.plot(c_grid, muc, label=group_labels.get(group, group), color=colors.get(group, 'gray'), lw=2)
 
     ax.axhline(0, color='black', lw=1, ls='--', alpha=0.6)
@@ -938,12 +1032,29 @@ def plot_mu_comparison(parsed_params: ParsedParameters, output_dir: Path, prefix
 
     # MUL comparison
     fig, ax = plt.subplots(figsize=(10, 6))
+    c_ref = float(np.median(c_grid))
     for group in parsed_params.preference_groups:
         params = parsed_params.get_all_params_for_group(group)
-        theta_l = params.get('theta_l', params.get('theta_l_m', 0.5))
-        beta_l0 = params.get('beta_l0', params.get('beta_l0_m', 0.0))
+        suffix = _infer_group_suffix(group)
+        theta_l = _get_param_value(params, 'theta_l', (suffix,)) if suffix else params.get('theta_l', params.get('theta_l_m', 0.5))
+        theta_c = _get_param_value(params, 'theta_c', (suffix,)) if suffix else params.get('theta_c', 0.5)
+        beta_l0 = _get_param_value(params, 'beta_l0', (suffix,)) if suffix else params.get('beta_l0', params.get('beta_l0_m', 0.0))
+        beta_cl = _get_param_value(params, 'beta_cl', (suffix,)) if suffix else params.get('beta_cl', 0.0)
+
+        theta_l = 0.5 if theta_l is None else theta_l
+        theta_c = 0.5 if theta_c is None else theta_c
+        beta_l0 = 0.0 if beta_l0 is None else beta_l0
+        beta_cl = 0.0 if beta_cl is None else beta_cl
+
         beta_l = np.full_like(l_grid, beta_l0)
-        mul = compute_marginal_utility_leisure(l_grid, beta_l, theta_l)
+        bc_c_ref = boxcox_transform(np.array([c_ref]), theta_c)[0]
+        mul = compute_marginal_utility_leisure(
+            l_grid,
+            beta_l,
+            theta_l,
+            beta_cl=beta_cl,
+            bc_c=np.full_like(l_grid, bc_c_ref),
+        )
         ax.plot(l_grid, mul, label=f"{group_labels.get(group, group)} (β_l={beta_l0:.2f})",
                 color=colors.get(group, 'gray'), lw=2)
 
@@ -1117,9 +1228,15 @@ def plot_mu_distributions_by_group(
         beta_c = params.get('beta_c', 1.0)
         theta_c = params.get('theta_c', 0.5)
         theta_l = params.get(f'theta_l{suffix}', params.get('theta_l', 0.5))
-        
+        beta_cl = params.get(f'beta_cl{suffix}', params.get('beta_cl', 0.0))
+        beta_c = 1.0 if beta_c is None else beta_c
+        theta_c = 0.5 if theta_c is None else theta_c
+        theta_l = 0.5 if theta_l is None else theta_l
+        beta_cl = 0.0 if beta_cl is None else beta_cl
+
         # Compute beta_l at median characteristics
         beta_l0 = params.get(f'beta_l0{suffix}', params.get('beta_l0', 0.0))
+        beta_l0 = 0.0 if beta_l0 is None else beta_l0
         beta_l_median = beta_l0  # Start with intercept
         
         # Add median shifter contributions (approximate with 0 for normalized vars)
@@ -1130,9 +1247,19 @@ def plot_mu_distributions_by_group(
         
         # Create figure with 2 subplots
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
-        
+        l_ref = float(np.median(l_grid))
+        c_ref = float(np.median(c_grid))
+        bc_l_ref = boxcox_transform(np.array([l_ref]), theta_l)[0]
+        bc_c_ref = boxcox_transform(np.array([c_ref]), theta_c)[0]
+
         # MUC curve
-        muc = compute_marginal_utility_consumption(c_grid, beta_c, theta_c)
+        muc = compute_marginal_utility_consumption(
+            c_grid,
+            beta_c,
+            theta_c,
+            beta_cl=beta_cl,
+            bc_l=np.full_like(c_grid, bc_l_ref),
+        )
         ax1.plot(c_grid, muc, color=color, lw=2)
         ax1.axhline(0, color='black', lw=1, ls='--', alpha=0.6)
         ax1.fill_between(c_grid, muc, 0, where=(muc > 0), color='green', alpha=0.2)
@@ -1144,7 +1271,13 @@ def plot_mu_distributions_by_group(
         
         # MUL curve at median characteristics
         beta_l = np.full_like(l_grid, beta_l_median)
-        mul = beta_l * d_boxcox_dx(l_grid, theta_l)
+        mul = compute_marginal_utility_leisure(
+            l_grid,
+            beta_l,
+            theta_l,
+            beta_cl=beta_cl,
+            bc_c=np.full_like(l_grid, bc_c_ref),
+        )
         ax2.plot(l_grid, mul, color=color, lw=2)
         ax2.axhline(0, color='black', lw=1, ls='--', alpha=0.6)
         ax2.fill_between(l_grid, mul, 0, where=(mul > 0), color='green', alpha=0.2)
@@ -1206,6 +1339,7 @@ def generate_specification_html(parsed_params: ParsedParameters) -> str:
         theta_c = params.get(f'theta_c{suffix}', params.get('theta_c', None))
         beta_l0 = params.get(f'beta_l0{suffix}', params.get('beta_l0', None))
         theta_l = params.get(f'theta_l{suffix}', params.get('theta_l', None))
+        beta_cl = params.get(f'beta_cl{suffix}', params.get('beta_cl', None))
 
         if beta_c is None:
             continue
@@ -1236,7 +1370,13 @@ def generate_specification_html(parsed_params: ParsedParameters) -> str:
             <div class="spec-section">
                 <h5>📐 Utility Function (Symbolic)</h5>
                 <div class="math-block">
-                    U = β<sub>c</sub> · BC(C, θ<sub>c</sub>) + β<sub>l</sub>(X) · BC(L, θ<sub>l</sub>)
+                    U = β<sub>c</sub> · BC(C, θ<sub>c</sub>) + β<sub>l</sub>(X) · BC(L, θ<sub>l</sub>)"""
+
+        if beta_cl is not None:
+            symbolic_html += """
+                    + β<sub>cl</sub> · BC(C, θ<sub>c</sub>) · BC(L, θ<sub>l</sub>)"""
+
+        symbolic_html += """
                 </div>
                 <p style="margin-top:0.5em; font-size:0.9em;">
                     where BC(x, θ) = (x<sup>θ</sup> - 1) / θ  (Box-Cox transformation)<br>
@@ -1257,11 +1397,21 @@ def generate_specification_html(parsed_params: ParsedParameters) -> str:
         theta_c_str = f"{theta_c:.4f}" if theta_c is not None else "0 (log)"
         theta_l_str = f"{theta_l:.4f}" if theta_l is not None else "0 (log)"
 
-        symbolic_html += f"U = {beta_c:.4f} · BC(C, {theta_c_str}) + ("
+        utility_terms = [f"{beta_c:.4f} · BC(C, {theta_c_str})"]
+        if beta_cl is not None:
+            utility_terms.append(
+                _format_signed_term(
+                    beta_cl,
+                    f"BC(C, {theta_c_str}) · BC(L, {theta_l_str})",
+                    ".4f",
+                )
+            )
+
+        symbolic_html += f"U = {_join_signed_terms(utility_terms)} + ("
         inner_terms = [f"{beta_l0:.4f}"]
         for s, v in zip(shifters, shifter_vals):
-            inner_terms.append(f"{_format_signed_value(v, '.4f')}·{s}")
-        symbolic_html += f"{' '.join(inner_terms)}) · BC(L, {theta_l_str})"
+            inner_terms.append(f"{_format_signed_term(v, s, '.4f')}")
+        symbolic_html += f"{_join_signed_terms(inner_terms)}) · BC(L, {theta_l_str})"
 
         symbolic_html += """
                 </div>
@@ -2030,7 +2180,8 @@ def _add_predicted_probabilities(
         c = df['c_norm'].values
     else:
         c = df['consumption'].values
-    V = beta_c * boxcox_transform(c, theta_c)
+    c_bc = boxcox_transform(c, theta_c)
+    V = beta_c * c_bc
 
     if is_couples:
         theta_l_m = params.get('theta_l_m', params.get('theta_l', 0.5))
@@ -2045,8 +2196,19 @@ def _add_predicted_probabilities(
             l_f = df['leisure_female'].values
         beta_l_m = compute_beta_l_full(df, params, '_m')
         beta_l_f = compute_beta_l_full(df, params, '_f')
-        V += beta_l_m * boxcox_transform(l_m, theta_l_m)
-        V += beta_l_f * boxcox_transform(l_f, theta_l_f)
+        l_bc_m = boxcox_transform(l_m, theta_l_m)
+        l_bc_f = boxcox_transform(l_f, theta_l_f)
+        V += beta_l_m * l_bc_m
+        V += beta_l_f * l_bc_f
+
+        beta_cl_m = params.get('beta_cl_m', params.get('beta_cl', 0.0))
+        beta_cl_f = params.get('beta_cl_f', params.get('beta_cl', 0.0))
+        if beta_cl_m is None:
+            beta_cl_m = 0.0
+        if beta_cl_f is None:
+            beta_cl_f = 0.0
+        V += beta_cl_m * c_bc * l_bc_m
+        V += beta_cl_f * c_bc * l_bc_f
 
         opp_added = False
         for col in [
@@ -2071,7 +2233,13 @@ def _add_predicted_probabilities(
         else:
             l = df['leisure'].values
         beta_l = compute_beta_l_full(df, params, group_suffix)
-        V += beta_l * boxcox_transform(l, theta_l)
+        l_bc = boxcox_transform(l, theta_l)
+        V += beta_l * l_bc
+
+        beta_cl = params.get(f'beta_cl{group_suffix}', params.get('beta_cl', 0.0))
+        if beta_cl is None:
+            beta_cl = 0.0
+        V += beta_cl * c_bc * l_bc
 
         opp_added = False
         for col in ['log_q_total', 'log_opp']:
@@ -3383,6 +3551,9 @@ def compute_fit_diagnostics_from_data(
             beta_c = params.get('beta_c', 1.0)
             theta_c = params.get('theta_c', 0.5)
             theta_l = params.get('theta_l', 0.5)
+            beta_cl = params.get('beta_cl', 0.0)
+            if beta_cl is None:
+                beta_cl = 0.0
             
             # Utility from preferences
             c = df_g['consumption'].values
@@ -3391,7 +3562,9 @@ def compute_fit_diagnostics_from_data(
             # Compute full beta_l(X) for each observation (not just beta_l0)
             beta_l = compute_beta_l_full(df_g, params, suffix='')
             
-            U_pref = beta_c * boxcox_transform(c, theta_c) + beta_l * boxcox_transform(l, theta_l)
+            c_bc = boxcox_transform(c, theta_c)
+            l_bc = boxcox_transform(l, theta_l)
+            U_pref = beta_c * c_bc + beta_l * l_bc + beta_cl * c_bc * l_bc
             
             # Add opportunity terms if available
             if 'log_opp' in df_g.columns:
@@ -3493,9 +3666,16 @@ def compute_fit_diagnostics_from_data(
             try:
                 beta_c = params.get('beta_c', 1.0)
                 theta_c = params.get('theta_c', 0.5)
+                params_female = params_f if params_f is not None else params
                 # Use sex-specific curvature when available (theta_l_m, theta_l_f)
                 theta_l_m = params.get('theta_l_m', params.get('theta_l', 0.5))
-                theta_l_f = params.get('theta_l_f', params.get('theta_l', 0.5))
+                theta_l_f = params_female.get('theta_l_f', params_female.get('theta_l', 0.5))
+                beta_cl_m = params.get('beta_cl_m', params.get('beta_cl', 0.0))
+                beta_cl_f = params_female.get('beta_cl_f', params_female.get('beta_cl', 0.0))
+                if beta_cl_m is None:
+                    beta_cl_m = 0.0
+                if beta_cl_f is None:
+                    beta_cl_f = 0.0
                 
                 df_cou = df_couples.copy()
                 
@@ -3505,15 +3685,19 @@ def compute_fit_diagnostics_from_data(
                 l_f = df_cou['leisure_female'].values
                 
                 # Preference utility
-                U_c = beta_c * boxcox_transform(c, theta_c)
-                
+                c_bc = boxcox_transform(c, theta_c)
+                U_c = beta_c * c_bc
+
                 # Leisure for male and female (using full beta_l with shifters and sex-specific curvature)
                 beta_l_m = compute_beta_l_full(df_cou, params, '_m')
-                beta_l_f = compute_beta_l_full(df_cou, params, '_f')
-                U_l_m = beta_l_m * boxcox_transform(l_m, theta_l_m)
-                U_l_f = beta_l_f * boxcox_transform(l_f, theta_l_f)
-                
-                V = U_c + U_l_m + U_l_f
+                beta_l_f = compute_beta_l_full(df_cou, params_female, '_f')
+                l_bc_m = boxcox_transform(l_m, theta_l_m)
+                l_bc_f = boxcox_transform(l_f, theta_l_f)
+                U_l_m = beta_l_m * l_bc_m
+                U_l_f = beta_l_f * l_bc_f
+                U_cl = beta_cl_m * c_bc * l_bc_m + beta_cl_f * c_bc * l_bc_f
+
+                V = U_c + U_l_m + U_l_f + U_cl
                 
                 # Add opportunity terms
                 if 'log_opp_male' in df_cou.columns:
@@ -3688,8 +3872,13 @@ def compute_marginal_utilities_at_chosen(
     """
     Compute marginal utilities (MUC, MUL) at chosen alternatives.
     
-    MUC = beta_c * c^(theta_c - 1)
-    MUL = beta_l(X) * l^(theta_l - 1)
+    Separable specification:
+        MUC = beta_c * c^(theta_c - 1)
+        MUL = beta_l(X) * l^(theta_l - 1)
+
+    With interaction U += beta_cl * BC(c, theta_c) * BC(l, theta_l):
+        MUC = (beta_c + beta_cl * BC(l, theta_l)) * c^(theta_c - 1)
+        MUL = (beta_l(X) + beta_cl * BC(c, theta_c)) * l^(theta_l - 1)
     
     where beta_l(X) = beta_l0 + sum_k(beta_l_k * X_k) is the full leisure 
     coefficient evaluated at each individual's characteristics.
@@ -3744,18 +3933,37 @@ def compute_marginal_utilities_at_chosen(
         beta_c = params.get('beta_c', 1.0)
         theta_c = params.get('theta_c', 0.5)
         theta_l = params.get('theta_l', 0.5)
-        
+        beta_cl = params.get('beta_cl', 0.0)
+        if beta_cl is None:
+            beta_cl = 0.0
+
         c = df_g['consumption'].values
         l = df_g['leisure'].values
-        
+
+        # Compute Box-Cox terms used by interaction-aware derivatives.
+        bc_c = boxcox_transform(c, theta_c)
+        bc_l = boxcox_transform(l, theta_l)
+
         # Compute MUC
-        muc = compute_marginal_utility_consumption(c, beta_c, theta_c)
+        muc = compute_marginal_utility_consumption(
+            c,
+            beta_c,
+            theta_c,
+            beta_cl=beta_cl,
+            bc_l=bc_l,
+        )
         
         # Compute full beta_l(X) for each observation
         beta_l = compute_beta_l_full(df_g, params, suffix='')
         
-        # Compute MUL = beta_l(X) * l^(theta_l - 1)
-        mul = beta_l * d_boxcox_dx(l, theta_l)
+        # Compute MUL = [beta_l(X) + beta_cl * BC(c)] * l^(theta_l - 1)
+        mul = compute_marginal_utility_leisure(
+            l,
+            beta_l,
+            theta_l,
+            beta_cl=beta_cl,
+            bc_c=bc_c,
+        )
         
         all_muc.extend(muc)
         all_mul.extend(mul)
@@ -3788,23 +3996,52 @@ def compute_marginal_utilities_at_chosen(
             params_m = parsed_params.get_all_params_for_group('m')
         if 'f' in parsed_params.params_by_group:
             params_f = parsed_params.get_all_params_for_group('f')
-          # If not found, try 'cou' or 'couples' group with suffixed params
+
+        # If virtual groups are absent, fall back to coupled group params.
+        if params_m is None:
+            for try_key in ['cou', 'couples']:
+                if try_key in parsed_params.params_by_group:
+                    params_m = parsed_params.get_all_params_for_group(try_key)
+                    break
+        if params_f is None:
+            params_f = params_m
+
         if params_m is not None:
             # Get consumption parameters (shared between M and F in couples)
             beta_c = params_m.get('beta_c', 1.0)
             theta_c = params_m.get('theta_c', 0.5)
-            
+            beta_cl_m = params_m.get('beta_cl_m', params_m.get('beta_cl', 0.0))
+            params_female = params_f if params_f is not None else params_m
+            beta_cl_f = params_female.get('beta_cl_f', params_female.get('beta_cl', 0.0))
+            if beta_cl_m is None:
+                beta_cl_m = 0.0
+            if beta_cl_f is None:
+                beta_cl_f = 0.0
+
             c = df_chosen['consumption'].values
-            muc = compute_marginal_utility_consumption(c, beta_c, theta_c)
-            
-            # Add MUC for couples to total (was missing before!)
-            all_muc.extend(muc)
-            
-            # Males in couples
+            bc_c = boxcox_transform(c, theta_c)
+
+            # MUC for household consumption includes both male and female interactions.
             theta_l_m = params_m.get('theta_l_m', params_m.get('theta_l', 0.5))
             l_m = df_chosen['leisure_male'].values
+            bc_l_m = boxcox_transform(l_m, theta_l_m)
+            theta_l_f = params_female.get('theta_l_f', params_female.get('theta_l', 0.5))
+            l_f = df_chosen['leisure_female'].values
+            bc_l_f = boxcox_transform(l_f, theta_l_f)
+            muc = (beta_c + beta_cl_m * bc_l_m + beta_cl_f * bc_l_f) * d_boxcox_dx(c, theta_c)
+
+            # Add MUC for couples to total.
+            all_muc.extend(muc)
+
+            # Males in couples
             beta_l_m = compute_beta_l_full(df_chosen, params_m, suffix='_m')
-            mul_m = beta_l_m * d_boxcox_dx(l_m, theta_l_m)
+            mul_m = compute_marginal_utility_leisure(
+                l_m,
+                beta_l_m,
+                theta_l_m,
+                beta_cl=beta_cl_m,
+                bc_c=bc_c,
+            )
             all_mul.extend(mul_m)
             
             mu_results['arrays']['cou_m'] = {'muc': muc, 'mul': mul_m}
@@ -3822,11 +4059,14 @@ def compute_marginal_utilities_at_chosen(
             LOGGER.info(f"  cou_m: {len(df_chosen)} obs, {(muc<0).sum()} neg MUC ({100*(muc<0).mean():.1f}%), {(mul_m<0).sum()} neg MUL ({100*(mul_m<0).mean():.1f}%)")
             
             # Females in couples - use params_f if available, else fallback to params_m
-            params_female = params_f if params_f is not None else params_m
-            theta_l_f = params_female.get('theta_l_f', params_female.get('theta_l', 0.5))
-            l_f = df_chosen['leisure_female'].values
             beta_l_f = compute_beta_l_full(df_chosen, params_female, suffix='_f')
-            mul_f = beta_l_f * d_boxcox_dx(l_f, theta_l_f)
+            mul_f = compute_marginal_utility_leisure(
+                l_f,
+                beta_l_f,
+                theta_l_f,
+                beta_cl=beta_cl_f,
+                bc_c=bc_c,
+            )
             all_mul.extend(mul_f)
             
             mu_results['arrays']['cou_f'] = {'muc': muc, 'mul': mul_f}

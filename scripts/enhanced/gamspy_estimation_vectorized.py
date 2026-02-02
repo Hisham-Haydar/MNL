@@ -25,11 +25,11 @@ Created: 2026-01-28
 import logging
 import time
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Any
+from typing import Dict, Optional, Tuple, Any, List
 import numpy as np
 
 try:
-    from gamspy import Container, Model, Variable, Set, Parameter, Sum as GamsSum
+    from gamspy import Container, Model, Variable, Set, Parameter, Equation, Sum as GamsSum
     from gamspy.math import exp as gp_exp, log as gp_log
     HAS_GAMSPY = True
 except ImportError:
@@ -38,6 +38,7 @@ except ImportError:
 
 from estimation_utils import PrecomputedDataSingles, PrecomputedDataCouples
 from estimation_spec_parser import EstimationSpec
+from expression_constraints import build_expression_constraints_gamspy
 
 
 # ==============================================================================
@@ -131,6 +132,73 @@ def box_cox_transform(x, theta, eps=LOG_EPS):
         + theta * theta * theta * log_x3 / 24.0
         + theta * theta * theta * theta * log_x4 / 120.0
     )
+
+
+def _sanitize_eq_name(name: str, prefix: str = "") -> str:
+    raw = f"{prefix}{name}"
+    safe = "".join(ch if ch.isalnum() or ch == "_" else "_" for ch in raw)
+    if not safe:
+        safe = "expr_constraint"
+    # GAMS identifiers are limited; keep a conservative margin.
+    return safe[:55]
+
+
+def _apply_expression_constraints(
+    container: Container,
+    spec: EstimationSpec,
+    param_vars: Dict[str, Variable],
+    ll_expr: Any,
+    active_groups: Optional[Tuple[str, ...]],
+    name_prefix: str,
+    logger: Optional[logging.Logger] = None,
+) -> Tuple[Any, List[Equation]]:
+    if not getattr(spec, "expression_constraints_enabled", False):
+        return ll_expr, []
+
+    built = build_expression_constraints_gamspy(
+        spec=spec,
+        param_vars=param_vars,
+        box_cox_transform_fn=box_cox_transform,
+        gp_exp=gp_exp,
+        gp_log=gp_log,
+        log_eps=LOG_EPS,
+        active_groups=list(active_groups) if active_groups is not None else None,
+    )
+
+    adjusted_ll = ll_expr - built["soft_penalty_expr"]
+    hard_equations: List[Equation] = []
+    for idx, bound in enumerate(built["hard_bounds"]):
+        base = _sanitize_eq_name(
+            f"{bound.get('name', f'expr_{idx}')}_{idx}",
+            prefix=f"{name_prefix}_",
+        )
+        value_expr = bound["value_expr"]
+        lower = bound.get("lower")
+        upper = bound.get("upper")
+        if lower is not None:
+            hard_equations.append(
+                Equation(
+                    container,
+                    name=f"{base}_lb",
+                    definition=(value_expr >= float(lower)),
+                )
+            )
+        if upper is not None:
+            hard_equations.append(
+                Equation(
+                    container,
+                    name=f"{base}_ub",
+                    definition=(value_expr <= float(upper)),
+                )
+            )
+
+    if logger and built["n_active"] > 0:
+        logger.info(
+            "  Applied expression constraints: "
+            f"{built['n_active']} active, {len(hard_equations)} hard inequalities"
+        )
+
+    return adjusted_ll, hard_equations
 
 
 def _extract_var_level(var) -> float:
@@ -1179,17 +1247,37 @@ def estimate_singles_vectorized_gamspy(
 
     logger.info("    Log-likelihood expression built (vectorized)")
 
+    ll_expr, hard_eqs = _apply_expression_constraints(
+        container=container,
+        spec=spec,
+        param_vars=param_vars,
+        ll_expr=ll_expr,
+        active_groups=(group,),
+        name_prefix="sg",
+        logger=logger,
+    )
+
     # ========================================================================
     # 5. Create model and solve
     # ========================================================================
 
-    model = Model(
-        container,
-        name="ruro_singles_mnl_vectorized",
-        problem="nlp",
-        sense="max",
-        objective=ll_expr
-    )
+    if hard_eqs:
+        model = Model(
+            container,
+            name="ruro_singles_mnl_vectorized",
+            problem="nlp",
+            sense="max",
+            equations=hard_eqs,
+            objective=ll_expr,
+        )
+    else:
+        model = Model(
+            container,
+            name="ruro_singles_mnl_vectorized",
+            problem="nlp",
+            sense="max",
+            objective=ll_expr,
+        )
 
     logger.info(f"    Model created (problem type: NLP, sense: MAX)")
     logger.info(f"  Solving with {solver_name.upper()}...")
@@ -1325,16 +1413,36 @@ def estimate_couples_vectorized_gamspy(
         logger=logger,
     )
 
+    ll_expr, hard_eqs = _apply_expression_constraints(
+        container=container,
+        spec=spec,
+        param_vars=param_vars,
+        ll_expr=ll_expr,
+        active_groups=("couples_male", "couples_female", "couples_household"),
+        name_prefix="cou",
+        logger=logger,
+    )
+
     # ========================================================================
     # 3. Create model and solve
     # ========================================================================
-    model = Model(
-        container,
-        name="ruro_couples_mnl_vectorized",
-        problem="nlp",
-        sense="max",
-        objective=ll_expr
-    )
+    if hard_eqs:
+        model = Model(
+            container,
+            name="ruro_couples_mnl_vectorized",
+            problem="nlp",
+            sense="max",
+            equations=hard_eqs,
+            objective=ll_expr,
+        )
+    else:
+        model = Model(
+            container,
+            name="ruro_couples_mnl_vectorized",
+            problem="nlp",
+            sense="max",
+            objective=ll_expr,
+        )
 
     logger.info(f"  Solving with {solver_name.upper()}...")
     logger.info("  (Vectorized approach should be 3-5x faster than line-by-line)")
@@ -1522,16 +1630,42 @@ def estimate_joint_vectorized_gamspy(
 
     ll_joint = ll_sm + ll_sf + ll_cou
 
+    ll_joint, hard_eqs = _apply_expression_constraints(
+        container=container,
+        spec=spec,
+        param_vars=param_vars,
+        ll_expr=ll_joint,
+        active_groups=(
+            "singles_male",
+            "singles_female",
+            "couples_male",
+            "couples_female",
+            "couples_household",
+        ),
+        name_prefix="joint",
+        logger=logger,
+    )
+
     # ========================================================================
     # 3. Create model and solve
     # ========================================================================
-    model = Model(
-        container,
-        name="ruro_joint_mnl_vectorized",
-        problem="nlp",
-        sense="max",
-        objective=ll_joint
-    )
+    if hard_eqs:
+        model = Model(
+            container,
+            name="ruro_joint_mnl_vectorized",
+            problem="nlp",
+            sense="max",
+            equations=hard_eqs,
+            objective=ll_joint,
+        )
+    else:
+        model = Model(
+            container,
+            name="ruro_joint_mnl_vectorized",
+            problem="nlp",
+            sense="max",
+            objective=ll_joint,
+        )
 
     logger.info("  Solving joint model...")
     if solver_options:

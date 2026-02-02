@@ -203,6 +203,13 @@ def estimate_single_group(
     logger.info(f"  Parameters: {len(theta_init)}")
     logger.info(f"  Optimizer: {spec.opt_method}")
 
+    if getattr(spec, "expression_constraints_enabled", False) and use_gradient:
+        logger.warning(
+            f"[{group_name}] Expression constraints enabled: disabling analytical gradient "
+            "for SciPy optimization to keep objective/gradient consistent."
+        )
+        use_gradient = False
+
     start_time = time.time()
 
     # Determine likelihood and gradient functions
@@ -453,6 +460,12 @@ def estimate_joint(
     # Get initial values
     if theta_init is None:
         theta_init = spec.get_initial_vector()
+
+    if getattr(spec, "expression_constraints_enabled", False) and use_gradient:
+        logger.warning(
+            "Expression constraints enabled: disabling analytical gradient for joint SciPy optimization."
+        )
+        use_gradient = False
 
     # Build objective function
     def objective(theta):

@@ -32,6 +32,7 @@ from estimation_utils import (
     HAS_NUMBA
 )
 from estimation_spec_parser import EstimationSpec
+from expression_constraints import compute_expression_constraints_penalty_numpy
 
 # Import Numba if available (used in estimation_utils for log-sum-exp)
 if HAS_NUMBA:
@@ -132,6 +133,15 @@ def compute_likelihood_singles(
     # Log-likelihood: Σ_i [V_obs_i - log_sum_exp_i]
     ll = np.sum(V_obs - lse)
 
+    penalty = 0.0
+    if getattr(spec, "expression_constraints_enabled", False):
+        active_group = "singles_male" if data.is_male else "singles_female"
+        penalty = compute_expression_constraints_penalty_numpy(
+            theta, spec, active_groups=[active_group]
+        )
+
+    neg_ll = -ll + penalty
+
     if return_components:
         return {
             'V': V,
@@ -141,10 +151,11 @@ def compute_likelihood_singles(
             'lse': lse,
             'V_obs': V_obs,
             'll': ll,
-            'neg_ll': -ll
+            'neg_ll': neg_ll,
+            'expr_penalty': penalty,
         }
     else:
-        return -ll  # Negative for minimization
+        return neg_ll  # Negative LL plus optional expression-constraint penalty
 
 
 def _compute_utility_singles(
@@ -954,6 +965,16 @@ def compute_likelihood_couples(
     V_obs = np.array([V[start] for start in data.group_starts])
     ll = np.sum(V_obs - lse)
 
+    penalty = 0.0
+    if getattr(spec, "expression_constraints_enabled", False):
+        penalty = compute_expression_constraints_penalty_numpy(
+            theta,
+            spec,
+            active_groups=["couples_male", "couples_female", "couples_household"],
+        )
+
+    neg_ll = -ll + penalty
+
     if return_components:
         return {
             'V': V,
@@ -965,10 +986,11 @@ def compute_likelihood_couples(
             'lse': lse,
             'V_obs': V_obs,
             'll': ll,
-            'neg_ll': -ll
+            'neg_ll': neg_ll,
+            'expr_penalty': penalty,
         }
     else:
-        return -ll
+        return neg_ll
 
 
 def _compute_utility_couples(

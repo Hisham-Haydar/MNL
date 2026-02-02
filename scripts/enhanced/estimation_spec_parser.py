@@ -91,6 +91,10 @@ class EstimationSpec:
     all_param_names: List[str] = field(default_factory=list)
     initial_values: Dict[str, float] = field(default_factory=dict)
     bounds: Dict[str, Tuple[float, float]] = field(default_factory=dict)
+    expression_constraints_enabled: bool = False
+    expression_constraints_default_mode: str = "soft"
+    expression_constraints_default_weight: float = 1e4
+    expression_constraints: List[Dict[str, Any]] = field(default_factory=list)
 
     # Optimization settings
     opt_method: str = "L-BFGS-B"
@@ -417,6 +421,12 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     opt_gradient_tolerance = float(opt_config.get("gradient_tolerance", 1e-6))  # NEW
     opt_display = opt_config.get("disp", False)  # NEW
     opt_iprint = int(opt_config.get("iprint", -1))  # NEW
+    (
+        expr_constraints_enabled,
+        expr_constraints_default_mode,
+        expr_constraints_default_weight,
+        expr_constraints
+    ) = _parse_expression_constraints(opt_config, logger)
 
     # Parse gradient verification settings
     grad_verify = config.get('gradient_verification', {})
@@ -473,6 +483,14 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     # Convert bounds to tuples
     bounds_dict = {name: tuple(bound) for name, bound in bounds.items()}
 
+    if expr_constraints_enabled:
+        logger.info(
+            "Expression constraints enabled: "
+            f"{len(expr_constraints)} constraints "
+            f"(default mode={expr_constraints_default_mode}, "
+            f"default weight={expr_constraints_default_weight:.2e})"
+        )
+
     logger.info("="*80)
     logger.info("Specification parsing complete")
     logger.info("="*80)
@@ -497,6 +515,10 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         all_param_names=all_param_names,
         initial_values=initial_values,
         bounds=bounds_dict,
+        expression_constraints_enabled=expr_constraints_enabled,
+        expression_constraints_default_mode=expr_constraints_default_mode,
+        expression_constraints_default_weight=expr_constraints_default_weight,
+        expression_constraints=expr_constraints,
         opt_method=opt_method,
         opt_analytical_gradient=opt_analytical_gradient,
         opt_max_iterations=opt_max_iterations,
@@ -532,6 +554,167 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         sampling_total_alternatives=sampling_total_alternatives,
         sampling_stratified_by_occ=sampling_stratified_by_occ,
     )
+
+
+def _parse_expression_constraints(
+    opt_config: Dict[str, Any],
+    logger: logging.Logger,
+) -> Tuple[bool, str, float, List[Dict[str, Any]]]:
+    """
+    Parse and validate optimization.expression_constraints block.
+
+    Supported schema:
+      optimization:
+        expression_constraints:
+          enabled: true
+          default_mode: soft  # soft | hard
+          default_weight: 1e4
+          constraints:
+            - name: muc_sm_positive
+              expression: muc  # muc | mul
+              group: singles_male
+              at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0}
+              lower: 0.0
+              mode: soft
+              weight: 5e3
+
+    A shorthand list under expression_constraints is also accepted.
+    """
+    expr_cfg = opt_config.get("expression_constraints", None)
+    if expr_cfg is None:
+        return False, "soft", 1e4, []
+
+    if isinstance(expr_cfg, list):
+        enabled = len(expr_cfg) > 0
+        default_mode = "soft"
+        default_weight = 1e4
+        raw_constraints = expr_cfg
+    elif isinstance(expr_cfg, dict):
+        raw_constraints = expr_cfg.get("constraints", [])
+        enabled = bool(expr_cfg.get("enabled", bool(raw_constraints)))
+        default_mode = str(expr_cfg.get("default_mode", "soft")).strip().lower()
+        default_weight = float(expr_cfg.get("default_weight", 1e4))
+    else:
+        raise ValueError(
+            "optimization.expression_constraints must be a dict or a list of constraints."
+        )
+
+    if default_mode not in {"soft", "hard"}:
+        raise ValueError(
+            "optimization.expression_constraints.default_mode must be 'soft' or 'hard'."
+        )
+    if default_weight <= 0:
+        raise ValueError(
+            "optimization.expression_constraints.default_weight must be > 0."
+        )
+
+    if not isinstance(raw_constraints, list):
+        raise ValueError(
+            "optimization.expression_constraints.constraints must be a list."
+        )
+
+    valid_exprs = {"muc", "mul"}
+    valid_groups = {
+        "singles_male",
+        "singles_female",
+        "couples_male",
+        "couples_female",
+        "couples_household",
+        "couples",
+    }
+    parsed_constraints: List[Dict[str, Any]] = []
+
+    for i, raw in enumerate(raw_constraints):
+        if not isinstance(raw, dict):
+            raise ValueError(
+                f"expression_constraints[{i}] must be a mapping, got {type(raw)}"
+            )
+
+        expr_name = str(raw.get("expression", "")).strip().lower()
+        if expr_name not in valid_exprs:
+            raise ValueError(
+                f"expression_constraints[{i}].expression must be one of "
+                f"{sorted(valid_exprs)}, got '{raw.get('expression')}'"
+            )
+
+        group = str(raw.get("group", "")).strip().lower()
+        if group not in valid_groups:
+            raise ValueError(
+                f"expression_constraints[{i}].group must be one of "
+                f"{sorted(valid_groups)}, got '{raw.get('group')}'"
+            )
+        if expr_name == "mul" and group in {"couples", "couples_household"}:
+            raise ValueError(
+                f"expression_constraints[{i}] with expression='mul' must use "
+                "group 'couples_male' or 'couples_female' (not household/alias)."
+            )
+
+        at = raw.get("at", {}) or {}
+        if not isinstance(at, dict):
+            raise ValueError(f"expression_constraints[{i}].at must be a mapping.")
+
+        at_clean: Dict[str, float] = {}
+        for key, value in at.items():
+            try:
+                at_clean[str(key)] = float(value)
+            except (TypeError, ValueError):
+                raise ValueError(
+                    f"expression_constraints[{i}].at['{key}'] must be numeric."
+                )
+
+        for pos_key in ("consumption", "leisure", "leisure_male", "leisure_female", "leisure_partner"):
+            if pos_key in at_clean and at_clean[pos_key] <= 0:
+                raise ValueError(
+                    f"expression_constraints[{i}].at['{pos_key}'] must be > 0."
+                )
+
+        lower = raw.get("lower", None)
+        upper = raw.get("upper", None)
+        if lower is None and upper is None:
+            raise ValueError(
+                f"expression_constraints[{i}] must define at least one of 'lower' or 'upper'."
+            )
+        lower_val = float(lower) if lower is not None else None
+        upper_val = float(upper) if upper is not None else None
+        if lower_val is not None and upper_val is not None and lower_val > upper_val:
+            raise ValueError(
+                f"expression_constraints[{i}] has lower > upper ({lower_val} > {upper_val})."
+            )
+
+        mode = str(raw.get("mode", default_mode)).strip().lower()
+        if mode not in {"soft", "hard"}:
+            raise ValueError(
+                f"expression_constraints[{i}].mode must be 'soft' or 'hard'."
+            )
+
+        weight = raw.get("weight", default_weight)
+        weight_val = float(weight)
+        if weight_val <= 0:
+            raise ValueError(
+                f"expression_constraints[{i}].weight must be > 0."
+            )
+
+        name = str(raw.get("name", f"{expr_name}_{group}_{i}")).strip()
+        if not name:
+            name = f"{expr_name}_{group}_{i}"
+
+        parsed_constraints.append({
+            "name": name,
+            "expression": expr_name,
+            "group": group,
+            "at": at_clean,
+            "lower": lower_val,
+            "upper": upper_val,
+            "mode": mode,
+            "weight": weight_val,
+        })
+
+    if enabled and not parsed_constraints:
+        logger.warning(
+            "optimization.expression_constraints.enabled=true but no constraints were provided."
+        )
+
+    return enabled, default_mode, default_weight, parsed_constraints
 
 
 def _build_parameter_list(

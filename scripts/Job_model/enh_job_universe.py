@@ -28,9 +28,9 @@ isco1 : int
 cell_count : int
     Number of observed working deciders in this job cell
 hours_rep : float
-    Representative hours for this job (mean of observations in cell)
+    Representative hours for this job (bin-level summary statistic)
 wage_rep : float
-    Representative wage for this job (mean of observations in cell)
+    Representative wage for this job (bin-level summary statistic)
 q_j_prior : float
     Proposal prior probability (sums to 1 over working jobs, excluding job 0)
 
@@ -74,6 +74,11 @@ UNIVERSE_MODE_FULL_GRID = "full_grid"  # Complete grid with filled empty cells
 REP_FILL_MODE_BIN_MEANS = "bin_means"  # Use observed bin means
 REP_FILL_MODE_BIN_MIDPOINTS = "bin_midpoints"  # Use bin midpoints
 
+# Summary statistics for representative values
+REP_STAT_MEAN = "mean"
+REP_STAT_MEDIAN = "median"
+REP_STAT_MODE = "mode"
+
 # Job ID assignment modes
 JOB_ID_MODE_DETERMINISTIC = "deterministic"  # Stable formula-based job_id
 JOB_ID_MODE_SEQUENTIAL = "sequential"  # Sequential 1..N (original)
@@ -102,6 +107,25 @@ def _setup_logging(level: str = "INFO") -> None:
         format="%(asctime)s - %(levelname)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+
+
+def _summarize_numeric(series: pd.Series, method: str) -> float:
+    """Summarize a numeric series with a deterministic scalar statistic."""
+    x = pd.to_numeric(series, errors="coerce").dropna()
+    if x.empty:
+        return float("nan")
+
+    if method == REP_STAT_MEAN:
+        return float(x.mean())
+    if method == REP_STAT_MEDIAN:
+        return float(x.median())
+    if method == REP_STAT_MODE:
+        modes = x.mode(dropna=True)
+        if modes.empty:
+            return float(x.iloc[0])
+        # Deterministic tie-breaker if multiple modes.
+        return float(np.min(modes.to_numpy(dtype=float)))
+    raise ValueError(f"Unknown representative statistic: {method}")
 
 
 # ---------------------------------------------------------------------------
@@ -298,6 +322,8 @@ def _build_job_universe(
     wage_labels: List[Tuple[float, float]],
     universe_mode: str = UNIVERSE_MODE_EMPIRICAL_PRUNED,
     rep_fill_mode: str = REP_FILL_MODE_BIN_MEANS,
+    hours_rep_stat: str = REP_STAT_MEAN,
+    wage_rep_stat: str = REP_STAT_MEAN,
     job_id_mode: str = JOB_ID_MODE_SEQUENTIAL,
     min_cell_threshold: int = DEFAULT_MIN_CELL_THRESHOLD,
     smoothing_alpha: float = DEFAULT_SMOOTHING_ALPHA,
@@ -330,9 +356,12 @@ def _build_job_universe(
     universe_mode : str
         One of: empirical_pruned, empirical_all, full_grid
     rep_fill_mode : str
-        Representative-value strategy for hours_rep / wage_rep in full_grid:
-        - bin_means: use observed bin means for all cells (default)
-        - bin_midpoints: use bin midpoints for all cells
+        Representative-value strategy:
+        - bin_means: use bin-level summary stats (configured by *_rep_stat)
+        - bin_midpoints: use bin midpoints
+    hours_rep_stat, wage_rep_stat : str
+        Bin-level summary statistics for hours_rep / wage_rep when
+        rep_fill_mode == bin_means. One of: mean, median, mode.
     job_id_mode : str
         One of: deterministic, sequential
     min_cell_threshold : int
@@ -359,13 +388,27 @@ def _build_job_universe(
     # Group by (hours_bin, wage_bin, isco1) - get empirical cells
     empirical_cells = (
         df_valid.groupby(["hours_bin", "wage_bin", "isco1"], dropna=False)
-        .agg(
-            cell_count=("lhw_base", "size"),
-            hours_rep=("lhw_base", "mean"),
-            wage_rep=("yivwg_base", "mean"),
-        )
+        .agg(cell_count=("lhw_base", "size"))
         .reset_index()
     )
+
+    # Common bin-level representative values (for all universe modes).
+    hours_bin_stats = (
+        df_valid.groupby("hours_bin")["lhw_base"]
+        .apply(lambda s: _summarize_numeric(s, hours_rep_stat))
+        .to_dict()
+    )
+    wage_bin_stats = (
+        df_valid.groupby("wage_bin")["yivwg_base"]
+        .apply(lambda s: _summarize_numeric(s, wage_rep_stat))
+        .to_dict()
+    )
+
+    def get_midpoint(label: Tuple[float, float]) -> float:
+        return (label[0] + label[1]) / 2.0
+
+    hours_midpoints = {i: get_midpoint(label) for i, label in enumerate(hours_labels)}
+    wage_midpoints = {i: get_midpoint(label) for i, label in enumerate(wage_labels)}
 
     # Apply universe mode
     if universe_mode == UNIVERSE_MODE_EMPIRICAL_PRUNED:
@@ -398,42 +441,32 @@ def _build_job_universe(
         # Fill missing cell_count with 0
         grouped["cell_count"] = grouped["cell_count"].fillna(0).astype(int)
 
-        # Build common bin-level representative values
-        # (used for all cells to keep job bundles consistent by bin)
-        hours_bin_means = df_valid.groupby("hours_bin")["lhw_base"].mean().to_dict()
-        wage_bin_means = df_valid.groupby("wage_bin")["yivwg_base"].mean().to_dict()
-
-        def get_midpoint(label):
-            return (label[0] + label[1]) / 2.0
-
-        hours_midpoints = {i: get_midpoint(label) for i, label in enumerate(hours_labels)}
-        wage_midpoints = {i: get_midpoint(label) for i, label in enumerate(wage_labels)}
-
-        # Set representative values according to strategy.
-        # NOTE: This applies to ALL cells (not only empties), so each job in the
-        # same bin shares the same representative hours/wage by construction.
-        if rep_fill_mode == REP_FILL_MODE_BIN_MEANS:
-            grouped["hours_rep"] = grouped["hours_bin"].map(hours_bin_means)
-            grouped["wage_rep"] = grouped["wage_bin"].map(wage_bin_means)
-            # Fallback to midpoints if an entire bin has no observations.
-            grouped["hours_rep"] = grouped["hours_rep"].fillna(grouped["hours_bin"].map(hours_midpoints)).fillna(0.0)
-            grouped["wage_rep"] = grouped["wage_rep"].fillna(grouped["wage_bin"].map(wage_midpoints)).fillna(0.0)
-
-        elif rep_fill_mode == REP_FILL_MODE_BIN_MIDPOINTS:
-            grouped["hours_rep"] = grouped["hours_bin"].map(hours_midpoints).fillna(0.0)
-            grouped["wage_rep"] = grouped["wage_bin"].map(wage_midpoints).fillna(0.0)
-
-        else:
-            raise ValueError(f"Unknown rep_fill_mode: {rep_fill_mode}")
-
         n_empty = (grouped["cell_count"] == 0).sum()
         logging.info(
             f"Universe mode: full_grid ({len(grouped)} total cells, "
-            f"{n_empty} empty cells; representatives set by {rep_fill_mode})"
+            f"{n_empty} empty cells)"
         )
 
     else:
         raise ValueError(f"Unknown universe_mode: {universe_mode}")
+
+    # Assign representative values by chosen strategy. This is done for ALL
+    # universe modes to keep the job-bundle interpretation consistent.
+    if rep_fill_mode == REP_FILL_MODE_BIN_MEANS:
+        grouped["hours_rep"] = grouped["hours_bin"].map(hours_bin_stats)
+        grouped["wage_rep"] = grouped["wage_bin"].map(wage_bin_stats)
+        grouped["hours_rep"] = grouped["hours_rep"].fillna(grouped["hours_bin"].map(hours_midpoints)).fillna(0.0)
+        grouped["wage_rep"] = grouped["wage_rep"].fillna(grouped["wage_bin"].map(wage_midpoints)).fillna(0.0)
+        logging.info(
+            "Representative values: bin statistics "
+            f"(hours={hours_rep_stat}, wage={wage_rep_stat})"
+        )
+    elif rep_fill_mode == REP_FILL_MODE_BIN_MIDPOINTS:
+        grouped["hours_rep"] = grouped["hours_bin"].map(hours_midpoints).fillna(0.0)
+        grouped["wage_rep"] = grouped["wage_bin"].map(wage_midpoints).fillna(0.0)
+        logging.info("Representative values: bin midpoints (hours and wage)")
+    else:
+        raise ValueError(f"Unknown rep_fill_mode: {rep_fill_mode}")
 
     # Compute prior with Laplace smoothing
     mean_count = grouped["cell_count"].mean() if len(grouped) > 0 else 1.0
@@ -524,6 +557,8 @@ def build_job_universe_from_ruro_ready(
     include_isco0: bool = False,
     universe_mode: str = UNIVERSE_MODE_EMPIRICAL_PRUNED,
     rep_fill_mode: str = REP_FILL_MODE_BIN_MEANS,
+    hours_rep_stat: str = REP_STAT_MEAN,
+    wage_rep_stat: str = REP_STAT_MEAN,
     job_id_mode: str = JOB_ID_MODE_SEQUENTIAL,
     min_cell_threshold: int = DEFAULT_MIN_CELL_THRESHOLD,
     smoothing_alpha: float = DEFAULT_SMOOTHING_ALPHA,
@@ -546,6 +581,9 @@ def build_job_universe_from_ruro_ready(
         Number of wage bins
     min_cell_threshold : int
         Minimum observations per job cell
+    hours_rep_stat, wage_rep_stat : str
+        Summary statistics for bin-level representative hours/wages
+        when rep_fill_mode == bin_means (mean, median, mode)
     smoothing_alpha : float
         Laplace smoothing parameter
     seed : int
@@ -651,6 +689,8 @@ def build_job_universe_from_ruro_ready(
         wage_labels=wage_labels,
         universe_mode=universe_mode,
         rep_fill_mode=rep_fill_mode,
+        hours_rep_stat=hours_rep_stat,
+        wage_rep_stat=wage_rep_stat,
         job_id_mode=job_id_mode,
         min_cell_threshold=min_cell_threshold,
         smoothing_alpha=smoothing_alpha,
@@ -694,6 +734,8 @@ def build_job_universe_from_ruro_ready(
         "include_isco0": include_isco0,
         "universe_mode": universe_mode,
         "rep_fill_mode": rep_fill_mode,
+        "hours_rep_stat": hours_rep_stat,
+        "wage_rep_stat": wage_rep_stat,
         "job_id_mode": job_id_mode,
         "n_jobs": int(len(job_universe) - 1),  # Excluding job 0
         "n_cells_total": int(len(job_universe)),
@@ -789,8 +831,22 @@ def parse_args() -> argparse.Namespace:
         type=str,
         choices=[REP_FILL_MODE_BIN_MEANS, REP_FILL_MODE_BIN_MIDPOINTS],
         default=REP_FILL_MODE_BIN_MEANS,
-        help=f"Representative value fill mode for empty cells in full_grid: "
-             f"{REP_FILL_MODE_BIN_MEANS} (observed bin means), {REP_FILL_MODE_BIN_MIDPOINTS} (bin midpoints)",
+        help=f"Representative-value strategy: "
+             f"{REP_FILL_MODE_BIN_MEANS} (bin-level stats), {REP_FILL_MODE_BIN_MIDPOINTS} (bin midpoints)",
+    )
+    ap.add_argument(
+        "--hours-rep-stat",
+        type=str,
+        choices=[REP_STAT_MEAN, REP_STAT_MEDIAN, REP_STAT_MODE],
+        default=REP_STAT_MEAN,
+        help="Summary stat for hours_rep when --rep-fill-mode=bin_means (default: mean)",
+    )
+    ap.add_argument(
+        "--wage-rep-stat",
+        type=str,
+        choices=[REP_STAT_MEAN, REP_STAT_MEDIAN, REP_STAT_MODE],
+        default=REP_STAT_MEAN,
+        help="Summary stat for wage_rep when --rep-fill-mode=bin_means (default: mean)",
     )
     ap.add_argument(
         "--job-id-mode",
@@ -851,6 +907,8 @@ def main() -> None:
         include_isco0=bool(args.include_isco0),
         universe_mode=args.universe_mode,
         rep_fill_mode=args.rep_fill_mode,
+        hours_rep_stat=args.hours_rep_stat,
+        wage_rep_stat=args.wage_rep_stat,
         job_id_mode=args.job_id_mode,
         min_cell_threshold=args.min_cell_threshold,
         smoothing_alpha=args.smoothing_alpha,

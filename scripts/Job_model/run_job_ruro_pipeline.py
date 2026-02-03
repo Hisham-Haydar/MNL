@@ -94,6 +94,8 @@ def run_job_ruro_pipeline(
     include_isco0: bool = False,
     universe_mode: str = "empirical_pruned",
     rep_fill_mode: str = "bin_means",
+    hours_rep_stat: str = "mean",
+    wage_rep_stat: str = "mean",
     job_id_mode: str = "sequential",
     min_cell_threshold: int = 5,
     smoothing_alpha: float = 0.01,
@@ -182,6 +184,8 @@ def run_job_ruro_pipeline(
         "--wage-bins", str(wage_bins),
         "--universe-mode", universe_mode,
         "--rep-fill-mode", rep_fill_mode,
+        "--hours-rep-stat", hours_rep_stat,
+        "--wage-rep-stat", wage_rep_stat,
         "--job-id-mode", job_id_mode,
         "--include-isco0", str(1 if include_isco0 else 0),
         "--min-cell-threshold", str(min_cell_threshold),
@@ -356,7 +360,21 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default="bin_means",
         choices=["bin_means", "bin_midpoints"],
-        help="Representative value fill mode for empty cells in full_grid (default: bin_means)",
+        help="Representative-value strategy (default: bin_means)",
+    )
+    ap.add_argument(
+        "--hours-rep-stat",
+        type=str,
+        default="mean",
+        choices=["mean", "median", "mode"],
+        help="Summary stat for hours_rep when --rep-fill-mode=bin_means (default: mean)",
+    )
+    ap.add_argument(
+        "--wage-rep-stat",
+        type=str,
+        default="mean",
+        choices=["mean", "median", "mode"],
+        help="Summary stat for wage_rep when --rep-fill-mode=bin_means (default: mean)",
     )
     ap.add_argument(
         "--job-id-mode",
@@ -460,6 +478,8 @@ def main() -> None:
         include_isco0=args.include_isco0,
         universe_mode=args.universe_mode,
         rep_fill_mode=args.rep_fill_mode,
+        hours_rep_stat=args.hours_rep_stat,
+        wage_rep_stat=args.wage_rep_stat,
         job_id_mode=args.job_id_mode,
         min_cell_threshold=args.min_cell_threshold,
         smoothing_alpha=args.smoothing_alpha,

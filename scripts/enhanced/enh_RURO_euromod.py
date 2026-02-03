@@ -441,6 +441,11 @@ def run_euromod_for_draws(
         override_cols.append("yivwg")
     if "lhw" in draws_df.columns:
         override_cols.append("lhw")
+    # Optional occupation override from job-based draws.
+    if "loc_ruro" in draws_df.columns:
+        override_cols.append("loc_ruro")
+    if "isco1" in draws_df.columns:
+        override_cols.append("isco1")
 
     draws_sub = draws_df[override_cols].copy()
     
@@ -681,6 +686,22 @@ def run_euromod_for_draws(
     # For non-deciders: keep baseline wage
     final_yivwg = np.where(working_mask, yivwg_from_draws, baseline_yivwg)
     merged[wage_col] = final_yivwg
+
+    # -------------------------------------------------------------------------
+    # 10b. Optional occupation override for deciders (job-choice draws)
+    # -------------------------------------------------------------------------
+    if "loc_ruro" in merged.columns or "loc_ruro_draw" in merged.columns:
+        baseline_loc = (
+            pd.to_numeric(merged["loc_ruro"], errors="coerce").fillna(-1).astype(int)
+            if "loc_ruro" in merged.columns
+            else pd.Series(-1, index=merged.index, dtype=int)
+        )
+        loc_from_draws = (
+            pd.to_numeric(merged["loc_ruro_draw"], errors="coerce").fillna(-1).astype(int)
+            if "loc_ruro_draw" in merged.columns
+            else baseline_loc
+        )
+        merged["loc_ruro"] = np.where(is_decider, loc_from_draws, baseline_loc).astype(int)
 
     # LHW: Already set above via hours_col at line 628
     # Retrieve FINAL lhw that will be sent to EUROMOD

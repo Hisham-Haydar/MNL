@@ -64,8 +64,8 @@ DEFAULT_SEED = 13
 WEEKS_PER_MONTH = 52.0 / 12.0
 
 # Baseline modes
-BASELINE_MODE_OBSERVED = "observed"  # Use actual lhw_base/yivwg_base (default)
-BASELINE_MODE_CELL_REP = "cell_rep"  # Use hours_rep/wage_rep from job universe
+BASELINE_MODE_OBSERVED = "observed"  # Use actual lhw_base/yivwg_base
+BASELINE_MODE_CELL_REP = "cell_rep"  # Use hours_rep/wage_rep from job universe (default)
 
 # ---------------------------------------------------------------------------
 # I/O Helpers
@@ -140,6 +140,8 @@ def _assign_baseline_job(
     Assign baseline job_id to each observation based on observed (lhw_base, yivwg_base, isco1).
 
     For working deciders: find job_id matching their bins + occupation.
+    If exact match is missing, fall back deterministically to a job with the
+    same (hours_bin, wage_bin) regardless of occupation.
     For non-workers (lhw_base==0): job_id=0.
 
     Parameters
@@ -192,11 +194,41 @@ def _assign_baseline_job(
 
         # Build lookup: (hours_bin, wage_bin, isco1) -> job_id
         job_lookup = {}
+        hw_lookup = {}
+        hw_score = {}
+        supported_isco = set()
+        fallback_job_id = 0
+        fallback_score = -np.inf
+        prior_col = "prior" if "prior" in job_universe.columns else (
+            "q_j_prior" if "q_j_prior" in job_universe.columns else None
+        )
+
         for _, row in job_universe.iterrows():
             if row["job_id"] == 0:
                 continue  # Skip non-employment
-            key = (int(row["hours_bin"]), int(row["wage_bin"]), int(row["isco1"]))
-            job_lookup[key] = int(row["job_id"])
+            h_bin = int(row["hours_bin"])
+            w_bin = int(row["wage_bin"])
+            isco = int(row["isco1"])
+            jid = int(row["job_id"])
+            key = (h_bin, w_bin, isco)
+            job_lookup[key] = jid
+            supported_isco.add(isco)
+
+            # Use prior (if available) to choose deterministic fallback job.
+            score = float(row[prior_col]) if prior_col is not None else -float(jid)
+            hw_key = (h_bin, w_bin)
+            if (hw_key not in hw_lookup) or (score > hw_score[hw_key]):
+                hw_lookup[hw_key] = jid
+                hw_score[hw_key] = score
+            if score > fallback_score:
+                fallback_job_id = jid
+                fallback_score = score
+
+        exact_match_count = 0
+        fallback_hw_count = 0
+        fallback_global_count = 0
+        invalid_isco_count = 0
+        invalid_bin_count = 0
 
         # Map working obs to job_id
         working_indices = np.where(working_mask)[0]
@@ -206,7 +238,46 @@ def _assign_baseline_job(
             isco = isco1_obs.iloc[idx]
 
             key = (h_bin, w_bin, isco)
-            baseline_job_id[idx] = job_lookup.get(key, 0)  # Default to 0 if not found
+            jid = job_lookup.get(key)
+            if jid is not None:
+                baseline_job_id[idx] = jid
+                exact_match_count += 1
+                continue
+
+            if isco not in supported_isco:
+                invalid_isco_count += 1
+            if h_bin < 0 or w_bin < 0:
+                invalid_bin_count += 1
+
+            # Fallback 1: keep observed bins, relax occupation.
+            hw_key = (h_bin, w_bin)
+            jid = hw_lookup.get(hw_key)
+            if jid is not None:
+                baseline_job_id[idx] = jid
+                fallback_hw_count += 1
+                continue
+
+            # Fallback 2: most likely working job in universe.
+            baseline_job_id[idx] = fallback_job_id
+            fallback_global_count += 1
+
+        n_working = int(working_mask.sum())
+        n_fallback = fallback_hw_count + fallback_global_count
+        if n_fallback > 0:
+            logging.warning(
+                "Baseline job assignment used fallback for %d/%d working rows "
+                "(exact=%d, same_bin=%d, global=%d).",
+                n_fallback,
+                n_working,
+                exact_match_count,
+                fallback_hw_count,
+                fallback_global_count,
+            )
+            logging.warning(
+                "Fallback diagnostics: invalid_isco=%d, invalid_bin=%d",
+                invalid_isco_count,
+                invalid_bin_count,
+            )
 
     df["baseline_job_id"] = baseline_job_id
 
@@ -225,7 +296,7 @@ def generate_job_draws_long(
     n_draws: int = DEFAULT_N_DRAWS,
     pi0_m: float = DEFAULT_PI0_M,
     pi0_f: float = DEFAULT_PI0_F,
-    baseline_mode: str = BASELINE_MODE_OBSERVED,
+    baseline_mode: str = BASELINE_MODE_CELL_REP,
     rng_seed: int = DEFAULT_SEED,
 ) -> pd.DataFrame:
     """
@@ -334,11 +405,11 @@ def generate_job_draws_long(
 
     # For draw=0, use baseline labor inputs based on mode
     if baseline_mode == BASELINE_MODE_OBSERVED:
-        # Use actual observed values (default)
+        # Use actual observed values
         df_draw0["lhw_draw"] = pd.to_numeric(df_draw0["lhw_base"], errors="coerce").fillna(0.0)
         df_draw0["yivwg_draw"] = pd.to_numeric(df_draw0["yivwg_base"], errors="coerce").fillna(0.0)
     elif baseline_mode == BASELINE_MODE_CELL_REP:
-        # Use representative values from job universe
+        # Use representative values from job universe (default)
         df_draw0["lhw_draw"] = df_draw0["hours_rep"].fillna(0.0)
         df_draw0["yivwg_draw"] = df_draw0["wage_rep"].fillna(0.0)
     else:
@@ -353,6 +424,22 @@ def generate_job_draws_long(
     df_draw0["log_q_job"] = 0.0
     df_draw0["log_q_state"] = 0.0
     df_draw0["log_q_total"] = 0.0
+
+    # Draw-specific occupation: deciders use sampled job occupation.
+    # Keep observed occupation in loc_ruro_obs for diagnostics.
+    if "isco1" in df_draw0.columns:
+        isco_draw0 = pd.to_numeric(df_draw0["isco1"], errors="coerce").fillna(-1).astype(int)
+        df_draw0["loc_ruro_draw"] = isco_draw0
+        if "loc_ruro" in df_draw0.columns:
+            loc_obs = pd.to_numeric(df_draw0["loc_ruro"], errors="coerce").fillna(-1).astype(int)
+            df_draw0["loc_ruro_obs"] = loc_obs
+            # Cast to int first so pandas does not warn on dtype-mismatch assignment.
+            df_draw0["loc_ruro"] = loc_obs
+            decider_mask_draw0 = df_draw0["is_decider"] == 1
+            df_draw0.loc[decider_mask_draw0, "loc_ruro"] = isco_draw0[decider_mask_draw0]
+        else:
+            df_draw0["loc_ruro_obs"] = -1
+            df_draw0["loc_ruro"] = np.where(df_draw0["is_decider"] == 1, isco_draw0, -1)
 
     # If no simulated draws requested, return baseline only
     if n_draws == 0:
@@ -476,6 +563,14 @@ def generate_job_draws_long(
     sim_df["log_q_job"] = log_q_job
     sim_df["log_q_total"] = log_q_state + log_q_job
 
+    # Draw-specific occupation for simulated decider draws.
+    if "isco1" in sim_df.columns:
+        isco_sim = pd.to_numeric(sim_df["isco1"], errors="coerce").fillna(-1).astype(int)
+        sim_df["loc_ruro_draw"] = isco_sim
+        if "loc_ruro" in sim_df.columns and "loc_ruro_obs" not in sim_df.columns:
+            sim_df["loc_ruro_obs"] = pd.to_numeric(sim_df["loc_ruro"], errors="coerce").fillna(-1).astype(int)
+        sim_df["loc_ruro"] = isco_sim
+
     # -------------------------------------------------------------------------
     # 7. Compute legacy proposal density for draw=0 (for backward compatibility)
     # -------------------------------------------------------------------------
@@ -542,12 +637,14 @@ def generate_job_draws_long(
 # Validation
 # ---------------------------------------------------------------------------
 
-def _validate_baseline_job_assignment(df: pd.DataFrame) -> None:
+def _validate_baseline_job_assignment(df: pd.DataFrame, baseline_mode: str) -> None:
     """
     Validate draw=0 baseline compliance.
 
     Checks:
-    - draw=0 hours/wage match lhw_base/yivwg_base
+    - draw=0 hours/wage match selected baseline mode
+      * observed: lhw_base/yivwg_base
+      * cell_rep: hours_rep/wage_rep
     - job_id=0 iff lhw_draw==0
     """
     draw0 = df[df["draw"] == 0].copy()
@@ -557,25 +654,34 @@ def _validate_baseline_job_assignment(df: pd.DataFrame) -> None:
         logging.warning("No deciders at draw=0 for validation")
         return
 
-    # Hours check
+    # Hours/wage check depends on baseline mode
     lhw_draw = pd.to_numeric(deciders["lhw_draw"], errors="coerce").fillna(0.0)
-    lhw_base = pd.to_numeric(deciders["lhw_base"], errors="coerce").fillna(0.0)
-    h_diff = np.abs(lhw_draw - lhw_base)
+    yivwg_draw = pd.to_numeric(deciders["yivwg_draw"], errors="coerce").fillna(0.0)
+    if baseline_mode == BASELINE_MODE_OBSERVED:
+        lhw_ref = pd.to_numeric(deciders["lhw_base"], errors="coerce").fillna(0.0)
+        yivwg_ref = pd.to_numeric(deciders["yivwg_base"], errors="coerce").fillna(0.0)
+        hours_label = "lhw_base"
+        wage_label = "yivwg_base"
+    elif baseline_mode == BASELINE_MODE_CELL_REP:
+        lhw_ref = pd.to_numeric(deciders["hours_rep"], errors="coerce").fillna(0.0)
+        yivwg_ref = pd.to_numeric(deciders["wage_rep"], errors="coerce").fillna(0.0)
+        hours_label = "hours_rep"
+        wage_label = "wage_rep"
+    else:
+        raise ValueError(f"Unknown baseline_mode in validation: {baseline_mode}")
+
+    h_diff = np.abs(lhw_draw - lhw_ref)
+    w_diff = np.abs(yivwg_draw - yivwg_ref)
 
     if (h_diff > 1e-6).any():
-        n_violations = (h_diff > 1e-6).sum()
+        n_violations = int((h_diff > 1e-6).sum())
         logging.error(f"Baseline hours compliance failed: {n_violations} violations")
-        raise ValueError(f"draw=0 hours do not match lhw_base for {n_violations} deciders")
-
-    # Wage check
-    yivwg_draw = pd.to_numeric(deciders["yivwg_draw"], errors="coerce").fillna(0.0)
-    yivwg_base = pd.to_numeric(deciders["yivwg_base"], errors="coerce").fillna(0.0)
-    w_diff = np.abs(yivwg_draw - yivwg_base)
+        raise ValueError(f"draw=0 hours do not match {hours_label} for {n_violations} deciders")
 
     if (w_diff > 1e-6).any():
-        n_violations = (w_diff > 1e-6).sum()
+        n_violations = int((w_diff > 1e-6).sum())
         logging.error(f"Baseline wage compliance failed: {n_violations} violations")
-        raise ValueError(f"draw=0 wages do not match yivwg_base for {n_violations} deciders")
+        raise ValueError(f"draw=0 wages do not match {wage_label} for {n_violations} deciders")
 
     # Job_id=0 iff lhw_draw==0
     job_id = deciders["job_id"].to_numpy()
@@ -621,8 +727,8 @@ def _validate_couples_draw_consistency(df: pd.DataFrame, household_type: str) ->
             continue
 
         # Check if all deciders have same draw set
-        first_set = next(iter(draw_sets.values()))
-        if not all(s == first_set for s in draw_sets.values()):
+        first_set = next(iter(draw_sets.values))
+        if not all(s == first_set for s in draw_sets.values):
             violations.append({
                 "idhh_true": idhh,
                 "draw_sets": {pid: sorted(draws) for pid, draws in draw_sets.items()},
@@ -650,7 +756,7 @@ def generate_draws_from_ruro_ready(
     n_draws: int = DEFAULT_N_DRAWS,
     pi0_m: float = DEFAULT_PI0_M,
     pi0_f: float = DEFAULT_PI0_F,
-    baseline_mode: str = BASELINE_MODE_OBSERVED,
+    baseline_mode: str = BASELINE_MODE_CELL_REP,
     rng_seed: int = DEFAULT_SEED,
 ) -> pd.DataFrame:
     """
@@ -701,7 +807,7 @@ def generate_draws_from_ruro_ready(
     )
 
     # Validate
-    _validate_baseline_job_assignment(long_df)
+    _validate_baseline_job_assignment(long_df, baseline_mode=baseline_mode)
     _validate_couples_draw_consistency(long_df, household_type)
 
     return long_df
@@ -761,9 +867,9 @@ def parse_args() -> argparse.Namespace:
         "--baseline-mode",
         type=str,
         choices=[BASELINE_MODE_OBSERVED, BASELINE_MODE_CELL_REP],
-        default=BASELINE_MODE_OBSERVED,
-        help=f"Baseline (draw=0) mode: {BASELINE_MODE_OBSERVED} (use actual lhw_base/yivwg_base), "
-             f"{BASELINE_MODE_CELL_REP} (use hours_rep/wage_rep from job universe)",
+        default=BASELINE_MODE_CELL_REP,
+        help=f"Baseline (draw=0) mode: {BASELINE_MODE_CELL_REP} (use hours_rep/wage_rep from job universe, default), "
+             f"{BASELINE_MODE_OBSERVED} (use actual lhw_base/yivwg_base)",
     )
     ap.add_argument(
         "--seed",

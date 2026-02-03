@@ -330,7 +330,9 @@ def _build_job_universe(
     universe_mode : str
         One of: empirical_pruned, empirical_all, full_grid
     rep_fill_mode : str
-        For full_grid empty cells: bin_means or bin_midpoints
+        Representative-value strategy for hours_rep / wage_rep in full_grid:
+        - bin_means: use observed bin means for all cells (default)
+        - bin_midpoints: use bin midpoints for all cells
     job_id_mode : str
         One of: deterministic, sequential
     min_cell_threshold : int
@@ -396,43 +398,39 @@ def _build_job_universe(
         # Fill missing cell_count with 0
         grouped["cell_count"] = grouped["cell_count"].fillna(0).astype(int)
 
-        # Fill representative values for empty cells
-        if rep_fill_mode == REP_FILL_MODE_BIN_MEANS:
-            # Compute bin means from empirical data
-            hours_bin_means = df_valid.groupby("hours_bin")["lhw_base"].mean().to_dict()
-            wage_bin_means = df_valid.groupby("wage_bin")["yivwg_base"].mean().to_dict()
+        # Build common bin-level representative values
+        # (used for all cells to keep job bundles consistent by bin)
+        hours_bin_means = df_valid.groupby("hours_bin")["lhw_base"].mean().to_dict()
+        wage_bin_means = df_valid.groupby("wage_bin")["yivwg_base"].mean().to_dict()
 
-            grouped["hours_rep"] = grouped.apply(
-                lambda row: row["hours_rep"] if pd.notna(row["hours_rep"]) else hours_bin_means.get(row["hours_bin"], 0.0),
-                axis=1
-            )
-            grouped["wage_rep"] = grouped.apply(
-                lambda row: row["wage_rep"] if pd.notna(row["wage_rep"]) else wage_bin_means.get(row["wage_bin"], 0.0),
-                axis=1
-            )
+        def get_midpoint(label):
+            return (label[0] + label[1]) / 2.0
+
+        hours_midpoints = {i: get_midpoint(label) for i, label in enumerate(hours_labels)}
+        wage_midpoints = {i: get_midpoint(label) for i, label in enumerate(wage_labels)}
+
+        # Set representative values according to strategy.
+        # NOTE: This applies to ALL cells (not only empties), so each job in the
+        # same bin shares the same representative hours/wage by construction.
+        if rep_fill_mode == REP_FILL_MODE_BIN_MEANS:
+            grouped["hours_rep"] = grouped["hours_bin"].map(hours_bin_means)
+            grouped["wage_rep"] = grouped["wage_bin"].map(wage_bin_means)
+            # Fallback to midpoints if an entire bin has no observations.
+            grouped["hours_rep"] = grouped["hours_rep"].fillna(grouped["hours_bin"].map(hours_midpoints)).fillna(0.0)
+            grouped["wage_rep"] = grouped["wage_rep"].fillna(grouped["wage_bin"].map(wage_midpoints)).fillna(0.0)
 
         elif rep_fill_mode == REP_FILL_MODE_BIN_MIDPOINTS:
-            # Use bin midpoints
-            def get_midpoint(label):
-                return (label[0] + label[1]) / 2.0
-
-            hours_midpoints = {i: get_midpoint(label) for i, label in enumerate(hours_labels)}
-            wage_midpoints = {i: get_midpoint(label) for i, label in enumerate(wage_labels)}
-
-            grouped["hours_rep"] = grouped.apply(
-                lambda row: row["hours_rep"] if pd.notna(row["hours_rep"]) else hours_midpoints.get(row["hours_bin"], 0.0),
-                axis=1
-            )
-            grouped["wage_rep"] = grouped.apply(
-                lambda row: row["wage_rep"] if pd.notna(row["wage_rep"]) else wage_midpoints.get(row["wage_bin"], 0.0),
-                axis=1
-            )
+            grouped["hours_rep"] = grouped["hours_bin"].map(hours_midpoints).fillna(0.0)
+            grouped["wage_rep"] = grouped["wage_bin"].map(wage_midpoints).fillna(0.0)
 
         else:
             raise ValueError(f"Unknown rep_fill_mode: {rep_fill_mode}")
 
         n_empty = (grouped["cell_count"] == 0).sum()
-        logging.info(f"Universe mode: full_grid ({len(grouped)} total cells, {n_empty} empty filled with {rep_fill_mode})")
+        logging.info(
+            f"Universe mode: full_grid ({len(grouped)} total cells, "
+            f"{n_empty} empty cells; representatives set by {rep_fill_mode})"
+        )
 
     else:
         raise ValueError(f"Unknown universe_mode: {universe_mode}")

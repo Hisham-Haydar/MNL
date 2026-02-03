@@ -99,7 +99,7 @@ def run_job_ruro_pipeline(
     smoothing_alpha: float = 0.01,
     pi0_m: float = 0.10,
     pi0_f: float = 0.10,
-    baseline_mode: str = "observed",
+    baseline_mode: str = "cell_rep",
     euromod_system: str = "FR_2020",
     euromod_dataset: str = "FR_2021_c2",
     euromod_root: Path | None = None,
@@ -400,9 +400,9 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument(
         "--baseline-mode",
         type=str,
-        default="observed",
+        default="cell_rep",
         choices=["observed", "cell_rep"],
-        help="Baseline (draw=0) mode: observed (use actual lhw_base/yivwg_base), cell_rep (use hours_rep/wage_rep)",
+        help="Baseline (draw=0) mode: cell_rep (use hours_rep/wage_rep, default), observed (use actual lhw_base/yivwg_base)",
     )
 
     # EUROMOD parameters

@@ -701,6 +701,12 @@ def _build_mnl_block(df: pd.DataFrame, sample_group: str) -> pd.DataFrame:
     leisure = leisure.clip(lower=DCM_MIN_POSITIVE)
     df["leisure"] = leisure
 
+    # Keep labor-status indicators aligned with draw-specific hours.
+    df["working"] = (hours > 0).astype(int)
+    df["working_pt1"] = ((hours >= 18.5) & (hours <= 20.5)).astype(int)  # ~20h part-time
+    df["working_pt2"] = ((hours >= 29.5) & (hours <= 30.5)).astype(int)  # ~30h part-time
+    df["working_ft"] = ((hours >= 37.5) & (hours <= 40.5)).astype(int)   # ~40h full-time
+
     ils = pd.to_numeric(df["ils_dispy"], errors="coerce")
     other_raw = df["other_members_income"] if "other_members_income" in df.columns else pd.Series(0.0, index=df.index)
     other_inc = pd.to_numeric(other_raw, errors="coerce").fillna(0.0)

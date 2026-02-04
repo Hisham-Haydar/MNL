@@ -2212,11 +2212,7 @@ def _add_predicted_probabilities(
         V += beta_cl_f * c_bc * l_bc_f
 
         opp_added = False
-        for col in [
-            'log_q_total_male', 'log_opp_male',
-            'log_q_total_female', 'log_opp_female',
-            'log_q_total', 'log_opp',
-        ]:
+        for col in ['log_opp_male', 'log_opp_female', 'log_opp']:
             if col in df.columns:
                 V += df[col].values
                 opp_added = True
@@ -2243,7 +2239,7 @@ def _add_predicted_probabilities(
         V += beta_cl * c_bc * l_bc
 
         opp_added = False
-        for col in ['log_q_total', 'log_opp']:
+        for col in ['log_opp']:
             if col in df.columns:
                 V += df[col].values
                 opp_added = True
@@ -2255,10 +2251,11 @@ def _add_predicted_probabilities(
             log_w = _compute_log_w(df, params, 'wage', 'hours', gender=gender, group_suffix=group_suffix, spec=spec)
             V += log_h + log_w
 
-    for prior_col in ['prior', 'log_prior']:
-        if prior_col in df.columns:
-            V -= df[prior_col].values
-            break
+    # Correct for sampling/proposal density: subtract log(prior).
+    if 'log_prior' in df.columns:
+        V -= df['log_prior'].values
+    elif 'prior' in df.columns:
+        V -= np.log(np.maximum(df['prior'].values, 1e-300))
 
     df['V'] = V
     df['pred_prob'] = 0.0
@@ -2591,6 +2588,272 @@ def plot_wage_distribution_comparison(
 
     except Exception as e:
         LOGGER.error(f"Error generating wage distribution plots: {e}")
+        import traceback
+        traceback.print_exc()
+
+    return plot_paths
+
+
+def plot_job_distribution_comparison(
+    parsed_params: ParsedParameters,
+    mnl_base: Path,
+    output_dir: Path,
+    prefix: str = '',
+    spec: Optional['EstimationSpec'] = None,
+    top_n: int = 20,
+) -> Dict[str, Path]:
+    """
+    Generate observed vs predicted job-share plots (top-N job IDs).
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        LOGGER.warning("Matplotlib not available, skipping job distribution plots")
+        return {}
+
+    plot_paths: Dict[str, Path] = {}
+
+    try:
+        singles_path = Path(str(mnl_base) + '__singles.parquet')
+        couples_path = Path(str(mnl_base) + '__couples.parquet')
+
+        group_defs: List[Tuple[str, pd.DataFrame, str]] = []
+
+        if singles_path.exists():
+            df_singles = pd.read_parquet(singles_path)
+            gender_col = 'dgn' if 'dgn' in df_singles.columns else 'gender'
+            for gender_code, group_key in [(1, 'sm'), (0, 'sf')]:
+                df_g = df_singles[df_singles[gender_col] == gender_code].copy()
+                if len(df_g) == 0:
+                    continue
+                params = None
+                for try_key in [group_key, group_key.upper(), 'joint']:
+                    if try_key in parsed_params.params_by_group:
+                        params = parsed_params.get_all_params_for_group(try_key)
+                        break
+                if not params:
+                    continue
+                df_g = _add_predicted_probabilities(
+                    df_g, params, spec=spec, is_couples=False, group_suffix=f'_{group_key}'
+                )
+                if 'job_id' in df_g.columns:
+                    group_defs.append((f'singles_{"male" if group_key == "sm" else "female"}', df_g, 'job_id'))
+
+        if couples_path.exists():
+            df_couples = pd.read_parquet(couples_path)
+            params = None
+            for try_key in ['joint', 'cou', 'couples', 'm']:
+                if try_key in parsed_params.params_by_group:
+                    params = parsed_params.get_all_params_for_group(try_key)
+                    break
+            if params:
+                df_c = _add_predicted_probabilities(df_couples, params, spec=spec, is_couples=True)
+                if 'job_id_male' in df_c.columns:
+                    group_defs.append(('couples_male', df_c, 'job_id_male'))
+                if 'job_id_female' in df_c.columns:
+                    group_defs.append(('couples_female', df_c, 'job_id_female'))
+
+        if not group_defs:
+            LOGGER.warning("No job_id columns found for job distribution plots")
+            return {}
+
+        def _obs_pred_shares(df: pd.DataFrame, cat_col: str) -> Tuple[pd.Series, pd.Series]:
+            chosen_col = 'chosen' if 'chosen' in df.columns else 'is_chosen'
+            obs = df.loc[df[chosen_col] == 1, cat_col].value_counts(dropna=False).sort_index()
+            pred = df.groupby(cat_col)['pred_prob'].sum().sort_index()
+            obs = (obs / obs.sum() * 100.0) if obs.sum() > 0 else obs.astype(float)
+            pred = (pred / pred.sum() * 100.0) if pred.sum() > 0 else pred.astype(float)
+            return obs, pred
+
+        def _plot_topn(obs: pd.Series, pred: pd.Series, title: str, out_key: str) -> None:
+            combined = obs.add(pred, fill_value=0.0).sort_values(ascending=False)
+            top_idx = list(combined.head(top_n).index)
+
+            obs_top = obs.reindex(top_idx, fill_value=0.0)
+            pred_top = pred.reindex(top_idx, fill_value=0.0)
+
+            other_obs = obs.loc[~obs.index.isin(top_idx)].sum()
+            other_pred = pred.loc[~pred.index.isin(top_idx)].sum()
+            if other_obs > 0 or other_pred > 0:
+                obs_top.loc['Other'] = other_obs
+                pred_top.loc['Other'] = other_pred
+
+            labels = [str(x) for x in obs_top.index]
+            x = np.arange(len(labels))
+
+            fig, ax = plt.subplots(figsize=(12, 6))
+            width = 0.40
+            ax.bar(x - width / 2, obs_top.values, width, label='Observed', alpha=0.85, color='steelblue')
+            ax.bar(x + width / 2, pred_top.values, width, label='Predicted', alpha=0.85, color='coral')
+            ax.set_xticks(x)
+            ax.set_xticklabels(labels, rotation=60, ha='right')
+            ax.set_ylabel('Share (%)')
+            ax.set_xlabel('Job ID')
+            ax.set_title(title)
+            ax.legend()
+            ax.grid(True, alpha=0.3, axis='y')
+            fig.tight_layout()
+
+            output_path = output_dir / f'{prefix}{out_key}.png'
+            fig.savefig(output_path, dpi=150)
+            plt.close(fig)
+            plot_paths[out_key] = output_path
+
+        # Total
+        total_parts = []
+        for _, df_src, cat_col in group_defs:
+            chosen_col = 'chosen' if 'chosen' in df_src.columns else 'is_chosen'
+            total_parts.append(df_src[[cat_col, 'pred_prob', chosen_col]].rename(columns={cat_col: 'job_id', chosen_col: 'is_chosen'}))
+        df_total = pd.concat(total_parts, ignore_index=True)
+        obs_total, pred_total = _obs_pred_shares(df_total, 'job_id')
+        _plot_topn(obs_total, pred_total, 'Job Distribution: Observed vs Predicted (Total, Top IDs)', 'job_distribution_total')
+
+        # By group
+        label_map = {
+            'singles_male': 'Singles Male',
+            'singles_female': 'Singles Female',
+            'couples_male': 'Couples Male',
+            'couples_female': 'Couples Female',
+        }
+        for key, df_src, cat_col in group_defs:
+            obs_g, pred_g = _obs_pred_shares(df_src, cat_col)
+            _plot_topn(
+                obs_g,
+                pred_g,
+                f'Job Distribution: Observed vs Predicted ({label_map.get(key, key)}, Top IDs)',
+                f'job_distribution_{key}',
+            )
+
+        LOGGER.info(f"   Generated {len(plot_paths)} job distribution plots")
+
+    except Exception as e:
+        LOGGER.error(f"Error generating job distribution plots: {e}")
+        import traceback
+        traceback.print_exc()
+
+    return plot_paths
+
+
+def plot_loc_distribution_comparison(
+    parsed_params: ParsedParameters,
+    mnl_base: Path,
+    output_dir: Path,
+    prefix: str = '',
+    spec: Optional['EstimationSpec'] = None,
+) -> Dict[str, Path]:
+    """
+    Generate observed vs predicted occupation (LOC/ISCO1) distribution plots.
+    """
+    if not MATPLOTLIB_AVAILABLE:
+        LOGGER.warning("Matplotlib not available, skipping LOC distribution plots")
+        return {}
+
+    plot_paths: Dict[str, Path] = {}
+
+    try:
+        singles_path = Path(str(mnl_base) + '__singles.parquet')
+        couples_path = Path(str(mnl_base) + '__couples.parquet')
+
+        group_defs: List[Tuple[str, pd.DataFrame, str]] = []
+
+        if singles_path.exists():
+            df_singles = pd.read_parquet(singles_path)
+            gender_col = 'dgn' if 'dgn' in df_singles.columns else 'gender'
+            for gender_code, group_key in [(1, 'sm'), (0, 'sf')]:
+                df_g = df_singles[df_singles[gender_col] == gender_code].copy()
+                if len(df_g) == 0:
+                    continue
+                params = None
+                for try_key in [group_key, group_key.upper(), 'joint']:
+                    if try_key in parsed_params.params_by_group:
+                        params = parsed_params.get_all_params_for_group(try_key)
+                        break
+                if not params:
+                    continue
+                df_g = _add_predicted_probabilities(
+                    df_g, params, spec=spec, is_couples=False, group_suffix=f'_{group_key}'
+                )
+                if 'isco1' in df_g.columns:
+                    group_defs.append((f'singles_{"male" if group_key == "sm" else "female"}', df_g, 'isco1'))
+
+        if couples_path.exists():
+            df_couples = pd.read_parquet(couples_path)
+            params = None
+            for try_key in ['joint', 'cou', 'couples', 'm']:
+                if try_key in parsed_params.params_by_group:
+                    params = parsed_params.get_all_params_for_group(try_key)
+                    break
+            if params:
+                df_c = _add_predicted_probabilities(df_couples, params, spec=spec, is_couples=True)
+                if 'isco1_male' in df_c.columns:
+                    group_defs.append(('couples_male', df_c, 'isco1_male'))
+                if 'isco1_female' in df_c.columns:
+                    group_defs.append(('couples_female', df_c, 'isco1_female'))
+
+        if not group_defs:
+            LOGGER.warning("No LOC/ISCO columns found for LOC distribution plots")
+            return {}
+
+        def _obs_pred_shares(df: pd.DataFrame, cat_col: str) -> Tuple[pd.Series, pd.Series]:
+            chosen_col = 'chosen' if 'chosen' in df.columns else 'is_chosen'
+            obs = df.loc[df[chosen_col] == 1, cat_col].value_counts(dropna=False).sort_index()
+            pred = df.groupby(cat_col)['pred_prob'].sum().sort_index()
+            obs = (obs / obs.sum() * 100.0) if obs.sum() > 0 else obs.astype(float)
+            pred = (pred / pred.sum() * 100.0) if pred.sum() > 0 else pred.astype(float)
+            return obs, pred
+
+        def _plot(obs: pd.Series, pred: pd.Series, title: str, out_key: str) -> None:
+            idx = sorted(set(obs.index).union(set(pred.index)))
+            obs_aligned = obs.reindex(idx, fill_value=0.0)
+            pred_aligned = pred.reindex(idx, fill_value=0.0)
+            labels = [str(x) for x in idx]
+            x = np.arange(len(labels))
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+            width = 0.40
+            ax.bar(x - width / 2, obs_aligned.values, width, label='Observed', alpha=0.85, color='steelblue')
+            ax.bar(x + width / 2, pred_aligned.values, width, label='Predicted', alpha=0.85, color='coral')
+            ax.set_xticks(x)
+            ax.set_xticklabels(labels)
+            ax.set_ylabel('Share (%)')
+            ax.set_xlabel('LOC / ISCO1 Category')
+            ax.set_title(title)
+            ax.legend()
+            ax.grid(True, alpha=0.3, axis='y')
+            fig.tight_layout()
+
+            output_path = output_dir / f'{prefix}{out_key}.png'
+            fig.savefig(output_path, dpi=150)
+            plt.close(fig)
+            plot_paths[out_key] = output_path
+
+        # Total
+        total_parts = []
+        for _, df_src, cat_col in group_defs:
+            chosen_col = 'chosen' if 'chosen' in df_src.columns else 'is_chosen'
+            total_parts.append(df_src[[cat_col, 'pred_prob', chosen_col]].rename(columns={cat_col: 'isco1', chosen_col: 'is_chosen'}))
+        df_total = pd.concat(total_parts, ignore_index=True)
+        obs_total, pred_total = _obs_pred_shares(df_total, 'isco1')
+        _plot(obs_total, pred_total, 'LOC / ISCO Distribution: Observed vs Predicted (Total)', 'loc_distribution_total')
+
+        # By group
+        label_map = {
+            'singles_male': 'Singles Male',
+            'singles_female': 'Singles Female',
+            'couples_male': 'Couples Male',
+            'couples_female': 'Couples Female',
+        }
+        for key, df_src, cat_col in group_defs:
+            obs_g, pred_g = _obs_pred_shares(df_src, cat_col)
+            _plot(
+                obs_g,
+                pred_g,
+                f'LOC / ISCO Distribution: Observed vs Predicted ({label_map.get(key, key)})',
+                f'loc_distribution_{key}',
+            )
+
+        LOGGER.info(f"   Generated {len(plot_paths)} LOC distribution plots")
+
+    except Exception as e:
+        LOGGER.error(f"Error generating LOC distribution plots: {e}")
         import traceback
         traceback.print_exc()
 
@@ -3119,6 +3382,40 @@ def generate_html_report_styled(
                 )
         if wage_dist_plots:
             plots_section += f'<h3>?? Wage Distribution: Observed vs Predicted (Working Only)</h3><div class="contour-grid">{"".join(wage_dist_plots)}</div>'
+
+        # Job distribution plots
+        job_dist_plots = []
+        job_plot_order = [
+            ('job_distribution_total', 'Total'),
+            ('job_distribution_singles_male', 'Singles Male'),
+            ('job_distribution_singles_female', 'Singles Female'),
+            ('job_distribution_couples_male', 'Couples Male'),
+            ('job_distribution_couples_female', 'Couples Female'),
+        ]
+        for key, label in job_plot_order:
+            if key in plot_paths:
+                job_dist_plots.append(
+                    f'<div class="plot-box"><img src="{plot_paths[key].name}" alt="Job Distribution ({label})"></div>'
+                )
+        if job_dist_plots:
+            plots_section += f'<h3>?? Job Distribution: Observed vs Predicted</h3><div class="contour-grid">{"".join(job_dist_plots)}</div>'
+
+        # LOC / ISCO distribution plots
+        loc_dist_plots = []
+        loc_plot_order = [
+            ('loc_distribution_total', 'Total'),
+            ('loc_distribution_singles_male', 'Singles Male'),
+            ('loc_distribution_singles_female', 'Singles Female'),
+            ('loc_distribution_couples_male', 'Couples Male'),
+            ('loc_distribution_couples_female', 'Couples Female'),
+        ]
+        for key, label in loc_plot_order:
+            if key in plot_paths:
+                loc_dist_plots.append(
+                    f'<div class="plot-box"><img src="{plot_paths[key].name}" alt="LOC Distribution ({label})"></div>'
+                )
+        if loc_dist_plots:
+            plots_section += f'<h3>?? LOC / ISCO Distribution: Observed vs Predicted</h3><div class="contour-grid">{"".join(loc_dist_plots)}</div>'
 
     # Color legend
     color_legend = """
@@ -4862,6 +5159,10 @@ def run_styled_post_estimation(
         plot_paths.update(plot_hours_distribution_comparison(parsed, mnl_base, output_dir, prefix, spec=spec))
         LOGGER.info("  Generating wage distribution plots...")
         plot_paths.update(plot_wage_distribution_comparison(parsed, mnl_base, output_dir, prefix, spec=spec))
+        LOGGER.info("  Generating job distribution plots...")
+        plot_paths.update(plot_job_distribution_comparison(parsed, mnl_base, output_dir, prefix, spec=spec))
+        LOGGER.info("  Generating LOC distribution plots...")
+        plot_paths.update(plot_loc_distribution_comparison(parsed, mnl_base, output_dir, prefix, spec=spec))
 
     # Generate HTML report
     LOGGER.info("\n6. Generating HTML report...")

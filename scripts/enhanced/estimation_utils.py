@@ -731,24 +731,39 @@ def precompute_data_singles(
             "Invalid group boundaries detected. "            f"group_starts: {group_starts[:10]}, group_ends: {group_ends[:10]}"
         )
 
-    # Identify actual choice for each group (for GAMSPy estimation)
-    # The actual choice is where hours matches the observed hours
-    # For importance sampling, this is typically the row with highest prior or where hours == hours_observed
+    # Identify actual choice for each group (for GAMSPy estimation).
+    # Priority: explicit chosen flags -> observed-hours match -> max prior fallback.
     actual_choice = np.zeros(n_obs)
-    if "hours_observed" in df.columns:
-        # If we have explicit observed hours column
-        hours_obs = df["hours_observed"].values
-        actual_choice = (df["hours"].values == hours_obs).astype(float)
-    else:
-        # Fallback: assume first row in each group is the observed choice
-        # (or the one with prior closest to 1.0)
-        for g in range(n_groups):
-            start = group_starts[g]
-            end = group_ends[g]
-            # Find row with maximum prior in this group
-            group_priors = prior[start:end]
-            chosen_local_idx = np.argmax(group_priors)
-            actual_choice[start + chosen_local_idx] = 1.0
+    chosen_col = "is_chosen" if "is_chosen" in df.columns else ("chosen" if "chosen" in df.columns else None)
+
+    if chosen_col is not None:
+        chosen_vals = pd.to_numeric(df[chosen_col], errors="coerce").fillna(0.0).values
+        actual_choice = (chosen_vals > 0.5).astype(float)
+        group_chosen_counts = np.array([actual_choice[s:e].sum() for s, e in zip(group_starts, group_ends)])
+        if np.allclose(group_chosen_counts, 1.0):
+            logger.info(f"  Actual choices identified from '{chosen_col}'")
+        else:
+            bad_groups = int(np.sum(~np.isclose(group_chosen_counts, 1.0)))
+            logger.warning(
+                "  Invalid '%s' pattern in %d groups; falling back to observed-hours/prior logic.",
+                chosen_col,
+                bad_groups,
+            )
+            actual_choice = np.zeros(n_obs)
+
+    if not np.any(actual_choice):
+        if "hours_observed" in df.columns:
+            # If we have explicit observed hours column
+            hours_obs = df["hours_observed"].values
+            actual_choice = (df["hours"].values == hours_obs).astype(float)
+        else:
+            # Final fallback: choose row with maximum prior in each group.
+            for g in range(n_groups):
+                start = group_starts[g]
+                end = group_ends[g]
+                group_priors = prior[start:end]
+                chosen_local_idx = np.argmax(group_priors)
+                actual_choice[start + chosen_local_idx] = 1.0
 
     logger.info(f"  Extracted {n_groups:,} groups with {n_obs:,} total observations")
     
@@ -1023,23 +1038,42 @@ def precompute_data_couples(
             f"group_starts: {group_starts[:10]}, group_ends: {group_ends[:10]}"
         )
 
-    # Identify actual choice for each group (for GAMSPy estimation)
+    # Identify actual choice for each group (for GAMSPy estimation).
+    # Priority: explicit chosen flags -> observed-hours match -> max prior fallback.
     actual_choice = np.zeros(n_obs)
-    if "hours_male_observed" in df.columns and "hours_female_observed" in df.columns:
-        # If we have explicit observed hours columns
-        hours_m_obs = df["hours_male_observed"].values
-        hours_f_obs = df["hours_female_observed"].values
-        hours_m = df["hours_male"].values
-        hours_f = df["hours_female"].values
-        actual_choice = ((hours_m == hours_m_obs) & (hours_f == hours_f_obs)).astype(float)
-    else:
-        # Fallback: assume row with maximum prior in each group
-        for g in range(n_groups):
-            start = group_starts[g]
-            end = group_ends[g]
-            group_priors = prior[start:end]
-            chosen_local_idx = np.argmax(group_priors)
-            actual_choice[start + chosen_local_idx] = 1.0
+    chosen_col = "is_chosen" if "is_chosen" in df.columns else ("chosen" if "chosen" in df.columns else None)
+
+    if chosen_col is not None:
+        chosen_vals = pd.to_numeric(df[chosen_col], errors="coerce").fillna(0.0).values
+        actual_choice = (chosen_vals > 0.5).astype(float)
+        group_chosen_counts = np.array([actual_choice[s:e].sum() for s, e in zip(group_starts, group_ends)])
+        if np.allclose(group_chosen_counts, 1.0):
+            logger.info(f"  Actual choices identified from '{chosen_col}'")
+        else:
+            bad_groups = int(np.sum(~np.isclose(group_chosen_counts, 1.0)))
+            logger.warning(
+                "  Invalid '%s' pattern in %d groups; falling back to observed-hours/prior logic.",
+                chosen_col,
+                bad_groups,
+            )
+            actual_choice = np.zeros(n_obs)
+
+    if not np.any(actual_choice):
+        if "hours_male_observed" in df.columns and "hours_female_observed" in df.columns:
+            # If we have explicit observed hours columns
+            hours_m_obs = df["hours_male_observed"].values
+            hours_f_obs = df["hours_female_observed"].values
+            hours_m = df["hours_male"].values
+            hours_f = df["hours_female"].values
+            actual_choice = ((hours_m == hours_m_obs) & (hours_f == hours_f_obs)).astype(float)
+        else:
+            # Final fallback: choose row with maximum prior in each group.
+            for g in range(n_groups):
+                start = group_starts[g]
+                end = group_ends[g]
+                group_priors = prior[start:end]
+                chosen_local_idx = np.argmax(group_priors)
+                actual_choice[start + chosen_local_idx] = 1.0
 
     logger.info(f"  Extracted {n_groups:,} groups with {n_obs:,} total observations")
     

@@ -578,7 +578,7 @@ def _parse_expression_constraints(
           default_weight: 1e4
           constraints:
             - name: muc_sm_positive
-              expression: muc  # muc | mul
+              expression: muc  # muc | mul | dmuc_dc | dmul_dl | param_diff
               group: singles_male
               at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0}
               lower: 0.0
@@ -620,7 +620,7 @@ def _parse_expression_constraints(
             "optimization.expression_constraints.constraints must be a list."
         )
 
-    valid_exprs = {"muc", "mul", "dmuc_dc", "dmul_dl"}
+    valid_exprs = {"muc", "mul", "dmuc_dc", "dmul_dl", "param_diff"}
     valid_groups = {
         "singles_male",
         "singles_female",
@@ -628,6 +628,7 @@ def _parse_expression_constraints(
         "couples_female",
         "couples_household",
         "couples",
+        "global",
     }
     parsed_constraints: List[Dict[str, Any]] = []
 
@@ -669,11 +670,26 @@ def _parse_expression_constraints(
                     f"expression_constraints[{i}].at['{key}'] must be numeric."
                 )
 
-        for pos_key in ("consumption", "leisure", "leisure_male", "leisure_female", "leisure_partner"):
-            if pos_key in at_clean and at_clean[pos_key] <= 0:
+        if expr_name != "param_diff":
+            for pos_key in ("consumption", "leisure", "leisure_male", "leisure_female", "leisure_partner"):
+                if pos_key in at_clean and at_clean[pos_key] <= 0:
+                    raise ValueError(
+                        f"expression_constraints[{i}].at['{pos_key}'] must be > 0."
+                    )
+
+        lhs_param = raw.get("lhs_param")
+        rhs_param = raw.get("rhs_param")
+        if expr_name == "param_diff":
+            if not lhs_param or not str(lhs_param).strip():
                 raise ValueError(
-                    f"expression_constraints[{i}].at['{pos_key}'] must be > 0."
+                    f"expression_constraints[{i}] with expression='param_diff' "
+                    "must provide non-empty 'lhs_param'."
                 )
+            lhs_param = str(lhs_param).strip()
+            rhs_param = str(rhs_param).strip() if rhs_param is not None else None
+        else:
+            lhs_param = None
+            rhs_param = None
 
         lower = raw.get("lower", None)
         upper = raw.get("upper", None)
@@ -710,6 +726,8 @@ def _parse_expression_constraints(
             "expression": expr_name,
             "group": group,
             "at": at_clean,
+            "lhs_param": lhs_param,
+            "rhs_param": rhs_param,
             "lower": lower_val,
             "upper": upper_val,
             "mode": mode,

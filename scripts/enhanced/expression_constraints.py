@@ -16,7 +16,7 @@ import numpy as np
 from estimation_spec_parser import EstimationSpec
 
 
-SUPPORTED_EXPRESSIONS = {"muc", "mul", "dmuc_dc", "dmul_dl"}
+SUPPORTED_EXPRESSIONS = {"muc", "mul", "dmuc_dc", "dmul_dl", "param_diff"}
 SUPPORTED_GROUPS = {
     "singles_male",
     "singles_female",
@@ -24,6 +24,7 @@ SUPPORTED_GROUPS = {
     "couples_female",
     "couples_household",
     "couples",
+    "global",
 }
 
 _SUFFIX_BY_GROUP = {
@@ -33,6 +34,7 @@ _SUFFIX_BY_GROUP = {
     "couples_female": "_f",
     "couples_household": "",
     "couples": "",
+    "global": "",
 }
 
 LOG_EPS = 1e-12
@@ -67,6 +69,9 @@ def get_active_constraints(
     for constraint in constraints:
         group = _normalize_group_name(constraint.get("group", ""))
         if group in active:
+            filtered.append(constraint)
+            continue
+        if group == "global":
             filtered.append(constraint)
             continue
         if group == "couples":
@@ -257,6 +262,15 @@ def evaluate_constraint_value_numpy(
         raise ValueError(f"Unsupported expression constraint '{expression}'.")
     if group not in SUPPORTED_GROUPS:
         raise ValueError(f"Unsupported constraint group '{group}'.")
+
+    if expression == "param_diff":
+        lhs_param = constraint.get("lhs_param")
+        rhs_param = constraint.get("rhs_param")
+        lhs_val = _resolve_param_value(params, lhs_param, group, required=True)
+        rhs_val = _resolve_param_value(params, rhs_param, group, required=False)
+        if rhs_val is None:
+            rhs_val = 0.0
+        return float(lhs_val - rhs_val)
 
     c = _at_value(at, "consumption", 1.0)
     theta_c_group = "couples_household" if group.startswith("couples") else group
@@ -496,6 +510,15 @@ def evaluate_constraint_value_gamspy(
         raise ValueError(f"Unsupported expression constraint '{expression}'.")
     if group not in SUPPORTED_GROUPS:
         raise ValueError(f"Unsupported constraint group '{group}'.")
+
+    if expression == "param_diff":
+        lhs_param = constraint.get("lhs_param")
+        rhs_param = constraint.get("rhs_param")
+        lhs_sym = _resolve_param_symbol(param_vars, lhs_param, group, required=True)
+        rhs_sym = _resolve_param_symbol(param_vars, rhs_param, group, required=False)
+        if rhs_sym is None:
+            rhs_sym = 0.0
+        return lhs_sym - rhs_sym
 
     c = _at_value(at, "consumption", 1.0)
     theta_c_group = "couples_household" if group.startswith("couples") else group

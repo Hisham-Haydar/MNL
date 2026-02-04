@@ -1,0 +1,523 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - Job Choice V1
+# ==============================================================================
+# Designed for job-draw MNL datasets (e.g., fr_2016_RURO_mnl_job).
+#
+# Key design:
+# - Preferences over (consumption, leisure) via Box-Cox utility
+# - Opportunity on jobs via market_opportunity.shifters
+# - No separate hours/wage opportunity densities (wage_spec: fw)
+#
+# Econometric separation guideline:
+# - Keep labor-demand shifters (e.g., gsur/region/year) in market_opportunity only
+# - Keep taste shifters in utility only
+# ==============================================================================
+
+specification:
+  name: "job_choice_v2_super_sub_wage_monotonicity"
+  description: "V1 dummies + super/sub job opportunity ordering within same LOC (higher wage => lower opportunity)"
+  wage_spec: "fw"  # fw | vw | vw_occupation | loc_empirical
+
+utility:
+  functional_form: "box_cox"
+
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"
+    box_cox_bounds: [-7.0, 1.0]
+
+  consumption_leisure_interaction:
+    coefficient: "beta_cl"
+    description: "Consumption-leisure interaction"
+
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: "theta_l"
+    box_cox_bounds: [-10.0, 1.0]
+
+    shifters:
+      - variable: "age_norm"
+        coefficient: "beta_l_age_norm"
+      - variable: "age_norm2"
+        coefficient: "beta_l_age_norm2"
+      # Optional robustness (OFF by default):
+      # Add occupation taste shifters in preferences only if you accept
+      # weaker preference/opportunity separation.
+      # - variable: "loc4_2"
+      #   coefficient: "beta_l_loc4_2"
+      # - variable: "loc4_3"
+      #   coefficient: "beta_l_loc4_3"
+      # - variable: "loc4_4"
+      #   coefficient: "beta_l_loc4_4"
+      - variable: "n_children"
+        coefficient: "beta_l_n_children"
+        gender_specific: true
+      - variable: "educL"
+        coefficient: "beta_l_educL"
+      - variable: "educH"
+        coefficient: "beta_l_educH"
+
+# Intentionally empty for job-choice baseline:
+# opportunity is modeled by market_opportunity below.
+hours_opportunity:
+  shifters: []
+
+wage_opportunity:
+  specification: "log_normal"
+
+market_opportunity:
+  # Additive term in utility index: + sum(beta_offer_k * z_ijk)
+  # Categorical coding tip:
+  # - You can request one-hot dummies directly via names like "hours_bin_1",
+  #   "wage_bin_3", "isco1_5". They are derived automatically from the base
+  #   integer columns when not physically present in the parquet.
+  # - Omit one level as reference to avoid dummy multicollinearity.
+  # Couples:
+  # - applies_to: both      => use *_male and *_female versions when present
+  # - applies_to: household => use one household-level variable
+  shifters:
+    - variable: "working"
+      coefficient: "beta_offer_working"
+      applies_to: "both"
+
+    # Hours-bin dummies (base omitted: hours_bin_0)
+    - variable: "hours_bin_1"
+      coefficient: "beta_offer_hours_bin_1"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "hours_bin_2"
+      coefficient: "beta_offer_hours_bin_2"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "hours_bin_3"
+      coefficient: "beta_offer_hours_bin_3"
+      interaction: "working"
+      applies_to: "both"
+
+    # Wage-bin dummies (base omitted: wage_bin_0)
+    - variable: "wage_bin_1"
+      coefficient: "beta_offer_wage_bin_1"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_2"
+      coefficient: "beta_offer_wage_bin_2"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_3"
+      coefficient: "beta_offer_wage_bin_3"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_4"
+      coefficient: "beta_offer_wage_bin_4"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_5"
+      coefficient: "beta_offer_wage_bin_5"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_6"
+      coefficient: "beta_offer_wage_bin_6"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_7"
+      coefficient: "beta_offer_wage_bin_7"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_8"
+      coefficient: "beta_offer_wage_bin_8"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_9"
+      coefficient: "beta_offer_wage_bin_9"
+      interaction: "working"
+      applies_to: "both"
+
+    # Occupation dummies (base omitted: isco1_0 when include_isco0=true)
+    - variable: "isco1_1"
+      coefficient: "beta_offer_isco1_1"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_2"
+      coefficient: "beta_offer_isco1_2"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_3"
+      coefficient: "beta_offer_isco1_3"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_4"
+      coefficient: "beta_offer_isco1_4"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_5"
+      coefficient: "beta_offer_isco1_5"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_6"
+      coefficient: "beta_offer_isco1_6"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_7"
+      coefficient: "beta_offer_isco1_7"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_8"
+      coefficient: "beta_offer_isco1_8"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_9"
+      coefficient: "beta_offer_isco1_9"
+      interaction: "working"
+      applies_to: "both"
+
+    - variable: "gsur"
+      coefficient: "beta_offer_gsur"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "educL"
+      coefficient: "beta_offer_educL"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "educH"
+      coefficient: "beta_offer_educH"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "reg2"
+      coefficient: "beta_offer_reg2"
+      applies_to: "household"
+    - variable: "reg3"
+      coefficient: "beta_offer_reg3"
+      applies_to: "household"
+    - variable: "reg4"
+      coefficient: "beta_offer_reg4"
+      applies_to: "household"
+    - variable: "reg5"
+      coefficient: "beta_offer_reg5"
+      applies_to: "household"
+    - variable: "reg6"
+      coefficient: "beta_offer_reg6"
+      applies_to: "household"
+    - variable: "reg7"
+      coefficient: "beta_offer_reg7"
+      applies_to: "household"
+    - variable: "reg8"
+      coefficient: "beta_offer_reg8"
+      applies_to: "household"
+
+singles:
+  gender_specific_leisure: true
+
+couples:
+  gender_specific_leisure: true
+  leisure_interaction:
+    coefficient: "beta_interact"
+
+initial_values:
+  # Singles male (_sm)
+  beta_l0_sm: 0.4179
+  beta_l_age_norm_sm: -0.0076
+  beta_l_age_norm2_sm: -0.0017
+  beta_l_educL_sm: 0.1389
+  beta_l_educH_sm: -0.3457
+  beta_c_sm: 1.0399
+  beta_cl_sm: 0.0
+  theta_l_sm: 0.001
+  theta_c_sm: 0.2628
+
+  # Singles female (_sf)
+  beta_l0_sf: 0.6778
+  beta_l_age_norm_sf: -0.0208
+  beta_l_age_norm2_sf: -0.0006
+  beta_l_n_children_sf: 0.2244
+  beta_l_educL_sf: 0.1394
+  beta_l_educH_sf: -0.4689
+  beta_c_sf: 0.7602
+  beta_cl_sf: 0.0
+  theta_l_sf: 0.0352
+  theta_c_sf: 0.5345
+
+  # Couples male (_m)
+  beta_l0_m: 0.2886
+  beta_l_age_norm_m: -0.0031
+  beta_l_age_norm2_m: -0.0027
+  beta_l_educL_m: 0.1749
+  beta_l_educH_m: -0.7092
+  theta_l_m: 0.0968
+  beta_cl_m: 0.0
+
+  # Couples female (_f)
+  beta_l0_f: 1.3515
+  beta_l_age_norm_f: -0.0334
+  beta_l_age_norm2_f: -0.0006
+  beta_l_n_children_f: 0.1000
+  beta_l_educL_f: 0.1644
+  beta_l_educH_f: -0.2558
+  theta_l_f: 0.001
+  beta_cl_f: 0.0
+
+  # Couples household consumption
+  beta_c: 1.2740
+  theta_c: 0.2926
+
+  # Job/market opportunity
+  beta_offer_working: 1.0
+  beta_offer_hours_bin_1: 0.0
+  beta_offer_hours_bin_2: 0.0
+  beta_offer_hours_bin_3: 0.0
+  beta_offer_wage_bin_1: -0.01
+  beta_offer_wage_bin_2: -0.02
+  beta_offer_wage_bin_3: -0.03
+  beta_offer_wage_bin_4: -0.04
+  beta_offer_wage_bin_5: -0.05
+  beta_offer_wage_bin_6: -0.06
+  beta_offer_wage_bin_7: -0.07
+  beta_offer_wage_bin_8: -0.08
+  beta_offer_wage_bin_9: -0.09
+  beta_offer_isco1_1: 0.0
+  beta_offer_isco1_2: 0.0
+  beta_offer_isco1_3: 0.0
+  beta_offer_isco1_4: 0.0
+  beta_offer_isco1_5: 0.0
+  beta_offer_isco1_6: 0.0
+  beta_offer_isco1_7: 0.0
+  beta_offer_isco1_8: 0.0
+  beta_offer_isco1_9: 0.0
+  beta_offer_gsur: 0.0
+  beta_offer_educL: 0.0
+  beta_offer_educH: 0.0
+  beta_offer_reg2: 0.0
+  beta_offer_reg3: 0.0
+  beta_offer_reg4: 0.0
+  beta_offer_reg5: 0.0
+  beta_offer_reg6: 0.0
+  beta_offer_reg7: 0.0
+  beta_offer_reg8: 0.0
+
+  # Couples leisure interaction
+  beta_interact: -0.5534
+
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 10000
+  tolerance: 1.0e-9
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+  bounds:
+    # Box-Cox
+    theta_l_sm: [-7.0, 1.0]
+    theta_c_sm: [-7.0, 1.0]
+    theta_l_sf: [-7.0, 1.0]
+    theta_c_sf: [-7.0, 1.0]
+    theta_l_m: [-7.0, 1.0]
+    theta_l_f: [-7.0, 1.0]
+    theta_c: [-7.0, 1.0]
+
+    # Consumption coefficients
+    beta_c: [0.001, 20.0]
+    beta_c_sf: [0.001, 20.0]
+    beta_c_sm: [0.001, 20.0]
+
+    # Leisure intercepts
+    beta_l0_f: [0.001, 20.0]
+    beta_l0_sf: [0.001, 20.0]
+    beta_l0_m: [0.001, 20.0]
+    beta_l0_sm: [0.001, 20.0]
+
+    # Consumption-leisure interaction
+    beta_cl_sm: [-15.0, 15.0]
+    beta_cl_sf: [-15.0, 15.0]
+    beta_cl_m: [-15.0, 15.0]
+    beta_cl_f: [-15.0, 15.0]
+
+    # Market opportunity
+    beta_offer_working: [-15.0, 15.0]
+    beta_offer_hours_bin_1: [-10.0, 10.0]
+    beta_offer_hours_bin_2: [-10.0, 10.0]
+    beta_offer_hours_bin_3: [-10.0, 10.0]
+    beta_offer_wage_bin_1: [-10.0, 10.0]
+    beta_offer_wage_bin_2: [-10.0, 10.0]
+    beta_offer_wage_bin_3: [-10.0, 10.0]
+    beta_offer_wage_bin_4: [-10.0, 10.0]
+    beta_offer_wage_bin_5: [-10.0, 10.0]
+    beta_offer_wage_bin_6: [-10.0, 10.0]
+    beta_offer_wage_bin_7: [-10.0, 10.0]
+    beta_offer_wage_bin_8: [-10.0, 10.0]
+    beta_offer_wage_bin_9: [-10.0, 10.0]
+    beta_offer_isco1_1: [-10.0, 10.0]
+    beta_offer_isco1_2: [-10.0, 10.0]
+    beta_offer_isco1_3: [-10.0, 10.0]
+    beta_offer_isco1_4: [-10.0, 10.0]
+    beta_offer_isco1_5: [-10.0, 10.0]
+    beta_offer_isco1_6: [-10.0, 10.0]
+    beta_offer_isco1_7: [-10.0, 10.0]
+    beta_offer_isco1_8: [-10.0, 10.0]
+    beta_offer_isco1_9: [-10.0, 10.0]
+    beta_offer_gsur: [-20.0, 20.0]
+    beta_offer_educL: [-10.0, 10.0]
+    beta_offer_educH: [-10.0, 10.0]
+    beta_offer_reg2: [-10.0, 10.0]
+    beta_offer_reg3: [-10.0, 10.0]
+    beta_offer_reg4: [-10.0, 10.0]
+    beta_offer_reg5: [-10.0, 10.0]
+    beta_offer_reg6: [-10.0, 10.0]
+    beta_offer_reg7: [-10.0, 10.0]
+    beta_offer_reg8: [-10.0, 10.0]
+
+  expression_constraints:
+    enabled: true
+    default_mode: soft
+    default_weight: 10000.0
+    constraints:
+      # Super/sub wage ordering on opportunity:
+      # Higher wage-bin jobs must have lower log-opportunity than lower wage-bin jobs.
+      # This is global (shared parameters), independent of hours and LOC coding.
+      - name: offer_wage_bin1_below_base
+        expression: param_diff
+        group: global
+        lhs_param: beta_offer_wage_bin_1
+        upper: -1.0e-6
+        mode: hard
+      - name: offer_wage_bin2_below_bin1
+        expression: param_diff
+        group: global
+        lhs_param: beta_offer_wage_bin_2
+        rhs_param: beta_offer_wage_bin_1
+        upper: -1.0e-6
+        mode: hard
+      - name: offer_wage_bin3_below_bin2
+        expression: param_diff
+        group: global
+        lhs_param: beta_offer_wage_bin_3
+        rhs_param: beta_offer_wage_bin_2
+        upper: -1.0e-6
+        mode: hard
+      - name: offer_wage_bin4_below_bin3
+        expression: param_diff
+        group: global
+        lhs_param: beta_offer_wage_bin_4
+        rhs_param: beta_offer_wage_bin_3
+        upper: -1.0e-6
+        mode: hard
+      - name: offer_wage_bin5_below_bin4
+        expression: param_diff
+        group: global
+        lhs_param: beta_offer_wage_bin_5
+        rhs_param: beta_offer_wage_bin_4
+        upper: -1.0e-6
+        mode: hard
+      - name: offer_wage_bin6_below_bin5
+        expression: param_diff
+        group: global
+        lhs_param: beta_offer_wage_bin_6
+        rhs_param: beta_offer_wage_bin_5
+        upper: -1.0e-6
+        mode: hard
+      - name: offer_wage_bin7_below_bin6
+        expression: param_diff
+        group: global
+        lhs_param: beta_offer_wage_bin_7
+        rhs_param: beta_offer_wage_bin_6
+        upper: -1.0e-6
+        mode: hard
+      - name: offer_wage_bin8_below_bin7
+        expression: param_diff
+        group: global
+        lhs_param: beta_offer_wage_bin_8
+        rhs_param: beta_offer_wage_bin_7
+        upper: -1.0e-6
+        mode: hard
+      - name: offer_wage_bin9_below_bin8
+        expression: param_diff
+        group: global
+        lhs_param: beta_offer_wage_bin_9
+        rhs_param: beta_offer_wage_bin_8
+        upper: -1.0e-6
+        mode: hard
+
+      - name: muc_sm_positive
+        expression: muc
+        group: singles_male
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        lower: 1.0e-6
+      - name: muc_sm_decreasing
+        expression: dmuc_dc
+        group: singles_male
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        upper: -1.0e-6
+      - name: mul_sm_positive
+        expression: mul
+        group: singles_male
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        lower: 1.0e-6
+      - name: mul_sm_decreasing
+        expression: dmul_dl
+        group: singles_male
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        upper: -1.0e-6
+
+      - name: muc_sf_positive
+        expression: muc
+        group: singles_female
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, n_children: 1.0, educL: 0.0, educH: 0.0}
+        lower: 1.0e-6
+      - name: muc_sf_decreasing
+        expression: dmuc_dc
+        group: singles_female
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, n_children: 1.0, educL: 0.0, educH: 0.0}
+        upper: -1.0e-6
+      - name: mul_sf_positive
+        expression: mul
+        group: singles_female
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, n_children: 1.0, educL: 0.0, educH: 0.0}
+        lower: 1.0e-6
+      - name: mul_sf_decreasing
+        expression: dmul_dl
+        group: singles_female
+        at: {consumption: 1.0, leisure: 1.0, age_norm: 0.0, age_norm2: 0.0, n_children: 1.0, educL: 0.0, educH: 0.0}
+        upper: -1.0e-6
+
+      - name: muc_cou_positive
+        expression: muc
+        group: couples_household
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        lower: 1.0e-6
+      - name: muc_cou_decreasing
+        expression: dmuc_dc
+        group: couples_household
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        upper: -1.0e-6
+
+      - name: mul_cou_m_positive
+        expression: mul
+        group: couples_male
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        lower: 1.0e-6
+      - name: mul_cou_m_decreasing
+        expression: dmul_dl
+        group: couples_male
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        upper: -1.0e-6
+
+      - name: mul_cou_f_positive
+        expression: mul
+        group: couples_female
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0, n_children: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        lower: 1.0e-6
+      - name: mul_cou_f_decreasing
+        expression: dmul_dl
+        group: couples_female
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0, n_children: 1.0, age_norm: 0.0, age_norm2: 0.0, educL: 0.0, educH: 0.0}
+        upper: -1.0e-6
+
+gradient_verification:
+  enabled: false
+  method: "central"
+  epsilon: 1.0e-7
+  tolerance: 1.0e-4
+  check_at_init: true
+  check_random_points: 0
+  random_seed: 13
+  verbose: true

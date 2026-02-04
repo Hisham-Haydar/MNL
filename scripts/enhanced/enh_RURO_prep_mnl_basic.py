@@ -199,6 +199,36 @@ def _derive_educ3_from_deh(df: pd.DataFrame, deh_col: str = "deh", educ3_col: st
         df[educ3_col] = educ3
 
 
+def _standardize_gsur_age_group_column(gsur_df: pd.DataFrame) -> pd.DataFrame:
+    """Ensure GSUR lookup exposes `age_group` when possible."""
+    out = gsur_df.copy()
+    if "age_group" not in out.columns and "age_group_used" in out.columns:
+        out["age_group"] = out["age_group_used"]
+    return out
+
+
+def _map_age_to_gsur_group(age_series: pd.Series) -> pd.Series:
+    """Map numeric age to GSUR age-group labels used in FR_gsur files."""
+    age = pd.to_numeric(age_series, errors="coerce")
+    group = pd.Series("Y20-64", index=age.index, dtype="object")  # Full-bracket fallback
+
+    group.loc[age < 25] = "Y15-24"
+    group.loc[(age >= 25) & (age < 35)] = "Y25-34"
+    group.loc[(age >= 35) & (age < 45)] = "Y35-44"
+    group.loc[(age >= 45) & (age < 55)] = "Y45-54"
+    group.loc[(age >= 55) & (age < 65)] = "Y55-64"
+    return group
+
+
+def _pick_gsur_full_age_fallback(available_age_groups: pd.Series) -> Optional[str]:
+    """Pick fallback full age bracket from available GSUR age-group labels."""
+    available = set(pd.Series(available_age_groups).dropna().astype(str).unique())
+    for candidate in ["Y20-64", "Y15-74", "Y_GE15", "Y_GE25"]:
+        if candidate in available:
+            return candidate
+    return None
+
+
 def _apply_decider_filter_couples(
     df: pd.DataFrame,
     decider_mask: pd.Series,
@@ -405,58 +435,114 @@ def _merge_gsur_singles(
     """
     Merge GSUR unemployment rates onto singles MNL dataset.
 
-    Merge keys: (year, drgn1, dgn, educ3)
+    Base merge keys: (year, drgn1, dgn, educ3)
+    Optional age-aware merge keys: (year, drgn1, dgn, educ3, age_group)
 
-    Requires df to have:
-        - year or year_for_ruro
-        - drgn1 (region)
-        - dgn (gender)
-        - educ3 (education level: 0=low, 1=medium, 2=high) or deh
+    If GSUR has age groups and singles has age information, merge on age-group first,
+    then fallback to a full-age GSUR bracket when available.
     """
     df = df.copy()
 
-    # Ensure year column
+    # Ensure required core columns
     _ensure_year_column(df)
-
-    # Derive educ3 from deh if not present
     _derive_educ3_from_deh(df, deh_col="deh", educ3_col="educ3")
 
-    # Merge on (year, drgn1, dgn, educ3)
-    merge_keys = ["year", "drgn1", "dgn", "educ3"]
+    gsur_std = _standardize_gsur_age_group_column(gsur_df)
+    gsur_has_age_group = (
+        "age_group" in gsur_std.columns and gsur_std["age_group"].notna().any()
+    )
 
-    # Check required columns
-    missing_keys = [k for k in merge_keys if k not in df.columns]
+    age_col = next(
+        (c for c in ["dag", "age", "age_years"] if c in df.columns),
+        None,
+    )
+
+    base_keys = ["year", "drgn1", "dgn", "educ3"]
+    missing_keys = [k for k in base_keys if k not in df.columns]
     if missing_keys:
         raise KeyError(f"GSUR merge requires columns: {missing_keys}")
 
     df_before = len(df)
-    df = df.merge(
-        gsur_df[merge_keys + ["gsur"]],
-        on=merge_keys,
-        how="left",
-        validate="m:1"
-    )
+
+    if gsur_has_age_group and age_col is not None:
+        df["_gsur_age_group"] = _map_age_to_gsur_group(df[age_col])
+
+        merge_keys = base_keys + ["_gsur_age_group"]
+        gsur_lookup = gsur_std.rename(columns={"age_group": "_gsur_age_group"})[
+            merge_keys + ["gsur"]
+        ].drop_duplicates(subset=merge_keys)
+
+        df = df.merge(
+            gsur_lookup,
+            on=merge_keys,
+            how="left",
+            validate="m:1",
+        )
+
+        # Fallback to full age bracket if fine age-group did not match.
+        missing_mask = df["gsur"].isna()
+        if missing_mask.any():
+            fallback_group = _pick_gsur_full_age_fallback(gsur_std["age_group"])
+            if fallback_group is not None:
+                fallback_lookup = (
+                    gsur_std.loc[
+                        gsur_std["age_group"].astype(str) == fallback_group,
+                        base_keys + ["gsur"],
+                    ]
+                    .drop_duplicates(subset=base_keys)
+                )
+                fallback_values = df.loc[missing_mask, base_keys].merge(
+                    fallback_lookup,
+                    on=base_keys,
+                    how="left",
+                    validate="m:1",
+                )["gsur"]
+                n_filled = int(fallback_values.notna().sum())
+                df.loc[missing_mask, "gsur"] = fallback_values.to_numpy()
+                if n_filled > 0:
+                    logging.info(
+                        "GSUR merge (singles): filled %d rows using fallback age_group=%s",
+                        n_filled,
+                        fallback_group,
+                    )
+            else:
+                logging.warning(
+                    "GSUR merge (singles): no full-age fallback age_group found in GSUR file."
+                )
+
+        df = df.drop(columns=["_gsur_age_group"], errors="ignore")
+    else:
+        if gsur_has_age_group and age_col is None:
+            logging.warning(
+                "GSUR has age_group but singles data has no age column; using age-agnostic fallback merge."
+            )
+
+        gsur_lookup = gsur_std[base_keys + ["gsur"]].drop_duplicates(subset=base_keys)
+        df = df.merge(
+            gsur_lookup,
+            on=base_keys,
+            how="left",
+            validate="m:1",
+        )
 
     if len(df) != df_before:
         raise ValueError(
-            f"GSUR merge changed row count: {df_before} → {len(df)}. "
+            f"GSUR merge changed row count: {df_before} -> {len(df)}. "
             "Check for duplicate keys in GSUR lookup."
         )
 
-    # Report missing rates
     missing_rate = df["gsur"].isna().mean()
     if missing_rate > 0:
         logging.warning(
-            f"GSUR merge (singles): {missing_rate:.1%} of rows have missing gsur. "
-            f"This may indicate incomplete GSUR coverage for observed (year, region, gender, education) combinations."
+            "GSUR merge (singles): %.1f%% of rows have missing gsur. "
+            "Check GSUR coverage for observed key combinations.",
+            100 * missing_rate,
         )
 
-        # Breakdown by year
-        if df["gsur"].isna().any():
-            missing_by_year = df.groupby("year")["gsur"].apply(lambda x: x.isna().mean())
-            for year, rate in missing_by_year.items():
-                if rate > 0:
-                    logging.warning(f"  Year {year}: {rate:.1%} missing GSUR")
+        missing_by_year = df.groupby("year")["gsur"].apply(lambda x: x.isna().mean())
+        for year, rate in missing_by_year.items():
+            if rate > 0:
+                logging.warning("  Year %s: %.1f%% missing GSUR", year, 100 * rate)
 
     return df
 
@@ -468,70 +554,128 @@ def _merge_gsur_couples_wide(
     """
     Merge GSUR unemployment rates onto couples MNL dataset (wide format).
 
-    Performs two merges:
-        - Male: (year, drgn1, dgn=1, educ3_male) → gsur_male
-        - Female: (year, drgn1, dgn=0, educ3_female) → gsur_female
+    Male/female merges use (year, drgn1, educ3_gender) and optionally age-group
+    if GSUR age groups are available and age columns exist in couples data.
     """
     df = df.copy()
 
-    # Ensure year column
     _ensure_year_column(df)
+    gsur_std = _standardize_gsur_age_group_column(gsur_df)
+    gsur_has_age_group = (
+        "age_group" in gsur_std.columns and gsur_std["age_group"].notna().any()
+    )
 
-    # Derive educ3_male, educ3_female from deh_male, deh_female
+    # Ensure educ3_male / educ3_female are present.
     for gender in ["male", "female"]:
         educ3_col = f"educ3_{gender}"
         deh_col = f"deh_{gender}"
 
         if educ3_col not in df.columns:
-            if deh_col not in df.columns:
-                # Fallback: try to derive from educL/M/H dummies if present
+            if deh_col in df.columns:
+                _derive_educ3_from_deh(df, deh_col=deh_col, educ3_col=educ3_col)
+            else:
                 eL, eM, eH = f"educL_{gender}", f"educM_{gender}", f"educH_{gender}"
                 if all(c in df.columns for c in [eL, eM, eH]):
-                    logging.info(f"GSUR merge: deriving {educ3_col} from educL/M/H dummies")
+                    logging.info("GSUR merge: deriving %s from educL/M/H dummies", educ3_col)
                     df[educ3_col] = np.select(
                         [df[eL] == 1, df[eM] == 1, df[eH] == 1],
                         [0, 1, 2],
-                        default=-1
+                        default=-1,
                     ).astype("Int64")
                 else:
                     raise KeyError(
                         f"GSUR merge requires '{educ3_col}' or '{deh_col}' "
-                        f"(or educL/M/H_{gender} dummies). None found in couples data."
+                        f"(or educL/M/H_{gender} dummies)."
                     )
-            else:
-                # Derive from deh column using helper
-                _derive_educ3_from_deh(df, deh_col=deh_col, educ3_col=educ3_col)
 
-    # Male merge: dgn=1
-    gsur_male = gsur_df[gsur_df["dgn"] == 1].copy()
-    gsur_male = gsur_male.rename(columns={"educ3": "educ3_male", "gsur": "gsur_male"})
-
-    df = df.merge(
-        gsur_male[["year", "drgn1", "educ3_male", "gsur_male"]],
-        on=["year", "drgn1", "educ3_male"],
-        how="left",
-        validate="m:1"
-    )
-
-    # Female merge: dgn=0
-    gsur_female = gsur_df[gsur_df["dgn"] == 0].copy()
-    gsur_female = gsur_female.rename(columns={"educ3": "educ3_female", "gsur": "gsur_female"})
-
-    df = df.merge(
-        gsur_female[["year", "drgn1", "educ3_female", "gsur_female"]],
-        on=["year", "drgn1", "educ3_female"],
-        how="left",
-        validate="m:1"
-    )
-
-    # Report missing rates
-    for gender in ["male", "female"]:
+    for gender, dgn_value in [("male", 1), ("female", 0)]:
         gsur_col = f"gsur_{gender}"
+        educ3_col = f"educ3_{gender}"
+        age_candidates = [
+            f"dag_{gender}",
+            f"age_{gender}",
+            f"age_years_{gender}",
+            "dag",
+            "age",
+            "age_years",
+        ]
+        age_col = next((c for c in age_candidates if c in df.columns), None)
+
+        base_keys_df = ["year", "drgn1", educ3_col]
+        gsur_gender = gsur_std[gsur_std["dgn"] == dgn_value].copy()
+
+        if gsur_has_age_group and age_col is not None:
+            age_key = f"_gsur_age_group_{gender}"
+            df[age_key] = _map_age_to_gsur_group(df[age_col])
+
+            merge_keys_df = base_keys_df + [age_key]
+            gsur_lookup = gsur_gender.rename(
+                columns={"educ3": educ3_col, "age_group": age_key, "gsur": gsur_col}
+            )[merge_keys_df + [gsur_col]].drop_duplicates(subset=merge_keys_df)
+
+            df = df.merge(
+                gsur_lookup,
+                on=merge_keys_df,
+                how="left",
+                validate="m:1",
+            )
+
+            missing_mask = df[gsur_col].isna()
+            if missing_mask.any():
+                fallback_group = _pick_gsur_full_age_fallback(gsur_gender["age_group"])
+                if fallback_group is not None:
+                    fallback_lookup = gsur_gender.loc[
+                        gsur_gender["age_group"].astype(str) == fallback_group,
+                        ["year", "drgn1", "educ3", "gsur"],
+                    ].rename(columns={"educ3": educ3_col, "gsur": gsur_col})
+                    fallback_lookup = fallback_lookup.drop_duplicates(subset=base_keys_df)
+
+                    fallback_values = df.loc[missing_mask, base_keys_df].merge(
+                        fallback_lookup,
+                        on=base_keys_df,
+                        how="left",
+                        validate="m:1",
+                    )[gsur_col]
+                    n_filled = int(fallback_values.notna().sum())
+                    df.loc[missing_mask, gsur_col] = fallback_values.to_numpy()
+                    if n_filled > 0:
+                        logging.info(
+                            "GSUR merge (%s): filled %d rows using fallback age_group=%s",
+                            gender,
+                            n_filled,
+                            fallback_group,
+                        )
+                else:
+                    logging.warning(
+                        "GSUR merge (%s): no full-age fallback age_group found in GSUR file.",
+                        gender,
+                    )
+
+            df = df.drop(columns=[age_key], errors="ignore")
+        else:
+            if gsur_has_age_group and age_col is None:
+                logging.warning(
+                    "GSUR has age_group but couples data has no %s age column; using age-agnostic fallback merge.",
+                    gender,
+                )
+
+            gsur_lookup = gsur_gender[["year", "drgn1", "educ3", "gsur"]].rename(
+                columns={"educ3": educ3_col, "gsur": gsur_col}
+            ).drop_duplicates(subset=base_keys_df)
+
+            df = df.merge(
+                gsur_lookup,
+                on=base_keys_df,
+                how="left",
+                validate="m:1",
+            )
+
         missing_rate = df[gsur_col].isna().mean()
         if missing_rate > 0:
             logging.warning(
-                f"GSUR merge ({gender}): {missing_rate:.1%} missing. "
-                f"Check coverage for observed (year, region, education) combinations."
+                "GSUR merge (%s): %.1f%% missing. Check coverage for observed key combinations.",
+                gender,
+                100 * missing_rate,
             )
 
     return df
@@ -942,11 +1086,20 @@ def _reshape_couples_to_wide(df: pd.DataFrame, allow_unbalanced: bool = False) -
             f"  Female: min {before_female_min:.2f} → {df_wide['ils_dispy_female'].min():.2f} ({n_floored_female} obs floored)"
         )
 
-    # For each remaining duplicate pair, keep the male version with original name
+    # Defragment once before adding restored columns.
+    df_wide = df_wide.copy()
+
+    # Restore duplicate columns in one batch to avoid per-column insert fragmentation.
+    restored_cols: Dict[str, pd.Series] = {}
     for male_col in dup_male_cols:
         base_name = male_col.replace("_MALE_DUP", "")
         if base_name not in df_wide.columns:
-            df_wide[base_name] = df_wide[male_col]
+            restored_cols[base_name] = df_wide[male_col]
+    if restored_cols:
+        df_wide = pd.concat(
+            [df_wide, pd.DataFrame(restored_cols, index=df_wide.index)],
+            axis=1,
+        )
 
     # Now drop all duplicate columns
     drop_cols = dup_male_cols + dup_female_cols
@@ -954,7 +1107,9 @@ def _reshape_couples_to_wide(df: pd.DataFrame, allow_unbalanced: bool = False) -
         logging.info(f"Dropping {len(drop_cols)} duplicate columns from merge (kept {len(dup_male_cols)} originals)")
         df_wide = df_wide.drop(columns=drop_cols)
 
-    # Ensure one copy of household-level variables with consistency checks
+    # Ensure one copy of household-level variables with consistency checks.
+    household_restored_cols: Dict[str, pd.Series] = {}
+    household_gender_cols_to_drop = []
     for var in household_cols:
         male_var = f"{var}_male"
         female_var = f"{var}_female"
@@ -972,26 +1127,53 @@ def _reshape_couples_to_wide(df: pd.DataFrame, allow_unbalanced: bool = False) -
                         f"Examples:\n{examples}"
                     )
 
-            # Use male version as canonical (they should be identical after check)
+            # Use male version as canonical (they should be identical after check).
             if var not in df_wide.columns:
-                df_wide[var] = df_wide[male_var]
+                household_restored_cols[var] = df_wide[male_var]
         elif male_var in df_wide.columns and var not in df_wide.columns:
-            # Only male version exists, use it
-            df_wide[var] = df_wide[male_var]
+            # Only male version exists, use it.
+            household_restored_cols[var] = df_wide[male_var]
 
-        # Drop gender-specific versions of household vars
-        df_wide = df_wide.drop(columns=[male_var, female_var], errors="ignore")
+        household_gender_cols_to_drop.extend([male_var, female_var])
+
+    if household_restored_cols:
+        df_wide = pd.concat(
+            [df_wide, pd.DataFrame(household_restored_cols, index=df_wide.index)],
+            axis=1,
+        )
+
+    # Drop gender-specific versions of household vars.
+    if household_gender_cols_to_drop:
+        df_wide = df_wide.drop(
+            columns=list(dict.fromkeys(household_gender_cols_to_drop)),
+            errors="ignore",
+        )
 
     # Create household-level idperson for couples (use idhh since household is the decision unit)
     if "idperson" not in df_wide.columns and "idhh" in df_wide.columns:
         df_wide["idperson"] = df_wide["idhh"]
         logging.info("Created household-level idperson from idhh for couples")
 
+    # Defragment once after structural column creation.
+    df_wide = df_wide.copy()
+
     # Create consumption_male and consumption_female from ils_dispy_male and ils_dispy_female
     # These are PERSON-LEVEL variables (vary by each person's hours choice in each draw)
     if "ils_dispy_male" in df_wide.columns and "ils_dispy_female" in df_wide.columns:
-        df_wide["consumption_male"] = df_wide["ils_dispy_male"]
-        df_wide["consumption_female"] = df_wide["ils_dispy_female"]
+        df_wide = df_wide.drop(columns=["consumption_male", "consumption_female"], errors="ignore")
+        df_wide = pd.concat(
+            [
+                df_wide,
+                pd.DataFrame(
+                    {
+                        "consumption_male": df_wide["ils_dispy_male"],
+                        "consumption_female": df_wide["ils_dispy_female"],
+                    },
+                    index=df_wide.index,
+                ),
+            ],
+            axis=1,
+        )
         logging.info(
             f"Created consumption_male and consumption_female from ils_dispy_male/female "
             f"(min_male: {df_wide['consumption_male'].min():.2f}, "

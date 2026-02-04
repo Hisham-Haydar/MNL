@@ -14,8 +14,8 @@
 # ==============================================================================
 
 specification:
-  name: "job_choice_v1_boxcox_market_opportunity"
-  description: "Job-choice RURO: Box-Cox preferences + job-market opportunity shifters"
+  name: "job_choice_v1_dummies_boxcox_market_opportunity"
+  description: "Job-choice RURO: Box-Cox preferences + dummy-coded job-market opportunity shifters"
   wage_spec: "fw"  # fw | vw | vw_occupation | loc_empirical
 
 utility:
@@ -79,18 +79,97 @@ market_opportunity:
     - variable: "working"
       coefficient: "beta_offer_working"
       applies_to: "both"
-    - variable: "hours_bin"
-      coefficient: "beta_offer_hours_bin"
+
+    # Hours-bin dummies (base omitted: hours_bin_0)
+    - variable: "hours_bin_1"
+      coefficient: "beta_offer_hours_bin_1"
       interaction: "working"
       applies_to: "both"
-    - variable: "wage_bin"
-      coefficient: "beta_offer_wage_bin"
+    - variable: "hours_bin_2"
+      coefficient: "beta_offer_hours_bin_2"
       interaction: "working"
       applies_to: "both"
-    - variable: "isco1"
-      coefficient: "beta_offer_isco1"
+    - variable: "hours_bin_3"
+      coefficient: "beta_offer_hours_bin_3"
       interaction: "working"
       applies_to: "both"
+
+    # Wage-bin dummies (base omitted: wage_bin_0)
+    - variable: "wage_bin_1"
+      coefficient: "beta_offer_wage_bin_1"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_2"
+      coefficient: "beta_offer_wage_bin_2"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_3"
+      coefficient: "beta_offer_wage_bin_3"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_4"
+      coefficient: "beta_offer_wage_bin_4"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_5"
+      coefficient: "beta_offer_wage_bin_5"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_6"
+      coefficient: "beta_offer_wage_bin_6"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_7"
+      coefficient: "beta_offer_wage_bin_7"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_8"
+      coefficient: "beta_offer_wage_bin_8"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "wage_bin_9"
+      coefficient: "beta_offer_wage_bin_9"
+      interaction: "working"
+      applies_to: "both"
+
+    # Occupation dummies (base omitted: isco1_0 when include_isco0=true)
+    - variable: "isco1_1"
+      coefficient: "beta_offer_isco1_1"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_2"
+      coefficient: "beta_offer_isco1_2"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_3"
+      coefficient: "beta_offer_isco1_3"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_4"
+      coefficient: "beta_offer_isco1_4"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_5"
+      coefficient: "beta_offer_isco1_5"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_6"
+      coefficient: "beta_offer_isco1_6"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_7"
+      coefficient: "beta_offer_isco1_7"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_8"
+      coefficient: "beta_offer_isco1_8"
+      interaction: "working"
+      applies_to: "both"
+    - variable: "isco1_9"
+      coefficient: "beta_offer_isco1_9"
+      interaction: "working"
+      applies_to: "both"
+
     - variable: "gsur"
       coefficient: "beta_offer_gsur"
       interaction: "working"
@@ -182,9 +261,27 @@ initial_values:
 
   # Job/market opportunity
   beta_offer_working: 1.0
-  beta_offer_hours_bin: 0.0
-  beta_offer_wage_bin: 0.0
-  beta_offer_isco1: 0.0
+  beta_offer_hours_bin_1: 0.0
+  beta_offer_hours_bin_2: 0.0
+  beta_offer_hours_bin_3: 0.0
+  beta_offer_wage_bin_1: 0.0
+  beta_offer_wage_bin_2: 0.0
+  beta_offer_wage_bin_3: 0.0
+  beta_offer_wage_bin_4: 0.0
+  beta_offer_wage_bin_5: 0.0
+  beta_offer_wage_bin_6: 0.0
+  beta_offer_wage_bin_7: 0.0
+  beta_offer_wage_bin_8: 0.0
+  beta_offer_wage_bin_9: 0.0
+  beta_offer_isco1_1: 0.0
+  beta_offer_isco1_2: 0.0
+  beta_offer_isco1_3: 0.0
+  beta_offer_isco1_4: 0.0
+  beta_offer_isco1_5: 0.0
+  beta_offer_isco1_6: 0.0
+  beta_offer_isco1_7: 0.0
+  beta_offer_isco1_8: 0.0
+  beta_offer_isco1_9: 0.0
   beta_offer_gsur: 0.0
   beta_offer_educL: 0.0
   beta_offer_educH: 0.0
@@ -237,9 +334,27 @@ optimization:
 
     # Market opportunity
     beta_offer_working: [-15.0, 15.0]
-    beta_offer_hours_bin: [-10.0, 10.0]
-    beta_offer_wage_bin: [-10.0, 10.0]
-    beta_offer_isco1: [-10.0, 10.0]
+    beta_offer_hours_bin_1: [-10.0, 10.0]
+    beta_offer_hours_bin_2: [-10.0, 10.0]
+    beta_offer_hours_bin_3: [-10.0, 10.0]
+    beta_offer_wage_bin_1: [-10.0, 10.0]
+    beta_offer_wage_bin_2: [-10.0, 10.0]
+    beta_offer_wage_bin_3: [-10.0, 10.0]
+    beta_offer_wage_bin_4: [-10.0, 10.0]
+    beta_offer_wage_bin_5: [-10.0, 10.0]
+    beta_offer_wage_bin_6: [-10.0, 10.0]
+    beta_offer_wage_bin_7: [-10.0, 10.0]
+    beta_offer_wage_bin_8: [-10.0, 10.0]
+    beta_offer_wage_bin_9: [-10.0, 10.0]
+    beta_offer_isco1_1: [-10.0, 10.0]
+    beta_offer_isco1_2: [-10.0, 10.0]
+    beta_offer_isco1_3: [-10.0, 10.0]
+    beta_offer_isco1_4: [-10.0, 10.0]
+    beta_offer_isco1_5: [-10.0, 10.0]
+    beta_offer_isco1_6: [-10.0, 10.0]
+    beta_offer_isco1_7: [-10.0, 10.0]
+    beta_offer_isco1_8: [-10.0, 10.0]
+    beta_offer_isco1_9: [-10.0, 10.0]
     beta_offer_gsur: [-20.0, 20.0]
     beta_offer_educL: [-10.0, 10.0]
     beta_offer_educH: [-10.0, 10.0]

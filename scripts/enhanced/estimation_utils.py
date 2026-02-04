@@ -798,13 +798,27 @@ def precompute_data_singles(
     )
 
     # Optional dynamic extras (spec-driven; keeps pipeline specification-agnostic).
+    # Supports derived one-hot requests like "hours_bin_2" from base "hours_bin".
+    def _extract_or_derive_single(var_name: str) -> Optional[np.ndarray]:
+        if var_name in df.columns:
+            return pd.to_numeric(df[var_name], errors="coerce").fillna(0.0).values
+
+        m = re.match(r"^(?P<base>[A-Za-z][A-Za-z0-9_]*)_(?P<level>-?\d+)$", var_name)
+        if m:
+            base = m.group("base")
+            level = float(m.group("level"))
+            if base in df.columns:
+                base_vals = pd.to_numeric(df[base], errors="coerce")
+                return (base_vals == level).astype(float).values
+        return None
+
     if include_extra_vars:
         for var_name in include_extra_vars:
             if hasattr(result, var_name):
                 continue
-            if var_name in df.columns:
-                series = pd.to_numeric(df[var_name], errors="coerce").fillna(0.0)
-                setattr(result, var_name, series.values)
+            arr = _extract_or_derive_single(var_name)
+            if arr is not None:
+                setattr(result, var_name, arr)
 
     return result
 
@@ -1096,21 +1110,52 @@ def precompute_data_couples(
     )
 
     # Optional dynamic extras (spec-driven job/market opportunity variables).
+    # Supports derived one-hot requests like "hours_bin_2" from base
+    # "hours_bin_male"/"hours_bin_female" for gendered attributes.
+    def _extract_or_derive_household(var_name: str) -> Optional[np.ndarray]:
+        if var_name in df.columns:
+            return pd.to_numeric(df[var_name], errors="coerce").fillna(0.0).values
+
+        m = re.match(r"^(?P<base>[A-Za-z][A-Za-z0-9_]*)_(?P<level>-?\d+)$", var_name)
+        if m:
+            base = m.group("base")
+            level = float(m.group("level"))
+            if base in df.columns:
+                base_vals = pd.to_numeric(df[base], errors="coerce")
+                return (base_vals == level).astype(float).values
+        return None
+
+    def _extract_or_derive_gender(var_name: str, gender: str) -> Optional[np.ndarray]:
+        attr_name = f"{var_name}_{gender}"
+        if attr_name in df.columns:
+            return pd.to_numeric(df[attr_name], errors="coerce").fillna(0.0).values
+
+        m = re.match(r"^(?P<base>[A-Za-z][A-Za-z0-9_]*)_(?P<level>-?\d+)$", var_name)
+        if m:
+            base = m.group("base")
+            level = float(m.group("level"))
+            base_gender = f"{base}_{gender}"
+            if base_gender in df.columns:
+                base_vals = pd.to_numeric(df[base_gender], errors="coerce")
+                return (base_vals == level).astype(float).values
+        return None
+
     if include_extra_vars:
         for var_name in include_extra_vars:
             # Household-level base variable
-            if (not hasattr(result, var_name)) and (var_name in df.columns):
-                series = pd.to_numeric(df[var_name], errors="coerce").fillna(0.0)
-                setattr(result, var_name, series.values)
+            if not hasattr(result, var_name):
+                arr = _extract_or_derive_household(var_name)
+                if arr is not None:
+                    setattr(result, var_name, arr)
 
             # Gender-specific variants
             for gender in ("male", "female"):
                 attr_name = f"{var_name}_{gender}"
                 if hasattr(result, attr_name):
                     continue
-                if attr_name in df.columns:
-                    series = pd.to_numeric(df[attr_name], errors="coerce").fillna(0.0)
-                    setattr(result, attr_name, series.values)
+                arr = _extract_or_derive_gender(var_name, gender)
+                if arr is not None:
+                    setattr(result, attr_name, arr)
 
     return result
 

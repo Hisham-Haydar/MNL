@@ -469,8 +469,37 @@ def _build_singles_ll_vectorized(
             if working_param is not None:
                 log_w = working_param * log_w_total
 
+    # === Job/market opportunity density ===
+    log_market = 0.0
+    if getattr(spec, "market_opportunity_shifters", None):
+        for shifter in spec.market_opportunity_shifters:
+            var_name = shifter.get("variable")
+            coef_name = shifter.get("coefficient")
+            interaction = shifter.get("interaction", None)
+            if not var_name or not coef_name:
+                continue
+            if coef_name not in param_vars:
+                continue
+            var_param = get_var_param(var_name)
+            if var_param is None:
+                continue
+            if interaction == "working":
+                if working_param is None:
+                    working_param = get_var_param("working")
+                if working_param is not None:
+                    var_param = var_param * working_param
+            log_market = log_market + param_vars[coef_name] * var_param
+
     # Composite utility
-    utility = u_consumption + u_leisure + u_consumption_leisure + log_h + log_w - gp_log(prior_param + LOG_EPS)
+    utility = (
+        u_consumption
+        + u_leisure
+        + u_consumption_leisure
+        + log_h
+        + log_w
+        + log_market
+        - gp_log(prior_param + LOG_EPS)
+    )
 
     if logger:
         logger.info("    Utility expression built (vectorized)")
@@ -530,7 +559,11 @@ def _build_couples_ll_vectorized(
         "prior": prior_param,
     }
 
-    def get_var_param(base_name: str, gender: Optional[str] = None) -> Optional[Parameter]:
+    def get_var_param(
+        base_name: str,
+        gender: Optional[str] = None,
+        fallback_to_base: bool = True,
+    ) -> Optional[Parameter]:
         if gender:
             if base_name == "female":
                 attr = f"female_{gender}"
@@ -538,7 +571,12 @@ def _build_couples_ll_vectorized(
                 attr = f"in_couple_{gender}"
             else:
                 attr_candidate = f"{base_name}_{gender}"
-                attr = attr_candidate if hasattr(data, attr_candidate) else base_name
+                if hasattr(data, attr_candidate):
+                    attr = attr_candidate
+                elif fallback_to_base:
+                    attr = base_name
+                else:
+                    return None
         else:
             attr = base_name
 
@@ -789,8 +827,49 @@ def _build_couples_ll_vectorized(
 
         log_w = build_loc_logw("male", working_m) + build_loc_logw("female", working_f)
 
+    # Job/market opportunity density
+    log_market = 0.0
+    if getattr(spec, "market_opportunity_shifters", None):
+        for shifter in spec.market_opportunity_shifters:
+            var_name = shifter.get("variable")
+            coef_name = shifter.get("coefficient")
+            interaction = shifter.get("interaction", None)
+            applies_to = shifter.get("applies_to", "both")
+            if not var_name or not coef_name:
+                continue
+            if coef_name not in param_vars:
+                continue
+
+            if applies_to == "household":
+                var_param = get_var_param(var_name)
+                if var_param is None:
+                    continue
+                if interaction == "working":
+                    if working_m is not None and working_f is not None:
+                        var_param = var_param * (working_m + working_f)
+                    elif working_m is not None:
+                        var_param = var_param * working_m
+                    elif working_f is not None:
+                        var_param = var_param * working_f
+                log_market = log_market + param_vars[coef_name] * var_param
+                continue
+
+            if applies_to in ("male", "both"):
+                var_param_m = get_var_param(var_name, gender="male", fallback_to_base=False)
+                if var_param_m is not None:
+                    if interaction == "working" and working_m is not None:
+                        var_param_m = var_param_m * working_m
+                    log_market = log_market + param_vars[coef_name] * var_param_m
+
+            if applies_to in ("female", "both"):
+                var_param_f = get_var_param(var_name, gender="female", fallback_to_base=False)
+                if var_param_f is not None:
+                    if interaction == "working" and working_f is not None:
+                        var_param_f = var_param_f * working_f
+                    log_market = log_market + param_vars[coef_name] * var_param_f
+
     # Composite utility
-    utility = utility + log_h_m + log_h_f + log_w - gp_log(prior_param + LOG_EPS)
+    utility = utility + log_h_m + log_h_f + log_w + log_market - gp_log(prior_param + LOG_EPS)
 
     if logger:
         logger.info("    Couples utility expression built (vectorized)")

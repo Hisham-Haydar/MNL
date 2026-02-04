@@ -15,10 +15,11 @@ Created: 2026-01-03
 """
 
 import logging
+import re
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, List
 
 import numpy as np
 import pandas as pd
@@ -551,7 +552,8 @@ def precompute_data_singles(
     metadata: Dict[str, Any],
     is_male: bool = True,
     include_wage_vars: bool = True,
-    include_loc_vars: bool = False
+    include_loc_vars: bool = False,
+    include_extra_vars: Optional[List[str]] = None,
 ) -> PrecomputedDataSingles:
     """
     Extract and validate all arrays for singles estimation.
@@ -568,6 +570,8 @@ def precompute_data_singles(
         Whether to extract wage variables (for vw/loc_empirical specs)
     include_loc_vars : bool, default=False
         Whether to extract occupation variables (for loc_empirical spec)
+    include_extra_vars : list of str, optional
+        Additional column names to extract dynamically (e.g., job-opportunity shifters)
 
     Returns
     -------
@@ -748,7 +752,7 @@ def precompute_data_singles(
 
     logger.info(f"  Extracted {n_groups:,} groups with {n_obs:,} total observations")
     
-    return PrecomputedDataSingles(
+    result = PrecomputedDataSingles(
         consumption=consumption,
         leisure=leisure,
         log_c=log_c,
@@ -793,12 +797,24 @@ def precompute_data_singles(
         is_male=is_male
     )
 
+    # Optional dynamic extras (spec-driven; keeps pipeline specification-agnostic).
+    if include_extra_vars:
+        for var_name in include_extra_vars:
+            if hasattr(result, var_name):
+                continue
+            if var_name in df.columns:
+                series = pd.to_numeric(df[var_name], errors="coerce").fillna(0.0)
+                setattr(result, var_name, series.values)
+
+    return result
+
 
 def precompute_data_couples(
     df: pd.DataFrame,
     metadata: Dict[str, Any],
     include_wage_vars: bool = True,
-    include_loc_vars: bool = False
+    include_loc_vars: bool = False,
+    include_extra_vars: Optional[List[str]] = None,
 ) -> PrecomputedDataCouples:
     """
     Extract and validate all arrays for couples estimation (wide format).
@@ -813,6 +829,8 @@ def precompute_data_couples(
         Whether to extract wage variables
     include_loc_vars : bool, default=False
         Whether to extract occupation variables
+    include_extra_vars : list of str, optional
+        Additional base variable names to extract dynamically (supports _male/_female)
 
     Returns
     -------
@@ -1011,7 +1029,7 @@ def precompute_data_couples(
 
     logger.info(f"  Extracted {n_groups:,} groups with {n_obs:,} total observations")
     
-    return PrecomputedDataCouples(
+    result = PrecomputedDataCouples(
         consumption=consumption,
         log_c=log_c,
         leisure_male=leisure_male,
@@ -1076,6 +1094,25 @@ def precompute_data_couples(
         n_obs=n_obs,
         actual_choice=actual_choice
     )
+
+    # Optional dynamic extras (spec-driven job/market opportunity variables).
+    if include_extra_vars:
+        for var_name in include_extra_vars:
+            # Household-level base variable
+            if (not hasattr(result, var_name)) and (var_name in df.columns):
+                series = pd.to_numeric(df[var_name], errors="coerce").fillna(0.0)
+                setattr(result, var_name, series.values)
+
+            # Gender-specific variants
+            for gender in ("male", "female"):
+                attr_name = f"{var_name}_{gender}"
+                if hasattr(result, attr_name):
+                    continue
+                if attr_name in df.columns:
+                    series = pd.to_numeric(df[attr_name], errors="coerce").fillna(0.0)
+                    setattr(result, attr_name, series.values)
+
+    return result
 
 
 # ==============================================================================

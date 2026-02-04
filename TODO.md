@@ -1,9 +1,18 @@
 # TODO - Remaining Work
 
-**Last Updated:** 2026-01-28
+**Last Updated:** 2026-02-04
 **Project:** RURO Labor Supply Model - France
 
 This document lists remaining optional enhancements and future work.
+
+---
+
+## 0. Job-Choice RURO Next Priorities
+
+1. Validate `ils_dispy == 0` concentrations by group/draw in job-model EUROMOD outputs and document expected vs abnormal ranges.
+2. Replace deprecated `datetime.utcnow()` calls with timezone-aware UTC timestamps.
+3. Add a compact draw diagnostics utility (within-person variation of `job_id`, `lhw`, `yivwg`, `ils_dispy`).
+4. Add a simple continuous-draw vs job-draw fit comparison note in reporting workflow.
 
 ---
 

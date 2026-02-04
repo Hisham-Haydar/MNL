@@ -1,9 +1,36 @@
 # DONE - Completed Work
 
-**Last Updated:** 2026-01-28 (Post-Estimation Improvements)
+**Last Updated:** 2026-02-04 (Job-model pipeline + MNL prep integration)
 **Project:** RURO Labor Supply Model - France
 
 This document consolidates all completed work, fixes, and implementations.
+
+---
+
+## Update: Job-Choice RURO Integration (2026-02-04) ✅
+
+### Job-model pipeline
+- Implemented and validated end-to-end run via `scripts/Job_model/run_job_ruro_pipeline.py`.
+- Supports full-grid universe with deterministic IDs and optional ISCO0 inclusion.
+- Added representative-stat controls for job cells (`mean` / `median` / `mode`) for hours and wages.
+- Baseline mode supports `cell_rep` (default) and `observed`.
+
+### MNL prep compatibility for job draws
+- `scripts/enhanced/enh_RURO_prep_mnl_basic.py` now detects job-draw proposal density and uses it directly:
+  - singles prior source: `log_q_total`
+  - couples prior source: `log_q_total_male + log_q_total_female`
+- Essential-column filtering retains job-model identifiers (`job_id`, bins, ISCO, `log_q_*`).
+- Couples reshape flow improved to reduce DataFrame fragmentation risk during wide transformation.
+
+### GSUR merge robustness
+- Added age-aware GSUR merge path with automatic fallback to full-age brackets when fine age groups are unavailable.
+- Current FR GSUR file (`FR_gsur_ruro.parquet`) effectively uses `Y20-64` fallback coverage.
+
+### Validation status
+- Pipeline run completed with:
+  - 400 working jobs + 1 non-employment
+  - 199 simulated draws (+ baseline draw 0)
+  - successful EUROMOD output and successful Step 6 MNL sanity checks.
 
 ---
 

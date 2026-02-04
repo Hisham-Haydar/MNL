@@ -58,6 +58,9 @@ class EstimationSpec:
     # Hours opportunity configuration
     hours_shifters: List[Dict[str, Any]]
 
+    # Job/market opportunity configuration (optional)
+    market_opportunity_shifters: List[Dict[str, Any]]
+
     # Wage opportunity configuration
     wage_form: str  # log_normal | occupation_specific_log_normal | occupation_groups
     wage_mean_shifters: List[Dict[str, Any]]
@@ -388,8 +391,10 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         interaction_config = couples_config.get("leisure_interaction", {})
         couples_interaction_coef = interaction_config.get("coefficient", "beta_interact")
 
-    # Parse market opportunity (NEW: occupation availability)
+    # Parse market opportunity
     market_config = config.get("market_opportunity", {})
+    market_opportunity_shifters = market_config.get("shifters", [])
+    # Parse occupation availability (legacy occupation-choice path)
     occupation_availability = market_config.get("occupation_availability", [])
 
     # Parse sampling configuration (NEW: McFadden sampling)
@@ -448,6 +453,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
             utility_leisure_shifters=utility_leisure_shifters,
             utility_consumption_leisure_interaction_coef=utility_consumption_leisure_interaction_coef,
             hours_shifters=hours_shifters,
+            market_opportunity_shifters=market_opportunity_shifters,
             wage_spec=wage_spec,
             wage_form=wage_form,
             wage_mean_shifters=wage_mean_shifters,
@@ -507,6 +513,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         utility_leisure_shifters=utility_leisure_shifters,
         utility_consumption_leisure_interaction_coef=utility_consumption_leisure_interaction_coef,
         hours_shifters=hours_shifters,
+        market_opportunity_shifters=market_opportunity_shifters,
         wage_form=wage_form,
         wage_mean_shifters=wage_mean_shifters,
         wage_variance_param=wage_variance_param,
@@ -726,6 +733,7 @@ def _build_parameter_list(
     utility_leisure_shifters: List[Dict[str, Any]],
     utility_consumption_leisure_interaction_coef: Optional[str],
     hours_shifters: List[Dict[str, Any]],
+    market_opportunity_shifters: Optional[List[Dict[str, Any]]],
     wage_spec: str,
     wage_form: str,
     wage_mean_shifters: List[Dict[str, Any]],
@@ -860,6 +868,12 @@ def _build_parameter_list(
     # SHARED OPPORTUNITY: Hours parameters (all groups)
     for shifter in hours_shifters:
         params.append(shifter["coefficient"])
+
+    # SHARED OPPORTUNITY: Job/market parameters (all groups)
+    if market_opportunity_shifters:
+        for shifter in market_opportunity_shifters:
+            if "coefficient" in shifter:
+                params.append(shifter["coefficient"])
 
     # SHARED OPPORTUNITY: Wage parameters (all groups)
     if wage_spec == "vw":

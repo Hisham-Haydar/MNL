@@ -169,6 +169,8 @@ python -c "import pandas as pd; df = pd.read_parquet('U:/EUROMOD-STORAGE/Data/pr
 ### Core Documentation
 - **[DONE.md](DONE.md)** - Complete list of all implemented features and fixes
 - **[TODO.md](TODO.md)** - Optional future enhancements and next steps
+- **[scripts/Job_model/README_job_model.md](scripts/Job_model/README_job_model.md)** - Job-choice RURO branch, commands, and current status
+- **[scripts/Job_model/ACCEPTANCE_TESTS.md](scripts/Job_model/ACCEPTANCE_TESTS.md)** - Acceptance tests and recommended production settings for job-model runs
 
 ### Technical References
 - **[docs/GAMSPy_Quick_Start.md](docs/GAMSPy_Quick_Start.md)** - GAMSPy estimation guide

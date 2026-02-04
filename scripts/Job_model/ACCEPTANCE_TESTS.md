@@ -1,5 +1,7 @@
 # Job-Choice RURO: Acceptance Tests
 
+Status snapshot: **validated on 2026-02-04** with FR 2016 data.
+
 ## Summary of Implementation
 
 The job-choice RURO pipeline has been enhanced with econometrically robust features for multi-year/multi-country estimation:
@@ -30,12 +32,17 @@ The job-choice RURO pipeline has been enhanced with econometrically robust featu
    - `q_j_prior`: Alias for backward compatibility
    - `job_idx`: Sequential index for backward compat
 
+6. **Representative-Statistic Controls for Filled/Representative Values**:
+   - `--hours-rep-stat`: `mean`, `median`, `mode`
+   - `--wage-rep-stat`: `mean`, `median`, `mode`
+   - Works with `--rep-fill-mode=bin_means`
+
 ### B) Job Draws Generator (`enh_job_draws.py`) - Completed
 
 **New Features:**
 1. **Baseline Mode** (`--baseline-mode`):
-   - `observed`: Use actual lhw_base/yivwg_base (default)
-   - `cell_rep`: Use hours_rep/wage_rep from job universe
+   - `cell_rep`: Use hours_rep/wage_rep from job universe (current default)
+   - `observed`: Use actual lhw_base/yivwg_base
 
 2. **Standardized Proposal Density**:
    - `prior`: Canonical proposal density
@@ -264,9 +271,12 @@ python scripts/Job_model/run_job_ruro_pipeline.py `
   --year 2016 `
   --universe-mode full_grid `
   --rep-fill-mode bin_means `
+  --hours-rep-stat mode `
+  --wage-rep-stat median `
   --job-id-mode deterministic `
-  --baseline-mode observed `
-  --n-draws 99 `
+  --baseline-mode cell_rep `
+  --n-draws 199 `
+  --include-isco0 `
   --wage-bins 10 `
   --seed 13
 ```
@@ -275,7 +285,18 @@ python scripts/Job_model/run_job_ruro_pipeline.py `
 - `full_grid`: Soft constraints - all job bundles are feasible alternatives
 - `bin_means`: Empty cells get empirically-informed representative values
 - `deterministic`: Stable job IDs for cross-year/country comparisons
-- `observed`: Draw=0 uses actual baseline for calibration
+- `cell_rep`: Draw=0 is aligned with the selected job-cell representation
+- `include-isco0`: Includes armed forces as an explicit occupation class
+
+---
+
+## Most Recent Successful Run (Reference)
+
+From `run_job_ruro_pipeline.py` (FR 2016):
+- ISCO codes used: `[0,1,2,3,4,5,6,7,8,9]`
+- Universe size: `400` working jobs + `1` non-employment
+- Draw count: `199` simulated + draw `0` baseline per decider
+- Step 3 (EUROMOD) completed and wrote `combined_draws_em.parquet`
 
 ---
 

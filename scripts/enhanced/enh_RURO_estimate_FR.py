@@ -1032,6 +1032,16 @@ Examples:
 
         include_wage_vars = (spec.wage_spec in ["vw", "loc_empirical"])
         include_loc_vars = (spec.wage_spec == "loc_empirical")
+        extra_precompute_vars = sorted({
+            sh["variable"]
+            for sh in getattr(spec, "market_opportunity_shifters", [])
+            if isinstance(sh, dict) and "variable" in sh
+        })
+        if extra_precompute_vars:
+            logger.info(
+                "Spec-driven extra precompute variables: %s",
+                extra_precompute_vars,
+            )
 
         data_sm = None
         data_sf = None
@@ -1046,7 +1056,8 @@ Examples:
                     metadata=metadata,
                     is_male=True,  # Treat as male for parameter convention
                     include_wage_vars=include_wage_vars,
-                    include_loc_vars=include_loc_vars
+                    include_loc_vars=include_loc_vars,
+                    include_extra_vars=extra_precompute_vars,
                 )
             else:
                 # Separate male/female
@@ -1060,7 +1071,8 @@ Examples:
                         metadata=metadata,
                         is_male=True,
                         include_wage_vars=include_wage_vars,
-                        include_loc_vars=include_loc_vars
+                        include_loc_vars=include_loc_vars,
+                        include_extra_vars=extra_precompute_vars,
                     )
 
                 if len(df_sf) > 0:
@@ -1070,7 +1082,8 @@ Examples:
                         metadata=metadata,
                         is_male=False,
                         include_wage_vars=include_wage_vars,
-                        include_loc_vars=include_loc_vars
+                        include_loc_vars=include_loc_vars,
+                        include_extra_vars=extra_precompute_vars,
                     )
 
         if df_couples is not None:
@@ -1079,8 +1092,11 @@ Examples:
                 df=df_couples,
                 metadata=metadata,
                 include_wage_vars=include_wage_vars,
-                include_loc_vars=include_loc_vars
-            )        # ===== 6. GET INITIAL VALUES =====
+                include_loc_vars=include_loc_vars,
+                include_extra_vars=extra_precompute_vars,
+            )
+
+        # ===== 6. GET INITIAL VALUES =====
         logger.info("")
         logger.info("="*80)
         logger.info("Step 6: Setting Initial Values")

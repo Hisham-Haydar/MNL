@@ -36,6 +36,7 @@ This directory contains the complete enhanced RURO (Random Utility Random Opport
    - Restricts to deciders (heads/partners)
    - Computes consumption/leisure normalization
    - Creates estimation variables (age_norm, n_children, etc.)
+   - Supports both continuous RURO draws and job-choice draws (including `job_id` / `log_q_*` priors)
 
 7. **[enh_RURO_estimate_FR.py](enh_RURO_estimate_FR.py)** - Step 7: Joint Estimation
    - YAML-based model specification

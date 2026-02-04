@@ -86,28 +86,28 @@ optimization:
 
   bounds:
     # Box-Cox
-    theta_l_sm: [-1.5, 0.8]
-    theta_c_sm: [-1.5, 0.8]
-    theta_l_sf: [-1.5, 0.8]
-    theta_c_sf: [-1.5, 0.8]
-    theta_l_m: [-1.5, 0.8]
-    theta_l_f: [-1.5, 0.8]
-    theta_c: [-1.5, 0.8]
+    theta_l_sm: [-30, 0.98]
+    theta_c_sm: [-30, 0.98]
+    theta_l_sf: [-30, 0.98]
+    theta_c_sf: [-30, 0.98]
+    theta_l_m: [-30, 0.98]
+    theta_l_f: [-30, 0.98]
+    theta_c: [-30, 0.98]
 
     # Consumption coefficients
-    beta_c_sm: [0.05, 8.0]
-    beta_c_sf: [0.05, 8.0]
-    beta_c: [0.05, 8.0]
+    beta_c_sm: [0.05, 50.0]
+    beta_c_sf: [0.05, 50.0]
+    beta_c: [0.05, 50.0]
 
     # Leisure intercepts
-    beta_l0_sm: [0.05, 8.0]
-    beta_l0_sf: [0.05, 8.0]
-    beta_l0_m: [0.05, 8.0]
-    beta_l0_f: [0.05, 8.0]
+    beta_l0_sm: [0.05, 50.0]
+    beta_l0_sf: [0.05, 50.0]
+    beta_l0_m: [0.05, 50.0]
+    beta_l0_f: [0.05, 50.0]
 
     # Market opportunity
-    beta_offer_working: [-4.0, 4.0]
-    beta_offer_gsur: [-4.0, 4.0]
+    beta_offer_working: [-40.0, 40.0]
+    beta_offer_gsur: [-40.0, 40.0]
 
   expression_constraints:
     enabled: false

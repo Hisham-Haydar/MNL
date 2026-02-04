@@ -3728,6 +3728,53 @@ def compute_null_log_likelihood(df: pd.DataFrame, choice_id_col: str = 'idhh') -
     return ll_null
 
 
+def compute_null_log_likelihood_prior_corrected(
+    df: pd.DataFrame,
+    choice_id_col: str = 'idhh',
+    prior_col: str = 'prior',
+    chosen_col: str = 'is_chosen',
+) -> Optional[float]:
+    """
+    Compute prior-corrected null LL for sampled-alternative estimators.
+
+    Uses index V_ij = -log(prior_ij), i.e.:
+      P_ij = (1/prior_ij) / sum_k (1/prior_ik)
+    and LL0 = sum_i log(P_i,chosen).
+    """
+    if prior_col not in df.columns:
+        return None
+
+    # Prefer explicit chosen flags; fallback to "chosen".
+    effective_chosen_col = chosen_col if chosen_col in df.columns else ("chosen" if "chosen" in df.columns else None)
+    if effective_chosen_col is None:
+        return None
+
+    ll0 = 0.0
+    n_groups_used = 0
+
+    for _, g in df.groupby(choice_id_col, sort=False):
+        prior = pd.to_numeric(g[prior_col], errors='coerce').to_numpy(dtype=float)
+        if prior.size == 0 or np.any(~np.isfinite(prior)) or np.any(prior <= 0):
+            continue
+
+        chosen = (pd.to_numeric(g[effective_chosen_col], errors='coerce').fillna(0.0).to_numpy(dtype=float) > 0.5)
+        if chosen.sum() != 1:
+            continue
+
+        chosen_prior = prior[np.argmax(chosen)]
+        inv_prior_sum = np.sum(1.0 / prior)
+        if not np.isfinite(inv_prior_sum) or inv_prior_sum <= 0:
+            continue
+
+        ll0 += -np.log(chosen_prior) - np.log(inv_prior_sum)
+        n_groups_used += 1
+
+    if n_groups_used == 0:
+        return None
+
+    return float(ll0)
+
+
 def load_mnl_metadata(mnl_base: Path) -> Optional[Dict[str, Any]]:
     """
     Load metadata from __mnlmeta.json file.
@@ -5059,7 +5106,8 @@ def run_styled_post_estimation(
     LOGGER.info("\n4. Computing fit diagnostics from MNL data...")
     fit_results = {}
     mu_results = {}
-    ll_null = None
+    ll_null_uniform = None
+    ll_null_prior_corrected = None
     n_obs_long = None
     n_individuals = None
     
@@ -5068,26 +5116,37 @@ def run_styled_post_estimation(
             fit_results = compute_fit_diagnostics_from_data(parsed, mnl_base)
             mu_results = compute_marginal_utilities_at_chosen(parsed, mnl_base)
             
-            # Compute LL0 if not in JSON
+            # Compute LL0 diagnostics if not in JSON
             if 'll_null' not in fit_stats or fit_stats['ll_null'] is None:
                 try:
                     singles_path = Path(str(mnl_base) + '__singles.parquet')
                     if singles_path.exists():
                         df_temp = pd.read_parquet(singles_path)
-                        ll_null = compute_null_log_likelihood(df_temp, 'idhh')
+                        ll_null_uniform = compute_null_log_likelihood(df_temp, 'idhh')
+                        ll_null_prior_corrected = compute_null_log_likelihood_prior_corrected(df_temp, 'idhh')
                         n_obs_long = len(df_temp)
                         n_individuals = df_temp['idhh'].nunique()
                         
                         couples_path = Path(str(mnl_base) + '__couples.parquet')
                         if couples_path.exists():
                             df_temp_c = pd.read_parquet(couples_path)
-                            ll_null += compute_null_log_likelihood(df_temp_c, 'idhh')
+                            ll_null_uniform += compute_null_log_likelihood(df_temp_c, 'idhh')
+                            ll0p_c = compute_null_log_likelihood_prior_corrected(df_temp_c, 'idhh')
+                            if ll_null_prior_corrected is None:
+                                ll_null_prior_corrected = ll0p_c
+                            elif ll0p_c is not None:
+                                ll_null_prior_corrected += ll0p_c
                             n_obs_long += len(df_temp_c)
                             n_individuals += df_temp_c['idhh'].nunique()
-                        
-                        fit_stats['ll_null'] = ll_null
+
+                        # Keep legacy keys and expose both null variants.
+                        fit_stats['ll_null'] = ll_null_uniform
+                        fit_stats['ll_null_uniform'] = ll_null_uniform
+                        fit_stats['ll_null_prior_corrected'] = ll_null_prior_corrected
                         fit_stats['n_obs_long'] = n_obs_long
-                        LOGGER.info(f"  Computed LL0 = {ll_null:.2f}")
+                        LOGGER.info(f"  Computed LL0 (uniform) = {ll_null_uniform:.2f}")
+                        if ll_null_prior_corrected is not None:
+                            LOGGER.info(f"  Computed LL0 (prior-corrected) = {ll_null_prior_corrected:.2f}")
                 except Exception as e:
                     LOGGER.warning(f"Could not compute LL0: {e}")
         except Exception as e:
@@ -5111,14 +5170,39 @@ def run_styled_post_estimation(
             }    # Compute rho-squared and AIC_per_obs now that we have ll_null
     ll = fit_stats.get('log_likelihood', 0)
     ll_null_val = fit_stats.get('ll_null')
+    ll_null_uniform_val = fit_stats.get('ll_null_uniform')
+    ll_null_prior_val = fit_stats.get('ll_null_prior_corrected')
     n_params = fit_stats.get('n_parameters', 0)
     n_obs = fit_stats.get('n_observations', 0)
-    
-    if ll_null_val is not None and ll_null_val != 0:
+
+    # Uniform null metrics (legacy McFadden rho²)
+    if ll_null_uniform_val is not None and ll_null_uniform_val != 0:
+        fit_stats['rho_squared_uniform'] = 1 - (ll / ll_null_uniform_val)
+        fit_stats['rho_squared_adj_uniform'] = 1 - ((ll - n_params) / ll_null_uniform_val)
+    else:
+        fit_stats['rho_squared_uniform'] = None
+        fit_stats['rho_squared_adj_uniform'] = None
+
+    # Prior-corrected null metrics (recommended for sampled-alternative/job-choice runs)
+    if ll_null_prior_val is not None and ll_null_prior_val != 0:
+        fit_stats['rho_squared_prior_corrected'] = 1 - (ll / ll_null_prior_val)
+        fit_stats['rho_squared_adj_prior_corrected'] = 1 - ((ll - n_params) / ll_null_prior_val)
+    else:
+        fit_stats['rho_squared_prior_corrected'] = None
+        fit_stats['rho_squared_adj_prior_corrected'] = None
+
+    # Backward-compatible headline rho²:
+    # use prior-corrected when available; otherwise fall back to legacy uniform.
+    if fit_stats['rho_squared_prior_corrected'] is not None:
+        fit_stats['rho_squared'] = fit_stats['rho_squared_prior_corrected']
+        fit_stats['rho_squared_adj'] = fit_stats['rho_squared_adj_prior_corrected']
+        LOGGER.info(f"  Rho-squared (prior-corrected): {fit_stats['rho_squared']:.4f}")
+        LOGGER.info(f"  Adjusted Rho-squared (prior-corrected): {fit_stats['rho_squared_adj']:.4f}")
+    elif ll_null_val is not None and ll_null_val != 0:
         fit_stats['rho_squared'] = 1 - (ll / ll_null_val)
         fit_stats['rho_squared_adj'] = 1 - ((ll - n_params) / ll_null_val)
-        LOGGER.info(f"  Rho-squared: {fit_stats['rho_squared']:.4f}")
-        LOGGER.info(f"  Adjusted Rho-squared: {fit_stats['rho_squared_adj']:.4f}")
+        LOGGER.info(f"  Rho-squared (uniform): {fit_stats['rho_squared']:.4f}")
+        LOGGER.info(f"  Adjusted Rho-squared (uniform): {fit_stats['rho_squared_adj']:.4f}")
     else:
         fit_stats['rho_squared'] = None
         fit_stats['rho_squared_adj'] = None

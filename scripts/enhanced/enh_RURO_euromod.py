@@ -446,6 +446,18 @@ def run_euromod_for_draws(
         override_cols.append("loc_ruro")
     if "isco1" in draws_df.columns:
         override_cols.append("isco1")
+    # Preserve job-model identifiers and metadata in merged/carry output.
+    optional_job_cols = [
+        "job_id",
+        "hours_bin",
+        "wage_bin",
+        "baseline_job_id",
+        "loc_ruro_draw",
+        "loc_ruro_obs",
+    ]
+    for col in optional_job_cols:
+        if col in draws_df.columns and col not in override_cols:
+            override_cols.append(col)
 
     draws_sub = draws_df[override_cols].copy()
     

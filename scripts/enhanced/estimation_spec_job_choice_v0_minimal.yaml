@@ -1,0 +1,123 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - Job Choice V0 (Minimal Stable)
+# ==============================================================================
+# Purpose:
+# - Provide a numerically stable first-pass job-choice specification
+# - Keep opportunity separate from preferences with a very small parameter set
+# - Use this first, then expand to richer v1/v2 specs once convergence is stable
+# ==============================================================================
+
+specification:
+  name: "job_choice_v0_minimal_stable"
+  description: "Minimal stable job-choice RURO: Box-Cox utility with parsimonious market opportunity"
+  wage_spec: "fw"
+
+utility:
+  functional_form: "box_cox"
+
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"
+    box_cox_bounds: [-1.5, 0.8]
+
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: "theta_l"
+    box_cox_bounds: [-1.5, 0.8]
+    shifters: []
+
+# Keep empty for job-choice baseline (opportunity is in market_opportunity).
+hours_opportunity:
+  shifters: []
+
+wage_opportunity:
+  specification: "log_normal"
+
+market_opportunity:
+  shifters:
+    - variable: "working"
+      coefficient: "beta_offer_working"
+      applies_to: "both"
+    - variable: "gsur"
+      coefficient: "beta_offer_gsur"
+      interaction: "working"
+      applies_to: "both"
+
+# Keep empty so parser does not auto-add beta_interact in this minimal spec.
+couples: {}
+
+initial_values:
+  # Singles male
+  beta_l0_sm: 0.30
+  beta_c_sm: 0.80
+  theta_l_sm: -0.20
+  theta_c_sm: 0.20
+
+  # Singles female
+  beta_l0_sf: 0.30
+  beta_c_sf: 0.80
+  theta_l_sf: -0.20
+  theta_c_sf: 0.20
+
+  # Couples male leisure
+  beta_l0_m: 0.30
+  theta_l_m: -0.20
+
+  # Couples female leisure
+  beta_l0_f: 0.30
+  theta_l_f: -0.20
+
+  # Couples household consumption
+  beta_c: 0.80
+  theta_c: 0.20
+
+  # Market opportunity
+  beta_offer_working: 0.50
+  beta_offer_gsur: -0.10
+
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 5000
+  tolerance: 1.0e-8
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+  bounds:
+    # Box-Cox
+    theta_l_sm: [-1.5, 0.8]
+    theta_c_sm: [-1.5, 0.8]
+    theta_l_sf: [-1.5, 0.8]
+    theta_c_sf: [-1.5, 0.8]
+    theta_l_m: [-1.5, 0.8]
+    theta_l_f: [-1.5, 0.8]
+    theta_c: [-1.5, 0.8]
+
+    # Consumption coefficients
+    beta_c_sm: [0.05, 8.0]
+    beta_c_sf: [0.05, 8.0]
+    beta_c: [0.05, 8.0]
+
+    # Leisure intercepts
+    beta_l0_sm: [0.05, 8.0]
+    beta_l0_sf: [0.05, 8.0]
+    beta_l0_m: [0.05, 8.0]
+    beta_l0_f: [0.05, 8.0]
+
+    # Market opportunity
+    beta_offer_working: [-4.0, 4.0]
+    beta_offer_gsur: [-4.0, 4.0]
+
+  expression_constraints:
+    enabled: false
+
+gradient_verification:
+  enabled: false
+  method: "central"
+  epsilon: 1.0e-7
+  tolerance: 1.0e-4
+  check_at_init: true
+  check_random_points: 0
+  random_seed: 13
+  verbose: true

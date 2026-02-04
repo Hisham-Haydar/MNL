@@ -1154,6 +1154,39 @@ def _compute_prior_singles(
     """
     df = df.copy()
 
+    # Job-choice draws path:
+    # If draw-level proposal density is available, use it directly.
+    # This keeps Step 6 spec-agnostic: continuous draws use formula prior,
+    # job draws use the sampled job proposal density.
+    if "log_q_total" in df.columns:
+        log_q = pd.to_numeric(df["log_q_total"], errors="coerce")
+        if log_q.notna().any():
+            missing_rate = float(log_q.isna().mean())
+            if missing_rate > 0:
+                logging.warning(
+                    f"Singles prior: log_q_total has {missing_rate:.1%} missing values; "
+                    "using finite fallback for those rows."
+                )
+
+            log_q_arr = log_q.to_numpy()
+            finite_mask = np.isfinite(log_q_arr)
+            if not finite_mask.any():
+                raise ValueError("Singles prior: log_q_total has no finite values.")
+
+            fallback = float(np.nanmedian(log_q_arr[finite_mask]))
+            log_q_arr = np.where(finite_mask, log_q_arr, fallback)
+
+            prior_density = np.exp(np.clip(log_q_arr, -700, 700))
+            prior_density = np.clip(prior_density, 1e-16, None)
+            df["prior"] = prior_density
+            df["log_prior"] = np.log(prior_density)
+            df.attrs["prior_source"] = "job_draw_log_q_total"
+
+            logging.info(
+                "Prior (singles): using job-draw proposal density from 'log_q_total'."
+            )
+            return df
+
     # Validate required columns
     for col in ("dgn", "hours"):
         if col not in df.columns:
@@ -1214,6 +1247,8 @@ def _compute_prior_singles(
     # Clip to avoid log(0) and take log
     prior_density = np.clip(prior_density, 1e-16, None)
     df["prior"] = np.log(prior_density)
+    df["log_prior"] = df["prior"]
+    df.attrs["prior_source"] = "continuous_formula"
 
     return df
 
@@ -1231,6 +1266,44 @@ def _compute_prior_couples_wide(
 ) -> pd.DataFrame:
     """Compute RURO prior for couples dataset (wide format)."""
     df = df.copy()
+
+    # Job-choice draws path:
+    # Couples wide keeps draw proposal density in gendered columns after reshape.
+    if "log_q_total_male" in df.columns and "log_q_total_female" in df.columns:
+        log_q_m = pd.to_numeric(df["log_q_total_male"], errors="coerce")
+        log_q_f = pd.to_numeric(df["log_q_total_female"], errors="coerce")
+
+        valid = np.isfinite(log_q_m.to_numpy()) & np.isfinite(log_q_f.to_numpy())
+        if valid.any():
+            missing_rate = 1.0 - float(valid.mean())
+            if missing_rate > 0:
+                logging.warning(
+                    f"Couples prior: log_q_total_male/female has {missing_rate:.1%} invalid rows; "
+                    "using finite fallback for those rows."
+                )
+
+            m_arr = log_q_m.to_numpy()
+            f_arr = log_q_f.to_numpy()
+
+            m_fallback = float(np.nanmedian(m_arr[np.isfinite(m_arr)]))
+            f_fallback = float(np.nanmedian(f_arr[np.isfinite(f_arr)]))
+
+            m_arr = np.where(np.isfinite(m_arr), m_arr, m_fallback)
+            f_arr = np.where(np.isfinite(f_arr), f_arr, f_fallback)
+
+            log_q_joint = m_arr + f_arr
+            prior_density = np.exp(np.clip(log_q_joint, -700, 700))
+            prior_density = np.clip(prior_density, 1e-16, None)
+
+            df["prior"] = prior_density
+            df["log_prior"] = np.log(prior_density)
+            df.attrs["prior_source"] = "job_draw_log_q_total_joint"
+
+            logging.info(
+                "Prior (couples): using joint job-draw proposal density from "
+                "'log_q_total_male + log_q_total_female'."
+            )
+            return df
 
     # For couples, we need hours_male, hours_female
     if "hours_male" not in df.columns or "hours_female" not in df.columns:
@@ -1298,6 +1371,8 @@ def _compute_prior_couples_wide(
     # Clip and log
     prior_density = np.clip(prior_density, 1e-16, None)
     df["prior"] = np.log(prior_density)
+    df["log_prior"] = df["prior"]
+    df.attrs["prior_source"] = "continuous_formula"
 
     return df
 
@@ -1369,6 +1444,13 @@ def get_essential_columns_for_estimation() -> set[str]:
         "loc4_male", "loc4_female",
         # Industry
         "lindi", "industry", "nace",
+        # Job-model identifiers (when using discrete job draws)
+        "job_id", "job_id_male", "job_id_female",
+        "hours_bin", "hours_bin_male", "hours_bin_female",
+        "wage_bin", "wage_bin_male", "wage_bin_female",
+        "baseline_job_id", "baseline_job_id_male", "baseline_job_id_female",
+        "isco1", "isco1_male", "isco1_female",
+        "loc_ruro_draw", "loc_ruro_obs",
     })
     
     # ---- EUROMOD outputs (Step 6 consumption) ----
@@ -1403,6 +1485,11 @@ def get_essential_columns_for_estimation() -> set[str]:
     essential.update({
         # Prior probability
         "prior", "log_prior", "prior_h", "prior_w",
+        # Proposal-density diagnostics (available for both continuous/job draws)
+        "log_q_total", "log_q_job", "log_q_state",
+        "log_q_total_male", "log_q_total_female",
+        "log_q_job_male", "log_q_job_female",
+        "log_q_state_male", "log_q_state_female",
         # GSUR unemployment rates
         "gsur", "gsur_male", "gsur_female",
         "u_rate", "u_rate_male", "u_rate_female",
@@ -1885,6 +1972,10 @@ def main() -> None:
             "w_min": args.w_min,
             "w_max": args.w_max,
             "source": "drawsmeta" if args.drawsmeta else "CLI arguments",
+            "effective_prior_source_singles": singles_mnl.attrs.get("prior_source", "unknown"),
+            "effective_prior_source_couples": (
+                couples_mnl.attrs.get("prior_source", "unknown") if couples_mnl is not None else None
+            ),
         },
         "sample_sizes": {
             "singles_deciders": int(singles_mnl[singles_mnl["is_chosen"] == 1]["idperson"].nunique()) if "is_chosen" in singles_mnl.columns and "idperson" in singles_mnl.columns else len(singles_mnl),

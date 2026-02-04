@@ -1467,11 +1467,29 @@ def generate_identification_diagnostics_html(
     top_correlations = hessian_diagnostics.get('top_correlations', [])
     poorly_identified = hessian_diagnostics.get('poorly_identified_params', [])
 
-    if condition_number is None:
-        return ""
+    cond_display = "N/A"
+    cond_suffix = ""
+
+    # Fallback: if kappa is unavailable (e.g., non-positive min eigenvalue), use |eigenvalue| ratio.
+    if condition_number is None and eigenvalues:
+        finite_abs = [
+            abs(v) for v in eigenvalues
+            if v is not None and np.isfinite(v) and abs(v) > 1e-14
+        ]
+        if len(finite_abs) >= 2:
+            condition_number = max(finite_abs) / min(finite_abs)
+            cond_suffix = " (|eigenvalue| fallback)"
 
     # Color-code condition number
-    if condition_number < 100:
+    if condition_number is None:
+        cond_color = "var(--warning-color)"
+        cond_status = "⚠ Condition Number Unavailable"
+        cond_interpretation = (
+            "Could not compute κ using the standard formula. "
+            "This usually happens when Hessian eigenvalues are non-positive or near-zero "
+            "(indicating weak identification or non-concavity)."
+        )
+    elif condition_number < 100:
         cond_color = "var(--success-color)"  # Green
         cond_status = "✓ Well-Conditioned"
         cond_interpretation = "The Hessian is well-conditioned (κ < 100). Parameters are well-identified with small standard errors."
@@ -1483,17 +1501,22 @@ def generate_identification_diagnostics_html(
         cond_color = "var(--danger-color)"  # Red
         cond_status = "✗ Severe Identification Problem"
         cond_interpretation = f"The Hessian is severely ill-conditioned (κ ≥ 10,000). This indicates serious identification issues with unreliable parameter estimates."
+    if condition_number is not None:
+        cond_display = f"{condition_number:.2e}{cond_suffix}"
+
+    min_ev_text = f"{min_eigenvalue:.2e}" if min_eigenvalue is not None and np.isfinite(min_eigenvalue) else "N/A"
+    max_ev_text = f"{max_eigenvalue:.2e}" if max_eigenvalue is not None and np.isfinite(max_eigenvalue) else "N/A"
 
     # Build eigenvalue info
     eigenvalue_html = f"""
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; margin-top: 1em;">
             <div class="stats-box" style="border-left-color: #3498db;">
                 <h4 style="margin-top:0;">Minimum Eigenvalue</h4>
-                <p style="font-size: 1.5em; margin: 0;">{min_eigenvalue:.2e}</p>
+                <p style="font-size: 1.5em; margin: 0;">{min_ev_text}</p>
             </div>
             <div class="stats-box" style="border-left-color: #3498db;">
                 <h4 style="margin-top:0;">Maximum Eigenvalue</h4>
-                <p style="font-size: 1.5em; margin: 0;">{max_eigenvalue:.2e}</p>
+                <p style="font-size: 1.5em; margin: 0;">{max_ev_text}</p>
             </div>
             <div class="stats-box" style="border-left-color: {'var(--danger-color)' if n_negative > 0 else 'var(--success-color)'};">
                 <h4 style="margin-top:0;">Negative Eigenvalues</h4>
@@ -1691,7 +1714,7 @@ def generate_identification_diagnostics_html(
         <p>Hessian-based diagnostics for parameter identification quality.</p>
 
         <div class="stats-box" style="border-left-color: {cond_color}; margin-bottom: 1em;">
-            <h3 style="margin-top:0;">Condition Number: {condition_number:.2e}</h3>
+            <h3 style="margin-top:0;">Condition Number: {cond_display}</h3>
             <p style="font-size: 1.1em; margin: 0.5em 0;"><strong>{cond_status}</strong></p>
             <p style="margin:0;">{cond_interpretation}</p>
         </div>

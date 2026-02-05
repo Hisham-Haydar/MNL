@@ -1,16 +1,14 @@
 # ==============================================================================
-# RURO MNL Estimation Specification - Job Choice Identification Ladder (M1)
+# RURO MNL Estimation Specification - Job Choice Identification Ladder (M2 lite)
 # ==============================================================================
-# Tier M1:
-#   log(lambda_ij) = beta_offer_working * 1[j is working]
-#                 + beta_offer_gsur * gsur_i * 1[j is working]
-# Goal:
-#   Identify participation opportunity effects with excluded labour-market shifter.
+# Tier M2 (lite):
+#   M1 + gsur_i * 1[j is working] * 1[isco1_j in subset]
+#   Occupation subset to reduce dimensionality and improve identification.
 # ==============================================================================
 
 specification:
-  name: "job_choice_M1_participation_opportunity"
-  description: "Job-choice RURO M1: M0 + gsur on employment margin only"
+  name: "job_choice_M2_occupation_access_lite_centered"
+  description: "Job-choice RURO M2 lite centered: gsur x occupation access for isco1 1-4 only"
   wage_spec: "fw"
   model_family: "job_choice"
 
@@ -35,15 +33,19 @@ wage_opportunity:
   specification: "log_normal"
 
 market_opportunity:
-  tier: "M1"
+  tier: "M2"
   applies_to: "both"
   employment_indicator: "working"
   gsur_variable: "gsur"
+  occupation_variable: "isco1"
+  occupation_categories: [0, 1, 2, 3, 4]
+  occupation_base: 0
   coef_working: "beta_offer_working"
   coef_gsur: "beta_offer_gsur"
+  coef_gsur_occ_prefix: "beta_offer_gsur_isco1_"
   offer_only_vars: ["gsur", "reg2", "reg3", "reg4", "reg5", "reg6", "reg7", "reg8"]
-  center_within_choice_set: false
-  center_weights: "uniform"
+  center_within_choice_set: true
+  center_weights: "proposal"
   enforce_job_varying: true
 
 couples: {}
@@ -76,11 +78,15 @@ initial_values:
   # Opportunity
   beta_offer_working: 0.50
   beta_offer_gsur: -0.10
+  beta_offer_gsur_isco1_1: 0.00
+  beta_offer_gsur_isco1_2: 0.00
+  beta_offer_gsur_isco1_3: 0.00
+  beta_offer_gsur_isco1_4: 0.00
 
 optimization:
   method: "L-BFGS-B"
   analytical_gradient: true
-  max_iterations: 5000
+  max_iterations: 6000
   tolerance: 1.0e-8
   gradient_tolerance: 1.0e-6
   disp: true
@@ -107,7 +113,11 @@ optimization:
 
     # Opportunity
     beta_offer_working: [-20.0, 20.0]
-    beta_offer_gsur: [-40.0, 40.0]
+    beta_offer_gsur: [-20.0, 20.0]
+    beta_offer_gsur_isco1_1: [-10.0, 10.0]
+    beta_offer_gsur_isco1_2: [-10.0, 10.0]
+    beta_offer_gsur_isco1_3: [-10.0, 10.0]
+    beta_offer_gsur_isco1_4: [-10.0, 10.0]
 
   expression_constraints:
     enabled: true

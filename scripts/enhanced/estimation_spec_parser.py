@@ -84,6 +84,7 @@ class EstimationSpec:
     market_opportunity_center_weights: str = "uniform"  # uniform | proposal
     market_opportunity_extra_dimension: Optional[str] = None
     market_opportunity_enforce_job_varying: bool = False
+    market_opportunity_variable_scales: Dict[str, float] = field(default_factory=dict)
 
     # Occupation choice configuration (NEW)
     occupation_choice: bool = False
@@ -441,6 +442,25 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         raise ValueError(
             "market_opportunity.center_weights must be 'uniform' or 'proposal'."
         )
+    raw_variable_scales = market_config.get("variable_scales", {}) or {}
+    if not isinstance(raw_variable_scales, dict):
+        raise ValueError("market_opportunity.variable_scales must be a mapping.")
+    market_opportunity_variable_scales: Dict[str, float] = {}
+    for raw_name, raw_value in raw_variable_scales.items():
+        name = str(raw_name).strip()
+        if not name:
+            continue
+        try:
+            scale_value = float(raw_value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"market_opportunity.variable_scales['{name}'] must be numeric."
+            ) from exc
+        if scale_value <= 0.0:
+            raise ValueError(
+                f"market_opportunity.variable_scales['{name}'] must be > 0."
+            )
+        market_opportunity_variable_scales[name] = scale_value
     market_opportunity_extra_dimension = market_config.get("extra_dimension")
     if market_opportunity_extra_dimension is not None:
         market_opportunity_extra_dimension = str(market_opportunity_extra_dimension).strip().lower()
@@ -615,6 +635,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         market_opportunity_center_weights=market_opportunity_center_weights,
         market_opportunity_extra_dimension=market_opportunity_extra_dimension,
         market_opportunity_enforce_job_varying=market_opportunity_enforce_job_varying,
+        market_opportunity_variable_scales=market_opportunity_variable_scales,
         ac2013_use_log_age=(model_version == "AC2013"),
         ac2013_children_age_groups=(model_version == "AC2013"),
         ac2013_experience_in_wage=(model_version == "AC2013"),

@@ -1,16 +1,15 @@
+﻿# ==============================================================================
+# RURO MNL Estimation Specification - Job Choice Identification Ladder (M2)
 # ==============================================================================
-# RURO MNL Estimation Specification - Job Choice Identification Ladder (M1)
-# ==============================================================================
-# Tier M1:
-#   log(lambda_ij) = beta_offer_working * 1[j is working]
-#                 + beta_offer_gsur * gsur_i * 1[j is working]
+# Tier M2:
+#   M1 + gsur_i * 1[j is working] * 1[isco1_j = o]  for o != base occupation
 # Goal:
-#   Identify participation opportunity effects with excluded labour-market shifter.
+#   Identify occupation-specific access shifts from excluded labour-market tightness.
 # ==============================================================================
 
 specification:
-  name: "job_choice_M1_participation_opportunity"
-  description: "Job-choice RURO M1: M0 + gsur on employment margin only"
+  name: "job_choice_M2_occupation_access_centered"
+  description: "Job-choice RURO M2 centered: gsur x occupation access with within-choice-set centering"
   wage_spec: "fw"
   model_family: "job_choice"
 
@@ -35,15 +34,19 @@ wage_opportunity:
   specification: "log_normal"
 
 market_opportunity:
-  tier: "M1"
+  tier: "M2"
   applies_to: "both"
   employment_indicator: "working"
   gsur_variable: "gsur"
+  occupation_variable: "isco1"
+  occupation_categories: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  occupation_base: 0
   coef_working: "beta_offer_working"
   coef_gsur: "beta_offer_gsur"
+  coef_gsur_occ_prefix: "beta_offer_gsur_isco1_"
   offer_only_vars: ["gsur", "reg2", "reg3", "reg4", "reg5", "reg6", "reg7", "reg8"]
-  center_within_choice_set: false
-  center_weights: "uniform"
+  center_within_choice_set: true
+  center_weights: "proposal"
   enforce_job_varying: true
 
 couples: {}
@@ -76,11 +79,20 @@ initial_values:
   # Opportunity
   beta_offer_working: 0.50
   beta_offer_gsur: -0.10
+  beta_offer_gsur_isco1_1: 0.00
+  beta_offer_gsur_isco1_2: 0.00
+  beta_offer_gsur_isco1_3: 0.00
+  beta_offer_gsur_isco1_4: 0.00
+  beta_offer_gsur_isco1_5: 0.00
+  beta_offer_gsur_isco1_6: 0.00
+  beta_offer_gsur_isco1_7: 0.00
+  beta_offer_gsur_isco1_8: 0.00
+  beta_offer_gsur_isco1_9: 0.00
 
 optimization:
   method: "L-BFGS-B"
   analytical_gradient: true
-  max_iterations: 5000
+  max_iterations: 6000
   tolerance: 1.0e-8
   gradient_tolerance: 1.0e-6
   disp: true
@@ -107,7 +119,16 @@ optimization:
 
     # Opportunity
     beta_offer_working: [-20.0, 20.0]
-    beta_offer_gsur: [-40.0, 40.0]
+    beta_offer_gsur: [-20.0, 20.0]
+    beta_offer_gsur_isco1_1: [-10.0, 10.0]
+    beta_offer_gsur_isco1_2: [-10.0, 10.0]
+    beta_offer_gsur_isco1_3: [-10.0, 10.0]
+    beta_offer_gsur_isco1_4: [-10.0, 10.0]
+    beta_offer_gsur_isco1_5: [-10.0, 10.0]
+    beta_offer_gsur_isco1_6: [-10.0, 10.0]
+    beta_offer_gsur_isco1_7: [-10.0, 10.0]
+    beta_offer_gsur_isco1_8: [-10.0, 10.0]
+    beta_offer_gsur_isco1_9: [-10.0, 10.0]
 
   expression_constraints:
     enabled: true
@@ -134,3 +155,4 @@ gradient_verification:
   check_random_points: 0
   random_seed: 13
   verbose: true
+

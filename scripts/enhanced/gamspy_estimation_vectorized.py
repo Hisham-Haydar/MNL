@@ -29,7 +29,7 @@ from typing import Dict, Optional, Tuple, Any, List
 import numpy as np
 
 try:
-    from gamspy import Container, Model, Variable, Set, Parameter, Equation, Sum as GamsSum
+    from gamspy import Container, Model, Variable, Set, Parameter, Equation, Alias, Sum as GamsSum
     from gamspy.math import exp as gp_exp, log as gp_log
     HAS_GAMSPY = True
 except ImportError:
@@ -108,8 +108,10 @@ def _normalize_interaction_terms(interaction_cfg: Any) -> List[str]:
 
 
 def _apply_market_centering(
+    container: Container,
     log_market_expr: Any,
     prior_param: Parameter,
+    i_set: Set,
     j_set: Set,
     n_alts: int,
     spec: EstimationSpec,
@@ -125,11 +127,13 @@ def _apply_market_centering(
         return log_market_expr
 
     weights = str(getattr(spec, "market_opportunity_center_weights", "uniform")).strip().lower()
+    j_alias = Alias(container, name=f"{j_set.name}_c", alias_with=j_set)
+    log_market_alias = log_market_expr[i_set, j_alias]
     if weights == "proposal":
-        denom = GamsSum(j_set, prior_param) + LOG_EPS
-        center_expr = GamsSum(j_set, prior_param * log_market_expr) / denom
+        denom = GamsSum(j_alias, prior_param[i_set, j_alias]) + LOG_EPS
+        center_expr = GamsSum(j_alias, prior_param[i_set, j_alias] * log_market_alias) / denom
     else:
-        center_expr = GamsSum(j_set, log_market_expr) / float(max(n_alts, 1))
+        center_expr = GamsSum(j_alias, log_market_alias) / float(max(n_alts, 1))
 
     if logger:
         logger.info(
@@ -137,6 +141,21 @@ def _apply_market_centering(
             "proposal" if weights == "proposal" else "uniform",
         )
     return log_market_expr - center_expr
+
+
+def _apply_market_scale(var_param: Any, var_name: str, scale_map: Dict[str, float]) -> Any:
+    if not scale_map:
+        return var_param
+    scale_value = scale_map.get(str(var_name).strip())
+    if scale_value is None:
+        return var_param
+    try:
+        scale_value = float(scale_value)
+    except (TypeError, ValueError):
+        return var_param
+    if scale_value == 1.0:
+        return var_param
+    return var_param * scale_value
 
 
 # ==============================================================================
@@ -521,6 +540,7 @@ def _build_singles_ll_vectorized(
 
     # === Job/market opportunity density ===
     log_market = 0.0
+    scale_map = getattr(spec, "market_opportunity_variable_scales", None) or {}
     if getattr(spec, "market_opportunity_shifters", None):
         for shifter in spec.market_opportunity_shifters:
             var_name = shifter.get("variable")
@@ -533,6 +553,7 @@ def _build_singles_ll_vectorized(
             var_param = get_var_param(var_name)
             if var_param is None:
                 continue
+            var_param = _apply_market_scale(var_param, var_name, scale_map)
 
             interaction_missing = False
             for interaction_name in interaction_terms:
@@ -545,6 +566,9 @@ def _build_singles_ll_vectorized(
                 if interaction_param is None:
                     interaction_missing = True
                     break
+                interaction_param = _apply_market_scale(
+                    interaction_param, interaction_name, scale_map
+                )
                 var_param = var_param * interaction_param
             if interaction_missing:
                 continue
@@ -553,8 +577,10 @@ def _build_singles_ll_vectorized(
 
     if getattr(spec, "market_opportunity_center_within_choice_set", False):
         log_market = _apply_market_centering(
+            container=container,
             log_market_expr=log_market,
             prior_param=prior_param,
+            i_set=i_set,
             j_set=j_set,
             n_alts=n_alts,
             spec=spec,
@@ -900,6 +926,7 @@ def _build_couples_ll_vectorized(
 
     # Job/market opportunity density
     log_market = 0.0
+    scale_map = getattr(spec, "market_opportunity_variable_scales", None) or {}
     if getattr(spec, "market_opportunity_shifters", None):
         for shifter in spec.market_opportunity_shifters:
             var_name = shifter.get("variable")
@@ -915,6 +942,7 @@ def _build_couples_ll_vectorized(
                 var_param = get_var_param(var_name)
                 if var_param is None:
                     continue
+                var_param = _apply_market_scale(var_param, var_name, scale_map)
                 interaction_missing = False
                 for interaction_name in interaction_terms:
                     if interaction_name == "working":
@@ -931,6 +959,9 @@ def _build_couples_ll_vectorized(
                     if interaction_param is None:
                         interaction_missing = True
                         break
+                    interaction_param = _apply_market_scale(
+                        interaction_param, interaction_name, scale_map
+                    )
                     var_param = var_param * interaction_param
                 if interaction_missing:
                     continue
@@ -940,6 +971,7 @@ def _build_couples_ll_vectorized(
             if applies_to in ("male", "both"):
                 var_param_m = get_var_param(var_name, gender="male", fallback_to_base=False)
                 if var_param_m is not None:
+                    var_param_m = _apply_market_scale(var_param_m, var_name, scale_map)
                     interaction_missing = False
                     for interaction_name in interaction_terms:
                         if interaction_name == "working":
@@ -949,6 +981,9 @@ def _build_couples_ll_vectorized(
                         if interaction_param is None:
                             interaction_missing = True
                             break
+                        interaction_param = _apply_market_scale(
+                            interaction_param, interaction_name, scale_map
+                        )
                         var_param_m = var_param_m * interaction_param
                     if not interaction_missing:
                         log_market = log_market + param_vars[coef_name] * var_param_m
@@ -956,6 +991,7 @@ def _build_couples_ll_vectorized(
             if applies_to in ("female", "both"):
                 var_param_f = get_var_param(var_name, gender="female", fallback_to_base=False)
                 if var_param_f is not None:
+                    var_param_f = _apply_market_scale(var_param_f, var_name, scale_map)
                     interaction_missing = False
                     for interaction_name in interaction_terms:
                         if interaction_name == "working":
@@ -965,14 +1001,19 @@ def _build_couples_ll_vectorized(
                         if interaction_param is None:
                             interaction_missing = True
                             break
+                        interaction_param = _apply_market_scale(
+                            interaction_param, interaction_name, scale_map
+                        )
                         var_param_f = var_param_f * interaction_param
                     if not interaction_missing:
                         log_market = log_market + param_vars[coef_name] * var_param_f
 
     if getattr(spec, "market_opportunity_center_within_choice_set", False):
         log_market = _apply_market_centering(
+            container=container,
             log_market_expr=log_market,
             prior_param=prior_param,
+            i_set=i_set,
             j_set=j_set,
             n_alts=n_alts,
             spec=spec,

@@ -2988,6 +2988,7 @@ def generate_html_report_styled(
     bound_diagnostics: List[Dict[str, Any]] = None,
     hessian_diagnostics: Dict[str, Any] = None,
     estimation_results_path: Optional[Path] = None,
+    run_metadata: Optional[Dict[str, Any]] = None,
 ) -> Path:
     """
     Generate comprehensive HTML report with professional styling.
@@ -3011,6 +3012,45 @@ def generate_html_report_styled(
             f"<p><strong>Estimation Results Source:</strong> "
             f"<code>{escape(str(estimation_results_path))}</code></p>"
         )
+
+    run_metadata = run_metadata or {}
+    run_meta_items = []
+    if run_metadata.get("spec_name"):
+        run_meta_items.append(("Specification", run_metadata.get("spec_name")))
+    if run_metadata.get("spec_config_path"):
+        run_meta_items.append(("Specification File", f"<code>{escape(str(run_metadata.get('spec_config_path')))}</code>"))
+    if run_metadata.get("model_family"):
+        run_meta_items.append(("Model Family", run_metadata.get("model_family")))
+    if run_metadata.get("market_opportunity_tier"):
+        run_meta_items.append(("Opportunity Tier", run_metadata.get("market_opportunity_tier")))
+
+    if run_metadata.get("prior_correction_applied") is not None:
+        run_meta_items.append((
+            "Proposal Correction",
+            "Enabled" if bool(run_metadata.get("prior_correction_applied")) else "Disabled"
+        ))
+    if run_metadata.get("prior_correction_form"):
+        run_meta_items.append(("Proposal Correction Form", run_metadata.get("prior_correction_form")))
+    if run_metadata.get("market_centering_applied") is not None:
+        run_meta_items.append((
+            "Opportunity Centering",
+            "Enabled" if bool(run_metadata.get("market_centering_applied")) else "Disabled"
+        ))
+
+    run_metadata_html = ""
+    if run_meta_items:
+        run_rows = "".join(
+            f"<tr><th>{escape(str(k))}</th><td>{v}</td></tr>"
+            for k, v in run_meta_items
+        )
+        run_metadata_html = f"""
+        <div class="stats-box" style="margin-top: 1em;">
+            <h4 style="margin-top:0;">Estimation Configuration</h4>
+            <table class="table table-sm" style="width:auto; margin-bottom:0;">
+                {run_rows}
+            </table>
+        </div>
+        """
 
     # Calculate bounded parameter statistics
     param_bounds = {}
@@ -3738,6 +3778,23 @@ def generate_html_report_styled(
     # Generate identification diagnostics HTML
     identification_html = generate_identification_diagnostics_html(hessian_diagnostics, parsed_params)
 
+    # Optionally include persisted identification diagnostics from estimation stage
+    identification_file_html = ""
+    id_diag_text = run_metadata.get("identification_diagnostics_text")
+    if isinstance(id_diag_text, str) and id_diag_text.strip():
+        id_diag_path = run_metadata.get("identification_diagnostics_path")
+        id_source_html = (
+            f"<p><strong>Source:</strong> <code>{escape(str(id_diag_path))}</code></p>"
+            if id_diag_path else ""
+        )
+        identification_file_html = f"""
+    <section>
+        <h2>🧪 Identification Diagnostics (Estimation Stage)</h2>
+        {id_source_html}
+        <pre style="white-space: pre-wrap; background: #f8f9fa; padding: 1em; border-radius: 6px; border: 1px solid #ddd; max-height: 500px; overflow-y: auto;">{escape(id_diag_text)}</pre>
+    </section>
+    """
+
     # Assemble HTML
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -3754,6 +3811,7 @@ def generate_html_report_styled(
         <p><strong>Generated:</strong> {timestamp}</p>
         <p><strong>Total Parameters:</strong> {len(parsed_params.param_names)} | <strong>Groups:</strong> {', '.join(parsed_params.groups)}</p>
         {estimation_results_info}
+        {run_metadata_html}
         <div class="group-legend">
             <div class="legend-item"><div class="legend-color" style="background:var(--sm-color)"></div>Single Males</div>
             <div class="legend-item"><div class="legend-color" style="background:var(--sf-color)"></div>Single Females</div>
@@ -3773,6 +3831,7 @@ def generate_html_report_styled(
     </section>
 
     {identification_html}
+    {identification_file_html}
 
     <section>
         <h2>📐 Model Specification</h2>
@@ -5169,6 +5228,12 @@ def run_styled_post_estimation(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    def _first_non_null(*values):
+        for value in values:
+            if value is not None:
+                return value
+        return None
+
     # Load estimation results
     LOGGER.info("\n1. Loading estimation results...")    # Try enhanced format first, then legacy
     try:
@@ -5236,6 +5301,94 @@ def run_styled_post_estimation(
             if 'n_iterations' in group_data:
                 n_iterations = group_data['n_iterations']
                 break
+
+    # Build run metadata for report header (model-aware context)
+    summary_data = data.get('summary', {}) if isinstance(data.get('summary'), dict) else {}
+    result_groups = data.get('results', {}) if isinstance(data.get('results'), dict) else {}
+    first_group_data = next(iter(result_groups.values()), {}) if result_groups else {}
+    metadata_data = data.get('metadata', {}) if isinstance(data.get('metadata'), dict) else {}
+
+    prior_correction_applied = _first_non_null(
+        summary_data.get('prior_correction_applied'),
+        data.get('prior_correction_applied'),
+        first_group_data.get('prior_correction_applied'),
+    )
+    prior_correction_form = _first_non_null(
+        summary_data.get('prior_correction_form'),
+        data.get('prior_correction_form'),
+        first_group_data.get('prior_correction_form'),
+    )
+    market_centering_applied = _first_non_null(
+        summary_data.get('market_centering_applied'),
+        data.get('market_centering_applied'),
+        first_group_data.get('market_centering_applied'),
+    )
+
+    # Fallback: infer proposal correction metadata from MNL sidecar when absent.
+    if (
+        prior_correction_applied is None or prior_correction_form is None
+    ) and mnl_base is not None:
+        try:
+            mnl_meta_path = Path(str(mnl_base) + "__mnlmeta.json")
+            if mnl_meta_path.exists():
+                with open(mnl_meta_path, 'r') as f:
+                    mnl_meta = json.load(f)
+                prior_meta = mnl_meta.get('prior_parameters', {})
+                eff_single = prior_meta.get('effective_prior_source_singles')
+                eff_couples = prior_meta.get('effective_prior_source_couples')
+                if prior_correction_applied is None and (eff_single or eff_couples):
+                    prior_correction_applied = True
+                if prior_correction_form is None and (eff_single or eff_couples):
+                    prior_correction_form = "-log(prior)"
+        except Exception:
+            # Keep report generation resilient if metadata sidecar is missing or malformed.
+            pass
+
+    if market_centering_applied is None and spec is not None:
+        market_centering_applied = bool(
+            getattr(spec, 'market_opportunity_center_within_choice_set', False)
+        )
+
+    run_metadata = {
+        'spec_name': _first_non_null(
+            getattr(spec, 'name', None),
+            data.get('specification'),
+        ),
+        'spec_config_path': _first_non_null(
+            str(spec_config) if spec_config is not None else None,
+            metadata_data.get('spec_config'),
+        ),
+        'model_family': _first_non_null(
+            getattr(spec, 'model_family', None),
+            summary_data.get('model_family'),
+            first_group_data.get('model_family'),
+        ),
+        'market_opportunity_tier': _first_non_null(
+            getattr(spec, 'market_opportunity_tier', None),
+            summary_data.get('market_opportunity_tier'),
+            first_group_data.get('market_opportunity_tier'),
+        ),
+        'prior_correction_applied': (
+            bool(prior_correction_applied)
+            if prior_correction_applied is not None else None
+        ),
+        'prior_correction_form': prior_correction_form,
+        'market_centering_applied': (
+            bool(market_centering_applied)
+            if market_centering_applied is not None else None
+        ),
+    }
+
+    id_diag_path = results_json_path.parent / "identification_diagnostics.txt"
+    if id_diag_path.exists():
+        try:
+            run_metadata['identification_diagnostics_text'] = id_diag_path.read_text(
+                encoding='utf-8',
+                errors='replace',
+            )
+            run_metadata['identification_diagnostics_path'] = str(id_diag_path)
+        except Exception as e:
+            LOGGER.warning(f"Could not read identification diagnostics file: {e}")
 
     # Compute fit statistics
     fit_stats = {}
@@ -5438,6 +5591,7 @@ def run_styled_post_estimation(
         bound_diagnostics=bound_diagnostics,
         hessian_diagnostics=hessian_diagnostics,
         estimation_results_path=results_json_path,
+        run_metadata=run_metadata,
     )
 
     # Save CSV outputs

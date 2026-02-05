@@ -1,9 +1,32 @@
 # DONE - Completed Work
 
-**Last Updated:** 2026-02-04 (Job-model pipeline + MNL prep integration)
+**Last Updated:** 2026-02-05 (Model-aware post-estimation metadata + diagnostics embedding)
 **Project:** RURO Labor Supply Model - France
 
 This document consolidates all completed work, fixes, and implementations.
+
+---
+
+## Update: Model-Aware Post-Estimation Reporting (2026-02-05)
+
+**File:** `scripts/enhanced/RURO_post_estimation_styled.py`
+
+Completed:
+- Wired report metadata extraction from estimation outputs and spec parsing.
+- Added an "Estimation Configuration" block in the HTML header showing:
+  - specification name + spec file path
+  - model family
+  - opportunity tier
+  - proposal correction enabled/form
+  - opportunity centering enabled
+- Added automatic loading of `identification_diagnostics.txt` from the estimation run folder.
+- Embedded saved identification diagnostics in a dedicated HTML section.
+- Kept backward compatibility:
+  - values are read from summary first, then top-level/group fields, then MNL sidecar fallback.
+  - report still renders when these fields are absent.
+
+Validation:
+- `python -m py_compile scripts/enhanced/RURO_post_estimation_styled.py` passed.
 
 ---
 

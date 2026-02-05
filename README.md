@@ -115,6 +115,38 @@ python scripts\enhanced\enh_RURO_estimate_FR.py `
     --auto-timestamp
 ```
 
+### Step 8: Post-Estimation (Model-Aware)
+
+The styled post-estimation report now auto-detects regular RURO vs job-choice runs and shows:
+- Estimation source path
+- Estimation configuration (spec, model family, opportunity tier, proposal correction, centering)
+- Any saved `identification_diagnostics.txt` from estimation
+- A warning style for degenerate/near-zero SE rows in parameter tables
+
+**Regular RURO**
+```powershell
+python scripts\enhanced\RURO_post_estimation_styled.py `
+    --results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/v3/gamspy/run_xxx/estimation_results.json" `
+    --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
+    --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/v3/gamspy" `
+    --prefix "fr_2016_gamspy_" `
+    --compute-se `
+    --spec-config "scripts/enhanced/estimation_spec_v3.yaml" `
+    --auto-timestamp
+```
+
+**Job-choice RURO**
+```powershell
+python scripts\enhanced\RURO_post_estimation_styled.py `
+    --results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/job_choice/gamspy/run_xxx/estimation_results.json" `
+    --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl_job" `
+    --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/job_choice/gamspy" `
+    --prefix "fr_2016_jobchoice_gamspy_" `
+    --compute-se `
+    --spec-config "scripts/enhanced/estimation_spec_job_choice_v0_plus_b.yaml" `
+    --auto-timestamp
+```
+
 ---
 
 ## 📋 Column Filtering

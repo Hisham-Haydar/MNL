@@ -121,6 +121,25 @@ Notes:
 - Job fields (`job_id`, `hours_bin`, `wage_bin`, `isco1`) are preserved in filtered MNL outputs.
 - For clean preference/opportunity separation, keep labor-demand shifters in `market_opportunity` only.
 
+### Step 8 (new): Job-choice post-estimation report
+Use the same styled report script; it now renders model-aware metadata for job-choice runs.
+
+```powershell
+python scripts/enhanced/RURO_post_estimation_styled.py `
+  --results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/job_choice/gamspy/run_xxx/estimation_results.json" `
+  --mnl-base "U:/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl_job" `
+  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/job_choice/gamspy" `
+  --prefix "fr_2016_jobchoice_gamspy_" `
+  --compute-se `
+  --spec-config "scripts/enhanced/estimation_spec_job_choice_v0_plus_b.yaml" `
+  --auto-timestamp
+```
+
+Report additions for job-choice runs:
+- Estimation configuration block (spec, model family, opportunity tier, proposal correction, centering)
+- Embedded `identification_diagnostics.txt` (if produced at estimation step)
+- Opportunity parameter table and job/LOC fit plots when those columns are present
+
 ---
 
 ## Expected Logs and Interpretation

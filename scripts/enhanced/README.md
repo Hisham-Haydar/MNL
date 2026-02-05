@@ -90,6 +90,12 @@ This directory contains the complete enhanced RURO (Random Utility Random Opport
 
 ### Post-Estimation Analysis
 
+- **[RURO_post_estimation_styled.py](RURO_post_estimation_styled.py)** - Styled Report Generator (recommended)
+  - Model-aware output (regular RURO vs job-choice RURO)
+  - Shows estimation source and run configuration metadata
+  - Includes identification diagnostics file (`identification_diagnostics.txt`) when present
+  - Flags degenerate/near-zero standard errors in parameter tables
+
 - **[enh_RURO_post_estimation.py](enh_RURO_post_estimation.py)** - Post-Estimation Diagnostics
   - Computes elasticities (own-wage, cross-wage, income)
   - Calculates wage gradients

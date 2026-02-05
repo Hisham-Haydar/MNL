@@ -844,14 +844,20 @@ def _build_mnl_block_couples_wide(df: pd.DataFrame, sample_group: str) -> pd.Dat
         if f"pexp_years2_{gender}" in df.columns:
             df[f"pexp2_{gender}"] = df[f"pexp_years2_{gender}"]
 
-        # Age normalization (for preference parameters)
+        # Age normalization (for preference/opportunity terms).
+        # Prefer dag_{gender}; fall back to age_{gender} if needed.
         dag_col = f"dag_{gender}"
-        if dag_col in df.columns:
-            dag_values = pd.to_numeric(df[dag_col], errors="coerce")
-            dag_mean = dag_values.mean()
-            df[f"age_norm_{gender}"] = dag_values - dag_mean
+        age_col = f"age_{gender}"
+        age_source_col = dag_col if dag_col in df.columns else (age_col if age_col in df.columns else None)
+        if age_source_col is not None:
+            age_values = pd.to_numeric(df[age_source_col], errors="coerce")
+            age_mean = age_values.mean()
+            df[f"age_norm_{gender}"] = age_values - age_mean
             df[f"age_norm2_{gender}"] = df[f"age_norm_{gender}"] ** 2
-            logging.debug(f"Created age_norm_{gender} (mean=0.00, std={df[f'age_norm_{gender}'].std():.2f})")
+            logging.debug(
+                f"Created age_norm_{gender} from {age_source_col} "
+                f"(mean=0.00, std={df[f'age_norm_{gender}'].std():.2f})"
+            )
 
         # Total children count (create alias for compatibility)
         num_children_col = f"num_children_total_{gender}"
@@ -1597,6 +1603,8 @@ def get_essential_columns_for_estimation() -> set[str]:
     essential.update({
         # Age
         "dag", "age", "age_norm", "age_norm2",
+        "dag_male", "dag_female", "age_male", "age_female",
+        "age_norm_male", "age_norm_female", "age_norm2_male", "age_norm2_female",
         # Gender
         "dgn", "female", "male", "gender",
         # Education
@@ -1627,6 +1635,8 @@ def get_essential_columns_for_estimation() -> set[str]:
         "lwage", "yem",
         # Experience
         "pexp_years", "pexp_years2", "exp", "exp2",
+        "pexp_male", "pexp_female", "pexp2_male", "pexp2_female",
+        "pexp_years_male", "pexp_years_female", "pexp_years2_male", "pexp_years2_female",
         # Occupation (user requested: loc4, lindi)
         "loc", "loc4", "loc4_1", "loc4_2", "loc4_3", "loc4_4",
         "loc4_male", "loc4_female",

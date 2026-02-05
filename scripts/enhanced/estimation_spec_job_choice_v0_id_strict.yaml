@@ -1,0 +1,177 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - Job Choice V0 (ID-Strict)
+# ==============================================================================
+# Purpose:
+# - Keep preference and opportunity decomposition as clean as possible
+# - Put labor-demand shifters only in market opportunity
+# - Avoid opportunity shifters that duplicate c/l content (hours_bin, wage_bin)
+# - Use as the main identification baseline before richer job-choice specs
+# ==============================================================================
+
+specification:
+  name: "job_choice_v0_plus_id_strict"
+  description: "Job-choice RURO with core preference shifters and ID-strict opportunity (working + gsur only)"
+  wage_spec: "fw"
+
+utility:
+  functional_form: "box_cox"
+
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"
+    box_cox_bounds: [-10.0, 0.9]
+
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: "theta_l"
+    box_cox_bounds: [-10.0, 0.9]
+    shifters:
+      - variable: "age_norm"
+        coefficient: "beta_l_age_norm"
+      - variable: "age_norm2"
+        coefficient: "beta_l_age_norm2"
+      - variable: "n_children"
+        coefficient: "beta_l_n_children"
+        gender_specific: true
+      - variable: "educL"
+        coefficient: "beta_l_educL"
+      - variable: "educH"
+        coefficient: "beta_l_educH"
+
+hours_opportunity:
+  shifters: []
+
+wage_opportunity:
+  specification: "log_normal"
+
+market_opportunity:
+  shifters:
+    - variable: "working"
+      coefficient: "beta_offer_working"
+      applies_to: "both"
+    - variable: "gsur"
+      coefficient: "beta_offer_gsur"
+      interaction: "working"
+      applies_to: "both"
+
+singles:
+  gender_specific_leisure: true
+
+couples: {}
+
+initial_values:
+  # Singles male
+  beta_l0_sm: 0.40
+  beta_l_age_norm_sm: -0.006
+  beta_l_age_norm2_sm: -0.001
+  beta_l_educL_sm: 0.15
+  beta_l_educH_sm: -0.35
+  beta_c_sm: 0.80
+  theta_l_sm: -0.20
+  theta_c_sm: 0.20
+
+  # Singles female
+  beta_l0_sf: 0.60
+  beta_l_age_norm_sf: -0.020
+  beta_l_age_norm2_sf: -0.001
+  beta_l_n_children_sf: 0.15
+  beta_l_educL_sf: 0.15
+  beta_l_educH_sf: -0.40
+  beta_c_sf: 0.80
+  theta_l_sf: -0.20
+  theta_c_sf: 0.20
+
+  # Couples male leisure
+  beta_l0_m: 0.30
+  beta_l_age_norm_m: -0.003
+  beta_l_age_norm2_m: -0.002
+  beta_l_educL_m: 0.15
+  beta_l_educH_m: -0.60
+  theta_l_m: -0.20
+
+  # Couples female leisure
+  beta_l0_f: 0.90
+  beta_l_age_norm_f: -0.025
+  beta_l_age_norm2_f: -0.001
+  beta_l_n_children_f: 0.10
+  beta_l_educL_f: 0.15
+  beta_l_educH_f: -0.25
+  theta_l_f: -0.20
+
+  # Couples household consumption
+  beta_c: 0.90
+  theta_c: 0.20
+
+  # Market opportunity
+  beta_offer_working: 0.50
+  beta_offer_gsur: -0.10
+
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 6000
+  tolerance: 1.0e-8
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+  bounds:
+    # Box-Cox exponents
+    theta_l_sm: [-10.0, 0.9]
+    theta_c_sm: [-10.0, 0.9]
+    theta_l_sf: [-10.0, 0.9]
+    theta_c_sf: [-10.0, 0.9]
+    theta_l_m: [-10.0, 0.9]
+    theta_l_f: [-10.0, 0.9]
+    theta_c: [-10.0, 0.9]
+
+    # Consumption coefficients
+    beta_c_sm: [0.05, 20.0]
+    beta_c_sf: [0.05, 20.0]
+    beta_c: [0.05, 20.0]
+
+    # Leisure intercepts
+    beta_l0_sm: [0.05, 30.0]
+    beta_l0_sf: [0.05, 30.0]
+    beta_l0_m: [0.05, 30.0]
+    beta_l0_f: [0.05, 30.0]
+
+    # Leisure shifters
+    beta_l_age_norm_sm: [-5.0, 5.0]
+    beta_l_age_norm2_sm: [-5.0, 5.0]
+    beta_l_educL_sm: [-5.0, 5.0]
+    beta_l_educH_sm: [-5.0, 5.0]
+
+    beta_l_age_norm_sf: [-5.0, 5.0]
+    beta_l_age_norm2_sf: [-5.0, 5.0]
+    beta_l_n_children_sf: [-5.0, 5.0]
+    beta_l_educL_sf: [-5.0, 5.0]
+    beta_l_educH_sf: [-5.0, 5.0]
+
+    beta_l_age_norm_m: [-5.0, 5.0]
+    beta_l_age_norm2_m: [-5.0, 5.0]
+    beta_l_educL_m: [-5.0, 5.0]
+    beta_l_educH_m: [-5.0, 5.0]
+
+    beta_l_age_norm_f: [-5.0, 5.0]
+    beta_l_age_norm2_f: [-5.0, 5.0]
+    beta_l_n_children_f: [-5.0, 5.0]
+    beta_l_educL_f: [-5.0, 5.0]
+    beta_l_educH_f: [-5.0, 5.0]
+
+    # Market opportunity
+    beta_offer_working: [-10.0, 10.0]
+    beta_offer_gsur: [-20.0, 20.0]
+
+  expression_constraints:
+    enabled: false
+
+gradient_verification:
+  enabled: false
+  method: "central"
+  epsilon: 1.0e-7
+  tolerance: 1.0e-4
+  check_at_init: true
+  check_random_points: 0
+  random_seed: 13
+  verbose: true

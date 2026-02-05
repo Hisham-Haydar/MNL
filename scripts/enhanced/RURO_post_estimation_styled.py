@@ -1928,6 +1928,94 @@ def build_hours_opportunity_html_dynamic(wage_params: Dict[str, float]) -> str:
     """
 
 
+def _extract_market_opportunity_params(parsed_params: ParsedParameters) -> Dict[str, float]:
+    """
+    Extract market-opportunity parameters (beta_offer_*) from parsed parameters.
+
+    Returns the first non-empty block found across groups.
+    """
+    search_groups = list(parsed_params.groups) + ["joint", "sm", "sf", "m", "f", "cou", "couples"]
+    seen = set()
+    for group in search_groups:
+        if group in seen:
+            continue
+        seen.add(group)
+        params = parsed_params.get_all_params_for_group(group)
+        offer_params = {k: v for k, v in params.items() if k.startswith("beta_offer_")}
+        if offer_params:
+            return offer_params
+    return {}
+
+
+def build_job_market_opportunity_html_dynamic(opportunity_params: Dict[str, float]) -> str:
+    """
+    Build job-market opportunity equation HTML dynamically for job-choice models.
+    """
+    if not opportunity_params:
+        return ""
+
+    label_map = {
+        "working": "I(job > 0)",
+        "hours_bin": "hours_bin",
+        "wage_bin": "wage_bin",
+        "isco1": "isco1",
+        "gsur": "gsur",
+        "educL": "educL",
+        "educH": "educH",
+        "age_norm": "age_norm",
+        "age_norm2": "age_norm2",
+        "pexp": "pexp_years",
+        "pexp2": "pexp_years2",
+        "reg2": "reg2",
+        "reg3": "reg3",
+        "reg4": "reg4",
+        "reg5": "reg5",
+        "reg6": "reg6",
+        "reg7": "reg7",
+        "reg8": "reg8",
+    }
+    ordered_bases = [
+        "working", "hours_bin", "wage_bin", "isco1", "gsur",
+        "educL", "educH", "age_norm", "age_norm2", "pexp", "pexp2",
+        "reg2", "reg3", "reg4", "reg5", "reg6", "reg7", "reg8",
+    ]
+
+    ordered_keys = []
+    for base in ordered_bases:
+        key = f"beta_offer_{base}"
+        if key in opportunity_params:
+            ordered_keys.append(key)
+    for key in sorted(opportunity_params.keys()):
+        if key.startswith("beta_offer_") and key not in ordered_keys:
+            ordered_keys.append(key)
+
+    symbolic_terms = []
+    numerical_terms = []
+    for key in ordered_keys:
+        base = key.replace("beta_offer_", "")
+        var_label = label_map.get(base, base)
+        symbolic_terms.append(f"beta_offer,{base} * {var_label}")
+        numerical_terms.append(_format_signed_term(opportunity_params[key], var_label, ".4f"))
+
+    symbolic_eq = " + ".join(symbolic_terms) if symbolic_terms else "(no market opportunity parameters)"
+    numerical_eq = _join_signed_terms(numerical_terms) if numerical_terms else "(no market opportunity parameters)"
+
+    return f"""
+    <div class="stats-box" style="margin-top: 1em;">
+        <h4>Job Market Opportunity Function</h4>
+        <div class="math-block symbolic">
+            log a(j|X) = {symbolic_eq}
+        </div>
+        <div class="math-block numerical" style="margin-top: 1em;">
+            log a(j|X) = {numerical_eq}
+        </div>
+        <p style="margin-top: 0.75em; font-size: 0.9em;">
+            This opportunity index is added to utility through +log a(j|X).
+        </p>
+    </div>
+    """
+
+
 def _get_param_value(params: Dict[str, float], base: str, suffixes: Tuple[str, ...] = ()) -> Optional[float]:
     """Fetch parameter value with optional suffix fallbacks."""
     for suf in suffixes:
@@ -3014,6 +3102,8 @@ def generate_html_report_styled(
     .legend-color { width: 20px; height: 4px; border-radius: 2px; }
     .param-table .bounded-param { background-color: var(--bounded-row-color) !important; }
     .param-table .bound-hit { background-color: var(--bound-hit-color) !important; font-weight: bold; }
+    .param-table .degenerate-se-row { background-color: #fff3cd !important; }
+    .param-table .degenerate-se-cell { background-color: #ffe69c !important; font-weight: 600; }
     .param-table .pval-marginal { background-color: var(--pval-marginal); }
     .param-table .pval-weak { background-color: var(--pval-weak); }
     .param-table .pval-insig { background-color: var(--pval-insig); }
@@ -3088,19 +3178,38 @@ def generate_html_report_styled(
     if elasticities_df is not None and len(elasticities_df) > 0:
         elasticities_html = elasticities_df.to_html(classes='table table-striped', border=0, index=False)
 
-    # Build wage equation display
-    wage_equation_html = ""
-    # Extract wage parameters (they should be in the first group or 'joint')
+    # Build model-specific specification blocks.
+    # Regular RURO: hours + wage opportunity sections.
+    # Job-choice RURO: dedicated market-opportunity section (beta_offer_*).
     wage_params = {}
     for group in parsed_params.groups:
         params = parsed_params.get_all_params_for_group(group)
-        if 'beta_w0' in params:
+        if any(k.startswith('beta_w') for k in params.keys()):
             wage_params = params
             break
+    if not wage_params and parsed_params.groups:
+        wage_params = parsed_params.get_all_params_for_group(parsed_params.groups[0])
 
-    # Use dynamic builders for specification-agnostic equations
     wage_equation_html = build_wage_equation_html_dynamic(wage_params)
     hours_opportunity_html = build_hours_opportunity_html_dynamic(wage_params)
+
+    market_opportunity_params = _extract_market_opportunity_params(parsed_params)
+    is_job_choice_model = len(market_opportunity_params) > 0
+    market_opportunity_html = build_job_market_opportunity_html_dynamic(market_opportunity_params)
+
+    if is_job_choice_model:
+        model_specific_sections_html = f"""
+        <h3>Job Market Opportunity Equation (All Groups)</h3>
+        {market_opportunity_html}
+        """
+    else:
+        model_specific_sections_html = f"""
+        <h3>Hours Opportunity Function (All Groups)</h3>
+        {hours_opportunity_html}
+
+        <h3>Wage Equation - Mincer (All Groups)</h3>
+        {wage_equation_html}
+        """
 
     # Build MUC analysis table
     muc_analysis_html = ""
@@ -3445,6 +3554,7 @@ def generate_html_report_styled(
     <div class="color-legend">
       <div class="color-legend-item"><div class="color-box" style="background-color: var(--bounded-row-color);"></div>Bounded (has constraints)</div>
       <div class="color-legend-item"><div class="color-box" style="background-color: var(--bound-hit-color);"></div>⚠️ Hit bound</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: #ffe69c;"></div>Warning: degenerate SE (near zero)</div>
       <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-marginal);"></div>p ∈ [0.05, 0.1)</div>
       <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-weak);"></div>p ∈ [0.1, 0.25)</div>
       <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-insig);"></div>p ≥ 0.25</div>
@@ -3465,8 +3575,11 @@ def generate_html_report_styled(
     
     # Classify parameters into preference vs opportunity
     def classify_param(name):
-        """Classify parameter as 'preference', 'hours_opp', 'wage_opp', or 'other'."""
+        """Classify parameter as 'preference', 'market_opp', 'hours_opp', 'wage_opp', or 'other'."""
         name_lower = name.lower()
+        # Job-choice market opportunity
+        if 'beta_offer_' in name_lower:
+            return 'market_opp'
         # Preference parameters: beta_l*, beta_c*, theta_l*, theta_c*, beta_interact
         if any(x in name_lower for x in ['beta_l', 'beta_c', 'theta_l', 'theta_c', 'beta_interact']):
             return 'preference'
@@ -3496,7 +3609,7 @@ def generate_html_report_styled(
             ub = row.get('upper_bound')
             init_val = row.get('initial_value')
 
-            row_class = ""
+            row_classes = []
             is_bounded = lb is not None or ub is not None
             hit_bound = False
             if is_bounded and is_num(est):
@@ -3506,9 +3619,9 @@ def generate_html_report_styled(
                     hit_bound = True
 
             if hit_bound:
-                row_class = 'class="bound-hit"'
+                row_classes.append("bound-hit")
             elif is_bounded:
-                row_class = 'class="bounded-param"'
+                row_classes.append("bounded-param")
 
             est_str = safe_format(est, ".4f", "N/A")
             se_str = safe_format(se, ".4f", "N/A")
@@ -3516,11 +3629,22 @@ def generate_html_report_styled(
             lb_str = safe_format(lb, ".4f", "—")
             ub_str = safe_format(ub, ".4f", "—")
             init_str = safe_format(init_val, ".4f", "N/A")
+            se_cell_class = ""
+
+            degenerate_se = is_num(se) and abs(float(se)) <= 1e-12
+            if degenerate_se:
+                row_classes.append("degenerate-se-row")
+                se_cell_class = 'class="degenerate-se-cell"'
+                se_str = f"{se_str} [degenerate]"
+                t_str = "N/A"
 
             sig = ""
             p_str = "N/A"
             p_class = ""
-            if is_num(p_val):
+            if degenerate_se:
+                p_class = 'class="warning-cell"'
+                p_str = "N/A"
+            elif is_num(p_val):
                 p_str = f"{float(p_val):.4f}"
                 if p_val < 0.001:
                     sig = "***"
@@ -3535,11 +3659,15 @@ def generate_html_report_styled(
                 else:
                     p_class = 'class="pval-insig"'
 
+            row_class = ""
+            if row_classes:
+                row_class = f'class="{" ".join(row_classes)}"'
+
             rows_html += f"""
             <tr {row_class}>
                 <td>{param_name}</td>
                 <td>{est_str}</td>
-                <td>{se_str}</td>
+                <td {se_cell_class}>{se_str}</td>
                 <td>{t_str}</td>
                 <td {p_class}>{p_str} {sig}</td>
                 <td>{lb_str}</td>
@@ -3578,6 +3706,12 @@ def generate_html_report_styled(
         "Parameters determining the utility from consumption (β_c, θ_c) and leisure (β_l*, θ_l) by demographic group."
     )
     
+    market_opp_table = build_param_table_html(
+        param_df[param_df['category'] == 'market_opp'],
+        "Job Market Opportunity Parameters",
+        "Parameters entering the market-opportunity index log a(j|X) for job-choice models."
+    )
+
     hours_opp_table = build_param_table_html(
         param_df[param_df['category'] == 'hours_opp'],
         "⏰ Hours Opportunity Parameters",
@@ -3596,7 +3730,7 @@ def generate_html_report_styled(
         ""
     )
     
-    param_table_rows = pref_table + hours_opp_table + wage_opp_table + other_table
+    param_table_rows = pref_table + market_opp_table + hours_opp_table + wage_opp_table + other_table
 
     # Generate specification HTML
     specification_html = generate_specification_html(parsed_params)
@@ -3645,11 +3779,7 @@ def generate_html_report_styled(
         <p>Utility and opportunity functions for each demographic group, shown in both symbolic and numerical form.</p>
         {specification_html}
 
-        <h3>⏰ Hours Opportunity Function (All Groups)</h3>
-        {hours_opportunity_html}
-
-        <h3>💰 Wage Equation - Mincer (All Groups)</h3>
-        {wage_equation_html}
+        {model_specific_sections_html}
     </section>
 
     <section>

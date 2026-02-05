@@ -502,7 +502,10 @@ def save_results_json(
         'joint_ll': float(results.get('joint_ll', 0.0)),
         'n_obs_total': int(results['n_obs_total']),
         'n_groups_total': int(results['n_groups_total']),
-        'total_walltime_seconds': float(results['total_walltime'])
+        'total_walltime_seconds': float(results['total_walltime']),
+        'prior_correction_applied': bool(results.get('prior_correction_applied', False)),
+        'prior_correction_form': results.get('prior_correction_form'),
+        'market_centering_applied': bool(results.get('market_centering_applied', False)),
     }
 
     # Add standard errors if available
@@ -724,6 +727,174 @@ def save_specification_copy(spec_path: Path, output_dir: Path) -> None:
 
     logger = logging.getLogger(__name__)
     logger.info(f"Copied specification to: {dest_path}")
+
+
+def _get_primary_theta(results: Dict[str, Any]) -> Optional[np.ndarray]:
+    """Extract final parameter vector from joint or first available group."""
+    for key in ("joint", "singles_male", "singles_female", "couples"):
+        obj = results.get(key)
+        if obj is not None and hasattr(obj, "x"):
+            try:
+                return np.asarray(obj.x, dtype=float)
+            except Exception:
+                return None
+    return None
+
+
+def _load_previous_theta(results_path: Path, spec) -> Optional[np.ndarray]:
+    """Load parameter vector from a previous estimation_results.json."""
+    try:
+        with open(results_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return None
+
+    params = {}
+    for key in ("joint", "singles_male", "singles_female", "couples"):
+        group_payload = data.get("results", {}).get(key, {})
+        if isinstance(group_payload, dict) and isinstance(group_payload.get("parameters"), dict):
+            params = group_payload["parameters"]
+            break
+
+    if not params:
+        return None
+
+    vec = []
+    for name in spec.all_param_names:
+        val = params.get(name, None)
+        if val is None:
+            vec.append(np.nan)
+        else:
+            try:
+                vec.append(float(val))
+            except Exception:
+                vec.append(np.nan)
+    return np.asarray(vec, dtype=float)
+
+
+def write_identification_diagnostics(
+    results: Dict[str, Any],
+    spec,
+    output_dir: Path,
+    warm_start_results_path: Optional[Path],
+    theta_init: Optional[np.ndarray],
+) -> Path:
+    """
+    Write compact identification diagnostics next to estimation results JSON.
+    """
+    logger = logging.getLogger(__name__)
+    out_path = output_dir / "identification_diagnostics.txt"
+
+    theta_final = _get_primary_theta(results)
+    if theta_final is None:
+        text = "Identification diagnostics unavailable: no final parameter vector found.\n"
+        out_path.write_text(text, encoding="utf-8")
+        logger.info(f"Saved identification diagnostics: {out_path}")
+        return out_path
+
+    # Bounds diagnostics
+    n_lower = 0
+    n_upper = 0
+    hit_params: List[str] = []
+    tol = 1e-8
+    for idx, pname in enumerate(spec.all_param_names):
+        if pname not in spec.bounds:
+            continue
+        lb, ub = spec.bounds[pname]
+        val = float(theta_final[idx])
+        if lb is not None and abs(val - float(lb)) <= tol:
+            n_lower += 1
+            hit_params.append(f"{pname}: lower ({lb})")
+        elif ub is not None and abs(val - float(ub)) <= tol:
+            n_upper += 1
+            hit_params.append(f"{pname}: upper ({ub})")
+
+    # Hessian diagnostics
+    hdiag = results.get("hessian_diagnostics") if isinstance(results.get("hessian_diagnostics"), dict) else {}
+    se_payload = results.get("standard_errors") if isinstance(results.get("standard_errors"), dict) else {}
+    eigvals = hdiag.get("eigenvalues", se_payload.get("eigenvalues"))
+    eig = np.asarray(eigvals, dtype=float) if eigvals is not None else np.array([], dtype=float)
+    eig = eig[np.isfinite(eig)]
+    n_neg_eig = int(np.sum(eig < 0)) if eig.size else 0
+    n_near_zero = int(np.sum(np.abs(eig) <= 1e-8)) if eig.size else 0
+
+    cond_number = hdiag.get("condition_number", se_payload.get("condition_number"))
+    if cond_number is None and eig.size:
+        min_abs = np.min(np.abs(eig))
+        max_abs = np.max(np.abs(eig))
+        cond_number = float(max_abs / min_abs) if min_abs > 0 else np.inf
+
+    neg_variances = 0
+    varcov = se_payload.get("varcov")
+    if isinstance(varcov, np.ndarray):
+        diag = np.diag(varcov)
+        neg_variances = int(np.sum(np.isfinite(diag) & (diag < 0)))
+
+    # Stability vs warm start / initialization
+    ref_label = "initial_vector"
+    ref_theta = np.asarray(theta_init, dtype=float) if theta_init is not None else None
+    if warm_start_results_path is not None and warm_start_results_path.exists():
+        prev_theta = _load_previous_theta(warm_start_results_path, spec)
+        if prev_theta is not None:
+            ref_theta = prev_theta
+            ref_label = f"warm_start:{warm_start_results_path}"
+
+    stability_lines: List[str] = []
+    if ref_theta is not None and ref_theta.shape[0] == theta_final.shape[0]:
+        mask = np.isfinite(ref_theta) & np.isfinite(theta_final)
+        if np.any(mask):
+            delta = theta_final[mask] - ref_theta[mask]
+            l2 = float(np.linalg.norm(delta))
+            max_abs = float(np.max(np.abs(delta)))
+            mean_abs = float(np.mean(np.abs(delta)))
+            ref_norm = float(np.linalg.norm(ref_theta[mask]))
+            rel_l2 = l2 / (ref_norm + 1e-12)
+            stability_lines.extend([
+                f"reference: {ref_label}",
+                f"matched_params: {int(np.sum(mask))}/{len(theta_final)}",
+                f"delta_l2: {l2:.6e}",
+                f"delta_l2_relative: {rel_l2:.6e}",
+                f"delta_max_abs: {max_abs:.6e}",
+                f"delta_mean_abs: {mean_abs:.6e}",
+            ])
+        else:
+            stability_lines.append("reference comparison unavailable: no matched finite parameters.")
+    else:
+        stability_lines.append("reference comparison unavailable: no compatible reference vector.")
+
+    lines: List[str] = []
+    lines.append("Identification Diagnostics")
+    lines.append("=" * 80)
+    lines.append(f"specification: {spec.name}")
+    lines.append(f"n_parameters: {len(spec.all_param_names)}")
+    lines.append(f"bounded_hits_total: {n_lower + n_upper}")
+    lines.append(f"bounded_hits_lower: {n_lower}")
+    lines.append(f"bounded_hits_upper: {n_upper}")
+    lines.append(f"hessian_condition_number: {cond_number}")
+    lines.append(f"hessian_negative_eigenvalues: {n_neg_eig}")
+    lines.append(f"hessian_near_zero_eigenvalues(|eig|<=1e-8): {n_near_zero}")
+    lines.append(f"negative_variances_from_varcov: {neg_variances}")
+    lines.append("")
+    lines.append("Parameter Stability")
+    lines.append("-" * 80)
+    lines.extend(stability_lines)
+    lines.append("")
+    lines.append("Bound Hits")
+    lines.append("-" * 80)
+    if hit_params:
+        lines.extend(hit_params)
+    else:
+        lines.append("none")
+    lines.append("")
+    lines.append(
+        "Interpretation hints: many bound hits, negative/near-zero Hessian eigenvalues, "
+        "or unstable parameters indicate weak identification."
+    )
+    lines.append("")
+
+    out_path.write_text("\n".join(lines), encoding="utf-8")
+    logger.info(f"Saved identification diagnostics: {out_path}")
+    return out_path
 
 
 # ==============================================================================
@@ -1120,6 +1291,7 @@ Examples:
         logger.info("="*80)
 
         # Determine warm-start behavior
+        warm_start_results_path_used: Optional[Path] = None
         if args.warm_start.lower() == "none":
             # Use spec defaults only
             logger.info("Warm-start disabled - using specification defaults")
@@ -1160,6 +1332,7 @@ Examples:
                     results_path=prev_results_path,
                     default_value=args.warm_start_default
                 )
+                warm_start_results_path_used = prev_results_path
 
         # Override with explicit init-params if provided (highest priority)
         if args.init_params:
@@ -1282,6 +1455,9 @@ Examples:
                     't_values': gamspy_result.get('t_values'),
                     'p_values': gamspy_result.get('p_values'),
                     'hessian_diagnostics': gamspy_result.get('hessian_diagnostics'),
+                    'prior_correction_applied': gamspy_result.get('prior_correction_applied'),
+                    'prior_correction_form': gamspy_result.get('prior_correction_form'),
+                    'market_centering_applied': gamspy_result.get('market_centering_applied'),
                 }
             else:
                 # Single group estimation with GAMSPy
@@ -1334,6 +1510,9 @@ Examples:
                     't_values': gamspy_result.get('t_values'),
                     'p_values': gamspy_result.get('p_values'),
                     'hessian_diagnostics': gamspy_result.get('hessian_diagnostics'),
+                    'prior_correction_applied': gamspy_result.get('prior_correction_applied'),
+                    'prior_correction_form': gamspy_result.get('prior_correction_form'),
+                    'market_centering_applied': gamspy_result.get('market_centering_applied'),
                 }
         
         else:
@@ -1475,6 +1654,14 @@ Examples:
         with open(summary_path, 'w') as f:
             f.write(summary)
         logger.info(f"Saved summary to: {summary_path}")
+
+        write_identification_diagnostics(
+            results=results,
+            spec=spec,
+            output_dir=output_dir,
+            warm_start_results_path=warm_start_results_path_used,
+            theta_init=theta_init,
+        )
 
         logger.info("")
         logger.info("="*80)

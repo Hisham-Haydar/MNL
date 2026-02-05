@@ -107,6 +107,38 @@ def _normalize_interaction_terms(interaction_cfg: Any) -> List[str]:
     return [term] if term else []
 
 
+def _apply_market_centering(
+    log_market_expr: Any,
+    prior_param: Parameter,
+    j_set: Set,
+    n_alts: int,
+    spec: EstimationSpec,
+    logger: Optional[logging.Logger] = None,
+) -> Any:
+    """
+    Optionally center market-opportunity index within each choice set.
+
+    loglambda_tilde_ij = loglambda_ij - E_k[loglambda_ik]
+    where expectation uses uniform or proposal (prior) weights.
+    """
+    if not getattr(spec, "market_opportunity_center_within_choice_set", False):
+        return log_market_expr
+
+    weights = str(getattr(spec, "market_opportunity_center_weights", "uniform")).strip().lower()
+    if weights == "proposal":
+        denom = GamsSum(j_set, prior_param) + LOG_EPS
+        center_expr = GamsSum(j_set, prior_param * log_market_expr) / denom
+    else:
+        center_expr = GamsSum(j_set, log_market_expr) / float(max(n_alts, 1))
+
+    if logger:
+        logger.info(
+            "    Centered market opportunity within choice set (weights=%s).",
+            "proposal" if weights == "proposal" else "uniform",
+        )
+    return log_market_expr - center_expr
+
+
 # ==============================================================================
 # Utility Functions
 # ==============================================================================
@@ -519,6 +551,16 @@ def _build_singles_ll_vectorized(
 
             log_market = log_market + param_vars[coef_name] * var_param
 
+    if getattr(spec, "market_opportunity_center_within_choice_set", False):
+        log_market = _apply_market_centering(
+            log_market_expr=log_market,
+            prior_param=prior_param,
+            j_set=j_set,
+            n_alts=n_alts,
+            spec=spec,
+            logger=logger,
+        )
+
     # Composite utility
     utility = (
         u_consumption
@@ -927,6 +969,16 @@ def _build_couples_ll_vectorized(
                     if not interaction_missing:
                         log_market = log_market + param_vars[coef_name] * var_param_f
 
+    if getattr(spec, "market_opportunity_center_within_choice_set", False):
+        log_market = _apply_market_centering(
+            log_market_expr=log_market,
+            prior_param=prior_param,
+            j_set=j_set,
+            n_alts=n_alts,
+            spec=spec,
+            logger=logger,
+        )
+
     # Composite utility
     utility = utility + log_h_m + log_h_f + log_w + log_market - gp_log(prior_param + LOG_EPS)
 
@@ -1094,296 +1146,17 @@ def estimate_singles_vectorized_gamspy(
     logger.info(f"  Created {len(param_vars)} parameter variables")
 
     # ========================================================================
-    # 3. Build utility function (VECTORIZED)
+    # 3. Build log-likelihood expression (shared builder)
     # ========================================================================
-
-    logger.info("  Building vectorized utility expression...")
-
-    # Get gender suffix from group parameter
-    if group == "singles_male" or group == "singles_pooled":
-        gender_suffix = "sm"
-    elif group == "singles_female":
-        gender_suffix = "sf"
-    else:
-        raise ValueError(f"Unknown group '{group}'. Expected 'singles_male' or 'singles_female'")
-
-    # Extract parameters
-    beta_c = param_vars[f'beta_c_{gender_suffix}']
-    theta_c = param_vars.get(f'theta_c_{gender_suffix}', 0.0)
-    beta_l0 = param_vars[f'beta_l0_{gender_suffix}']
-    theta_l = param_vars.get(f'theta_l_{gender_suffix}', 0.0)
-
-    # Build utility as INDEXED expression
-    # U[i,j] = beta_c * BC(C[i,j]/c_scale, theta_c) + beta_l0 * BC(L[i,j]/l_scale, theta_l)
-
-    # Consumption utility
-    c_scaled = consumption_param / c_scale
-    bc_consumption = box_cox_transform(c_scaled, theta_c)
-    u_consumption = beta_c * bc_consumption
-
-    # Leisure utility (base)
-    l_scaled = leisure_param / l_scale
-    bc_leisure = box_cox_transform(l_scaled, theta_l)
-    u_leisure = beta_l0 * bc_leisure
-
-    # Optional consumption-leisure interaction (group-specific)
-    u_consumption_leisure = 0.0
-    if spec.utility_consumption_leisure_interaction_coef:
-        beta_cl_name = f"{spec.utility_consumption_leisure_interaction_coef}_{gender_suffix}"
-        if beta_cl_name in param_vars:
-            u_consumption_leisure = param_vars[beta_cl_name] * bc_consumption * bc_leisure
-
-    # ========================================================================
-    # 3a. Add leisure shifters (demographics)
-    # ========================================================================
-
-    # Age shifters (1D: individuals only)
-    if f'beta_l_age_norm_{gender_suffix}' in param_vars:
-        age_norm_data = data.age_norm.reshape(n_groups, n_alts)[:, 0]  # Same for all alts
-        age_norm_param = Parameter(
-            container,
-            name="age_norm",
-            domain=[i_set],
-            records=age_norm_data
-        )
-        beta_l_age = param_vars[f'beta_l_age_norm_{gender_suffix}']
-        # Age shifter multiplies the BC(leisure) term
-        u_leisure = u_leisure + beta_l_age * age_norm_param * bc_leisure
-
-    if f'beta_l_age_norm2_{gender_suffix}' in param_vars:
-        age_norm2_data = data.age_norm2.reshape(n_groups, n_alts)[:, 0]
-        age_norm2_param = Parameter(
-            container,
-            name="age_norm2",
-            domain=[i_set],
-            records=age_norm2_data
-        )
-        beta_l_age2 = param_vars[f'beta_l_age_norm2_{gender_suffix}']
-        u_leisure = u_leisure + beta_l_age2 * age_norm2_param * bc_leisure
-
-    # Education shifters (1D: individuals only)
-    if f'beta_l_educL_{gender_suffix}' in param_vars:
-        educL_data = data.educL.reshape(n_groups, n_alts)[:, 0]
-        educL_param = Parameter(
-            container,
-            name="educL",
-            domain=[i_set],
-            records=educL_data
-        )
-        beta_l_educL = param_vars[f'beta_l_educL_{gender_suffix}']
-        u_leisure = u_leisure + beta_l_educL * educL_param * bc_leisure
-
-    if f'beta_l_educH_{gender_suffix}' in param_vars:
-        educH_data = data.educH.reshape(n_groups, n_alts)[:, 0]
-        educH_param = Parameter(
-            container,
-            name="educH",
-            domain=[i_set],
-            records=educH_data
-        )
-        beta_l_educH = param_vars[f'beta_l_educH_{gender_suffix}']
-        u_leisure = u_leisure + beta_l_educH * educH_param * bc_leisure
-
-    # Children shifter (females only)
-    if f'beta_l_n_children_{gender_suffix}' in param_vars and gender_suffix == 'sf':
-        n_children_data = data.n_children.reshape(n_groups, n_alts)[:, 0]
-        n_children_param = Parameter(
-            container,
-            name="n_children",
-            domain=[i_set],
-            records=n_children_data
-        )
-        beta_l_children = param_vars[f'beta_l_n_children_{gender_suffix}']
-        u_leisure = u_leisure + beta_l_children * n_children_param * bc_leisure
-
-    # ========================================================================
-    # 3b. Add hours opportunity density (log_h)
-    # ========================================================================
-
-    log_h = 0.0
-    working_param = None
-
-    # Build hours opportunity from specification
-    if spec.hours_shifters:
-        # Extract 2D versions of shifter data (individuals × alternatives)
-        working_2d = data.working.reshape(n_groups, n_alts)
-        pt1_2d = data.working_pt1.reshape(n_groups, n_alts)
-        pt2_2d = data.working_pt2.reshape(n_groups, n_alts)
-        ft_2d = data.working_ft.reshape(n_groups, n_alts)
-        gsur_2d = data.gsur.reshape(n_groups, n_alts)
-
-        # Create Parameters for shifter variables
-        working_param = Parameter(
-            container, name="working", domain=[i_set, j_set],
-            records=working_2d
-        )
-        pt1_param = Parameter(
-            container, name="working_pt1", domain=[i_set, j_set],
-            records=pt1_2d
-        )
-        pt2_param = Parameter(
-            container, name="working_pt2", domain=[i_set, j_set],
-            records=pt2_2d
-        )
-        ft_param = Parameter(
-            container, name="working_ft", domain=[i_set, j_set],
-            records=ft_2d
-        )
-        gsur_param = Parameter(
-            container, name="gsur", domain=[i_set, j_set],
-            records=gsur_2d
-        )
-
-        # Education Parameters (1D - same across alternatives)
-        educL_data = data.educL.reshape(n_groups, n_alts)[:, 0]
-        educL_param_1d = Parameter(
-            container, name="educL_1d", domain=[i_set],
-            records=educL_data
-        )
-        educH_data = data.educH.reshape(n_groups, n_alts)[:, 0]
-        educH_param_1d = Parameter(
-            container, name="educH_1d", domain=[i_set],
-            records=educH_data
-        )
-
-        # Build log_h from specification
-        for shifter in spec.hours_shifters:
-            var_name = shifter["variable"]
-            coef_name = shifter["coefficient"]
-            interaction = shifter.get("interaction", None)
-
-            # Get parameter - try gender-specific first, then base name
-            if gender_suffix == 'sm':
-                coef_name_gender = f"{coef_name}_male"
-            elif gender_suffix == 'sf':
-                coef_name_gender = f"{coef_name}_female"
-            else:
-                coef_name_gender = coef_name
-
-            # Find parameter
-            if coef_name_gender in param_vars:
-                param = param_vars[coef_name_gender]
-            elif coef_name in param_vars:
-                param = param_vars[coef_name]
-            else:
-                continue  # Skip if parameter not found
-
-            # Get variable value (2D or broadcast from 1D)
-            if var_name == "working":
-                var_val = working_param
-            elif var_name == "working_pt1":
-                var_val = pt1_param
-            elif var_name == "working_pt2":
-                var_val = pt2_param
-            elif var_name == "working_ft":
-                var_val = ft_param
-            elif var_name == "gsur":
-                var_val = gsur_param
-            elif var_name == "educL":
-                var_val = educL_param_1d  # Broadcast to 2D
-            elif var_name == "educH":
-                var_val = educH_param_1d  # Broadcast to 2D
-            else:
-                continue  # Skip unknown variables
-
-            # Apply interaction if specified
-            if interaction == "working":
-                var_val = var_val * working_param
-
-            log_h = log_h + param * var_val
-
-    # ========================================================================
-    # 3c. Add wage opportunity density (log_w) for workers
-    # ========================================================================
-
-    log_w = 0.0
-
-    # Only add wage opportunity if we have wage data
-    if data.log_wage is not None and 'beta_w0' in param_vars:
-        # Extract 2D wage data (individuals × alternatives)
-        log_wage_2d = data.log_wage.reshape(n_groups, n_alts)
-        working_2d = data.working.reshape(n_groups, n_alts)
-
-        # Create wage parameter
-        log_wage_param = Parameter(
-            container, name="log_wage", domain=[i_set, j_set],
-            records=log_wage_2d
-        )
-
-        # Build wage mean (Mincer equation): μ_w = β_w0 + β_educL*educL + β_educH*educH + β_pexp*pexp + β_pexp2*pexp²
-        mu_wage = param_vars['beta_w0']
-
-        # Education effects
-        if 'beta_w_educL' in param_vars:
-            mu_wage = mu_wage + param_vars['beta_w_educL'] * educL_param_1d
-        if 'beta_w_educH' in param_vars:
-            mu_wage = mu_wage + param_vars['beta_w_educH'] * educH_param_1d
-
-        # Experience effects (if available)
-        if data.pexp_years is not None and 'beta_pexp' in param_vars:
-            pexp_data = data.pexp_years.reshape(n_groups, n_alts)[:, 0]
-            pexp_param = Parameter(
-                container, name="pexp_years", domain=[i_set],
-                records=pexp_data
-            )
-            mu_wage = mu_wage + param_vars['beta_pexp'] * pexp_param
-
-            if data.pexp_years2 is not None and 'beta_pexp2' in param_vars:
-                pexp2_data = data.pexp_years2.reshape(n_groups, n_alts)[:, 0]
-                pexp2_param = Parameter(
-                    container, name="pexp_years2", domain=[i_set],
-                    records=pexp2_data
-                )
-                mu_wage = mu_wage + param_vars['beta_pexp2'] * pexp2_param
-
-        # Log-likelihood of observed wage: log(φ((log_wage - μ) / σ) / σ)
-        # where φ is the standard normal PDF
-        residual = log_wage_param - mu_wage
-        sigma_param = param_vars['sigma']
-
-        # Log-normal density: -0.5*(residual²/σ²) - log(σ) - 0.5*log(2π)
-        log_w_density = (
-            -0.5 * (residual * residual) / (sigma_param * sigma_param + LOG_EPS)
-            - gp_log(sigma_param + LOG_EPS)
-            - 0.5 * gp_log(2.0 * 3.141592653589793)
-        )
-
-        # Only add wage likelihood for working alternatives (working=1)
-        # For non-working alternatives (working=0), log_w contribution is 0
-        if working_param is None:
-            # If working_param wasn't created earlier, create it now
-            working_2d_check = data.working.reshape(n_groups, n_alts)
-            working_param = Parameter(
-                container, name="working_check", domain=[i_set, j_set],
-                records=working_2d_check
-            )
-
-        log_w = working_param * log_w_density
-
-    # Total utility = consumption + leisure + hours opportunity + wage opportunity - prior
-    utility = u_consumption + u_leisure + u_consumption_leisure + log_h + log_w
-
-    # Subtract log prior (importance sampling correction)
-    utility = utility - gp_log(prior_param + LOG_EPS)
-
-    logger.info("    Utility expression built (vectorized)")
-
-    # ========================================================================
-    # 4. Build log-likelihood (VECTORIZED)
-    # ========================================================================
-
-    logger.info("  Building vectorized log-likelihood...")
-
-    # Chosen utility: Sum over j of (chosen[i,j] * utility[i,j])
-    chosen_utility = GamsSum(j_set, chosen_param * utility)
-
-    # Log-sum-exp denominator: Sum over j of exp(utility[i,j])
-    denom = GamsSum(j_set, gp_exp(utility))
-
-    # Log-likelihood: Sum over i of (chosen_utility[i] - log(denom[i]))
-    ll_expr = GamsSum(i_set, chosen_utility - gp_log(denom + LOG_EPS))
-
-    logger.info("    Log-likelihood expression built (vectorized)")
+    ll_expr, _ = _build_singles_ll_vectorized(
+        container=container,
+        data=data,
+        spec=spec,
+        param_vars=param_vars,
+        group=group,
+        prefix="sg_",
+        logger=logger,
+    )
 
     ll_expr, hard_eqs = _apply_expression_constraints(
         container=container,
@@ -1420,6 +1193,7 @@ def estimate_singles_vectorized_gamspy(
     logger.info(f"    Model created (problem type: NLP, sense: MAX)")
     logger.info(f"  Solving with {solver_name.upper()}...")
     logger.info("  (Vectorized approach should be 3-5x faster than line-by-line)")
+    logger.info("  Proposal correction active: utility includes -log(prior) exactly once.")
 
     # Solve
     if solver_options:
@@ -1474,6 +1248,9 @@ def estimate_singles_vectorized_gamspy(
         "n_alts": n_alts,
         "spec_name": spec.name,
         "ll": ll_final,
+        "prior_correction_applied": True,
+        "prior_correction_form": "-log(prior)",
+        "market_centering_applied": bool(getattr(spec, "market_opportunity_center_within_choice_set", False)),
     }
 
 
@@ -1584,6 +1361,7 @@ def estimate_couples_vectorized_gamspy(
 
     logger.info(f"  Solving with {solver_name.upper()}...")
     logger.info("  (Vectorized approach should be 3-5x faster than line-by-line)")
+    logger.info("  Proposal correction active: utility includes -log(prior) exactly once.")
 
     if solver_options:
         logger.info(f"  Solver options: {solver_options}")
@@ -1635,6 +1413,9 @@ def estimate_couples_vectorized_gamspy(
         "n_alts": n_alts,
         "spec_name": spec.name,
         "ll": ll_final,
+        "prior_correction_applied": True,
+        "prior_correction_form": "-log(prior)",
+        "market_centering_applied": bool(getattr(spec, "market_opportunity_center_within_choice_set", False)),
     }
 
 
@@ -1806,6 +1587,7 @@ def estimate_joint_vectorized_gamspy(
         )
 
     logger.info("  Solving joint model...")
+    logger.info("  Proposal correction active: utility includes -log(prior) exactly once per group.")
     if solver_options:
         logger.info(f"  Solver options: {solver_options}")
         solve_result = model.solve(solver=solver_name, solver_options=solver_options)
@@ -1859,6 +1641,9 @@ def estimate_joint_vectorized_gamspy(
         "ll_singles_male": None,
         "ll_singles_female": None,
         "ll_couples": None,
+        "prior_correction_applied": True,
+        "prior_correction_form": "-log(prior)",
+        "market_centering_applied": bool(getattr(spec, "market_opportunity_center_within_choice_set", False)),
     }
 
 

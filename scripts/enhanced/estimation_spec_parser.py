@@ -17,6 +17,7 @@ Created: 2026-01-03
 """
 
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -74,6 +75,15 @@ class EstimationSpec:
 
     # Model version (NEW: AC2013 support)
     model_version: str = "legacy"  # "legacy" or "AC2013"
+    model_family: str = "regular"  # regular | job_choice
+
+    # Job-choice opportunity identification settings (optional)
+    market_opportunity_tier: Optional[str] = None
+    market_opportunity_offer_only_vars: List[str] = field(default_factory=list)
+    market_opportunity_center_within_choice_set: bool = False
+    market_opportunity_center_weights: str = "uniform"  # uniform | proposal
+    market_opportunity_extra_dimension: Optional[str] = None
+    market_opportunity_enforce_job_varying: bool = False
 
     # Occupation choice configuration (NEW)
     occupation_choice: bool = False
@@ -322,10 +332,14 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     name = spec_meta.get("name", config.get("name", "unknown"))
     description = spec_meta.get("description", config.get("description", ""))
     wage_spec = spec_meta.get("wage_spec", config.get("wage_spec", "fw"))
+    model_family = str(
+        spec_meta.get("model_family", config.get("model_family", "regular"))
+    ).strip().lower()
 
     logger.info(f"Specification: {name}")
     logger.info(f"Description: {description}")
     logger.info(f"Wage specification: {wage_spec}")
+    logger.info(f"Model family: {model_family}")
 
     # Check if occupation choice is enabled
     occupation_choice = spec_meta.get("occupation_choice", False)
@@ -334,6 +348,8 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     # Validate wage_spec
     if wage_spec not in ["fw", "vw", "vw_occupation", "loc_empirical"]:
         raise ValueError(f"Invalid wage_spec: {wage_spec}. Must be fw, vw, vw_occupation, or loc_empirical")
+    if model_family not in {"regular", "job_choice"}:
+        raise ValueError("model_family must be 'regular' or 'job_choice'.")
 
     # Parse utility function
     utility_config = config.get("utility", {})
@@ -393,7 +409,56 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
 
     # Parse market opportunity
     market_config = config.get("market_opportunity", {})
+    market_opportunity_tier_raw = market_config.get("tier", None)
+    market_opportunity_tier = (
+        str(market_opportunity_tier_raw).strip().upper()
+        if market_opportunity_tier_raw is not None
+        else None
+    )
+    if market_opportunity_tier is not None and market_opportunity_tier not in {"M0", "M1", "M2", "M3", "M4"}:
+        raise ValueError("market_opportunity.tier must be one of M0, M1, M2, M3, M4.")
+
     market_opportunity_shifters = market_config.get("shifters", [])
+    if market_opportunity_tier and not market_opportunity_shifters:
+        market_opportunity_shifters = _build_market_shifters_from_tier(market_config)
+        logger.info(
+            "Market opportunity tier %s expanded to %d shifters.",
+            market_opportunity_tier,
+            len(market_opportunity_shifters),
+        )
+
+    market_opportunity_offer_only_vars = _normalize_string_list(
+        market_config.get("offer_only_vars", []),
+        "market_opportunity.offer_only_vars",
+    )
+    market_opportunity_center_within_choice_set = bool(
+        market_config.get("center_within_choice_set", False)
+    )
+    market_opportunity_center_weights = str(
+        market_config.get("center_weights", "uniform")
+    ).strip().lower()
+    if market_opportunity_center_weights not in {"uniform", "proposal"}:
+        raise ValueError(
+            "market_opportunity.center_weights must be 'uniform' or 'proposal'."
+        )
+    market_opportunity_extra_dimension = market_config.get("extra_dimension")
+    if market_opportunity_extra_dimension is not None:
+        market_opportunity_extra_dimension = str(market_opportunity_extra_dimension).strip().lower()
+        if market_opportunity_extra_dimension not in {"hours_bin", "wage_bin"}:
+            raise ValueError(
+                "market_opportunity.extra_dimension must be 'hours_bin', 'wage_bin', or omitted."
+            )
+    market_opportunity_enforce_job_varying = bool(
+        market_config.get("enforce_job_varying", False)
+    )
+
+    _validate_market_opportunity_configuration(
+        utility_leisure_shifters=utility_leisure_shifters,
+        market_opportunity_shifters=market_opportunity_shifters,
+        offer_only_vars=market_opportunity_offer_only_vars,
+        enforce_job_varying=market_opportunity_enforce_job_varying,
+    )
+
     # Parse occupation availability (legacy occupation-choice path)
     occupation_availability = market_config.get("occupation_availability", [])
 
@@ -543,6 +608,13 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         grad_verify_verbose=grad_verify.get('verbose', False),
         # AC2013 settings
         model_version=model_version,
+        model_family=model_family,
+        market_opportunity_tier=market_opportunity_tier,
+        market_opportunity_offer_only_vars=market_opportunity_offer_only_vars,
+        market_opportunity_center_within_choice_set=market_opportunity_center_within_choice_set,
+        market_opportunity_center_weights=market_opportunity_center_weights,
+        market_opportunity_extra_dimension=market_opportunity_extra_dimension,
+        market_opportunity_enforce_job_varying=market_opportunity_enforce_job_varying,
         ac2013_use_log_age=(model_version == "AC2013"),
         ac2013_children_age_groups=(model_version == "AC2013"),
         ac2013_experience_in_wage=(model_version == "AC2013"),
@@ -740,6 +812,202 @@ def _parse_expression_constraints(
         )
 
     return enabled, default_mode, default_weight, parsed_constraints
+
+
+def _normalize_string_list(value: Any, field_name: str) -> List[str]:
+    """Normalize a YAML scalar/list field into a list of non-empty strings."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        token = value.strip()
+        return [token] if token else []
+    if not isinstance(value, list):
+        raise ValueError(f"{field_name} must be a string or list of strings.")
+    out: List[str] = []
+    for idx, item in enumerate(value):
+        if not isinstance(item, str):
+            raise ValueError(f"{field_name}[{idx}] must be a string.")
+        token = item.strip()
+        if token:
+            out.append(token)
+    return out
+
+
+def _normalize_interaction_list(value: Any) -> List[str]:
+    """Normalize interaction specification to a list."""
+    return _normalize_string_list(value, "market_opportunity.shifters[*].interaction")
+
+
+def _is_alt_varying_market_var(var_name: str) -> bool:
+    """
+    Heuristic check whether a variable name is alternative-varying in job-choice data.
+
+    Supports both raw categorical columns (hours_bin, wage_bin, isco1)
+    and derived dummies (hours_bin_1, wage_bin_3, isco1_9, etc.).
+    """
+    name = str(var_name).strip()
+    if not name:
+        return False
+    if name in {
+        "working",
+        "working_pt1",
+        "working_pt2",
+        "working_ft",
+        "hours_bin",
+        "wage_bin",
+        "isco1",
+        "loc4",
+        "job_id",
+    }:
+        return True
+    return bool(re.match(r"^(hours_bin|wage_bin|isco1|loc4|job_id)_[A-Za-z0-9-]+$", name))
+
+
+def _build_market_shifters_from_tier(market_config: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Build market_opportunity.shifters from a tier declaration (M0-M4).
+
+    This keeps YAML concise for the identification ladder while preserving
+    backward compatibility with explicit shifter lists.
+    """
+    tier = str(market_config.get("tier", "")).strip().upper()
+    if tier not in {"M0", "M1", "M2", "M3", "M4"}:
+        raise ValueError("market_opportunity.tier must be one of M0, M1, M2, M3, M4.")
+
+    applies_to = str(market_config.get("applies_to", "both")).strip().lower() or "both"
+    if applies_to not in {"male", "female", "both", "household"}:
+        raise ValueError("market_opportunity.applies_to must be male/female/both/household.")
+
+    employment_var = str(market_config.get("employment_indicator", "working")).strip() or "working"
+    gsur_var = str(market_config.get("gsur_variable", "gsur")).strip() or "gsur"
+
+    coef_working = str(market_config.get("coef_working", "beta_offer_working")).strip() or "beta_offer_working"
+    coef_gsur = str(market_config.get("coef_gsur", "beta_offer_gsur")).strip() or "beta_offer_gsur"
+    coef_gsur_occ_prefix = str(
+        market_config.get("coef_gsur_occ_prefix", "beta_offer_gsur_isco1_")
+    ).strip() or "beta_offer_gsur_isco1_"
+
+    shifters: List[Dict[str, Any]] = [
+        {
+            "variable": employment_var,
+            "coefficient": coef_working,
+            "applies_to": applies_to,
+        }
+    ]
+
+    if tier in {"M1", "M2", "M3", "M4"}:
+        shifters.append(
+            {
+                "variable": gsur_var,
+                "coefficient": coef_gsur,
+                "interaction": [employment_var],
+                "applies_to": applies_to,
+            }
+        )
+
+    if tier in {"M2", "M3", "M4"}:
+        occ_var = str(market_config.get("occupation_variable", "isco1")).strip() or "isco1"
+        occ_categories = market_config.get("occupation_categories", list(range(10)))
+        if not isinstance(occ_categories, list) or not occ_categories:
+            raise ValueError("market_opportunity.occupation_categories must be a non-empty list.")
+        occ_base = market_config.get("occupation_base", occ_categories[0])
+        for occ in occ_categories:
+            if str(occ) == str(occ_base):
+                continue
+            shifters.append(
+                {
+                    "variable": f"{occ_var}_{occ}",
+                    "coefficient": f"{coef_gsur_occ_prefix}{occ}",
+                    "interaction": [employment_var, gsur_var],
+                    "applies_to": applies_to,
+                }
+            )
+
+    if tier in {"M3", "M4"}:
+        extra_dim = market_config.get("extra_dimension", None)
+        if extra_dim is None:
+            raise ValueError(
+                "market_opportunity.extra_dimension is required for tier M3/M4 "
+                "(hours_bin or wage_bin)."
+            )
+        extra_dim = str(extra_dim).strip().lower()
+        if extra_dim not in {"hours_bin", "wage_bin"}:
+            raise ValueError(
+                "market_opportunity.extra_dimension must be 'hours_bin' or 'wage_bin'."
+            )
+
+        categories_key = f"{extra_dim}_categories"
+        default_categories = [0, 1, 2, 3] if extra_dim == "hours_bin" else list(range(10))
+        extra_categories = market_config.get(categories_key, default_categories)
+        if not isinstance(extra_categories, list) or not extra_categories:
+            raise ValueError(f"market_opportunity.{categories_key} must be a non-empty list.")
+
+        extra_base = market_config.get(f"{extra_dim}_base", extra_categories[0])
+        coef_extra_prefix = str(
+            market_config.get("coef_gsur_extra_prefix", f"beta_offer_gsur_{extra_dim}_")
+        ).strip() or f"beta_offer_gsur_{extra_dim}_"
+
+        for cat in extra_categories:
+            if str(cat) == str(extra_base):
+                continue
+            shifters.append(
+                {
+                    "variable": f"{extra_dim}_{cat}",
+                    "coefficient": f"{coef_extra_prefix}{cat}",
+                    "interaction": [employment_var, gsur_var],
+                    "applies_to": applies_to,
+                }
+            )
+
+    return shifters
+
+
+def _validate_market_opportunity_configuration(
+    utility_leisure_shifters: List[Dict[str, Any]],
+    market_opportunity_shifters: List[Dict[str, Any]],
+    offer_only_vars: List[str],
+    enforce_job_varying: bool,
+) -> None:
+    """
+    Validate exclusion restrictions and job-varying opportunity logic.
+    """
+    pref_vars = {
+        str(shifter.get("variable", "")).strip()
+        for shifter in utility_leisure_shifters
+        if isinstance(shifter, dict) and str(shifter.get("variable", "")).strip()
+    }
+    if "gsur" in pref_vars:
+        raise ValueError(
+            "Identification restriction violated: 'gsur' cannot appear in utility.leisure.shifters. "
+            "Use gsur only in market_opportunity."
+        )
+
+    overlap = sorted(set(offer_only_vars).intersection(pref_vars))
+    if overlap:
+        raise ValueError(
+            "Identification restriction violated: offer-only variables appear in preferences: "
+            + ", ".join(overlap)
+        )
+
+    if not enforce_job_varying:
+        return
+
+    for idx, shifter in enumerate(market_opportunity_shifters):
+        if not isinstance(shifter, dict):
+            continue
+        var_name = str(shifter.get("variable", "")).strip()
+        interaction_terms = _normalize_interaction_list(shifter.get("interaction", None))
+
+        if _is_alt_varying_market_var(var_name):
+            continue
+        if any(_is_alt_varying_market_var(term) for term in interaction_terms):
+            continue
+
+        raise ValueError(
+            f"market_opportunity.shifters[{idx}] is not job-varying and would cancel in conditional logit: "
+            f"variable='{var_name}', interaction={interaction_terms}. "
+            "Add an interaction with an alternative-varying job attribute or employment indicator."
+        )
 
 
 def _build_parameter_list(

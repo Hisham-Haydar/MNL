@@ -1,0 +1,118 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - Job Choice Identification Ladder (M0)
+# ==============================================================================
+# Tier M0:
+#   log(lambda_ij) = beta_offer_working * 1[j is working]
+# Goal:
+#   Stabilize preference estimation before adding richer opportunity heterogeneity.
+# ==============================================================================
+
+specification:
+  name: "job_choice_M0_preferences_plus_employment_offer"
+  description: "Job-choice RURO M0: Box-Cox preferences + employment-only opportunity term"
+  wage_spec: "fw"
+  model_family: "job_choice"
+
+utility:
+  functional_form: "box_cox"
+
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"
+    box_cox_bounds: [-8.0, 0.95]
+
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: "theta_l"
+    box_cox_bounds: [-8.0, 0.95]
+    shifters: []
+
+hours_opportunity:
+  shifters: []
+
+wage_opportunity:
+  specification: "log_normal"
+
+market_opportunity:
+  tier: "M0"
+  applies_to: "both"
+  employment_indicator: "working"
+  coef_working: "beta_offer_working"
+  offer_only_vars: ["gsur", "reg2", "reg3", "reg4", "reg5", "reg6", "reg7", "reg8"]
+  center_within_choice_set: false
+  center_weights: "uniform"
+  enforce_job_varying: true
+
+couples: {}
+
+initial_values:
+  # Singles male
+  beta_l0_sm: 0.30
+  beta_c_sm: 0.80
+  theta_l_sm: -0.20
+  theta_c_sm: 0.20
+
+  # Singles female
+  beta_l0_sf: 0.30
+  beta_c_sf: 0.80
+  theta_l_sf: -0.20
+  theta_c_sf: 0.20
+
+  # Couples male leisure
+  beta_l0_m: 0.30
+  theta_l_m: -0.20
+
+  # Couples female leisure
+  beta_l0_f: 0.30
+  theta_l_f: -0.20
+
+  # Couples household consumption
+  beta_c: 0.80
+  theta_c: 0.20
+
+  # Opportunity
+  beta_offer_working: 0.50
+
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 5000
+  tolerance: 1.0e-8
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+  bounds:
+    # Box-Cox exponents
+    theta_l_sm: [-8.0, 0.95]
+    theta_c_sm: [-8.0, 0.95]
+    theta_l_sf: [-8.0, 0.95]
+    theta_c_sf: [-8.0, 0.95]
+    theta_l_m: [-8.0, 0.95]
+    theta_l_f: [-8.0, 0.95]
+    theta_c: [-8.0, 0.95]
+
+    # Preference scales
+    beta_c_sm: [0.05, 50.0]
+    beta_c_sf: [0.05, 50.0]
+    beta_c: [0.05, 50.0]
+    beta_l0_sm: [0.05, 50.0]
+    beta_l0_sf: [0.05, 50.0]
+    beta_l0_m: [0.05, 50.0]
+    beta_l0_f: [0.05, 50.0]
+
+    # Opportunity
+    beta_offer_working: [-20.0, 20.0]
+
+  expression_constraints:
+    enabled: false
+
+gradient_verification:
+  enabled: false
+  method: "central"
+  epsilon: 1.0e-7
+  tolerance: 1.0e-4
+  check_at_init: true
+  check_random_points: 0
+  random_seed: 13
+  verbose: true

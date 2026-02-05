@@ -596,6 +596,13 @@ def format_estimation_results(
     lines.append(f"Total groups: {results['n_groups_total']:,}")
     lines.append(f"Joint log-likelihood: {results['joint_ll']:.2f}")
     lines.append(f"Total walltime: {results['total_walltime']:.1f}s")
+    if results.get("prior_correction_applied"):
+        lines.append(
+            f"Proposal correction: {results.get('prior_correction_form', '-log(prior)')} "
+            "(applied once per alternative)"
+        )
+    if results.get("market_centering_applied"):
+        lines.append("Opportunity centering: enabled within each choice set")
     lines.append("")
     
     for group_name in ['singles_male', 'singles_female', 'couples']:

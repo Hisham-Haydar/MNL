@@ -1032,11 +1032,28 @@ Examples:
 
         include_wage_vars = (spec.wage_spec in ["vw", "loc_empirical"])
         include_loc_vars = (spec.wage_spec == "loc_empirical")
-        extra_precompute_vars = sorted({
-            sh["variable"]
-            for sh in getattr(spec, "market_opportunity_shifters", [])
-            if isinstance(sh, dict) and "variable" in sh
-        })
+        extra_precompute_vars_set = set()
+        for shifter in getattr(spec, "market_opportunity_shifters", []):
+            if not isinstance(shifter, dict):
+                continue
+            var_name = shifter.get("variable")
+            if isinstance(var_name, str) and var_name.strip():
+                extra_precompute_vars_set.add(var_name.strip())
+
+            interaction_cfg = shifter.get("interaction")
+            if interaction_cfg is None:
+                continue
+            if isinstance(interaction_cfg, (list, tuple, set)):
+                interaction_names = [str(v).strip() for v in interaction_cfg if str(v).strip()]
+            else:
+                interaction_names = [str(interaction_cfg).strip()]
+
+            for interaction_name in interaction_names:
+                # 'working' is part of the base precompute structure.
+                if interaction_name and interaction_name != "working":
+                    extra_precompute_vars_set.add(interaction_name)
+
+        extra_precompute_vars = sorted(extra_precompute_vars_set)
         if extra_precompute_vars:
             logger.info(
                 "Spec-driven extra precompute variables: %s",

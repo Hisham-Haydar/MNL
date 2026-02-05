@@ -89,6 +89,24 @@ def get_param_name(base_name: str, group: str, param_vars: dict) -> str:
     )
 
 
+def _normalize_interaction_terms(interaction_cfg: Any) -> List[str]:
+    """
+    Normalize a YAML interaction config to a flat list of variable names.
+
+    Supported formats:
+    - None
+    - "working"
+    - ["working", "educL"]
+    """
+    if interaction_cfg is None:
+        return []
+    if isinstance(interaction_cfg, (list, tuple, set)):
+        terms = [str(term).strip() for term in interaction_cfg if str(term).strip()]
+        return terms
+    term = str(interaction_cfg).strip()
+    return [term] if term else []
+
+
 # ==============================================================================
 # Utility Functions
 # ==============================================================================
@@ -475,7 +493,7 @@ def _build_singles_ll_vectorized(
         for shifter in spec.market_opportunity_shifters:
             var_name = shifter.get("variable")
             coef_name = shifter.get("coefficient")
-            interaction = shifter.get("interaction", None)
+            interaction_terms = _normalize_interaction_terms(shifter.get("interaction", None))
             if not var_name or not coef_name:
                 continue
             if coef_name not in param_vars:
@@ -483,11 +501,22 @@ def _build_singles_ll_vectorized(
             var_param = get_var_param(var_name)
             if var_param is None:
                 continue
-            if interaction == "working":
-                if working_param is None:
-                    working_param = get_var_param("working")
-                if working_param is not None:
-                    var_param = var_param * working_param
+
+            interaction_missing = False
+            for interaction_name in interaction_terms:
+                if interaction_name == "working":
+                    if working_param is None:
+                        working_param = get_var_param("working")
+                    interaction_param = working_param
+                else:
+                    interaction_param = get_var_param(interaction_name)
+                if interaction_param is None:
+                    interaction_missing = True
+                    break
+                var_param = var_param * interaction_param
+            if interaction_missing:
+                continue
+
             log_market = log_market + param_vars[coef_name] * var_param
 
     # Composite utility
@@ -833,7 +862,7 @@ def _build_couples_ll_vectorized(
         for shifter in spec.market_opportunity_shifters:
             var_name = shifter.get("variable")
             coef_name = shifter.get("coefficient")
-            interaction = shifter.get("interaction", None)
+            interaction_terms = _normalize_interaction_terms(shifter.get("interaction", None))
             applies_to = shifter.get("applies_to", "both")
             if not var_name or not coef_name:
                 continue
@@ -844,29 +873,59 @@ def _build_couples_ll_vectorized(
                 var_param = get_var_param(var_name)
                 if var_param is None:
                     continue
-                if interaction == "working":
-                    if working_m is not None and working_f is not None:
-                        var_param = var_param * (working_m + working_f)
-                    elif working_m is not None:
-                        var_param = var_param * working_m
-                    elif working_f is not None:
-                        var_param = var_param * working_f
+                interaction_missing = False
+                for interaction_name in interaction_terms:
+                    if interaction_name == "working":
+                        if working_m is not None and working_f is not None:
+                            interaction_param = working_m + working_f
+                        elif working_m is not None:
+                            interaction_param = working_m
+                        elif working_f is not None:
+                            interaction_param = working_f
+                        else:
+                            interaction_param = None
+                    else:
+                        interaction_param = get_var_param(interaction_name)
+                    if interaction_param is None:
+                        interaction_missing = True
+                        break
+                    var_param = var_param * interaction_param
+                if interaction_missing:
+                    continue
                 log_market = log_market + param_vars[coef_name] * var_param
                 continue
 
             if applies_to in ("male", "both"):
                 var_param_m = get_var_param(var_name, gender="male", fallback_to_base=False)
                 if var_param_m is not None:
-                    if interaction == "working" and working_m is not None:
-                        var_param_m = var_param_m * working_m
-                    log_market = log_market + param_vars[coef_name] * var_param_m
+                    interaction_missing = False
+                    for interaction_name in interaction_terms:
+                        if interaction_name == "working":
+                            interaction_param = working_m
+                        else:
+                            interaction_param = get_var_param(interaction_name, gender="male")
+                        if interaction_param is None:
+                            interaction_missing = True
+                            break
+                        var_param_m = var_param_m * interaction_param
+                    if not interaction_missing:
+                        log_market = log_market + param_vars[coef_name] * var_param_m
 
             if applies_to in ("female", "both"):
                 var_param_f = get_var_param(var_name, gender="female", fallback_to_base=False)
                 if var_param_f is not None:
-                    if interaction == "working" and working_f is not None:
-                        var_param_f = var_param_f * working_f
-                    log_market = log_market + param_vars[coef_name] * var_param_f
+                    interaction_missing = False
+                    for interaction_name in interaction_terms:
+                        if interaction_name == "working":
+                            interaction_param = working_f
+                        else:
+                            interaction_param = get_var_param(interaction_name, gender="female")
+                        if interaction_param is None:
+                            interaction_missing = True
+                            break
+                        var_param_f = var_param_f * interaction_param
+                    if not interaction_missing:
+                        log_market = log_market + param_vars[coef_name] * var_param_f
 
     # Composite utility
     utility = utility + log_h_m + log_h_f + log_w + log_market - gp_log(prior_param + LOG_EPS)

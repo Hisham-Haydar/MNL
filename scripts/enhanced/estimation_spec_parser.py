@@ -86,6 +86,9 @@ class EstimationSpec:
     market_opportunity_enforce_job_varying: bool = False
     market_opportunity_variable_scales: Dict[str, float] = field(default_factory=dict)
 
+    # Consumption pooling (NEW: identification fix)
+    pool_consumption_across_groups: bool = False  # If True, all groups share (beta_c, theta_c)
+
     # Occupation choice configuration (NEW)
     occupation_choice: bool = False
     occupation_preferences: List[Dict[str, Any]] = field(default_factory=list)
@@ -359,6 +362,11 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     consumption_config = utility_config.get("consumption", {})
     utility_consumption_coef = consumption_config.get("coefficient", "beta_c")
     utility_consumption_theta = consumption_config.get("box_cox_exponent", None)
+    pool_consumption_across_groups = bool(
+        consumption_config.get("pool_across_groups", False)
+    )
+    if pool_consumption_across_groups:
+        logger.info("Consumption pooling ENABLED: all groups share (beta_c, theta_c)")
     consumption_leisure_interaction_config = utility_config.get("consumption_leisure_interaction", {})
     if isinstance(consumption_leisure_interaction_config, dict):
         utility_consumption_leisure_interaction_coef = consumption_leisure_interaction_config.get("coefficient", None)
@@ -552,7 +560,8 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
             occupation_hour_configs=occupation_hour_configs,
             occupation_specific_wages=occupation_specific_wages,
             occupation_wage_configs=occupation_wage_configs,
-            occupation_availability=occupation_availability
+            occupation_availability=occupation_availability,
+            pool_consumption=pool_consumption_across_groups,
         )
 
     logger.info(f"Total parameters: {len(all_param_names)}")
@@ -636,6 +645,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         market_opportunity_extra_dimension=market_opportunity_extra_dimension,
         market_opportunity_enforce_job_varying=market_opportunity_enforce_job_varying,
         market_opportunity_variable_scales=market_opportunity_variable_scales,
+        pool_consumption_across_groups=pool_consumption_across_groups,
         ac2013_use_log_age=(model_version == "AC2013"),
         ac2013_children_age_groups=(model_version == "AC2013"),
         ac2013_experience_in_wage=(model_version == "AC2013"),
@@ -1054,7 +1064,8 @@ def _build_parameter_list(
     occupation_hour_configs: Optional[List[Dict[str, Any]]] = None,
     occupation_specific_wages: bool = False,
     occupation_wage_configs: Optional[List[Dict[str, Any]]] = None,
-    occupation_availability: Optional[List[Dict[str, Any]]] = None
+    occupation_availability: Optional[List[Dict[str, Any]]] = None,
+    pool_consumption: bool = False,
 ) -> List[str]:
     """
     Build ordered list of all parameter names.
@@ -1105,14 +1116,15 @@ def _build_parameter_list(
             continue
         singles_male_params.append(f"{shifter['coefficient']}_sm")
 
-    singles_male_params.append(f"{utility_consumption_coef}_sm")  # beta_c_sm
+    if not pool_consumption:
+        singles_male_params.append(f"{utility_consumption_coef}_sm")  # beta_c_sm
     if utility_consumption_leisure_interaction_coef:
         singles_male_params.append(f"{utility_consumption_leisure_interaction_coef}_sm")
 
     if utility_form == "box_cox":
         if utility_leisure_theta:
             singles_male_params.append(f"{utility_leisure_theta}_sm")  # theta_l_sm
-        if utility_consumption_theta:
+        if utility_consumption_theta and not pool_consumption:
             singles_male_params.append(f"{utility_consumption_theta}_sm")  # theta_c_sm
 
     params.extend(singles_male_params)
@@ -1124,14 +1136,15 @@ def _build_parameter_list(
     for shifter in utility_leisure_shifters:
         singles_female_params.append(f"{shifter['coefficient']}_sf")
 
-    singles_female_params.append(f"{utility_consumption_coef}_sf")  # beta_c_sf
+    if not pool_consumption:
+        singles_female_params.append(f"{utility_consumption_coef}_sf")  # beta_c_sf
     if utility_consumption_leisure_interaction_coef:
         singles_female_params.append(f"{utility_consumption_leisure_interaction_coef}_sf")
 
     if utility_form == "box_cox":
         if utility_leisure_theta:
             singles_female_params.append(f"{utility_leisure_theta}_sf")  # theta_l_sf
-        if utility_consumption_theta:
+        if utility_consumption_theta and not pool_consumption:
             singles_female_params.append(f"{utility_consumption_theta}_sf")  # theta_c_sf
 
     params.extend(singles_female_params)

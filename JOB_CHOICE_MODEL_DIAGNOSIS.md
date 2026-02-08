@@ -114,6 +114,11 @@ This is the consolidated list of code changes applied in response to the identif
   - Adds **Job Market Opportunity Equation** section when `beta_offer_*` exist.
   - Flags degenerate/zero SEs in parameter tables to avoid false confidence.
 
+### D. Numerical SEs for market opportunity
+- **Fixed SE computation for offer parameters**:
+  - `estimation_engine.py` now includes `market_opportunity` in the numpy likelihood and gradient used for numerical Hessians.
+  - This resolves the previous issue where `beta_offer_*` SEs were reported as zero/degenerate due to missing derivatives.
+
 
 ## 3) Identification-stabilizing edits that were implemented (summary view)
 
@@ -138,10 +143,11 @@ These are code-level changes already applied to support the identification ladde
    - Applied consistently in the vectorized GAMSPy estimator (singles + couples).
 
 5) **New specs created for tests**
-   - `estimation_spec_job_M2_centered.yaml`
-   - `estimation_spec_job_M2_lite.yaml`
-   - `estimation_spec_job_M2_scaled.yaml`
-   - `estimation_spec_job_M2_lite_scaled.yaml`
+  - `estimation_spec_job_M2_centered.yaml`
+  - `estimation_spec_job_M2_lite.yaml`
+  - `estimation_spec_job_M2_scaled.yaml`
+  - `estimation_spec_job_M2_lite_scaled.yaml`
+  - `estimation_spec_job_M2_plus.yaml` (Option A: educ/age/region × isco1 offer shifters)
 
 
 ## 4) Model that is currently estimated

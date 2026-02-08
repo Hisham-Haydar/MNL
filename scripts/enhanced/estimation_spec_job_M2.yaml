@@ -40,14 +40,42 @@ market_opportunity:
   gsur_variable: "gsur"
   occupation_variable: "isco1"
   occupation_categories: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-  occupation_base: 0
-  coef_working: "beta_offer_working"
+  occupation_base: 1
   coef_gsur: "beta_offer_gsur"
   coef_gsur_occ_prefix: "beta_offer_gsur_isco1_"
   offer_only_vars: ["gsur", "reg2", "reg3", "reg4", "reg5", "reg6", "reg7", "reg8"]
   center_within_choice_set: false
   center_weights: "uniform"
   enforce_job_varying: true
+  # Explicit shifters (drop beta_offer_working to reduce collinearity)
+  shifters:
+    - variable: "gsur"
+      coefficient: "beta_offer_gsur"
+      interaction: ["working"]
+    - variable: "isco1_2"
+      coefficient: "beta_offer_gsur_isco1_2"
+      interaction: ["working", "gsur"]
+    - variable: "isco1_3"
+      coefficient: "beta_offer_gsur_isco1_3"
+      interaction: ["working", "gsur"]
+    - variable: "isco1_4"
+      coefficient: "beta_offer_gsur_isco1_4"
+      interaction: ["working", "gsur"]
+    - variable: "isco1_5"
+      coefficient: "beta_offer_gsur_isco1_5"
+      interaction: ["working", "gsur"]
+    - variable: "isco1_6"
+      coefficient: "beta_offer_gsur_isco1_6"
+      interaction: ["working", "gsur"]
+    - variable: "isco1_7"
+      coefficient: "beta_offer_gsur_isco1_7"
+      interaction: ["working", "gsur"]
+    - variable: "isco1_8"
+      coefficient: "beta_offer_gsur_isco1_8"
+      interaction: ["working", "gsur"]
+    - variable: "isco1_9"
+      coefficient: "beta_offer_gsur_isco1_9"
+      interaction: ["working", "gsur"]
 
 couples: {}
 
@@ -77,9 +105,7 @@ initial_values:
   theta_c: 0.20
 
   # Opportunity
-  beta_offer_working: 0.50
   beta_offer_gsur: -0.10
-  beta_offer_gsur_isco1_1: 0.00
   beta_offer_gsur_isco1_2: 0.00
   beta_offer_gsur_isco1_3: 0.00
   beta_offer_gsur_isco1_4: 0.00
@@ -118,9 +144,7 @@ optimization:
     beta_l0_f: [0.05, 50.0]
 
     # Opportunity
-    beta_offer_working: [-20.0, 20.0]
     beta_offer_gsur: [-40.0, 40.0]
-    beta_offer_gsur_isco1_1: [-25.0, 25.0]
     beta_offer_gsur_isco1_2: [-25.0, 25.0]
     beta_offer_gsur_isco1_3: [-25.0, 25.0]
     beta_offer_gsur_isco1_4: [-25.0, 25.0]

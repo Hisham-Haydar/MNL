@@ -45,6 +45,215 @@ else:
     prange = range
 
 
+def _normalize_interaction_terms(interaction_cfg) -> list:
+    if interaction_cfg is None:
+        return []
+    if isinstance(interaction_cfg, (list, tuple, set)):
+        return [str(term).strip() for term in interaction_cfg if str(term).strip()]
+    term = str(interaction_cfg).strip()
+    return [term] if term else []
+
+
+def _apply_market_scale_numpy(values: np.ndarray, var_name: str, scale_map: Dict[str, float]) -> np.ndarray:
+    if not scale_map:
+        return values
+    scale_value = scale_map.get(str(var_name).strip())
+    if scale_value is None:
+        return values
+    try:
+        scale_value = float(scale_value)
+    except (TypeError, ValueError):
+        return values
+    if scale_value == 1.0:
+        return values
+    return values * scale_value
+
+
+def _center_within_choice_set(
+    values: np.ndarray,
+    group_starts: np.ndarray,
+    group_ends: np.ndarray,
+    weights: Optional[np.ndarray] = None,
+) -> np.ndarray:
+    centered = values.copy()
+    for g in range(len(group_starts)):
+        start, end = int(group_starts[g]), int(group_ends[g])
+        if weights is None:
+            mean_val = np.mean(values[start:end])
+        else:
+            w = weights[start:end]
+            denom = np.sum(w) + EPS
+            mean_val = np.sum(values[start:end] * w) / denom
+        centered[start:end] = values[start:end] - mean_val
+    return centered
+
+
+def _compute_market_opportunity_singles(
+    params: Dict[str, float],
+    data: PrecomputedDataSingles,
+    spec: EstimationSpec,
+) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+    log_market = np.zeros(data.n_obs)
+    components: Dict[str, np.ndarray] = {}
+    scale_map = getattr(spec, "market_opportunity_variable_scales", None) or {}
+
+    if getattr(spec, "market_opportunity_shifters", None):
+        for shifter in spec.market_opportunity_shifters:
+            var_name = shifter.get("variable")
+            coef_name = shifter.get("coefficient")
+            interaction_terms = _normalize_interaction_terms(shifter.get("interaction", None))
+            if not var_name or not coef_name:
+                continue
+            if coef_name not in params:
+                continue
+            if not hasattr(data, var_name):
+                continue
+            var_param = getattr(data, var_name)
+            if var_param is None:
+                continue
+            var_param = _apply_market_scale_numpy(var_param, var_name, scale_map)
+
+            interaction_missing = False
+            for interaction_name in interaction_terms:
+                if interaction_name == "working":
+                    interaction_param = data.working
+                else:
+                    interaction_param = getattr(data, interaction_name, None)
+                if interaction_param is None:
+                    interaction_missing = True
+                    break
+                interaction_param = _apply_market_scale_numpy(
+                    interaction_param, interaction_name, scale_map
+                )
+                var_param = var_param * interaction_param
+
+            if interaction_missing:
+                continue
+
+            log_market = log_market + params[coef_name] * var_param
+            if coef_name in components:
+                components[coef_name] = components[coef_name] + var_param
+            else:
+                components[coef_name] = var_param
+
+    if getattr(spec, "market_opportunity_center_within_choice_set", False):
+        weights = data.prior if spec.market_opportunity_center_weights == "proposal" else None
+        log_market = _center_within_choice_set(
+            log_market, data.group_starts, data.group_ends, weights
+        )
+        for coef_name, var_param in list(components.items()):
+            components[coef_name] = _center_within_choice_set(
+                var_param, data.group_starts, data.group_ends, weights
+            )
+
+    return log_market, components
+
+
+def _compute_market_opportunity_couples(
+    params: Dict[str, float],
+    data: PrecomputedDataCouples,
+    spec: EstimationSpec,
+) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+    log_market = np.zeros(data.n_obs)
+    components: Dict[str, np.ndarray] = {}
+    scale_map = getattr(spec, "market_opportunity_variable_scales", None) or {}
+
+    def _get_gender_var(base: str, gender: str) -> Optional[np.ndarray]:
+        attr_name = f"{base}_{gender}"
+        return getattr(data, attr_name, None) if hasattr(data, attr_name) else None
+
+    if getattr(spec, "market_opportunity_shifters", None):
+        for shifter in spec.market_opportunity_shifters:
+            var_name = shifter.get("variable")
+            coef_name = shifter.get("coefficient")
+            interaction_terms = _normalize_interaction_terms(shifter.get("interaction", None))
+            applies_to = str(shifter.get("applies_to", "both")).strip().lower()
+            if not var_name or not coef_name:
+                continue
+            if coef_name not in params:
+                continue
+
+            if applies_to == "household":
+                if not hasattr(data, var_name):
+                    continue
+                var_param = getattr(data, var_name)
+                if var_param is None:
+                    continue
+                var_param = _apply_market_scale_numpy(var_param, var_name, scale_map)
+                interaction_missing = False
+                for interaction_name in interaction_terms:
+                    if interaction_name == "working":
+                        interaction_param = data.working_male + data.working_female
+                    else:
+                        interaction_param = getattr(data, interaction_name, None)
+                    if interaction_param is None:
+                        interaction_missing = True
+                        break
+                    interaction_param = _apply_market_scale_numpy(
+                        interaction_param, interaction_name, scale_map
+                    )
+                    var_param = var_param * interaction_param
+                if interaction_missing:
+                    continue
+                log_market = log_market + params[coef_name] * var_param
+                components[coef_name] = components.get(coef_name, 0.0) + var_param
+                continue
+
+            if applies_to in ("male", "both"):
+                var_param_m = _get_gender_var(var_name, "male")
+                if var_param_m is not None:
+                    var_param_m = _apply_market_scale_numpy(var_param_m, var_name, scale_map)
+                    interaction_missing = False
+                    for interaction_name in interaction_terms:
+                        if interaction_name == "working":
+                            interaction_param = data.working_male
+                        else:
+                            interaction_param = _get_gender_var(interaction_name, "male")
+                        if interaction_param is None:
+                            interaction_missing = True
+                            break
+                        interaction_param = _apply_market_scale_numpy(
+                            interaction_param, interaction_name, scale_map
+                        )
+                        var_param_m = var_param_m * interaction_param
+                    if not interaction_missing:
+                        log_market = log_market + params[coef_name] * var_param_m
+                        components[coef_name] = components.get(coef_name, 0.0) + var_param_m
+
+            if applies_to in ("female", "both"):
+                var_param_f = _get_gender_var(var_name, "female")
+                if var_param_f is not None:
+                    var_param_f = _apply_market_scale_numpy(var_param_f, var_name, scale_map)
+                    interaction_missing = False
+                    for interaction_name in interaction_terms:
+                        if interaction_name == "working":
+                            interaction_param = data.working_female
+                        else:
+                            interaction_param = _get_gender_var(interaction_name, "female")
+                        if interaction_param is None:
+                            interaction_missing = True
+                            break
+                        interaction_param = _apply_market_scale_numpy(
+                            interaction_param, interaction_name, scale_map
+                        )
+                        var_param_f = var_param_f * interaction_param
+                    if not interaction_missing:
+                        log_market = log_market + params[coef_name] * var_param_f
+                        components[coef_name] = components.get(coef_name, 0.0) + var_param_f
+
+    if getattr(spec, "market_opportunity_center_within_choice_set", False):
+        weights = data.prior if spec.market_opportunity_center_weights == "proposal" else None
+        log_market = _center_within_choice_set(
+            log_market, data.group_starts, data.group_ends, weights
+        )
+        for coef_name, var_param in list(components.items()):
+            components[coef_name] = _center_within_choice_set(
+                var_param, data.group_starts, data.group_ends, weights
+            )
+
+    return log_market, components
+
+
 # ==============================================================================
 # Singles Estimation - Likelihood
 # ==============================================================================
@@ -110,7 +319,8 @@ def compute_likelihood_singles(
 
     # ===== 4. COMPOSITE VALUE FUNCTION =====
     # V = u + log h + log w - log π
-    V = u + log_h + log_w - np.log(data.prior)
+    log_market, _ = _compute_market_opportunity_singles(params, data, spec)
+    V = u + log_h + log_w + log_market - np.log(data.prior)
 
     # Validate likelihood computation
     if not np.all(np.isfinite(V)):
@@ -123,7 +333,7 @@ def compute_likelihood_singles(
         logger.error(f"prior finite: {np.all(np.isfinite(data.prior))}")
         raise ValueError("Likelihood contains NaN/Inf - check inputs")
 
-    # ===== 5. COMPUTE LOG-LIKELIHOOD =====
+    # ===== 6. COMPUTE LOG-LIKELIHOOD =====
     # Log-sum-exp for each choice set
     lse = compute_log_sum_exp_by_group(V, data.group_starts, data.group_ends)
 
@@ -148,6 +358,7 @@ def compute_likelihood_singles(
             'u': u,
             'log_h': log_h,
             'log_w': log_w,
+            'log_market': log_market,
             'lse': lse,
             'V_obs': V_obs,
             'll': ll,
@@ -546,6 +757,9 @@ def compute_gradient_singles(
         _compute_wage_derivatives_loc_singles(dV_dtheta, params, data, spec)
     # fw: no wage derivatives (all zeros)
 
+    # 2d. Market opportunity derivatives
+    _compute_market_derivatives_singles(dV_dtheta, params, data, spec)
+
     # ===== 3. COMPUTE GRADIENT VIA SOFTMAX WEIGHTING =====
     # Loop-based approach is faster than vectorized due to efficient NumPy @ operator
     grad = np.zeros(n_params)
@@ -893,6 +1107,40 @@ def _compute_wage_derivatives_loc_singles(
         dV_dtheta[:, idx] = np.where(data.working > 0, deriv_common, 0.0)
 
 
+def _compute_market_derivatives_singles(
+    dV_dtheta: np.ndarray,
+    params: Dict[str, float],
+    data: PrecomputedDataSingles,
+    spec: EstimationSpec
+) -> None:
+    """
+    Compute market-opportunity derivatives for singles (in-place).
+    """
+    _, components = _compute_market_opportunity_singles(params, data, spec)
+    for coef_name, var_param in components.items():
+        if coef_name not in spec.all_param_names:
+            continue
+        idx = spec.get_param_index(coef_name)
+        dV_dtheta[:, idx] = dV_dtheta[:, idx] + var_param
+
+
+def _compute_market_derivatives_couples(
+    dV_dtheta: np.ndarray,
+    params: Dict[str, float],
+    data: PrecomputedDataCouples,
+    spec: EstimationSpec
+) -> None:
+    """
+    Compute market-opportunity derivatives for couples (in-place).
+    """
+    _, components = _compute_market_opportunity_couples(params, data, spec)
+    for coef_name, var_param in components.items():
+        if coef_name not in spec.all_param_names:
+            continue
+        idx = spec.get_param_index(coef_name)
+        dV_dtheta[:, idx] = dV_dtheta[:, idx] + var_param
+
+
 # ==============================================================================
 # Couples Estimation - Likelihood
 # ==============================================================================
@@ -957,10 +1205,13 @@ def compute_likelihood_couples(
     else:
         raise ValueError(f"Unknown wage_spec: {spec.wage_spec}")
 
-    # ===== 4. COMPOSITE VALUE FUNCTION =====
-    V = u + log_h + log_w - np.log(data.prior)
+    # ===== 4. COMPUTE MARKET OPPORTUNITY =====
+    log_market, _ = _compute_market_opportunity_couples(params, data, spec)
 
-    # ===== 5. COMPUTE LOG-LIKELIHOOD =====
+    # ===== 5. COMPOSITE VALUE FUNCTION =====
+    V = u + log_h + log_w + log_market - np.log(data.prior)
+
+    # ===== 6. COMPUTE LOG-LIKELIHOOD =====
     lse = compute_log_sum_exp_by_group(V, data.group_starts, data.group_ends)
     V_obs = np.array([V[start] for start in data.group_starts])
     ll = np.sum(V_obs - lse)
@@ -983,6 +1234,7 @@ def compute_likelihood_couples(
             'log_h_female': log_h_female,
             'log_w_male': log_w_male if spec.wage_spec != "fw" else None,
             'log_w_female': log_w_female if spec.wage_spec != "fw" else None,
+            'log_market': log_market,
             'lse': lse,
             'V_obs': V_obs,
             'll': ll,
@@ -1410,6 +1662,9 @@ def compute_gradient_couples(
     elif spec.wage_spec == "loc_empirical":
         _compute_wage_derivatives_loc_couples_gender(dV_dtheta, params, data, spec, is_male=True)
         _compute_wage_derivatives_loc_couples_gender(dV_dtheta, params, data, spec, is_male=False)
+
+    # Market opportunity derivatives
+    _compute_market_derivatives_couples(dV_dtheta, params, data, spec)
 
     # ===== 3. COMPUTE GRADIENT VIA SOFTMAX WEIGHTING =====
     # Loop-based approach is faster than vectorized due to efficient NumPy @ operator

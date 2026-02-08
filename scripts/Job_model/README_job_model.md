@@ -13,11 +13,24 @@ Last validated run: **2026-02-04** (FR 2016, full grid with ISCO0, 199 simulated
 ## What Is Implemented
 
 ### 1) Job universe construction
-- `--universe-mode`: `empirical_pruned`, `empirical_all`, `full_grid`
+- `--universe-mode`:
+  - `empirical_pruned`, `empirical_all`, `full_grid`
+  - `gmm_occ` (latent job types per occupation using GMM)
+  - `kmeans_occ`, `hier_occ` (stubs for future)
+- `--rep-level`: `bin` (default, posted bundle) or `cell` (legacy)
 - `--rep-fill-mode`: `bin_means`, `bin_midpoints`
 - `--hours-rep-stat` and `--wage-rep-stat` when `bin_means`: `mean`, `median`, `mode`
 - `--job-id-mode`: `deterministic` (stable IDs) or `sequential`
 - `--include-isco0` and `--isco-codes` support
+
+For `gmm_occ`:
+- `--gmm-kmax`, `--gmm-min-comp-count`, `--gmm-min-comp-weight`
+- `--gmm-rep-stat` (`mean` or `trimmed_mean`), `--gmm-trim-q`
+- `--gmm-cov-type` (`full`, `diag`, `tied`, `spherical`)
+- `--gmm-contract-draws` (additional within-type contract draws per component; default 0)
+
+Note: `gmm-contract-draws > 0` increases the number of job alternatives by adding extra posted bundles
+per latent type (type_draw_id = 1..R). Baseline assignment still uses type_draw_id=0.
 
 With `full_grid`, total jobs are:
 - `n_isco * n_hours_bins * n_wage_bins` working jobs
@@ -27,8 +40,9 @@ Example: ISCO codes `0..9` with 4 hour bins and 10 wage bins gives `400 + 1 = 40
 
 ### 2) Draw generation
 - Baseline mode:
-  - `cell_rep` (default): draw 0 also uses job-cell representative values
+  - `posted` (default): draw 0 uses posted bundle (hours_rep/wage_rep)
   - `observed`: draw 0 uses observed baseline values
+  - `cell_rep` (legacy alias for posted)
 - Vectorized simulation for deciders
 - Proposal density columns available (`prior`, `log_prior`, `log_q_*`)
 - `job_id`, `hours_bin`, `wage_bin`, `isco1` carried with each draw
@@ -60,7 +74,7 @@ python scripts/Job_model/run_job_ruro_pipeline.py `
   --hours-rep-stat mode `
   --wage-rep-stat median `
   --job-id-mode deterministic `
-  --baseline-mode cell_rep `
+  --baseline-mode posted `
   --n-draws 199 `
   --include-isco0 `
   --euromod-system FR_2015 `
@@ -68,6 +82,24 @@ python scripts/Job_model/run_job_ruro_pipeline.py `
   --euromod-root "U:/EUROMOD-STORAGE/EUROMOD_RELEASES_J1.0+/EUROMOD_RELEASES_J1.0+" `
   --scenario-dir "U:/EUROMOD-STORAGE/interim/ruro/fr/2016/job_model/scenarios" `
   --seed 13
+```
+
+### GMM occupation mode example
+```powershell
+python scripts/Job_model/enh_job_universe.py `
+  --singles-path "U:/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready.parquet" `
+  --couples-path "U:/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready.parquet" `
+  --output-dir "U:/EUROMOD-STORAGE/Data/processed/fr/2016/job_model" `
+  --year 2016 `
+  --universe-mode gmm_occ `
+  --gmm-kmax 6 `
+  --gmm-min-comp-count 50 `
+  --gmm-min-comp-weight 0.03 `
+  --gmm-rep-stat mean `
+  --gmm-cov-type full `
+  --gmm-contract-draws 0 `
+  --job-id-mode deterministic `
+  --include-isco0
 ```
 
 ---

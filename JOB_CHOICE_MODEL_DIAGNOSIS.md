@@ -8,7 +8,8 @@ This note summarizes what the current job-choice pipeline does end-to-end, what 
 - Script: `scripts/Job_model/enh_job_universe.py`
 - Input: `singles_RURO_ready.parquet`, `couples_RURO_ready.parquet`
 - Main action:
-  - Build discrete jobs from `(hours_bin, wage_bin, isco1)` cells.
+  - Build discrete jobs from `(hours_bin, wage_bin, isco1)` cells (grid modes).
+  - Optional: build **latent job types** per occupation (GMM mode), with posted reps and optional within-type contract draws.
   - Compute representative hours/wage per cell (mean/median/mode depending on options).
   - Assign deterministic `job_id`.
 - Output:
@@ -68,7 +69,53 @@ This note summarizes what the current job-choice pipeline does end-to-end, what 
   - Fit stats, MU diagnostics, Hessian diagnostics, plots (hours/wage/job/loc distributions).
   - Includes prior-corrected null fit diagnostics for sampled alternatives.
 
-## 2) Identification-stabilizing edits that were implemented
+## 2) Applied edits (comprehensive summary)
+
+This is the consolidated list of code changes applied in response to the identification‑stabilizing prompt and subsequent requests.
+
+### A. Job universe and draws (job-choice pipeline)
+- **New universe mode `gmm_occ`** in `scripts/Job_model/enh_job_universe.py`:
+  - Fits **GMM within each ISCO1** on `(log yivwg_base, lhw_base)` using working deciders.
+  - Chooses `K_o` by BIC subject to **min count/weight** constraints (fallback to `K=1`).
+  - Produces **posted bundles** per type (mean or trimmed mean).
+  - **Optional within‑type contract draws** via `--gmm-contract-draws` (adds `type_draw_id`).
+  - Outputs `type_id`, `type_draw_id`, `hours_rep`, `wage_rep`, `yem_rep`.
+  - Metadata stores GMM params, scalers, and deterministic `job_id_map`.
+- **New baseline mode `posted`** in `scripts/Job_model/enh_job_draws.py`:
+  - Draw=0 uses posted reps from the universe (default).
+  - `cell_rep` retained as legacy alias.
+  - For `gmm_occ`, baseline job_id is assigned by **posterior argmax** within occupation.
+  - Proposal priors remain (`q_j_prior`, `log_q_*`) and are applied unchanged.
+- **Sanity checks** extended in `scripts/Job_model/sanity_checks_job.py`:
+  - For `gmm_occ`, enforce `type_id` + `type_draw_id` + finite reps.
+  - Validate `job_id=0` has zero hours/wage/yem and `type_draw_id=-1`.
+- **Documentation updated**:
+  - `scripts/Job_model/README_job_model.md` updated with `gmm_occ` usage and new args.
+  - `scripts/Job_model/ACCEPTANCE_TESTS.md` updated with GMM checks + `type_draw_id`.
+
+### B. Identification ladder in estimation (job-choice)
+- **Offer-tier ladder (M0–M3)** implemented via YAML (market_opportunity.tier):
+  - M0: working indicator only.
+  - M1: `gsur × working`.
+  - M2: `gsur × working × isco1` (base omitted).
+  - M3: one extra dimension (`hours_bin` OR `wage_bin`) with `gsur` interactions.
+- **Choice‑set centering** (optional):
+  - `market_opportunity.center_within_choice_set` with `center_weights` (uniform/proposal).
+  - Implemented with safe GAMS aliasing to avoid compile errors.
+- **Offer‑only exclusions enforced**:
+  - Variables declared offer‑only are blocked from preferences at parse time.
+- **Shifter scaling**:
+  - `market_opportunity.variable_scales` supported (e.g., `gsur: 10.0`) for stability.
+- **Specs created/extended**:
+  - `estimation_spec_job_M0.yaml` → `M3` family (+ centered/scaled variants).
+
+### C. Post‑estimation reporting (job-choice aware)
+- **Model‑aware branch** in `RURO_post_estimation_styled.py`:
+  - Adds **Job Market Opportunity Equation** section when `beta_offer_*` exist.
+  - Flags degenerate/zero SEs in parameter tables to avoid false confidence.
+
+
+## 3) Identification-stabilizing edits that were implemented (summary view)
 
 These are code-level changes already applied to support the identification ladder and stabilization tests:
 
@@ -97,7 +144,7 @@ These are code-level changes already applied to support the identification ladde
    - `estimation_spec_job_M2_lite_scaled.yaml`
 
 
-## 3) Model that is currently estimated
+## 4) Model that is currently estimated
 
 Let `i` be household/decision-maker, `j` alternative (draw/job), and `g` group.
 
@@ -122,7 +169,7 @@ For couples:
 - Same logic, with male/female leisure components and shared household consumption component.
 
 
-## 4) Why identification is hard in this setup
+## 5) Why identification is hard in this setup
 
 The estimated index is additive:
 
@@ -133,7 +180,7 @@ Main implication:
 - You identify the combined index well enough for prediction, but decomposition into "taste" vs "opportunity" can be weak/unstable.
 
 
-## 5) Evidence from recent runs
+## 6) Evidence from recent runs
 
 ### A) Baseline job-choice (older v0_plus family)
 - `run_2026-02-05_10-48-29` (v0_plus / IPOPT): LL ~ -22411.64, rho2_prior ~ 0.1069, but weak ID.
@@ -159,7 +206,7 @@ Interpretation so far:
 - Scaling reduces extreme magnitudes but does not fix curvature.
 
 
-## 6) Where issues are most likely
+## 7) Where issues are most likely
 
 1. **Preference-opportunity confounding by construction**
 - Utility and opportunity both enter additively in the same index.
@@ -179,7 +226,7 @@ Interpretation so far:
 - Limited exogenous variation can make decomposition less stable.
 
 
-## 7) Practical path to a model that fits better and is more identifiable
+## 8) Practical path to a model that fits better and is more identifiable
 
 1. **Stack multiple years** (best fix):
    - gsur varies more → offer block becomes identifiable.
@@ -190,7 +237,7 @@ Interpretation so far:
 5. Prefer holdout predictive checks (out-of-sample LL, rho2).
 
 
-## 8) Discussion checklist
+## 9) Discussion checklist
 
 - Are we prioritizing:
   - best in-sample fit, or

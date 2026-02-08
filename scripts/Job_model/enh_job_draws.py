@@ -65,7 +65,8 @@ WEEKS_PER_MONTH = 52.0 / 12.0
 
 # Baseline modes
 BASELINE_MODE_OBSERVED = "observed"  # Use actual lhw_base/yivwg_base
-BASELINE_MODE_CELL_REP = "cell_rep"  # Use hours_rep/wage_rep from job universe (default)
+BASELINE_MODE_CELL_REP = "cell_rep"  # Legacy alias for posted
+BASELINE_MODE_POSTED = "posted"  # Use hours_rep/wage_rep from job universe (default)
 
 # ---------------------------------------------------------------------------
 # I/O Helpers
@@ -285,6 +286,102 @@ def _assign_baseline_job(
 
 
 # ---------------------------------------------------------------------------
+# Baseline assignment for GMM occupation mode
+# ---------------------------------------------------------------------------
+
+def _gmm_argmax_component(
+    X_std: np.ndarray,
+    *,
+    weights: np.ndarray,
+    means: np.ndarray,
+    covariances: np.ndarray,
+) -> np.ndarray:
+    """Return argmax component index for each row of X_std."""
+    n, d = X_std.shape
+    k = weights.shape[0]
+    log_probs = np.empty((n, k), dtype=float)
+    const = -0.5 * d * np.log(2.0 * np.pi)
+    for j in range(k):
+        cov = covariances[j]
+        inv_cov = np.linalg.inv(cov)
+        sign, logdet = np.linalg.slogdet(cov)
+        if sign <= 0:
+            logdet = np.log(np.maximum(np.linalg.det(cov), 1e-12))
+        diff = X_std - means[j]
+        maha = np.einsum("ij,jk,ik->i", diff, inv_cov, diff)
+        log_probs[:, j] = const - 0.5 * logdet - 0.5 * maha + np.log(weights[j])
+    return log_probs.argmax(axis=1)
+
+
+def _assign_baseline_job_gmm(
+    df: pd.DataFrame,
+    job_universe: pd.DataFrame,
+    job_metadata: Dict[str, Any],
+) -> pd.DataFrame:
+    """
+    Assign baseline job_id using posterior GMM component within occupation.
+    """
+    df = df.copy()
+    lhw = pd.to_numeric(df["lhw_base"], errors="coerce").fillna(0.0).to_numpy()
+    yivwg = pd.to_numeric(df["yivwg_base"], errors="coerce").fillna(0.0).to_numpy()
+    isco1_obs = pd.to_numeric(df.get("loc_ruro", -1), errors="coerce").fillna(-1).astype(int).to_numpy()
+
+    baseline_job_id = np.zeros(len(df), dtype=int)
+    working_mask = (lhw > 0) & (yivwg > 0)
+
+    gmm_meta = job_metadata.get("gmm_occ", {}).get("occupations", {})
+
+    # Build lookup from (isco1, type_id) to job_id (representative draw_id=0 if present)
+    if "type_id" in job_universe.columns:
+        job_candidates = job_universe[job_universe["job_id"] > 0].copy()
+        if "type_draw_id" in job_candidates.columns:
+            job_candidates = job_candidates[job_candidates["type_draw_id"] == 0]
+        job_lookup = {
+            (int(r["isco1"]), int(r["type_id"])): int(r["job_id"])
+            for _, r in job_candidates.iterrows()
+        }
+    else:
+        job_lookup = {}
+
+    fallback_job_id = 0
+    if "prior" in job_universe.columns:
+        fallback_job_id = int(job_universe[job_universe["job_id"] > 0].sort_values("prior", ascending=False).iloc[0]["job_id"])
+    elif "q_j_prior" in job_universe.columns:
+        fallback_job_id = int(job_universe[job_universe["job_id"] > 0].sort_values("q_j_prior", ascending=False).iloc[0]["job_id"])
+
+    for isco in np.unique(isco1_obs[working_mask]):
+        occ_key = str(int(isco))
+        occ_meta = gmm_meta.get(occ_key)
+        if occ_meta is None:
+            continue
+        idx = np.where(working_mask & (isco1_obs == isco))[0]
+        if len(idx) == 0:
+            continue
+        logw = np.log(yivwg[idx])
+        X = np.column_stack([logw, lhw[idx]])
+        scaler_mean = np.array(occ_meta["scaler_mean"], dtype=float)
+        scaler_std = np.array(occ_meta["scaler_std"], dtype=float)
+        X_std = (X - scaler_mean) / scaler_std
+        weights = np.array(occ_meta["weights"], dtype=float)
+        means = np.array(occ_meta["means"], dtype=float)
+        covariances = np.array(occ_meta["covariances"], dtype=float)
+        comp_idx = _gmm_argmax_component(X_std, weights=weights, means=means, covariances=covariances)
+        for row_i, k in zip(idx, comp_idx):
+            jid = job_lookup.get((int(isco), int(k)))
+            if jid is None:
+                continue
+            baseline_job_id[row_i] = jid
+
+    # Fallback for any remaining working obs without assignment
+    unresolved = working_mask & (baseline_job_id == 0)
+    if unresolved.any():
+        baseline_job_id[unresolved] = fallback_job_id
+
+    df["baseline_job_id"] = baseline_job_id
+    return df
+
+
+# ---------------------------------------------------------------------------
 # Vectorized job draws
 # ---------------------------------------------------------------------------
 
@@ -296,7 +393,7 @@ def generate_job_draws_long(
     n_draws: int = DEFAULT_N_DRAWS,
     pi0_m: float = DEFAULT_PI0_M,
     pi0_f: float = DEFAULT_PI0_F,
-    baseline_mode: str = BASELINE_MODE_CELL_REP,
+    baseline_mode: str = BASELINE_MODE_POSTED,
     rng_seed: int = DEFAULT_SEED,
 ) -> pd.DataFrame:
     """
@@ -387,7 +484,10 @@ def generate_job_draws_long(
     hours_cutpoints = job_metadata["hours_cutpoints"]
     wage_cutpoints = job_metadata["wage_cutpoints"]
 
-    df_with_job = _assign_baseline_job(df, job_universe, hours_cutpoints, wage_cutpoints)
+    if job_metadata.get("universe_mode") == "gmm_occ":
+        df_with_job = _assign_baseline_job_gmm(df, job_universe, job_metadata)
+    else:
+        df_with_job = _assign_baseline_job(df, job_universe, hours_cutpoints, wage_cutpoints)
 
     # -------------------------------------------------------------------------
     # 5. Create draw=0 (baseline) for ALL persons
@@ -399,7 +499,12 @@ def generate_job_draws_long(
     df_draw0["job_id"] = df_draw0["baseline_job_id"]
 
     # Merge job attributes from job_universe
-    job_attrs = job_universe[["job_id", "hours_bin", "wage_bin", "isco1", "hours_rep", "wage_rep"]].copy()
+    job_attr_cols = ["job_id", "hours_bin", "wage_bin", "isco1", "hours_rep", "wage_rep"]
+    if "type_id" in job_universe.columns:
+        job_attr_cols.append("type_id")
+    if "type_draw_id" in job_universe.columns:
+        job_attr_cols.append("type_draw_id")
+    job_attrs = job_universe[job_attr_cols].copy()
 
     df_draw0 = df_draw0.merge(job_attrs, on="job_id", how="left", suffixes=("", "_job"))
 
@@ -408,7 +513,7 @@ def generate_job_draws_long(
         # Use actual observed values
         df_draw0["lhw_draw"] = pd.to_numeric(df_draw0["lhw_base"], errors="coerce").fillna(0.0)
         df_draw0["yivwg_draw"] = pd.to_numeric(df_draw0["yivwg_base"], errors="coerce").fillna(0.0)
-    elif baseline_mode == BASELINE_MODE_CELL_REP:
+    elif baseline_mode in {BASELINE_MODE_CELL_REP, BASELINE_MODE_POSTED}:
         # Use representative values from job universe (default)
         df_draw0["lhw_draw"] = df_draw0["hours_rep"].fillna(0.0)
         df_draw0["yivwg_draw"] = df_draw0["wage_rep"].fillna(0.0)
@@ -662,7 +767,7 @@ def _validate_baseline_job_assignment(df: pd.DataFrame, baseline_mode: str) -> N
         yivwg_ref = pd.to_numeric(deciders["yivwg_base"], errors="coerce").fillna(0.0)
         hours_label = "lhw_base"
         wage_label = "yivwg_base"
-    elif baseline_mode == BASELINE_MODE_CELL_REP:
+    elif baseline_mode in {BASELINE_MODE_CELL_REP, BASELINE_MODE_POSTED}:
         lhw_ref = pd.to_numeric(deciders["hours_rep"], errors="coerce").fillna(0.0)
         yivwg_ref = pd.to_numeric(deciders["wage_rep"], errors="coerce").fillna(0.0)
         hours_label = "hours_rep"
@@ -756,7 +861,7 @@ def generate_draws_from_ruro_ready(
     n_draws: int = DEFAULT_N_DRAWS,
     pi0_m: float = DEFAULT_PI0_M,
     pi0_f: float = DEFAULT_PI0_F,
-    baseline_mode: str = BASELINE_MODE_CELL_REP,
+    baseline_mode: str = BASELINE_MODE_POSTED,
     rng_seed: int = DEFAULT_SEED,
 ) -> pd.DataFrame:
     """
@@ -866,10 +971,11 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument(
         "--baseline-mode",
         type=str,
-        choices=[BASELINE_MODE_OBSERVED, BASELINE_MODE_CELL_REP],
-        default=BASELINE_MODE_CELL_REP,
-        help=f"Baseline (draw=0) mode: {BASELINE_MODE_CELL_REP} (use hours_rep/wage_rep from job universe, default), "
-             f"{BASELINE_MODE_OBSERVED} (use actual lhw_base/yivwg_base)",
+        choices=[BASELINE_MODE_OBSERVED, BASELINE_MODE_CELL_REP, BASELINE_MODE_POSTED],
+        default=BASELINE_MODE_POSTED,
+        help=f"Baseline (draw=0) mode: {BASELINE_MODE_POSTED} (use hours_rep/wage_rep from job universe, default), "
+             f"{BASELINE_MODE_OBSERVED} (use actual lhw_base/yivwg_base), "
+             f"{BASELINE_MODE_CELL_REP} (legacy alias for posted)",
     )
     ap.add_argument(
         "--seed",

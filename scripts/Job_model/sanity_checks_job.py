@@ -96,6 +96,8 @@ def sanity_report_job_universe(
         raise ValueError(f"job_id=0 has hours_rep={job_0_row['hours_rep']}, expected 0")
     if job_0_row["wage_rep"] != 0:
         raise ValueError(f"job_id=0 has wage_rep={job_0_row['wage_rep']}, expected 0")
+    if "yem_rep" in job_universe.columns and job_0_row["yem_rep"] != 0:
+        raise ValueError(f"job_id=0 has yem_rep={job_0_row['yem_rep']}, expected 0")
 
     logging.info("✓ job_id=0 (non-employment) is correctly defined")
 
@@ -128,6 +130,24 @@ def sanity_report_job_universe(
             raise ValueError(f"Column {col} has {n_missing} missing values")
 
     logging.info("✓ No missing values in working jobs")
+
+    # GMM-specific checks
+    if metadata is not None and metadata.get("universe_mode") == "gmm_occ":
+        if "type_id" not in job_universe.columns:
+            raise ValueError("GMM universe missing type_id column")
+        if "type_draw_id" not in job_universe.columns:
+            raise ValueError("GMM universe missing type_draw_id column")
+        if working_jobs["type_id"].isna().any():
+            raise ValueError("GMM universe has missing type_id values")
+        if working_jobs["type_draw_id"].isna().any():
+            raise ValueError("GMM universe has missing type_draw_id values")
+        if not np.isfinite(working_jobs["hours_rep"]).all() or not np.isfinite(working_jobs["wage_rep"]).all():
+            raise ValueError("GMM universe has non-finite representative values")
+        if "type_draw_id" in job_universe.columns and job_0_row["type_draw_id"] != -1:
+            raise ValueError(
+                f"job_id=0 has type_draw_id={job_0_row['type_draw_id']}, expected -1"
+            )
+        logging.info("✓ GMM-specific checks passed (type_id/type_draw_id present, reps finite)")
 
     # Summary statistics
     logging.info("\nJob Universe Summary:")

@@ -108,6 +108,34 @@ python scripts/enhanced/enh_RURO_euromod.py `
 
 ---
 
+### Test 1b: GMM Occupation Mode (Latent Job Types)
+
+**Purpose**: Build latent job types by occupation using GMM and verify mapping
+
+```powershell
+python scripts/Job_model/enh_job_universe.py `
+  --singles-path "U:/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready.parquet" `
+  --couples-path "U:/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready.parquet" `
+  --output-dir "U:/EUROMOD-STORAGE/Data/processed/fr/2016/job_model_gmm" `
+  --year 2016 `
+  --universe-mode gmm_occ `
+  --gmm-kmax 6 `
+  --gmm-min-comp-count 50 `
+  --gmm-min-comp-weight 0.03 `
+  --gmm-rep-stat mean `
+  --gmm-cov-type full `
+  --gmm-contract-draws 0 `
+  --job-id-mode deterministic `
+  --include-isco0
+```
+
+**Expected Outcomes**:
+1. Job universe includes `type_id`, `type_draw_id`, and `yem_rep`
+2. Metadata includes `gmm_occ`, `gmm_contract_draws`, and `job_id_map`
+3. `q_j_prior` sums to 1 over working jobs
+
+---
+
 ### Test 2: Backward Compatibility (Original Behavior)
 
 **Purpose**: Ensure default settings replicate original pipeline behavior
@@ -306,12 +334,14 @@ After running tests, verify:
 
 - [ ] **Job Universe File** (`job_universe_2016.parquet`):
   - [ ] Has columns: `job_id, job_idx, hours_bin, wage_bin, isco1, cell_count, hours_rep, wage_rep, prior, log_prior, q_j_prior`
+  - [ ] If `universe_mode=gmm_occ`, also has `type_id`, `type_draw_id`, and `yem_rep`
   - [ ] job_id=0 row exists (non-employment)
   - [ ] `prior` sums to 1.0 (excluding job 0): `sum(prior[job_id>0]) ≈ 1.0`
   - [ ] For full_grid: N_jobs = (n_isco × n_hours × n_wage) + 1
 
 - [ ] **Job Metadata** (`job_universe_2016__meta.json`):
   - [ ] Contains: `universe_mode, rep_fill_mode, job_id_mode, isco1_codes, n_hours_bins, n_wage_bins, n_empty_cells`
+  - [ ] If `universe_mode=gmm_occ`, contains `gmm_occ`, `gmm_contract_draws`, and `job_id_map`
   - [ ] `prior_sum ≈ 1.0`
 
 - [ ] **Job Draws File** (`*_jobdraws.parquet`):

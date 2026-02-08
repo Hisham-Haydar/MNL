@@ -12,8 +12,9 @@ This script:
 1. Loads singles/couples RURO_ready.parquet from enh_RURO_prep.py
 2. Defines hours bins (fixed cutpoints) and wage bins (data-dependent deciles/quantiles)
 3. Builds job grid by counting observed (hours_bin, wage_bin, isco1) cells among working deciders
-4. Computes empirical prior q_j ∝ cell_count (with optional Laplace smoothing)
-5. Exports job_universe_{year}.parquet + metadata JSON sidecar
+4. Assigns representative posted values (hours_rep, wage_rep) at bin- or cell-level
+5. Computes empirical prior q_j ∝ cell_count (with optional Laplace smoothing)
+6. Exports job_universe_{year}.parquet + metadata JSON sidecar
 
 Output schema:
 --------------
@@ -25,12 +26,18 @@ wage_bin : int
     Wage bin ID (0-indexed; -1 for non-employment)
 isco1 : int
     ISCO 1-digit occupation code (1-9; -1 for non-employment)
+type_id : int
+    Latent type within occupation (gmm_occ only; -1 for non-employment)
+type_draw_id : int
+    Within-type contract draw ID (gmm_occ only; 0=component representative, -1 for non-employment)
 cell_count : int
     Number of observed working deciders in this job cell
 hours_rep : float
     Representative hours for this job (bin-level summary statistic)
 wage_rep : float
     Representative wage for this job (bin-level summary statistic)
+yem_rep : float
+    Representative monthly earnings (wage_rep * hours_rep * 52/12); 0 for job_id=0
 q_j_prior : float
     Proposal prior probability (sums to 1 over working jobs, excluding job 0)
 
@@ -69,12 +76,18 @@ EXCLUDE_ISCO1 = [-1, -2]  # -1 non-applicable, -2 unknown
 UNIVERSE_MODE_EMPIRICAL_PRUNED = "empirical_pruned"  # Drop rare cells (original behavior)
 UNIVERSE_MODE_EMPIRICAL_ALL = "empirical_all"  # Keep all observed cells
 UNIVERSE_MODE_FULL_GRID = "full_grid"  # Complete grid with filled empty cells
+UNIVERSE_MODE_GMM_OCC = "gmm_occ"  # Occupation-specific latent job types (GMM)
+UNIVERSE_MODE_KMEANS_OCC = "kmeans_occ"  # Stub (future)
+UNIVERSE_MODE_HIER_OCC = "hier_occ"  # Stub (future)
 
 # Representative value fill modes (for empty cells in full_grid)
 REP_FILL_MODE_BIN_MEANS = "bin_means"  # Use observed bin means
 REP_FILL_MODE_BIN_MIDPOINTS = "bin_midpoints"  # Use bin midpoints
 REP_LEVEL_BIN = "bin"
 REP_LEVEL_CELL = "cell"
+
+# GMM latent types (occupation-specific) - contract draws per type
+DEFAULT_GMM_CONTRACT_DRAWS = 0
 
 # Summary statistics for representative values
 REP_STAT_MEAN = "mean"
@@ -273,6 +286,320 @@ def _assign_bins(
 # ---------------------------------------------------------------------------
 # Job universe construction
 # ---------------------------------------------------------------------------
+
+def _trimmed_mean(series: pd.Series, trim_q: float) -> float:
+    x = pd.to_numeric(series, errors="coerce").dropna()
+    if x.empty:
+        return float("nan")
+    if trim_q <= 0:
+        return float(x.mean())
+    lo = x.quantile(trim_q)
+    hi = x.quantile(1.0 - trim_q)
+    trimmed = x[(x >= lo) & (x <= hi)]
+    if trimmed.empty:
+        trimmed = x
+    return float(trimmed.mean())
+
+
+def _fit_gmm_for_occ(
+    df_occ: pd.DataFrame,
+    *,
+    kmax: int,
+    min_comp_count: int,
+    min_comp_weight: float,
+    rep_stat: str,
+    trim_q: float,
+    seed: int,
+    cov_type: str,
+) -> Dict[str, Any]:
+    from sklearn.mixture import GaussianMixture
+
+    lhw = pd.to_numeric(df_occ["lhw_base"], errors="coerce").to_numpy()
+    yivwg = pd.to_numeric(df_occ["yivwg_base"], errors="coerce").to_numpy()
+    valid = (lhw > 0) & (yivwg > 0)
+    lhw = lhw[valid]
+    yivwg = yivwg[valid]
+    if len(lhw) == 0:
+        raise ValueError("No valid observations for GMM fit")
+
+    logw = np.log(yivwg)
+    X = np.column_stack([logw, lhw])
+
+    scaler_mean = X.mean(axis=0)
+    scaler_std = X.std(axis=0)
+    scaler_std = np.where(scaler_std == 0, 1.0, scaler_std)
+    X_std = (X - scaler_mean) / scaler_std
+
+    best = None
+    for k in range(1, kmax + 1):
+        gmm = GaussianMixture(
+            n_components=k,
+            covariance_type=cov_type,
+            random_state=seed,
+            reg_covar=1e-6,
+        )
+        gmm.fit(X_std)
+        weights = gmm.weights_
+        resp = gmm.predict_proba(X_std)
+        hard = resp.argmax(axis=1)
+        counts = np.bincount(hard, minlength=k)
+        if (weights < min_comp_weight).any() or (counts < min_comp_count).any():
+            continue
+        bic = gmm.bic(X_std)
+        if best is None or bic < best["bic"]:
+            best = {
+                "gmm": gmm,
+                "bic": bic,
+                "weights": weights,
+                "counts": counts,
+                "hard": hard,
+            }
+
+    if best is None:
+        logging.warning("No GMM fit passed constraints; falling back to K=1.")
+        gmm = GaussianMixture(
+            n_components=1,
+            covariance_type=cov_type,
+            random_state=seed,
+            reg_covar=1e-6,
+        )
+        gmm.fit(X_std)
+        weights = gmm.weights_
+        resp = gmm.predict_proba(X_std)
+        hard = resp.argmax(axis=1)
+        counts = np.bincount(hard, minlength=1)
+    else:
+        gmm = best["gmm"]
+        weights = best["weights"]
+        counts = best["counts"]
+        hard = best["hard"]
+
+    if rep_stat == "mean":
+        means_std = gmm.means_
+        means = means_std * scaler_std + scaler_mean
+        wage_rep = np.exp(means[:, 0])
+        hours_rep = means[:, 1]
+    elif rep_stat == "trimmed_mean":
+        wage_rep = []
+        hours_rep = []
+        for k in range(gmm.n_components):
+            mask = hard == k
+            if not mask.any():
+                wage_rep.append(float(np.exp(scaler_mean[0])))
+                hours_rep.append(float(scaler_mean[1]))
+                continue
+            logw_k = logw[mask]
+            lhw_k = lhw[mask]
+            wage_rep.append(float(np.exp(_trimmed_mean(pd.Series(logw_k), trim_q))))
+            hours_rep.append(float(_trimmed_mean(pd.Series(lhw_k), trim_q)))
+        wage_rep = np.array(wage_rep)
+        hours_rep = np.array(hours_rep)
+    else:
+        raise ValueError(f"Unknown gmm rep_stat: {rep_stat}")
+
+    return {
+        "k": int(gmm.n_components),
+        "weights": weights.tolist(),
+        "counts": counts.tolist(),
+        "means": gmm.means_.tolist(),
+        "covariances": gmm.covariances_.tolist(),
+        "scaler_mean": scaler_mean.tolist(),
+        "scaler_std": scaler_std.tolist(),
+        "hours_rep": hours_rep.tolist(),
+        "wage_rep": wage_rep.tolist(),
+    }
+
+
+def _build_job_universe_gmm_occ(
+    df: pd.DataFrame,
+    *,
+    isco_col: str,
+    isco_codes: List[int],
+    kmax: int,
+    min_comp_count: int,
+    min_comp_weight: float,
+    rep_stat: str,
+    trim_q: float,
+    contract_draws: int,
+    smoothing_alpha: float,
+    job_id_mode: str,
+    seed: int,
+    cov_type: str,
+) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+    df = df.copy()
+    df["isco1"] = pd.to_numeric(df[isco_col], errors="coerce").fillna(-2).astype(int)
+    df = df[df["isco1"].isin(isco_codes)].copy()
+
+    if df.empty:
+        raise ValueError("No valid ISCO codes found in working deciders")
+
+    total_working = len(df)
+    occ_counts = df["isco1"].value_counts().to_dict()
+    occ_share = {int(k): v / total_working for k, v in occ_counts.items()}
+
+    jobs = []
+    gmm_meta = {}
+    rng = np.random.default_rng(seed)
+    draws_per_type = int(max(contract_draws, 0))
+    for isco in sorted(isco_codes):
+        df_occ = df[df["isco1"] == isco].copy()
+        if df_occ.empty:
+            logging.warning("No data for ISCO %s; skipping.", isco)
+            continue
+        occ_fit = _fit_gmm_for_occ(
+            df_occ,
+            kmax=kmax,
+            min_comp_count=min_comp_count,
+            min_comp_weight=min_comp_weight,
+            rep_stat=rep_stat,
+            trim_q=trim_q,
+            seed=seed,
+            cov_type=cov_type,
+        )
+        gmm_meta[str(isco)] = occ_fit
+        k = occ_fit["k"]
+        weights = np.array(occ_fit["weights"], dtype=float)
+        means = np.array(occ_fit["means"], dtype=float)
+        covariances = np.array(occ_fit["covariances"], dtype=float)
+        scaler_mean = np.array(occ_fit["scaler_mean"], dtype=float)
+        scaler_std = np.array(occ_fit["scaler_std"], dtype=float)
+        for type_id in range(k):
+            # Representative (draw_id=0)
+            jobs.append(
+                {
+                    "isco1": int(isco),
+                    "type_id": int(type_id),
+                    "type_draw_id": 0,
+                    "hours_bin": -1,
+                    "wage_bin": -1,
+                    "cell_count": int(occ_fit["counts"][type_id]),
+                    "hours_rep": float(occ_fit["hours_rep"][type_id]),
+                    "wage_rep": float(occ_fit["wage_rep"][type_id]),
+                    "mix_weight": float(occ_fit["weights"][type_id]),
+                }
+            )
+            if draws_per_type > 0:
+                # Sample from the component distribution in standardized space.
+                mean_k = means[type_id]
+                cov_k = covariances[type_id]
+                draws = rng.multivariate_normal(mean_k, cov_k, size=draws_per_type)
+                X = draws * scaler_std + scaler_mean
+                logw = X[:, 0]
+                hours = X[:, 1]
+                wage = np.exp(logw)
+                # Guard against non-positive hours (rare but possible with Gaussian tails).
+                if np.any(hours <= 0):
+                    n_bad = int(np.sum(hours <= 0))
+                    logging.warning(
+                        "GMM draws produced %d non-positive hours for ISCO %s type %s; clipping to 0.1.",
+                        n_bad,
+                        isco,
+                        type_id,
+                    )
+                    hours = np.maximum(hours, 0.1)
+                for draw_id in range(1, draws_per_type + 1):
+                    jobs.append(
+                        {
+                            "isco1": int(isco),
+                            "type_id": int(type_id),
+                            "type_draw_id": int(draw_id),
+                            "hours_bin": -1,
+                            "wage_bin": -1,
+                            "cell_count": int(occ_fit["counts"][type_id]),
+                            "hours_rep": float(hours[draw_id - 1]),
+                            "wage_rep": float(wage[draw_id - 1]),
+                            "mix_weight": float(occ_fit["weights"][type_id]),
+                        }
+                    )
+
+    if not jobs:
+        raise ValueError("No latent job types created (empty job list)")
+
+    grouped = pd.DataFrame(jobs)
+
+    # Compute prior: occ_share * mix_weight / (1 + contract_draws) with Laplace smoothing.
+    denom = 1.0 + draws_per_type
+    raw = grouped["isco1"].map(occ_share).to_numpy() * grouped["mix_weight"].to_numpy() / denom
+    mean_raw = raw.mean() if len(raw) > 0 else 1.0
+    smoothing_constant = smoothing_alpha * mean_raw
+    grouped["prior"] = (raw + smoothing_constant) / (raw.sum() + smoothing_constant * len(raw))
+    grouped["log_prior"] = np.log(grouped["prior"])
+    grouped["q_j_prior"] = grouped["prior"]
+
+    # Assign job_id
+    if job_id_mode == JOB_ID_MODE_DETERMINISTIC:
+        isco_sorted = sorted(grouped["isco1"].unique())
+        isco_rank_map = {code: rank for rank, code in enumerate(isco_sorted)}
+        grouped["job_id"] = grouped.apply(
+            lambda row: int(
+                1
+                + isco_rank_map[int(row["isco1"])] * kmax * (draws_per_type + 1)
+                + int(row["type_id"]) * (draws_per_type + 1)
+                + int(row["type_draw_id"])
+            ),
+            axis=1,
+        )
+        grouped = grouped.sort_values(["isco1", "type_id", "type_draw_id"]).reset_index(drop=True)
+        grouped["job_idx"] = np.arange(1, len(grouped) + 1, dtype=int)
+    else:
+        grouped = grouped.sort_values(["isco1", "type_id", "type_draw_id"]).reset_index(drop=True)
+        grouped["job_id"] = np.arange(1, len(grouped) + 1, dtype=int)
+        grouped["job_idx"] = grouped["job_id"].copy()
+
+    # Prepend job_id=0
+    job_0 = pd.DataFrame(
+        {
+            "job_id": [0],
+            "job_idx": [0],
+            "hours_bin": [-1],
+            "wage_bin": [-1],
+            "isco1": [-1],
+            "type_id": [-1],
+            "type_draw_id": [-1],
+            "cell_count": [0],
+            "hours_rep": [0.0],
+            "wage_rep": [0.0],
+            "mix_weight": [0.0],
+            "prior": [0.0],
+            "log_prior": [-np.inf],
+            "q_j_prior": [0.0],
+        }
+    )
+
+    job_universe = pd.concat([job_0, grouped], ignore_index=True)
+    job_universe["yem_rep"] = job_universe["wage_rep"] * job_universe["hours_rep"] * WEEKS_PER_MONTH
+    job_universe.loc[job_universe["job_id"] == 0, "yem_rep"] = 0.0
+
+    col_order = [
+        "job_id",
+        "job_idx",
+        "hours_bin",
+        "wage_bin",
+        "isco1",
+        "type_id",
+        "type_draw_id",
+        "cell_count",
+        "hours_rep",
+        "wage_rep",
+        "yem_rep",
+        "prior",
+        "log_prior",
+        "q_j_prior",
+    ]
+    job_universe = job_universe[col_order]
+
+    meta = {
+        "kmax": kmax,
+        "min_comp_count": min_comp_count,
+        "min_comp_weight": min_comp_weight,
+        "rep_stat": rep_stat,
+        "trim_q": trim_q,
+        "cov_type": cov_type,
+        "contract_draws": draws_per_type,
+        "occupations": gmm_meta,
+    }
+
+    return job_universe, meta
 
 def _compute_deterministic_job_id(
     hours_bin: int,
@@ -602,6 +929,13 @@ def build_job_universe_from_ruro_ready(
     job_id_mode: str = JOB_ID_MODE_SEQUENTIAL,
     min_cell_threshold: int = DEFAULT_MIN_CELL_THRESHOLD,
     smoothing_alpha: float = DEFAULT_SMOOTHING_ALPHA,
+    gmm_kmax: int = 6,
+    gmm_min_comp_count: int = 50,
+    gmm_min_comp_weight: float = 0.03,
+    gmm_rep_stat: str = "mean",
+    gmm_trim_q: float = 0.10,
+    gmm_cov_type: str = "full",
+    gmm_contract_draws: int = DEFAULT_GMM_CONTRACT_DRAWS,
     seed: int = DEFAULT_SEED,
 ) -> Dict[str, Any]:
     """
@@ -693,7 +1027,10 @@ def build_job_universe_from_ruro_ready(
     working_mask = (is_worker == 1) & (lhw > 0) & (yivwg > 0)
     working_df = combined_df[working_mask].copy()
 
-    logging.info(f"Working deciders: {len(working_df)} / {len(combined_df)} ({100*len(working_df)/len(combined_df):.1f}%)")
+    logging.info(
+        f"Working deciders: {len(working_df)} / {len(combined_df)} "
+        f"({100*len(working_df)/len(combined_df):.1f}%)"
+    )
 
     if len(working_df) == 0:
         raise ValueError("No working deciders found (is_worker==1, lhw_base>0, yivwg_base>0)")
@@ -712,36 +1049,57 @@ def build_job_universe_from_ruro_ready(
         logging.info(f"  Bin {i}: [{lo:.2f}, {hi:.2f}]")
 
     # -------------------------------------------------------------------------
-    # 4. Assign bins to working deciders
+    # 4. Assign bins to working deciders / build latent universe
     # -------------------------------------------------------------------------
-    working_binned = _assign_bins(working_df, hours_edges, wage_edges)
+    gmm_meta = None
+    n_working_deciders = len(working_df)
+    if universe_mode == UNIVERSE_MODE_GMM_OCC:
+        job_universe, gmm_meta = _build_job_universe_gmm_occ(
+            working_df,
+            isco_col="loc_ruro",
+            isco_codes=isco_codes,
+            kmax=gmm_kmax,
+            min_comp_count=gmm_min_comp_count,
+            min_comp_weight=gmm_min_comp_weight,
+            rep_stat=gmm_rep_stat,
+            trim_q=gmm_trim_q,
+            contract_draws=gmm_contract_draws,
+            smoothing_alpha=smoothing_alpha,
+            job_id_mode=job_id_mode,
+            seed=seed,
+            cov_type=gmm_cov_type,
+        )
+    elif universe_mode in {UNIVERSE_MODE_KMEANS_OCC, UNIVERSE_MODE_HIER_OCC}:
+        raise NotImplementedError(f"Universe mode '{universe_mode}' is not yet implemented.")
+    else:
+        working_binned = _assign_bins(working_df, hours_edges, wage_edges)
 
-    # -------------------------------------------------------------------------
-    # 5. Build job universe
-    # -------------------------------------------------------------------------
-    job_universe = _build_job_universe(
-        working_binned,
-        isco_col="loc_ruro",
-        isco_codes=isco_codes,
-        n_hours_bins=len(hours_labels),
-        n_wage_bins=len(wage_labels),
-        hours_labels=hours_labels,
-        wage_labels=wage_labels,
-        universe_mode=universe_mode,
-        rep_fill_mode=rep_fill_mode,
-        rep_level=rep_level,
-        hours_rep_stat=hours_rep_stat,
-        wage_rep_stat=wage_rep_stat,
-        job_id_mode=job_id_mode,
-        min_cell_threshold=min_cell_threshold,
-        smoothing_alpha=smoothing_alpha,
-    )
+        # ---------------------------------------------------------------------
+        # 5. Build job universe (grid modes)
+        # ---------------------------------------------------------------------
+        job_universe = _build_job_universe(
+            working_binned,
+            isco_col="loc_ruro",
+            isco_codes=isco_codes,
+            n_hours_bins=len(hours_labels),
+            n_wage_bins=len(wage_labels),
+            hours_labels=hours_labels,
+            wage_labels=wage_labels,
+            universe_mode=universe_mode,
+            rep_fill_mode=rep_fill_mode,
+            rep_level=rep_level,
+            hours_rep_stat=hours_rep_stat,
+            wage_rep_stat=wage_rep_stat,
+            job_id_mode=job_id_mode,
+            min_cell_threshold=min_cell_threshold,
+            smoothing_alpha=smoothing_alpha,
+        )
 
     logging.info(f"Job universe: {len(job_universe)-1} working jobs + 1 non-employment")
     logging.info(f"  Total cells: {len(job_universe)}")
     logging.info(f"  prior sum (excluding job 0): {job_universe[job_universe['job_id']>0]['prior'].sum():.6f}")
 
-    if rep_level == REP_LEVEL_BIN:
+    if rep_level == REP_LEVEL_BIN and universe_mode not in {UNIVERSE_MODE_GMM_OCC, UNIVERSE_MODE_KMEANS_OCC, UNIVERSE_MODE_HIER_OCC}:
         working_jobs = job_universe[job_universe["job_id"] > 0]
         hours_rep_nunique = working_jobs.groupby("hours_bin")["hours_rep"].nunique()
         wage_rep_nunique = working_jobs.groupby("wage_bin")["wage_rep"].nunique()
@@ -787,11 +1145,18 @@ def build_job_universe_from_ruro_ready(
         "rep_level": rep_level,
         "hours_rep_stat": hours_rep_stat,
         "wage_rep_stat": wage_rep_stat,
+        "gmm_kmax": gmm_kmax,
+        "gmm_min_comp_count": gmm_min_comp_count,
+        "gmm_min_comp_weight": gmm_min_comp_weight,
+        "gmm_rep_stat": gmm_rep_stat,
+        "gmm_trim_q": gmm_trim_q,
+        "gmm_cov_type": gmm_cov_type,
+        "gmm_contract_draws": gmm_contract_draws,
         "job_id_mode": job_id_mode,
         "n_jobs": int(len(job_universe) - 1),  # Excluding job 0
         "n_cells_total": int(len(job_universe)),
         "n_empty_cells": int((job_universe["cell_count"] == 0).sum()),
-        "n_working_deciders": int(len(working_binned)),
+        "n_working_deciders": int(n_working_deciders),
         "min_cell_threshold": min_cell_threshold,
         "smoothing_alpha": smoothing_alpha,
         "prior_sum": float(job_universe[job_universe["job_id"] > 0]["prior"].sum()),
@@ -803,6 +1168,13 @@ def build_job_universe_from_ruro_ready(
         },
         "output_file": str(output_path),
     }
+    if gmm_meta is not None:
+        metadata["gmm_occ"] = gmm_meta
+        job_map_cols = ["job_id", "isco1", "type_id"]
+        if "type_draw_id" in job_universe.columns:
+            job_map_cols.append("type_draw_id")
+        job_map = job_universe[job_universe["job_id"] > 0][job_map_cols].to_dict(orient="records")
+        metadata["job_id_map"] = job_map
 
     metadata_path = output_dir / f"job_universe_{year}__meta.json"
     with open(metadata_path, "w", encoding="utf-8") as f:
@@ -872,10 +1244,18 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument(
         "--universe-mode",
         type=str,
-        choices=[UNIVERSE_MODE_EMPIRICAL_PRUNED, UNIVERSE_MODE_EMPIRICAL_ALL, UNIVERSE_MODE_FULL_GRID],
+        choices=[
+            UNIVERSE_MODE_EMPIRICAL_PRUNED,
+            UNIVERSE_MODE_EMPIRICAL_ALL,
+            UNIVERSE_MODE_FULL_GRID,
+            UNIVERSE_MODE_GMM_OCC,
+            UNIVERSE_MODE_KMEANS_OCC,
+            UNIVERSE_MODE_HIER_OCC,
+        ],
         default=UNIVERSE_MODE_EMPIRICAL_PRUNED,
         help=f"Universe construction mode: {UNIVERSE_MODE_EMPIRICAL_PRUNED} (drop rare cells, backward compat), "
-             f"{UNIVERSE_MODE_EMPIRICAL_ALL} (keep all observed), {UNIVERSE_MODE_FULL_GRID} (complete grid with filled empty cells, RECOMMENDED)",
+             f"{UNIVERSE_MODE_EMPIRICAL_ALL} (keep all observed), {UNIVERSE_MODE_FULL_GRID} (complete grid with filled empty cells, RECOMMENDED), "
+             f"{UNIVERSE_MODE_GMM_OCC} (occupation-specific latent job types)",
     )
     ap.add_argument(
         "--rep-level",
@@ -891,6 +1271,50 @@ def parse_args() -> argparse.Namespace:
         default=REP_FILL_MODE_BIN_MEANS,
         help=f"Representative-value strategy: "
              f"{REP_FILL_MODE_BIN_MEANS} (bin-level stats), {REP_FILL_MODE_BIN_MIDPOINTS} (bin midpoints)",
+    )
+    ap.add_argument(
+        "--gmm-kmax",
+        type=int,
+        default=6,
+        help="Maximum components per occupation for gmm_occ (default: 6)",
+    )
+    ap.add_argument(
+        "--gmm-min-comp-count",
+        type=int,
+        default=50,
+        help="Minimum count per component for gmm_occ (default: 50)",
+    )
+    ap.add_argument(
+        "--gmm-min-comp-weight",
+        type=float,
+        default=0.03,
+        help="Minimum component weight for gmm_occ (default: 0.03)",
+    )
+    ap.add_argument(
+        "--gmm-rep-stat",
+        type=str,
+        choices=["mean", "trimmed_mean"],
+        default="mean",
+        help="Representative value for gmm_occ components (mean or trimmed_mean)",
+    )
+    ap.add_argument(
+        "--gmm-trim-q",
+        type=float,
+        default=0.10,
+        help="Trim quantile for trimmed_mean (default: 0.10)",
+    )
+    ap.add_argument(
+        "--gmm-cov-type",
+        type=str,
+        default="full",
+        choices=["full", "diag", "tied", "spherical"],
+        help="GaussianMixture covariance_type for gmm_occ",
+    )
+    ap.add_argument(
+        "--gmm-contract-draws",
+        type=int,
+        default=DEFAULT_GMM_CONTRACT_DRAWS,
+        help="Number of within-type contract draws to add per GMM component (default: 0)",
     )
     ap.add_argument(
         "--hours-rep-stat",
@@ -971,6 +1395,13 @@ def main() -> None:
         job_id_mode=args.job_id_mode,
         min_cell_threshold=args.min_cell_threshold,
         smoothing_alpha=args.smoothing_alpha,
+        gmm_kmax=args.gmm_kmax,
+        gmm_min_comp_count=args.gmm_min_comp_count,
+        gmm_min_comp_weight=args.gmm_min_comp_weight,
+        gmm_rep_stat=args.gmm_rep_stat,
+        gmm_trim_q=args.gmm_trim_q,
+        gmm_cov_type=args.gmm_cov_type,
+        gmm_contract_draws=args.gmm_contract_draws,
         seed=args.seed,
     )
 

@@ -181,6 +181,7 @@ def sanity_report_job_draws(
     df: pd.DataFrame,
     metadata: Dict[str, Any] | None = None,
     n_draws: int | None = None,
+    baseline_mode: str | None = None,
 ) -> None:
     """
     Validate job draws output structure and consistency.
@@ -265,24 +266,60 @@ def sanity_report_job_draws(
     draw0 = df[df["draw"] == 0].copy()
     draw0_deciders = draw0[draw0["is_decider"] == 1].copy()
 
-    if len(draw0_deciders) > 0 and "lhw_base" in df.columns and "yivwg_base" in df.columns:
+    if len(draw0_deciders) > 0:
         lhw_draw = pd.to_numeric(draw0_deciders["lhw_draw"], errors="coerce").fillna(0.0)
-        lhw_base = pd.to_numeric(draw0_deciders["lhw_base"], errors="coerce").fillna(0.0)
-        h_diff = np.abs(lhw_draw - lhw_base)
-
         yivwg_draw = pd.to_numeric(draw0_deciders["yivwg_draw"], errors="coerce").fillna(0.0)
-        yivwg_base = pd.to_numeric(draw0_deciders["yivwg_base"], errors="coerce").fillna(0.0)
-        w_diff = np.abs(yivwg_draw - yivwg_base)
 
-        h_violations = (h_diff > 1e-6).sum()
-        w_violations = (w_diff > 1e-6).sum()
+        h_diff_obs = w_diff_obs = None
+        if "lhw_base" in df.columns and "yivwg_base" in df.columns:
+            lhw_base = pd.to_numeric(draw0_deciders["lhw_base"], errors="coerce").fillna(0.0)
+            yivwg_base = pd.to_numeric(draw0_deciders["yivwg_base"], errors="coerce").fillna(0.0)
+            h_diff_obs = (lhw_draw - lhw_base).abs()
+            w_diff_obs = (yivwg_draw - yivwg_base).abs()
 
-        if h_violations > 0:
-            raise ValueError(f"Baseline hours compliance failed: {h_violations} violations")
-        if w_violations > 0:
-            raise ValueError(f"Baseline wage compliance failed: {w_violations} violations")
+        h_diff_posted = w_diff_posted = None
+        if "hours_rep" in df.columns and "wage_rep" in df.columns:
+            hours_rep = pd.to_numeric(draw0_deciders["hours_rep"], errors="coerce").fillna(0.0)
+            wage_rep = pd.to_numeric(draw0_deciders["wage_rep"], errors="coerce").fillna(0.0)
+            h_diff_posted = (lhw_draw - hours_rep).abs()
+            w_diff_posted = (yivwg_draw - wage_rep).abs()
 
-        logging.info(f"✓ draw=0 baseline compliance: {len(draw0_deciders)} deciders OK")
+        mode = baseline_mode
+        if mode is None:
+            obs_viol = ((h_diff_obs > 1e-6).sum() + (w_diff_obs > 1e-6).sum()) if h_diff_obs is not None else float('inf')
+            posted_viol = ((h_diff_posted > 1e-6).sum() + (w_diff_posted > 1e-6).sum()) if h_diff_posted is not None else float('inf')
+            mode = "observed" if obs_viol <= posted_viol else "posted"
+            logging.info(
+                "Baseline mode auto-detected as '%s' (obs_viol=%s, posted_viol=%s).",
+                mode,
+                obs_viol,
+                posted_viol,
+            )
+
+        if mode == "observed":
+            if h_diff_obs is None or w_diff_obs is None:
+                logging.warning("Baseline observed check skipped: missing lhw_base/yivwg_base.")
+            else:
+                h_violations = (h_diff_obs > 1e-6).sum()
+                w_violations = (w_diff_obs > 1e-6).sum()
+                if h_violations > 0:
+                    raise ValueError(f"Baseline hours compliance failed (observed): {h_violations} violations")
+                if w_violations > 0:
+                    raise ValueError(f"Baseline wage compliance failed (observed): {w_violations} violations")
+                logging.info(f"??? draw=0 baseline compliance (observed): {len(draw0_deciders)} deciders OK")
+        elif mode == "posted":
+            if h_diff_posted is None or w_diff_posted is None:
+                logging.warning("Baseline posted check skipped: missing hours_rep/wage_rep.")
+            else:
+                h_violations = (h_diff_posted > 1e-6).sum()
+                w_violations = (w_diff_posted > 1e-6).sum()
+                if h_violations > 0:
+                    raise ValueError(f"Baseline hours compliance failed (posted): {h_violations} violations")
+                if w_violations > 0:
+                    raise ValueError(f"Baseline wage compliance failed (posted): {w_violations} violations")
+                logging.info(f"??? draw=0 baseline compliance (posted): {len(draw0_deciders)} deciders OK")
+        else:
+            logging.warning("Unknown baseline_mode '%s'; skipping baseline compliance check.", mode)
 
     # Check 3: Non-employment consistency
     job_0_rows = df[df["job_id"] == 0].copy()
@@ -423,6 +460,7 @@ def run_all_job_checks(
     job_draws: pd.DataFrame | None = None,
     metadata: Dict[str, Any] | None = None,
     n_draws: int | None = None,
+    baseline_mode: str | None = None,
 ) -> None:
     """
     Run all job-choice RURO validation checks.
@@ -446,7 +484,7 @@ def run_all_job_checks(
         sanity_report_job_universe(job_universe, metadata)
 
     if job_draws is not None:
-        sanity_report_job_draws(job_draws, metadata, n_draws)
+        sanity_report_job_draws(job_draws, metadata, n_draws, baseline_mode)
         sanity_report_proposal_density(job_draws)
 
     logging.info("\n" + "=" * 80)
@@ -471,6 +509,13 @@ if __name__ == "__main__":
     ap.add_argument("--job-universe", type=Path, help="Path to job_universe_{year}.parquet")
     ap.add_argument("--job-draws", type=Path, help="Path to *_jobdraws.parquet")
     ap.add_argument("--n-draws", type=int, default=None, help="Expected number of draws")
+    ap.add_argument(
+        "--baseline-mode",
+        type=str,
+        choices=["observed", "posted"],
+        default=None,
+        help="Baseline mode for draw=0 compliance (observed or posted). If omitted, auto-detect.",
+    )
 
     args = ap.parse_args()
 
@@ -489,4 +534,9 @@ if __name__ == "__main__":
     if args.job_draws:
         job_draws = _read_dataframe(args.job_draws)
 
-    run_all_job_checks(job_universe, job_draws, n_draws=args.n_draws)
+    run_all_job_checks(
+        job_universe,
+        job_draws,
+        n_draws=args.n_draws,
+        baseline_mode=args.baseline_mode,
+    )

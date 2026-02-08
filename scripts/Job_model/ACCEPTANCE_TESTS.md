@@ -133,6 +133,7 @@ python scripts/Job_model/enh_job_universe.py `
 1. Job universe includes `type_id`, `type_draw_id`, and `yem_rep`
 2. Metadata includes `gmm_occ`, `gmm_contract_draws`, and `job_id_map`
 3. `q_j_prior` sums to 1 over working jobs
+4. `job_universe_YYYY__gmm_diagnostics.csv` is written with per‑ISCO summary
 
 ---
 

@@ -28,6 +28,7 @@ For `gmm_occ`:
 - `--gmm-rep-stat` (`mean` or `trimmed_mean`), `--gmm-trim-q`
 - `--gmm-cov-type` (`full`, `diag`, `tied`, `spherical`)
 - `--gmm-contract-draws` (additional within-type contract draws per component; default 0)
+ - Diagnostics: `job_universe_YYYY__gmm_diagnostics.csv` (per‑ISCO summary of K, weights, reps, dispersion)
 
 Note: `gmm-contract-draws > 0` increases the number of job alternatives by adding extra posted bundles
 per latent type (type_draw_id = 1..R). Baseline assignment still uses type_draw_id=0.

@@ -601,6 +601,78 @@ def _build_job_universe_gmm_occ(
 
     return job_universe, meta
 
+
+def _write_gmm_diagnostics(
+    gmm_meta: Dict[str, Any],
+    output_dir: Path,
+    year: int,
+) -> None:
+    """
+    Write per-ISCO diagnostics for GMM latent types to CSV and log a short summary.
+    """
+    rows = []
+    for isco_str, occ in gmm_meta.get("occupations", {}).items():
+        try:
+            weights = np.array(occ["weights"], dtype=float)
+            counts = np.array(occ["counts"], dtype=float)
+            hours_rep = np.array(occ["hours_rep"], dtype=float)
+            wage_rep = np.array(occ["wage_rep"], dtype=float)
+            k = int(occ.get("k", len(weights)))
+            # Convert covariances to original scale for rough dispersion diagnostics.
+            covs = np.array(occ["covariances"], dtype=float)
+            scaler_std = np.array(occ["scaler_std"], dtype=float)
+            # logw std and hours std per component in original scale
+            logw_std = []
+            hours_std = []
+            for cov in covs:
+                # cov is in standardized space; unscale by std
+                cov_orig = cov * np.outer(scaler_std, scaler_std)
+                logw_std.append(float(np.sqrt(max(cov_orig[0, 0], 0.0))))
+                hours_std.append(float(np.sqrt(max(cov_orig[1, 1], 0.0))))
+            rows.append(
+                {
+                    "isco1": int(isco_str),
+                    "k": k,
+                    "min_weight": float(np.min(weights)) if weights.size else float("nan"),
+                    "max_weight": float(np.max(weights)) if weights.size else float("nan"),
+                    "min_count": float(np.min(counts)) if counts.size else float("nan"),
+                    "max_count": float(np.max(counts)) if counts.size else float("nan"),
+                    "mean_hours_rep": float(np.mean(hours_rep)) if hours_rep.size else float("nan"),
+                    "mean_wage_rep": float(np.mean(wage_rep)) if wage_rep.size else float("nan"),
+                    "median_hours_rep": float(np.median(hours_rep)) if hours_rep.size else float("nan"),
+                    "median_wage_rep": float(np.median(wage_rep)) if wage_rep.size else float("nan"),
+                    "mean_logw_std": float(np.mean(logw_std)) if len(logw_std) else float("nan"),
+                    "mean_hours_std": float(np.mean(hours_std)) if len(hours_std) else float("nan"),
+                }
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            logging.warning("Failed to summarize GMM diagnostics for ISCO %s: %s", isco_str, exc)
+
+    if not rows:
+        logging.warning("GMM diagnostics skipped: no occupation metadata found.")
+        return
+
+    diag_df = pd.DataFrame(rows).sort_values("isco1")
+    out_csv = output_dir / f"job_universe_{year}__gmm_diagnostics.csv"
+    diag_df.to_csv(out_csv, index=False)
+    logging.info("Saved GMM diagnostics to %s", out_csv)
+
+    # Short log summary
+    logging.info("GMM summary (per ISCO):")
+    for _, row in diag_df.iterrows():
+        logging.info(
+            "  ISCO %s: K=%d, weight[min,max]=[%.3f, %.3f], "
+            "count[min,max]=[%.0f, %.0f], mean_hours_rep=%.2f, mean_wage_rep=%.2f",
+            int(row["isco1"]),
+            int(row["k"]),
+            row["min_weight"],
+            row["max_weight"],
+            row["min_count"],
+            row["max_count"],
+            row["mean_hours_rep"],
+            row["mean_wage_rep"],
+        )
+
 def _compute_deterministic_job_id(
     hours_bin: int,
     wage_bin: int,
@@ -1175,6 +1247,7 @@ def build_job_universe_from_ruro_ready(
             job_map_cols.append("type_draw_id")
         job_map = job_universe[job_universe["job_id"] > 0][job_map_cols].to_dict(orient="records")
         metadata["job_id_map"] = job_map
+        _write_gmm_diagnostics(gmm_meta, output_dir, year)
 
     metadata_path = output_dir / f"job_universe_{year}__meta.json"
     with open(metadata_path, "w", encoding="utf-8") as f:

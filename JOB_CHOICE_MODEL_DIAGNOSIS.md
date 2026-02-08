@@ -68,8 +68,36 @@ This note summarizes what the current job-choice pipeline does end-to-end, what 
   - Fit stats, MU diagnostics, Hessian diagnostics, plots (hours/wage/job/loc distributions).
   - Includes prior-corrected null fit diagnostics for sampled alternatives.
 
+## 2) Identification-stabilizing edits that were implemented
 
-## 2) Model that is currently estimated
+These are code-level changes already applied to support the identification ladder and stabilization tests:
+
+1) **Offer-tier ladder via YAML (`market_opportunity.tier`)**
+   - M0: working indicator only
+   - M1: `gsur × working`
+   - M2: `gsur × working × isco1`
+   - M3: optional `gsur × working × (hours_bin OR wage_bin)` (one dimension only)
+
+2) **Choice-set centering (optional)**
+   - Added centered opportunity index within choice set.
+   - Implemented using GAMS alias set to avoid compile errors.
+   - YAML: `market_opportunity.center_within_choice_set` + `center_weights`.
+
+3) **Offer-only exclusions enforced**
+   - If a variable is declared offer-only (e.g., `gsur`), it is blocked from preferences.
+
+4) **Offer shifter scaling**
+   - Added `market_opportunity.variable_scales` (e.g., `gsur: 10.0`) to rescale shifters.
+   - Applied consistently in the vectorized GAMSPy estimator (singles + couples).
+
+5) **New specs created for tests**
+   - `estimation_spec_job_M2_centered.yaml`
+   - `estimation_spec_job_M2_lite.yaml`
+   - `estimation_spec_job_M2_scaled.yaml`
+   - `estimation_spec_job_M2_lite_scaled.yaml`
+
+
+## 3) Model that is currently estimated
 
 Let `i` be household/decision-maker, `j` alternative (draw/job), and `g` group.
 
@@ -94,7 +122,7 @@ For couples:
 - Same logic, with male/female leisure components and shared household consumption component.
 
 
-## 3) Why identification is hard in this setup
+## 4) Why identification is hard in this setup
 
 The estimated index is additive:
 
@@ -105,34 +133,33 @@ Main implication:
 - You identify the combined index well enough for prediction, but decomposition into "taste" vs "opportunity" can be weak/unstable.
 
 
-## 4) Evidence from recent runs
+## 5) Evidence from recent runs
 
-### A) `job_choice_v0_plus_stable` (IPOPT)
-- Run: `run_2026-02-05_10-48-29`
-- LL about `-22411.64`
-- Prior-corrected rho2 about `0.1069`
-- Negative MUC/MUL in report: `0 / 0`
-- Still weak ID signs: very large condition number and negative Hessian eigenvalues.
+### A) Baseline job-choice (older v0_plus family)
+- `run_2026-02-05_10-48-29` (v0_plus / IPOPT): LL ~ -22411.64, rho2_prior ~ 0.1069, but weak ID.
+- `run_2026-02-05_11-07-11` (v0_plus_b / IPOPT): LL ~ -22161.64, but MU regularity degraded and ID weak.
+- `run_2026-02-05_11-36-48` (v0_plus_id / CONOPT): LL ~ -24364.10, underfit, several bounds.
 
-### B) `job_choice_v0_plus_b_stable_beta_cl` (IPOPT, soft MU constraints)
-- Run: `run_2026-02-05_11-07-11`
-- LL about `-22161.64` (better fit)
-- Prior-corrected rho2 about `0.1169` (better fit)
-- But MU diagnostics degrade: high shares of negative MUC/MUL.
-- Condition number remains very large, negative eigenvalues remain.
+### B) Identification ladder tests (M1/M2 family)
+- **M1** (`job_choice_M1_participation_opportunity`):  
+  LL ~ -24603.36; condition number = inf; negative eigenvalues; stable but weak curvature.
+- **M2 centered** (`job_choice_M2_occupation_access_centered`):  
+  LL ~ -23869.11; several offer params hit bounds; ID still weak (cond = inf).
+- **M2 no centering** (`job_choice_M2_occupation_access`):  
+  LL ~ -23676.59 (best LL so far), but very large offer coefficients and bound hits.
+- **M2 scaled** (`job_choice_M2_occupation_access_scaled`):  
+  LL ~ -23641.81; offer magnitudes stabilized; still cond = inf; theta_c hit upper bound.
+- **M2 lite** (`job_choice_M2_occupation_access_lite_centered`):  
+  LL ~ -24370.06; fewer bounds, but curvature still weak.
+- **M2 lite scaled** (`job_choice_M2_occupation_access_lite_scaled`):  
+  LL ~ -24370.06; coefficients small; ID still weak (cond = inf).
 
-### C) `job_choice_v0_plus_id_strict` (CONOPT)
-- Run: `run_2026-02-05_11-36-48`
-- LL about `-24364.10` (much worse fit)
-- Prior-corrected rho2 about `0.0291` (underfit)
-- Some parameters pinned at bounds.
-
-Interpretation:
-- Strict exclusion improves conceptual separation but loses too much fit.
-- Richer specs recover fit but reintroduce overlap/confounding and unstable decomposition.
+Interpretation so far:
+- M2 improves LL, but the offer block is still weakly identified in a single year.
+- Scaling reduces extreme magnitudes but does not fix curvature.
 
 
-## 5) Where issues are most likely
+## 6) Where issues are most likely
 
 1. **Preference-opportunity confounding by construction**
 - Utility and opportunity both enter additively in the same index.
@@ -152,24 +179,18 @@ Interpretation:
 - Limited exogenous variation can make decomposition less stable.
 
 
-## 6) Practical path to a model that fits better and is more identifiable
+## 7) Practical path to a model that fits better and is more identifiable
 
-1. Keep `v0_plus` as baseline reference (best current fit-vs-regularity compromise).
-2. Use a **semi-strict** opportunity block:
-   - Keep `working + gsur`
-   - Add only one of `{wage_bin, hours_bin}` (not both initially).
-3. Keep `beta_cl` off until semi-strict baseline is stable.
-4. If adding `beta_cl`, add stronger regularization:
-   - stronger soft MU weights
-   - MU constraints at multiple `(c, l)` points, not one anchor only.
-5. Use multi-start checks:
-   - if very different params but similar LL, decomposition is still weak.
-6. Prefer holdout predictive checks for model comparison:
-   - compare out-of-sample LL and prior-corrected rho2.
-7. If possible, pool multiple years to increase identifying variation.
+1. **Stack multiple years** (best fix):
+   - gsur varies more → offer block becomes identifiable.
+2. **If staying single-year**, keep opportunity block lean:
+   - `working + gsur` only (M1), or M2‑lite with very few occupation interactions.
+3. **Only add extra dimensions (M3)** once M2 is stable across years.
+4. Use multi-start / warm-start comparisons to detect instability.
+5. Prefer holdout predictive checks (out-of-sample LL, rho2).
 
 
-## 7) Discussion checklist
+## 8) Discussion checklist
 
 - Are we prioritizing:
   - best in-sample fit, or
@@ -177,4 +198,3 @@ Interpretation:
 - Which variables are allowed in opportunity but excluded from utility?
 - Should we enforce stronger economic regularity (MUC/MUL) even at fit cost?
 - Do we have additional labor-demand instruments by occupation/region/year?
-

@@ -835,6 +835,23 @@ def precompute_data_singles(
             if arr is not None:
                 setattr(result, var_name, arr)
 
+        # Diagnostic: report which extra vars were successfully derived
+        for var_name in include_extra_vars:
+            if not hasattr(result, var_name):
+                logger.warning(
+                    "  Extra var '%s' could NOT be derived from data columns "
+                    "(available columns with '%s' prefix: %s)",
+                    var_name,
+                    var_name.rsplit("_", 1)[0] if "_" in var_name else var_name,
+                    [c for c in df.columns if var_name.rsplit("_", 1)[0] in c][:10] if "_" in var_name else "N/A",
+                )
+            else:
+                arr = getattr(result, var_name)
+                logger.info(
+                    "  Extra var '%s': %d/%d nonzero",
+                    var_name, np.count_nonzero(arr), len(arr),
+                )
+
     return result
 
 
@@ -1190,6 +1207,35 @@ def precompute_data_couples(
                 arr = _extract_or_derive_gender(var_name, gender)
                 if arr is not None:
                     setattr(result, attr_name, arr)
+
+        # Diagnostic: report which extra vars were successfully derived
+        for var_name in include_extra_vars:
+            # Household-level
+            if not hasattr(result, var_name):
+                logger.warning(
+                    "  Extra var '%s' (household) could NOT be derived from couples data",
+                    var_name,
+                )
+            else:
+                arr = getattr(result, var_name)
+                logger.info(
+                    "  Extra var '%s' (household): %d/%d nonzero",
+                    var_name, np.count_nonzero(arr), len(arr),
+                )
+            # Gender-specific
+            for gender in ("male", "female"):
+                attr_name = f"{var_name}_{gender}"
+                if not hasattr(result, attr_name):
+                    logger.warning(
+                        "  Extra var '%s' could NOT be derived from couples data",
+                        attr_name,
+                    )
+                else:
+                    arr = getattr(result, attr_name)
+                    logger.info(
+                        "  Extra var '%s': %d/%d nonzero",
+                        attr_name, np.count_nonzero(arr), len(arr),
+                    )
 
     return result
 

@@ -4984,30 +4984,55 @@ def _compute_and_update_standard_errors(
     # Precompute data
     include_wage_vars = (spec.wage_spec in ["vw", "loc_empirical"])
     include_loc_vars = (spec.wage_spec == "loc_empirical")
-    
+
+    # Extract spec-driven extra precompute variables (market opportunity shifters)
+    extra_precompute_vars_set = set()
+    for shifter in getattr(spec, "market_opportunity_shifters", []):
+        if not isinstance(shifter, dict):
+            continue
+        var_name = shifter.get("variable")
+        if isinstance(var_name, str) and var_name.strip():
+            extra_precompute_vars_set.add(var_name.strip())
+        interaction_cfg = shifter.get("interaction")
+        if interaction_cfg is None:
+            continue
+        if isinstance(interaction_cfg, (list, tuple, set)):
+            interaction_names = [str(v).strip() for v in interaction_cfg if str(v).strip()]
+        else:
+            interaction_names = [str(interaction_cfg).strip()]
+        for interaction_name in interaction_names:
+            if interaction_name and interaction_name != "working":
+                extra_precompute_vars_set.add(interaction_name)
+    extra_precompute_vars = sorted(extra_precompute_vars_set) if extra_precompute_vars_set else None
+    if extra_precompute_vars:
+        LOGGER.info(f"   Extra precompute variables for SE: {extra_precompute_vars}")
+
     data_sm = None
     data_sf = None
     data_cou = None
-    
+
     if df_singles is not None:
         df_sm = df_singles[df_singles["dgn"] == 1]
         df_sf = df_singles[df_singles["dgn"] == 0]
-        
+
         if len(df_sm) > 0:
             data_sm = precompute_data_singles(
                 df=df_sm, metadata=metadata, is_male=True,
-                include_wage_vars=include_wage_vars, include_loc_vars=include_loc_vars
+                include_wage_vars=include_wage_vars, include_loc_vars=include_loc_vars,
+                include_extra_vars=extra_precompute_vars
             )
         if len(df_sf) > 0:
             data_sf = precompute_data_singles(
                 df=df_sf, metadata=metadata, is_male=False,
-                include_wage_vars=include_wage_vars, include_loc_vars=include_loc_vars
+                include_wage_vars=include_wage_vars, include_loc_vars=include_loc_vars,
+                include_extra_vars=extra_precompute_vars
             )
-    
+
     if df_couples is not None:
         data_cou = precompute_data_couples(
             df=df_couples, metadata=metadata,
-            include_wage_vars=include_wage_vars, include_loc_vars=include_loc_vars
+            include_wage_vars=include_wage_vars, include_loc_vars=include_loc_vars,
+            include_extra_vars=extra_precompute_vars
         )
     
     # Build gradient function

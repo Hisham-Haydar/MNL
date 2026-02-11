@@ -1284,6 +1284,40 @@ Examples:
                 include_extra_vars=extra_precompute_vars,
             )
 
+        # ===== 5b. VALIDATE MARKET OPPORTUNITY VARIABLES =====
+        market_shifters = getattr(spec, "market_opportunity_shifters", [])
+        if market_shifters:
+            logger.info("Validating market opportunity variables on precomputed data...")
+            for shifter in market_shifters:
+                var_name = shifter.get("variable", "")
+                coef_name = shifter.get("coefficient", "")
+                interactions = shifter.get("interaction", [])
+                if isinstance(interactions, str):
+                    interactions = [interactions]
+                all_vars = [var_name] + [v for v in (interactions or []) if v != "working"]
+                for vn in all_vars:
+                    if not vn:
+                        continue
+                    # Check singles
+                    for data_obj, label in [(data_sm, "singles_male"), (data_sf, "singles_female")]:
+                        if data_obj is not None and not hasattr(data_obj, vn):
+                            logger.error(
+                                "MISSING variable '%s' on %s data — "
+                                "gradient for '%s' will be ZERO, SE will be 0.0!",
+                                vn, label, coef_name
+                            )
+                    # Check couples (gender-specific)
+                    if data_cou is not None:
+                        for gender in ("male", "female"):
+                            attr = f"{vn}_{gender}"
+                            if not hasattr(data_cou, attr) and not hasattr(data_cou, vn):
+                                logger.error(
+                                    "MISSING variable '%s' (or '%s') on couples data — "
+                                    "gradient for '%s' will be ZERO, SE will be 0.0!",
+                                    attr, vn, coef_name
+                                )
+            logger.info("Market opportunity variable validation complete.")
+
         # ===== 6. GET INITIAL VALUES =====
         logger.info("")
         logger.info("="*80)

@@ -19,6 +19,8 @@ Created: 2026-01-03
 import logging
 from typing import Dict, Optional, Tuple, Union
 
+logger = logging.getLogger(__name__)
+
 import numpy as np
 
 from estimation_utils import (
@@ -107,6 +109,10 @@ def _compute_market_opportunity_singles(
             if coef_name not in params:
                 continue
             if not hasattr(data, var_name):
+                logger.warning(
+                    "Market opportunity (singles): skipping shifter '%s' "
+                    "-- variable '%s' not found on data object", coef_name, var_name
+                )
                 continue
             var_param = getattr(data, var_name)
             if var_param is None:
@@ -120,6 +126,11 @@ def _compute_market_opportunity_singles(
                 else:
                     interaction_param = getattr(data, interaction_name, None)
                 if interaction_param is None:
+                    logger.warning(
+                        "Market opportunity (singles): skipping shifter '%s' "
+                        "-- interaction variable '%s' not found on data",
+                        coef_name, interaction_name
+                    )
                     interaction_missing = True
                     break
                 interaction_param = _apply_market_scale_numpy(
@@ -175,6 +186,10 @@ def _compute_market_opportunity_couples(
 
             if applies_to == "household":
                 if not hasattr(data, var_name):
+                    logger.warning(
+                        "Market opportunity (couples/household): skipping '%s' "
+                        "-- variable '%s' not found on data", coef_name, var_name
+                    )
                     continue
                 var_param = getattr(data, var_name)
                 if var_param is None:
@@ -201,6 +216,11 @@ def _compute_market_opportunity_couples(
 
             if applies_to in ("male", "both"):
                 var_param_m = _get_gender_var(var_name, "male")
+                if var_param_m is None:
+                    logger.warning(
+                        "Market opportunity (couples/male): skipping '%s' "
+                        "-- variable '%s_male' not found on data", coef_name, var_name
+                    )
                 if var_param_m is not None:
                     var_param_m = _apply_market_scale_numpy(var_param_m, var_name, scale_map)
                     interaction_missing = False
@@ -210,6 +230,10 @@ def _compute_market_opportunity_couples(
                         else:
                             interaction_param = _get_gender_var(interaction_name, "male")
                         if interaction_param is None:
+                            logger.warning(
+                                "Market opportunity (couples/male): skipping '%s' "
+                                "-- interaction '%s_male' not found", coef_name, interaction_name
+                            )
                             interaction_missing = True
                             break
                         interaction_param = _apply_market_scale_numpy(
@@ -222,6 +246,11 @@ def _compute_market_opportunity_couples(
 
             if applies_to in ("female", "both"):
                 var_param_f = _get_gender_var(var_name, "female")
+                if var_param_f is None:
+                    logger.warning(
+                        "Market opportunity (couples/female): skipping '%s' "
+                        "-- variable '%s_female' not found on data", coef_name, var_name
+                    )
                 if var_param_f is not None:
                     var_param_f = _apply_market_scale_numpy(var_param_f, var_name, scale_map)
                     interaction_missing = False
@@ -231,6 +260,10 @@ def _compute_market_opportunity_couples(
                         else:
                             interaction_param = _get_gender_var(interaction_name, "female")
                         if interaction_param is None:
+                            logger.warning(
+                                "Market opportunity (couples/female): skipping '%s' "
+                                "-- interaction '%s_female' not found", coef_name, interaction_name
+                            )
                             interaction_missing = True
                             break
                         interaction_param = _apply_market_scale_numpy(

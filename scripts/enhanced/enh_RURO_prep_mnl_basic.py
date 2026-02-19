@@ -865,6 +865,12 @@ def _build_mnl_block_couples_wide(df: pd.DataFrame, sample_group: str) -> pd.Dat
             df[f"n_children_{gender}"] = pd.to_numeric(df[num_children_col], errors="coerce").fillna(0)
             logging.debug(f"Created n_children_{gender} alias (mean={df[f'n_children_{gender}'].mean():.2f})")
 
+    # Create household-level n_children (same for both partners, use female's value)
+    # This allows specs to use n_children for couples without gender suffix
+    if "n_children_female" in df.columns:
+        df["n_children"] = df["n_children_female"]
+        logging.debug(f"Created household n_children alias (mean={df['n_children'].mean():.2f})")
+
     # NOTE: For couples, consumption_male and consumption_female are already created in reshape
     # No need to create a single 'consumption' column - couples utility uses BC(c_male + c_female)
     df["sample_group"] = sample_group

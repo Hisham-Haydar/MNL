@@ -907,8 +907,8 @@ def _add_ruro_variables_basic(
         dey_valid = dey_num.notna() & (dey_num >= 0) & (dey_num <= 100)
         pexp_from_dey = (dag - 6.0 - dey_num).where(dey_valid, np.nan)
 
-    # Combine priority: dew -> liwwh -> dey
-    pexp_raw = pexp_from_dew.where(pexp_from_dew.notna(), pexp_from_liwwh)
+    # Combine priority: liwwh -> dew -> dey
+    pexp_raw = pexp_from_liwwh.where(pexp_from_liwwh.notna(), pexp_from_dew)
     pexp_raw = pexp_raw.where(pexp_raw.notna(), pexp_from_dey)
 
     # Final safeguards: non-negative, cap by age-consistency (dag - 15), fill NaNs with 0

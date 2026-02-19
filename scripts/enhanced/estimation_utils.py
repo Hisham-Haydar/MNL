@@ -829,7 +829,7 @@ def precompute_data_singles(
 
     if include_extra_vars:
         for var_name in include_extra_vars:
-            if hasattr(result, var_name):
+            if getattr(result, var_name, None) is not None:
                 continue
             arr = _extract_or_derive_single(var_name)
             if arr is not None:
@@ -837,7 +837,8 @@ def precompute_data_singles(
 
         # Diagnostic: report which extra vars were successfully derived
         for var_name in include_extra_vars:
-            if not hasattr(result, var_name):
+            arr = getattr(result, var_name, None)
+            if arr is None:
                 logger.warning(
                     "  Extra var '%s' could NOT be derived from data columns "
                     "(available columns with '%s' prefix: %s)",
@@ -846,7 +847,6 @@ def precompute_data_singles(
                     [c for c in df.columns if var_name.rsplit("_", 1)[0] in c][:10] if "_" in var_name else "N/A",
                 )
             else:
-                arr = getattr(result, var_name)
                 logger.info(
                     "  Extra var '%s': %d/%d nonzero",
                     var_name, np.count_nonzero(arr), len(arr),
@@ -1194,7 +1194,7 @@ def precompute_data_couples(
     if include_extra_vars:
         for var_name in include_extra_vars:
             # Household-level base variable
-            if not hasattr(result, var_name):
+            if getattr(result, var_name, None) is None:
                 arr = _extract_or_derive_household(var_name)
                 if arr is not None:
                     setattr(result, var_name, arr)
@@ -1202,7 +1202,7 @@ def precompute_data_couples(
             # Gender-specific variants
             for gender in ("male", "female"):
                 attr_name = f"{var_name}_{gender}"
-                if hasattr(result, attr_name):
+                if getattr(result, attr_name, None) is not None:
                     continue
                 arr = _extract_or_derive_gender(var_name, gender)
                 if arr is not None:
@@ -1211,13 +1211,13 @@ def precompute_data_couples(
         # Diagnostic: report which extra vars were successfully derived
         for var_name in include_extra_vars:
             # Household-level
-            if not hasattr(result, var_name):
+            arr = getattr(result, var_name, None)
+            if arr is None:
                 logger.warning(
                     "  Extra var '%s' (household) could NOT be derived from couples data",
                     var_name,
                 )
             else:
-                arr = getattr(result, var_name)
                 logger.info(
                     "  Extra var '%s' (household): %d/%d nonzero",
                     var_name, np.count_nonzero(arr), len(arr),
@@ -1225,13 +1225,13 @@ def precompute_data_couples(
             # Gender-specific
             for gender in ("male", "female"):
                 attr_name = f"{var_name}_{gender}"
-                if not hasattr(result, attr_name):
+                arr = getattr(result, attr_name, None)
+                if arr is None:
                     logger.warning(
                         "  Extra var '%s' could NOT be derived from couples data",
                         attr_name,
                     )
                 else:
-                    arr = getattr(result, attr_name)
                     logger.info(
                         "  Extra var '%s': %d/%d nonzero",
                         attr_name, np.count_nonzero(arr), len(arr),

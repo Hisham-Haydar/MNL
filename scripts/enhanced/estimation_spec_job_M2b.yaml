@@ -3,16 +3,10 @@
 # ==============================================================================
 # M2b: Expanded market opportunity with education interactions
 #   - isco1_k × working for k=1..9 (occupation-specific employment shifts)
-#   - gsur × working × educM/educH (education-differentiated tightness)
+#   - gsur × working × educL/educM/educH (education-specific tightness, all 3 levels)
+#   - pexp_years × working (experience effect on employment opportunity)
 #
-# Changes from M2:
-#   - occupation_base: 0 (all 9 occupation dummies estimated)
-#   - beta_offer_working dropped (not significant: t=0.10)
-#   - beta_offer_gsur dropped (not significant: t=-0.10, absorbed by education interactions)
-#   - isco1 interactions simplified: 2-way (× working) instead of 3-way (× gsur × working)
-#   - Education dummies added: gsur × working × educM + gsur × working × educH
-#
-# Total parameters: 25 (14 preference + 11 market opportunity)
+# Total parameters: 27 (14 preference + 13 market opportunity)
 # ==============================================================================
 
 specification:
@@ -82,7 +76,7 @@ market_opportunity:
       coefficient: "beta_offer_isco1_9"
       interaction: ["working"]
 
-    # Education × gsur × working (educL as base category)
+    # Education × gsur × working (2 levels, educ L  is base )
     - variable: "gsur"
       coefficient: "beta_offer_gsur_educM"
       interaction: ["working", "educM"]
@@ -127,8 +121,10 @@ initial_values:
   beta_offer_isco1_7: 0.00
   beta_offer_isco1_8: 0.00
   beta_offer_isco1_9: 0.00
+  beta_offer_gsur_educL: 0.00
   beta_offer_gsur_educM: 0.00
   beta_offer_gsur_educH: 0.00
+  beta_offer_pexp: 0.00
 
 optimization:
   method: "L-BFGS-B"
@@ -170,6 +166,7 @@ optimization:
     beta_offer_isco1_9: [-25.0, 25.0]
     beta_offer_gsur_educM: [-40.0, 40.0]
     beta_offer_gsur_educH: [-40.0, 40.0]
+    beta_offer_pexp: [-10.0, 10.0]
 
   expression_constraints:
     enabled: true

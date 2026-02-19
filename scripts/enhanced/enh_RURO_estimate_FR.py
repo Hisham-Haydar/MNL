@@ -1204,6 +1204,8 @@ Examples:
         include_wage_vars = (spec.wage_spec in ["vw", "loc_empirical"])
         include_loc_vars = (spec.wage_spec == "loc_empirical")
         extra_precompute_vars_set = set()
+
+        # Extract variables from market opportunity shifters
         for shifter in getattr(spec, "market_opportunity_shifters", []):
             if not isinstance(shifter, dict):
                 continue
@@ -1223,6 +1225,14 @@ Examples:
                 # 'working' is part of the base precompute structure.
                 if interaction_name and interaction_name != "working":
                     extra_precompute_vars_set.add(interaction_name)
+
+        # Extract variables from leisure shifters
+        for shifter in getattr(spec, "utility_leisure_shifters", []):
+            if not isinstance(shifter, dict):
+                continue
+            var_name = shifter.get("variable")
+            if isinstance(var_name, str) and var_name.strip():
+                extra_precompute_vars_set.add(var_name.strip())
 
         extra_precompute_vars = sorted(extra_precompute_vars_set)
         if extra_precompute_vars:

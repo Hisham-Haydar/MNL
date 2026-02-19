@@ -54,6 +54,7 @@ utility:
       # NOTE: For singles male and couples male, n_children is set to 0 in data prep
       - variable: "n_children"
         coefficient: "beta_l_nkids"
+        gender_specific: true
 
       # High education (all groups)
       - variable: "educH"
@@ -121,7 +122,7 @@ initial_values:
   beta_l0_sm: 4.94
   beta_c_sm: 0.71
   theta_l_sm: -2.65
-  theta_c_sm: -1.79
+  theta_c_sm: -1.525496  # Fixed for identification stability (matches singles_female estimate)
 
   # Singles female (warm-start from M2b)
   beta_l0_sf: 5.74
@@ -145,7 +146,6 @@ initial_values:
   # Singles male
   beta_l_age_sm: 0.00
   beta_l_age2_sm: 0.00
-  beta_l_nkids_sm: 0.00  # Not used (n_children=0 for males), but required by parser
   beta_l_educH_sm: 0.00
 
   # Singles female
@@ -157,7 +157,6 @@ initial_values:
   # Couples male
   beta_l_age_m: 0.00
   beta_l_age2_m: 0.00
-  beta_l_nkids_m: 0.00  # Not used (n_children=0 for males), but required by parser
   beta_l_educH_m: 0.00
 
   # Couples female
@@ -191,7 +190,7 @@ optimization:
   bounds:
     # Box-Cox exponents
     theta_l_sm: [-8.0, 0.95]
-    theta_c_sm: [-8.0, 0.95]
+    theta_c_sm: [-1.525496001, -1.525495999]  # Effectively fixed for identification stability
     theta_l_sf: [-8.0, 0.95]
     theta_c_sf: [-8.0, 0.95]
     theta_l_m: [-8.0, 0.95]
@@ -219,9 +218,7 @@ optimization:
     beta_l_age2_f: [-1.0, 1.0]
 
     # Children effect (expect negative: children reduce available leisure)
-    beta_l_nkids_sm: [-5.0, 5.0]  # Not used (n_children=0 for males), but required by parser
     beta_l_nkids_sf: [-5.0, 5.0]
-    beta_l_nkids_m: [-5.0, 5.0]   # Not used (n_children=0 for males), but required by parser
     beta_l_nkids_f: [-5.0, 5.0]
 
     # Education effect (could go either way)

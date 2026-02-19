@@ -1,0 +1,218 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - Job Choice M2d (Type-based opportunity)
+# ==============================================================================
+# M2d goal:
+#   Improve identification by moving market-opportunity heterogeneity from isco1
+#   levels to latent GMM type structure (type_id), while keeping M2c preferences.
+#
+# Opportunity block:
+#   - type_id_k x working for k=1..2 (type 0 is base)
+#   - gsur x working (base slope)
+#   - gsur x working x type_id_k for k=1..2
+#   - gsur x working x educM / educH
+#
+# Notes:
+#   - Uses centered opportunity index to reduce overlap with proposal correction.
+#   - Uses gsur scaling (x10) for better numerical conditioning.
+# ==============================================================================
+
+specification:
+  name: "job_choice_M2d_type_opportunity"
+  description: "Job-choice M2d: M2c preferences + type-based market opportunity"
+  wage_spec: "fw"
+  model_family: "job_choice"
+
+utility:
+  functional_form: "box_cox"
+
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"
+    box_cox_bounds: [-8.0, 0.95]
+
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: "theta_l"
+    box_cox_bounds: [-8.0, 0.95]
+    shifters:
+      - variable: "age_norm"
+        coefficient: "beta_l_age"
+      - variable: "age_norm2"
+        coefficient: "beta_l_age2"
+      - variable: "n_children"
+        coefficient: "beta_l_nkids"
+        gender_specific: true
+      - variable: "educH"
+        coefficient: "beta_l_educH"
+
+hours_opportunity:
+  shifters: []
+
+wage_opportunity:
+  specification: "log_normal"
+
+market_opportunity:
+  applies_to: "both"
+  employment_indicator: "working"
+  gsur_variable: "gsur"
+  offer_only_vars: ["gsur", "drgn1", "reg_nuts1_1", "reg_nuts1_2", "reg_nuts1_3", "reg_nuts1_4", "reg_nuts1_5", "reg_nuts1_6", "reg_nuts1_7", "reg_nuts1_8"]
+  center_within_choice_set: true
+  center_weights: "proposal"
+  enforce_job_varying: true
+  variable_scales:
+    gsur: 10.0
+
+  shifters:
+    # Type-level access shifts (type_id=0 is reference)
+    - variable: "type_id_1"
+      coefficient: "beta_offer_type_1"
+      interaction: ["working"]
+    - variable: "type_id_2"
+      coefficient: "beta_offer_type_2"
+      interaction: ["working"]
+
+    # Base gsur slope on employment opportunity (for reference type)
+    - variable: "gsur"
+      coefficient: "beta_offer_gsur_base"
+      interaction: ["working"]
+
+    # Type-differential gsur slopes
+    - variable: "gsur"
+      coefficient: "beta_offer_gsur_type_1"
+      interaction: ["working", "type_id_1"]
+    - variable: "gsur"
+      coefficient: "beta_offer_gsur_type_2"
+      interaction: ["working", "type_id_2"]
+
+    # Education heterogeneity in market tightness (educL is reference)
+    - variable: "gsur"
+      coefficient: "beta_offer_gsur_educM"
+      interaction: ["working", "educM"]
+    - variable: "gsur"
+      coefficient: "beta_offer_gsur_educH"
+      interaction: ["working", "educH"]
+
+couples: {}
+
+initial_values:
+  # Preference block (warm-start near latest M2c run)
+  beta_l0_sm: 5.19
+  beta_l_age_sm: 0.095
+  beta_l_age2_sm: 0.0055
+  beta_l_educH_sm: -1.63
+  beta_c_sm: 0.85
+  theta_l_sm: -2.65
+  theta_c_sm: -1.525496
+
+  beta_l0_sf: 8.04
+  beta_l_age_sf: -0.019
+  beta_l_age2_sf: 0.0026
+  beta_l_nkids_sf: -0.34
+  beta_l_educH_sf: -4.17
+  beta_c_sf: 0.84
+  theta_l_sf: -2.15
+  theta_c_sf: -1.52
+
+  beta_l0_m: 4.08
+  beta_l_age_m: -0.035
+  beta_l_age2_m: 0.0031
+  beta_l_educH_m: -2.10
+  theta_l_m: -2.17
+
+  beta_l0_f: 6.83
+  beta_l_age_f: -0.052
+  beta_l_age2_f: 0.0001
+  beta_l_nkids_f: -0.23
+  beta_l_educH_f: -2.96
+  theta_l_f: -1.91
+
+  beta_c: 1.19
+  theta_c: -2.74
+
+  # Opportunity block
+  beta_offer_type_1: 0.00
+  beta_offer_type_2: 0.00
+  beta_offer_gsur_base: 0.00
+  beta_offer_gsur_type_1: 0.00
+  beta_offer_gsur_type_2: 0.00
+  beta_offer_gsur_educM: 1.00
+  beta_offer_gsur_educH: 2.50
+
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 6000
+  tolerance: 1.0e-8
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+  bounds:
+    # Box-Cox exponents
+    theta_l_sm: [-8.0, 0.95]
+    theta_c_sm: [-1.525496001, -1.525495999]  # fixed for stability (as in M2c)
+    theta_l_sf: [-8.0, 0.95]
+    theta_c_sf: [-8.0, 0.95]
+    theta_l_m: [-8.0, 0.95]
+    theta_l_f: [-8.0, 0.95]
+    theta_c: [-8.0, 0.95]
+
+    # Preference scales
+    beta_c_sm: [0.05, 50.0]
+    beta_c_sf: [0.05, 50.0]
+    beta_c: [0.05, 50.0]
+    beta_l0_sm: [0.05, 50.0]
+    beta_l0_sf: [0.05, 50.0]
+    beta_l0_m: [0.05, 50.0]
+    beta_l0_f: [0.05, 50.0]
+
+    # Leisure shifters
+    beta_l_age_sm: [-5.0, 5.0]
+    beta_l_age2_sm: [-1.0, 1.0]
+    beta_l_age_sf: [-5.0, 5.0]
+    beta_l_age2_sf: [-1.0, 1.0]
+    beta_l_age_m: [-5.0, 5.0]
+    beta_l_age2_m: [-1.0, 1.0]
+    beta_l_age_f: [-5.0, 5.0]
+    beta_l_age2_f: [-1.0, 1.0]
+    beta_l_nkids_sf: [-5.0, 5.0]
+    beta_l_nkids_f: [-5.0, 5.0]
+    beta_l_educH_sm: [-5.0, 5.0]
+    beta_l_educH_sf: [-5.0, 5.0]
+    beta_l_educH_m: [-5.0, 5.0]
+    beta_l_educH_f: [-5.0, 5.0]
+
+    # Opportunity (gsur already scaled x10)
+    beta_offer_type_1: [-25.0, 25.0]
+    beta_offer_type_2: [-25.0, 25.0]
+    beta_offer_gsur_base: [-10.0, 10.0]
+    beta_offer_gsur_type_1: [-10.0, 10.0]
+    beta_offer_gsur_type_2: [-10.0, 10.0]
+    beta_offer_gsur_educM: [-15.0, 15.0]
+    beta_offer_gsur_educH: [-15.0, 15.0]
+
+  expression_constraints:
+    enabled: true
+    default_mode: soft
+    default_weight: 1000.0
+    constraints:
+      - name: mul_cou_m_positive
+        expression: mul
+        group: couples_male
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        lower: 1.0e-6
+      - name: mul_cou_f_positive
+        expression: mul
+        group: couples_female
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        lower: 1.0e-6
+
+gradient_verification:
+  enabled: false
+  method: "central"
+  epsilon: 1.0e-7
+  tolerance: 1.0e-4
+  check_at_init: true
+  check_random_points: 0
+  random_seed: 13
+  verbose: true

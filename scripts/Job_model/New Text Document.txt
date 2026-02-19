@@ -1,0 +1,165 @@
+I checked the **actual files you uploaded here** (`enh_job_universe.py`, `enh_job_draws.py`, `sanity_checks_job.py`, `README_job_model.md`, `ACCEPTANCE_TESTS.md`). Based on those files, **Option B (latent job types via GMM within occupation) has *not* been applied yet**—at least not in these copies.
+
+## 1) Verification: what is (and is not) in the current code
+
+### `enh_job_universe.py` (uploaded copy)
+
+* The CLI `--universe-mode` currently accepts only:
+
+  * `empirical_pruned`, `empirical_all`, `full_grid`
+* There is **no** `gmm_occ` mode, and no references to `GaussianMixture`, `kmeans_occ`, or `hier_occ`.
+
+So the universe builder is still **grid/cell-based** (hours bins × wage bins × isco1), not mixture/type-based.
+
+### `enh_job_draws.py` (uploaded copy)
+
+* Baseline handling exists, but only:
+
+  * `observed`
+  * `cell_rep`
+* There is **no**:
+
+  * posterior component assignment `argmax_k P(k|logw,h,o)`
+  * `baseline-mode posted`
+  * any use of stored mixture parameters in metadata
+
+So draws are still tied to **(hours_bin, wage_bin, isco1)** mapping logic, not **(isco1, type_id)**.
+
+### `sanity_checks_job.py`, `README_job_model.md`, `ACCEPTANCE_TESTS.md`
+
+* No mention of `gmm_occ`, no checks for `type_id`, no acceptance tests for GMM mode.
+
+**Conclusion:** the only thing that looks implemented in what you uploaded is the **existing grid-based job model**. The “Codex summary” you pasted describes a *different* state than what is present in the uploaded scripts.
+
+---
+
+## 2) What is missing to truly “apply Option B” end-to-end
+
+Option B is not “a small tweak”; it requires **a coherent set of linked changes** across universe → draws → checks/docs so that everything is consistent and reproducible.
+
+### Missing piece A — Universe builder must support latent types
+
+You need to extend `enh_job_universe.py` so it can produce a job universe whose alternatives are:
+
+[
+j \in {0}\cup{(o,k): o\in\mathcal O,\ k=1,\dots,K_o}
+]
+
+with:
+
+* `isco1 = o`
+* `type_id = k`
+* `(hours_rep, wage_rep)` = representative posted bundle for component ((o,k))
+* `yem_rep = wage_rep * hours_rep * 52/12`
+* `q_j_prior ∝ occ_share(o) * π_{k|o}` (with Laplace smoothing)
+
+**Concrete requirements to implement in the script:**
+
+1. Add `--universe-mode gmm_occ` (and optionally stubs for `kmeans_occ`, `hier_occ`).
+2. Fit a GMM **within each occupation** `o` on features such as:
+   [
+   x_i = (\log w_i,\ h_i) \quad\text{using working deciders only}
+   ]
+3. Choose (K_o) by BIC subject to your constraints:
+
+   * (K_o\le K_{\max})
+   * component size ≥ `MIN_COMP_COUNT`
+   * component weight ≥ `MIN_COMP_WEIGHT`
+4. Store *everything needed to reproduce assignment* in `job_universe__meta.json`:
+
+   * scaler mean/std per occupation (if standardizing)
+   * weights, means, covariances per occupation
+   * final chosen (K_o)
+5. Output universe parquet columns must include:
+
+   * `job_id`, `isco1`, `type_id`, `hours_rep`, `wage_rep`, `yem_rep`, `q_j_prior`
+
+### Missing piece B — Draws must assign baseline job via posterior component
+
+Your `enh_job_draws.py` must be updated so that for `gmm_occ`:
+
+* For each working decider (i), given observed `(isco1_i, logw_i, h_i)` compute posterior:
+  [
+  P(k \mid x_i,o_i)
+  ]
+  and assign:
+  [
+  k_i^{obs} = \arg\max_k P(k\mid x_i,o_i),\qquad job_id^{obs} = map(o_i,k_i^{obs})
+  ]
+
+Then implement the baseline data rows (draw=0) under:
+
+* `--baseline-mode posted` (default): use `(hours_rep, wage_rep, yem_rep)`
+* `--baseline-mode observed`: use the original observed `(lhw_base, yivwg_base)`
+
+This is essential because with Option B the “job identity” is the **latent type**, not the observed point.
+
+### Missing piece C — Proposal density must be updated for latent jobs
+
+Your sampling correction relies on `log_q_total`. In Option B, the proposal needs to be:
+
+[
+q_i(0)=\pi_{0,g(i)},\qquad
+q_i(o,k)=(1-\pi_{0,g(i)})\cdot q(o,k)
+]
+with
+[
+q(o,k)\propto \widehat{Pr}(o)\cdot \widehat{\pi}_{k|o}
+]
+(+ smoothing)
+
+So `enh_job_draws.py` must compute/store:
+
+* `log_q_job`, `log_q_state`, `log_q_total`
+  consistent with this new universe definition.
+
+### Missing piece D — Sanity checks must validate GMM universe + posterior baseline
+
+Update `sanity_checks_job.py` so that when universe mode is `gmm_occ`, it checks:
+
+* `type_id` exists and is valid for every market job
+* reps are finite and nonnegative
+* draw=0 has a valid `job_id` for every decider (including fallback rules)
+* metadata has the expected GMM blocks (scalers, weights, means, covariances)
+
+### Missing piece E — Documentation + acceptance tests
+
+Update:
+
+* `README_job_model.md` to document `gmm_occ` mode, CLI examples, and baseline modes
+* `ACCEPTANCE_TESTS.md` to include:
+
+  * “GMM mode builds universe”
+  * “posterior baseline assignment has no missing job_id”
+  * “draws contain the expected columns and log_q* fields are finite”
+
+---
+
+## 3) The fastest way to confirm on your side (in your repo)
+
+Run:
+
+```powershell
+python scripts/Job_model/enh_job_universe.py --help
+```
+
+If you do **not** see `gmm_occ` listed under `--universe-mode`, then Option B is **not** present in the code you’re actually running.
+
+And in `enh_job_draws.py --help`, if you do **not** see `--baseline-mode posted`, then the baseline half of Option B is also not present.
+
+---
+
+## 4) One subtle but important “missing conceptual piece”
+
+Even after you implement Option B at the **data-generation** level, you still need to be careful in the **estimation** that you do not create a new identification failure:
+
+* If the opportunity index (A_{ij}) is too flexible and uses variables that can mimic (V_{ij}), separation is still weak.
+* Option B helps because it **reduces arbitrary grid degrees of freedom** and makes jobs “structured”, but it does **not automatically** identify tastes vs opportunities unless your estimation stage keeps the exclusion restrictions and job-varying interactions you already planned.
+
+---
+
+## 5) If you want: I can give you a “surgical” Codex prompt that patches *exactly* what’s missing
+
+If you tell me one thing—**what is the exact occupation column name in your RURO-ready file** used by the job scripts (`isco1` vs `loc_ruro` vs `loc` etc.)—I can write a prompt that forces Codex to implement Option B *as an extension*, without breaking the existing grid pipeline.
+
+(If you don’t want to answer: I can still write it assuming `isco1` and include a fallback detection block.)

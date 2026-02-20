@@ -27,6 +27,7 @@ Created: 2026-01-03
 import argparse
 import json
 import logging
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -108,6 +109,32 @@ def setup_logging(output_dir: Path, verbose: bool = False) -> None:
     ))
     logger.addHandler(fh)
     logger.addHandler(ch)
+
+
+# ==============================================================================
+# Output Path Helpers
+# ==============================================================================
+
+def resolve_spec_path(spec_config_arg: str) -> Path:
+    """
+    Resolve specification file path from CLI argument.
+
+    Tries the provided path first (relative to current working directory), then
+    falls back to script-relative resolution.
+    """
+    spec_path = Path(spec_config_arg)
+    if not spec_path.is_absolute() and not spec_path.exists():
+        spec_path = Path(__file__).parent / spec_config_arg
+    return spec_path.resolve()
+
+
+def build_spec_folder_name(spec_config_path: Path) -> str:
+    """
+    Build a filesystem-safe folder name from a spec YAML filename.
+    """
+    base_name = spec_config_path.stem or spec_config_path.name or "unknown_spec"
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", base_name).strip("._")
+    return safe_name or "unknown_spec"
 
 
 # ==============================================================================
@@ -1051,12 +1078,17 @@ Examples:
         "--output-dir",
         type=str,
         required=True,
-        help="Directory for estimation results"
+        help="Base directory for estimation results"
+    )
+    parser.add_argument(
+        "--no-spec-subdir",
+        action="store_true",
+        help="Do not create a specification-named subfolder under --output-dir"
     )
     parser.add_argument(
         "--auto-timestamp",
         action="store_true",
-        help="Automatically create timestamped subfolder: {output-dir}/run_{YYYY-MM-DD}_{HH-MM-SS}/"
+        help="Automatically create timestamped run folder under the selected output directory"
     )
 
     # Validation
@@ -1080,9 +1112,15 @@ Examples:
     
     args = parser.parse_args()
 
+    # Resolve spec path once so it can drive folder grouping and later parsing
+    spec_path = resolve_spec_path(args.spec_config)
+    spec_folder_name = build_spec_folder_name(spec_path)
+
     # Setup output directory and logging
     output_dir_base = Path(args.output_dir)
-    
+    if not args.no_spec_subdir:
+        output_dir_base = output_dir_base / spec_folder_name
+
     if args.auto_timestamp:
         # Create timestamped subdirectory
         timestamp = datetime.now().strftime("run_%Y-%m-%d_%H-%M-%S")
@@ -1100,6 +1138,8 @@ Examples:
     logger.info("="*80)
     logger.info(f"Started: {datetime.now().isoformat()}")
     logger.info(f"Output directory: {output_dir}")
+    if not args.no_spec_subdir:
+        logger.info(f"Specification folder: {spec_folder_name}")
     if args.auto_timestamp:
         logger.info(f"  (Timestamped run folder created automatically)")
     logger.info("")
@@ -1108,16 +1148,6 @@ Examples:
         logger.info("="*80)
         logger.info("Step 1: Loading Specification")
         logger.info("="*80)
-
-        spec_path = Path(args.spec_config)
-        if not spec_path.is_absolute():
-            # Check if the path exists as-is first (relative to cwd)
-            if not spec_path.exists():
-                # Try relative to script directory
-                spec_path = Path(__file__).parent / args.spec_config
-
-        # Convert to absolute path NOW (before any working directory changes by GAMS)
-        spec_path = spec_path.resolve()
 
         spec = parse_specification(spec_path)
         

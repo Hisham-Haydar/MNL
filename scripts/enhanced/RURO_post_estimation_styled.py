@@ -34,6 +34,7 @@ import json
 import sys
 import argparse
 import time
+import re
 from html import escape
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple, Callable, Union
@@ -5654,6 +5655,38 @@ def run_styled_post_estimation(
 # CLI INTERFACE
 # =============================================================================
 
+def _build_spec_folder_name(spec_config_path: Union[str, Path]) -> str:
+    """Build a filesystem-safe folder name from a spec YAML path."""
+    path_obj = Path(str(spec_config_path))
+    base_name = path_obj.stem or path_obj.name or "unknown_spec"
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", base_name).strip("._")
+    return safe_name or "unknown_spec"
+
+
+def _extract_spec_config_from_results_json(results_json_path: Path) -> Optional[str]:
+    """Extract spec config path from estimation_results.json metadata when available."""
+    try:
+        with open(results_json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return None
+
+    metadata = data.get("metadata")
+    if isinstance(metadata, dict):
+        spec_config = metadata.get("spec_config")
+        if isinstance(spec_config, str) and spec_config.strip():
+            return spec_config
+
+    # Legacy fallback: try command line capture if metadata key is absent
+    command_line = data.get("command_line")
+    if isinstance(command_line, str):
+        match = re.search(r"--spec-config\s+([^\s]+)", command_line)
+        if match:
+            return match.group(1).strip().strip('"').strip("'")
+
+    return None
+
+
 def main():
     """Command-line interface."""
     parser = argparse.ArgumentParser(
@@ -5678,13 +5711,19 @@ def main():
         '--output-dir',
         type=Path,
         default=None,
-        help='Output directory (default: same as results-json parent)'
+        help='Base output directory (default: same as results-json parent)'
+    )
+
+    parser.add_argument(
+        '--no-spec-subdir',
+        action='store_true',
+        help='Do not create a specification-named subfolder under --output-dir'
     )
     
     parser.add_argument(
         '--auto-timestamp',
         action='store_true',
-        help='Automatically create timestamped subfolder: {output-dir}/run_{YYYY-MM-DD}_{HH-MM-SS}/'
+        help='Automatically create timestamped run folder under the selected output directory'
     )
     
     parser.add_argument(
@@ -5729,15 +5768,29 @@ def main():
         np.random.seed(args.seed)
         LOGGER.info(f"Set random seed to {args.seed}")
     
-    # Handle timestamped output directory
-    output_dir = args.output_dir
+    # Build output directory (base + optional spec folder + optional timestamp)
+    if args.output_dir is None:
+        output_dir_base = args.results_json.parent / 'post_estimation'
+    else:
+        output_dir_base = Path(args.output_dir)
+
+    spec_for_grouping = args.spec_config
+    if spec_for_grouping is None:
+        extracted_spec = _extract_spec_config_from_results_json(args.results_json)
+        if extracted_spec:
+            spec_for_grouping = Path(extracted_spec)
+            LOGGER.info(f"Detected specification from results JSON: {extracted_spec}")
+
+    if not args.no_spec_subdir and spec_for_grouping is not None:
+        spec_folder_name = _build_spec_folder_name(spec_for_grouping)
+        output_dir_base = output_dir_base / spec_folder_name
+        LOGGER.info(f"Using specification folder: {spec_folder_name}")
+
+    output_dir = output_dir_base
     if args.auto_timestamp:
         from datetime import datetime
         timestamp = datetime.now().strftime("run_%Y-%m-%d_%H-%M-%S")
-        if output_dir is None:
-            output_dir = args.results_json.parent / timestamp
-        else:
-            output_dir = Path(output_dir) / timestamp
+        output_dir = Path(output_dir) / timestamp
         print(f"Auto-timestamp enabled: {output_dir}")
         LOGGER.info(f"Timestamped output directory: {output_dir}")
     

@@ -60,3 +60,26 @@ python .\scripts\enhanced\enh_RURO_prep_mnl_basic.py `
   --year 2016 `
   --gsur-file "U:/Desktop/Nizam_Hisham/MNL/Data/external/FR_gsur_ruro.parquet" `
   --no-column-filter
+
+
+python .\scripts\enhanced\enh_RURO_estimate_FR.py `     
+>>   --mnl-base "\\aff300msh.cifs.myliser.lu\ComputeShare\Hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_mnl_job_gmm" `
+>>   --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/job_choice/gamspy" `
+>>   --group joint `
+>>   --solver gamspy-conopt `
+>>   --vectorized `
+>>   --spec-config "scripts/enhanced/estimation_spec_job_M2c.yaml" `
+>>   --warm-start none `
+>>   --auto-timestamp `
+>>   --verbose
+
+
+python scripts/enhanced/RURO_post_estimation_styled.py `
+>>   --results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/job_choice/gamspy/run_2026-02-19_13-37-33/estimation_results.json" `
+>>   --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl_job_gmm" `
+>>   --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/job_choice/gamspy" `
+>>   --prefix "fr_2016_jobchoice_gmm_gamspy_" `
+>>   --compute-se `
+>>   --spec-config "scripts/enhanced/estimation_spec_job_M2c.yaml" `
+>>   --auto-timestamp   
+

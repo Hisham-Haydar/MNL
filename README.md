@@ -1,264 +1,76 @@
 # RURO Labor Supply Model - France
 
-**Random Utility Random Opportunity (RURO) Model** for labor supply estimation in France.
+This repository contains the Python implementation of the French RURO labor-supply work, including the continuous RURO pipeline, the job-choice RURO branch, GAMSPy estimation, post-estimation reporting, and references to Stijn's R implementation.
 
----
+## Start Here
 
-## 🚀 Quick Start
+Active entrypoints:
 
-### Run the Optimized Pipeline
+- [docs/PIPELINE_ENTRYPOINTS.md](docs/PIPELINE_ENTRYPOINTS.md)
+- [docs/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/RURO_ACTIVE_RESULTS_REGISTRY.md)
+- [docs/ROADMAP.md](docs/ROADMAP.md)
+- [scripts/enhanced/README.md](scripts/enhanced/README.md)
+- [scripts/Job_model/README_job_model.md](scripts/Job_model/README_job_model.md)
+
+Cleanup rationale:
+
+- [docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md](docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md)
+
+## Main Commands
+
+Continuous RURO pipeline:
 
 ```powershell
-.\RUN_PIPELINE_WITH_REDUCED_FILES.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\enhanced\run_enhanced_pipeline.ps1
 ```
 
-**Select an option:**
-1. Run Step 6 (MNL dataset creation)
-2. Run full pipeline (Step 6 + Step 7 estimation)
-3. Just show commands
-4. Exit
+Job-choice RURO pipeline:
 
----
-
-## 📊 Pipeline Overview
-
-```
-Step 1-3: Data Preparation (SILC microdata)
-    ↓
-Step 4: EUROMOD Simulation
-    ↓ (OPTIMIZED: 465 MB → 63 MB)
-Step 5: GSUR Preparation
-    ↓
-Step 6: MNL Dataset Creation
-    ↓ (OPTIMIZED: 641 cols → ~100 cols)
-Step 7: Estimation (SCIPY or GAMSPY)
-    ↓ (2-3x faster with reduced data)
-Step 8: Post-Estimation Analysis
+```powershell
+python scripts\Job_model\run_job_ruro_pipeline.py
 ```
 
----
+Post-estimation reporting:
 
-## 🎯 Current Status
-
-### ✅ Optimizations Complete
-- **EUROMOD Output:** 86% reduction (465 MB → 63 MB, 342 → 27 cols)
-- **MNL Datasets:** 87% reduction (700 MB → 90 MB, 641 → ~100 cols)
-- **Pipeline Speed:** 2-3x faster overall
-- **Memory Usage:** 7x less (500 MB vs 3-4 GB)
-
-### ✅ Key Features
-- Automatic column filtering in Step 6
-- GAMSPY solver integration (CONOPT, IPOPT, KNITRO)
-- Parallel joint estimation (singles + couples)
-- YAML-based specification system
-- Comprehensive validation and sanity checks
-
----
-
-## 📁 Project Structure
-
+```powershell
+python scripts\enhanced\RURO_post_estimation_styled.py --help
 ```
+
+## Project Layout
+
+```text
 MNL/
-├── scripts/
-│   ├── enhanced/           # Main pipeline scripts
-│   │   ├── enh_RURO_prep_mnl_basic.py    # Step 6 (MNL dataset)
-│   │   ├── enh_RURO_estimate_FR.py       # Step 7 (Estimation)
-│   │   ├── estimation_spec.yaml          # Estimation specification
-│   │   ├── gamspy_estimation.py          # GAMSPY solver integration
-│   │   └── reduce_mnl_columns.py         # Column reduction utility
-│   └── R/                  # Legacy R scripts (reference)
-├── Data/
-│   ├── external/           # GSUR unemployment rates
-│   └── processed/          # Pipeline outputs
-├── outputs/
-│   └── estimation/         # Estimation results
-├── docs/
-│   └── archive/            # Troubleshooting session docs
-└── *.ps1                   # PowerShell runner scripts
+  configs/                 Configuration files
+  Data/                    Small external/reference inputs and documentation
+  docs/                    Current documentation and archived notes
+  literature/              Papers and external references
+  outputs/                 Ignored generated outputs; see KEEP_RESULTS.md
+  scripts/enhanced/        Active continuous RURO pipeline and estimation code
+  scripts/Job_model/       Active job-choice RURO pipeline
+  scripts/diagnostics/     Manual checks and comparison scripts
+  scripts/runners/legacy/  Old root-level runner scripts
+  scripts/archive/         Legacy scripts, backups, and old approaches
+  src/                     Package skeleton / reusable code area
+  stijn/                   Stijn's R reference implementation
+  tests/                   Automated tests
 ```
 
----
+## Current Result Baselines
 
-## 🔧 Manual Commands
+The active results are documented in:
 
-### Step 6: Create MNL Dataset (with reduced EUROMOD)
-```powershell
-python scripts\enhanced\enh_RURO_prep_mnl_basic.py `
-    --singles-draws U:/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready_RURO_draws.parquet `
-    --euromod-combined U:/EUROMOD-STORAGE/interim/ruro/fr/scenarios_2016_reduced/combined_draws_em.parquet `
-    --out-base U:/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl `
-    --wage-spec vw `
-    --year 2016 `
-    --couples-draws U:/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready_RURO_draws.parquet `
-    --gsur-file U:/Desktop/Nizam_Hisham/MNL/Data/external/FR_gsur_ruro.parquet
-```
+- [docs/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/RURO_ACTIVE_RESULTS_REGISTRY.md)
 
-### Step 7: Estimation
+Do not infer the current baseline by browsing timestamped folders manually. Promote important runs into the registry first.
 
-**With SCIPY (default):**
-```powershell
-python scripts\enhanced\enh_RURO_estimate_FR.py `
-    --mnl-base U:/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl `
-    --output-dir outputs\estimation\FR_2016 `
-    --group joint `
-    --n-jobs 4
-```
+## Reference Work
 
-**With GAMSPY-CONOPT (2-3x faster):**
-```powershell
-python scripts\enhanced\enh_RURO_estimate_FR.py `
-    --mnl-base U:/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl `
-    --output-dir outputs\estimation\FR_2016_gamspy `
-    --group joint `
-    --solver gamspy-conopt `
-    --spec-config scripts\enhanced\estimation_spec.yaml `
-    --auto-timestamp
-```
+Stijn's files are kept intact in `stijn/`:
 
-### Step 8: Post-Estimation (Model-Aware)
+- `stijn/Ruro_estimation_H.Rmd`
+- `stijn/Ruro_estimation_new.Rmd`
+- `stijn/Ruro_functions_EMRWS.R`
+- `stijn/Ruro_simulation_H.Rmd`
 
-The styled post-estimation report now auto-detects regular RURO vs job-choice runs and shows:
-- Estimation source path
-- Estimation configuration (spec, model family, opportunity tier, proposal correction, centering)
-- Any saved `identification_diagnostics.txt` from estimation
-- A warning style for degenerate/near-zero SE rows in parameter tables
+Older Python design notes, implementation history, root runner scripts, and scratch files were moved to archive folders during the 2026-05-11 hygiene cleanup.
 
-**Regular RURO**
-```powershell
-python scripts\enhanced\RURO_post_estimation_styled.py `
-    --results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/v3/gamspy/run_xxx/estimation_results.json" `
-    --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
-    --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/v3/gamspy" `
-    --prefix "fr_2016_gamspy_" `
-    --compute-se `
-    --spec-config "scripts/enhanced/estimation_spec_v3.yaml" `
-    --auto-timestamp
-```
-
-**Job-choice RURO**
-```powershell
-python scripts\enhanced\RURO_post_estimation_styled.py `
-    --results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/job_choice/gamspy/run_xxx/estimation_results.json" `
-    --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl_job" `
-    --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/job_choice/gamspy" `
-    --prefix "fr_2016_jobchoice_gamspy_" `
-    --compute-se `
-    --spec-config "scripts/enhanced/estimation_spec_job_choice_v0_plus_b.yaml" `
-    --auto-timestamp
-```
-
----
-
-## 📋 Column Filtering
-
-Step 6 automatically filters MNL datasets to ~100 essential columns:
-
-### Included Columns
-- **Core IDs:** `idhh`, `idperson`, `draw`, `is_chosen`
-- **Demographics:** Age, gender, education, children, region
-- **Labor:** Hours, wages, occupation (`loc4`), industry (`lindi`)
-- **EUROMOD:** `ils_dispy`, taxes, benefits
-- **Utility:** `consumption`, `leisure`, normalized versions
-- **Estimation:** `prior`, `log_prior`, `gsur`
-- **Weights:** `dwt`, `weight`
-
-### Disable Filtering (if needed)
-Add `--no-column-filter` flag to Step 6 command.
-
----
-
-## 🔍 Troubleshooting
-
-### Check File Sizes
-```powershell
-Get-ChildItem U:/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl*.parquet | 
-    Select-Object Name, @{N='Size_MB';E={[math]::Round($_.Length/1MB, 1)}}
-```
-
-**Expected:**
-- `fr_2016_RURO_mnl__singles.parquet`: ~40 MB, ~100 cols
-- `fr_2016_RURO_mnl__couples.parquet`: ~50 MB, ~100 cols
-
-### Verify Reduced EUROMOD
-```powershell
-Get-Item U:/EUROMOD-STORAGE/interim/ruro/fr/scenarios_2016_reduced/combined_draws_em.parquet | 
-    Select-Object Name, @{N='Size_MB';E={[math]::Round($_.Length/1MB, 1)}}
-```
-
-**Expected:** ~63 MB
-
-### Check Column Counts
-```powershell
-python -c "import pandas as pd; df = pd.read_parquet('U:/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__singles.parquet'); print(f'Columns: {len(df.columns)}'); print(f'Rows: {len(df):,}')"
-```
-
-**Expected:** Columns: ~100, Rows: 167,600
-
----
-
-## 📚 Documentation
-
-### Core Documentation
-- **[DONE.md](DONE.md)** - Complete list of all implemented features and fixes
-- **[TODO.md](TODO.md)** - Optional future enhancements and next steps
-- **[scripts/Job_model/README_job_model.md](scripts/Job_model/README_job_model.md)** - Job-choice RURO branch, commands, and current status
-- **[scripts/Job_model/ACCEPTANCE_TESTS.md](scripts/Job_model/ACCEPTANCE_TESTS.md)** - Acceptance tests and recommended production settings for job-model runs
-
-### Technical References
-- **[docs/GAMSPy_Quick_Start.md](docs/GAMSPy_Quick_Start.md)** - GAMSPy estimation guide
-- **[docs/GAMSPy_vs_SciPy_Architecture_Comparison.md](docs/GAMSPy_vs_SciPy_Architecture_Comparison.md)** - Solver comparison (40K detailed analysis)
-- **[docs/FR2016_RURO_pipeline_report.md](docs/FR2016_RURO_pipeline_report.md)** - Complete pipeline documentation (42K)
-- **Occupation Choice:** See `OCCUPATION_CHOICE_*.md` files for detailed design docs
-- **R Validation:** See [notes/STIJN_vs_PYTHON_SPECIFICATION.md](notes/STIJN_vs_PYTHON_SPECIFICATION.md)
-
----
-
-## 🛠️ Maintenance
-
-### Clean Workspace
-```powershell
-.\cleanup_final.ps1
-```
-
-Removes `__pycache__` directories (protects `.venv`).
-
----
-
-## 📈 Performance Benchmarks
-
-### File Sizes (Before → After)
-- **EUROMOD:** 465 MB → 63 MB (86% reduction)
-- **Singles MNL:** 300 MB → 40 MB (87% reduction)
-- **Couples MNL:** 400 MB → 50 MB (87% reduction)
-- **Total:** 1.16 GB → 153 MB (87% reduction)
-
-### Runtime (Estimated)
-- **Step 6:** 10-15 min → 5-7 min (1.5-2x faster)
-- **Step 7 (SCIPY):** 30-60 min → 15-30 min (2x faster)
-- **Step 7 (GAMSPY):** 10-20 min → 5-10 min (2-3x faster)
-
----
-
-## 🎯 Quick Commands
-
-### Run Full Pipeline
-```powershell
-.\RUN_PIPELINE_WITH_REDUCED_FILES.ps1
-```
-
-### Run Estimation Only (GAMSPy)
-```powershell
-.\RUN_OPTIMIZED_ESTIMATION.ps1
-```
-
-### Run Estimation Only (SciPy baseline)
-```powershell
-.\RUN_WITH_SCIPY.ps1
-```
-
----
-
-**Project Status:** ✅ **Production Ready**
-**Last Updated:** January 28, 2026
-
-See [DONE.md](DONE.md) for complete implementation details and [TODO.md](TODO.md) for optional future enhancements.

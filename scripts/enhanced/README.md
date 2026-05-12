@@ -102,7 +102,7 @@ This directory contains the complete enhanced RURO (Random Utility Random Opport
   - Generates predicted probabilities
   - Creates interactive HTML report
 
-- **[diagnose_pre_estimation.py](diagnose_pre_estimation.py)** - Pre-Estimation Checks
+- **[diagnostic_consumption_variation.py](diagnostic_consumption_variation.py)** - Consumption-variation identification check
   - Data quality validation
   - Descriptive statistics
   - Variable distribution checks
@@ -110,19 +110,19 @@ This directory contains the complete enhanced RURO (Random Utility Random Opport
 ### Documentation
 
 - **[README.md](README.md)** - This file (directory overview)
-- **[PIPELINE_GUIDE.md](PIPELINE_GUIDE.md)** - **Complete Documentation**
+- **[../../docs/PIPELINE_ENTRYPOINTS.md](../../docs/PIPELINE_ENTRYPOINTS.md)** - Active entrypoints and canonical commands
   - Full step-by-step guide
   - Prerequisites and setup
   - Detailed command-line syntax
   - Troubleshooting guide
   - Advanced configuration
 
-- **[QUICK_START.md](QUICK_START.md)** - Quick Reference
+- **[../../README.md](../../README.md)** - Project quick start
   - Fast setup instructions
   - Common commands
   - Quick troubleshooting
 
-- **[README_POST_ESTIMATION.md](README_POST_ESTIMATION.md)** - Post-Estimation Guide
+- **[../../docs/RURO_ACTIVE_RESULTS_REGISTRY.md](../../docs/RURO_ACTIVE_RESULTS_REGISTRY.md)** - Current baseline output runs
   - How to interpret results
   - Diagnostics explanation
   - Elasticity calculations
@@ -149,7 +149,7 @@ This directory contains the complete enhanced RURO (Random Utility Random Opport
 
 ### Detailed Guide
 
-For comprehensive documentation, see **[PIPELINE_GUIDE.md](PIPELINE_GUIDE.md)**
+For canonical active commands, see **[../../docs/PIPELINE_ENTRYPOINTS.md](../../docs/PIPELINE_ENTRYPOINTS.md)**.
 
 ## 📊 Pipeline Flow
 
@@ -249,9 +249,9 @@ $MAX_ITER = 5000          # Optimizer max iterations
 
 ## 📖 Documentation Hierarchy
 
-1. **Start here**: [QUICK_START.md](QUICK_START.md) - Get running quickly
-2. **Full details**: [PIPELINE_GUIDE.md](PIPELINE_GUIDE.md) - Comprehensive guide
-3. **After estimation**: [README_POST_ESTIMATION.md](README_POST_ESTIMATION.md) - Interpret results
+1. **Start here**: [../../README.md](../../README.md) - Project quick start
+2. **Active commands**: [../../docs/PIPELINE_ENTRYPOINTS.md](../../docs/PIPELINE_ENTRYPOINTS.md) - Canonical entrypoints
+3. **After estimation**: [../../docs/RURO_ACTIVE_RESULTS_REGISTRY.md](../../docs/RURO_ACTIVE_RESULTS_REGISTRY.md) - Baseline result registry
 4. **This file**: [README.md](README.md) - Directory overview
 
 ## 🆘 Troubleshooting
@@ -262,7 +262,7 @@ $MAX_ITER = 5000          # Optimizer max iterations
 2. **EUROMOD exit code 1**: Usually false alarm, check if output file exists
 3. **Estimation not converging**: Use warm start (automatic in pipeline script)
 
-For detailed troubleshooting, see [PIPELINE_GUIDE.md](PIPELINE_GUIDE.md#troubleshooting)
+For cleanup and current project structure, see [../../docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md](../../docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md).
 
 ## 🔬 Model Specification
 

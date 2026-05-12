@@ -22,7 +22,8 @@ Data/
 data/
 raw_data/
 reports/
-outputs/
+outputs/*
+!outputs/KEEP_RESULTS.md
 output/
 artifacts/
 *.parquet
@@ -61,3 +62,19 @@ __pycache__/
 .venv/
 venv/
 .env/
+
+# generated project inventories
+RURO_MNL_project_files_structure*.md
+
+# solver working directories
+_gams_work/
+
+# accidental local cache/config folders
+Microsoft/
+.mplconfig/
+.claude/
+.idea/
+.vscode/
+
+# generated package metadata
+src/*.egg-info/

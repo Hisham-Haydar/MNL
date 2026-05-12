@@ -73,7 +73,7 @@ except NameError:  # interactive environments
     SCRIPT_DIR = Path.cwd() / "scripts"
 PROJECT_ROOT = (SCRIPT_DIR / "..").resolve()
 
-# Make sure SCRIPT_DIR and PROJECT_ROOT are on sys.path (for path_helpers, scratch, etc.)
+# Make sure SCRIPT_DIR and PROJECT_ROOT are on sys.path for local helpers.
 for candidate in (SCRIPT_DIR, PROJECT_ROOT):
     c_str = str(candidate)
     if c_str not in sys.path:
@@ -83,7 +83,7 @@ for candidate in (SCRIPT_DIR, PROJECT_ROOT):
 from path_helpers import data_root, ensure_dir, resolve_storage_root  # type: ignore  # noqa: E402
 from sanity_checks import sanity_report_ruro_prep  # type: ignore  # noqa: E402
 
-# Add scratch/ to the path so we can import setup_logging like in data_prep2.py
+# Legacy scratch helper is optional; use the fallback if it is archived/missing.
 SCRATCH_DIR = PROJECT_ROOT / "scratch"
 if SCRATCH_DIR.exists():
     sys.path.insert(0, str(SCRATCH_DIR))

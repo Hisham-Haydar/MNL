@@ -2,7 +2,8 @@
 
 Generated on: 2026-05-11  
 Basis: `RURO_MNL_project_files_structure.md`, selected README files, `.gitignore`, and git status.  
-Scope: project hygiene and clarity, not primarily disk-size reduction. No files were deleted or moved.
+Scope: project hygiene and clarity, not primarily disk-size reduction.  
+Cleanup status: the first reversible hygiene pass was applied on 2026-05-11; see `docs/RURO_PROJECT_HYGIENE_CLEANUP_LOG_2026-05-11.md`.
 
 ## Executive Recommendation
 
@@ -683,4 +684,3 @@ Recommended first commit of cleanup work:
 5. Add `.gitignore` hygiene patterns.
 
 Only after that should files be moved. This avoids losing context and makes the cleanup auditable.
-

@@ -64,7 +64,7 @@ This document lists remaining optional enhancements and future work.
   - `estimation_spec_parser.py`
 - **Integration approach:** Minimal (add to likelihood computation only)
 - **When:** After verifying base model correctness
-- **Reference:** [OCCUPATION_CHOICE_SUMMARY.md](OCCUPATION_CHOICE_SUMMARY.md)
+- **Reference:** [OCCUPATION_CHOICE_SUMMARY.md](archive/occupation_choice_notes/OCCUPATION_CHOICE_SUMMARY.md)
 
 ---
 
@@ -235,4 +235,4 @@ This document lists remaining optional enhancements and future work.
 **All items in this TODO are optional enhancements.**
 **System is ready for research use as-is.**
 
-See [DONE.md](DONE.md) for completed work and [README.md](README.md) for usage instructions.
+See [DONE.md](archive/implementation_history/DONE.md) for completed work and [README.md](../README.md) for usage instructions.

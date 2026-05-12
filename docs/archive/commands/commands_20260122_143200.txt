@@ -1,0 +1,9 @@
+try { . "c:\Program Files\Microsoft VS Code\resources\app\out\vs\workbench\contrib\terminal\common\scripts\shellIntegration.ps1" } catch {}
+& //crc/users/hisham/Desktop/Nizam_Hisham/MNL/.venv/Scripts/Activate.ps1
+$run = Get-ChildItem -Directory "U:\Desktop\Nizam_Hisham\MNL\outputs\post_estimation\fr\2016_gamspy_styled" |
+  Sort-Object LastWriteTime -Descending | Select-Object -First 1
+Start-Process (Get-ChildItem $run.FullName -Filter *.html | Select-Object -First 1).FullName
+
+Get-History | Select-Object -ExpandProperty CommandLine |
+  Set-Content "U:\Desktop\Nizam_Hisham\MNL\logs\commands_$(Get-Date -Format yyyyMMdd_HHmmss).txt"
+New-Item -ItemType Directory -Force "U:\Desktop\Nizam_Hisham\MNL\logs" | Out-Null

@@ -200,5 +200,5 @@ Report additions for job-choice runs:
 
 - `scripts/Job_model/ACCEPTANCE_TESTS.md`
 - `scripts/enhanced/README.md`
-- `DONE.md`
-- `TODO.md`
+- `../../docs/archive/implementation_history/DONE.md`
+- `../../docs/ROADMAP.md`

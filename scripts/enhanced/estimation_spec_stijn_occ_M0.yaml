@@ -8,7 +8,7 @@
 #   docs/RURO_model_spec_contract_v3_stijn_occ.md
 #   docs/RURO_model_spec_contract_v4_stijn_occ.md
 #   docs/RURO_occ_pipeline_audit_v1.md
-#   Prototype/RURO_stijn_occ_baseline_spec_v1.md
+#   docs/RURO_stijn_occ_baseline_spec_v1.md
 #
 # Choice index (per individual; partner-additive for couples):
 #   V = U  +  O^E + O^H  +  O^W  +  O^Occ  -  log_prior

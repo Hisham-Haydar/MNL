@@ -1729,12 +1729,14 @@ def estimate_joint_gamspy(
                     mu_wage = mu_wage + param_vars['beta_w_educH'] * educH
 
                 # Add experience terms if available
-                if data_singles_male.pexp_years is not None and 'beta_pexp' in param_vars:
+                pexp_coef = 'beta_w_pexp' if 'beta_w_pexp' in param_vars else ('beta_pexp' if 'beta_pexp' in param_vars else None)
+                pexp2_coef = 'beta_w_pexp2' if 'beta_w_pexp2' in param_vars else ('beta_pexp2' if 'beta_pexp2' in param_vars else None)
+                if data_singles_male.pexp_years is not None and pexp_coef is not None:
                     pexp = float(data_singles_male.pexp_years[global_idx])
-                    mu_wage = mu_wage + param_vars['beta_pexp'] * pexp
-                    if 'beta_pexp2' in param_vars and data_singles_male.pexp_years2 is not None:
+                    mu_wage = mu_wage + param_vars[pexp_coef] * pexp
+                    if pexp2_coef is not None and data_singles_male.pexp_years2 is not None:
                         pexp2 = float(data_singles_male.pexp_years2[global_idx])
-                        mu_wage = mu_wage + param_vars['beta_pexp2'] * pexp2
+                        mu_wage = mu_wage + param_vars[pexp2_coef] * pexp2
 
                 # Log-likelihood of observed wage
                 residual = log_wage_obs - mu_wage
@@ -1742,7 +1744,8 @@ def estimate_joint_gamspy(
 
                 log_w = (-0.5 * (residual * residual) / (sigma_param * sigma_param + LOG_EPS)
                         - gp_log(sigma_param + LOG_EPS)
-                        - 0.5 * gp_log(2.0 * 3.141592653589793))
+                        - 0.5 * gp_log(2.0 * 3.141592653589793)
+                        - log_wage_obs)
 
                 util_j = util_j + log_w
 
@@ -1917,12 +1920,14 @@ def estimate_joint_gamspy(
                     mu_wage = mu_wage + param_vars['beta_w_educH'] * educH
 
                 # Add experience terms if available
-                if data_singles_female.pexp_years is not None and 'beta_pexp' in param_vars:
+                pexp_coef = 'beta_w_pexp' if 'beta_w_pexp' in param_vars else ('beta_pexp' if 'beta_pexp' in param_vars else None)
+                pexp2_coef = 'beta_w_pexp2' if 'beta_w_pexp2' in param_vars else ('beta_pexp2' if 'beta_pexp2' in param_vars else None)
+                if data_singles_female.pexp_years is not None and pexp_coef is not None:
                     pexp = float(data_singles_female.pexp_years[global_idx])
-                    mu_wage = mu_wage + param_vars['beta_pexp'] * pexp
-                    if 'beta_pexp2' in param_vars and data_singles_female.pexp_years2 is not None:
+                    mu_wage = mu_wage + param_vars[pexp_coef] * pexp
+                    if pexp2_coef is not None and data_singles_female.pexp_years2 is not None:
                         pexp2 = float(data_singles_female.pexp_years2[global_idx])
-                        mu_wage = mu_wage + param_vars['beta_pexp2'] * pexp2
+                        mu_wage = mu_wage + param_vars[pexp2_coef] * pexp2
 
                 # Log-likelihood of observed wage
                 residual = log_wage_obs - mu_wage
@@ -1930,7 +1935,8 @@ def estimate_joint_gamspy(
 
                 log_w = (-0.5 * (residual * residual) / (sigma_param * sigma_param + LOG_EPS)
                         - gp_log(sigma_param + LOG_EPS)
-                        - 0.5 * gp_log(2.0 * 3.141592653589793))
+                        - 0.5 * gp_log(2.0 * 3.141592653589793)
+                        - log_wage_obs)
 
                 util_j = util_j + log_w
 
@@ -2209,19 +2215,22 @@ def estimate_joint_gamspy(
                     mu_wage_m = mu_wage_m + param_vars['beta_w_educH'] * educH_m
 
                 # Add experience terms only if available
-                if data_couples.pexp_years_male is not None and 'beta_pexp' in param_vars:
+                pexp_coef = 'beta_w_pexp' if 'beta_w_pexp' in param_vars else ('beta_pexp' if 'beta_pexp' in param_vars else None)
+                pexp2_coef = 'beta_w_pexp2' if 'beta_w_pexp2' in param_vars else ('beta_pexp2' if 'beta_pexp2' in param_vars else None)
+                if data_couples.pexp_years_male is not None and pexp_coef is not None:
                     pexp_m = float(data_couples.pexp_years_male[global_idx])
-                    mu_wage_m = mu_wage_m + param_vars['beta_pexp'] * pexp_m
-                    if 'beta_pexp2' in param_vars and data_couples.pexp_years2_male is not None:
+                    mu_wage_m = mu_wage_m + param_vars[pexp_coef] * pexp_m
+                    if pexp2_coef is not None and data_couples.pexp_years2_male is not None:
                         pexp2_m = float(data_couples.pexp_years2_male[global_idx])
-                        mu_wage_m = mu_wage_m + param_vars['beta_pexp2'] * pexp2_m
+                        mu_wage_m = mu_wage_m + param_vars[pexp2_coef] * pexp2_m
 
                 residual_m = log_wage_m - mu_wage_m
                 sigma_param = param_vars['sigma']
 
                 log_w_m = (-0.5 * (residual_m * residual_m) / (sigma_param * sigma_param + LOG_EPS)
                           - gp_log(sigma_param + LOG_EPS)
-                          - 0.5 * gp_log(2.0 * 3.141592653589793))
+                          - 0.5 * gp_log(2.0 * 3.141592653589793)
+                          - log_wage_m)
 
                 util_j = util_j + log_w_m
 
@@ -2237,19 +2246,22 @@ def estimate_joint_gamspy(
                     mu_wage_f = mu_wage_f + param_vars['beta_w_educH'] * educH_f
 
                 # Add experience terms only if available
-                if data_couples.pexp_years_female is not None and 'beta_pexp' in param_vars:
+                pexp_coef = 'beta_w_pexp' if 'beta_w_pexp' in param_vars else ('beta_pexp' if 'beta_pexp' in param_vars else None)
+                pexp2_coef = 'beta_w_pexp2' if 'beta_w_pexp2' in param_vars else ('beta_pexp2' if 'beta_pexp2' in param_vars else None)
+                if data_couples.pexp_years_female is not None and pexp_coef is not None:
                     pexp_f = float(data_couples.pexp_years_female[global_idx])
-                    mu_wage_f = mu_wage_f + param_vars['beta_pexp'] * pexp_f
-                    if 'beta_pexp2' in param_vars and data_couples.pexp_years2_female is not None:
+                    mu_wage_f = mu_wage_f + param_vars[pexp_coef] * pexp_f
+                    if pexp2_coef is not None and data_couples.pexp_years2_female is not None:
                         pexp2_f = float(data_couples.pexp_years2_female[global_idx])
-                        mu_wage_f = mu_wage_f + param_vars['beta_pexp2'] * pexp2_f
+                        mu_wage_f = mu_wage_f + param_vars[pexp2_coef] * pexp2_f
 
                 residual_f = log_wage_f - mu_wage_f
                 sigma_param = param_vars['sigma']
 
                 log_w_f = (-0.5 * (residual_f * residual_f) / (sigma_param * sigma_param + LOG_EPS)
                           - gp_log(sigma_param + LOG_EPS)
-                          - 0.5 * gp_log(2.0 * 3.141592653589793))
+                          - 0.5 * gp_log(2.0 * 3.141592653589793)
+                          - log_wage_f)
 
                 util_j = util_j + log_w_f
 

@@ -489,6 +489,7 @@ def _build_singles_ll_vectorized(
                 -0.5 * (residual * residual) / (sigma_param * sigma_param + LOG_EPS)
                 - gp_log(sigma_param + LOG_EPS)
                 - 0.5 * gp_log(2.0 * 3.141592653589793)
+                - log_wage_param
             )
 
             if working_param is None:
@@ -530,6 +531,7 @@ def _build_singles_ll_vectorized(
                     -0.5 * (residual * residual) / (sigma_g * sigma_g + LOG_EPS)
                     - gp_log(sigma_g + LOG_EPS)
                     - 0.5 * gp_log(2.0 * 3.141592653589793)
+                    - log_wage_param
                 )
                 log_w_total = log_w_total + loc_param * log_w_g
 
@@ -546,9 +548,16 @@ def _build_singles_ll_vectorized(
             var_name = shifter.get("variable")
             coef_name = shifter.get("coefficient")
             interaction_terms = _normalize_interaction_terms(shifter.get("interaction", None))
+            applies_to = str(shifter.get("applies_to", "both")).strip().lower()
             if not var_name or not coef_name:
                 continue
             if coef_name not in param_vars:
+                continue
+            if applies_to in {"male", "sm"} and not getattr(data, "is_male", False):
+                continue
+            if applies_to in {"female", "sf"} and getattr(data, "is_male", False):
+                continue
+            if applies_to in {"cm", "cf", "household"}:
                 continue
             var_param = get_var_param(var_name)
             if var_param is None:
@@ -862,6 +871,7 @@ def _build_couples_ll_vectorized(
                 -0.5 * (residual_m * residual_m) / (sigma_param * sigma_param + LOG_EPS)
                 - gp_log(sigma_param + LOG_EPS)
                 - 0.5 * gp_log(2.0 * 3.141592653589793)
+                - log_wage_m
             )
             log_w_m = working_m * log_w_density_m
 
@@ -873,6 +883,7 @@ def _build_couples_ll_vectorized(
                 -0.5 * (residual_f * residual_f) / (sigma_param * sigma_param + LOG_EPS)
                 - gp_log(sigma_param + LOG_EPS)
                 - 0.5 * gp_log(2.0 * 3.141592653589793)
+                - log_wage_f
             )
             log_w_f = working_f * log_w_density_f
 
@@ -918,6 +929,7 @@ def _build_couples_ll_vectorized(
                     -0.5 * (residual * residual) / (sigma_g * sigma_g + LOG_EPS)
                     - gp_log(sigma_g + LOG_EPS)
                     - 0.5 * gp_log(2.0 * 3.141592653589793)
+                    - log_wage_param
                 )
                 log_w_total = log_w_total + loc_param * log_w_g
             return working_param * log_w_total
@@ -932,7 +944,7 @@ def _build_couples_ll_vectorized(
             var_name = shifter.get("variable")
             coef_name = shifter.get("coefficient")
             interaction_terms = _normalize_interaction_terms(shifter.get("interaction", None))
-            applies_to = shifter.get("applies_to", "both")
+            applies_to = str(shifter.get("applies_to", "both")).strip().lower()
             if not var_name or not coef_name:
                 continue
             if coef_name not in param_vars:
@@ -968,7 +980,7 @@ def _build_couples_ll_vectorized(
                 log_market = log_market + param_vars[coef_name] * var_param
                 continue
 
-            if applies_to in ("male", "both"):
+            if applies_to in ("male", "cm", "both"):
                 var_param_m = get_var_param(var_name, gender="male", fallback_to_base=False)
                 if var_param_m is not None:
                     var_param_m = _apply_market_scale(var_param_m, var_name, scale_map)
@@ -988,7 +1000,7 @@ def _build_couples_ll_vectorized(
                     if not interaction_missing:
                         log_market = log_market + param_vars[coef_name] * var_param_m
 
-            if applies_to in ("female", "both"):
+            if applies_to in ("female", "cf", "both"):
                 var_param_f = get_var_param(var_name, gender="female", fallback_to_base=False)
                 if var_param_f is not None:
                     var_param_f = _apply_market_scale(var_param_f, var_name, scale_map)

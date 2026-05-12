@@ -634,7 +634,7 @@ def precompute_data_singles(
     working = (hours > 0).astype(float)
 
     # Focal hours peaks matching Stijn's R code (narrow bands around typical schedules)
-    working_pt1 = ((hours >= 18.5) & (hours <= 20.5)).astype(float)  # ~20h part-time
+    working_pt1 = ((hours >= 18.5) & (hours <= 21.5)).astype(float)  # ~20-21h part-time
     working_pt2 = ((hours >= 29.5) & (hours <= 30.5)).astype(float)  # ~30h part-time
     working_ft = ((hours >= 37.5) & (hours <= 40.5)).astype(float)   # ~40h full-time    # GSUR (check both column names for backwards compatibility)
     if "gsur" in df.columns:
@@ -932,7 +932,7 @@ def precompute_data_couples(
     hours_male = df["hours_male"].values
     working_male = (hours_male > 0).astype(float)
     # Focal hours peaks matching Stijn's R code (narrow bands around typical schedules)
-    working_pt1_male = ((hours_male >= 18.5) & (hours_male <= 20.5)).astype(float)  # ~20h part-time
+    working_pt1_male = ((hours_male >= 18.5) & (hours_male <= 21.5)).astype(float)  # ~20-21h part-time
     working_pt2_male = ((hours_male >= 29.5) & (hours_male <= 30.5)).astype(float)  # ~30h part-time
     working_ft_male = ((hours_male >= 37.5) & (hours_male <= 40.5)).astype(float)   # ~40h full-time
 
@@ -948,7 +948,7 @@ def precompute_data_couples(
     hours_female = df["hours_female"].values
     working_female = (hours_female > 0).astype(float)
     # Focal hours peaks matching Stijn's R code (narrow bands around typical schedules)
-    working_pt1_female = ((hours_female >= 18.5) & (hours_female <= 20.5)).astype(float)  # ~20h part-time
+    working_pt1_female = ((hours_female >= 18.5) & (hours_female <= 21.5)).astype(float)  # ~20-21h part-time
     working_pt2_female = ((hours_female >= 29.5) & (hours_female <= 30.5)).astype(float)  # ~30h part-time
     working_ft_female = ((hours_female >= 37.5) & (hours_female <= 40.5)).astype(float)   # ~40h full-time
 

@@ -104,9 +104,16 @@ def _compute_market_opportunity_singles(
             var_name = shifter.get("variable")
             coef_name = shifter.get("coefficient")
             interaction_terms = _normalize_interaction_terms(shifter.get("interaction", None))
+            applies_to = str(shifter.get("applies_to", "both")).strip().lower()
             if not var_name or not coef_name:
                 continue
             if coef_name not in params:
+                continue
+            if applies_to in {"male", "sm"} and not data.is_male:
+                continue
+            if applies_to in {"female", "sf"} and data.is_male:
+                continue
+            if applies_to in {"cm", "cf", "household"}:
                 continue
             if not hasattr(data, var_name):
                 logger.warning(
@@ -214,7 +221,7 @@ def _compute_market_opportunity_couples(
                 components[coef_name] = components.get(coef_name, 0.0) + var_param
                 continue
 
-            if applies_to in ("male", "both"):
+            if applies_to in ("male", "cm", "both"):
                 var_param_m = _get_gender_var(var_name, "male")
                 if var_param_m is None:
                     logger.warning(
@@ -244,7 +251,7 @@ def _compute_market_opportunity_couples(
                         log_market = log_market + params[coef_name] * var_param_m
                         components[coef_name] = components.get(coef_name, 0.0) + var_param_m
 
-            if applies_to in ("female", "both"):
+            if applies_to in ("female", "cf", "both"):
                 var_param_f = _get_gender_var(var_name, "female")
                 if var_param_f is None:
                     logger.warning(
@@ -638,7 +645,7 @@ def _compute_wage_opportunity_vw_singles(
 
     # Log-normal density
     residual = (data.log_wage - mu_w) / sigma
-    log_w = -0.5 * residual**2 - np.log(sigma) - 0.5 * np.log(2 * np.pi)
+    log_w = -0.5 * residual**2 - np.log(sigma) - 0.5 * np.log(2 * np.pi) - data.log_wage
 
     # Zero for non-workers
     log_w = np.where(data.working > 0, log_w, 0.0)
@@ -716,7 +723,7 @@ def _compute_wage_opportunity_loc_singles(
 
         # Log-normal density for this group
         residual = (data.log_wage - mu_g) / sigma_g
-        log_w_g = -0.5 * residual**2 - np.log(sigma_g) - 0.5 * np.log(2 * np.pi)
+        log_w_g = -0.5 * residual**2 - np.log(sigma_g) - 0.5 * np.log(2 * np.pi) - data.log_wage
 
         # Add contribution (weighted by indicator)
         log_w = log_w + loc_indicator * log_w_g
@@ -1565,7 +1572,7 @@ def _compute_wage_opportunity_vw_couples_gender(
 
     sigma = params[spec.wage_variance_param]
     residual = (log_wage - mu_w) / sigma
-    log_w = -0.5 * residual**2 - np.log(sigma) - 0.5 * np.log(2 * np.pi)
+    log_w = -0.5 * residual**2 - np.log(sigma) - 0.5 * np.log(2 * np.pi) - log_wage
 
     return np.where(working > 0, log_w, 0.0)
 
@@ -1632,7 +1639,7 @@ def _compute_wage_opportunity_loc_couples_gender(
         mu_g = params[intercept_name] + common_shift
         sigma_g = params[sigma_name]
         residual = (log_wage - mu_g) / sigma_g
-        log_w_g = -0.5 * residual**2 - np.log(sigma_g) - 0.5 * np.log(2 * np.pi)
+        log_w_g = -0.5 * residual**2 - np.log(sigma_g) - 0.5 * np.log(2 * np.pi) - log_wage
 
         log_w = log_w + loc_indicator * log_w_g
 

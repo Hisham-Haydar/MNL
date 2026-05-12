@@ -168,10 +168,13 @@ LABOR_MARKET_COLS = {
     "loc4_male",      # Male occupation (couples)
     "loc4_female",    # Female occupation (couples)
     
-    # Industry (NACE)
-    "lindi",          # Industry code (NACE)
-    "industry",       # Industry
-    "nace",           # NACE code
+    # Industry (NACE) — DROPPED for M0_stijn_occ per contract §15/§25.
+    # `lindi` is reserved for the M6 industry-opportunity extension; the
+    # M0 MNL must not carry it. Held upstream in RURO-ready files for
+    # traceability. Restore here only when activating M6.
+    # "lindi",
+    # "industry",
+    # "nace",
 }
 
 # EUROMOD tax-benefit outputs
@@ -234,6 +237,20 @@ PRIOR_GSUR_COLS = {
     "log_prior",      # Log prior (used in Step 7 log-likelihood)
     "prior_h",        # Hours prior component
     "prior_w",        # Wage prior component
+
+    # Frozen Stijn M0 proposal components
+    "log_q_E",
+    "log_q_H",
+    "log_q_W",
+    "log_q_Occ",
+    "log_q_E_male",
+    "log_q_E_female",
+    "log_q_H_male",
+    "log_q_H_female",
+    "log_q_W_male",
+    "log_q_W_female",
+    "log_q_Occ_male",
+    "log_q_Occ_female",
     
     # GSUR unemployment rates (used in wage opportunity cost in Step 7)
     "gsur",           # Group-specific unemployment rate (singles)

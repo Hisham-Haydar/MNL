@@ -455,20 +455,21 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         raise ValueError("market_opportunity.variable_scales must be a mapping.")
     market_opportunity_variable_scales: Dict[str, float] = {}
     for raw_name, raw_value in raw_variable_scales.items():
-        name = str(raw_name).strip()
-        if not name:
+        # NOTE: do not shadow the outer `name` (specification.name).
+        scale_name = str(raw_name).strip()
+        if not scale_name:
             continue
         try:
             scale_value = float(raw_value)
         except (TypeError, ValueError) as exc:
             raise ValueError(
-                f"market_opportunity.variable_scales['{name}'] must be numeric."
+                f"market_opportunity.variable_scales['{scale_name}'] must be numeric."
             ) from exc
         if scale_value <= 0.0:
             raise ValueError(
-                f"market_opportunity.variable_scales['{name}'] must be > 0."
+                f"market_opportunity.variable_scales['{scale_name}'] must be > 0."
             )
-        market_opportunity_variable_scales[name] = scale_value
+        market_opportunity_variable_scales[scale_name] = scale_value
     market_opportunity_extra_dimension = market_config.get("extra_dimension")
     if market_opportunity_extra_dimension is not None:
         market_opportunity_extra_dimension = str(market_opportunity_extra_dimension).strip().lower()
@@ -479,6 +480,77 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     market_opportunity_enforce_job_varying = bool(
         market_config.get("enforce_job_varying", False)
     )
+
+    # -------------------------------------------------------------------------
+    # Parse occupation_opportunity block (Stijn-style M0_stijn_occ)
+    # Dedicated, distinct from market_opportunity. Per contract v3/v4:
+    #   - variable is restricted to `loc4` (M0) or `loc` (M2).
+    #   - loc4/loc must NOT appear in utility, hours_opportunity, wage_opportunity,
+    #     or market_opportunity (exclusion restriction).
+    #   - shifters are internally appended to market_opportunity_shifters so the
+    #     existing engines and parameter-list builder pick them up unchanged.
+    # -------------------------------------------------------------------------
+    occupation_opp_config = config.get("occupation_opportunity", {}) or {}
+    occupation_opp_shifters = occupation_opp_config.get("shifters", []) or []
+    if occupation_opp_shifters:
+        occ_var_field = str(occupation_opp_config.get("variable", "loc4")).strip()
+        if occ_var_field not in {"loc4", "loc"}:
+            raise ValueError(
+                f"occupation_opportunity.variable must be 'loc4' or 'loc', got '{occ_var_field}'."
+            )
+
+        def _shifter_vars(shifters: List[Dict[str, Any]]) -> set:
+            seen = set()
+            for sh in shifters or []:
+                v = sh.get("variable") if isinstance(sh, dict) else None
+                if isinstance(v, str):
+                    seen.add(v)
+            return seen
+
+        forbidden_prefixes = ("loc4", "loc")
+        def _has_loc(vs: set) -> List[str]:
+            return [v for v in vs if any(v == p or v.startswith(p + "_") for p in forbidden_prefixes)]
+
+        util_vars = _shifter_vars(utility_leisure_shifters)
+        hours_vars = _shifter_vars(hours_shifters)
+        wage_mean_vars = _shifter_vars(wage_mean_shifters)
+        market_vars = _shifter_vars(market_opportunity_shifters)
+        for block_name, vs in (
+            ("utility.leisure.shifters", util_vars),
+            ("hours_opportunity.shifters", hours_vars),
+            ("wage_opportunity.mean_shifters", wage_mean_vars),
+            ("market_opportunity.shifters", market_vars),
+        ):
+            violators = _has_loc(vs)
+            if violators:
+                raise ValueError(
+                    f"Occupation variables {violators} appear in {block_name}; "
+                    "loc4/loc may only appear in occupation_opportunity at M0."
+                )
+
+        # Append occupation shifters to market_opportunity_shifters so the
+        # existing engine path computes them with the correct `working` gate.
+        # The math is identical to a dedicated O^Occ block.
+        for sh in occupation_opp_shifters:
+            if not isinstance(sh, dict):
+                continue
+            sh_copy = dict(sh)
+            sh_copy.setdefault("interaction", ["working"])
+            applies_to = str(sh_copy.get("applies_to", "both")).strip().lower() or "both"
+            if applies_to not in {"both", "sm", "sf", "cm", "cf", "male", "female", "household"}:
+                raise ValueError(
+                    "occupation_opportunity.shifters[*].applies_to must be one of "
+                    "both, sm, sf, cm, cf, male, female, or household."
+                )
+            sh_copy["applies_to"] = applies_to
+            market_opportunity_shifters.append(sh_copy)
+        logger.info(
+            "occupation_opportunity: parsed %d shifter(s), variable='%s', "
+            "ref=%s; appended to market_opportunity for engine evaluation.",
+            len(occupation_opp_shifters),
+            occ_var_field,
+            occupation_opp_config.get("reference", "1"),
+        )
 
     _validate_market_opportunity_configuration(
         utility_leisure_shifters=utility_leisure_shifters,

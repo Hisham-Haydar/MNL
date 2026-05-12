@@ -58,7 +58,12 @@ Important orientation documents:
 - [docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md](docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md): current ability to separate preferences and opportunities.
 - [docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md](docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md): parameter-by-parameter explanation of preference estimation.
 - [docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md): comparison with Stijn's R work and sector-opportunity extension plan.
+- [docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md](docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md): GMM latent job-type method in the job-choice branch.
+- [docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md](docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md): GSUR preparation, merge keys, and opportunity interpretation.
 - [docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md](docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md): cleanup policy and project hygiene decisions.
+- [docs/RURO_PROJECT_MEMORY_MAP.md](docs/RURO_PROJECT_MEMORY_MAP.md): quick map of what was built and where it is documented.
+- [docs/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md](docs/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md): practical return guide for data roots, commands, results, and cleanup.
+- [docs/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md](docs/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md): audit of `U:\EUROMOD-STORAGE`, `Z:\Hisham\EUROMOD-STORAGE`, and storage cleanup candidates.
 - [docs/ROADMAP.md](docs/ROADMAP.md): optional future work.
 
 Active code references:
@@ -82,7 +87,11 @@ MNL/
     PIPELINE_ENTRYPOINTS.md              Canonical scripts and commands.
     RURO_ACTIVE_RESULTS_REGISTRY.md      Current baseline output runs.
     RURO_CURRENT_STATE_AND_IDENTIFICATION.md
+    RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md
+    RURO_GSUR_DATA_AND_MERGE_NOTE.md
+    RURO_JOB_MODEL_GMM_METHOD_NOTE.md
     RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md
+    RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md
     RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md
     ROADMAP.md
     archive/                             Historical implementation notes and old root docs.
@@ -509,4 +518,3 @@ Do not run `scripts/runners/legacy/cleanup_final.ps1` without reading [docs/RURO
 - Job-choice RURO: branch that constructs and samples discrete job bundles.
 - Preference block: parameters governing utility from consumption and leisure.
 - Opportunity block: parameters governing the availability/intensity of alternatives.
-

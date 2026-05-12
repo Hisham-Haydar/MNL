@@ -2,6 +2,15 @@
 
 This file defines the active paths for future work. If another script can do a similar job but is not listed here, treat it as legacy, diagnostic, or experimental until it is promoted here.
 
+For a topic-by-topic memory map of GMM, GSUR, job-choice, commands, and current result baselines, see `docs/RURO_PROJECT_MEMORY_MAP.md`.
+
+Focused method notes:
+
+- `docs/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md`
+- `docs/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
+- `docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
+- `docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
+
 ## Active Continuous RURO Pipeline
 
 Main runner:
@@ -78,4 +87,3 @@ scripts/runners/legacy/
 ```
 
 They are retained for provenance only. Prefer the active runners listed above.
-

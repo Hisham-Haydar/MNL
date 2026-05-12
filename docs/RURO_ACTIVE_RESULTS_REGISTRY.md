@@ -63,6 +63,45 @@ Role:
 - Rich continuous-RURO reference run.
 - Useful when comparing the continuous opportunity approach with the job-choice/discrete opportunity approach.
 
+## Candidate Runs To Review Before Cleanup
+
+### Job-Choice RURO: Later M2e_b Candidate
+
+Path:
+
+```text
+outputs/estimates/fr/spec/job_choice/gamspy/estimation_spec_job_M2e_b/run_2026-02-20_11-24-37/
+```
+
+Observed in the 2026-05-12 storage audit:
+
+- timestamp in `estimation_results.json`: `2026-02-20T11:51:26`
+- spec: `scripts/enhanced/estimation_spec_job_M2e_b.yaml`
+- joint log-likelihood: `-22161.05`
+- complete result folder with summary and diagnostics
+
+Role:
+
+- Later than the currently registered M2h pruned run.
+- Do not delete during cleanup until it is reviewed.
+- Promotion should not be based on log-likelihood alone; check identification diagnostics, bound hits, Hessian, parameter interpretation, and whether it matches the intended opportunity specification.
+
+## Full Result Inventory
+
+The 2026-05-12 audit summarized repository estimation outputs in:
+
+```text
+docs/archive/inventories/external_storage_2026-05-12/repo_estimation_results_summary_2026-05-12.csv
+docs/archive/inventories/external_storage_2026-05-12/repo_estimation_runs_inventory_2026-05-12.csv
+```
+
+Observed counts:
+
+```text
+estimation run directories: 168
+runs with estimation_results.json summarized: 115
+```
+
 ## Registry Rules
 
 For every run promoted to active status, record:
@@ -79,4 +118,3 @@ For every run promoted to active status, record:
 - matching post-estimation report path
 
 Do not delete old output folders until the relevant baseline, comparison, and failed-run information has been recorded here or in a linked archive note.
-

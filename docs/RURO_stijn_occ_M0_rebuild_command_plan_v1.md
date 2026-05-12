@@ -20,10 +20,13 @@ deciders into a single pooled stratum. This samples occupation from the
 pooled empirical marginal — the M0 contract: one pooled `q_Occ`, no stratum
 interactions.
 
-**Occupation column priority**: `enh_RURO_draws.py` calls `_infer_occ_col`,
-which prefers `loc4` if present in the RURO-ready file, then `loc_ruro`,
-then `loc`. Step 0 identifies which column is actually present before
-anything is run.
+**Occupation column requirement**: The MNL spec (`stijn_occ_M0`) expects
+`loc4` in the final parquet. `enh_RURO_draws.py` calls `_infer_occ_col`,
+which prefers `loc4` → `loc_ruro` → `loc`. **If the RURO-ready file does not
+contain `loc4`, the rebuild cannot proceed as-is** — a pre-step that creates
+`loc4` from `loc` (collapsing ISCO 1-digit to 4 task groups) would be
+required first. Step 0 explicitly asserts `loc4` is present and fails loudly
+if it is not.
 
 ---
 
@@ -53,35 +56,36 @@ be used by the draws script (`loc4` preferred, then `loc_ruro`, then `loc`).
 
 ```powershell
 & $PY -c @'
-import pandas as pd
-
-OCC_PRIORITY = ["loc4", "loc_ruro", "loc"]
+import pandas as pd, sys
 
 for name, path in [
     ("singles", r"Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready.parquet"),
     ("couples", r"Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready.parquet"),
 ]:
     df = pd.read_parquet(path)
-    occ_col = next((c for c in OCC_PRIORITY if c in df.columns), None)
-    required = ["dgn", "educ3", "lhw", "yivwg"]
+    required = ["loc4", "dgn", "lhw", "yivwg"]
     missing = [c for c in required if c not in df.columns]
     print(f"\n{name}: {len(df)} rows")
-    print(f"  Occupation column selected: {occ_col!r}")
-    if occ_col:
-        working_mask = df["lma"] == 1 if "lma" in df.columns else pd.Series(True, index=df.index)
-        vc = df.loc[working_mask, occ_col].value_counts().sort_index()
-        print(f"  {occ_col} distribution (working): {vc.to_dict()}")
     print(f"  Missing required cols: {missing}")
+    if missing:
+        print(f"  STOP: required columns missing — cannot proceed")
+        sys.exit(1)
+    # Working filter: lhw > 0 (positive contracted hours), not lma flag
+    working_mask = df["lhw"] > 0
+    vc = df.loc[working_mask, "loc4"].value_counts().sort_index()
+    n_uniq = vc.shape[0]
+    print(f"  loc4 distribution (lhw > 0): {vc.to_dict()}")
+    print(f"  Distinct loc4 values in working subsample: {n_uniq}  (need >= 3)")
+    if n_uniq < 3:
+        print(f"  WARNING: only {n_uniq} distinct loc4 value(s) — empirical sampling may not create variation")
 '@
 ```
 
-**Pass criteria**: both files load, `occ_col` is not `None`, at least 3
-distinct occupation values are present in the working subsample (if only
-1–2 unique values exist the data may not produce within-household variation
-even after empirical sampling).
+**Pass criteria**:
 
-Note the reported `occ_col` — the same column name carries through the draws
-output and is checked in the post-draw canary below.
+- Both files load without error.
+- `loc4` is present (not `loc_ruro` or `loc`). If absent, a pre-step creating `loc4` from `loc` is required before anything else.
+- At least 3 distinct `loc4` values among `lhw > 0` rows (positive contracted hours — the correct working filter; `lma` can include non-employment alternatives where `loc4 = -1`).
 
 ---
 
@@ -118,7 +122,7 @@ Run draws:
 **Output files**:
 
 | File | Location |
-|---|---|
+| --- | --- |
 | `singles_RURO_ready_RURO_draws.parquet` | `$DATA/` |
 | `singles_RURO_ready_RURO_draws__drawsmeta.json` | `$DATA/` |
 | `couples_RURO_ready_RURO_draws.parquet` | `$DATA/` |
@@ -136,22 +140,23 @@ Replace `OCC_COL` below with the column reported by Step 0:
 & $PY -c @'
 import pandas as pd
 
-OCC_COL = "loc4"   # <-- replace with column reported in Step 0
-
 df = pd.read_parquet(r"Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready_RURO_draws.parquet")
+print("loc4 present:", "loc4" in df.columns)
 print("log_q_occ present:", "log_q_occ" in df.columns)
-print("Occupation column in draws:", OCC_COL, "->", OCC_COL in df.columns)
+# Simulated working draws only: draw >= 1 AND hours > 0 (lhw > 0)
+# lma is not used — non-employment draws also have lma=1 but loc4=-1
 sim = df[df["draw"] >= 1]
-working_sim = sim[sim.get("lma", pd.Series(1, index=sim.index)) == 1] if "lma" in sim.columns else sim
-if OCC_COL in df.columns and "idhh_true" in df.columns:
-    med = working_sim.groupby("idhh_true")[OCC_COL].nunique().median()
-    print(f"Median distinct {OCC_COL} per household in simulated working draws: {med}")
+working_sim = sim[sim["lhw"] > 0] if "lhw" in sim.columns else sim[sim["hours"] > 0]
+if "loc4" in df.columns and "idhh_true" in df.columns:
+    med = working_sim.groupby("idhh_true")["loc4"].nunique().median()
+    print(f"Median distinct loc4 per household in simulated working draws (lhw > 0): {med}")
     print("(expect >= 2; if 1, --occ-spec empirical did not take effect)")
 '@
 ```
 
-**Pass criteria**: `log_q_occ` present; median distinct occupation values
-per household in simulated working draws ≥ 2. If median = 1, do not proceed.
+**Pass criteria**: `loc4` and `log_q_occ` both present; median distinct
+`loc4` per household in simulated working draws ≥ 2. If median = 1, do not
+proceed.
 
 ### C2 — Drawsmeta occ_spec check (~5 s)
 
@@ -189,12 +194,12 @@ If `occ_spec: fixed`, the draw file was not rebuilt — re-run Step 1.
 **Output files**:
 
 | File | Location |
-|---|---|
+| --- | --- |
 | `combined_draws_em.parquet` | `$SCEN/` |
 
-EUROMOD reads and writes income/tax-benefit variables only. The occupation
-column (`loc` or `loc4`) is carried through in the draws file and re-joined
-downstream in MNL prep.
+EUROMOD reads and writes income/tax-benefit variables only. The `loc4` column
+is carried through unchanged in the draws file and re-joined downstream in
+MNL prep.
 
 ---
 
@@ -251,19 +256,23 @@ If Step 2b was run (recommended):
 If Step 2b was skipped, replace `$SCEN_RED` with `$SCEN`.
 
 **Key flags**:
+
 - `--drawsmeta`: reads the sidecar from Step 1, syncing `pi0_m`, `pi0_f`,
   `h_min/max`, `w_min/max`, `wage_spec`, and `occ_spec` so MNL prep
   computes priors that exactly match the draw distribution.
-- No `--no-column-filter`: the default column filter is active and keeps all
-  `stijn_occ_M0` columns (`loc4`, `log_q_occ`, `log_q_E/H/W/Occ`) while
-  dropping forbidden ones (`lindi`, `industry`, `nace`, `log_q_job`,
-  `log_q_total`, `job_id`, `type_id`, `hours_bin`, `wage_bin`, `log_q_state`).
+- No `--no-column-filter`: the default column filter is active. MNL prep
+  computes the frozen Stijn aliases (`log_q_E`, `log_q_H`, `log_q_W`,
+  `log_q_Occ`) from the raw draw-layer components (`log_q_state`,
+  `log_q_hours`, `log_q_wage`, `log_q_occ`) and keeps only the aliases in
+  the final parquet — the raw layer columns are dropped. Also kept: `loc4`.
+  Forbidden columns dropped: `lindi`, `industry`, `nace`, `log_q_job`,
+  `log_q_total`, `log_q_state`, `job_id`, `type_id`, `hours_bin`, `wage_bin`.
 
 **Output files** (overwrite warning — these replace the existing MNL
 parquets used by the current continuous pipeline):
 
 | File | Location |
-|---|---|
+| --- | --- |
 | `fr_2016_RURO_mnl__singles.parquet` | `$DATA/` |
 | `fr_2016_RURO_mnl__couples.parquet` | `$DATA/` |
 
@@ -300,6 +309,7 @@ for partner in ["male", "female"]:
 ```
 
 **Pass criteria**:
+
 - Singles: median distinct `loc4` per `idhh` ≥ 3.
 - Couples male: median distinct `loc4_male` per `idhh` ≥ 3.
 - Couples female: median distinct `loc4_female` per `idhh` ≥ 3.
@@ -316,16 +326,34 @@ Check C2 first; if drawsmeta shows `occ_spec: fixed` re-run from Step 1.
 & $PY -c @'
 import pandas as pd, numpy as np
 
-df = pd.read_parquet(r"Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__singles.parquet")
-w = (df["working"] == 1).astype(float)
-recon = df["log_q_E"] + w * (df["log_q_H"] + df["log_q_W"] + df["log_q_Occ"])
-diff = (df["log_prior"] - recon).abs()
-print(f"Max |log_prior - reconstructed|: {diff.max():.6e}  (expect < 1e-9)")
-print(f"Rows with |diff| > 1e-6: {(diff > 1e-6).sum()}")
+SINGLES = r"Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__singles.parquet"
+COUPLES = r"Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__couples.parquet"
+
+# --- Singles: log_prior = log_q_E + working*(log_q_H + log_q_W + log_q_Occ) ---
+s = pd.read_parquet(SINGLES)
+w = (s["working"] == 1).astype(float)
+recon = s["log_q_E"] + w * (s["log_q_H"] + s["log_q_W"] + s["log_q_Occ"])
+diff = (s["log_prior"] - recon).abs()
+print(f"Singles  max |log_prior - recon|: {diff.max():.6e}  (expect < 1e-9)")
+print(f"         rows with |diff| > 1e-6: {(diff > 1e-6).sum()}")
+
+# --- Couples: log_prior = male_component + female_component ---
+# male:   log_q_E_male + working_male*(log_q_H_male + log_q_W_male + log_q_Occ_male)
+# female: log_q_E_female + working_female*(log_q_H_female + log_q_W_female + log_q_Occ_female)
+c = pd.read_parquet(COUPLES)
+wm = (c["working_male"] == 1).astype(float)
+wf = (c["working_female"] == 1).astype(float)
+recon_c = (
+    c["log_q_E_male"]   + wm * (c["log_q_H_male"]   + c["log_q_W_male"]   + c["log_q_Occ_male"])
+  + c["log_q_E_female"] + wf * (c["log_q_H_female"] + c["log_q_W_female"] + c["log_q_Occ_female"])
+)
+diff_c = (c["log_prior"] - recon_c).abs()
+print(f"Couples  max |log_prior - recon|: {diff_c.max():.6e}  (expect < 1e-9)")
+print(f"         rows with |diff| > 1e-6: {(diff_c > 1e-6).sum()}")
 '@
 ```
 
-**Pass criteria**: max absolute difference < 1e-9 (floating-point noise only).
+**Pass criteria**: max absolute difference < 1e-9 for both singles and couples.
 Any larger discrepancy indicates a prior-computation mismatch in MNL prep.
 
 ---
@@ -333,7 +361,7 @@ Any larger discrepancy indicates a prior-computation mismatch in MNL prep.
 ## Step 4 — Summary of expected output files
 
 | Step | File | Location |
-|---|---|---|
+| --- | --- | --- |
 | 1 | `singles_RURO_ready_RURO_draws.parquet` | `$DATA/` |
 | 1 | `singles_RURO_ready_RURO_draws__drawsmeta.json` | `$DATA/` |
 | 1 | `couples_RURO_ready_RURO_draws.parquet` | `$DATA/` |
@@ -348,7 +376,7 @@ Any larger discrepancy indicates a prior-computation mismatch in MNL prep.
 ## Step 5 — Estimated runtime and risk
 
 | Step | Estimated wall time | Risk |
-|---|---|---|
+| --- | --- | --- |
 | 0 — pre-flight canary | ~30 s | None |
 | 1 — draws | ~5–15 min (99 draws × ~30 k singles + ~12 k couples) | Low; fully vectorised |
 | C1/C2 — post-draw canaries | ~30 s | None |
@@ -358,10 +386,9 @@ Any larger discrepancy indicates a prior-computation mismatch in MNL prep.
 | C3/C4 — post-MNL canaries | ~60 s | None |
 
 **EUROMOD risk notes**:
-- Requires `.NET CoreCLR` and the release at `$EM`. Verify the path exists
-  before submitting.
-- If EUROMOD fails mid-run, scenario files in `$SCEN` may be partial.
-  Delete `$SCEN` entirely and retry from Step 2.
+
+- Requires `.NET CoreCLR` and the release at `$EM`. Verify the path exists before submitting.
+- If EUROMOD fails mid-run, scenario files in `$SCEN` may be partial. Delete `$SCEN` entirely and retry from Step 2.
 - Memory: 99 draws × ~42 k individuals ≈ 8–16 GB RAM.
 
 **Overwrite risk**: Steps 1 and 3 overwrite files shared with the existing
@@ -375,7 +402,7 @@ will use the new occupation-varying data after Step 3.
 Run in order; stop on the first failure before proceeding.
 
 | Check | When | Expect |
-|---|---|---|
+| --- | --- | --- |
 | C0 — pre-flight | Before Step 1 | Both RURO-ready files load; occ col found; ≥ 3 distinct values in working subsample |
 | C1 — post-draw | After Step 1, before Step 2 | `log_q_occ` present; median distinct occ per household ≥ 2 in simulated working draws |
 | C2 — drawsmeta | After Step 1, before Step 2 | `occ_spec: empirical`, `occ_strata: ['__all__']` |

@@ -113,9 +113,13 @@
       "Bash(cmd /c \"cd /d U:\\\\Desktop\\\\Nizam_Hisham\\\\MNL\\\\scripts\\\\enhanced && C:\\\\Program Files\\\\Python312\\\\python.exe -c \"\"from estimation_spec_parser import parse_specification; spec = parse_specification\\(''estimation_spec.yaml''\\); print\\(''Total parameters:'', len\\(spec.all_param_names\\)\\); [print\\(p\\) for p in spec.all_param_names]\"\"\")",
       "Bash(conda run -n GAMSPy_env python:*)",
       "Bash(iconv:*)",
-      "Bash(U:/Desktop/Nizam_Hisham/MNL/.venv/Scripts/python.exe -c ' *)"
+      "Bash(U:/Desktop/Nizam_Hisham/MNL/.venv/Scripts/python.exe -c ' *)",
+      "Bash(printf '\\\\n' >> '\\\\\\\\crc\\\\users\\\\hisham\\\\Desktop\\\\Nizam_Hisham\\\\MNL\\\\docs\\\\RURO_stijn_occ_M0_rebuild_command_plan_v1.md')"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "\\\\crc\\users\\hisham\\Desktop\\Nizam_Hisham\\MNL\\docs"
+    ]
   }
 }

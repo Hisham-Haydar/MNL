@@ -36,7 +36,7 @@ and only adds variables that are *not* already created in data_prep2:
     - working_ft: 1{37.5 <= lhw <= 40.5} (focal full-time)
     - pexp_years: potential experience in years (education-dependent start age)
     - pexp_years2: squared potential experience
-    - pexp: potential experience / 100 (Stijn-style, in "hundreds of years")
+    - pexp: potential experience / 100 (RURO scaling, in "hundreds of years")
     - educL: 1{deh in {0,1,2}} (low education dummy)
     - educH: 1{deh == 5} (high education dummy)
     - yd1, yd2, yd3: year dummies based on input_year/system_year/yds
@@ -424,7 +424,7 @@ def _add_ruro_variables_basic(
         - ruro_sample: 1{ruro_decider == 1 AND dag >= 18} (estimation sample flag)
         - wage_ruro, is_worker
         - working, working_pt1, working_pt2, working_ft (focal bands)
-        - pexp_years, pexp_years2, pexp (Stijn-style, education-dependent)
+        - pexp_years, pexp_years2, pexp (RURO-scaled, education-dependent)
         - educL, educH (education dummies)
         - yd1, yd2, yd3
         - reg_nuts1_1 ... reg_nuts1_10: French NUTS 1 region dummies
@@ -542,7 +542,7 @@ def _add_ruro_variables_basic(
     _maybe_add_column(df, "pexp_years", pexp_years)
     _maybe_add_column(df, "pexp_years2", pexp_years2)
 
-    # Stijn-style scaling: hundreds of years
+    # RURO scaling: hundreds of years
     if "pexp" not in df.columns:
         df["pexp"] = (pexp_years / 100.0).astype(float)
 
@@ -590,7 +590,7 @@ def _add_ruro_variables_basic(
     wage_ruro = np.where(is_worker_bool, wage_numeric, 0.0)
     _maybe_add_column(df, "wage_ruro", wage_ruro)
 
-    # Working and part-time dummies: narrow bands around focal hours (Stijn-style)
+    # Working and part-time dummies: narrow bands around RURO focal hours
     # working = 1{lhw > 0}
     # working_pt1 = 1{18.5 ≤ lhw ≤ 20.5} (≈ 20 hours)
     # working_pt2 = 1{29.5 ≤ lhw ≤ 30.5} (≈ 30 hours)
@@ -605,7 +605,7 @@ def _add_ruro_variables_basic(
     _maybe_add_column(df, "working_pt2", working_pt2)
     _maybe_add_column(df, "working_ft", working_ft)
 
-    # Aliases for 'hours' and 'wage' (Stijn's RURO likelihood uses these names)
+    # Aliases for 'hours' and 'wage' used by the RURO likelihood
     _maybe_add_column(df, "hours", lhw)
     _maybe_add_column(df, "wage", wage_ruro)
 

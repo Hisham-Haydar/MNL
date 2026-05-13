@@ -7,7 +7,7 @@ RURO_euromod.py
 Implements the EUROMOD simulation stage for a Random Utility Random Opportunity
 (RURO) labour supply model à la Aaberge & Colombino (1998) and Capeau & Decoster (2014).
 
-This script follows the structure of Stijn Van Houtven's Belgian RURO implementation.
+This script follows the continuous RURO opportunity-set pipeline.
 
 Key Design Decisions
 --------------------

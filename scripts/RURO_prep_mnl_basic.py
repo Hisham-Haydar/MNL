@@ -490,7 +490,7 @@ def _compute_prior(
       - A continuous uniform density over hours (if working)
       - A continuous uniform density over wages (if wage_spec="vw" and working)
     
-    This exactly follows Stijn Van Houtven's `f_choicesets_est()` and matches the
+    This follows the continuous RURO choice-set construction and matches the
     Aaberge–Colombino / Capeau–Decoster RURO methodology.
     
     **Importantly**: Occupation (`loc`) does NOT enter the prior. The opportunity

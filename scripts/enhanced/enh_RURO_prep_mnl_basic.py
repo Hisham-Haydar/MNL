@@ -790,7 +790,7 @@ def _build_mnl_block_couples_wide(df: pd.DataFrame, sample_group: str) -> pd.Dat
             df[f"log_l_{gender}"] = np.log(leisure)
 
             # Working status indicators (for hours opportunity)
-            # Focal hours peaks matching Stijn's R code (narrow bands around typical schedules)
+            # Focal hours peaks for RURO opportunity draws (narrow bands around typical schedules)
             df[f"working_{gender}"] = (hours > 0).astype(int)
             df[f"working_pt1_{gender}"] = ((hours >= 18.5) & (hours <= 21.5)).astype(int)  # ~20-21h part-time
             df[f"working_pt2_{gender}"] = ((hours >= 29.5) & (hours <= 30.5)).astype(int)  # ~30h part-time
@@ -822,7 +822,7 @@ def _build_mnl_block_couples_wide(df: pd.DataFrame, sample_group: str) -> pd.Dat
 
         # Experience variables (for wage opportunity)
         # Priority: use pexp_years_{gender} if it exists (from reshape of raw pexp_years)
-        # Otherwise, convert pexp_{gender} (Stijn-style /100) back to years by multiplying by 100
+        # Otherwise, convert pexp_{gender} (RURO /100 scaling) back to years by multiplying by 100
         pexp_years_col = f"pexp_years_{gender}"
         pexp_col = f"pexp_{gender}"
 
@@ -833,7 +833,7 @@ def _build_mnl_block_couples_wide(df: pd.DataFrame, sample_group: str) -> pd.Dat
             df[f"pexp_years2_{gender}"] = pexp_years_num ** 2
             logging.debug(f"Using existing {pexp_years_col} (mean={pexp_years_num.mean():.2f} years)")
         elif pexp_col in df.columns:
-            # Only have Stijn-style pexp (scaled by /100) - convert to years
+            # Only have RURO-scaled pexp (scaled by /100) - convert to years
             pexp_num = pd.to_numeric(df[pexp_col], errors="coerce").fillna(0.0)
             pexp_years_num = pexp_num * 100.0  # Convert back to actual years
             df[pexp_years_col] = pexp_years_num
@@ -1335,8 +1335,8 @@ def _normalize_couples_wide(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, f
 # PRIOR COMPUTATION (SPLIT BY SAMPLE GROUP)
 # =========================================================================
 
-def _copy_stijn_log_q_aliases(df: pd.DataFrame) -> pd.DataFrame:
-    """Expose draw proposal components under the frozen Stijn M0 names."""
+def _copy_proposal_component_aliases(df: pd.DataFrame) -> pd.DataFrame:
+    """Expose draw proposal components under RURO layered proposal names."""
     aliases = {
         "log_q_state": "log_q_E",
         "log_q_hours": "log_q_H",
@@ -1424,22 +1424,22 @@ def _compute_prior_singles(
     (labour-market-attached population). All individuals are treated as active.
     """
     df = df.copy()
-    df = _copy_stijn_log_q_aliases(df)
+    df = _copy_proposal_component_aliases(df)
 
     component_log_q = _component_log_q_singles(df)
     if component_log_q is not None:
         finite_mask = np.isfinite(component_log_q)
         if not finite_mask.any():
-            raise ValueError("Singles prior: Stijn log_q components have no finite values.")
+            raise ValueError("Singles prior: layered log_q components have no finite values.")
         fallback = float(np.nanmedian(component_log_q[finite_mask]))
         component_log_q = np.where(finite_mask, component_log_q, fallback)
         prior_density = np.exp(np.clip(component_log_q, -700, 700))
         prior_density = np.clip(prior_density, 1e-16, None)
         df["prior"] = prior_density
         df["log_prior"] = np.log(prior_density)
-        df.attrs["prior_source"] = "stijn_layered_log_q"
+        df.attrs["prior_source"] = "layered_log_q"
         logging.info(
-            "Prior (singles): using Stijn layered proposal density "
+            "Prior (singles): using RURO layered proposal density "
             "log_q_E + working*(log_q_H + log_q_W + log_q_Occ)."
         )
         return df
@@ -1559,22 +1559,22 @@ def _compute_prior_couples_wide(
 ) -> pd.DataFrame:
     """Compute RURO prior for couples dataset (wide format)."""
     df = df.copy()
-    df = _copy_stijn_log_q_aliases(df)
+    df = _copy_proposal_component_aliases(df)
 
     component_log_q = _component_log_q_couples(df)
     if component_log_q is not None:
         finite_mask = np.isfinite(component_log_q)
         if not finite_mask.any():
-            raise ValueError("Couples prior: Stijn log_q components have no finite values.")
+            raise ValueError("Couples prior: layered log_q components have no finite values.")
         fallback = float(np.nanmedian(component_log_q[finite_mask]))
         component_log_q = np.where(finite_mask, component_log_q, fallback)
         prior_density = np.exp(np.clip(component_log_q, -700, 700))
         prior_density = np.clip(prior_density, 1e-16, None)
         df["prior"] = prior_density
         df["log_prior"] = np.log(prior_density)
-        df.attrs["prior_source"] = "stijn_layered_log_q_joint"
+        df.attrs["prior_source"] = "layered_log_q_joint"
         logging.info(
-            "Prior (couples): using Stijn layered proposal density summed over spouses."
+            "Prior (couples): using RURO layered proposal density summed over spouses."
         )
         return df
 
@@ -1763,7 +1763,7 @@ def get_essential_columns_for_estimation() -> set[str]:
         # Occupation
         "loc", "loc4", "loc4_1", "loc4_2", "loc4_3", "loc4_4",
         "loc4_male", "loc4_female",
-        # Industry DROPPED for M0_stijn_occ (contract §15/§25 — reserved for M6).
+        # Industry DROPPED for occupation-opportunity M0 (contract §15/§25; reserved for M6).
         # Restore "lindi", "industry", "nace" only when activating M6.
         # Job-choice identifiers are intentionally excluded from frozen M0.
     })

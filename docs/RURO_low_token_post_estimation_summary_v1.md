@@ -34,10 +34,10 @@ The filename is:
 {prefix}llm_summary_{YYYYMMDD_HHMMSS}.md
 ```
 
-Example from the France 2016 Stijn occupation M0 run:
+Example from the France 2016 RURO occupation M0 run:
 
 ```text
-reports/fr_2016_stijn_occ_gamspy_llm_summary_20260513_140315.md
+reports/fr_2016_ruro_occ_gamspy_llm_summary_YYYYMMDD_HHMMSS.md
 ```
 
 ## What It Contains
@@ -51,7 +51,7 @@ The Markdown summary includes:
 - choice data footprint with rows, groups, alternatives per group, chosen rows,
   working rows, and column counts;
 - proposal/prior diagnostics, including prior positivity, `log_prior =
-  log(prior)`, Stijn proposal-alias reconstruction, and forbidden-column
+  log(prior)`, proposal-component reconstruction, and forbidden-column
   presence;
 - warnings and review flags for ill-conditioned Hessians, very high predicted
   participation, small chosen probabilities, and proposal-column issues;
@@ -144,8 +144,8 @@ The `reports/` folder is explicitly allowed by `.gitignore`, so the Markdown
 summary can be committed normally:
 
 ```powershell
-git add reports/fr_2016_stijn_occ_gamspy_llm_summary_20260513_140315.md
-git commit -m "Add low-token Stijn occupation M0 summary"
+git add reports/fr_2016_ruro_occ_gamspy_llm_summary_YYYYMMDD_HHMMSS.md
+git commit -m "Add low-token RURO occupation M0 summary"
 ```
 
 The large HTML, CSV, and plot files remain under `outputs/`, which is still
@@ -158,11 +158,11 @@ automatically:
 
 ```powershell
 python .\scripts\enhanced\RURO_post_estimation_styled.py `
-  --results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/stijn_occ/gamspy/estimation_spec_stijn_occ_M0/run_2026-05-13_11-27-40/estimation_results.json" `
+  --results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/ruro_occ/gamspy/estimation_spec_ruro_occ_M0/run_YYYY-MM-DD_HH-MM-SS/estimation_results.json" `
   --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
-  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/stijn_occ/gamspy" `
-  --prefix "fr_2016_stijn_occ_gamspy_" `
-  --spec-config "scripts/enhanced/estimation_spec_stijn_occ_M0.yaml" `
+  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/ruro_occ/gamspy" `
+  --prefix "fr_2016_ruro_occ_gamspy_" `
+  --spec-config "scripts/enhanced/estimation_spec_ruro_occ_M0.yaml" `
   --auto-timestamp
 ```
 

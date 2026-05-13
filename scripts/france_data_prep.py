@@ -200,7 +200,7 @@ def create_income_columns(df: pd.DataFrame) -> pd.DataFrame:
     
     Key aggregates created:
         - benefit_retire_disab: Retirement/survivor/early-retirement/disability benefits
-          Used to EXCLUDE households (following Stijn's byr + pdi + poa + psu == 0 logic)
+          Used to EXCLUDE households (RURO benefit-exclusion logic: byr + pdi + poa + psu == 0)
         - benefit_ub_sa: Unemployment benefits + social assistance
           These do NOT trigger exclusion; kept in sample as out-of-labour income in RURO model
         - replacement_income_total: Legacy aggregate for descriptive purposes only
@@ -222,7 +222,7 @@ def create_income_columns(df: pd.DataFrame) -> pd.DataFrame:
         df["income_market"] = df[available_market].fillna(0).sum(axis=1)
     
     # =========================================================================
-    # BENEFIT AGGREGATES (following Stijn's DRD mapping)
+    # BENEFIT AGGREGATES (RURO DRD mapping)
     # =========================================================================
     
     # Retirement/survivor/early-retirement/disability benefits
@@ -501,7 +501,7 @@ def stepwise_filter_households(
     # Step 3: Retirement/Disability Benefits (Household level)
     # =========================================================================
     # Exclude households where ANY member receives retirement/survivor/early-retirement/
-    # disability benefits, following Stijn's logic: byr + pdi + poa + psu == 0
+    # disability benefits, using RURO exclusion logic: byr + pdi + poa + psu == 0
     # 
     # NOTE: Unemployment benefits (bun) and social assistance (bsa) do NOT trigger
     # exclusion. They are kept in the sample as out-of-labour income in the RURO model.

@@ -11,7 +11,7 @@ RURO_draws.py
 Implements the opportunity set generation for a Random Utility Random Opportunity
 (RURO) labour supply model à la Aaberge & Colombino (1998) and Capeau & Decoster (2014).
 
-This script follows the structure of Stijn Van Houtven's Belgian RURO implementation.
+This script follows the continuous RURO opportunity-set pipeline.
 
 Key Design Decisions
 --------------------
@@ -21,7 +21,7 @@ Key Design Decisions
    draw=0 and their observed hours/wage, so that EUROMOD can correctly compute
    household-level tax-benefit outcomes.
 
-2. **RURO opportunity density** (hours and wages only, following Stijn's implementation):
+2. **RURO opportunity density** (hours and wages only in the baseline implementation):
    For each decider i:
    - With probability π₀,g(i) (gender-specific: pi0_m for men, pi0_f for women),
      the opportunity is **non-employment**: hours=0, wage=0, loc=-1.
@@ -32,7 +32,7 @@ Key Design Decisions
    
    **Note**: Occupation (`loc`) does NOT enter the opportunity density. For working
    draws, `loc` is set to the baseline (observed) occupation; for non-employment
-   draws, `loc` is set to -1. This matches Stijn's `f_choicesets_est()` where the
+   draws, `loc` is set to -1. This matches the continuous RURO choice-set setup where the
    prior is only over hours and wages.
 
 3. **Observed job**: draw=0 preserves the observed hours, wage, and occupation
@@ -634,7 +634,7 @@ def generate_draws_long(
 
     Decider-Only Logic
     ------------------
-    Following Stijn's RURO implementation:
+    Following the continuous RURO opportunity-set construction:
     - If hh_IsHead and hh_IsPartner columns exist, only those individuals
       (heads and partners) get simulated draws (draw >= 1).
     - Non-deciders (children, other adults) appear only with draw=0 and
@@ -731,7 +731,7 @@ def generate_draws_long(
     # Random generator for hours/wages only (VECTORIZED)
     # -------------------------------------------------------------------------
     # We no longer draw occupations (loc). The opportunity density
-    # is over hours and wages only, as in Stijn's RURO implementation.
+    # is over hours and wages only in the baseline continuous RURO implementation.
     rng = np.random.default_rng(rng_seed)
 
     # =========================================================================

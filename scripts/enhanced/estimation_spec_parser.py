@@ -38,7 +38,7 @@ class EstimationSpec:
     - Shifter configurations
 
     Supports model versions:
-    - "legacy": Original Stijn Van Houtven specification
+    - "legacy": original continuous RURO specification
     - "AC2013": Aaberge-Colombino (2013) aligned specification
     - "occupation_choice": Occupation as choice dimension (Aaberge-Colombino 2011)
     """
@@ -482,7 +482,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     )
 
     # -------------------------------------------------------------------------
-    # Parse occupation_opportunity block (Stijn-style M0_stijn_occ)
+    # Parse occupation_opportunity block for RURO occupation-opportunity M0 specs.
     # Dedicated, distinct from market_opportunity. Per contract v3/v4:
     #   - variable is restricted to `loc4` (M0) or `loc` (M2).
     #   - loc4/loc must NOT appear in utility, hours_opportunity, wage_opportunity,

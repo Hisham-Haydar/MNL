@@ -633,7 +633,7 @@ def precompute_data_singles(
     hours = df["hours"].values
     working = (hours > 0).astype(float)
 
-    # Focal hours peaks matching Stijn's R code (narrow bands around typical schedules)
+    # Focal hours peaks for RURO opportunity draws (narrow bands around typical schedules)
     working_pt1 = ((hours >= 18.5) & (hours <= 21.5)).astype(float)  # ~20-21h part-time
     working_pt2 = ((hours >= 29.5) & (hours <= 30.5)).astype(float)  # ~30h part-time
     working_ft = ((hours >= 37.5) & (hours <= 40.5)).astype(float)   # ~40h full-time    # GSUR (check both column names for backwards compatibility)
@@ -931,7 +931,7 @@ def precompute_data_couples(
     educH_female = df.get("educH_female", pd.Series(0.0, index=df.index)).fillna(0.0).values    # Male hours opportunity
     hours_male = df["hours_male"].values
     working_male = (hours_male > 0).astype(float)
-    # Focal hours peaks matching Stijn's R code (narrow bands around typical schedules)
+    # Focal hours peaks for RURO opportunity draws (narrow bands around typical schedules)
     working_pt1_male = ((hours_male >= 18.5) & (hours_male <= 21.5)).astype(float)  # ~20-21h part-time
     working_pt2_male = ((hours_male >= 29.5) & (hours_male <= 30.5)).astype(float)  # ~30h part-time
     working_ft_male = ((hours_male >= 37.5) & (hours_male <= 40.5)).astype(float)   # ~40h full-time
@@ -947,7 +947,7 @@ def precompute_data_couples(
     # Female hours opportunity
     hours_female = df["hours_female"].values
     working_female = (hours_female > 0).astype(float)
-    # Focal hours peaks matching Stijn's R code (narrow bands around typical schedules)
+    # Focal hours peaks for RURO opportunity draws (narrow bands around typical schedules)
     working_pt1_female = ((hours_female >= 18.5) & (hours_female <= 21.5)).astype(float)  # ~20-21h part-time
     working_pt2_female = ((hours_female >= 29.5) & (hours_female <= 30.5)).astype(float)  # ~30h part-time
     working_ft_female = ((hours_female >= 37.5) & (hours_female <= 40.5)).astype(float)   # ~40h full-time

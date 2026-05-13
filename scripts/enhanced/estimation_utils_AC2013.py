@@ -708,7 +708,7 @@ def get_ac2013_vs_legacy_comparison() -> str:
         Markdown-formatted comparison table
     """
     table = """
-| Block | Legacy (Stijn) | A-C 2013 | Status |
+| Block | Legacy RURO | A-C 2013 | Status |
 |-------|----------------|----------|--------|
 | **Hours opportunity** | Discrete logits (implicit h=0) | Discrete logits (explicit non-work) | Same structure |
 | **Wage equation** | μ = β₀ + β_educ | μ = β₀ + β_exp + β_exp² + β_educ | Extended |

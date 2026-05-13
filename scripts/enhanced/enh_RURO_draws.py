@@ -730,7 +730,7 @@ def generate_draws_long(
 
     Decider-Only Logic
     ------------------
-    Following Stijn's RURO implementation:
+    Following the continuous RURO opportunity-set construction:
     - If hh_IsHead and hh_IsPartner columns exist, only those individuals
       (heads and partners) get simulated draws (draw >= 1).
     - Non-deciders (children, other adults) appear only with draw=0 and
@@ -902,7 +902,7 @@ def generate_draws_long(
     # Random generator for hours/wages only (VECTORIZED)
     # -------------------------------------------------------------------------
     # We no longer draw occupations (loc). The opportunity density
-    # is over hours and wages only, as in Stijn's RURO implementation.
+    # is over hours and wages only in the baseline continuous RURO implementation.
     rng = np.random.default_rng(rng_seed)
 
     # =========================================================================

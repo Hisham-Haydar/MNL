@@ -75,7 +75,7 @@ fr_2016_RURO_mnl__singles.parquet
 fr_2016_RURO_mnl__couples.parquet
 ```
 
-The Stijn-style occupation baseline belongs to this branch.
+The RURO occupation-opportunity M0 baseline belongs to this branch.
 
 ### Job-Choice RURO
 
@@ -106,7 +106,7 @@ The current strongest empirical candidate is the pruned job-choice model:
 scripts/enhanced/estimation_spec_job_M2h_pruned.yaml
 ```
 
-This is empirically useful but not the same object as Stijn's continuous
+This is empirically useful but not the same object as the continuous RURO
 hours/wage opportunity model.
 
 ---
@@ -120,17 +120,17 @@ Current defensible statement:
 
 ```text
 The code implements a RURO likelihood with separate preference and opportunity
-components. On the French 2016 data, the job-choice branch is the strongest
-current empirical candidate. The continuous branch is structurally closest to
-Stijn's implementation, but the older continuous files need further diagnostics
-and, for the Stijn occupation baseline, a data rebuild before interpretation.
+components. On the French 2016 data, the job-choice branch is one empirical
+candidate, while the continuous branch is the direct hours/wage RURO design.
+For the RURO occupation-opportunity baseline, the data rebuild canary must pass
+before interpretation.
 ```
 
 Claims to avoid for now:
 
 - "Preferences and opportunities are fully separately identified."
 - "The package is already country/year-agnostic."
-- "The continuous Stijn occupation baseline is ready before the rebuild canary
+- "The continuous RURO occupation baseline is ready before the rebuild canary
   passes."
 
 ---
@@ -161,7 +161,7 @@ These files document EUROMOD France input variables such as `idperson`, `idhh`,
 `dgn`, `dag`, `deh`, `les`, `lhw`, `loc`, `lindi`, and `yem`, and output
 concepts such as `ils_dispy`.
 
-For France 2016, consumption in the current Stijn occupation contract is locked
+For France 2016, consumption in the current RURO occupation contract is locked
 to EUROMOD standardized disposable income:
 
 ```text
@@ -169,7 +169,7 @@ ils_dispy
 ```
 
 Ad-hoc reconstructions such as `ils_origy - ils_tax - ils_sicee` are not the
-target source for `M0_stijn_occ`.
+target source for `M0_ruro_occ`.
 
 ---
 
@@ -247,7 +247,7 @@ loc4 = 4   nonroutine-cognitive
 ```
 
 `loc4 = -2` is not an occupation. It may remain on observed working rows
-(`draw = 0`) when the original occupation cannot be classified. The Stijn M0
+(`draw = 0`) when the original occupation cannot be classified. The RURO M0
 occupation layer uses only the dummies for `loc4 = 2`, `3`, and `4`, so
 `loc4 = -2` contributes zero to `O^Occ`. Simulated working alternatives must
 draw only valid `loc4` values in `{1, 2, 3, 4}`.
@@ -400,7 +400,7 @@ python .\scripts\enhanced\enh_RURO_draws.py `
   --rng-seed 17
 ```
 
-For the Stijn occupation baseline, the key draw command change is:
+For the RURO occupation-opportunity baseline, the key draw command change is:
 
 ```powershell
 --occ-spec empirical --occ-strata __all__
@@ -448,7 +448,7 @@ python .\scripts\enhanced\enh_RURO_euromod.py `
   --euromod-system FR_2015 `
   --euromod-dataset FR_2016 `
   --euromod-root "Z:/hisham/EUROMOD-STORAGE/EUROMOD_RELEASES_J1.0+/EUROMOD_RELEASES_J1.0+" `
-  --scenario-dir "Z:/hisham/EUROMOD-STORAGE/interim/ruro/fr/2016/stijn_occ/scenarios"
+  --scenario-dir "Z:/hisham/EUROMOD-STORAGE/interim/ruro/fr/2016/ruro_occ/scenarios"
 ```
 
 Main output:
@@ -514,7 +514,7 @@ Typical command:
 python .\scripts\enhanced\enh_RURO_prep_mnl_basic.py `
   --singles-draws "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready_RURO_draws.parquet" `
   --couples-draws "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready_RURO_draws.parquet" `
-  --euromod-combined "Z:/hisham/EUROMOD-STORAGE/interim/ruro/fr/2016/stijn_occ/scenarios/combined_draws_em.parquet" `
+  --euromod-combined "Z:/hisham/EUROMOD-STORAGE/interim/ruro/fr/2016/ruro_occ/scenarios/combined_draws_em.parquet" `
   --out-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
   --wage-spec vw `
   --year 2016 `
@@ -530,7 +530,7 @@ fr_2016_RURO_mnl__couples.parquet
 fr_2016_RURO_mnl__mnlmeta.json
 ```
 
-For the Stijn occupation baseline, the final files must contain:
+For the RURO occupation-opportunity baseline, the final files must contain:
 
 ```text
 loc4
@@ -594,16 +594,16 @@ Production-style GAMSPy command:
 ```powershell
 python .\scripts\enhanced\enh_RURO_estimate_FR.py `
   --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
-  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/stijn_occ/gamspy" `
+  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/ruro_occ/gamspy" `
   --group joint `
   --solver gamspy-conopt `
   --vectorized `
-  --spec-config "scripts/enhanced/estimation_spec_stijn_occ_M0.yaml" `
+  --spec-config "scripts/enhanced/estimation_spec_ruro_occ_M0.yaml" `
   --auto-timestamp `
   --verbose
 ```
 
-Do not run the Stijn occupation estimation until the data rebuild canaries pass.
+Do not run the RURO occupation-opportunity estimation until the data rebuild canaries pass.
 
 Main estimation engines:
 
@@ -625,7 +625,7 @@ Important current specs:
 scripts/enhanced/estimation_spec_job_M2h_pruned.yaml
 scripts/enhanced/estimation_spec_job_M2e_a.yaml
 scripts/enhanced/estimation_spec_v3.yaml
-scripts/enhanced/estimation_spec_stijn_occ_M0.yaml
+scripts/enhanced/estimation_spec_ruro_occ_M0.yaml
 ```
 
 The parser is:
@@ -634,7 +634,7 @@ The parser is:
 scripts/enhanced/estimation_spec_parser.py
 ```
 
-The Stijn occupation baseline uses:
+The RURO occupation-opportunity baseline uses:
 
 ```text
 occupation_opportunity:
@@ -666,12 +666,12 @@ Typical command:
 
 ```powershell
 python .\scripts\enhanced\RURO_post_estimation_styled.py `
-  --results-json "outputs/estimates/fr/spec/stijn_occ/gamspy/estimation_spec_stijn_occ_M0/run_YYYY-MM-DD_HH-MM-SS/estimation_results.json" `
+  --results-json "outputs/estimates/fr/spec/ruro_occ/gamspy/estimation_spec_ruro_occ_M0/run_YYYY-MM-DD_HH-MM-SS/estimation_results.json" `
   --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
-  --output-dir "outputs/post_estimation/fr/spec/stijn_occ/gamspy" `
-  --prefix "fr_2016_stijn_occ_gamspy_" `
+  --output-dir "outputs/post_estimation/fr/spec/ruro_occ/gamspy" `
+  --prefix "fr_2016_ruro_occ_gamspy_" `
   --compute-se `
-  --spec-config "scripts/enhanced/estimation_spec_stijn_occ_M0.yaml" `
+  --spec-config "scripts/enhanced/estimation_spec_ruro_occ_M0.yaml" `
   --auto-timestamp
 ```
 
@@ -684,7 +684,7 @@ Post-estimation reports usually include:
 - marginal utility diagnostics;
 - observed vs predicted outcomes.
 
-For the Stijn occupation baseline, observed vs predicted occupation panels are
+For the RURO occupation-opportunity baseline, observed vs predicted occupation panels are
 still a pending extension.
 
 ---
@@ -696,13 +696,13 @@ Before estimation:
 1. Input files load.
 2. Required columns exist.
 3. Draw metadata matches the draw command.
-4. `loc4` varies within household across working alternatives for Stijn M0.
+4. `loc4` varies within household across working alternatives for RURO M0.
 5. Proposal aliases exist.
 6. `prior > 0`.
 7. `log_prior == log(prior)`.
 8. Per-layer prior reconstruction holds.
 
-Reusable Stijn canary:
+Reusable RURO occupation M0 canary:
 
 ```text
 Results/_canary_stijn_occ_M0.py
@@ -726,22 +726,23 @@ rebuild is required.
 
 ---
 
-## 16. Stijn Occupation M0
+## 16. RURO Occupation M0
 
 Purpose:
 
 ```text
-Estimate a Stijn-style continuous RURO baseline with an additive occupation
+Estimate a continuous RURO baseline with an additive occupation
 opportunity block based on loc4.
 ```
 
 Core spec:
 
 ```text
-scripts/enhanced/estimation_spec_stijn_occ_M0.yaml
+scripts/enhanced/estimation_spec_ruro_occ_M0.yaml
 ```
 
-Main docs:
+Main docs. Some filenames still carry the older project label used during
+development; the model object is the RURO occupation-opportunity M0 baseline.
 
 - `docs/RURO_model_spec_contract_v4_stijn_occ.md`
 - `docs/RURO_stijn_occ_baseline_spec_v1.md`
@@ -842,7 +843,7 @@ Read in this order:
 5. `docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md`
 6. `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
 7. `docs/RURO_ACTIVE_RESULTS_REGISTRY.md`
-8. For Stijn M0 only: `docs/RURO_stijn_occ_M0_rebuild_command_plan_v1.md`
+8. For RURO occupation M0 only: `docs/RURO_stijn_occ_M0_rebuild_command_plan_v1.md`
 
 After these files, a researcher should know what the project does, which branch
 to run, what files are produced, how the estimator works, and what cannot yet

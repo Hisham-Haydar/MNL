@@ -21,7 +21,7 @@
 # Model Version Flag
 # ------------------------------------------------------------------------------
 # "AC2013" - Aaberge-Colombino style specification
-# "legacy" - Original Stijn Van Houtven specification
+# "legacy" - original continuous RURO specification
 model_version: "AC2013"
 
 # ------------------------------------------------------------------------------
@@ -69,7 +69,7 @@ variables:
 # ------------------------------------------------------------------------------
 # Hours Categories (Discrete Choice Set)
 # ------------------------------------------------------------------------------
-# Maintained from Stijn's structure - discrete hours categories
+    # Maintained from the legacy RURO structure - discrete hours categories
 hours_categories:
   values: [0, 10, 20, 30, 40]
   labels: ["non-work", "part-time-1", "part-time-2", "part-time-3", "full-time"]
@@ -268,7 +268,7 @@ singles:
     # log(w) ~ N(μ_w, σ²_w)
     # μ_w = β_w0 + β_exp*exp + β_exp2*exp² + β_educL*educL + β_educH*educH
     #
-    # This extends Stijn's specification with experience terms from A-C
+    # This extends the legacy RURO specification with experience terms from A-C
     # --------------------------------------------------------------------------
     wage:
       type: "lognormal"

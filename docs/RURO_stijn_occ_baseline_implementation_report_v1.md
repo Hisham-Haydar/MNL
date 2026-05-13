@@ -1,29 +1,29 @@
-# RURO Stijn Occupation Baseline - Implementation Report v1
+# RURO R reference Occupation Baseline - Implementation Report v1
 
 Date: 2026-05-12
 
-Target: first feasible Stijn-style enhanced RURO baseline with additive
-occupation opportunity (`M0_stijn_occ`), using `loc4` occupation opportunity
+Target: first feasible continuous RURO baseline with additive
+occupation opportunity (`M0_ruro_occ`), using `loc4` occupation opportunity
 and no occupation effects in utility, hours opportunity, or wage opportunity.
 
 Inputs read:
-- `docs/RURO_stijn_occ_baseline_spec_v1.md`
+- `docs/RURO_ruro_occ_baseline_spec_v1.md`
 - `docs/RURO_occ_pipeline_audit_v1.md`
-- `docs/RURO_model_spec_contract_v4_stijn_occ.md`
+- `docs/RURO_model_spec_contract_v4_ruro_occ.md`
 
 ## 1. Files changed
 
 | File | Change |
 |---|---|
-| `scripts/enhanced/estimation_spec_stijn_occ_M0.yaml` | New runnable spec for `stijn_occ_M0`; uses `model_family: regular`, Mincer wage mean, base `beta_E`, dedicated `occupation_opportunity`, and 12 group-specific occupation coefficients. |
+| `scripts/enhanced/estimation_spec_ruro_occ_M0.yaml` | New runnable spec for `ruro_occ_M0`; uses `model_family: regular`, Mincer wage mean, base `beta_E`, dedicated `occupation_opportunity`, and 12 group-specific occupation coefficients. |
 | `scripts/enhanced/estimation_spec_parser.py` | Added top-level `occupation_opportunity` parsing, enforces that `loc4`/`loc` do not appear in utility/hours/wage/market blocks, appends occupation shifters to the engine market-opportunity list, and fixes the `spec.name = gsur` shadowing bug. |
 | `scripts/enhanced/estimation_engine.py` | Adds `applies_to: sm/sf/cm/cf` routing for market/occupation shifters and fixes log-normal wage opportunity by adding the required `-log(wage)` Jacobian. |
 | `scripts/enhanced/gamspy_estimation_vectorized.py` | Same group routing and log-normal Jacobian fixes for the vectorized GAMSPy path used by the run command. |
 | `scripts/enhanced/gamspy_estimation.py` | Adds the log-normal Jacobian and supports the `beta_w_pexp`/`beta_w_pexp2` names in the non-vectorized wage mean. |
 | `scripts/enhanced/estimation_utils.py` | Aligns PT1 hours band to `[18.5, 21.5]`. |
-| `scripts/enhanced/enh_RURO_prep_mnl_basic.py` | Aligns PT1 band, fixes fallback prior storage (`prior` density, `log_prior = log(prior)`), creates Stijn proposal aliases (`log_q_E/H/W/Occ`), computes prior from per-layer components when available, and drops M0-forbidden job/industry proposal artifacts from the final keep set. |
-| `scripts/enhanced/reduce_mnl_columns.py` | Keeps Stijn proposal aliases and drops `lindi`/`industry`/`nace` for M0 reductions. |
-| `docs/RURO_stijn_occ_baseline_implementation_report_v1.md` | This report. |
+| `scripts/enhanced/enh_RURO_prep_mnl_basic.py` | Aligns PT1 band, fixes fallback prior storage (`prior` density, `log_prior = log(prior)`), creates proposal-component aliases (`log_q_E/H/W/Occ`), computes prior from per-layer components when available, and drops M0-forbidden job/industry proposal artifacts from the final keep set. |
+| `scripts/enhanced/reduce_mnl_columns.py` | Keeps proposal-component aliases and drops `lindi`/`industry`/`nace` for M0 reductions. |
+| `docs/RURO_ruro_occ_baseline_implementation_report_v1.md` | This report. |
 
 The job-choice branch under `scripts/Job_model/` was not modified.
 
@@ -198,11 +198,11 @@ Estimation:
 ```powershell
 python .\scripts\enhanced\enh_RURO_estimate_FR.py `
   --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
-  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/stijn_occ/gamspy" `
+  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/ruro_occ/gamspy" `
   --group joint `
   --solver gamspy-conopt `
   --vectorized `
-  --spec-config "scripts/enhanced/estimation_spec_stijn_occ_M0.yaml" `
+  --spec-config "scripts/enhanced/estimation_spec_ruro_occ_M0.yaml" `
   --auto-timestamp `
   --verbose
 ```
@@ -213,12 +213,12 @@ Post-estimation:
 
 ```powershell
 python .\scripts\enhanced\RURO_post_estimation_styled.py `
-  --results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/stijn_occ/gamspy/estimation_spec_stijn_occ_M0/run_YYYY-MM-DD_HH-MM-SS/estimation_results.json" `
+  --results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/ruro_occ/gamspy/estimation_spec_ruro_occ_M0/run_YYYY-MM-DD_HH-MM-SS/estimation_results.json" `
   --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
-  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/stijn_occ/gamspy" `
-  --prefix "fr_2016_stijn_occ_gamspy_" `
+  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/ruro_occ/gamspy" `
+  --prefix "fr_2016_ruro_occ_gamspy_" `
   --compute-se `
-  --spec-config "scripts/enhanced/estimation_spec_stijn_occ_M0.yaml" `
+  --spec-config "scripts/enhanced/estimation_spec_ruro_occ_M0.yaml" `
   --auto-timestamp
 ```
 
@@ -239,7 +239,7 @@ Still required after this code pass:
 | Gate | Status |
 |---|---|
 | YAML parses as `regular` | PASS |
-| `spec.name == stijn_occ_M0` | PASS |
+| `spec.name == ruro_occ_M0` | PASS |
 | Dedicated `occupation_opportunity` block | PASS |
 | `loc4` excluded from utility/hours/wage/market blocks | PASS |
 | 12 occupation coefficients (`sm/sf/cm/cf`) | PASS |
@@ -247,6 +247,6 @@ Still required after this code pass:
 | Mincer wage mean declared | PASS |
 | Log-normal wage Jacobian included | PASS |
 | PT1 band `[18.5, 21.5]` | PASS |
-| Stijn proposal aliases retained | PASS |
+| proposal-component aliases retained | PASS |
 | M0-forbidden job/industry artifacts dropped from final keep set | PASS on rebuild |
 | Current parquet identified for occupation | FAIL until data rebuild |

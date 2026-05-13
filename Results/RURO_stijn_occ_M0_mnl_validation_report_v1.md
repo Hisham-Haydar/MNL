@@ -1,10 +1,10 @@
-# RURO Stijn Occ M0 — MNL Validation Report v1
+# RURO R reference Occ M0 — MNL Validation Report v1
 
 Date: 2026-05-13
 
 ## Verdict
 
-**PASS — MNL files are estimation-ready for `M0_stijn_occ`.** All eight check
+**PASS — MNL files are estimation-ready for `M0_ruro_occ`.** All eight check
 categories below pass with strong margins, and a completed estimation run
 already exercised these files end-to-end without errors.
 
@@ -17,7 +17,7 @@ isolated likelihood probe could provide.
 
 | Field | Value |
 | --- | --- |
-| Specification | `stijn_occ_M0` |
+| Specification | `ruro_occ_M0` |
 | Wage spec | `vw` |
 | Optimisation | `L-BFGS-B`, analytical gradient, GAMSPy backend |
 | Joint log-likelihood | **−6,499.881** |
@@ -31,15 +31,15 @@ isolated likelihood probe could provide.
 | Proposal correction | `-log(prior)` applied once per alternative |
 | Opportunity centering | enabled within each choice set |
 
-Source: `outputs/estimates/fr/spec/stijn_occ/gamspy/estimation_spec_stijn_occ_M0/run_2026-05-13_15-02-16/estimation_results.json` and `estimation_summary.txt`.
+Source: `outputs/estimates/fr/spec/ruro_occ/gamspy/estimation_spec_ruro_occ_M0/run_2026-05-13_15-02-16/estimation_results.json` and `estimation_summary.txt`.
 
 ---
 
 ## Validation script
 
 ```text
-U:/Desktop/Nizam_Hisham/MNL/Results/_validation_stijn_occ_M0.py
-U:/Desktop/Nizam_Hisham/MNL/Results/_validation_stijn_occ_M0.json
+U:/Desktop/Nizam_Hisham/MNL/Results/_validation_ruro_occ_M0.py
+U:/Desktop/Nizam_Hisham/MNL/Results/_validation_ruro_occ_M0.json
 ```
 
 The script is read-only against
@@ -201,7 +201,7 @@ alternatives.
 | `type_id` | absent | absent |
 | `log_q_job` | absent | absent |
 | `log_q_total` | absent | absent |
-| `log_q_state` | absent | absent (Stijn aliases `log_q_E/H/W/Occ` are used instead) |
+| `log_q_state` | absent | absent (R reference aliases `log_q_E/H/W/Occ` are used instead) |
 
 Couples-side suffix variants (`*_male`, `*_female`) of all forbidden
 names are also absent. The frozen-spec exclusion contract holds in both
@@ -225,7 +225,7 @@ files.
 | 8. Estimation already ran successfully | PASS (`run_2026-05-13_15-02-16` converged, joint LL = −6,499.88) |
 
 The completed estimation at
-`outputs/estimates/fr/spec/stijn_occ/gamspy/estimation_spec_stijn_occ_M0/run_2026-05-13_15-02-16/`
+`outputs/estimates/fr/spec/ruro_occ/gamspy/estimation_spec_ruro_occ_M0/run_2026-05-13_15-02-16/`
 finished with `SolveStatus.NormalCompletion (ModelStatus.OptimalLocal)`
 on all three result blocks (`singles_male`, `singles_female`, `couples`)
 and produced finite estimates for all 52 parameters. No separate
@@ -237,6 +237,6 @@ likelihood smoke-test is required.
 
 | File | Purpose |
 | --- | --- |
-| `Results/_validation_stijn_occ_M0.py` | Re-runnable validation script |
-| `Results/_validation_stijn_occ_M0.json` | Machine-readable check results |
-| `Results/RURO_stijn_occ_M0_mnl_validation_report_v1.md` | This report |
+| `Results/_validation_ruro_occ_M0.py` | Re-runnable validation script |
+| `Results/_validation_ruro_occ_M0.json` | Machine-readable check results |
+| `Results/RURO_ruro_occ_M0_mnl_validation_report_v1.md` | This report |

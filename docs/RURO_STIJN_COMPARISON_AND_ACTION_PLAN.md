@@ -1,18 +1,18 @@
-# RURO Comparison To Stijn And Action Plan
+# RURO Comparison To R reference And Action Plan
 
 Date: May 11, 2026
 
-This note compares the current French RURO code to Stijn's `stijn/Ruro_simulation_H.Rmd` and related R functions. It focuses on whether the current project can separately identify preferences and opportunities.
+This note compares the current French RURO code to the R reference's `ruro/Ruro_simulation_H.Rmd` and related R functions. It focuses on whether the current project can separately identify preferences and opportunities.
 
-## Stijn's RURO Setup
+## the R reference's RURO Setup
 
-Stijn's code separates three concepts:
+the R reference's code separates three concepts:
 
 1. A proposal distribution used to build simulated choice sets.
 2. A RURO opportunity model for the availability of hours and wages.
 3. A preference utility model that chooses among available alternatives.
 
-In `stijn/Ruro_estimation_H.Rmd`, the likelihood is:
+In `ruro/Ruro_estimation_H.Rmd`, the likelihood is:
 
 ```text
 probability of observed alternative
@@ -22,28 +22,28 @@ probability of observed alternative
 
 Key references:
 
-- `stijn/Ruro_estimation_H.Rmd:553-570` constructs `prior` as a log proposal density.
-- `stijn/Ruro_estimation_H.Rmd:834-846` computes utility, hours opportunity, and wage opportunity.
-- `stijn/Ruro_estimation_H.Rmd:853-859` applies `exp(util + hopp + wopp - prior)`.
-- `stijn/Ruro_estimation_H.Rmd:867` defines the preference utility function.
-- `stijn/Ruro_estimation_H.Rmd:899` defines the hours opportunity function.
-- `stijn/Ruro_estimation_H.Rmd:923` defines the wage opportunity function.
+- `ruro/Ruro_estimation_H.Rmd:553-570` constructs `prior` as a log proposal density.
+- `ruro/Ruro_estimation_H.Rmd:834-846` computes utility, hours opportunity, and wage opportunity.
+- `ruro/Ruro_estimation_H.Rmd:853-859` applies `exp(util + hopp + wopp - prior)`.
+- `ruro/Ruro_estimation_H.Rmd:867` defines the preference utility function.
+- `ruro/Ruro_estimation_H.Rmd:899` defines the hours opportunity function.
+- `ruro/Ruro_estimation_H.Rmd:923` defines the wage opportunity function.
 
-In `stijn/Ruro_simulation_H.Rmd`, Stijn can simulate outcomes because the data-generating parameters are known. That is the crucial difference from the French empirical application.
+In `ruro/Ruro_simulation_H.Rmd`, R reference can simulate outcomes because the data-generating parameters are known. That is the crucial difference from the French empirical application.
 
-The opportunity generator is in `stijn/Ruro_functions_EMRWS.R`:
+The opportunity generator is in `ruro/Ruro_functions_EMRWS.R`:
 
-- `stijn/Ruro_functions_EMRWS.R:365` defines `f_choicesets_sim`.
-- `stijn/Ruro_functions_EMRWS.R:396-413` builds focal-hour masses for male and female hours.
-- `stijn/Ruro_functions_EMRWS.R:422-427` builds employment intensity terms using opportunity parameters and shifters.
-- `stijn/Ruro_functions_EMRWS.R:433-452` transforms draws into hours.
+- `ruro/Ruro_functions_EMRWS.R:365` defines `f_choicesets_sim`.
+- `ruro/Ruro_functions_EMRWS.R:396-413` builds focal-hour masses for male and female hours.
+- `ruro/Ruro_functions_EMRWS.R:422-427` builds employment intensity terms using opportunity parameters and shifters.
+- `ruro/Ruro_functions_EMRWS.R:433-452` transforms draws into hours.
 
 The simulated choice stage then chooses using preference utility plus an extreme-value shock:
 
-- `stijn/Ruro_simulation_H.Rmd:355` defines `ff_predchoice4`.
-- `stijn/Ruro_simulation_H.Rmd:359-377` uses `util + gumb_draw`.
+- `ruro/Ruro_simulation_H.Rmd:355` defines `ff_predchoice4`.
+- `ruro/Ruro_simulation_H.Rmd:359-377` uses `util + gumb_draw`.
 
-Because Stijn's simulation has known truth, separation between preferences and opportunity can be tested by recovery: generate with known parameters, estimate, and check whether the estimator recovers the known preference and opportunity parameters.
+Because the R reference's simulation has known truth, separation between preferences and opportunity can be tested by recovery: generate with known parameters, estimate, and check whether the estimator recovers the known preference and opportunity parameters.
 
 ## Current Python/GAMSPy Setup
 
@@ -71,7 +71,7 @@ The job-choice pruned spec is intentionally conservative:
 
 ## Main Differences From Stijn
 
-| Dimension | Stijn simulation | Current French code |
+| Dimension | R reference simulation | Current French code |
 | --- | --- | --- |
 | Object | Simulation and recovery environment | Empirical French 2016 estimation |
 | Truth | Known parameters in the DGP | Unknown |
@@ -81,11 +81,11 @@ The job-choice pruned spec is intentionally conservative:
 | Strongest current output | Not applicable: simulation framework | Job-choice M2h pruned |
 | Main weakness | Simulation does not prove empirical identification | Empirical continuous specs are unstable |
 
-The current code is conceptually aligned with Stijn's likelihood. The current evidence is not yet aligned with Stijn's recovery standard.
+The current code is conceptually aligned with the R reference's likelihood. The current evidence is not yet aligned with the R reference's recovery standard.
 
 ## Why The French Continuous RURO Result Is Not Enough
 
-The continuous French models are the closest analog to Stijn's `util + hopp + wopp - prior` setup. They are also the weak point empirically.
+The continuous French models are the closest analog to the R reference's `util + hopp + wopp - prior` setup. They are also the weak point empirically.
 
 Observed diagnostics:
 
@@ -112,7 +112,7 @@ That run has:
 - `0` negative Hessian eigenvalues.
 - No listed poorly identified parameters.
 
-This is the best current empirical baseline. The limitation is interpretation: it separates preferences from a job-market opportunity index, not necessarily from the exact continuous hours/wage opportunity process in Stijn's simulation.
+This is the best current empirical baseline. The limitation is interpretation: it separates preferences from a job-market opportunity index, not necessarily from the exact continuous hours/wage opportunity process in the R reference's simulation.
 
 ## Action Plan
 
@@ -155,7 +155,7 @@ Minimum pass criteria:
 - Recovery improves as the number of households or alternatives grows.
 - Hessian has no negative eigenvalues at the recovered optimum.
 
-Without this recovery test, the French empirical results cannot be benchmarked against Stijn's simulation standard.
+Without this recovery test, the French empirical results cannot be benchmarked against the R reference's simulation standard.
 
 ### 3. Strengthen Exclusion Restrictions
 
@@ -235,4 +235,4 @@ Use language like this:
 
 ## Bottom Line
 
-Compared with Stijn's work, your code has the right architecture but not yet the same identification evidence. Stijn's simulation can validate separation because the true DGP is known. Your French empirical pipeline needs a recovery experiment and stronger robustness diagnostics before you can make the same claim.
+Compared with the R reference's work, your code has the right architecture but not yet the same identification evidence. the R reference's simulation can validate separation because the true DGP is known. Your French empirical pipeline needs a recovery experiment and stronger robustness diagnostics before you can make the same claim.

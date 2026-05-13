@@ -15,7 +15,7 @@ Most of the important work is documented, but not all in one place. The main top
 - preference estimation;
 - opportunity/preference identification status;
 - command families;
-- Stijn comparison and sector-extension plan;
+- R reference comparison and sector-extension plan;
 - project cleanup / package direction.
 
 The biggest documentation risk is not absence. It is fragmentation. Some details live in old archived notes, some in command files, and some in script READMEs.
@@ -36,7 +36,7 @@ The biggest documentation risk is not absence. It is fragmentation. Some details
 | Current result baselines | `docs/RURO_ACTIVE_RESULTS_REGISTRY.md` |
 | Current identification status | `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md` |
 | Detailed preference estimation explanation | `docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md` |
-| Stijn comparison and sector plan | `docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md` |
+| R reference comparison and sector plan | `docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md` |
 | Job model details | `scripts/Job_model/README_job_model.md` |
 | Job model validation / GMM tests | `scripts/Job_model/ACCEPTANCE_TESTS.md` |
 | GMM job-model method note | `docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md` |
@@ -93,7 +93,7 @@ Main docs:
 - `docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
 - `scripts/Job_model/Commands_job.txt`
 - `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
-- `docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`
+- `docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`
 
 Key file markers:
 
@@ -194,7 +194,7 @@ Main docs:
 - `docs/FR2016_RURO_pipeline_report.md`
 - `scripts/Job_model/README_job_model.md`
 - `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
-- `docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`
+- `docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`
 
 Important implementation note:
 
@@ -227,8 +227,8 @@ Status: documented.
 Main docs:
 
 - `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
-- `docs/RURO_STIJN_COMPARISON_AND_ACTION_PLAN.md`
-- `docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`
+- `docs/RURO_R_REFERENCE_COMPARISON_AND_ACTION_PLAN.md`
+- `docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`
 
 Current safe claim:
 
@@ -245,7 +245,7 @@ Status: planned, not implemented as a clean sector layer.
 Main doc:
 
 ```text
-docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md
+docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md
 ```
 
 Current state:

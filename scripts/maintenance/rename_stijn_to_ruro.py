@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Rename every 'stijn' / 'Stijn' / 'Stijn-style' mention in the active tree to
+Rename every 'ruro' / 'Stijn' / 'continuous-RURO' mention in the active tree to
 neutral RURO terminology.
 
 Safe-haven exclusions (left fully untouched):
-    - stijn/                       (original R notebooks; legitimate authorship)
+    - ruro/                       (original R notebooks; legitimate authorship)
     - docs/archive/                (sealed snapshot)
     - docs/ACKNOWLEDGEMENTS.md     (centralised personal acknowledgement)
 
@@ -15,9 +15,9 @@ Z: paths matching 'Z:/.../stijn_occ/...' are preserved (out-of-scope for the
 rename — see Phase 5 of the plan).
 
 Usage:
-    python scripts/maintenance/rename_stijn_to_ruro.py                # dry-run
-    python scripts/maintenance/rename_stijn_to_ruro.py --apply        # execute
-    python scripts/maintenance/rename_stijn_to_ruro.py --apply --allow-dirty
+    python scripts/maintenance/rename_ruro_to_ruro.py                # dry-run
+    python scripts/maintenance/rename_ruro_to_ruro.py --apply        # execute
+    python scripts/maintenance/rename_ruro_to_ruro.py --apply --allow-dirty
 """
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ from typing import Dict, List, Optional, Set, Tuple
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 SAFE_HAVENS: Set[Path] = {
-    (REPO_ROOT / "stijn"),
+    (REPO_ROOT / "ruro"),
     (REPO_ROOT / "docs" / "archive"),
     (REPO_ROOT / "docs" / "ACKNOWLEDGEMENTS.md"),
 }
@@ -59,70 +59,70 @@ TEXT_SUFFIXES = {
 
 # Replacement maps — order matters. Longest/most-specific patterns first.
 PROSE_MAP: List[Tuple[str, str]] = [
-    ("Stijn-style enhanced RURO baseline", "continuous RURO baseline"),
-    ("Stijn-style enhanced branch", "enhanced continuous RURO branch"),
-    ("Stijn-style enhanced", "enhanced continuous"),
-    ("Stijn-style simulated data", "RURO-style simulated data"),
-    ("Stijn proposal aliases", "proposal-component aliases"),
-    ("Stijn prior correction", "proposal-density correction"),
-    ("Stijn log_q aliases", "layered proposal components"),
-    ("Stijn occupation M0", "RURO occupation-opportunity M0"),
-    ("Stijn occupation", "RURO occupation-opportunity"),
-    ("Stijn's R implementation", "the R reference implementation"),
-    ("Stijn's continuous model", "the continuous RURO reference design"),
-    ("Stijn's R work", "the R reference work"),
-    ("Stijn's R files", "the R reference files"),
-    ("Stijn Reference Work", "R Reference Work"),
-    ("Stijn reference", "R reference"),
-    ("Stijn alias columns", "proposal-alias columns"),
-    ("Stijn-style", "continuous-RURO"),
-    ("Stijn's", "the R reference's"),
-    ("Stijn ", "R reference "),
+    ("continuous RURO baseline", "continuous RURO baseline"),
+    ("enhanced continuous RURO branch", "enhanced continuous RURO branch"),
+    ("enhanced continuous", "enhanced continuous"),
+    ("RURO-style simulated data", "RURO-style simulated data"),
+    ("proposal-component aliases", "proposal-component aliases"),
+    ("proposal-density correction", "proposal-density correction"),
+    ("layered proposal components", "layered proposal components"),
+    ("RURO occupation-opportunity M0", "RURO occupation-opportunity M0"),
+    ("RURO occupation-opportunity", "RURO occupation-opportunity"),
+    ("the R reference implementation", "the R reference implementation"),
+    ("the continuous RURO reference design", "the continuous RURO reference design"),
+    ("the R reference work", "the R reference work"),
+    ("the R reference files", "the R reference files"),
+    ("R Reference Work", "R Reference Work"),
+    ("R reference", "R reference"),
+    ("proposal-alias columns", "proposal-alias columns"),
+    ("continuous-RURO", "continuous-RURO"),
+    ("the R reference's", "the R reference's"),
+    ("R reference ", "R reference "),
 ]
 
 IDENTIFIER_MAP: List[Tuple[str, str]] = [
-    ("estimation_spec_stijn_occ_M0", "estimation_spec_ruro_occ_M0"),
-    ("_canary_stijn_occ_M0", "_canary_ruro_occ_M0"),
-    ("_validation_stijn_occ_M0", "_validation_ruro_occ_M0"),
-    ("fr_2016_stijn_occ_gamspy", "fr_2016_ruro_occ_gamspy"),
-    ("stijn_occ_M0", "ruro_occ_M0"),
-    ("STIJN_vs_PYTHON_SPECIFICATION", "R_REFERENCE_vs_PYTHON_SPECIFICATION"),
-    ("RURO_STIJN_COMPARISON_AND_ACTION_PLAN", "RURO_R_REFERENCE_COMPARISON_AND_ACTION_PLAN"),
-    ("RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN", "RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN"),
-    ("RURO_stijn_occ_", "RURO_ruro_occ_"),
-    ("RURO_model_spec_contract_v2_stijn_enhanced", "RURO_model_spec_contract_v2_continuous_enhanced"),
-    ("_stijn_enhanced", "_continuous_enhanced"),
-    ("_stijn_occ", "_ruro_occ"),
+    ("estimation_spec_ruro_occ_M0", "estimation_spec_ruro_occ_M0"),
+    ("_canary_ruro_occ_M0", "_canary_ruro_occ_M0"),
+    ("_validation_ruro_occ_M0", "_validation_ruro_occ_M0"),
+    ("fr_2016_ruro_occ_gamspy", "fr_2016_ruro_occ_gamspy"),
+    ("ruro_occ_M0", "ruro_occ_M0"),
+    ("R_REFERENCE_vs_PYTHON_SPECIFICATION", "R_REFERENCE_vs_PYTHON_SPECIFICATION"),
+    ("RURO_R_REFERENCE_COMPARISON_AND_ACTION_PLAN", "RURO_R_REFERENCE_COMPARISON_AND_ACTION_PLAN"),
+    ("RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN", "RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN"),
+    ("RURO_ruro_occ_", "RURO_ruro_occ_"),
+    ("RURO_model_spec_contract_v2_continuous_enhanced", "RURO_model_spec_contract_v2_continuous_enhanced"),
+    ("_continuous_enhanced", "_continuous_enhanced"),
+    ("_ruro_occ", "_ruro_occ"),
 ]
 
 PATH_SEGMENT_MAP: List[Tuple[str, str]] = [
-    ("/stijn_occ/", "/ruro_occ/"),
-    ("\\stijn_occ\\", "\\ruro_occ\\"),
+    ("/ruro_occ/", "/ruro_occ/"),
+    ("\\ruro_occ\\", "\\ruro_occ\\"),
 ]
 
 CATCHALL_MAP: List[Tuple[str, str]] = [
-    ("stijn_occ", "ruro_occ"),
-    ("stijn", "ruro"),
+    ("ruro_occ", "ruro_occ"),
+    ("ruro", "ruro"),
 ]
 
 # Used to rename filenames + directory components.
 FILENAME_TOKEN_MAP: List[Tuple[str, str]] = [
-    ("estimation_spec_stijn_occ_M0", "estimation_spec_ruro_occ_M0"),
-    ("_canary_stijn_occ_M0", "_canary_ruro_occ_M0"),
-    ("_validation_stijn_occ_M0", "_validation_ruro_occ_M0"),
-    ("fr_2016_stijn_occ_gamspy", "fr_2016_ruro_occ_gamspy"),
-    ("RURO_stijn_occ_", "RURO_ruro_occ_"),
-    ("STIJN_vs_PYTHON_SPECIFICATION", "R_REFERENCE_vs_PYTHON_SPECIFICATION"),
-    ("RURO_STIJN_COMPARISON_AND_ACTION_PLAN", "RURO_R_REFERENCE_COMPARISON_AND_ACTION_PLAN"),
-    ("RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN", "RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN"),
-    ("RURO_model_spec_contract_v2_stijn_enhanced", "RURO_model_spec_contract_v2_continuous_enhanced"),
-    ("RURO_model_spec_contract_v3_stijn_occ", "RURO_model_spec_contract_v3_ruro_occ"),
-    ("RURO_model_spec_contract_v4_stijn_occ", "RURO_model_spec_contract_v4_ruro_occ"),
-    ("stijn_occ", "ruro_occ"),
+    ("estimation_spec_ruro_occ_M0", "estimation_spec_ruro_occ_M0"),
+    ("_canary_ruro_occ_M0", "_canary_ruro_occ_M0"),
+    ("_validation_ruro_occ_M0", "_validation_ruro_occ_M0"),
+    ("fr_2016_ruro_occ_gamspy", "fr_2016_ruro_occ_gamspy"),
+    ("RURO_ruro_occ_", "RURO_ruro_occ_"),
+    ("R_REFERENCE_vs_PYTHON_SPECIFICATION", "R_REFERENCE_vs_PYTHON_SPECIFICATION"),
+    ("RURO_R_REFERENCE_COMPARISON_AND_ACTION_PLAN", "RURO_R_REFERENCE_COMPARISON_AND_ACTION_PLAN"),
+    ("RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN", "RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN"),
+    ("RURO_model_spec_contract_v2_continuous_enhanced", "RURO_model_spec_contract_v2_continuous_enhanced"),
+    ("RURO_model_spec_contract_v3_ruro_occ", "RURO_model_spec_contract_v3_ruro_occ"),
+    ("RURO_model_spec_contract_v4_ruro_occ", "RURO_model_spec_contract_v4_ruro_occ"),
+    ("ruro_occ", "ruro_occ"),
 ]
 
 Z_PATH_RE = re.compile(
-    r"Z:[/\\][^\s'\"\)\,\>\}]*?stijn_occ[/\\][^\s'\"\)\,\>\}]*",
+    r"Z:[/\\][^\s'\"\)\,\>\}]*?ruro_occ[/\\][^\s'\"\)\,\>\}]*",
     re.IGNORECASE,
 )
 CITATION = "Stijn Van Houtven"
@@ -309,7 +309,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         # Content
         if is_text_eligible(p):
             text = read_text(p)
-            if text is not None and ("stijn" in text or "Stijn" in text):
+            if text is not None and ("ruro" in text or "Stijn" in text):
                 warnings: List[str] = []
                 new_text, n_subs = apply_content_rewrites(text, rel_label, warnings)
                 if new_text != text:
@@ -332,7 +332,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Manifest CSV
     ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    manifest_path = REPO_ROOT / "Results" / f"rename_stijn_to_ruro_manifest_{ts}.csv"
+    manifest_path = REPO_ROOT / "Results" / f"rename_ruro_to_ruro_manifest_{ts}.csv"
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     with manifest_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
@@ -373,7 +373,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if not args.no_commit:
         git("add", "-A")
-        r = git("commit", "-m", "rename(stijn->ruro): content rewrites")
+        r = git("commit", "-m", "rename(ruro->ruro): content rewrites")
         if r.returncode != 0 and "nothing to commit" not in (r.stdout + r.stderr):
             print(f"WARNING: content commit returned {r.returncode}:\n{r.stdout}\n{r.stderr}")
 
@@ -429,7 +429,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if not args.no_commit:
         git("add", "-A")
-        r = git("commit", "-m", "rename(stijn->ruro): path renames")
+        r = git("commit", "-m", "rename(ruro->ruro): path renames")
         if r.returncode != 0 and "nothing to commit" not in (r.stdout + r.stderr):
             print(f"WARNING: rename commit returned {r.returncode}:\n{r.stdout}\n{r.stderr}")
 

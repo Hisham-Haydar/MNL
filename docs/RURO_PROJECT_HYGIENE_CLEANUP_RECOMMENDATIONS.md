@@ -15,7 +15,7 @@ The clean project should have:
 
 - one canonical continuous-RURO pipeline: `scripts/enhanced/`
 - one canonical job-choice RURO pipeline: `scripts/Job_model/`
-- one reference folder for Stijn's work: `stijn/`
+- one reference folder for the R reference's work: `ruro/`
 - one active documentation folder: `docs/`
 - one clearly documented results registry for the few outputs that matter
 - old scripts, old specs, temporary checks, and experiments moved into archive folders instead of mixed with active work
@@ -25,7 +25,7 @@ The clean project should have:
 1. Make it obvious which scripts should be used for future work.
 2. Make it difficult to accidentally run old code.
 3. Preserve research history without keeping it in the active path.
-4. Keep Stijn's R work intact as a reference baseline.
+4. Keep the R reference work intact as a reference baseline.
 5. Keep only a small set of named estimation runs as current baselines.
 6. Avoid deleting anything scientifically meaningful before it is labeled and recorded.
 
@@ -170,14 +170,14 @@ Keep:
 - `Data/documentation/`
 - `Data/README.md`
 - `literature/`
-- `stijn/`
+- `ruro/`
 
 Rationale:
 
 - `Data/external/` contains small input/reference files such as GSUR, CPI, and SMIC files.
 - `Data/documentation/` contains extracted EUROMOD documentation and indexes.
 - `literature/` is reference material.
-- `stijn/` is the reference implementation and should stay intact.
+- `ruro/` is the reference implementation and should stay intact.
 
 Do not mix generated processed datasets into this project folder. The large processed data should remain on `Z:/Hisham` or `U:/EUROMOD-STORAGE` and be referenced by path.
 
@@ -366,7 +366,7 @@ Review contents first:
 - `scratch/Ruro_estimation_new.Rmd`
 - `scratch/RURO_post_estimation_OLD_backup_20251208.py`
 
-Reason: `scratch/` is ambiguous. It includes a Stijn Rmd copy and an old post-estimation backup. If the files are reference material, archive them with a note. If duplicated exactly elsewhere, they can later be deleted after comparison.
+Reason: `scratch/` is ambiguous. It includes a R reference Rmd copy and an old post-estimation backup. If the files are reference material, archive them with a note. If duplicated exactly elsewhere, they can later be deleted after comparison.
 
 ## Safe to Remove After Confirmation
 
@@ -508,7 +508,7 @@ MNL/
     runners/
     archive/
   src/
-  stijn/
+  ruro/
   tests/
   outputs/
     KEEP_RESULTS.md
@@ -631,7 +631,7 @@ Review before adding `.vscode/` if you intentionally want shared VS Code setting
 
 - `scripts/enhanced/`
 - `scripts/Job_model/`
-- `stijn/`
+- `ruro/`
 - `Data/external/`
 - `Data/documentation/`
 - `literature/`
@@ -666,7 +666,7 @@ Review before adding `.vscode/` if you intentionally want shared VS Code setting
 
 ### Do Not Touch Yet
 
-- `stijn/`
+- `ruro/`
 - active specs until commands are updated
 - `outputs/` until `outputs/KEEP_RESULTS.md` exists
 - `src/` until you decide whether the project is package-first or script-first

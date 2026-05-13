@@ -1,9 +1,9 @@
-# RURO Stijn Occ M0 — Rebuild Canary Report v1
+# RURO R reference Occ M0 — Rebuild Canary Report v1
 
 Date: 2026-05-13 (revised after code-side fix)
 
 **Purpose**: Run the smallest feasible canary on the current France 2016 MNL
-parquet files to verify whether the M0_stijn_occ rebuild has effectively
+parquet files to verify whether the M0_ruro_occ rebuild has effectively
 landed before committing to the full data rebuild.
 
 **Inputs inspected** (read-only, no modifications):
@@ -15,16 +15,16 @@ landed before committing to the full data rebuild.
 
 Singles: 167,600 rows × 74 cols. Couples: 257,700 rows × 80 cols.
 
-The canary script lives at `Results/_canary_stijn_occ_M0.py`; raw JSON at
-`Results/_canary_stijn_occ_M0_results.json`.
+The canary script lives at `Results/_canary_ruro_occ_M0.py`; raw JSON at
+`Results/_canary_ruro_occ_M0_results.json`.
 
 ---
 
 ## Headline
 
 **Overall result: 7 of 9 checks FAIL.** The current parquets predate every
-M0_stijn_occ code change. They were built on 2026-02-05 — before the MNL
-prep changes that compute the frozen Stijn aliases, and before any
+M0_ruro_occ code change. They were built on 2026-02-05 — before the MNL
+prep changes that compute the frozen R reference aliases, and before any
 `--occ-spec empirical` rebuild. **The full rebuild plan must be executed;
 the canary cannot be "rescued" by a partial fix.**
 
@@ -77,8 +77,8 @@ So:
   the older `hours_{male,female} > 0` convention rather than the
   `working_{male,female}` indicator the spec expects.
 
-Both files were produced before *any* of the stijn_occ MNL prep changes
-described in `docs/RURO_stijn_occ_baseline_implementation_report_v1.md`.
+Both files were produced before *any* of the ruro_occ MNL prep changes
+described in `docs/RURO_ruro_occ_baseline_implementation_report_v1.md`.
 
 ---
 
@@ -132,7 +132,7 @@ couples_male   [working source: hours_male > 0 (fallback)]:   n_hh=2,577  median
 couples_female [working source: hours_female > 0 (fallback)]: n_hh=2,577  median=1.0
 ```
 
-The couples medians now appear in `_canary_stijn_occ_M0_results.json`
+The couples medians now appear in `_canary_ruro_occ_M0_results.json`
 together with a `"working_source"` field — so each value is self-describing
 about which indicator it came from. This matters once `working_male`/
 `working_female` are present after the rebuild: the same JSON will record
@@ -149,7 +149,7 @@ Those columns are written by `enh_RURO_prep_mnl_basic.py` only when:
 
 1. The draws file was produced with `--occ-spec empirical` (creates a
    meaningful `log_q_occ` per row), AND
-2. The MNL prep step that creates the Stijn aliases (`log_q_E`, `log_q_H`,
+2. The MNL prep step that creates the R reference aliases (`log_q_E`, `log_q_H`,
    `log_q_W`, `log_q_Occ`, with `_male`/`_female` for couples) and the
    `working_{male,female}` indicators has run.
 
@@ -166,7 +166,7 @@ identification problem.
 
 **Order matters.** Do not start the rebuild before the keep-set fix above
 is in place. With that committed, execute the rebuild plan as written in
-`docs/RURO_stijn_occ_M0_rebuild_command_plan_v1.md`:
+`docs/RURO_ruro_occ_M0_rebuild_command_plan_v1.md`:
 
 1. **Step 0** — confirm `loc4` exists in `singles_RURO_ready.parquet` and
    `couples_RURO_ready.parquet`. This is the only "free" pre-check; if
@@ -176,7 +176,7 @@ is in place. With that committed, execute the rebuild plan as written in
 4. **Step 2** — EUROMOD on rebuilt draws.
 5. **Step 2b** (optional) — `reduce_mnl_columns.py`.
 6. **Step 3** — `enh_RURO_prep_mnl_basic.py` with `--drawsmeta`.
-7. **Re-run this canary script** (`Results/_canary_stijn_occ_M0.py`). All
+7. **Re-run this canary script** (`Results/_canary_ruro_occ_M0.py`). All
    9 checks should flip to PASS. If any of them remain FAIL, the rebuild's
    MNL prep step did not produce the expected columns and the implementation
    report's claims need to be re-checked against the running code.
@@ -191,6 +191,6 @@ identification precondition is documented for the final spec.
 
 | File | Purpose |
 | --- | --- |
-| `Results/_canary_stijn_occ_M0.py` | Reusable canary — re-run after the rebuild to confirm all 9 checks PASS |
-| `Results/_canary_stijn_occ_M0_results.json` | Machine-readable check results for this run |
-| `Results/RURO_stijn_occ_M0_rebuild_canary_report_v1.md` | This report |
+| `Results/_canary_ruro_occ_M0.py` | Reusable canary — re-run after the rebuild to confirm all 9 checks PASS |
+| `Results/_canary_ruro_occ_M0_results.json` | Machine-readable check results for this run |
+| `Results/RURO_ruro_occ_M0_rebuild_canary_report_v1.md` | This report |

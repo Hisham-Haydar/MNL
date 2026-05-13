@@ -2,16 +2,16 @@
 
 Date: 2026-05-12
 Scope: enhanced continuous-draws branch (`scripts/enhanced/`) and the job-choice branch (`scripts/Job_model/`, `scripts/enhanced/enh_RURO_prep_mnl_basic.py`) on the France 2016 RURO pipeline.
-Inputs: `docs/RURO_model_spec_contract_v3_stijn_occ.md`, `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`, `docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md`, `docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`.
+Inputs: `docs/RURO_model_spec_contract_v3_ruro_occ.md`, `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`, `docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md`, `docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`.
 Method: read-only inspection of source files and a column-schema read of the four production MNL parquet files on `Z:`. No code modified, no estimation run.
 
 ## 1. Files inspected
 
 Documentation:
-- [docs/RURO_model_spec_contract_v3_stijn_occ.md](docs/RURO_model_spec_contract_v3_stijn_occ.md)
+- [docs/RURO_model_spec_contract_v3_ruro_occ.md](docs/RURO_model_spec_contract_v3_ruro_occ.md)
 - [docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md](docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md)
 - [docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md](docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md)
-- [docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md)
+- [docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md)
 
 Code:
 - [scripts/enhanced/enh_RURO_prep.py](scripts/enhanced/enh_RURO_prep.py) (sections around lines 404–430, 556–636)
@@ -165,7 +165,7 @@ In execution order, with the smallest viable patch:
 6. **Build dummies in `estimation_utils.py`.** Derive `loc4_1..loc4_4` (and `_male`/`_female`) lazily from the carried `loc4` column.
 7. **Reduce columns** in `reduce_mnl_columns.py` to keep `loc4`, `loc4_*`, `log_q_occ*`, plus the other per-layer log-proposal columns.
 8. **Post-estimation** in `RURO_post_estimation_styled.py`: add an "Occupation Opportunity" table and an Observed-vs-Predicted occupation-share panel.
-9. **YAML**: create `estimation_spec_stijn_occ_M0.yaml` with the contract §24 parameter set.
+9. **YAML**: create `estimation_spec_ruro_occ_M0.yaml` with the contract §24 parameter set.
 
 ## 14. Which scripts need changes
 
@@ -179,7 +179,7 @@ In execution order, with the smallest viable patch:
 | `scripts/enhanced/gamspy_estimation_vectorized.py` | Same as estimation_engine; GAMSPy equation block | blocking |
 | `scripts/enhanced/estimation_utils.py` | Derive `loc4_k` and `loc4_k_male/female` dummies in precompute | blocking |
 | `scripts/enhanced/RURO_post_estimation_styled.py` | Occupation parameter table + observed/predicted shares; rename "sector" → "occupation" | high |
-| New: `scripts/enhanced/estimation_spec_stijn_occ_M0.yaml` | New baseline spec per contract §24 | high |
+| New: `scripts/enhanced/estimation_spec_ruro_occ_M0.yaml` | New baseline spec per contract §24 | high |
 | `scripts/enhanced/enh_RURO_prep.py` | No code change required; already produces `loc4` with correct sentinels | n/a |
 
 `scripts/Job_model/*` is not touched at `M0`.
@@ -204,4 +204,4 @@ Concretely:
 2. If it does not vary, rerun `enh_RURO_draws.py` with occupation-draws enabled (the code path at `enh_RURO_draws.py:1112–1170` already supports this), then patch `enh_RURO_prep_mnl_basic.py` to keep `loc4`, `log_q_occ`, `log_q_hours`, `log_q_wage` in the carried columns.
 3. After the rebuild, assert in a small diagnostic script: `(prior > 0).all()`, `|log(prior) − log_prior| < 1e-8`, `|log_q_total − (log_q_state + log_q_hours + log_q_wage + log_q_occ)| < 1e-8`, and `loc4` has at least 4 distinct values within each household's choice set on average.
 
-Once this step passes, the parser/engine/spec/post-estimation changes (§13 items 4–9) can be implemented and `estimation_spec_stijn_occ_M0.yaml` can be estimated. Until per-alternative `loc4` variation is in the MNL file, adding `β_occ_k` to the engine would not be identified and the estimation would be wasted compute.
+Once this step passes, the parser/engine/spec/post-estimation changes (§13 items 4–9) can be implemented and `estimation_spec_ruro_occ_M0.yaml` can be estimated. Until per-alternative `loc4` variation is in the MNL file, adding `β_occ_k` to the engine would not be identified and the estimation would be wasted compute.

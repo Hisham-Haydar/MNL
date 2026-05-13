@@ -10,7 +10,7 @@ External data inspected: `Z:\Hisham\EUROMOD-STORAGE\Data\processed\fr\2016`
 
 | Area | Purpose |
 | --- | --- |
-| `stijn/` | Original R notebooks and functions from Stijn's RURO work. Main files are `Ruro_simulation_H.Rmd`, `Ruro_estimation_H.Rmd`, `Ruro_estimation_new.Rmd`, and `Ruro_functions_EMRWS.R`. |
+| `ruro/` | Original R notebooks and functions from the R reference's RURO work. Main files are `Ruro_simulation_H.Rmd`, `Ruro_estimation_H.Rmd`, `Ruro_estimation_new.Rmd`, and `Ruro_functions_EMRWS.R`. |
 | `scripts/enhanced/` | Current Python/GAMSPy RURO implementation, French data preparation, estimation specs, estimation engines, and post-estimation tooling. |
 | `scripts/Job_model/` | Job-choice related construction and diagnostics. |
 | `outputs/estimates/fr/` | French estimation outputs, including continuous RURO and job-choice runs. |
@@ -32,22 +32,22 @@ External data inspected: `Z:\Hisham\EUROMOD-STORAGE\Data\processed\fr\2016`
 | `scripts/enhanced/estimation_spec_job_M2h_pruned.yaml` | Best current job-choice empirical candidate. |
 | `scripts/enhanced/RURO_post_estimation_styled.py` | Post-estimation reporting and diagnostics. |
 
-## Stijn Reference Files
+## R reference Reference Files
 
 | File | Role |
 | --- | --- |
-| `stijn/Ruro_simulation_H.Rmd` | Simulation workflow and policy/reform simulation code. |
-| `stijn/Ruro_estimation_H.Rmd` | R estimation likelihood with utility, hours opportunity, wage opportunity, and prior correction. |
-| `stijn/Ruro_estimation_new.Rmd` | Additional/updated R estimation workflow. |
-| `stijn/Ruro_functions_EMRWS.R` | Core R helper functions, including simulated choice-set construction. |
+| `ruro/Ruro_simulation_H.Rmd` | Simulation workflow and policy/reform simulation code. |
+| `ruro/Ruro_estimation_H.Rmd` | R estimation likelihood with utility, hours opportunity, wage opportunity, and prior correction. |
+| `ruro/Ruro_estimation_new.Rmd` | Additional/updated R estimation workflow. |
+| `ruro/Ruro_functions_EMRWS.R` | Core R helper functions, including simulated choice-set construction. |
 
-Important Stijn references:
+Important R references:
 
-- `stijn/Ruro_estimation_H.Rmd:553-570`: builds the log proposal prior.
-- `stijn/Ruro_estimation_H.Rmd:834-859`: likelihood formula with `util + hopp + wopp - prior`.
-- `stijn/Ruro_functions_EMRWS.R:365`: `f_choicesets_sim`.
-- `stijn/Ruro_functions_EMRWS.R:396-452`: opportunity generator for employment and hours.
-- `stijn/Ruro_simulation_H.Rmd:355-377`: simulated choice using `util + gumb_draw`.
+- `ruro/Ruro_estimation_H.Rmd:553-570`: builds the log proposal prior.
+- `ruro/Ruro_estimation_H.Rmd:834-859`: likelihood formula with `util + hopp + wopp - prior`.
+- `ruro/Ruro_functions_EMRWS.R:365`: `f_choicesets_sim`.
+- `ruro/Ruro_functions_EMRWS.R:396-452`: opportunity generator for employment and hours.
+- `ruro/Ruro_simulation_H.Rmd:355-377`: simulated choice using `util + gumb_draw`.
 
 ## Processed French Data
 
@@ -120,7 +120,7 @@ Main caveats:
 | Continuous RURO Hessian instability | Active risk | Rebuild continuous spec from a simpler ladder and test each block. |
 | Inconsistent prior fallback convention | Active code risk | Fix fallback so `prior` is always original-scale and positive. |
 | Preference/opportunity confounding | Active identification risk | Add and document exclusion restrictions. |
-| Lack of simulation recovery | Missing evidence | Add Stijn-style recovery on French-shaped data. |
+| Lack of simulation recovery | Missing evidence | Add continuous-RURO recovery on French-shaped data. |
 | Bound-hit opportunity terms | Seen in some job-choice specs | Keep pruned baseline and add terms back one at a time. |
 | Single-year empirical variation | Identification limitation | Add region/year/labor-market variation if data allow. |
 
@@ -149,7 +149,7 @@ assert np.max(np.abs(np.log(df["prior"]) - df["log_prior"])) < 1e-8
 This audit generated three documents:
 
 - `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
-- `docs/RURO_STIJN_COMPARISON_AND_ACTION_PLAN.md`
+- `docs/RURO_R_REFERENCE_COMPARISON_AND_ACTION_PLAN.md`
 - `docs/RURO_WORKSPACE_AUDIT_2026-05-11.md`
 
-The first file is the main answer to whether the French data currently identify preferences and opportunities separately. The second file explains the comparison with Stijn's simulation. This file records the workspace and data evidence used to reach the conclusion.
+The first file is the main answer to whether the French data currently identify preferences and opportunities separately. The second file explains the comparison with the R reference's simulation. This file records the workspace and data evidence used to reach the conclusion.

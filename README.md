@@ -62,7 +62,7 @@ Important orientation documents:
 - [docs/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/RURO_ACTIVE_RESULTS_REGISTRY.md): current baseline result folders.
 - [docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md](docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md): current ability to separate preferences and opportunities.
 - [docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md](docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md): parameter-by-parameter explanation of preference estimation.
-- [docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md): legacy comparison with an external RURO R reference and sector-opportunity extension plan.
+- [docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md): legacy comparison with an external RURO R reference and sector-opportunity extension plan.
 - [docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md](docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md): GMM latent job-type method in the job-choice branch.
 - [docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md](docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md): GSUR preparation, merge keys, and opportunity interpretation.
 - [docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md](docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md): cleanup policy and project hygiene decisions.
@@ -97,7 +97,7 @@ MNL/
     RURO_JOB_MODEL_GMM_METHOD_NOTE.md
     RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md
     RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md
-    RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md
+    RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md
     ROADMAP.md
     archive/                             Historical implementation notes and old root docs.
 
@@ -122,7 +122,7 @@ MNL/
     integration/                         EUROMOD connector scaffold.
     evaluation/                          Basic metrics.
 
-  stijn/                                 Legacy external RURO R reference files.
+  ruro/                                 Legacy external RURO R reference files.
 
   tests/                                 Minimal automated tests.
 ```
@@ -443,13 +443,13 @@ Use the run recorded in [docs/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/RURO_ACTIVE_
 
 ## External RURO Reference Work
 
-The external RURO R reference files are kept intact in the legacy `stijn/`
+The external RURO R reference files are kept intact in the legacy `ruro/`
 folder:
 
-- `stijn/Ruro_estimation_H.Rmd`
-- `stijn/Ruro_estimation_new.Rmd`
-- `stijn/Ruro_functions_EMRWS.R`
-- `stijn/Ruro_simulation_H.Rmd`
+- `ruro/Ruro_estimation_H.Rmd`
+- `ruro/Ruro_estimation_new.Rmd`
+- `ruro/Ruro_functions_EMRWS.R`
+- `ruro/Ruro_simulation_H.Rmd`
 
 The main comparison is:
 
@@ -458,7 +458,7 @@ The main comparison is:
 - The current job-choice branch adds a discrete job object and market-opportunity terms.
 - The planned sector extension should factor opportunities into labor-time, sector, and wage components more explicitly.
 
-See [docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md).
+See [docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md).
 
 ## Diagnostics and Testing
 

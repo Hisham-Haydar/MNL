@@ -52,7 +52,7 @@ That stale note says GMM was not applied. It should not be used as current truth
 
 ## Why This Branch Exists
 
-The continuous RURO branch draws hours and wages as continuous random alternatives. That branch is close to Stijn's original RURO design.
+The continuous RURO branch draws hours and wages as continuous random alternatives. That branch is close to the R reference's original RURO design.
 
 The job-choice branch changes the opportunity object. Instead of treating hours and wages as separately drawn continuous dimensions, it builds finite job alternatives. A job alternative carries posted labor-market characteristics such as:
 
@@ -470,4 +470,4 @@ Read in this order:
 3. `scripts/Job_model/ACCEPTANCE_TESTS.md`
 4. `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
 5. `docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
-6. `docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`
+6. `docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`

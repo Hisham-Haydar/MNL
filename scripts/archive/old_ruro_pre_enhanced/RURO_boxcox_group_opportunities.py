@@ -36,7 +36,7 @@ from path_helpers import reports_root
 
 LOGGER = logging.getLogger(__name__)
 
-T_HOURS_DEFAULT: float = 80.0  # total weekly time endowment (Stijn-style, 80 hours)
+T_HOURS_DEFAULT: float = 80.0  # total weekly time endowment (continuous-RURO, 80 hours)
 LEIS_HOURS_MIN: float = 1.0
 C_NORM_MIN: float = 0.2
 C_NORM_MAX: float = 5.0

@@ -59,7 +59,7 @@ Important orientation documents:
 - [docs/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/RURO_ACTIVE_RESULTS_REGISTRY.md): current baseline result folders.
 - [docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md](docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md): current ability to separate preferences and opportunities.
 - [docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md](docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md): parameter-by-parameter explanation of preference estimation.
-- [docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md): comparison with Stijn's R work and sector-opportunity extension plan.
+- [docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md): comparison with the R reference work and sector-opportunity extension plan.
 - [docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md](docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md): GMM latent job-type method in the job-choice branch.
 - [docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md](docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md): GSUR preparation, merge keys, and opportunity interpretation.
 - [docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md](docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md): cleanup policy and project hygiene decisions.
@@ -94,7 +94,7 @@ MNL/
     RURO_JOB_MODEL_GMM_METHOD_NOTE.md
     RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md
     RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md
-    RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md
+    RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md
     ROADMAP.md
     archive/                             Historical implementation notes and old root docs.
 
@@ -119,7 +119,7 @@ MNL/
     integration/                         EUROMOD connector scaffold.
     evaluation/                          Basic metrics.
 
-  stijn/                                 Stijn's R reference implementation.
+  ruro/                                 the R reference's R reference implementation.
 
   tests/                                 Minimal automated tests.
 ```
@@ -147,12 +147,12 @@ Main scripts:
 
 Current continuous specification candidates:
 
-- `scripts/enhanced/estimation_spec_stijn_occ_M0.yaml` (requires occupation-draw rebuild and canary pass before estimation)
+- `scripts/enhanced/estimation_spec_ruro_occ_M0.yaml` (requires occupation-draw rebuild and canary pass before estimation)
 - `scripts/enhanced/estimation_spec_v3.yaml`
 - `scripts/enhanced/estimation_spec_v2.yaml`
 - `scripts/enhanced/estimation_spec.yaml`
 
-The continuous branch is closest to Stijn's R implementation. It draws non-work, hours, and wages, then estimates a likelihood with preference, hours opportunity, wage opportunity, and proposal correction terms.
+The continuous branch is closest to the R reference implementation. It draws non-work, hours, and wages, then estimates a likelihood with preference, hours opportunity, wage opportunity, and proposal correction terms.
 
 ### Job-Choice RURO Pipeline
 
@@ -438,23 +438,23 @@ python scripts\enhanced\RURO_post_estimation_styled.py --help
 
 Use the run recorded in [docs/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/RURO_ACTIVE_RESULTS_REGISTRY.md) as the `--results-json` source unless you are deliberately reporting a new run.
 
-## Stijn Reference Work
+## R Reference Work
 
-Stijn's R files are kept intact in `stijn/`:
+the R reference files are kept intact in `ruro/`:
 
-- `stijn/Ruro_estimation_H.Rmd`
-- `stijn/Ruro_estimation_new.Rmd`
-- `stijn/Ruro_functions_EMRWS.R`
-- `stijn/Ruro_simulation_H.Rmd`
+- `ruro/Ruro_estimation_H.Rmd`
+- `ruro/Ruro_estimation_new.Rmd`
+- `ruro/Ruro_functions_EMRWS.R`
+- `ruro/Ruro_simulation_H.Rmd`
 
 The main comparison is:
 
-- Stijn estimates utility plus hours/labor-time opportunity plus wage opportunity minus proposal prior.
+- R reference estimates utility plus hours/labor-time opportunity plus wage opportunity minus proposal prior.
 - The current continuous Python branch is structurally closest to this.
 - The current job-choice branch adds a discrete job object and market-opportunity terms.
 - The planned sector extension should factor opportunities into labor-time, sector, and wage components more explicitly.
 
-See [docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/RURO_STIJN_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md).
+See [docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md).
 
 ## Diagnostics and Testing
 
@@ -484,7 +484,7 @@ Current automated test coverage is minimal. Before making strong claims from new
 - no missing values in utility/opportunity variables;
 - stability across seeds, draw counts, starts, and specifications;
 - Hessian condition number and negative eigenvalues;
-- recovery on Stijn-style simulated data.
+- recovery on RURO-style simulated data.
 
 ## Project Hygiene Rules
 

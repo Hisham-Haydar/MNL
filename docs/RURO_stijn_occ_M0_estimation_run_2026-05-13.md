@@ -1,16 +1,16 @@
-# RURO Stijn Occupation M0 Estimation Run
+# RURO R reference Occupation M0 Estimation Run
 
 Date: 2026-05-13
 
 ## Purpose
 
-This note records the first completed France 2016 `M0_stijn_occ` preference
+This note records the first completed France 2016 `M0_ruro_occ` preference
 estimation after the occupation-draw rebuild passed the Gate-A canaries.
 
 This is a run record, not a new specification. The active specification is:
 
 ```text
-scripts/enhanced/estimation_spec_stijn_occ_M0.yaml
+scripts/enhanced/estimation_spec_ruro_occ_M0.yaml
 ```
 
 ## Data Preconditions
@@ -25,8 +25,8 @@ Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__couples.parqu
 The rebuild and validation are documented in:
 
 ```text
-Results/RURO_stijn_occ_M0_full_rebuild_report_v1.md
-Results/_canary_stijn_occ_M0_results.json
+Results/RURO_ruro_occ_M0_full_rebuild_report_v1.md
+Results/_canary_ruro_occ_M0_results.json
 ```
 
 The final pre-estimation canary status was:
@@ -58,11 +58,11 @@ The completed estimation command was:
 ```powershell
 python .\scripts\enhanced\enh_RURO_estimate_FR.py `
   --mnl-base "\\aff300msh.cifs.myliser.lu\ComputeShare\Hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_mnl" `
-  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/stijn_occ/gamspy" `
+  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/ruro_occ/gamspy" `
   --group joint `
   --solver gamspy-conopt `
   --vectorized `
-  --spec-config "scripts/enhanced/estimation_spec_stijn_occ_M0.yaml" `
+  --spec-config "scripts/enhanced/estimation_spec_ruro_occ_M0.yaml" `
   --auto-timestamp `
   --verbose
 ```
@@ -72,8 +72,8 @@ No job-choice warm start was used.
 ## Run Folder
 
 ```text
-U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/stijn_occ/gamspy/
-  estimation_spec_stijn_occ_M0/run_2026-05-13_11-27-40
+U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/ruro_occ/gamspy/
+  estimation_spec_ruro_occ_M0/run_2026-05-13_11-27-40
 ```
 
 Files written:
@@ -97,7 +97,7 @@ are available locally but are not committed unless explicitly force-added.
 Core status:
 
 ```text
-Specification: stijn_occ_M0
+Specification: ruro_occ_M0
 Wage specification: vw
 Solver: GAMSPy CONOPT, vectorized
 Status: SolveStatus.NormalCompletion (ModelStatus.OptimalLocal)
@@ -185,15 +185,15 @@ Post-estimation was run from the completed result and the report was later
 regenerated with spec-driven opportunity equations:
 
 ```text
-U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/stijn_occ/gamspy/
-  estimation_spec_stijn_occ_M0/run_2026-05-13_12-10-38/
-  fr_2016_stijn_occ_gamspy_specdriven_post_estimation_report_20260513_121058.html
+U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/ruro_occ/gamspy/
+  estimation_spec_ruro_occ_M0/run_2026-05-13_12-10-38/
+  fr_2016_ruro_occ_gamspy_specdriven_post_estimation_report_20260513_121058.html
 ```
 
 The report fix is documented in:
 
 ```text
-docs/RURO_stijn_occ_post_estimation_report_fix_v1.md
+docs/RURO_ruro_occ_post_estimation_report_fix_v1.md
 ```
 
 Known remaining reporting issue: the new spec-driven opportunity sections are

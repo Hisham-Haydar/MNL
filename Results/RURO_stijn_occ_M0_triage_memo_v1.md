@@ -2,7 +2,7 @@
 
 Date: 2026-05-13
 
-Scope: France 2016, `estimation_spec_stijn_occ_M0`, joint singles+couples,
+Scope: France 2016, `estimation_spec_ruro_occ_M0`, joint singles+couples,
 GAMSPy CONOPT vectorized. Triage of the FIRST converged M0 optimum
 (predecessor run `run_2026-05-13_11-27-40`, 29 iterations, joint_ll = −6499.88;
 post-estimation re-run inspected here is `run_2026-05-13_15-02-16`, which
@@ -20,12 +20,12 @@ preference parameters have no standard error.**
 ## 1. What has been successfully completed
 
 The data and code pipeline is in good standing. This is the first time the
-M0_stijn_occ spec has both estimable inputs and an executing solver run.
+M0_ruro_occ spec has both estimable inputs and an executing solver run.
 
 - The full Stijn-occupation rebuild has landed. Per the rebuild report,
   all 9 post-MNL canary checks pass: `loc4` varies within household (median
   4.0 distinct values across simulated working alternatives for singles and
-  for each partner of couples), all four Stijn proposal aliases
+  for each partner of couples), all four proposal-component aliases
   (`log_q_E`, `log_q_H`, `log_q_W`, `log_q_Occ` and partner-suffixed
   analogues) are present, `prior > 0` everywhere, `log_prior == log(prior)`,
   per-layer prior reconstruction holds (`max_abs_log_prior_minus_log_density
@@ -35,7 +35,7 @@ M0_stijn_occ spec has both estimable inputs and an executing solver run.
   (`7.82e−06` singles vs `6.29e−11` couples) are consistent with two
   partner-specific component multiplications and are not by themselves a
   problem.
-- The YAML spec `estimation_spec_stijn_occ_M0` parses cleanly as
+- The YAML spec `estimation_spec_ruro_occ_M0` parses cleanly as
   `model_family: regular`, exposes a dedicated `occupation_opportunity`
   block with `loc4` reference category 1, uses Mincer-form wage opportunity
   with the log-normal Jacobian, and applies `−log(prior)` prior correction
@@ -58,7 +58,7 @@ not.
 
 ---
 
-## 2. What the first M0_stijn_occ estimation currently shows
+## 2. What the first M0_ruro_occ estimation currently shows
 
 A locally indefinite optimum, catastrophic hours and participation fit,
 two unidentified preference parameters, and an extreme male-female asymmetry
@@ -97,7 +97,7 @@ These are the things that should not be re-debugged in the next pass.
 - The model and pipeline can run end-to-end through M0 on the rebuilt data
   in ~5 min wall time. Nothing in the pipeline blew up.
 - The implementation contract is being honoured by the run: occupation
-  appears in `O^Occ` only, never in utility; the four Stijn proposal
+  appears in `O^Occ` only, never in utility; the four R reference proposal
   aliases are read and used; the log-normal Jacobian for `O^W` is present;
   market centering is on.
 - The Mincer wage block is mostly clean. `β_w_educH = 0.306` (t = 20),
@@ -137,7 +137,7 @@ In rough order of severity for the JMP.
    current optimum.
 2. **The Hessian is not at a local maximum.** Two negative eigenvalues
    (min eigenvalue −26.0). The model contract §22 of
-   `RURO_model_spec_contract_v4_stijn_occ.md` lists "no negative Hessian
+   `RURO_model_spec_contract_v4_ruro_occ.md` lists "no negative Hessian
    eigenvalues" as a hard gate before any welfare/decomposition use. That
    gate is failed.
 3. **Predicted participation is essentially 100% for every group**
@@ -321,7 +321,7 @@ Concretely, what it can and cannot support right now.
 
 | Use case | Status |
 |---|---|
-| Confirm the M0_stijn_occ pipeline runs end-to-end on rebuilt data | Yes |
+| Confirm the M0_ruro_occ pipeline runs end-to-end on rebuilt data | Yes |
 | Confirm the spec matches the model contract on paper | Yes |
 | Provide initial values for the next M0 estimation pass | Yes |
 | Surface identification problems for triage (i.e., this memo) | Yes |
@@ -426,7 +426,7 @@ under the existing versioned-file convention.
   across households at the converged θ; the consumption-scale value used
   for singles vs couples; the empirical fraction of working observations
   by group.
-- Save as: `RURO_stijn_occ_M0_identification_diag_v1.md` in `Results/`.
+- Save as: `RURO_ruro_occ_M0_identification_diag_v1.md` in `Results/`.
 - Next: read this memo *before* re-estimating. If it confirms that
   `β_c_sf`, `θ_c_sf` are unidentified by data, drop one of them in the
   next spec (most defensibly: fix `θ_c_sf = θ_c_sm` or pool consumption
@@ -439,7 +439,7 @@ under the existing versioned-file convention.
   `gamspy_estimation_vectorized` and either `gamspy_estimation` or
   `estimation_engine`. Report differences in per-observation log-
   likelihood. The hard gate is `1e−6` per observation.
-- Save as: `RURO_stijn_occ_M0_cross_engine_check_v1.md` in `Results/`.
+- Save as: `RURO_ruro_occ_M0_cross_engine_check_v1.md` in `Results/`.
 
 **C. Recompute SEs on regularized Hessian (Claude Code).**
 
@@ -449,7 +449,7 @@ under the existing versioned-file convention.
   goal is not to defend these SEs as valid — they are not — but to
   separate the 2 pathological parameters from the rest, so the next
   re-spec is informed.
-- Save as: `RURO_stijn_occ_M0_se_repair_v1.md` in `Results/`.
+- Save as: `RURO_ruro_occ_M0_se_repair_v1.md` in `Results/`.
 
 **D. Plan the M0a re-spec (Claude project chat).**
 
@@ -463,10 +463,10 @@ under the existing versioned-file convention.
   parameterization (the part-time / full-time dummies are evidently
   pushing too hard), and whether to drop the leisure-education interaction
   shifter at this step.
-- Save as: `RURO_stijn_occ_M0a_respec_plan_v1.md`.
+- Save as: `RURO_ruro_occ_M0a_respec_plan_v1.md`.
 
 **E. Run M0a (Claude Code, then the existing PowerShell command in
-`docs/RURO_stijn_occ_baseline_implementation_report_v1.md`).**
+`docs/RURO_ruro_occ_baseline_implementation_report_v1.md`).**
 
 - Tool: Claude Code to update the YAML; the existing
   `enh_RURO_estimate_FR.py` command to run it.
@@ -476,7 +476,7 @@ under the existing versioned-file convention.
   re-run with at least three start points.
 - Save run folder following existing convention. Add the post-estimation
   Markdown summary to `reports/`. Save a follow-up triage as
-  `RURO_stijn_occ_M0a_triage_memo_v1.md`.
+  `RURO_ruro_occ_M0a_triage_memo_v1.md`.
 
 **F. Postpone until M0a passes the hard gates.**
 
@@ -496,5 +496,5 @@ re-spec, then re-run.
 
 ## Suggested filename
 
-Save this memo as: `RURO_stijn_occ_M0_triage_memo_v1.md`
+Save this memo as: `RURO_ruro_occ_M0_triage_memo_v1.md`
 (category: technical memo / estimation triage).

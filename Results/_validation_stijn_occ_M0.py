@@ -1,4 +1,4 @@
-"""One-shot validation of rebuilt M0_stijn_occ MNL parquets.
+"""One-shot validation of rebuilt M0_ruro_occ MNL parquets.
 
 Read-only. Produces a JSON blob the report references.
 """
@@ -172,7 +172,7 @@ out["forbidden_couples"] = _forbidden(c)
 extra_couples = [col for col in c.columns if any(col.startswith(f + "_male") or col.startswith(f + "_female") or col == f for f in FORBIDDEN)]
 out["forbidden_couples_with_suffix"] = sorted(set(extra_couples))
 
-with open(r"U:/Desktop/Nizam_Hisham/MNL/Results/_validation_stijn_occ_M0.json", "w") as f:
+with open(r"U:/Desktop/Nizam_Hisham/MNL/Results/_validation_ruro_occ_M0.json", "w") as f:
     json.dump(out, f, indent=2, default=str)
 print("Saved validation JSON.")
 print(json.dumps({k: v for k, v in out.items() if k in

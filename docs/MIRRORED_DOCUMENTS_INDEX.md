@@ -39,7 +39,7 @@ locations so existing scripts, notes, and references keep working.
 
 | Original | Mirror |
 | --- | --- |
-| `Results/RURO_stijn_occ_M0_rebuild_canary_report_v1.md` | `docs/canary_reports/RURO_stijn_occ_M0_rebuild_canary_report_v1.md` |
+| `Results/RURO_ruro_occ_M0_rebuild_canary_report_v1.md` | `docs/canary_reports/RURO_ruro_occ_M0_rebuild_canary_report_v1.md` |
 
 ## Job-Choice Documentation Mirrors
 
@@ -55,7 +55,7 @@ locations so existing scripts, notes, and references keep working.
 | --- | --- |
 | `outputs/KEEP_RESULTS.md` | `docs/results/KEEP_RESULTS.md` |
 | `notes/EUROMO_sys_france_2015.md` | `docs/notes/EUROMO_sys_france_2015.md` |
-| `notes/STIJN_vs_PYTHON_SPECIFICATION.md` | `docs/notes/STIJN_vs_PYTHON_SPECIFICATION.md` |
+| `notes/R_REFERENCE_vs_PYTHON_SPECIFICATION.md` | `docs/notes/R_REFERENCE_vs_PYTHON_SPECIFICATION.md` |
 
 ## Recommended Reading Bundle For France 2016
 
@@ -71,9 +71,9 @@ For writing about France 2016 data, cleaning, estimation, and methodology, use:
 8. `docs/euromod_reference/euromod_fr_2015_2017_output_variable_index.csv`
 9. `docs/euromod_reference/euromod_fr_2015_2017_standard_income_concepts.csv`
 
-For the Stijn occupation baseline, also use:
+For the RURO occupation-opportunity baseline, also use:
 
-1. `docs/RURO_stijn_occ_baseline_spec_v1.md`
-2. `docs/RURO_stijn_occ_baseline_implementation_report_v1.md`
-3. `docs/RURO_stijn_occ_M0_rebuild_command_plan_v1.md`
-4. `docs/canary_reports/RURO_stijn_occ_M0_rebuild_canary_report_v1.md`
+1. `docs/RURO_ruro_occ_baseline_spec_v1.md`
+2. `docs/RURO_ruro_occ_baseline_implementation_report_v1.md`
+3. `docs/RURO_ruro_occ_M0_rebuild_command_plan_v1.md`
+4. `docs/canary_reports/RURO_ruro_occ_M0_rebuild_canary_report_v1.md`

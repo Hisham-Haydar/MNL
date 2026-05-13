@@ -705,13 +705,13 @@ Before estimation:
 Reusable RURO occupation M0 canary:
 
 ```text
-Results/_canary_stijn_occ_M0.py
+Results/_canary_ruro_occ_M0.py
 ```
 
 Canary report:
 
 ```text
-Results/RURO_stijn_occ_M0_rebuild_canary_report_v1.md
+Results/RURO_ruro_occ_M0_rebuild_canary_report_v1.md
 ```
 
 Current pre-rebuild result:
@@ -744,11 +744,11 @@ scripts/enhanced/estimation_spec_ruro_occ_M0.yaml
 Main docs. Some filenames still carry the older project label used during
 development; the model object is the RURO occupation-opportunity M0 baseline.
 
-- `docs/RURO_model_spec_contract_v4_stijn_occ.md`
-- `docs/RURO_stijn_occ_baseline_spec_v1.md`
-- `docs/RURO_stijn_occ_baseline_implementation_report_v1.md`
-- `docs/RURO_stijn_occ_M0_rebuild_command_plan_v1.md`
-- `Results/RURO_stijn_occ_M0_rebuild_canary_report_v1.md`
+- `docs/RURO_model_spec_contract_v4_ruro_occ.md`
+- `docs/RURO_ruro_occ_baseline_spec_v1.md`
+- `docs/RURO_ruro_occ_baseline_implementation_report_v1.md`
+- `docs/RURO_ruro_occ_M0_rebuild_command_plan_v1.md`
+- `Results/RURO_ruro_occ_M0_rebuild_canary_report_v1.md`
 
 Key data precondition:
 
@@ -843,7 +843,7 @@ Read in this order:
 5. `docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md`
 6. `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
 7. `docs/RURO_ACTIVE_RESULTS_REGISTRY.md`
-8. For RURO occupation M0 only: `docs/RURO_stijn_occ_M0_rebuild_command_plan_v1.md`
+8. For RURO occupation M0 only: `docs/RURO_ruro_occ_M0_rebuild_command_plan_v1.md`
 
 After these files, a researcher should know what the project does, which branch
 to run, what files are produced, how the estimator works, and what cannot yet

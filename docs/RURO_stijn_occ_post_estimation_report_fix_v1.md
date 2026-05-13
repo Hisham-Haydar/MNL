@@ -4,7 +4,7 @@ Date: 2026-05-13
 
 ## Goal
 
-Stop the post-estimation HTML report from putting Stijn-style M0 opportunity
+Stop the post-estimation HTML report from putting continuous-RURO M0 opportunity
 parameters under a generic "Other Parameters" heading and from displaying
 `log h(h|X) = (no hours parameters)`. Replace the hard-coded substring-match
 rendering with a spec-driven renderer that reads the active YAML
@@ -19,21 +19,21 @@ parameters, or the estimation results.
 | File | Change |
 | --- | --- |
 | `scripts/enhanced/RURO_post_estimation_styled.py` | Added spec-driven equation renderers and a YAML-driven parameter classifier; rewired the model-specific HTML assembly to use them; kept legacy renderers as a fallback. |
-| `docs/RURO_stijn_occ_post_estimation_report_fix_v1.md` | This note. |
+| `docs/RURO_ruro_occ_post_estimation_report_fix_v1.md` | This note. |
 
 No other scripts touched. No estimation re-run.
 
 ## What was wrong in the old report
 
 Looking at the previous output of
-`fr_2016_stijn_occ_gamspy_post_estimation_report_*.html` for the
-`run_2026-05-13_11-27-40` estimate of `M0_stijn_occ`:
+`fr_2016_ruro_occ_gamspy_post_estimation_report_*.html` for the
+`run_2026-05-13_11-27-40` estimate of `M0_ruro_occ`:
 
 1. **`Hours Opportunity Function (All Groups)` showed
    `log h(h|X) = (no hours parameters)`.**
    The legacy renderer (`build_hours_opportunity_html_dynamic`) hard-coded
-   parameter names from the older Stijn-style spec (`beta_work`, `beta_pt1`,
-   `beta_ft`, `beta_gsur`, …). The current `M0_stijn_occ` YAML uses
+   parameter names from the older continuous-RURO spec (`beta_work`, `beta_pt1`,
+   `beta_ft`, `beta_gsur`, …). The current `M0_ruro_occ` YAML uses
    `beta_E`, `beta_h_pt1`, `beta_h_pt2`, `beta_h_ft`, `beta_E_gsur`,
    `beta_E_educH`. None of these names matched any of the hard-coded checks,
    so the equation came up empty.
@@ -114,7 +114,7 @@ section by `_coef_to_block_map(blocks)`:
 | `beta_offer_*` (job-choice models) | `market_opp` | Job Market Opportunity Parameters |
 | anything else | `other` | Other Parameters (omitted entirely if empty) |
 
-For `M0_stijn_occ` this resolves cleanly:
+For `M0_ruro_occ` this resolves cleanly:
 
 - Preference: 26 params (`beta_c*`, `beta_l*`, `theta_c*`, `theta_l*`).
 - Employment and Hours Opportunity: `beta_E`, `beta_h_pt1`, `beta_h_pt2`,
@@ -126,7 +126,7 @@ For `M0_stijn_occ` this resolves cleanly:
 
 ### How equation rendering supports country/year/spec agnosticism
 
-- Nothing in the new renderers is keyed on the `stijn_occ_M0` spec name,
+- Nothing in the new renderers is keyed on the `ruro_occ_M0` spec name,
   on FR/2016, or on specific parameter names.
 - A spec declaring different shifters (e.g. a future M1 with
   age-on-employment, or a Belgian variant with different focal-hours
@@ -140,19 +140,19 @@ For `M0_stijn_occ` this resolves cleanly:
 ## Regenerated HTML report
 
 ```text
-U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/stijn_occ/
-  gamspy/estimation_spec_stijn_occ_M0/run_2026-05-13_12-10-38/
-  fr_2016_stijn_occ_gamspy_specdriven_post_estimation_report_20260513_121058.html
+U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/ruro_occ/
+  gamspy/estimation_spec_ruro_occ_M0/run_2026-05-13_12-10-38/
+  fr_2016_ruro_occ_gamspy_specdriven_post_estimation_report_20260513_121058.html
 ```
 
 Source artefacts:
 
 - Estimation results (unchanged):
-  `outputs/estimates/fr/spec/stijn_occ/gamspy/estimation_spec_stijn_occ_M0/run_2026-05-13_11-27-40/estimation_results.json`
+  `outputs/estimates/fr/spec/ruro_occ/gamspy/estimation_spec_ruro_occ_M0/run_2026-05-13_11-27-40/estimation_results.json`
 - MNL parquets used for fit diagnostics:
   `Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__{singles,couples}.parquet`
 - Spec used for equation rendering:
-  `scripts/enhanced/estimation_spec_stijn_occ_M0.yaml`
+  `scripts/enhanced/estimation_spec_ruro_occ_M0.yaml`
 
 Verification of section presence (raw counts of headings in the HTML):
 
@@ -187,7 +187,7 @@ verified present in the regenerated HTML:
   The new spec-driven opportunity equation sections and the new
   "Parameter Estimates by Category" section are correctly separated, but the
   older `Group-Specific Parameters` block is still emitted later in the HTML.
-  In the joint `M0_stijn_occ` report it can show parameters from other groups
+  In the joint `M0_ruro_occ` report it can show parameters from other groups
   under a group heading, for example couple-male or couple-female occupation
   parameters under single-male/single-female headings. Until that legacy block
   is removed or rewritten, use the spec-driven opportunity sections and the

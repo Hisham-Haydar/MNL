@@ -1,21 +1,21 @@
-# RURO Comparison With Stijn And Sector Opportunity Extension Plan
+# RURO Comparison With R reference And Sector Opportunity Extension Plan
 
 Date: May 11, 2026
 
-Scope: compare the current French RURO code with Stijn's R work and propose a cleaner extension with three opportunity layers: labor time, wages, and sector.
+Scope: compare the current French RURO code with the R reference work and propose a cleaner extension with three opportunity layers: labor time, wages, and sector.
 
 Files compared:
 
-- `stijn/Ruro_estimation_H.Rmd`
-- `stijn/Ruro_estimation_new.Rmd`
-- `stijn/Ruro_functions_EMRWS.R`
-- `stijn/Ruro_simulation_H.Rmd`
+- `ruro/Ruro_estimation_H.Rmd`
+- `ruro/Ruro_estimation_new.Rmd`
+- `ruro/Ruro_functions_EMRWS.R`
+- `ruro/Ruro_simulation_H.Rmd`
 - Current Python/GAMSPy pipeline under `scripts/enhanced/`
 - Current job-choice pipeline under `scripts/Job_model/`
 
 ## Short Answer
 
-Stijn's empirical estimation has two explicit opportunity components:
+the R reference's empirical estimation has two explicit opportunity components:
 
 ```text
 utility + hours opportunity + wage opportunity - proposal prior
@@ -23,7 +23,7 @@ utility + hours opportunity + wage opportunity - proposal prior
 
 His hours opportunity also includes the employment/non-employment margin, so it is better described as a labor-time opportunity block rather than only an hours density.
 
-Your current continuous RURO branch is structurally close to Stijn's model: preferences, hours opportunity, wage opportunity, and prior correction.
+Your current continuous RURO branch is structurally close to the R reference's model: preferences, hours opportunity, wage opportunity, and prior correction.
 
 Your current job-choice branch is different. It already introduces something close to a third opportunity object through discrete jobs:
 
@@ -31,7 +31,7 @@ Your current job-choice branch is different. It already introduces something clo
 job = hours_bin + wage_bin + isco1 occupation + latent type_id
 ```
 
-and through a `market_opportunity` block with `beta_offer_*` parameters. But this is not yet a clean Stijn-style third layer. Sector/occupation is bundled inside the empirical job draw and then adjusted by a market-opportunity index. It is not yet a separately defined sector opportunity density with its own proposal correction and structural interpretation.
+and through a `market_opportunity` block with `beta_offer_*` parameters. But this is not yet a clean continuous-RURO third layer. Sector/occupation is bundled inside the empirical job draw and then adjusted by a market-opportunity index. It is not yet a separately defined sector opportunity density with its own proposal correction and structural interpretation.
 
 The recommended next step is to explicitly factor the opportunity model as:
 
@@ -52,13 +52,13 @@ V = U(consumption, leisure)
   - log q(employment, sector, hours, wage | X)
 ```
 
-This would be closer to Stijn's logic, but extended with your proposed sector dimension.
+This would be closer to the R reference's logic, but extended with your proposed sector dimension.
 
-## 1. What Stijn Does
+## 1. What R reference Does
 
 ### 1.1 Choice-Set Proposal
 
-In `Ruro_estimation_new.Rmd`, Stijn builds estimation choice sets using a simple proposal distribution:
+In `Ruro_estimation_new.Rmd`, R reference builds estimation choice sets using a simple proposal distribution:
 
 - Draw non-employment with probability `pi0`.
 - Otherwise draw hours uniformly on `[h_min, h_max]`.
@@ -67,9 +67,9 @@ In `Ruro_estimation_new.Rmd`, Stijn builds estimation choice sets using a simple
 
 Code references:
 
-- `stijn/Ruro_estimation_new.Rmd:126-165`: repeats each household and draws random hours/wages.
-- `stijn/Ruro_estimation_new.Rmd:166-178`: assigns fixed-wage or variable-wage alternatives.
-- `stijn/Ruro_estimation_new.Rmd:553-575`: computes the log proposal prior.
+- `ruro/Ruro_estimation_new.Rmd:126-165`: repeats each household and draws random hours/wages.
+- `ruro/Ruro_estimation_new.Rmd:166-178`: assigns fixed-wage or variable-wage alternatives.
+- `ruro/Ruro_estimation_new.Rmd:553-575`: computes the log proposal prior.
 
 For variable wages:
 
@@ -85,7 +85,7 @@ prior = log(q_hours)
 
 ### 1.2 Likelihood
 
-Stijn's likelihood is:
+the R reference's likelihood is:
 
 ```text
 P(observed choice) =
@@ -95,10 +95,10 @@ P(observed choice) =
 
 Code references:
 
-- `stijn/Ruro_estimation_new.Rmd:839-868`: likelihood.
-- `stijn/Ruro_estimation_new.Rmd:874-904`: utility.
-- `stijn/Ruro_estimation_new.Rmd:906-928`: hours/labor-time opportunity.
-- `stijn/Ruro_estimation_new.Rmd:930-956`: wage opportunity.
+- `ruro/Ruro_estimation_new.Rmd:839-868`: likelihood.
+- `ruro/Ruro_estimation_new.Rmd:874-904`: utility.
+- `ruro/Ruro_estimation_new.Rmd:906-928`: hours/labor-time opportunity.
+- `ruro/Ruro_estimation_new.Rmd:930-956`: wage opportunity.
 
 The three parts are:
 
@@ -111,7 +111,7 @@ The three parts are:
 
 ### 1.3 Simulation
 
-Stijn's simulation is also important because it shows how he uses the estimated opportunity model to generate counterfactual opportunity sets.
+the R reference's simulation is also important because it shows how he uses the estimated opportunity model to generate counterfactual opportunity sets.
 
 In `Ruro_functions_EMRWS.R`, the simulation generator:
 
@@ -122,15 +122,15 @@ In `Ruro_functions_EMRWS.R`, the simulation generator:
 
 Code references:
 
-- `stijn/Ruro_functions_EMRWS.R:365`: `f_choicesets_sim`.
-- `stijn/Ruro_functions_EMRWS.R:396-413`: hour density normalizers and focal-hour mass.
-- `stijn/Ruro_functions_EMRWS.R:419-452`: employment intensity and hours draws.
-- `stijn/Ruro_functions_EMRWS.R:461-470`: wage draws from the wage opportunity model.
+- `ruro/Ruro_functions_EMRWS.R:365`: `f_choicesets_sim`.
+- `ruro/Ruro_functions_EMRWS.R:396-413`: hour density normalizers and focal-hour mass.
+- `ruro/Ruro_functions_EMRWS.R:419-452`: employment intensity and hours draws.
+- `ruro/Ruro_functions_EMRWS.R:461-470`: wage draws from the wage opportunity model.
 
 Then `Ruro_simulation_H.Rmd` simulates choices using utility plus Gumbel shocks:
 
-- `stijn/Ruro_simulation_H.Rmd:279-354`: simulation wrapper.
-- `stijn/Ruro_simulation_H.Rmd:355-381`: predicted choice by maximum `util + gumb_draw`.
+- `ruro/Ruro_simulation_H.Rmd:279-354`: simulation wrapper.
+- `ruro/Ruro_simulation_H.Rmd:355-381`: predicted choice by maximum `util + gumb_draw`.
 
 So the structure is:
 
@@ -165,7 +165,7 @@ The main difference is empirical performance: your continuous French outputs cur
 
 ### 2.2 Job-Choice Branch
 
-Your job-choice branch is different from Stijn because it changes the object being drawn.
+Your job-choice branch is different from R reference because it changes the object being drawn.
 
 Instead of drawing continuous hours and wage independently, it builds a job universe:
 
@@ -219,9 +219,9 @@ I checked the processed French MNL files:
 
 This matters because `ISCO` is occupation, while `NACE` is sector/industry. If by "sector" you mean industry, you need to carry a NACE-like variable through the pipeline. If you are willing to use occupation as a first proxy, your current `isco1` or `loc4` variables are already available.
 
-## 3. Key Differences Between Stijn And Your Current Work
+## 3. Key Differences Between R reference And Your Current Work
 
-| Dimension | Stijn | Your continuous RURO | Your job-choice RURO |
+| Dimension | R reference | Your continuous RURO | Your job-choice RURO |
 | --- | --- | --- | --- |
 | Opportunity layers | Labor time and wage | Labor time and wage | Employment/job bundle plus market index |
 | Sector/occupation | Not modeled as separate layer | Not modeled as separate layer | ISCO/loc/type embedded in job bundle and market terms |
@@ -233,7 +233,7 @@ This matters because `ISCO` is occupation, while `NACE` is sector/industry. If b
 
 ## 4. Recommended New Model
 
-If you want to extend Stijn's approach, define the opportunity decomposition explicitly.
+If you want to extend the R reference's approach, define the opportunity decomposition explicitly.
 
 ### Singles
 
@@ -576,7 +576,7 @@ V = U
   - log q(employment, sector, hours, wage)
 ```
 
-This is more realistic for labor markets, but it increases identification pressure. You need stronger diagnostics and stronger exclusion restrictions than Stijn's two-opportunity model.
+This is more realistic for labor markets, but it increases identification pressure. You need stronger diagnostics and stronger exclusion restrictions than the R reference's two-opportunity model.
 
 ## 8. How This Differs From Your Current Job-Choice Model
 
@@ -682,5 +682,5 @@ If implemented and validated, the stronger claim would be:
 
 Before validation, use the weaker claim:
 
-> The current job-choice branch already contains an implicit occupation/job availability channel. The next methodological step is to make that channel explicit as a separate sector or occupation opportunity layer, following Stijn's additive opportunity-density logic.
+> The current job-choice branch already contains an implicit occupation/job availability channel. The next methodological step is to make that channel explicit as a separate sector or occupation opportunity layer, following the R reference's additive opportunity-density logic.
 

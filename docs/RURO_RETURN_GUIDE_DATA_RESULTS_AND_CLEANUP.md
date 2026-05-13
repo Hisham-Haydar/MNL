@@ -159,7 +159,7 @@ This is the external dataset behind the current job-choice runs.
 
 ## Goal B: Run Continuous Enhanced RURO
 
-Use this branch when comparing with Stijn's original continuous hours/wage approach.
+Use this branch when comparing with the R reference's original continuous hours/wage approach.
 
 Read:
 

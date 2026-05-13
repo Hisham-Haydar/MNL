@@ -1,4 +1,4 @@
-"""Canary checks 1-9 for M0_stijn_occ rebuild status."""
+"""Canary checks 1-9 for M0_ruro_occ rebuild status."""
 import json
 import numpy as np
 import pandas as pd
@@ -259,7 +259,7 @@ checks = [
     (1, "loc4 varies across working alts (any variation)", results.get("check1_pass")),
     (2, "median distinct loc4 per hh >= 3", results.get("check2_pass")),
     (3, "log_q_Occ exists", results.get("check3_pass")),
-    (4, "all required Stijn alias columns exist", results.get("check4_pass")),
+    (4, "all required proposal-alias columns exist", results.get("check4_pass")),
     (5, "prior > 0", results.get("check5_pass")),
     (6, "log_prior == log(prior)", results.get("check6_pass")),
     (7, "singles log_prior reconstruction", results.get("check7_pass")),
@@ -269,6 +269,6 @@ checks = [
 for n, name, ok in checks:
     print(f"  C{n}: {'PASS' if ok else 'FAIL'} — {name}")
 
-with open(r"U:/Desktop/Nizam_Hisham/MNL/Results/_canary_stijn_occ_M0_results.json", "w") as f:
+with open(r"U:/Desktop/Nizam_Hisham/MNL/Results/_canary_ruro_occ_M0_results.json", "w") as f:
     json.dump(results, f, indent=2, default=str)
 print("\nSaved results JSON.")

@@ -34,7 +34,7 @@ Main step scripts:
 
 Current continuous-RURO spec candidates:
 
-- `scripts/enhanced/estimation_spec_stijn_occ_M0.yaml` (requires occupation-draw rebuild and canary pass)
+- `scripts/enhanced/estimation_spec_ruro_occ_M0.yaml` (requires occupation-draw rebuild and canary pass)
 - `scripts/enhanced/estimation_spec_v3.yaml`
 - `scripts/enhanced/estimation_spec_v2.yaml`
 - `scripts/enhanced/estimation_spec.yaml`
@@ -64,12 +64,12 @@ Current job-choice spec candidates:
 
 ## Reference Implementation
 
-Keep Stijn's R files unchanged as reference material:
+Keep the R reference files unchanged as reference material:
 
-- `stijn/Ruro_estimation_H.Rmd`
-- `stijn/Ruro_estimation_new.Rmd`
-- `stijn/Ruro_functions_EMRWS.R`
-- `stijn/Ruro_simulation_H.Rmd`
+- `ruro/Ruro_estimation_H.Rmd`
+- `ruro/Ruro_estimation_new.Rmd`
+- `ruro/Ruro_functions_EMRWS.R`
+- `ruro/Ruro_simulation_H.Rmd`
 
 ## Diagnostics
 

@@ -1,11 +1,11 @@
-# RURO Stijn Occ M0 — Full Rebuild Report v1
+# RURO R reference Occ M0 — Full Rebuild Report v1
 
 Date: 2026-05-13 (rebuild complete — all 9 canary checks PASS)
 
 ## Status
 
 **Full rebuild complete. All 9 post-MNL canary checks PASS.** The
-France 2016 continuous MNL parquets are now in the `M0_stijn_occ` state
+France 2016 continuous MNL parquets are now in the `M0_ruro_occ` state
 with occupation drawn from the pooled empirical distribution.
 
 ### Timeline of this session
@@ -20,7 +20,7 @@ with occupation drawn from the pooled empirical distribution.
 4. Step 1 re-run: 25 s, C1 + C2 PASS (median distinct `loc4` per hh = 4.0
    for singles and both couples partners).
 5. **Pre-Step 3 archive**: old `fr_2016_RURO_mnl__{singles,couples}.parquet`
-   and `__mnlmeta.json` renamed with `__pre_stijn_occ_20260513` suffix.
+   and `__mnlmeta.json` renamed with `__pre_ruro_occ_20260513` suffix.
 6. Step 2 (EUROMOD): 2 minutes wall (much faster than the 30–90 min the
    plan budgeted — the underlying data is small).
 7. Step 3 first attempt: crashed with `KeyError: 'h_min'` —
@@ -30,11 +30,11 @@ with occupation drawn from the pooled empirical distribution.
    `scripts/enhanced/enh_RURO_prep_mnl_basic.py` (accepts nested form,
    falls back to flat for older sidecars).
 9. Step 3 re-run: 2m28s, sanity checks PASS, MNL parquets written.
-10. Final canary (`Results/_canary_stijn_occ_M0.py`): **all 9 PASS**.
+10. Final canary (`Results/_canary_ruro_occ_M0.py`): **all 9 PASS**.
 
 The user's instruction was conditional: *"If the canary passed, run the full
 France 2016 rebuild."* Per
-`Results/RURO_stijn_occ_M0_rebuild_canary_report_v1.md` the canary headline
+`Results/RURO_ruro_occ_M0_rebuild_canary_report_v1.md` the canary headline
 is **7 of 9 checks FAIL** on the current pre-rebuild parquet files. Those
 failures are exactly the *expected* pre-rebuild state — they confirm the
 rebuild is needed — but they do not constitute "the canary passed". The
@@ -324,15 +324,15 @@ Warnings:
 
 ```bash
 mv fr_2016_RURO_mnl__singles.parquet \
-   fr_2016_RURO_mnl__singles__pre_stijn_occ_20260513.parquet
+   fr_2016_RURO_mnl__singles__pre_ruro_occ_20260513.parquet
 mv fr_2016_RURO_mnl__couples.parquet \
-   fr_2016_RURO_mnl__couples__pre_stijn_occ_20260513.parquet
+   fr_2016_RURO_mnl__couples__pre_ruro_occ_20260513.parquet
 mv fr_2016_RURO_mnl__mnlmeta.json \
-   fr_2016_RURO_mnl__mnlmeta__pre_stijn_occ_20260513.json
+   fr_2016_RURO_mnl__mnlmeta__pre_ruro_occ_20260513.json
 ```
 
 The old files (from 2026-02-05) are retained under
-`__pre_stijn_occ_20260513` so they remain available for diff/inspection.
+`__pre_ruro_occ_20260513` so they remain available for diff/inspection.
 
 **First attempt failed** with `KeyError: 'h_min'` because the drawsmeta
 reader expected flat keys but the writer puts them under
@@ -377,10 +377,10 @@ For couples, the working filter is per partner: 231,647 rows with
 
 **Column-filter outcome**:
 
-- singles: 962 → 75 cols (92.2 % reduction). All required Stijn aliases
+- singles: 962 → 75 cols (92.2 % reduction). All required R reference aliases
   (`log_q_E`, `log_q_H`, `log_q_W`, `log_q_Occ`) and `loc4` retained.
 - couples: 1468 → 93 cols (93.7 % reduction). `working_{male,female}` and
-  the four gendered Stijn aliases retained (per the earlier keep-set
+  the four gendered R reference aliases retained (per the earlier keep-set
   fix). M0-forbidden columns (`lindi`, `industry`, `nace`, `log_q_job`,
   `log_q_total`, `log_q_state`, `job_id`, `type_id`, `hours_bin`,
   `wage_bin`) confirmed absent — `raw/forbidden cols present: []` for
@@ -396,7 +396,7 @@ For couples, the working filter is per partner: 231,647 rows with
 ## Commands queued (not yet executed)
 
 These are the exact commands from
-`docs/RURO_stijn_occ_M0_rebuild_command_plan_v1.md` that will fire on
+`docs/RURO_ruro_occ_M0_rebuild_command_plan_v1.md` that will fire on
 authorisation.
 
 ### Notation
@@ -415,9 +415,9 @@ $PROJ      = "U:/Desktop/Nizam_Hisham/MNL"
 
 ```powershell
 Rename-Item "$DATA/singles_RURO_ready_RURO_draws.parquet" `
-            "$DATA/singles_RURO_ready_RURO_draws__pre_stijn_occ.parquet"
+            "$DATA/singles_RURO_ready_RURO_draws__pre_ruro_occ.parquet"
 Rename-Item "$DATA/couples_RURO_ready_RURO_draws.parquet" `
-            "$DATA/couples_RURO_ready_RURO_draws__pre_stijn_occ.parquet"
+            "$DATA/couples_RURO_ready_RURO_draws__pre_ruro_occ.parquet"
 ```
 
 ### Step 1 — draws
@@ -468,7 +468,7 @@ Rename-Item "$DATA/couples_RURO_ready_RURO_draws.parquet" `
 ### Post-rebuild verification
 
 ```powershell
-& $PY "$PROJ/Results/_canary_stijn_occ_M0.py"
+& $PY "$PROJ/Results/_canary_ruro_occ_M0.py"
 ```
 
 Expected: all 9 checks PASS (currently 7 FAIL on the old files).
@@ -537,21 +537,21 @@ does not change.
 
 ## Final canary (C1–C9) on rebuilt MNL files
 
-Ran `Results/_canary_stijn_occ_M0.py` on the new MNL parquets:
+Ran `Results/_canary_ruro_occ_M0.py` on the new MNL parquets:
 
 | # | Check | Status | Detail |
 | --- | --- | --- | --- |
 | 1 | `loc4` varies across working alts | **PASS** | singles median = 4.0 (max 5), couples-male 4.0 (max 5), couples-female 4.0 (max 5). Zero households with only 1 distinct `loc4`. |
 | 2 | Median distinct `loc4` per hh ≥ 3 | **PASS** | all medians = 4.0. |
 | 3 | `log_q_Occ` exists | **PASS** | singles + both couples partners. |
-| 4 | All required Stijn alias columns exist | **PASS** | `log_q_{E,H,W,Occ}` (singles); `_male` / `_female` analogues (couples). No missing. |
+| 4 | All required proposal-alias columns exist | **PASS** | `log_q_{E,H,W,Occ}` (singles); `_male` / `_female` analogues (couples). No missing. |
 | 5 | `prior > 0` | **PASS** | singles min = 7.819e-06, couples min = 6.290e-11; no zeros, no NaNs. |
 | 6 | `log_prior == log(prior)` | **PASS** | max diff = 0.0 on both files (167,600 + 257,700 rows). |
 | 7 | Singles `log_prior` reconstruction | **PASS** | max\|`log_prior − recon`\| = 0.0. |
 | 8 | Couples `log_prior` reconstruction (male + female) | **PASS** | max\|`log_prior − recon`\| = 0.0 using `working_male` / `working_female`. |
 | 9 | Non-work alts gate off `log_q_Occ` | **PASS** | singles 16,813 non-work rows: all `log_q_Occ = 0`, all `loc4 = -1`. Couples-male 26,053 non-work: all gated. Couples-female 25,693 non-work: all gated. |
 
-Saved details: `Results/_canary_stijn_occ_M0_results.json`.
+Saved details: `Results/_canary_ruro_occ_M0_results.json`.
 
 ### `loc4 = -2` observed-row convention
 
@@ -582,7 +582,7 @@ working alternatives contain valid `loc4` draws in `{1, 2, 3, 4}`.
 | Net Step 1 + 2 + 3 runtime (final, clean) | 25 s + 2 min + 2 m 28 s ≈ **5 m** |
 | Code patches landed today | 2 (sampler in `enh_RURO_draws.py`, drawsmeta reader in `enh_RURO_prep_mnl_basic.py`) |
 | Code patch landed earlier today | gendered `working_{male,female}` indicators added to the MNL keep set (essential for C8 / C9 on couples) |
-| Old MNL files | archived as `__pre_stijn_occ_20260513.*` |
+| Old MNL files | archived as `__pre_ruro_occ_20260513.*` |
 | Draws files | regenerated (timestamp 10:24) |
 | EUROMOD scenario file | newly created (`$SCEN/combined_draws_em.parquet`, 488 MB) |
 | Final MNL singles | 167,600 rows × 75 cols, 1,676 hh × 100 alts |
@@ -604,11 +604,11 @@ Estimation is **not** run per instruction.
 | MNL singles (new) | `Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__singles.parquet` |
 | MNL couples (new) | `Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__couples.parquet` |
 | MNL mnlmeta (new) | `Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__mnlmeta.json` |
-| MNL singles (archived) | `..._RURO_mnl__singles__pre_stijn_occ_20260513.parquet` |
-| MNL couples (archived) | `..._RURO_mnl__couples__pre_stijn_occ_20260513.parquet` |
-| MNL mnlmeta (archived) | `..._RURO_mnl__mnlmeta__pre_stijn_occ_20260513.json` |
+| MNL singles (archived) | `..._RURO_mnl__singles__pre_ruro_occ_20260513.parquet` |
+| MNL couples (archived) | `..._RURO_mnl__couples__pre_ruro_occ_20260513.parquet` |
+| MNL mnlmeta (archived) | `..._RURO_mnl__mnlmeta__pre_ruro_occ_20260513.json` |
 | Step 2 log | `Results/_step2_euromod.log` |
 | Step 3 log | `Results/_step3_mnl_prep.log` |
-| Canary script | `Results/_canary_stijn_occ_M0.py` |
-| Canary JSON | `Results/_canary_stijn_occ_M0_results.json` |
-| This report | `Results/RURO_stijn_occ_M0_full_rebuild_report_v1.md` |
+| Canary script | `Results/_canary_ruro_occ_M0.py` |
+| Canary JSON | `Results/_canary_ruro_occ_M0_results.json` |
+| This report | `Results/RURO_ruro_occ_M0_full_rebuild_report_v1.md` |

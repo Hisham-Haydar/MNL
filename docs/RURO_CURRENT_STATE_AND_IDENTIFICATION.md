@@ -8,7 +8,7 @@ Scope: workspace at `\\crc\users\hisham\Desktop\Nizam_Hisham\MNL`, with processe
 
 The code can estimate separate RURO parameter blocks for preferences and opportunities. The empirical French evidence does not yet support the stronger claim that preferences and opportunities are separately identified in a reliable structural sense for the continuous RURO model.
 
-The best current empirical candidate is the newer job-choice RURO branch, especially `estimation_spec_job_M2h_pruned`. That branch has a much healthier Hessian than the continuous French specs and applies the proposal/prior correction correctly. However, it is a pruned job-market opportunity model, not a full validation of Stijn's continuous hours/wage RURO opportunity model, and one preference curvature parameter is effectively fixed.
+The best current empirical candidate is the newer job-choice RURO branch, especially `estimation_spec_job_M2h_pruned`. That branch has a much healthier Hessian than the continuous French specs and applies the proposal/prior correction correctly. However, it is a pruned job-market opportunity model, not a full validation of the R reference's continuous hours/wage RURO opportunity model, and one preference curvature parameter is effectively fixed.
 
 Therefore the safest statement today is:
 
@@ -73,7 +73,7 @@ The job-choice pruned model is materially better. Its result summary records:
 - Hessian condition number about `1.28e6`
 - `n_negative_eigenvalues = 0`
 
-But this still needs to be described carefully. It supports a provisional separation between preferences and a centered job-market opportunity index. It does not yet prove the full continuous RURO separation used in Stijn's simulation.
+But this still needs to be described carefully. It supports a provisional separation between preferences and a centered job-market opportunity index. It does not yet prove the full continuous RURO separation used in the R reference's simulation.
 
 ## Important Prior Convention Issue
 
@@ -121,13 +121,13 @@ Claims to avoid for now:
 
 - "Preferences and opportunities are separately identified on the French data."
 - "The continuous RURO model is production-ready for structural interpretation."
-- "The job-choice opportunity estimates are directly comparable to Stijn's continuous hours/wage opportunity DGP."
+- "The job-choice opportunity estimates are directly comparable to the R reference's continuous hours/wage opportunity DGP."
 
 ## Minimum Next Steps
 
 1. Fix the continuous fallback prior convention in `enh_RURO_prep_mnl_basic.py`.
 2. Add tests that enforce `prior > 0` and `max(abs(log_prior - log(prior)))` near zero for every MNL output file.
-3. Run a Stijn-style simulation recovery test on French-shaped data with known preference and opportunity parameters.
+3. Run a continuous-RURO simulation recovery test on French-shaped data with known preference and opportunity parameters.
 4. Strengthen exclusion restrictions so some variables affect opportunity only and others affect preferences only.
 5. Re-estimate a simpler continuous RURO spec before adding interactions.
 6. Treat `estimation_spec_job_M2h_pruned` as the current empirical baseline, not as final proof.

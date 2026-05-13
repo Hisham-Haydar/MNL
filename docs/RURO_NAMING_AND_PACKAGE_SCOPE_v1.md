@@ -3,7 +3,7 @@
 ## Purpose
 
 The package-facing terminology should describe the model as RURO, not as a
-person-specific style. Earlier development files used `stijn_occ` as a working
+person-specific style. Earlier development files used `ruro_occ` as a working
 label because the continuous branch was compared against an existing RURO
 reference implementation. That label should not be treated as the name of the
 method.
@@ -18,12 +18,12 @@ docs/ACKNOWLEDGEMENTS.md
 
 | Avoid in package-facing text | Use instead |
 | --- | --- |
-| Stijn-style baseline | continuous RURO baseline |
-| Stijn occupation M0 | RURO occupation-opportunity M0 |
-| Stijn proposal aliases | proposal-component aliases |
-| Stijn prior correction | proposal-density correction |
-| Stijn log_q aliases | layered proposal components |
-| Stijn-style enhanced branch | enhanced continuous RURO branch |
+| continuous-RURO baseline | continuous RURO baseline |
+| RURO occupation-opportunity M0 | RURO occupation-opportunity M0 |
+| proposal-component aliases | proposal-component aliases |
+| proposal-density correction | proposal-density correction |
+| layered proposal components | layered proposal components |
+| enhanced continuous RURO branch | enhanced continuous RURO branch |
 
 ## Active Specification Name
 
@@ -36,7 +36,7 @@ scripts/enhanced/estimation_spec_ruro_occ_M0.yaml
 The older file
 
 ```text
-scripts/enhanced/estimation_spec_stijn_occ_M0.yaml
+scripts/enhanced/estimation_spec_ruro_occ_M0.yaml
 ```
 
 is retained only as a compatibility/provenance artifact for completed runs and
@@ -59,5 +59,5 @@ This describes the model object without tying it to a person-specific label.
 ## Archival References
 
 References to older comparison material, historical notes, and completed run
-folders may still contain `stijn` in filenames. Do not rewrite those blindly:
+folders may still contain `ruro` in filenames. Do not rewrite those blindly:
 they are provenance labels, not the package API.

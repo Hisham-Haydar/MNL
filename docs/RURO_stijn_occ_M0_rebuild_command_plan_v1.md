@@ -1,4 +1,4 @@
-# RURO Stijn Occ M0 — MNL Rebuild Command Plan v1
+# RURO R reference Occ M0 — MNL Rebuild Command Plan v1
 
 Date: 2026-05-12 (revised)
 
@@ -20,7 +20,7 @@ deciders into a single pooled stratum. This samples occupation from the
 pooled empirical marginal — the M0 contract: one pooled `q_Occ`, no stratum
 interactions.
 
-**Occupation column requirement**: The MNL spec (`stijn_occ_M0`) expects
+**Occupation column requirement**: The MNL spec (`ruro_occ_M0`) expects
 `loc4` in the final parquet. `enh_RURO_draws.py` calls `_infer_occ_col`,
 which prefers `loc4` → `loc_ruro` → `loc`. **If the RURO-ready file does not
 contain `loc4`, the rebuild cannot proceed as-is** — a pre-step that creates
@@ -43,7 +43,7 @@ $GSUR        = "U:/Desktop/Nizam_Hisham/MNL/Data/external/FR_gsur_ruro.parquet"
 $PROJ        = "U:/Desktop/Nizam_Hisham/MNL"
 ```
 
-Use a dedicated scenario directory (`stijn_occ/scenarios`) so this rebuild
+Use a dedicated scenario directory (`ruro_occ/scenarios`) so this rebuild
 does not overwrite the `combined_draws_em.parquet` used by the existing job
 model or current continuous MNL.
 
@@ -96,9 +96,9 @@ needed by other pipelines:
 
 ```powershell
 Rename-Item "$DATA/singles_RURO_ready_RURO_draws.parquet" `
-            "$DATA/singles_RURO_ready_RURO_draws__pre_stijn_occ.parquet"
+            "$DATA/singles_RURO_ready_RURO_draws__pre_ruro_occ.parquet"
 Rename-Item "$DATA/couples_RURO_ready_RURO_draws.parquet" `
-            "$DATA/couples_RURO_ready_RURO_draws__pre_stijn_occ.parquet"
+            "$DATA/couples_RURO_ready_RURO_draws__pre_ruro_occ.parquet"
 ```
 
 Run draws:
@@ -267,7 +267,7 @@ If Step 2b was skipped, replace `$SCEN_RED` with `$SCEN`.
   `h_min/max`, `w_min/max`, `wage_spec`, and `occ_spec` so MNL prep
   computes priors that exactly match the draw distribution.
 - No `--no-column-filter`: the default column filter is active. MNL prep
-  computes the frozen Stijn aliases (`log_q_E`, `log_q_H`, `log_q_W`,
+  computes the frozen R reference aliases (`log_q_E`, `log_q_H`, `log_q_W`,
   `log_q_Occ`) from the raw draw-layer components (`log_q_state`,
   `log_q_hours`, `log_q_wage`, `log_q_occ`) and keeps only the aliases in
   the final parquet — the raw layer columns are dropped. Also kept: `loc4`.
@@ -319,7 +319,7 @@ for partner in ["male", "female"]:
 - Singles: median distinct `loc4` per `idhh` ≥ 3.
 - Couples male: median distinct `loc4_male` per `idhh` ≥ 3.
 - Couples female: median distinct `loc4_female` per `idhh` ≥ 3.
-- All Stijn alias columns present for singles (`log_q_E/H/W/Occ`) and for
+- All proposal-alias columns present for singles (`log_q_E/H/W/Occ`) and for
   each partner (`log_q_E_male`, `log_q_H_male`, `log_q_W_male`,
   `log_q_Occ_male`, and the `_female` equivalents).
 
@@ -412,7 +412,7 @@ Run in order; stop on the first failure before proceeding.
 | C0 — pre-flight | Before Step 1 | Both RURO-ready files load; occ col found; ≥ 3 distinct values in working subsample |
 | C1 — post-draw | After Step 1, before Step 2 | `log_q_occ` present; median distinct occ per household ≥ 2 in simulated working draws |
 | C2 — drawsmeta | After Step 1, before Step 2 | `occ_spec: empirical`, `occ_strata: ['__all__']` |
-| C3 — Gate-A | After Step 3 | Median distinct `loc4` (and `loc4_male`/`loc4_female`) per household ≥ 3; all Stijn aliases present |
+| C3 — Gate-A | After Step 3 | Median distinct `loc4` (and `loc4_male`/`loc4_female`) per household ≥ 3; all R reference aliases present |
 | C4 — prior | After Step 3 | Max \|log_prior − reconstructed\| < 1e-9 |
 
 ---
@@ -424,11 +424,11 @@ Do not run until all canaries (C0–C4) pass.
 ```powershell
 & $PY "$PROJ/scripts/enhanced/enh_RURO_estimate_FR.py" `
   --mnl-base "$DATA/fr_2016_RURO_mnl" `
-  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/stijn_occ/gamspy" `
+  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/ruro_occ/gamspy" `
   --group joint `
   --solver gamspy-conopt `
   --vectorized `
-  --spec-config "scripts/enhanced/estimation_spec_stijn_occ_M0.yaml" `
+  --spec-config "scripts/enhanced/estimation_spec_ruro_occ_M0.yaml" `
   --auto-timestamp `
   --verbose
 ```

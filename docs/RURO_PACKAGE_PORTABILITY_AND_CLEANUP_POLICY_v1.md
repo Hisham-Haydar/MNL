@@ -168,7 +168,7 @@ prior
 log_prior
 ```
 
-For the Stijn occupation baseline:
+For the RURO occupation-opportunity baseline:
 
 ```text
 loc4
@@ -279,7 +279,7 @@ if target exists and target is not a run-specific timestamped output:
 Example archive naming:
 
 ```text
-fr_2016_RURO_mnl__singles__archived_YYYYMMDD_HHMMSS__before_stijn_occ.parquet
+fr_2016_RURO_mnl__singles__archived_YYYYMMDD_HHMMSS__before_ruro_occ.parquet
 ```
 
 Every archive action should record:
@@ -357,7 +357,7 @@ Short-term:
 
 - keep `scripts/enhanced/` and `scripts/Job_model/` as production;
 - document every active command and validation gate;
-- keep Stijn M0 rebuild commands and canaries current;
+- keep R reference M0 rebuild commands and canaries current;
 - keep cleanup archive-first and manifest-based.
 
 Medium-term:

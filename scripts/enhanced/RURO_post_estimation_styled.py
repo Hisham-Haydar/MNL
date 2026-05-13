@@ -1919,7 +1919,7 @@ def _shifter_symbolic_term(shifter: Dict[str, Any]) -> str:
     for ix in (shifter.get("interaction") or []):
         if ix:
             parts.append(str(ix))
-    return " · ".join(parts)
+    return " * ".join(parts)
 
 
 def _shifter_numerical_term(shifter: Dict[str, Any], value: Any) -> str:
@@ -1929,7 +1929,7 @@ def _shifter_numerical_term(shifter: Dict[str, Any], value: Any) -> str:
     for ix in (shifter.get("interaction") or []):
         if ix:
             parts.append(str(ix))
-    return " · ".join(parts)
+    return " * ".join(parts)
 
 
 def _pick_value_for_group(
@@ -5760,14 +5760,41 @@ def _md_clean(value: Any) -> str:
         "β": "beta",
         "θ": "theta",
         "σ": "sigma",
+        "κ": "kappa",
+        "μ": "mu",
+        "ε": "eps",
+        "Σ": "sum",
+        "·": "*",
+        "✓": "yes",
+        "✗": "no",
+        "≤": "<=",
+        "≥": ">=",
+        "−": "-",
+        "—": "-",
+        "→": "->",
+        "Δ": "delta",
+        "β": "beta",
+        "θ": "theta",
+        "σ": "sigma",
         "✓": "yes",
         "✗": "no",
         "Î²": "beta",
         "Î¸": "theta",
         "Ïƒ": "sigma",
+        "Îº": "kappa",
+        "Î¼": "mu",
+        "Îµ": "eps",
+        "Î£": "sum",
+        "Â·": "*",
         "Â·": "*",
         "âœ“": "yes",
         "âœ—": "no",
+        "â‰¤": "<=",
+        "â‰¥": ">=",
+        "âˆ’": "-",
+        "â€”": "-",
+        "â†’": "->",
+        "Î”": "delta",
         "â‰¤": "<=",
         "â‰¥": ">=",
         "âˆ’": "-",
@@ -5877,6 +5904,367 @@ def _muc_beta_theta_values(row: Dict[str, Any]) -> Tuple[Any, Any]:
     return beta_c, theta_c
 
 
+def _utility_parameter_rows(parsed_params: ParsedParameters) -> List[List[Any]]:
+    """Compact numerical summary of utility/preference equations by group."""
+    rows = []
+    for group in sorted(set(parsed_params.preference_groups or [])):
+        params = parsed_params.get_all_params_for_group(group)
+        beta_l_terms = []
+        for key, value in sorted(params.items()):
+            if not key.startswith("beta_l"):
+                continue
+            if key == "beta_l0" or "." in key:
+                continue
+            beta_l_terms.append(f"{key}={_md_clean(value)}")
+        rows.append([
+            group,
+            params.get("beta_c"),
+            params.get("theta_c"),
+            params.get("beta_l0"),
+            "; ".join(beta_l_terms) if beta_l_terms else "none",
+            params.get("theta_l"),
+            params.get("beta_cl"),
+        ])
+    return rows
+
+
+def _safe_read_parquet(path: Path) -> Optional[pd.DataFrame]:
+    """Read a parquet file, returning None if it is absent or unreadable."""
+    try:
+        return pd.read_parquet(path) if path.exists() else None
+    except Exception as exc:  # noqa: BLE001
+        LOGGER.warning(f"Could not read {path}: {exc}")
+        return None
+
+
+def _working_mask_for_cols(df: pd.DataFrame, work_col: str, hours_col: str) -> pd.Series:
+    """Prefer an explicit working indicator, fallback to hours > 0."""
+    if work_col in df.columns:
+        return pd.to_numeric(df[work_col], errors="coerce").fillna(0) > 0
+    if hours_col in df.columns:
+        return pd.to_numeric(df[hours_col], errors="coerce").fillna(0) > 0
+    return pd.Series(False, index=df.index)
+
+
+def _choice_data_footprint_rows(mnl_base: Optional[Path]) -> List[List[Any]]:
+    """Summarize rows, groups, alternatives, chosen rows, and working rows."""
+    if mnl_base is None:
+        return []
+    base = Path(mnl_base)
+    rows = []
+    for dataset, path in [
+        ("singles", Path(str(base) + "__singles.parquet")),
+        ("couples", Path(str(base) + "__couples.parquet")),
+    ]:
+        df = _safe_read_parquet(path)
+        if df is None or len(df) == 0:
+            continue
+        alt_counts = df.groupby("idhh").size() if "idhh" in df.columns else pd.Series(dtype=float)
+        chosen_col = "is_chosen" if "is_chosen" in df.columns else ("chosen" if "chosen" in df.columns else None)
+        chosen_rows = int(pd.to_numeric(df[chosen_col], errors="coerce").fillna(0).sum()) if chosen_col else None
+        if dataset == "singles":
+            working = int(_working_mask_for_cols(df, "working", "hours").sum())
+        else:
+            wm = int(_working_mask_for_cols(df, "working_male", "hours_male").sum())
+            wf = int(_working_mask_for_cols(df, "working_female", "hours_female").sum())
+            working = f"male={wm}; female={wf}"
+        rows.append([
+            dataset,
+            len(df),
+            df["idhh"].nunique() if "idhh" in df.columns else None,
+            alt_counts.min() if len(alt_counts) else None,
+            alt_counts.median() if len(alt_counts) else None,
+            alt_counts.max() if len(alt_counts) else None,
+            chosen_rows,
+            working,
+            len(df.columns),
+        ])
+    return rows
+
+
+def _proposal_prior_diagnostic_rows(mnl_base: Optional[Path]) -> List[List[Any]]:
+    """Check proposal aliases, prior positivity, and prior reconstruction."""
+    if mnl_base is None:
+        return []
+    base = Path(mnl_base)
+    rows = []
+    forbidden = {"lindi", "industry", "nace", "job_id", "type_id", "log_q_job", "log_q_total", "log_q_state"}
+
+    def _max_abs(series: pd.Series) -> Optional[float]:
+        if series is None or len(series) == 0:
+            return None
+        return float(pd.to_numeric(series, errors="coerce").abs().max())
+
+    for dataset, path in [
+        ("singles", Path(str(base) + "__singles.parquet")),
+        ("couples", Path(str(base) + "__couples.parquet")),
+    ]:
+        df = _safe_read_parquet(path)
+        if df is None or len(df) == 0:
+            continue
+        present_forbidden = ", ".join(sorted(forbidden & set(df.columns))) or "none"
+        prior_min = float(pd.to_numeric(df["prior"], errors="coerce").min()) if "prior" in df.columns else None
+        log_prior_diff = None
+        if "prior" in df.columns and "log_prior" in df.columns:
+            log_prior_diff = _max_abs(df["log_prior"] - np.log(np.maximum(pd.to_numeric(df["prior"], errors="coerce"), 1e-300)))
+
+        recon_diff = None
+        missing_aliases: List[str] = []
+        if dataset == "singles":
+            needed = ["log_q_E", "log_q_H", "log_q_W", "log_q_Occ"]
+            missing_aliases = [c for c in needed if c not in df.columns]
+            if not missing_aliases and "log_prior" in df.columns:
+                working = _working_mask_for_cols(df, "working", "hours").astype(float)
+                recon = df["log_q_E"] + working * (df["log_q_H"] + df["log_q_W"] + df["log_q_Occ"])
+                recon_diff = _max_abs(df["log_prior"] - recon)
+        else:
+            needed = [
+                "log_q_E_male", "log_q_H_male", "log_q_W_male", "log_q_Occ_male",
+                "log_q_E_female", "log_q_H_female", "log_q_W_female", "log_q_Occ_female",
+            ]
+            missing_aliases = [c for c in needed if c not in df.columns]
+            if not missing_aliases and "log_prior" in df.columns:
+                wm = _working_mask_for_cols(df, "working_male", "hours_male").astype(float)
+                wf = _working_mask_for_cols(df, "working_female", "hours_female").astype(float)
+                recon = (
+                    df["log_q_E_male"] + wm * (df["log_q_H_male"] + df["log_q_W_male"] + df["log_q_Occ_male"])
+                    + df["log_q_E_female"] + wf * (df["log_q_H_female"] + df["log_q_W_female"] + df["log_q_Occ_female"])
+                )
+                recon_diff = _max_abs(df["log_prior"] - recon)
+        rows.append([
+            dataset,
+            prior_min,
+            log_prior_diff,
+            recon_diff,
+            ", ".join(missing_aliases) if missing_aliases else "none",
+            present_forbidden,
+        ])
+    return rows
+
+
+def _weighted_quantile(values: np.ndarray, weights: np.ndarray, qs: List[float]) -> List[Optional[float]]:
+    """Compute weighted quantiles for finite values and positive weights."""
+    values = np.asarray(values, dtype=float)
+    weights = np.asarray(weights, dtype=float)
+    mask = np.isfinite(values) & np.isfinite(weights) & (weights > 0)
+    if not mask.any():
+        return [None for _ in qs]
+    values = values[mask]
+    weights = weights[mask]
+    order = np.argsort(values)
+    values = values[order]
+    weights = weights[order]
+    cdf = np.cumsum(weights) / np.sum(weights)
+    return [float(np.interp(q, cdf, values)) for q in qs]
+
+
+def _weighted_mean(values: np.ndarray, weights: np.ndarray) -> Optional[float]:
+    values = np.asarray(values, dtype=float)
+    weights = np.asarray(weights, dtype=float)
+    mask = np.isfinite(values) & np.isfinite(weights) & (weights > 0)
+    if not mask.any():
+        return None
+    return float(np.average(values[mask], weights=weights[mask]))
+
+
+def _prediction_frames(
+    parsed_params: ParsedParameters,
+    mnl_base: Optional[Path],
+    spec: Optional[Any],
+) -> List[Tuple[str, pd.DataFrame, str, str, Optional[str]]]:
+    """Build group-level frames with predicted probabilities for summaries."""
+    if mnl_base is None:
+        return []
+    base = Path(mnl_base)
+    out: List[Tuple[str, pd.DataFrame, str, str, Optional[str]]] = []
+    singles = _safe_read_parquet(Path(str(base) + "__singles.parquet"))
+    couples = _safe_read_parquet(Path(str(base) + "__couples.parquet"))
+
+    if singles is not None and len(singles):
+        gender_col = "dgn" if "dgn" in singles.columns else "gender"
+        for gender_code, group_key, label in [(1, "sm", "singles_male"), (0, "sf", "singles_female")]:
+            df_g = singles[singles[gender_col] == gender_code].copy()
+            if len(df_g) == 0:
+                continue
+            params = None
+            for try_key in [group_key, group_key.upper(), "joint"]:
+                if try_key in parsed_params.params_by_group:
+                    params = parsed_params.get_all_params_for_group(try_key)
+                    break
+            if params:
+                df_g = _add_predicted_probabilities(df_g, params, spec=spec, is_couples=False, group_suffix=f"_{group_key}")
+                out.append((label, df_g, "wage", "hours", "loc4" if "loc4" in df_g.columns else None))
+
+    if couples is not None and len(couples):
+        params = None
+        for try_key in ["joint", "cou", "couples", "m"]:
+            if try_key in parsed_params.params_by_group:
+                params = parsed_params.get_all_params_for_group(try_key)
+                break
+        if params:
+            df_c = _add_predicted_probabilities(couples, params, spec=spec, is_couples=True)
+            out.append(("couples_male", df_c, "wage_male", "hours_male", "loc4_male" if "loc4_male" in df_c.columns else None))
+            out.append(("couples_female", df_c, "wage_female", "hours_female", "loc4_female" if "loc4_female" in df_c.columns else None))
+    return out
+
+
+def _wage_distribution_summary_rows(
+    parsed_params: ParsedParameters,
+    mnl_base: Optional[Path],
+    spec: Optional[Any],
+) -> List[List[Any]]:
+    """Observed and predicted wage quantiles by group, text-only."""
+    rows = []
+    for label, df, wage_col, hours_col, _ in _prediction_frames(parsed_params, mnl_base, spec):
+        if wage_col not in df.columns or hours_col not in df.columns:
+            continue
+        chosen_col = "is_chosen" if "is_chosen" in df.columns else ("chosen" if "chosen" in df.columns else None)
+        if not chosen_col:
+            continue
+        work = pd.to_numeric(df[hours_col], errors="coerce").fillna(0) > 0
+        obs = pd.to_numeric(df.loc[work & (df[chosen_col] == 1), wage_col], errors="coerce").dropna().to_numpy()
+        pred_values = pd.to_numeric(df.loc[work, wage_col], errors="coerce").to_numpy()
+        pred_weights = pd.to_numeric(df.loc[work, "pred_prob"], errors="coerce").fillna(0).to_numpy()
+        pred_q10, pred_q50, pred_q90 = _weighted_quantile(pred_values, pred_weights, [0.10, 0.50, 0.90])
+        obs_q10, obs_q50, obs_q90 = (
+            [float(np.nanquantile(obs, q)) for q in [0.10, 0.50, 0.90]]
+            if obs.size else [None, None, None]
+        )
+        rows.append([
+            label,
+            int(obs.size),
+            float(np.sum(pred_weights)) if pred_weights.size else None,
+            float(np.nanmean(obs)) if obs.size else None,
+            _weighted_mean(pred_values, pred_weights),
+            obs_q10,
+            obs_q50,
+            obs_q90,
+            pred_q10,
+            pred_q50,
+            pred_q90,
+        ])
+    return rows
+
+
+def _loc4_label(value: Any) -> str:
+    mapping = {
+        -2: "unknown_observed_working",
+        -1: "nonwork",
+        1: "routine_manual_ref",
+        2: "nonroutine_manual",
+        3: "routine_cognitive",
+        4: "nonroutine_cognitive",
+    }
+    try:
+        key = int(value)
+    except (TypeError, ValueError):
+        return str(value)
+    return mapping.get(key, str(key))
+
+
+def _occupation_share_rows(
+    parsed_params: ParsedParameters,
+    mnl_base: Optional[Path],
+    spec: Optional[Any],
+) -> List[List[Any]]:
+    """Observed vs predicted occupation shares when loc4-style columns exist."""
+    rows = []
+    for label, df, _, hours_col, occ_col in _prediction_frames(parsed_params, mnl_base, spec):
+        if not occ_col or occ_col not in df.columns or hours_col not in df.columns:
+            continue
+        chosen_col = "is_chosen" if "is_chosen" in df.columns else ("chosen" if "chosen" in df.columns else None)
+        if not chosen_col:
+            continue
+        work = pd.to_numeric(df[hours_col], errors="coerce").fillna(0) > 0
+        obs_counts = df.loc[work & (df[chosen_col] == 1), occ_col].value_counts(dropna=False)
+        pred_weights = df.loc[work].groupby(occ_col)["pred_prob"].sum()
+        obs_total = float(obs_counts.sum())
+        pred_total = float(pred_weights.sum())
+        categories = sorted(
+            set(obs_counts.index.tolist()) | set(pred_weights.index.tolist()),
+            key=lambda x: (pd.isna(x), str(x)),
+        )
+        for cat in categories:
+            obs_count = float(obs_counts.get(cat, 0.0))
+            pred_weight = float(pred_weights.get(cat, 0.0))
+            rows.append([
+                label,
+                occ_col,
+                cat,
+                _loc4_label(cat),
+                obs_count / obs_total if obs_total else None,
+                pred_weight / pred_total if pred_total else None,
+                obs_count,
+                pred_weight,
+            ])
+    return rows
+
+
+def _marginal_utility_distribution_rows(mu_results: Dict[str, Any]) -> List[List[Any]]:
+    """Summarize negative and mean MUC/MUL by group."""
+    rows = []
+    for group, vals in sorted((mu_results or {}).get("by_group", {}).items()):
+        rows.append([
+            group,
+            vals.get("N"),
+            vals.get("n_neg_muc"),
+            vals.get("pct_neg_muc"),
+            vals.get("mean_muc"),
+            vals.get("n_neg_mul"),
+            vals.get("pct_neg_mul"),
+            vals.get("mean_mul"),
+        ])
+    totals = (mu_results or {}).get("totals") or {}
+    if totals:
+        rows.append([
+            "total",
+            None,
+            totals.get("n_negative_muc_total"),
+            totals.get("pct_negative_muc_total"),
+            None,
+            totals.get("n_negative_mul_total"),
+            totals.get("pct_negative_mul_total"),
+            None,
+        ])
+    return rows
+
+
+def _warning_rows(
+    fit_results: Dict[str, Dict[str, Any]],
+    hessian_interp: Optional[str],
+    hessian_diagnostics: Optional[Dict[str, Any]],
+    probability_rows: List[List[Any]],
+    prior_rows: List[List[Any]],
+) -> List[List[Any]]:
+    """Collect compact warnings that are useful in an LLM memory artifact."""
+    rows: List[List[Any]] = []
+    if hessian_interp:
+        rows.append(["identification", hessian_interp])
+    for group, vals in sorted((fit_results or {}).items()):
+        pred_part = vals.get("participation_predicted")
+        if pred_part is not None and np.isfinite(pred_part) and float(pred_part) >= 0.99:
+            rows.append(["fit", f"{group}: predicted participation is very high ({float(pred_part):.4f})"])
+    p_min = None
+    for key, value in probability_rows:
+        if key == "p_chosen_min":
+            p_min = value
+    if p_min is not None and float(p_min) < 1e-6:
+        rows.append(["probability", f"minimum chosen probability is very small ({float(p_min):.3e})"])
+    for dataset, _, log_diff, recon_diff, missing, forbidden in prior_rows:
+        if missing != "none":
+            rows.append(["proposal", f"{dataset}: missing aliases {missing}"])
+        if forbidden != "none":
+            rows.append(["proposal", f"{dataset}: forbidden diagnostic columns present: {forbidden}"])
+        if log_diff is not None and float(log_diff) > 1e-8:
+            rows.append(["proposal", f"{dataset}: log_prior != log(prior), max diff {float(log_diff):.3e}"])
+        if recon_diff is not None and float(recon_diff) > 1e-8:
+            rows.append(["proposal", f"{dataset}: prior alias reconstruction max diff {float(recon_diff):.3e}"])
+    if hessian_diagnostics and hessian_diagnostics.get("n_negative_eigenvalues"):
+        if int(hessian_diagnostics.get("n_negative_eigenvalues") or 0) > 0:
+            rows.append(["hessian", "negative eigenvalues present; inspect SE and local optimum diagnostics"])
+    return rows
+
+
 def generate_llm_markdown_summary(
     parsed_params: ParsedParameters,
     data: Dict[str, Any],
@@ -5896,6 +6284,8 @@ def generate_llm_markdown_summary(
     post_output_dir: Optional[Path] = None,
     mnl_base: Optional[Path] = None,
     spec_config: Optional[Path] = None,
+    mu_results: Optional[Dict[str, Any]] = None,
+    spec: Optional[Any] = None,
 ) -> Path:
     """
     Write a compact, graph-free Markdown report for LLM/paper workflows.
@@ -5922,7 +6312,9 @@ def generate_llm_markdown_summary(
             group_data.get("success"),
             group_data.get("message"),
             group_data.get("n_iterations"),
-            group_data.get("log_likelihood"),
+            group_data.get("n_function_evaluations"),
+            group_data.get("gradient_norm"),
+            group_data.get("final_ll") or group_data.get("log_likelihood"),
             group_data.get("walltime_seconds"),
         ])
 
@@ -5939,6 +6331,188 @@ def generate_llm_markdown_summary(
             row.get("upper_bound"),
             row.get("initial_value"),
         ])
+
+    # ----- Spec-block inventory ------------------------------------------------
+    def _shifter_inventory_row(block_name: str, label: str, shifters: List[Dict[str, Any]]) -> List[Any]:
+        n = len(shifters or [])
+        coefs = ", ".join(
+            (sh or {}).get("coefficient", "?") for sh in (shifters or [])
+        ) if shifters else ""
+        variables = ", ".join(sorted({(sh or {}).get("variable", "?") for sh in (shifters or [])}))
+        return [block_name, label, n, variables, coefs]
+
+    spec_inventory_rows: List[List[Any]] = []
+    if isinstance(blocks, dict) and blocks:
+        spec_inventory_rows.append(_shifter_inventory_row("hours_opportunity", "Employment/Hours", blocks.get("hours") or []))
+        spec_inventory_rows.append(_shifter_inventory_row("market_opportunity", "Market residual", blocks.get("market") or []))
+        spec_inventory_rows.append(_shifter_inventory_row("wage_opportunity.mean_shifters", "Mincer mean", blocks.get("wage_mean") or []))
+        if blocks.get("wage_sigma"):
+            spec_inventory_rows.append(["wage_opportunity.variance", "Mincer sigma", 1, "-", blocks["wage_sigma"]])
+        spec_inventory_rows.append(_shifter_inventory_row("occupation_opportunity", "Occupation", blocks.get("occupation") or []))
+
+    # ----- Symbolic + numerical opportunity equations --------------------------
+    symbolic_equations_lines: List[str] = []
+    if isinstance(blocks, dict) and blocks:
+        # Hours + market
+        emp_shifters = list(blocks.get("hours") or []) + list(blocks.get("market") or [])
+        if emp_shifters:
+            symbolic_equations_lines.append("O^E + O^H =")
+            for sh in emp_shifters:
+                symbolic_equations_lines.append(f"  + {_shifter_symbolic_term(sh)}")
+            symbolic_equations_lines.append("")
+        # Wage
+        wage_mean = list(blocks.get("wage_mean") or [])
+        if wage_mean or blocks.get("wage_sigma"):
+            symbolic_equations_lines.append("mu_w =")
+            for sh in wage_mean:
+                var = (sh or {}).get("variable")
+                coef = (sh or {}).get("coefficient", "?")
+                if var == "intercept":
+                    symbolic_equations_lines.append(f"  + {coef}")
+                else:
+                    symbolic_equations_lines.append(f"  + {_shifter_symbolic_term(sh)}")
+            sigma_name = blocks.get("wage_sigma") or "σ"
+            symbolic_equations_lines.append(f"log(wage) = mu_w + eps,  eps ~ N(0, {sigma_name}^2)")
+            symbolic_equations_lines.append("")
+        # Occupation
+        occ_shifters = list(blocks.get("occupation") or [])
+        if occ_shifters:
+            occ_var = blocks.get("occ_var") or "occ"
+            occ_ref = blocks.get("occ_ref")
+            symbolic_equations_lines.append(f"O^Occ (reference {occ_var}={occ_ref}):")
+            by_grp: Dict[str, List[Dict[str, Any]]] = {}
+            for sh in occ_shifters:
+                by_grp.setdefault((sh or {}).get("applies_to") or "both", []).append(sh)
+            for applies, sh_list in by_grp.items():
+                symbolic_equations_lines.append(f"  applies_to={applies}:")
+                for sh in sh_list:
+                    symbolic_equations_lines.append(f"    + {_shifter_symbolic_term(sh)}")
+            symbolic_equations_lines.append("")
+
+    # Numerical equations: one row per (block_group, term, coefficient_value)
+    numerical_eq_rows: List[List[Any]] = []
+    if isinstance(blocks, dict) and blocks:
+        groups_pri = list(getattr(parsed_params, "groups", []) or []) or ["joint"]
+        # Employment / hours
+        for sh in (blocks.get("hours") or []) + (blocks.get("market") or []):
+            coef = (sh or {}).get("coefficient")
+            if not coef:
+                continue
+            val, src = _pick_value_for_coef(coef, parsed_params, groups_pri)
+            numerical_eq_rows.append([
+                "employment_hours", _shifter_symbolic_term(sh),
+                coef, src or "-", _md_clean(val),
+            ])
+        for sh in (blocks.get("wage_mean") or []):
+            coef = (sh or {}).get("coefficient")
+            if not coef:
+                continue
+            val, src = _pick_value_for_coef(coef, parsed_params, groups_pri)
+            numerical_eq_rows.append([
+                "wage_mean", _shifter_symbolic_term(sh),
+                coef, src or "-", _md_clean(val),
+            ])
+        if blocks.get("wage_sigma"):
+            coef = blocks["wage_sigma"]
+            val, src = _pick_value_for_coef(coef, parsed_params, groups_pri)
+            numerical_eq_rows.append(["wage_sigma", coef, coef, src or "-", _md_clean(val)])
+        for sh in (blocks.get("occupation") or []):
+            coef = (sh or {}).get("coefficient")
+            if not coef:
+                continue
+            applies = (sh or {}).get("applies_to") or "both"
+            # Prefer the matching group when applies_to is sm/sf/cm/cf
+            group_aliases = {"sm": "singles_male", "sf": "singles_female",
+                             "cm": "couples_male", "cf": "couples_female"}
+            target = group_aliases.get(applies, applies)
+            val = _pick_value_for_group(coef, target, parsed_params)
+            src = target if val is not None else None
+            if val is None:
+                val, src = _pick_value_for_coef(coef, parsed_params, [target] + groups_pri)
+            numerical_eq_rows.append([
+                f"occupation:{applies}", _shifter_symbolic_term(sh),
+                coef, src or "-", _md_clean(val),
+            ])
+
+    # ----- Per-block parameter counts and significance summary -----------------
+    block_count_rows: List[List[Any]] = []
+    def _count_block(block_name: str) -> List[Any]:
+        sub = param_df[param_df["block"] == block_name]
+        n_total = len(sub)
+        if n_total == 0:
+            return []
+        n_estim = int(sub.apply(
+            lambda r: not (
+                isinstance(r.get("lower_bound"), (int, float))
+                and isinstance(r.get("upper_bound"), (int, float))
+                and (float(r["upper_bound"]) - float(r["lower_bound"])) <= 1e-6
+            ),
+            axis=1,
+        ).sum())
+        p_vals = pd.to_numeric(sub["p_value"], errors="coerce")
+        n_sig_001 = int((p_vals < 0.001).sum())
+        n_sig_01 = int((p_vals < 0.01).sum())
+        n_sig_05 = int((p_vals < 0.05).sum())
+        n_sig_10 = int((p_vals < 0.10).sum())
+        return [block_name, n_total, n_estim, n_sig_001, n_sig_01, n_sig_05, n_sig_10]
+
+    for blk_name in [
+        "preference", "employment_hours_opportunity", "market_residual_opportunity",
+        "wage_opportunity", "occupation_opportunity", "other",
+    ]:
+        row = _count_block(blk_name)
+        if row:
+            block_count_rows.append(row)
+
+    # ----- Top movers (initial -> final) ---------------------------------------
+    mover_rows: List[List[Any]] = []
+    if "initial_value" in param_df.columns:
+        df_m = param_df.copy()
+        df_m["initial_value"] = pd.to_numeric(df_m["initial_value"], errors="coerce")
+        df_m["estimate"] = pd.to_numeric(df_m["estimate"], errors="coerce")
+        df_m["delta"] = (df_m["estimate"] - df_m["initial_value"]).abs()
+        df_m = df_m.dropna(subset=["delta"])
+        df_m = df_m.sort_values("delta", ascending=False).head(15)
+        for _, row in df_m.iterrows():
+            init = row.get("initial_value")
+            est = row.get("estimate")
+            mover_rows.append([
+                row.get("block"),
+                row.get("parameter"),
+                init,
+                est,
+                float(est) - float(init) if pd.notna(init) and pd.notna(est) else None,
+            ])
+
+    # ----- Hessian condition interpretation ------------------------------------
+    hessian_interp: Optional[str] = None
+    if hessian_diagnostics and isinstance(hessian_diagnostics, dict):
+        cond = hessian_diagnostics.get("condition_number")
+        n_neg = hessian_diagnostics.get("n_negative_eigenvalues")
+        try:
+            cond_f = float(cond) if cond is not None else None
+        except (TypeError, ValueError):
+            cond_f = None
+        labels: List[str] = []
+        if cond_f is not None:
+            if cond_f < 1e3:
+                labels.append("well-conditioned (κ < 1e3)")
+            elif cond_f < 1e6:
+                labels.append("moderately conditioned (κ < 1e6)")
+            elif cond_f < 1e10:
+                labels.append("weakly conditioned (1e6 ≤ κ < 1e10)")
+            else:
+                labels.append("ill-conditioned (κ ≥ 1e10)")
+        if n_neg and int(n_neg) > 0:
+            labels.append(f"{int(n_neg)} negative eigenvalue(s) — not at a local maximum or numerically singular")
+        hessian_interp = "; ".join(labels) if labels else None
+
+    footprint_rows = _choice_data_footprint_rows(mnl_base)
+    prior_rows = _proposal_prior_diagnostic_rows(mnl_base)
+    utility_rows = _utility_parameter_rows(parsed_params)
+    mu_distribution_rows = _marginal_utility_distribution_rows(mu_results or {})
+    wage_distribution_rows = _wage_distribution_summary_rows(parsed_params, mnl_base, spec)
+    occupation_share_rows = _occupation_share_rows(parsed_params, mnl_base, spec)
 
     fit_rows = [
         ["log_likelihood", fit_stats.get("log_likelihood")],
@@ -5962,6 +6536,14 @@ def generate_llm_markdown_summary(
         probability_rows.append([f"prob_sum_{key}", value])
     for key, value in (prob_diagnostics.get("p_chosen_dist") or {}).items():
         probability_rows.append([f"p_chosen_{key}", value])
+
+    warning_rows = _warning_rows(
+        fit_results,
+        hessian_interp,
+        hessian_diagnostics,
+        probability_rows,
+        prior_rows,
+    )
 
     worst_rows = [
         [i + 1, row.get("idhh"), row.get("group"), row.get("p_chosen"), row.get("ll_i")]
@@ -6033,10 +6615,74 @@ def generate_llm_markdown_summary(
                 ["estimation_walltime_seconds", summary.get("total_walltime_seconds")],
             ],
         ),
+        "## Choice Data Footprint",
+        "",
+        _md_table(
+            ["dataset", "rows", "groups", "alt_min", "alt_median", "alt_max", "chosen_rows", "working_rows", "n_columns"],
+            footprint_rows,
+        ) if footprint_rows else "_MNL base not provided or not readable._\n",
+        "## Proposal And Prior Diagnostics",
+        "",
+        _md_table(
+            ["dataset", "min_prior", "max_abs_log_prior_minus_log_density", "max_abs_prior_alias_reconstruction", "missing_aliases", "forbidden_columns_present"],
+            prior_rows,
+        ) if prior_rows else "_MNL base not provided or not readable._\n",
+        "## Warnings And Review Flags",
+        "",
+        _md_table(["type", "message"], warning_rows) if warning_rows else "_No automatic warnings raised._\n",
+        "## Model Index Equation",
+        "",
+        (
+            "V_ij = U_ij"
+            + (" + O^E_ij + O^H_ij" if (blocks.get("hours") or blocks.get("market")) else "")
+            + (" + O^W_ij" if (blocks.get("wage_mean") or blocks.get("wage_sigma")) else "")
+            + (" + O^Occ_ij" if blocks.get("occupation") else "")
+            + " - log_prior_ij"
+        ) if isinstance(blocks, dict) and blocks else "_Spec YAML not loaded; equation omitted._",
+        "",
+        "P_ij = exp(V_ij) / sum_k exp(V_ik)",
+        "",
+        "## Utility / Preference Parameters By Group",
+        "",
+        "Utility uses Box-Cox consumption and leisure. This table gives the",
+        "group-level consumption and leisure parameters resolved from the",
+        "estimated parameter vector.",
+        "",
+        _md_table(
+            ["group", "beta_c", "theta_c", "beta_l0", "beta_l_shifters", "theta_l", "beta_cl"],
+            utility_rows,
+        ) if utility_rows else "_No group-level preference parameters resolved._\n",
+        "## Specification Block Inventory",
+        "",
+        _md_table(
+            ["yaml_block", "label", "n_shifters", "variables", "coefficients"],
+            spec_inventory_rows,
+        ) if spec_inventory_rows else "_Spec YAML not loaded._\n",
+        "## Opportunity Equations — Symbolic",
+        "",
+        "```text",
+        "\n".join(
+            _md_clean(line) if str(line).strip() else ""
+            for line in symbolic_equations_lines
+        ).rstrip(),
+        "```",
+        "" if symbolic_equations_lines else "_Spec YAML not loaded; symbolic equations omitted._",
+        "## Opportunity Equations — Numerical (estimated coefficients bound)",
+        "",
+        _md_table(
+            ["block", "term", "coefficient", "source_group", "value"],
+            numerical_eq_rows,
+        ) if numerical_eq_rows else "_Spec YAML not loaded; numerical equations omitted._\n",
+        "## Per-Block Parameter Counts and Significance",
+        "",
+        _md_table(
+            ["block", "n_params", "n_estimable", "n_sig_p<0.001", "n_sig_p<0.01", "n_sig_p<0.05", "n_sig_p<0.10"],
+            block_count_rows,
+        ) if block_count_rows else "_No estimated parameters classified._\n",
         "## Convergence By Result Block",
         "",
         _md_table(
-            ["group", "success", "message", "iterations", "log_likelihood", "walltime_seconds"],
+            ["group", "success", "message", "iterations", "n_function_evaluations", "gradient_norm", "log_likelihood", "walltime_seconds"],
             group_rows,
         ),
         "## Fit Statistics",
@@ -6076,6 +6722,12 @@ def generate_llm_markdown_summary(
                 for row in (muc_analysis or [])
             ],
         ),
+        "## Marginal Utility Distribution Summary",
+        "",
+        _md_table(
+            ["group", "N", "n_neg_muc", "pct_neg_muc", "mean_muc", "n_neg_mul", "pct_neg_mul", "mean_mul"],
+            mu_distribution_rows,
+        ) if mu_distribution_rows else "_Marginal utility arrays not available._\n",
         "## Probability Diagnostics",
         "",
         _md_table(["metric", "value"], probability_rows),
@@ -6085,6 +6737,13 @@ def generate_llm_markdown_summary(
         "## Identification Diagnostics",
         "",
         _md_table(["metric", "value"], hessian_rows),
+        f"_Interpretation: {_md_clean(hessian_interp)}._\n" if hessian_interp else "",
+        "## Initial → Final Movement (top 15 by |Δ|)",
+        "",
+        _md_table(
+            ["block", "parameter", "initial_value", "final_estimate", "delta"],
+            mover_rows,
+        ) if mover_rows else "_No initial values available._\n",
         "## Top High-Correlation Parameter Pairs",
         "",
         _md_table(["param_i", "param_j", "correlation"], top_corr_rows),
@@ -6106,6 +6765,25 @@ def generate_llm_markdown_summary(
             ["group", "hours_bin", "observed_share", "predicted_share"],
             _hours_distribution_rows(fit_results),
         ),
+        "## Wage Distribution Summary",
+        "",
+        "Observed values use chosen working alternatives. Predicted values use",
+        "choice-probability weights over working alternatives.",
+        "",
+        _md_table(
+            ["group", "n_observed_working", "predicted_worker_weight", "obs_mean", "pred_mean", "obs_q10", "obs_q50", "obs_q90", "pred_q10", "pred_q50", "pred_q90"],
+            wage_distribution_rows,
+        ) if wage_distribution_rows else "_No wage columns available for this run._\n",
+        "## Occupation Distribution Shares",
+        "",
+        "Observed shares use chosen working alternatives. Predicted shares use",
+        "choice-probability weights over working alternatives. Category labels",
+        "are reported for loc4-style variables when available.",
+        "",
+        _md_table(
+            ["group", "occupation_column", "category", "label", "observed_share", "predicted_share", "observed_count", "predicted_weight"],
+            occupation_share_rows,
+        ) if occupation_share_rows else "_No loc4-style occupation columns available for this run._\n",
         "## Notes For Use",
         "",
         "- This Markdown file is the preferred low-token artifact for LLM review.",
@@ -6572,6 +7250,8 @@ def run_styled_post_estimation(
             post_output_dir=output_dir,
             mnl_base=mnl_base,
             spec_config=spec_config,
+            mu_results=mu_results,
+            spec=spec,
         )
 
     LOGGER.info("\n" + "=" * 70)

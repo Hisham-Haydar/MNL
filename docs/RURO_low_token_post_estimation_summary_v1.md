@@ -48,18 +48,55 @@ The Markdown summary includes:
   YAML specification;
 - run metadata, including specification name, model family, prior correction,
   and opportunity centering;
-- convergence status by result block;
+- choice data footprint with rows, groups, alternatives per group, chosen rows,
+  working rows, and column counts;
+- proposal/prior diagnostics, including prior positivity, `log_prior =
+  log(prior)`, Stijn proposal-alias reconstruction, and forbidden-column
+  presence;
+- warnings and review flags for ill-conditioned Hessians, very high predicted
+  participation, small chosen probabilities, and proposal-column issues;
+- utility/preference parameters by group (`beta_c`, `theta_c`, `beta_l0`,
+  leisure shifters, `theta_l`, and `beta_cl` when present);
+- **model index equation** (`V_ij = U + O^E + O^H + O^W + O^Occ − log_prior`,
+  adapted to whichever opportunity blocks the YAML declares) and the softmax
+  choice-probability formula;
+- **specification block inventory** — one row per YAML opportunity block
+  (`hours_opportunity`, `market_opportunity`, `wage_opportunity.mean_shifters`,
+  `wage_opportunity.variance`, `occupation_opportunity`) with shifter count,
+  declared variables, and coefficient names;
+- **opportunity equations (symbolic)** — text-only block, one term per line
+  for each shifter declared in the YAML, including the four `applies_to`
+  occupation groups;
+- **opportunity equations (numerical)** — a table binding each declared
+  shifter to its estimated coefficient value, with the source group
+  recorded;
+- **per-block parameter counts and significance** — for each block:
+  `n_params`, `n_estimable`, and significance hit counts at p < 0.001,
+  0.01, 0.05, 0.10;
+- convergence status by result block, including `n_iterations`,
+  `n_function_evaluations`, `gradient_norm`, `log_likelihood`, and
+  `walltime_seconds`;
 - log-likelihood, null likelihoods, rho-squared, AIC, BIC, observations,
   groups, and parameters;
 - observed vs predicted participation and mean hours by group;
 - structural elasticity heuristics reported by the post-estimation script;
 - marginal utility diagnostics;
+- marginal utility distribution summaries, including negative MUC/MUL counts
+  and percentages by group;
 - probability diagnostics and worst-fit households;
-- Hessian/identification diagnostics;
-- high-correlation parameter pairs;
+- Hessian/identification diagnostics, with a one-line interpretation
+  (well-/moderately/weakly/ill-conditioned thresholds and a flag for
+  negative eigenvalues);
+- **top 15 initial → final parameter movements** (ranked by |Δ|),
+  exposing which coefficients moved most from their YAML initial values;
+- high-correlation parameter pairs and weakest eigenvector diagnostics;
 - parameters at bounds;
 - all parameter estimates grouped by model block;
 - observed and predicted hours-bin shares.
+- wage-distribution summaries by group, with observed and predicted means and
+  q10/q50/q90 for working alternatives;
+- occupation-distribution shares for loc4-style columns when available,
+  including loc4 labels and observed/predicted shares.
 
 It intentionally excludes:
 

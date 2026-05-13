@@ -114,7 +114,10 @@
       "Bash(conda run -n GAMSPy_env python:*)",
       "Bash(iconv:*)",
       "Bash(U:/Desktop/Nizam_Hisham/MNL/.venv/Scripts/python.exe -c ' *)",
-      "Bash(printf '\\\\n' >> '\\\\\\\\crc\\\\users\\\\hisham\\\\Desktop\\\\Nizam_Hisham\\\\MNL\\\\docs\\\\RURO_stijn_occ_M0_rebuild_command_plan_v1.md')"
+      "Bash(printf '\\\\n' >> '\\\\\\\\crc\\\\users\\\\hisham\\\\Desktop\\\\Nizam_Hisham\\\\MNL\\\\docs\\\\RURO_stijn_occ_M0_rebuild_command_plan_v1.md')",
+      "Bash(ls -la \"Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/\" 2>&1 | grep -i mnl | head -20)",
+      "Read(//z/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/**)",
+      "Bash(\"U:/Desktop/Nizam_Hisham/MNL/.venv/Scripts/python.exe\" \"U:/Desktop/Nizam_Hisham/MNL/Results/_canary_stijn_occ_M0.py\")"
     ],
     "deny": [],
     "ask": [],

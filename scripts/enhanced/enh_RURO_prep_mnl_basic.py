@@ -1748,6 +1748,11 @@ def get_essential_columns_for_estimation() -> set[str]:
         # Hours
         "hours", "hours_observed", "hours_male", "hours_female",
         "lhw", "working", "working_pt1", "working_pt2", "working_ft",
+        # Gendered working indicators (couples; engine routes male/female via these)
+        "working_male", "working_female",
+        "working_pt1_male", "working_pt1_female",
+        "working_pt2_male", "working_pt2_female",
+        "working_ft_male", "working_ft_female",
         # Wages
         "wage", "wage_observed", "wage_male", "wage_female",
         "lwage", "yem",

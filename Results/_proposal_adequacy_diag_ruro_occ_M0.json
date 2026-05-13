@@ -1,0 +1,779 @@
+{
+  "metadata": {
+    "date": "2026-05-13",
+    "files": {
+      "singles": {
+        "path": "Z:\\hisham\\EUROMOD-STORAGE\\Data\\processed\\fr\\2016\\fr_2016_RURO_mnl__singles.parquet",
+        "size": 21500551,
+        "mtime": "2026-05-13T10:38:21.929304",
+        "n_rows": 167600,
+        "n_cols": 75,
+        "n_hh": 1676
+      },
+      "couples": {
+        "path": "Z:\\hisham\\EUROMOD-STORAGE\\Data\\processed\\fr\\2016\\fr_2016_RURO_mnl__couples.parquet",
+        "size": 43108822,
+        "mtime": "2026-05-13T10:38:22.968306",
+        "n_rows": 257700,
+        "n_cols": 93,
+        "n_hh": 2577
+      }
+    }
+  },
+  "thresholds": {
+    "R_BC_C_fail": 0.1,
+    "R_BC_C_marginal": 0.3,
+    "nonwork_thin_share_threshold_pct": 5,
+    "nonwork_flag_share_threshold_pct": 8,
+    "rank_corr_collinearity_threshold": -0.85
+  },
+  "M0_anchors": {
+    "theta_c": {
+      "singles_male": -0.856029,
+      "singles_female": -1.08841,
+      "couples_household": 0.215302
+    },
+    "theta_l": {
+      "singles_male": -0.703775,
+      "singles_female": -0.723846,
+      "couples_male": -0.733006,
+      "couples_female": -0.695727
+    }
+  },
+  "results": {
+    "singles": {
+      "column_resolution": {
+        "file": "singles",
+        "hh_col": "idhh",
+        "chosen_col": "is_chosen",
+        "gender_col": "dgn",
+        "consumption_col": "consumption",
+        "leisure_col": "leisure",
+        "working_col": "working",
+        "hours_col": "hours",
+        "log_q_E_col": "log_q_E"
+      },
+      "singles_male": {
+        "n_rows": 76600,
+        "n_hh": 766,
+        "D1a_consumption": {
+          "n_hh": 766,
+          "within_std_quantiles": {
+            "q10": 5270.063753387487,
+            "q25": 5541.926994648853,
+            "q50": 5805.52078525193,
+            "q75": 6118.261016593186,
+            "q90": 6383.42102907978
+          },
+          "within_range_quantiles": {
+            "q10": 20461.622745627672,
+            "q25": 21497.676490128437,
+            "q50": 22600.74985990495,
+            "q75": 23652.380399159814,
+            "q90": 24459.7536554891
+          },
+          "within_mean_quantiles": {
+            "q10": 6605.254420319494,
+            "q25": 6952.527168086879,
+            "q50": 7381.3889258878135,
+            "q75": 7891.112740912449,
+            "q90": 8362.253037739321
+          },
+          "between_std": 887.9976722076274,
+          "median_within_std": 5805.52078525193,
+          "R_raw": 6.537765770059936
+        },
+        "D1b_consumption_BC": [
+          {
+            "theta": -1.0,
+            "within_std_q25": 0.00032140998917336397,
+            "within_std_q50": 0.0004151466375534886,
+            "within_std_q75": 0.0005338438043173789,
+            "between_std": 0.007834812848067705,
+            "R_BC": 0.05298743513137981
+          },
+          {
+            "theta": -0.5,
+            "within_std_q25": 0.016013258953822336,
+            "within_std_q50": 0.018665592826700016,
+            "within_std_q75": 0.02133440083456237,
+            "between_std": 0.015979399801277477,
+            "R_BC": 1.1681034994322999
+          },
+          {
+            "theta": 0.0,
+            "within_std_q25": 0.9403104265413746,
+            "within_std_q50": 1.0175182470966844,
+            "within_std_q75": 1.0873530200574226,
+            "between_std": 0.1795092337862122,
+            "R_BC": 5.668333743257492
+          },
+          {
+            "theta": 0.215,
+            "within_std_q25": 5.735632744290565,
+            "within_std_q50": 6.078274773932368,
+            "within_std_q75": 6.424056947307185,
+            "between_std": 0.9877021497686013,
+            "R_BC": 6.153955193229442
+          },
+          {
+            "theta": 0.5,
+            "within_std_q25": 66.40724073055286,
+            "within_std_q50": 69.51133243537676,
+            "within_std_q75": 72.50267784322767,
+            "between_std": 10.872759232875461,
+            "R_BC": 6.393163956505037
+          }
+        ],
+        "D1b_at_M0_theta": {
+          "theta": -0.856029,
+          "within_std_q25": 0.000973791595027488,
+          "within_std_q50": 0.0012189685902301854,
+          "within_std_q75": 0.0015095430266632106,
+          "between_std": 0.009173290362209149,
+          "R_BC": 0.13288237285630067
+        },
+        "D1a_leisure": {
+          "n_hh": 766,
+          "within_std_quantiles": {
+            "q10": 19.749731354494475,
+            "q25": 20.315531506431505,
+            "q50": 20.964389482759522,
+            "q75": 21.609103605650045,
+            "q90": 22.136698241492745
+          },
+          "within_range_quantiles": {
+            "q10": 68.3259305761622,
+            "q25": 68.93257134234598,
+            "q50": 69.50582470099326,
+            "q75": 69.79233964618247,
+            "q90": 69.92337994130821
+          },
+          "within_mean_quantiles": {
+            "q10": 43.52089987675329,
+            "q25": 44.74043433443534,
+            "q50": 46.12002904492583,
+            "q75": 47.59080284199624,
+            "q90": 48.67539338742696
+          },
+          "between_std": 2.0117790847523613,
+          "median_within_std": 20.964389482759522,
+          "R_raw": 10.420820875240445
+        },
+        "D1c_leisure_BC": [
+          {
+            "theta": -1.0,
+            "within_std_q25": 0.017594378612839898,
+            "within_std_q50": 0.019107684185291872,
+            "within_std_q75": 0.020376912725535528,
+            "between_std": 0.0018764958816603508,
+            "R_BC": 10.182641151540986
+          },
+          {
+            "theta": -0.7,
+            "within_std_q25": 0.04728456270306274,
+            "within_std_q50": 0.05074954599782464,
+            "within_std_q75": 0.05351602419626504,
+            "between_std": 0.004944744987913669,
+            "R_BC": 10.263329276205473
+          },
+          {
+            "theta": -0.5,
+            "within_std_q25": 0.0927209565558945,
+            "within_std_q50": 0.09865413221056009,
+            "within_std_q75": 0.10369817808965123,
+            "between_std": 0.009581854366206493,
+            "R_BC": 10.295933171192392
+          },
+          {
+            "theta": 0.0,
+            "within_std_q25": 0.5235679649095913,
+            "within_std_q50": 0.548773403189005,
+            "within_std_q75": 0.5706539265549804,
+            "between_std": 0.05294349770975676,
+            "R_BC": 10.365265366437503
+          }
+        ],
+        "D1c_at_M0_theta": {
+          "theta": -0.703775,
+          "within_std_q25": 0.0466908903875605,
+          "within_std_q50": 0.05012683181860643,
+          "within_std_q75": 0.05285729554572696,
+          "between_std": 0.004883978563880364,
+          "R_BC": 10.263524125458122
+        },
+        "D1d_rank_corr": {
+          "all_alts": {
+            "n_hh": 766,
+            "median": -0.7061675699472795,
+            "q10": -0.7767360907847379,
+            "q90": -0.6303920593574781
+          },
+          "working_alts_only": {
+            "n_hh": 766,
+            "median": -0.6024883176934022,
+            "q10": -0.6799918742646084,
+            "q90": -0.509095176555115
+          }
+        },
+        "D2a_nonwork_share": {
+          "n_hh": 766,
+          "quantiles": {
+            "q10": 0.07,
+            "q25": 0.08,
+            "q50": 0.1,
+            "q75": 0.12,
+            "q90": 0.14
+          },
+          "pct_hh_share_lt_5pct": 0.016971279373368148,
+          "pct_hh_share_lt_10pct": 0.45300261096605743,
+          "pct_hh_share_eq_0": 0.0
+        },
+        "D2b_observed_vs_proposal": {
+          "obs_nonwork_rate": 0.07049608355091384,
+          "proposal_median_share": 0.1,
+          "gap": -0.029503916449086162
+        },
+        "D2c_log_q_e": {
+          "log_q_e_col": "log_q_E",
+          "mean_working": -0.10536051565782631,
+          "mean_nonwork": -2.302585092994046,
+          "diff": 2.1972245773362196
+        }
+      },
+      "singles_female": {
+        "n_rows": 91000,
+        "n_hh": 910,
+        "D1a_consumption": {
+          "n_hh": 910,
+          "within_std_quantiles": {
+            "q10": 5294.389006618683,
+            "q25": 5569.930085707477,
+            "q50": 5840.803659786008,
+            "q75": 6112.51772478182,
+            "q90": 6357.246166519979
+          },
+          "within_range_quantiles": {
+            "q10": 20715.22820792719,
+            "q25": 21652.026442352973,
+            "q50": 22644.980461416737,
+            "q75": 23734.249417818253,
+            "q90": 24453.786184807665
+          },
+          "within_mean_quantiles": {
+            "q10": 6691.201171756159,
+            "q25": 7074.776770557079,
+            "q50": 7562.791881529696,
+            "q75": 8110.7526469072745,
+            "q90": 8586.539281987107
+          },
+          "between_std": 1665.0932011665852,
+          "median_within_std": 5840.803659786008,
+          "R_raw": 3.5077938314166843
+        },
+        "D1b_consumption_BC": [
+          {
+            "theta": -1.0,
+            "within_std_q25": 0.00026257237541419586,
+            "within_std_q50": 0.0003574742216339879,
+            "within_std_q75": 0.00044489560648450287,
+            "between_std": 0.00020100471829817687,
+            "R_BC": 1.7784369673536675
+          },
+          {
+            "theta": -0.5,
+            "within_std_q25": 0.014224573829676743,
+            "within_std_q50": 0.017003528283669522,
+            "within_std_q75": 0.019690118251628586,
+            "between_std": 0.003744729574462955,
+            "R_BC": 4.540655859270708
+          },
+          {
+            "theta": 0.0,
+            "within_std_q25": 0.8944013420560175,
+            "within_std_q50": 0.9685767790426645,
+            "within_std_q75": 1.0505999280876932,
+            "between_std": 0.1843035722952231,
+            "R_BC": 5.255333724574631
+          },
+          {
+            "theta": 0.215,
+            "within_std_q25": 5.592796724333506,
+            "within_std_q50": 5.93273277546765,
+            "within_std_q75": 6.266764821705902,
+            "between_std": 1.1451770986684608,
+            "R_BC": 5.180624710680867
+          },
+          {
+            "theta": 0.5,
+            "within_std_q25": 65.84121521240448,
+            "within_std_q50": 68.62252205896571,
+            "within_std_q75": 71.5417480600516,
+            "between_std": 14.557583259804682,
+            "R_BC": 4.71386773712922
+          }
+        ],
+        "D1b_at_M0_theta": {
+          "theta": -1.08841,
+          "within_std_q25": 0.00013127391844772865,
+          "within_std_q50": 0.00018306814842126415,
+          "within_std_q75": 0.00023184581908578897,
+          "between_std": 0.00013678917374943474,
+          "R_BC": 1.3383233731391746
+        },
+        "D1a_leisure": {
+          "n_hh": 910,
+          "within_std_quantiles": {
+            "q10": 19.613841124990973,
+            "q25": 20.191243203007975,
+            "q50": 20.846137597044002,
+            "q75": 21.504010710172242,
+            "q90": 22.094515325821778
+          },
+          "within_range_quantiles": {
+            "q10": 68.43817289991972,
+            "q25": 68.99419988914947,
+            "q50": 69.49690657056476,
+            "q75": 69.80820204159855,
+            "q90": 69.93739767702134
+          },
+          "within_mean_quantiles": {
+            "q10": 43.723116247832095,
+            "q25": 44.88075651466646,
+            "q50": 46.394700271066775,
+            "q75": 47.86165542006274,
+            "q90": 49.06437448053611
+          },
+          "between_std": 2.1248380441003984,
+          "median_within_std": 20.846137597044002,
+          "R_raw": 9.810694822093945
+        },
+        "D1c_leisure_BC": [
+          {
+            "theta": -1.0,
+            "within_std_q25": 0.017470862551951426,
+            "within_std_q50": 0.018792485374335838,
+            "within_std_q75": 0.020112832860939144,
+            "between_std": 0.001892796809975434,
+            "R_BC": 9.92842193905628
+          },
+          {
+            "theta": -0.7,
+            "within_std_q25": 0.046827868342888115,
+            "within_std_q50": 0.04993878329106242,
+            "within_std_q75": 0.05300620446741745,
+            "between_std": 0.005040630233342303,
+            "R_BC": 9.90724988330465
+          },
+          {
+            "theta": -0.5,
+            "within_std_q25": 0.0918514105740732,
+            "within_std_q50": 0.09727086192419826,
+            "within_std_q75": 0.10270409747559614,
+            "between_std": 0.009832208720625247,
+            "R_BC": 9.893083506267617
+          },
+          {
+            "theta": 0.0,
+            "within_std_q25": 0.5193870762856332,
+            "within_std_q50": 0.5428742931372139,
+            "within_std_q75": 0.566279975702342,
+            "between_std": 0.055084355151326085,
+            "R_BC": 9.855326283585347
+          }
+        ],
+        "D1c_at_M0_theta": {
+          "theta": -0.723846,
+          "within_std_q25": 0.043247544680145675,
+          "within_std_q50": 0.04615010747152823,
+          "within_std_q75": 0.04899029535096718,
+          "between_std": 0.004658448341838994,
+          "R_BC": 9.906755229426837
+        },
+        "D1d_rank_corr": {
+          "all_alts": {
+            "n_hh": 910,
+            "median": -0.7127482466657142,
+            "q10": -0.7835075470291576,
+            "q90": -0.6273034685419459
+          },
+          "working_alts_only": {
+            "n_hh": 910,
+            "median": -0.6060865709241774,
+            "q10": -0.6943960836334824,
+            "q90": -0.5008565221154536
+          }
+        },
+        "D2a_nonwork_share": {
+          "n_hh": 910,
+          "quantiles": {
+            "q10": 0.06,
+            "q25": 0.08,
+            "q50": 0.1,
+            "q75": 0.12,
+            "q90": 0.14
+          },
+          "pct_hh_share_lt_5pct": 0.01868131868131868,
+          "pct_hh_share_lt_10pct": 0.4472527472527473,
+          "pct_hh_share_eq_0": 0.0
+        },
+        "D2b_observed_vs_proposal": {
+          "obs_nonwork_rate": 0.06043956043956044,
+          "proposal_median_share": 0.1,
+          "gap": -0.039560439560439566
+        },
+        "D2c_log_q_e": {
+          "log_q_e_col": "log_q_E",
+          "mean_working": -0.10536051565782631,
+          "mean_nonwork": -2.302585092994046,
+          "diff": 2.1972245773362196
+        }
+      }
+    },
+    "couples": {
+      "column_resolution": {
+        "file": "couples",
+        "hh_col": "idhh",
+        "chosen_col": "is_chosen",
+        "consumption_col": "consumption",
+        "leisure_male_col": "leisure_male",
+        "leisure_female_col": "leisure_female",
+        "working_male_col": "working_male",
+        "working_female_col": "working_female",
+        "hours_male_col": "hours_male",
+        "hours_female_col": "hours_female",
+        "log_q_E_male_col": "log_q_E_male",
+        "log_q_E_female_col": "log_q_E_female"
+      },
+      "couples_household_consumption": {
+        "D1a_consumption": {
+          "n_hh": 2577,
+          "within_std_quantiles": {
+            "q10": 7583.633009793575,
+            "q25": 7931.7646554295925,
+            "q50": 8339.85945258427,
+            "q75": 8727.03472091954,
+            "q90": 9121.772993496701
+          },
+          "within_range_quantiles": {
+            "q10": 32091.214887191036,
+            "q25": 34081.032920552476,
+            "q50": 36608.90035161176,
+            "q75": 39383.64654981024,
+            "q90": 41956.623729857834
+          },
+          "within_mean_quantiles": {
+            "q10": 13733.881964107712,
+            "q25": 14333.1472537819,
+            "q50": 15026.82802562146,
+            "q75": 15702.286417832855,
+            "q90": 16456.81075598456
+          },
+          "between_std": 1244.7280352030323,
+          "median_within_std": 8339.85945258427,
+          "R_raw": 6.700145908759839
+        },
+        "D1b_consumption_BC": [
+          {
+            "theta": -1.0,
+            "within_std_q25": 9.55451855634012e-05,
+            "within_std_q50": 0.00012034139288949499,
+            "within_std_q75": 0.00014994787445852303,
+            "between_std": 1.8486497387002826e-05,
+            "R_BC": 6.50969139097721
+          },
+          {
+            "theta": -0.5,
+            "within_std_q25": 0.007281288920140971,
+            "within_std_q50": 0.008356721898276239,
+            "within_std_q75": 0.009532816321845937,
+            "between_std": 0.0012515879245111662,
+            "R_BC": 6.676895593683625
+          },
+          {
+            "theta": 0.0,
+            "within_std_q25": 0.6559684791045928,
+            "within_std_q50": 0.7102930203102862,
+            "within_std_q75": 0.760941210084946,
+            "between_std": 0.10552228571951794,
+            "R_BC": 6.7312133685037
+          },
+          {
+            "theta": 0.215,
+            "within_std_q25": 4.764992078242234,
+            "within_std_q50": 5.056794122340175,
+            "within_std_q75": 5.351284256709403,
+            "between_std": 0.7538478207934763,
+            "R_BC": 6.707977370044731
+          },
+          {
+            "theta": 0.5,
+            "within_std_q25": 68.25836109730925,
+            "within_std_q50": 71.65718992614964,
+            "within_std_q75": 74.9002727529816,
+            "between_std": 10.696818647783,
+            "R_BC": 6.698925380117682
+          }
+        ],
+        "D1b_at_M0_theta": {
+          "theta": 0.215302,
+          "within_std_q25": 4.77826831353332,
+          "within_std_q50": 5.0708500064525355,
+          "within_std_q75": 5.3661793679098375,
+          "between_std": 0.7559495651168839,
+          "R_BC": 6.707921057760629
+        },
+        "note": "Couples `consumption` is a household-level aggregate, shared between couples_male and couples_female views. Reported once."
+      },
+      "couples_male": {
+        "n_rows": 257700,
+        "n_hh": 2577,
+        "working_col_used": "working_male",
+        "leisure_col_used": "leisure_male",
+        "log_q_e_col_used": "log_q_E_male",
+        "D1a_leisure": {
+          "n_hh": 2577,
+          "within_std_quantiles": {
+            "q10": 19.727226498298183,
+            "q25": 20.258245694701706,
+            "q50": 20.90675976340152,
+            "q75": 21.534886560907708,
+            "q90": 22.119500230579018
+          },
+          "within_range_quantiles": {
+            "q10": 68.38454556695226,
+            "q25": 69.03173994343409,
+            "q50": 69.52238788721826,
+            "q75": 69.81602281898722,
+            "q90": 69.94065700549064
+          },
+          "within_mean_quantiles": {
+            "q10": 43.45020673467305,
+            "q25": 44.73901672019756,
+            "q50": 46.17675965125915,
+            "q75": 47.60742667982644,
+            "q90": 48.940781603243046
+          },
+          "between_std": 2.1161794342330964,
+          "median_within_std": 20.90675976340152,
+          "R_raw": 9.87948348103011
+        },
+        "D1c_leisure_BC": [
+          {
+            "theta": -1.0,
+            "within_std_q25": 0.017648776997251727,
+            "within_std_q50": 0.01896917337167761,
+            "within_std_q75": 0.020237168942241514,
+            "between_std": 0.0018930533117732702,
+            "R_BC": 10.020411603679937
+          },
+          {
+            "theta": -0.7,
+            "within_std_q25": 0.04731108740239659,
+            "within_std_q50": 0.05039615345238564,
+            "within_std_q75": 0.05323315794286469,
+            "between_std": 0.005038747320141664,
+            "R_BC": 10.001722700190642
+          },
+          {
+            "theta": -0.5,
+            "within_std_q25": 0.09272334309046348,
+            "within_std_q50": 0.09812553211163474,
+            "within_std_q75": 0.10308196245594874,
+            "between_std": 0.009823826563589306,
+            "R_BC": 9.988524479384017
+          },
+          {
+            "theta": 0.0,
+            "within_std_q25": 0.5236473185779742,
+            "within_std_q50": 0.546964317400831,
+            "within_std_q75": 0.5679185326301543,
+            "between_std": 0.0549605795902959,
+            "R_BC": 9.951938670919795
+          }
+        ],
+        "D1c_at_M0_theta": {
+          "theta": -0.733006,
+          "within_std_q25": 0.04238449418047647,
+          "within_std_q50": 0.045193242952419874,
+          "within_std_q75": 0.047797585029473094,
+          "between_std": 0.004518302282686285,
+          "R_BC": 10.00226193931207
+        },
+        "D1d_rank_corr": {
+          "all_alts": {
+            "n_hh": 2577,
+            "median": -0.4757355038304057,
+            "q10": -0.5754232542385932,
+            "q90": -0.3594143661302745
+          },
+          "working_alts_only": {
+            "n_hh": 2577,
+            "median": -0.4191669977964816,
+            "q10": -0.527644481834897,
+            "q90": -0.28710849828597496
+          }
+        },
+        "D2a_nonwork_share": {
+          "n_hh": 2577,
+          "quantiles": {
+            "q10": 0.06,
+            "q25": 0.08,
+            "q50": 0.1,
+            "q75": 0.12,
+            "q90": 0.14
+          },
+          "pct_hh_share_lt_5pct": 0.016686069072564997,
+          "pct_hh_share_lt_10pct": 0.4334497477687233,
+          "pct_hh_share_eq_0": 0.0
+        },
+        "D2b_observed_vs_proposal": {
+          "obs_nonwork_rate": 0.028327512611563833,
+          "proposal_median_share": 0.1,
+          "gap": -0.07167248738843618
+        },
+        "D2c_log_q_e": {
+          "log_q_e_col": "log_q_E_male",
+          "mean_working": -0.10536051565782632,
+          "mean_nonwork": -2.302585092994046,
+          "diff": 2.1972245773362196
+        }
+      },
+      "couples_female": {
+        "n_rows": 257700,
+        "n_hh": 2577,
+        "working_col_used": "working_female",
+        "leisure_col_used": "leisure_female",
+        "log_q_e_col_used": "log_q_E_female",
+        "D1a_leisure": {
+          "n_hh": 2577,
+          "within_std_quantiles": {
+            "q10": 19.62825677397715,
+            "q25": 20.208411285175192,
+            "q50": 20.877277737772378,
+            "q75": 21.481249178475323,
+            "q90": 22.07717262309732
+          },
+          "within_range_quantiles": {
+            "q10": 68.32605806747041,
+            "q25": 69.00687421114195,
+            "q50": 69.49692933077529,
+            "q75": 69.79483293193765,
+            "q90": 69.93346166560453
+          },
+          "within_mean_quantiles": {
+            "q10": 43.5503550754048,
+            "q25": 44.80403914252412,
+            "q50": 46.29950532171507,
+            "q75": 47.733958388692265,
+            "q90": 48.95051776955402
+          },
+          "between_std": 2.0866716753347543,
+          "median_within_std": 20.877277737772378,
+          "R_raw": 10.005061162496078
+        },
+        "D1c_leisure_BC": [
+          {
+            "theta": -1.0,
+            "within_std_q25": 0.017473941472069102,
+            "within_std_q50": 0.01885195860917102,
+            "within_std_q75": 0.020230193791509723,
+            "between_std": 0.0018931720354270069,
+            "R_BC": 9.95786872845866
+          },
+          {
+            "theta": -0.7,
+            "within_std_q25": 0.046904128797570874,
+            "within_std_q50": 0.050049562123078845,
+            "within_std_q75": 0.053242580087578636,
+            "between_std": 0.005025149861400095,
+            "R_BC": 9.959814832096203
+          },
+          {
+            "theta": -0.5,
+            "within_std_q25": 0.09195246481472119,
+            "within_std_q50": 0.09747494984203658,
+            "within_std_q75": 0.10306227285623766,
+            "between_std": 0.009779975245070478,
+            "R_BC": 9.966789015255237
+          },
+          {
+            "theta": 0.0,
+            "within_std_q25": 0.5196874048316673,
+            "within_std_q50": 0.5438649285175038,
+            "within_std_q75": 0.5678661231948243,
+            "between_std": 0.05449926908621445,
+            "R_BC": 9.979306835420918
+          }
+        ],
+        "D1c_at_M0_theta": {
+          "theta": -0.695727,
+          "within_std_q25": 0.04757934436074239,
+          "within_std_q50": 0.050758355841794625,
+          "within_std_q75": 0.05398452607842649,
+          "between_std": 0.005096503096674089,
+          "R_BC": 9.959447660282764
+        },
+        "D1d_rank_corr": {
+          "all_alts": {
+            "n_hh": 2577,
+            "median": -0.4759829830300868,
+            "q10": -0.5770992020563273,
+            "q90": -0.3666736492147422
+          },
+          "working_alts_only": {
+            "n_hh": 2577,
+            "median": -0.4177135865835098,
+            "q10": -0.5329698810900341,
+            "q90": -0.29755657463188007
+          }
+        },
+        "D2a_nonwork_share": {
+          "n_hh": 2577,
+          "quantiles": {
+            "q10": 0.06,
+            "q25": 0.08,
+            "q50": 0.1,
+            "q75": 0.12,
+            "q90": 0.14
+          },
+          "pct_hh_share_lt_5pct": 0.02405898331393093,
+          "pct_hh_share_lt_10pct": 0.4578967792006209,
+          "pct_hh_share_eq_0": 0.0
+        },
+        "D2b_observed_vs_proposal": {
+          "obs_nonwork_rate": 0.034924330616996506,
+          "proposal_median_share": 0.1,
+          "gap": -0.06507566938300349
+        },
+        "D2c_log_q_e": {
+          "log_q_e_col": "log_q_E_female",
+          "mean_working": -0.10536051565782631,
+          "mean_nonwork": -2.302585092994046,
+          "diff": 2.1972245773362196
+        }
+      }
+    }
+  },
+  "verdict": "FLAG",
+  "verdict_detail": {
+    "R_BC_C_at_M0": {
+      "singles_male": 0.13288237285630067,
+      "singles_female": 1.3383233731391746,
+      "couples_household": 6.707921057760629
+    },
+    "nonwork_share_medians": {
+      "singles_male": 0.1,
+      "singles_female": 0.1,
+      "couples_male": 0.1,
+      "couples_female": 0.1
+    },
+    "rank_corr_working_medians": {
+      "singles_male": -0.6024883176934022,
+      "singles_female": -0.6060865709241774,
+      "couples_male": -0.4191669977964816,
+      "couples_female": -0.4177135865835098
+    }
+  },
+  "rationale": "R_BC_C at M0 thetas: singles_male=0.133, singles_female=1.338, couples_household=6.708. Non-work median share lowest at 0.100; working-only rank-corr(C, L) lowest at -0.606. FLAG: R_BC_C at M0 theta lowest = 0.133 in marginal band [0.1, 0.3]. M0a is worth running, but plan to re-evaluate R_BC_C at the M0a converged theta. If R_BC_C drops further after pooling, draws-side widening may also be needed."
+}

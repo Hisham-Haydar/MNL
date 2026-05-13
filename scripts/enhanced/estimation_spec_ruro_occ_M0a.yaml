@@ -1,0 +1,352 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - RURO occupation-opportunity M0a
+# ==============================================================================
+# M0a is the identification-repair sibling of M0. Two changes vs M0:
+#
+#   1. The leisure-utility education shifter `beta_l_educH_{sm,sf,m,f}` is
+#      REMOVED. In M0, `corr(beta_l0_g, beta_l_educH_g)` ranged from 0.97 to
+#      0.996 across all four groups; the two parameters were not separately
+#      identified. Education remains in the model via `beta_E_educH` (market
+#      opportunity) and `beta_w_educH` (wage opportunity).
+#
+#   2. The singles consumption curvature is POOLED across sm and sf via a
+#      hard equality constraint on `theta_c_sm - theta_c_sf`. In M0,
+#      `(beta_c_sf, theta_c_sf)` returned NA SEs with reported correlation
+#      -1.035, i.e. a non-PSD inverse Hessian. Pooling theta_c across
+#      singles releases beta_c_sm and beta_c_sf to be jointly identified.
+#      The hard equality-constraint route is used because the
+#      estimation_spec_parser builds gendered theta_c copies and rewiring
+#      it to recognise a "singles-only shared" parameter would require
+#      coordinated engine changes. The equality-constraint route yields
+#      exactly the same likelihood landscape and uses one fewer effective
+#      degree of freedom (47 effective vs 48 reported).
+#
+# Everything else is identical to M0 byte-for-byte:
+#   - hours_opportunity, wage_opportunity, market_opportunity,
+#     occupation_opportunity blocks
+#   - prior/proposal correction
+#   - couples consumption block (beta_c, theta_c stay shared cm/cf)
+#   - choice index V = U + O^E + O^H + O^W + O^Occ - log_prior
+#
+# Reference docs:
+#   Results/RURO_occ_M0_verdict_v1.md
+#   Results/RURO_occ_M0a_simplification_plan_v1.md
+#   docs/RURO_NAMING_AND_PACKAGE_SCOPE_v1.md
+#
+# Parameter count: 47 effective (48 reported; one pair pinned by equality).
+# ==============================================================================
+
+specification:
+  name: "ruro_occ_M0a"
+  description: "M0a identification repair: theta_c pooled across singles via hard equality; beta_l_educH removed from utility leisure"
+  wage_spec: "vw"
+  model_family: "regular"
+
+utility:
+  functional_form: "box_cox"
+
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"
+    box_cox_bounds: [-8.0, 0.95]
+
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: "theta_l"
+    box_cox_bounds: [-8.0, 0.95]
+    shifters:
+      - variable: "age_norm"
+        coefficient: "beta_l_age"
+      - variable: "age_norm2"
+        coefficient: "beta_l_age2"
+      - variable: "n_children"
+        coefficient: "beta_l_nkids"
+        gender_specific: true   # female only
+      # REMOVED at M0a: educH shifter
+      # M0 reported corr(beta_l0_g, beta_l_educH_g) in [0.97, 0.996] across
+      # all four groups; the leisure-utility education term is absorbed by
+      # beta_l0_g and is not separately identified.
+
+hours_opportunity:
+  # IDENTICAL to M0. O^E + O^H. Base employment intercept beta_E * working is
+  # the participation log-odds (contract sec 9). PT1/PT2/FT focal-point shifters.
+  shifters:
+    - variable: "working"
+      coefficient: "beta_E"
+    - variable: "working_pt1"
+      coefficient: "beta_h_pt1"
+    - variable: "working_pt2"
+      coefficient: "beta_h_pt2"
+    - variable: "working_ft"
+      coefficient: "beta_h_ft"
+
+wage_opportunity:
+  # IDENTICAL to M0. Log-normal wage opportunity with Mincer mean.
+  # mu(X) = beta_w0 + beta_w_educL*educL + beta_w_educH*educH
+  #         + beta_w_pexp*pexp + beta_w_pexp2*pexp^2
+  # sigma shared across occupations.
+  specification: "log_normal"
+  mean_shifters:
+    - variable: "intercept"
+      coefficient: "beta_w0"
+    - variable: "educL"
+      coefficient: "beta_w_educL"
+    - variable: "educH"
+      coefficient: "beta_w_educH"
+    - variable: "pexp_years"
+      coefficient: "beta_w_pexp"
+    - variable: "pexp_years2"
+      coefficient: "beta_w_pexp2"
+  variance:
+    parameter: "sigma"
+
+market_opportunity:
+  # IDENTICAL to M0. Residual employment/market access shifters only.
+  applies_to: "both"
+  employment_indicator: "working"
+  gsur_variable: "gsur"
+  offer_only_vars: ["gsur"]
+  center_within_choice_set: true
+  center_weights: "proposal"
+  variable_scales:
+    gsur: 10.0
+
+  shifters:
+    - variable: "gsur"
+      coefficient: "beta_E_gsur"
+      interaction: ["working"]
+    - variable: "educH"
+      coefficient: "beta_E_educH"
+      interaction: ["working"]
+
+occupation_opportunity:
+  # IDENTICAL to M0. Reference category loc4 = 1 (routine-manual).
+  variable: "loc4"
+  reference: 1
+  shifters:
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_sm"
+      applies_to: "sm"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_sm"
+      applies_to: "sm"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_sm"
+      applies_to: "sm"
+      interaction: ["working"]
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_sf"
+      applies_to: "sf"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_sf"
+      applies_to: "sf"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_sf"
+      applies_to: "sf"
+      interaction: ["working"]
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_cm"
+      applies_to: "cm"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_cm"
+      applies_to: "cm"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_cm"
+      applies_to: "cm"
+      interaction: ["working"]
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_cf"
+      applies_to: "cf"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_cf"
+      applies_to: "cf"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_cf"
+      applies_to: "cf"
+      interaction: ["working"]
+
+couples: {}
+
+initial_values:
+  # Preferences - neutral starts (no warm-start from M0; the M0 optimum is
+  # on the wrong side of an indefinite Hessian).
+  beta_l0_sm: 1.0
+  beta_l_age_sm: 0.0
+  beta_l_age2_sm: 0.0
+  # REMOVED at M0a: beta_l_educH_sm
+  beta_c_sm: 1.0
+  theta_l_sm: -1.0
+  theta_c_sm: -1.0
+
+  beta_l0_sf: 1.0
+  beta_l_age_sf: 0.0
+  beta_l_age2_sf: 0.0
+  beta_l_nkids_sf: 0.0
+  # REMOVED at M0a: beta_l_educH_sf
+  beta_c_sf: 1.0
+  theta_l_sf: -1.0
+  theta_c_sf: -1.0   # pinned equal to theta_c_sm by hard equality constraint
+
+  beta_l0_m: 1.0
+  beta_l_age_m: 0.0
+  beta_l_age2_m: 0.0
+  # REMOVED at M0a: beta_l_educH_m
+  theta_l_m: -1.0
+
+  beta_l0_f: 1.0
+  beta_l_age_f: 0.0
+  beta_l_age2_f: 0.0
+  beta_l_nkids_f: 0.0
+  # REMOVED at M0a: beta_l_educH_f
+  theta_l_f: -1.0
+
+  beta_c: 1.0
+  theta_c: -1.0
+
+  # Employment intercept and hours focal-point shifters (identical to M0)
+  beta_E:     0.0
+  beta_h_pt1: 0.0
+  beta_h_pt2: 0.0
+  beta_h_ft:  0.0
+
+  # Market opportunity residual (identical to M0)
+  beta_E_gsur:  0.0
+  beta_E_educH: 0.0
+
+  # Wage opportunity Mincer mean (identical to M0)
+  beta_w0:       2.0
+  beta_w_educL: -0.1
+  beta_w_educH:  0.2
+  beta_w_pexp:   0.02
+  beta_w_pexp2: -0.0003
+
+  # Occupation opportunity (identical to M0)
+  beta_occ_2_sm: 0.0
+  beta_occ_3_sm: 0.0
+  beta_occ_4_sm: 0.0
+  beta_occ_2_sf: 0.0
+  beta_occ_3_sf: 0.0
+  beta_occ_4_sf: 0.0
+  beta_occ_2_cm: 0.0
+  beta_occ_3_cm: 0.0
+  beta_occ_4_cm: 0.0
+  beta_occ_2_cf: 0.0
+  beta_occ_3_cf: 0.0
+  beta_occ_4_cf: 0.0
+
+  # Wage noise sigma (identical to M0)
+  sigma: 0.5
+
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 6000
+  tolerance: 1.0e-8
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+  bounds:
+    # Box-Cox exponents - NONE hard-fixed at M0a (contract sec 19, M0a sec 3)
+    theta_l_sm: [-8.0, 0.95]
+    theta_c_sm: [-8.0, 0.95]
+    theta_l_sf: [-8.0, 0.95]
+    theta_c_sf: [-8.0, 0.95]   # equality-linked to theta_c_sm via param_diff
+    theta_l_m:  [-8.0, 0.95]
+    theta_l_f:  [-8.0, 0.95]
+    theta_c:    [-8.0, 0.95]
+
+    # Preference scales
+    beta_c_sm: [0.05, 50.0]
+    beta_c_sf: [0.05, 50.0]
+    beta_c:    [0.05, 50.0]
+    beta_l0_sm: [0.05, 50.0]
+    beta_l0_sf: [0.05, 50.0]
+    beta_l0_m:  [0.05, 50.0]
+    beta_l0_f:  [0.05, 50.0]
+
+    # Leisure shifters (beta_l_educH_* removed at M0a)
+    beta_l_age_sm:   [-5.0, 5.0]
+    beta_l_age2_sm:  [-1.0, 1.0]
+    beta_l_age_sf:   [-5.0, 5.0]
+    beta_l_age2_sf:  [-1.0, 1.0]
+    beta_l_age_m:    [-5.0, 5.0]
+    beta_l_age2_m:   [-1.0, 1.0]
+    beta_l_age_f:    [-5.0, 5.0]
+    beta_l_age2_f:   [-1.0, 1.0]
+    beta_l_nkids_sf: [-5.0, 5.0]
+    beta_l_nkids_f:  [-5.0, 5.0]
+
+    # Employment intercept and hours focal-point shifters
+    beta_E:     [-25.0, 25.0]
+    beta_h_pt1: [-10.0, 10.0]
+    beta_h_pt2: [-10.0, 10.0]
+    beta_h_ft:  [-10.0, 10.0]
+
+    # Wage opportunity Mincer mean
+    beta_w0:       [-10.0, 20.0]
+    beta_w_educL:  [-5.0, 5.0]
+    beta_w_educH:  [-5.0, 5.0]
+    beta_w_pexp:   [-1.0, 1.0]
+    beta_w_pexp2:  [-0.1, 0.1]
+
+    # Market opportunity residual
+    beta_E_gsur:  [-10.0, 10.0]
+    beta_E_educH: [-10.0, 10.0]
+
+    # Occupation opportunity (reference loc4=1)
+    beta_occ_2_sm: [-10.0, 10.0]
+    beta_occ_3_sm: [-10.0, 10.0]
+    beta_occ_4_sm: [-10.0, 10.0]
+    beta_occ_2_sf: [-10.0, 10.0]
+    beta_occ_3_sf: [-10.0, 10.0]
+    beta_occ_4_sf: [-10.0, 10.0]
+    beta_occ_2_cm: [-10.0, 10.0]
+    beta_occ_3_cm: [-10.0, 10.0]
+    beta_occ_4_cm: [-10.0, 10.0]
+    beta_occ_2_cf: [-10.0, 10.0]
+    beta_occ_3_cf: [-10.0, 10.0]
+    beta_occ_4_cf: [-10.0, 10.0]
+
+    # Wage noise
+    sigma: [0.1, 20.0]
+
+  expression_constraints:
+    enabled: true
+    default_mode: soft
+    default_weight: 1000.0
+    constraints:
+      # M0a NEW: hard equality constraint pooling singles theta_c.
+      # Encodes theta_c_sm = theta_c_sf as a singles-only shared curvature.
+      # Equivalent to renaming both to a single `theta_c_singles` parameter
+      # without requiring engine changes. See M0a plan section 8(e).
+      - name: theta_c_singles_pool
+        expression: param_diff
+        group: global
+        lhs_param: theta_c_sm
+        rhs_param: theta_c_sf
+        lower: 0.0
+        upper: 0.0
+        mode: hard
+      # IDENTICAL to M0 (couples MUL positivity guards).
+      - name: mul_cou_m_positive
+        expression: mul
+        group: couples_male
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        lower: 1.0e-6
+      - name: mul_cou_f_positive
+        expression: mul
+        group: couples_female
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        lower: 1.0e-6
+
+gradient_verification:
+  enabled: false

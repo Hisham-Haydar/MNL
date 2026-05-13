@@ -1,0 +1,200 @@
+{
+  "files": {
+    "singles": {
+      "path": "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__singles.parquet",
+      "exists": true,
+      "size_bytes": 21500551,
+      "mtime": "2026-05-13T10:38:21.929304"
+    },
+    "couples": {
+      "path": "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__couples.parquet",
+      "exists": true,
+      "size_bytes": 43108822,
+      "mtime": "2026-05-13T10:38:22.968306"
+    },
+    "mnlmeta": {
+      "path": "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__mnlmeta.json",
+      "exists": true,
+      "size_bytes": 57973,
+      "mtime": "2026-05-13T10:38:22.979297"
+    }
+  },
+  "structure_singles": {
+    "rows": 167600,
+    "n_columns": 75,
+    "n_households": 1676,
+    "alt_per_hh_min": 100,
+    "alt_per_hh_median": 100.0,
+    "alt_per_hh_max": 100,
+    "alt_per_hh_distinct_values": [
+      100
+    ],
+    "chosen_col_used": "is_chosen",
+    "chosen_per_hh_min": 1,
+    "chosen_per_hh_max": 1,
+    "n_hh_with_chosen_eq_1": 1676,
+    "n_hh_with_chosen_ne_1": 0
+  },
+  "structure_couples": {
+    "rows": 257700,
+    "n_columns": 93,
+    "n_households": 2577,
+    "alt_per_hh_min": 100,
+    "alt_per_hh_median": 100.0,
+    "alt_per_hh_max": 100,
+    "alt_per_hh_distinct_values": [
+      100
+    ],
+    "chosen_col_used": "is_chosen",
+    "chosen_per_hh_min": 1,
+    "chosen_per_hh_max": 1,
+    "n_hh_with_chosen_eq_1": 2577,
+    "n_hh_with_chosen_ne_1": 0
+  },
+  "required_singles_missing": [],
+  "required_couples_missing": [],
+  "dummies_singles_present": [],
+  "dummies_singles_absent": [
+    "loc4_2",
+    "loc4_3",
+    "loc4_4"
+  ],
+  "dummies_couples_present": [],
+  "dummies_couples_absent": [
+    "loc4_2_male",
+    "loc4_3_male",
+    "loc4_4_male",
+    "loc4_2_female",
+    "loc4_3_female",
+    "loc4_4_female"
+  ],
+  "occupation_variation_singles": {
+    "n_households_with_working": 1676,
+    "median_distinct_loc4": 4.0,
+    "mean_distinct_loc4": 4.00417661097852,
+    "max_distinct_loc4": 5,
+    "min_distinct_loc4": 4,
+    "pct_hh_eq_1": 0.0,
+    "distribution_of_distinct_counts": {
+      "4": 1669,
+      "5": 7
+    },
+    "loc4_value_counts_overall": {
+      "-2": 7,
+      "-1": 16813,
+      "1": 43764,
+      "2": 23042,
+      "3": 14234,
+      "4": 69740
+    },
+    "loc4_value_counts_working": {
+      "-2": 7,
+      "1": 43764,
+      "2": 23042,
+      "3": 14234,
+      "4": 69740
+    }
+  },
+  "occupation_variation_couples_male": {
+    "n_households_with_working": 2577,
+    "median_distinct_loc4": 4.0,
+    "mean_distinct_loc4": 4.012029491656966,
+    "max_distinct_loc4": 5,
+    "min_distinct_loc4": 4,
+    "pct_hh_eq_1": 0.0,
+    "distribution_of_distinct_counts": {
+      "4": 2546,
+      "5": 31
+    },
+    "loc4_value_counts_overall": {
+      "-2": 31,
+      "-1": 26053,
+      "1": 62393,
+      "2": 33433,
+      "3": 21991,
+      "4": 113799
+    },
+    "loc4_value_counts_working": {
+      "-2": 31,
+      "1": 62393,
+      "2": 33433,
+      "3": 21991,
+      "4": 113799
+    }
+  },
+  "occupation_variation_couples_female": {
+    "n_households_with_working": 2577,
+    "median_distinct_loc4": 4.0,
+    "mean_distinct_loc4": 4.000776096235933,
+    "max_distinct_loc4": 5,
+    "min_distinct_loc4": 3,
+    "pct_hh_eq_1": 0.0,
+    "distribution_of_distinct_counts": {
+      "3": 1,
+      "4": 2573,
+      "5": 3
+    },
+    "loc4_value_counts_overall": {
+      "-2": 3,
+      "-1": 25693,
+      "1": 61831,
+      "2": 33482,
+      "3": 22601,
+      "4": 114090
+    },
+    "loc4_value_counts_working": {
+      "-2": 3,
+      "1": 61831,
+      "2": 33482,
+      "3": 22601,
+      "4": 114090
+    }
+  },
+  "prior_singles": {
+    "n_rows": 167600,
+    "min_prior": 7.819103972950115e-06,
+    "n_prior_le_0": 0,
+    "n_prior_nan": 0,
+    "max_abs_log_diff": 0.0,
+    "n_rows_log_diff_gt_1e_8": 0,
+    "max_abs_reconstruction": 0.0,
+    "n_rows_reconstruction_gt_1e_8": 0
+  },
+  "prior_couples": {
+    "n_rows": 257700,
+    "min_prior": 6.289826448992587e-11,
+    "n_prior_le_0": 0,
+    "n_prior_nan": 0,
+    "max_abs_log_diff": 0.0,
+    "n_rows_log_diff_gt_1e_8": 0,
+    "max_abs_reconstruction": 0.0,
+    "n_rows_reconstruction_gt_1e_8": 0
+  },
+  "nonwork_singles": {
+    "n_nonwork_rows": 16813,
+    "log_q_Occ_nonwork_max_abs": 0.0,
+    "log_q_Occ_nonwork_n_nonzero": 0,
+    "loc4_unique_values_nonwork": [
+      -1
+    ]
+  },
+  "nonwork_couples_male": {
+    "n_nonwork_rows": 26053,
+    "log_q_Occ_nonwork_max_abs": 0.0,
+    "log_q_Occ_nonwork_n_nonzero": 0,
+    "loc4_unique_values_nonwork": [
+      -1
+    ]
+  },
+  "nonwork_couples_female": {
+    "n_nonwork_rows": 25693,
+    "log_q_Occ_nonwork_max_abs": 0.0,
+    "log_q_Occ_nonwork_n_nonzero": 0,
+    "loc4_unique_values_nonwork": [
+      -1
+    ]
+  },
+  "forbidden_singles": [],
+  "forbidden_couples": [],
+  "forbidden_couples_with_suffix": []
+}

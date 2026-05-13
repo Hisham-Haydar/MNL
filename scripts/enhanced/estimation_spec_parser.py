@@ -89,6 +89,12 @@ class EstimationSpec:
     # Consumption pooling (NEW: identification fix)
     pool_consumption_across_groups: bool = False  # If True, all groups share (beta_c, theta_c)
 
+    # Singles-only shared consumption Box-Cox exponent (M0a-clean identification repair).
+    # When set, both singles_male and singles_female read this single parameter instead
+    # of separate theta_c_sm / theta_c_sf. Couples consumption theta is untouched.
+    # YAML key: utility.consumption.singles_box_cox_exponent
+    utility_consumption_theta_singles_shared: Optional[str] = None
+
     # Occupation choice configuration (NEW)
     occupation_choice: bool = False
     occupation_preferences: List[Dict[str, Any]] = field(default_factory=list)
@@ -151,13 +157,54 @@ class EstimationSpec:
     def is_ac2013(self) -> bool:
         """
         Check if this specification uses Aaberge-Colombino (2013) style.
-        
+
         Returns
         -------
         bool
             True if model_version is "AC2013"
         """
         return self.model_version == "AC2013"
+
+    def theta_c_param_name(self, group: Optional[str]) -> Optional[str]:
+        """
+        Return the parameter-vector name of the consumption Box-Cox exponent
+        for a given group, handling the M0a-clean singles-shared case.
+
+        Parameters
+        ----------
+        group : str or None
+            One of "singles_male", "singles_female", "singles_pooled",
+            "sm", "sf", "couples_male", "couples_female", "couples_household",
+            "couples", "m", "f". For singles_* / sm / sf the singles-shared
+            name (when set on this spec) takes precedence over the per-gender
+            suffix variant. For couples / couples_* / m / f the legacy
+            shared `utility_consumption_theta` (e.g. ``theta_c``) is returned
+            unchanged. ``None`` is also accepted and returns the legacy
+            shared name.
+
+        Returns
+        -------
+        Optional[str]
+            The parameter name, or None if the spec has no consumption theta.
+        """
+        if not self.utility_consumption_theta:
+            return None
+        singles_groups = {
+            "singles_male", "singles_female", "singles_pooled", "sm", "sf",
+        }
+        if (
+            self.utility_consumption_theta_singles_shared
+            and group in singles_groups
+        ):
+            return self.utility_consumption_theta_singles_shared
+        if group in {"couples_household", "couples", "couples_male",
+                     "couples_female", "m", "f", None}:
+            return self.utility_consumption_theta
+        # Singles legacy: append suffix to the base name.
+        suffix_map = {"singles_male": "_sm", "singles_female": "_sf",
+                      "sm": "_sm", "sf": "_sf"}
+        suffix = suffix_map.get(group, "")
+        return f"{self.utility_consumption_theta}{suffix}"
 
     def get_bounds_tuple(self) -> List[Tuple[Optional[float], Optional[float]]]:
         """
@@ -367,6 +414,26 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     )
     if pool_consumption_across_groups:
         logger.info("Consumption pooling ENABLED: all groups share (beta_c, theta_c)")
+
+    # Singles-only shared consumption Box-Cox exponent (M0a-clean).
+    # If set, both singles_male and singles_female read this one parameter
+    # instead of separate theta_c_sm / theta_c_sf. Couples remain on the
+    # ordinary `box_cox_exponent` (e.g. theta_c). Mutually exclusive with
+    # pool_consumption_across_groups (which pools across all four groups).
+    utility_consumption_theta_singles_shared = consumption_config.get(
+        "singles_box_cox_exponent", None
+    )
+    if utility_consumption_theta_singles_shared and pool_consumption_across_groups:
+        raise ValueError(
+            "utility.consumption.singles_box_cox_exponent and "
+            "utility.consumption.pool_across_groups are mutually exclusive. "
+            "Use one or the other, not both."
+        )
+    if utility_consumption_theta_singles_shared:
+        logger.info(
+            f"Singles theta_c POOLED: singles_male and singles_female share "
+            f"'{utility_consumption_theta_singles_shared}'."
+        )
     consumption_leisure_interaction_config = utility_config.get("consumption_leisure_interaction", {})
     if isinstance(consumption_leisure_interaction_config, dict):
         utility_consumption_leisure_interaction_coef = consumption_leisure_interaction_config.get("coefficient", None)
@@ -634,6 +701,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
             occupation_wage_configs=occupation_wage_configs,
             occupation_availability=occupation_availability,
             pool_consumption=pool_consumption_across_groups,
+            singles_shared_consumption_theta=utility_consumption_theta_singles_shared,
         )
 
     logger.info(f"Total parameters: {len(all_param_names)}")
@@ -718,6 +786,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         market_opportunity_enforce_job_varying=market_opportunity_enforce_job_varying,
         market_opportunity_variable_scales=market_opportunity_variable_scales,
         pool_consumption_across_groups=pool_consumption_across_groups,
+        utility_consumption_theta_singles_shared=utility_consumption_theta_singles_shared,
         ac2013_use_log_age=(model_version == "AC2013"),
         ac2013_children_age_groups=(model_version == "AC2013"),
         ac2013_experience_in_wage=(model_version == "AC2013"),
@@ -1138,6 +1207,7 @@ def _build_parameter_list(
     occupation_wage_configs: Optional[List[Dict[str, Any]]] = None,
     occupation_availability: Optional[List[Dict[str, Any]]] = None,
     pool_consumption: bool = False,
+    singles_shared_consumption_theta: Optional[str] = None,
 ) -> List[str]:
     """
     Build ordered list of all parameter names.
@@ -1196,7 +1266,10 @@ def _build_parameter_list(
     if utility_form == "box_cox":
         if utility_leisure_theta:
             singles_male_params.append(f"{utility_leisure_theta}_sm")  # theta_l_sm
-        if utility_consumption_theta and not pool_consumption:
+        # Singles-shared theta_c (M0a-clean) suppresses the per-singles _sm copy;
+        # the shared name is added once below, after both singles blocks.
+        if (utility_consumption_theta and not pool_consumption
+                and not singles_shared_consumption_theta):
             singles_male_params.append(f"{utility_consumption_theta}_sm")  # theta_c_sm
 
     params.extend(singles_male_params)
@@ -1216,10 +1289,19 @@ def _build_parameter_list(
     if utility_form == "box_cox":
         if utility_leisure_theta:
             singles_female_params.append(f"{utility_leisure_theta}_sf")  # theta_l_sf
-        if utility_consumption_theta and not pool_consumption:
+        # Singles-shared theta_c (M0a-clean) suppresses the per-singles _sf copy.
+        if (utility_consumption_theta and not pool_consumption
+                and not singles_shared_consumption_theta):
             singles_female_params.append(f"{utility_consumption_theta}_sf")  # theta_c_sf
 
     params.extend(singles_female_params)
+
+    # M0a-clean: a single shared singles consumption Box-Cox exponent, added
+    # once after both singles blocks. Mutually exclusive with pool_consumption
+    # (which would have folded singles into couples already).
+    if (utility_consumption_theta and singles_shared_consumption_theta
+            and utility_form == "box_cox" and not pool_consumption):
+        params.append(singles_shared_consumption_theta)
 
     # GROUP 3: Couples Male - Leisure preferences (_m suffix)
     couples_male_params = [

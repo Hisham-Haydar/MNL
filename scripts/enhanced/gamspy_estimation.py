@@ -607,7 +607,11 @@ def estimate_singles_gamspy(
 
             # Handle optional theta_c parameter (None = log utility)
             if spec.utility_consumption_theta:
-                theta_c_param = get_param_name('theta_c', group, param_vars)
+                # M0a-clean: spec.theta_c_param_name returns 'theta_c_singles'
+                # when group is singles_male / singles_female; the legacy
+                # gendered suffix otherwise.
+                theta_c_base = spec.theta_c_param_name(group) or 'theta_c'
+                theta_c_param = get_param_name(theta_c_base, group, param_vars)
                 bc_c = boxcox_gamspy(c_scaled, param_vars[theta_c_param])
                 params_used.add(theta_c_param)
             else:
@@ -913,7 +917,12 @@ def estimate_couples_gamspy(
 
             # Handle optional theta_c parameter (None = log utility)
             if spec.utility_consumption_theta:
-                theta_c_param = get_param_name('theta_c', 'couples_household', param_vars)
+                # Couples_household routes via the helper for symmetry; under
+                # M0a-clean this still returns the legacy shared `theta_c`.
+                theta_c_base = (
+                    spec.theta_c_param_name('couples_household') or 'theta_c'
+                )
+                theta_c_param = get_param_name(theta_c_base, 'couples_household', param_vars)
                 bc_c = boxcox_gamspy(c_scaled, param_vars[theta_c_param])
             else:
                 # Log utility when theta=None
@@ -1606,7 +1615,11 @@ def estimate_joint_gamspy(
 
             # Handle optional theta_c parameter (None = log utility)
             if spec.utility_consumption_theta:
-                theta_c_param = get_param_name('theta_c', 'singles_male', param_vars)
+                # M0a-clean: theta_c_singles for singles_male; else theta_c_sm.
+                theta_c_base = (
+                    spec.theta_c_param_name('singles_male') or 'theta_c'
+                )
+                theta_c_param = get_param_name(theta_c_base, 'singles_male', param_vars)
                 bc_c = boxcox_gamspy(c_val, param_vars[theta_c_param])
             else:
                 # Log utility when theta=None
@@ -1797,7 +1810,11 @@ def estimate_joint_gamspy(
 
             # Handle optional theta_c parameter (None = log utility)
             if spec.utility_consumption_theta:
-                theta_c_param = get_param_name('theta_c', 'singles_female', param_vars)
+                # M0a-clean: theta_c_singles for singles_female; else theta_c_sf.
+                theta_c_base = (
+                    spec.theta_c_param_name('singles_female') or 'theta_c'
+                )
+                theta_c_param = get_param_name(theta_c_base, 'singles_female', param_vars)
                 bc_c = boxcox_gamspy(c_val, param_vars[theta_c_param])
             else:
                 # Log utility when theta=None
@@ -1986,7 +2003,12 @@ def estimate_joint_gamspy(
 
             # Handle optional theta_c parameter (None = log utility)
             if spec.utility_consumption_theta:
-                theta_c_param = get_param_name('theta_c', 'couples_household', param_vars)
+                # Couples_household: helper returns legacy shared `theta_c`
+                # (M0a-clean does NOT pool couples with singles).
+                theta_c_base = (
+                    spec.theta_c_param_name('couples_household') or 'theta_c'
+                )
+                theta_c_param = get_param_name(theta_c_base, 'couples_household', param_vars)
                 bc_c = boxcox_gamspy(c_val, param_vars[theta_c_param])
             else:
                 # Log utility when theta=None

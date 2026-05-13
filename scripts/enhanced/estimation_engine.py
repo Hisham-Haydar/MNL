@@ -447,6 +447,7 @@ def _compute_utility_singles(
 
     # Determine gender suffix for parameter names
     gender_suffix = "_sm" if data.is_male else "_sf"
+    singles_group = "singles_male" if data.is_male else "singles_female"
 
     # Box-Cox transformations with gender-specific exponents
     # Handle optional theta parameters (can be None for log utility)
@@ -456,8 +457,10 @@ def _compute_utility_singles(
     else:
         theta_l = 0.0  # Log utility if theta not specified
 
-    if spec.utility_consumption_theta:
-        theta_c_name = f"{spec.utility_consumption_theta}{gender_suffix}"
+    # Consumption theta name: M0a-clean shares theta_c_singles across sm/sf;
+    # otherwise this returns the gender-suffixed legacy name.
+    theta_c_name = spec.theta_c_param_name(singles_group)
+    if theta_c_name:
         theta_c = params[theta_c_name]
     else:
         theta_c = 0.0  # Log utility if theta not specified
@@ -869,6 +872,7 @@ def _compute_utility_derivatives_singles(
     """
     # Determine gender suffix for parameter names
     gender_suffix = "_sm" if data.is_male else "_sf"
+    singles_group = "singles_male" if data.is_male else "singles_female"
 
     # Box-Cox transformations with gender-specific exponents
     # Handle optional theta parameters (can be None for log utility)
@@ -878,8 +882,9 @@ def _compute_utility_derivatives_singles(
     else:
         theta_l = 0.0  # Log utility if theta not specified
 
-    if spec.utility_consumption_theta:
-        theta_c_name = f"{spec.utility_consumption_theta}{gender_suffix}"
+    # Consumption theta name (M0a-clean honours singles-shared exponent).
+    theta_c_name = spec.theta_c_param_name(singles_group)
+    if theta_c_name:
         theta_c = params[theta_c_name]
     else:
         theta_c = 0.0  # Log utility if theta not specified

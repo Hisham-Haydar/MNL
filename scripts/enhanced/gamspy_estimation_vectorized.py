@@ -379,7 +379,11 @@ def _build_singles_ll_vectorized(
     beta_c = param_vars[beta_c_name]
 
     if spec.utility_consumption_theta:
-        theta_c_name = get_param_name(spec.utility_consumption_theta, group, param_vars)
+        # spec.theta_c_param_name routes singles_{male,female} to the shared
+        # `theta_c_singles` when M0a-clean is active; couples_household keeps
+        # the legacy shared `theta_c`.
+        theta_c_base = spec.theta_c_param_name(group) or spec.utility_consumption_theta
+        theta_c_name = get_param_name(theta_c_base, group, param_vars)
         theta_c = param_vars[theta_c_name]
         bc_c = box_cox_transform(consumption_param, theta_c)
     else:
@@ -708,7 +712,13 @@ def _build_couples_ll_vectorized(
     beta_c = param_vars[beta_c_name]
 
     if spec.utility_consumption_theta:
-        theta_c_name = get_param_name(spec.utility_consumption_theta, "couples_household", param_vars)
+        # Couples group -> spec.theta_c_param_name returns the legacy shared
+        # `theta_c`; routed via the helper for symmetry with the singles path.
+        theta_c_base = (
+            spec.theta_c_param_name("couples_household")
+            or spec.utility_consumption_theta
+        )
+        theta_c_name = get_param_name(theta_c_base, "couples_household", param_vars)
         theta_c = param_vars[theta_c_name]
         bc_c = box_cox_transform(consumption_param, theta_c)
     else:

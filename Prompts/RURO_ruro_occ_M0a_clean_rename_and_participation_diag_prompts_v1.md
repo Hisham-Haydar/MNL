@@ -1,506 +1,530 @@
-# Claude Code prompts — RURO `ruro_occ_M0a-clean` rename + participation diagnostic
+# Claude Code Prompts - RURO ruro_occ_M0a-clean and Participation Diagnostic
 
 Date: 2026-05-13
 
-Purpose: two sequential prompts for Claude Code. Prompt 1 replaces the
-M0a equality-constraint fallback with a proper renamed shared
-parameter, removing the post-estimation `|corr| > 1` artifacts in the
-consumption block. Prompt 2 decomposes the choice index at the M0a-clean
-converged θ to identify which term is driving predicted participation
-= 1.0000 across all four groups.
+Purpose: cleanly re-parameterize M0a so the singles consumption curvature is
+a true shared parameter, then diagnose the persistent predicted-participation
+pathology using a read-only decomposition. These are two related tasks, but
+they should be run sequentially for traceability.
 
-Run Prompt 1 first. After it finishes and a new estimation results file
-exists, run Prompt 2 against that results file. Do not run them in
-parallel.
+Use Prompt 1 first. It patches and validates the M0a-clean specification but
+does not run estimation. After the user runs the M0a-clean estimation and
+post-estimation, use Prompt 2 to diagnose the participation issue.
+
+## Why These Prompts Replace the Earlier Drafts
+
+The earlier equality-constraint M0a used a hard constraint
+`theta_c_sm = theta_c_sf`. That gives the intended likelihood restriction, but
+post-estimation inverts an unconstrained Hessian, so correlations involving the
+constrained consumption-curvature block can become non-PSD and even exceed
+absolute value 1. That is a reporting artifact from the parameterization.
+
+The clean fix is not to prune insignificant parameters. The clean fix is to
+remove the redundant singles curvature parameter from the parameter vector.
+This prompt therefore requires a true shared parameter named
+`theta_c_singles`.
+
+The participation diagnostic is kept separate. Predicted participation equal
+to 1.0000 across groups survived M0 and M0a, so it is probably not fixed by
+another YAML simplification. It needs a decomposition of the structural choice
+index and the post-estimation aggregation.
 
 ---
 
-## Prompt 1 — M0a-clean: proper rename of `θ_c_singles`
+# Prompt 1 - Implement ruro_occ_M0a-clean with true theta_c_singles
+
+Work locally in my RURO/MNL codebase.
+
+Read:
+
+- `Results/RURO_occ_M0a_simplification_plan_v1.md`
+- `docs/RURO_occ_M0a_implementation_report_v1.md`
+- `scripts/enhanced/estimation_spec_ruro_occ_M0a.yaml`
+- `scripts/enhanced/estimation_spec_ruro_occ_M0.yaml`
+- `scripts/enhanced/estimation_spec_parser.py`
+- `scripts/enhanced/estimation_engine.py`
+- `scripts/enhanced/gamspy_estimation_vectorized.py`
+- `scripts/enhanced/gamspy_estimation.py` if it exists and is still used
+- the latest M0a `estimation_results.json` for context only, if present
+
+Do not run full estimation.
+Do not run post-estimation.
+Do not edit MNL parquets, draw scripts, EUROMOD scripts, or job-choice code.
+
+## Goal
+
+Create a clean M0a specification where singles male and singles female share
+one consumption Box-Cox curvature parameter:
+
+```yaml
+utility:
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"
+    singles_box_cox_exponent: "theta_c_singles"
+```
+
+The clean parameter vector must contain `theta_c_singles` and must not contain
+`theta_c_sm` or `theta_c_sf`. Couples keep their existing shared `theta_c`.
+
+Create:
+
+- `scripts/enhanced/estimation_spec_ruro_occ_M0a_clean.yaml`
+- `docs/RURO_occ_M0a_clean_implementation_report_v1.md`
+- `Results/_M0a_clean_spec_check.py`
+
+## Required Implementation
+
+Implement Route A only: a true renamed shared parameter.
+
+Do not implement the fallback route where `theta_c_sm` is reused for singles
+female. That route is shorter but semantically misleading and risks hidden
+engine assumptions.
+
+### Parser requirements
+
+Modify `scripts/enhanced/estimation_spec_parser.py` narrowly so:
+
+1. `utility.consumption.singles_box_cox_exponent` is optional.
+2. If present, `_build_parameter_list` emits the named parameter once for the
+   singles consumption curvature.
+3. If present, `_build_parameter_list` does not emit `theta_c_sm` or
+   `theta_c_sf`.
+4. Couples consumption remains unchanged and still uses the ordinary
+   `box_cox_exponent` parameter, currently `theta_c`.
+5. Old specs without `singles_box_cox_exponent` still parse exactly as before.
+
+Use a small parser metadata field or property if needed so the engines can
+detect the shared singles curvature without hard-coding the M0a-clean spec
+name.
+
+### Engine requirements
+
+Modify the estimation code paths narrowly and symmetrically:
+
+- `scripts/enhanced/estimation_engine.py`
+- `scripts/enhanced/gamspy_estimation_vectorized.py`
+- `scripts/enhanced/gamspy_estimation.py` if present and relevant
+
+Required behavior:
+
+1. For singles male and singles female, use `theta_c_singles` when the parsed
+   spec declares `utility.consumption.singles_box_cox_exponent`.
+2. Fall back to the legacy `theta_c_sm` and `theta_c_sf` behavior when the key
+   is absent.
+3. Couples continue to use `theta_c`; do not route couples through
+   `theta_c_singles`.
+4. Do not touch the prior/proposal correction machinery.
+5. Do not touch hours, wage, market, or occupation opportunity blocks except
+   where a function signature must pass parser metadata through.
+
+Audit every grep hit for `theta_c_sm`, `theta_c_sf`, `box_cox_exponent`, and
+`consumption` in the touched engine files. Record the important hits in the
+report.
+
+### YAML requirements
+
+Create `scripts/enhanced/estimation_spec_ruro_occ_M0a_clean.yaml` from the
+current M0a YAML, then apply these exact changes:
+
+1. Set `specification.name` to `ruro_occ_M0a_clean`.
+2. Add `utility.consumption.singles_box_cox_exponent: "theta_c_singles"`.
+3. Remove the hard equality constraint `theta_c_singles_pool`.
+4. Remove any `param_diff` constraint linking `theta_c_sm` and `theta_c_sf`.
+5. Remove `theta_c_sm` and `theta_c_sf` from `initial_values`.
+6. Add `theta_c_singles: -1.0` to `initial_values`.
+7. Remove `theta_c_sm` and `theta_c_sf` from bounds.
+8. Add bounds for `theta_c_singles` equal to `[-8.0, 0.95]`.
+9. Keep the two `mul_cou_*_positive` constraints verbatim.
+10. Keep the four `beta_l_educH_*` leisure education shifters removed.
+11. Do not change:
+    - `hours_opportunity`
+    - `wage_opportunity`
+    - `market_opportunity`
+    - `occupation_opportunity`
+    - prior/proposal correction settings
+    - MNL data paths
+    - draw or EUROMOD settings
+
+Expected final count: 47 estimated parameters.
+
+## Validation Gates
+
+Before declaring success, create and run:
 
 ```text
-You are repairing a constraint-handling artifact in the
-`ruro_occ_M0a` estimation. The M0a YAML implemented the singles
-consumption-curvature pool via a hard equality constraint
-`theta_c_sm - theta_c_sf = 0` in expression_constraints. This works at
-the optimizer level but produces a non-PSD post-estimation covariance
-matrix (|corr| values of -4.67, -3.79, -3.71, -3.01 between
-theta_c/beta_c pairs in the M0a results), because the
-post-estimation Hessian is computed on the unconstrained parameter
-vector and is rank-deficient along the constrained direction. The fix
-is to actually rename the parameter so that the sf utility evaluation
-references the same theta as sm, removing one parameter from the
-estimable vector.
+Results/_M0a_clean_spec_check.py
+```
 
-INPUT FILES (read+write where indicated):
-- scripts/enhanced/estimation_spec_ruro_occ_M0a.yaml             (read)
-- scripts/enhanced/estimation_spec_parser.py                     (read+write if needed)
-- scripts/enhanced/gamspy_estimation_vectorized.py               (read+write if needed)
-- scripts/enhanced/estimation_engine.py                          (read+write if needed)
-- scripts/enhanced/enh_RURO_estimate_FR.py                       (no changes; entrypoint)
+The script must print PASS/FAIL per gate and exit non-zero on any failure.
 
-GOAL: produce
-- scripts/enhanced/estimation_spec_ruro_occ_M0a_clean.yaml   (the corrected spec)
-- an estimation run at
-  outputs/estimates/fr/spec/ruro_occ/gamspy/estimation_spec_ruro_occ_M0a_clean/
-  with `n_estimated_params = 47` (one less than M0a's 48) and a
-  post-estimation low-token Markdown summary in reports/.
-- a short Markdown patch report at
-  Results/RURO_ruro_occ_M0a_clean_rename_patch_v1.md that documents
-  the parser/engine changes (if any) and the resulting parameter count.
+Gate A - M0a-clean parse:
 
-STEP A — INVENTORY:
-First, inspect scripts/enhanced/estimation_spec_parser.py and the two
-engine files to determine how the parser currently handles the case
-where the consumption box-cox exponent is shared between sm and sf.
-There are three implementation strategies in increasing order of
-invasiveness. Pick the LEAST invasive that works.
+- `spec.name == "ruro_occ_M0a_clean"`
+- `len(spec.all_param_names) == 47`
+- `theta_c_singles` is present
+- `theta_c_sm` is absent
+- `theta_c_sf` is absent
+- all four `beta_l_educH_*` parameters are absent
+- no expression constraint links any `theta_c_*` pair by `param_diff`
+- the two `mul_cou_*_positive` constraints are still present
 
-Strategy 1 (preferred, no parser change):
-  In the YAML, drop `theta_c_sf` from initial_values and bounds
-  entirely. In the parser's group-resolution logic (likely a function
-  like `_resolve_group_param` or similar), ensure that when
-  `theta_c_sf` is requested by the sf likelihood block and is not in
-  the spec, it falls back to `theta_c_sm`. Many parsers already do
-  this fallback (it's how shared couples params work). Check whether
-  the existing fallback chain
-  `params.get('theta_c_sf', params.get('theta_c_singles',
-  params.get('theta_c_sm', params.get('theta_c'))))`
-  is in place; if not, add it as a one-line change.
+Gate B - backward compatibility:
 
-Strategy 2 (small parser change):
-  Add a new parameter name `theta_c_singles` to the parser's
-  recognised shared-singles parameter set. The sm and sf likelihood
-  evaluations both look up `theta_c_singles` before falling back to
-  their gendered names.
+- `scripts/enhanced/estimation_spec_ruro_occ_M0.yaml` still parses.
+- It still has 52 parameters.
+- It still has separate `theta_c_sm` and `theta_c_sf`.
+- Its opportunity blocks are unchanged.
 
-Strategy 3 (avoid):
-  Modify the engine to treat (theta_c_sm, theta_c_sf) as a single
-  parameter via constraint reduction at the symbolic level. This is
-  more invasive than needed.
+Gate C - forward code-path check without estimation:
 
-Determine which strategy works for the current parser. If Strategy 1
-works out of the box (the fallback chain already exists), no parser
-edit is needed — only the YAML changes.
+- Construct a tiny dummy singles dataset or minimal precompute object with a
+  few singles male and singles female alternatives.
+- Evaluate the consumption Box-Cox theta resolution path used by the engine.
+- Verify both singles male and singles female use `theta_c_singles`.
+- Verify no code path tries to read `theta_c_sf` under M0a-clean.
+- If the exact engine forward pass cannot be invoked without a full
+  optimization container, write a small resolver-level test and document the
+  limitation clearly.
 
-STEP B — YAML EDIT:
-Copy estimation_spec_ruro_occ_M0a.yaml to
-estimation_spec_ruro_occ_M0a_clean.yaml. Apply these changes:
+Gate D - syntax:
 
-  1. Update `specification.name` to `"ruro_occ_M0a_clean"`.
-  2. Update `specification.description` to:
-     "M0a-clean: theta_c shared across singles via proper rename
-      (not equality constraint); beta_l_educH removed from utility."
-  3. In `initial_values:`, remove the line `theta_c_sf: -1.0`. Keep
-     `theta_c_sm: -1.0` as the singles-shared name.
-  4. In `optimization.bounds:`, remove the line
-     `theta_c_sf: [-8.0, 0.95]`. Keep `theta_c_sm: [-8.0, 0.95]`.
-  5. In `optimization.expression_constraints.constraints:`, REMOVE
-     the `theta_c_singles_pool` (or equivalently-named) equality
-     constraint that links theta_c_sm and theta_c_sf. If after this
-     removal the constraints block is empty, leave it as
-     `constraints: []` (do not delete the parent
-     expression_constraints block).
-  6. Add an inline comment near the consumption block explaining the
-     change:
-     "# M0a-clean: theta_c_sm is the shared singles curvature; the sf
-     #  likelihood block looks up theta_c_sm as the fallback for
-     #  theta_c_sf. See Strategy 1 in
-     #  Results/RURO_ruro_occ_M0a_clean_rename_patch_v1.md."
+- Run `python -m py_compile` on every touched Python file and on the
+  validation script.
 
-STEP C — PARSER / ENGINE EDIT (only if Strategy 1 doesn't work
-out of the box):
-Make the minimum change needed to ensure both sm and sf utility
-evaluations use the same theta_c value at every alternative. Confirm
-that:
-  - spec.all_param_names does not contain "theta_c_sf"
-  - spec.all_param_names contains "theta_c_sm" exactly once
-  - the engine's V evaluation for the sf likelihood pulls
-    theta_c_sm (not theta_c_sf) at every alternative
+## Report Requirements
 
-Run `python -c "from estimation_spec_parser import parse_specification;
-s = parse_specification('scripts/enhanced/estimation_spec_ruro_occ_M0a_clean.yaml');
-print('n_params:', len(s.all_param_names));
-print('theta_c_sm in:', 'theta_c_sm' in s.all_param_names);
-print('theta_c_sf in:', 'theta_c_sf' in s.all_param_names)"` and
-confirm: n_params = 47; theta_c_sm in: True; theta_c_sf in: False.
+Write:
 
-If those don't print as expected, Strategy 1 is insufficient and
-Strategy 2 is required.
+```text
+docs/RURO_occ_M0a_clean_implementation_report_v1.md
+```
 
-STEP D — ESTIMATION:
-Run:
-  python .\scripts\enhanced\enh_RURO_estimate_FR.py `
-    --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
-    --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/ruro_occ/gamspy" `
-    --group joint `
-    --solver gamspy-conopt `
-    --vectorized `
-    --spec-config "scripts/enhanced/estimation_spec_ruro_occ_M0a_clean.yaml" `
-    --warm-start none `
-    --auto-timestamp `
-    --verbose
+Include:
 
-`--warm-start none` is mandatory: M0a's converged theta is on the wrong
-side of an indefinite Hessian. Use spec defaults.
+1. Files changed.
+2. Why Route A (`theta_c_singles`) was chosen.
+3. Exact YAML changes relative to equality-constraint M0a.
+4. Parser changes with file and line references.
+5. Engine changes with file and line references.
+6. Validation gate results A-D.
+7. A note that the equality-constraint M0a run is preserved as provenance but
+   should not be cited as the clean M0a baseline.
+8. Exact commands the user should run later for estimation and post-estimation.
+9. Risks before re-estimation, especially any theta-related grep hits that
+   were audited but not changed.
 
-STEP E — POST-ESTIMATION:
-Run RURO_post_estimation_styled.py with --compute-se on the new
-estimation_results.json. Save the low-token Markdown summary to
-reports/. Read the resulting Convergence Health Summary and identify:
-  - n_estimated_params (expect 47)
-  - n_negative_eigenvalues (expect 0 if the rename was correct; 1 is
-    a residual identification problem to address in M0b)
-  - hessian_condition_number (expect < 10^10; the gate is 10^7 but
-    10^10 vs M0a's 10.6 x 10^9 will tell us whether the rename also
-    drove down kappa)
-  - Top high-correlation pairs (expect all |corr| <= 1 if rename is
-    correct)
-  - Specifically, the rows where param_i is theta_c_sm or beta_c_sm
-    should not show |corr| > 1 with any other parameter.
+Do not run estimation. Stop after reporting the three output file paths and
+the validation gate summary.
 
-STEP F — PATCH REPORT:
-Write Results/RURO_ruro_occ_M0a_clean_rename_patch_v1.md containing:
-  1. Which strategy was used (1, 2, or 3) and why.
-  2. The exact lines changed in the parser/engine (if any), with
-     before/after.
-  3. The diff between estimation_spec_ruro_occ_M0a.yaml and
-     estimation_spec_ruro_occ_M0a_clean.yaml.
-  4. The pre-estimation `n_params` confirmation from STEP C.
-  5. A two-row results table: M0a vs M0a-clean on
-     n_negative_eigenvalues, hessian_condition_number, max |corr|,
-     log-likelihood, n_significant.
-  6. A one-paragraph verdict on whether Gate B2 (zero negative
-     eigenvalues, kappa < 10^7) is now passed. If yes, recommend
-     proceeding to the participation diagnostic (Prompt 2 of this
-     prompt pair). If no, recommend a follow-up specifically targeting
-     whichever eigenvector is now driving the residual indefiniteness
-     — but DO NOT pre-implement that follow-up.
+## Suggested User Commands After Prompt 1 Succeeds
 
-DO NOT:
-- Touch the data pipeline, the rebuilt parquets, or the draws script.
-- Change any other YAML block (utility leisure shifters, opportunity
-  blocks, occupation block, wage block, bounds on substantive
-  parameters).
-- Modify the existing estimation_spec_ruro_occ_M0a.yaml. The original
-  M0a YAML must remain available for diff and provenance.
-- Run the participation diagnostic in this prompt. That is Prompt 2.
+These commands are for the user after the patch is validated. Do not execute
+them in Prompt 1.
 
-After STEP F is written, confirm the file paths of the four
-deliverables (clean YAML, run folder, post-estimation Markdown summary,
-patch report) and stop.
+```powershell
+python .\scripts\enhanced\enh_RURO_estimate_FR.py `
+  --mnl-base "\\aff300msh.cifs.myliser.lu\ComputeShare\Hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_mnl" `
+  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/ruro_occ/gamspy" `
+  --group joint `
+  --solver gamspy-conopt `
+  --vectorized `
+  --spec-config "scripts/enhanced/estimation_spec_ruro_occ_M0a_clean.yaml" `
+  --auto-timestamp `
+  --verbose
+```
+
+```powershell
+python .\scripts\enhanced\RURO_post_estimation_styled.py `
+  --results-json "<LATEST_M0a_clean_RUN>/estimation_results.json" `
+  --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" `
+  --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/ruro_occ/gamspy" `
+  --prefix "fr_2016_ruro_occ_gamspy_M0a_clean_" `
+  --spec-config "scripts/enhanced/estimation_spec_ruro_occ_M0a_clean.yaml" `
+  --auto-timestamp `
+  --compute-se
 ```
 
 ---
 
-## Prompt 2 — participation V-decomposition diagnostic
+# Prompt 2 - Participation Pathology V-Decomposition Diagnostic
 
-Run only after Prompt 1 finishes and a new `estimation_spec_ruro_occ_M0a_clean` run exists.
+Run this only after Prompt 1 succeeds and after the user has run the
+M0a-clean estimation and post-estimation.
+
+Work locally in my RURO/MNL codebase.
+
+Read:
+
+- `scripts/enhanced/estimation_spec_ruro_occ_M0a_clean.yaml`
+- latest M0a-clean `estimation_results.json` under
+  `outputs/estimates/fr/spec/ruro_occ/gamspy/estimation_spec_ruro_occ_M0a_clean/run_*/`
+- latest M0a-clean low-token Markdown summary under `reports/`, if present
+- `scripts/enhanced/estimation_engine.py`
+- `scripts/enhanced/gamspy_estimation_vectorized.py`
+- `scripts/enhanced/RURO_post_estimation_styled.py`
+- `scripts/enhanced/estimation_spec_parser.py`
+- MNL parquets:
+  - `Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__singles.parquet`
+  - `Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__couples.parquet`
+
+Fallback parquet paths if the Z drive is unavailable:
+
+- `\\aff300msh.cifs.myliser.lu\ComputeShare\Hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_mnl__singles.parquet`
+- `\\aff300msh.cifs.myliser.lu\ComputeShare\Hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_mnl__couples.parquet`
+
+Do not rerun estimation.
+Do not modify Python or YAML files.
+Do not modify parquet files.
+
+## Symptom
+
+Predicted participation was reported as 1.0000 for all four groups in the M0
+and M0a post-estimation reports, while observed participation is below 1. This
+survived a specification simplification, so diagnose whether the root cause is:
+
+- post-estimation reporting,
+- structural engine/index construction,
+- prior/proposal correction,
+- or a real specification artifact.
+
+## Deliverables
+
+Create:
+
+- `Results/_participation_diag_ruro_occ_M0a_clean.py`
+- `Results/_participation_diag_ruro_occ_M0a_clean.json`
+- `Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md`
+
+The diagnostic script must be reusable, deterministic, read-only on inputs,
+and runnable in under five minutes.
+
+## Group Definitions
+
+Use these definitions:
+
+- `singles_male`: singles parquet with `dgn == 1`
+- `singles_female`: singles parquet with `dgn == 0`
+- `couples_male`: couples parquet, male-suffixed columns
+- `couples_female`: couples parquet, female-suffixed columns
+
+Household ID:
+
+- preferred: `idhh`
+- fallbacks: `idhh_true`, `hh_id`
+
+Chosen indicator:
+
+- preferred: `is_chosen`
+- fallback: `chosen`
+
+Working indicators:
+
+- singles: `working`, fallback `hours > 0`
+- couples male: `working_male`, fallback `hours_male > 0`
+- couples female: `working_female`, fallback `hours_female > 0`
+
+Proposal-density columns:
+
+- singles: `log_q_E`, `log_q_H`, `log_q_W`, `log_q_Occ`
+- couples male: `log_q_E_male`, `log_q_H_male`, `log_q_W_male`,
+  `log_q_Occ_male`
+- couples female: `log_q_E_female`, `log_q_H_female`, `log_q_W_female`,
+  `log_q_Occ_female`
+
+## Diagnostic Procedure
+
+### D1 - Load and sanity-check inputs
+
+Load the latest M0a-clean results JSON and confirm:
+
+- specification is `ruro_occ_M0a_clean`
+- parameter vector has 47 parameters
+- `theta_c_singles` exists
+- `theta_c_sm` and `theta_c_sf` do not exist
+
+Load the MNL files and confirm:
+
+- one chosen alternative per household
+- exactly 100 alternatives per household
+- required proposal aliases exist
+- `prior > 0`
+- `log_prior == log(prior)` within floating-point tolerance
+
+### D2 - Re-evaluate or reconstruct V by component
+
+Preferred route:
+
+- Use the same forward-index code path as the estimator where feasible.
+
+Fallback route:
+
+- If the exact engine path cannot be invoked cleanly outside optimization,
+  reconstruct the choice index component-by-component from the parsed spec,
+  data, and estimated parameters. Document where the wrapper diverges from
+  the exact estimator path, if anywhere.
+
+For each group, sample up to 100 households with a fixed seed. For each
+alternative, decompose:
 
 ```text
-You are diagnosing why predicted participation is 1.0000 across all four
-groups (sm, sf, cou_m, cou_f) in the M0a and M0a-clean estimations
-despite the proposal-adequacy diagnostic confirming 10% median non-work
-mass in the choice set and despite beta_E being significantly negative.
-The proposal-adequacy diagnostic eliminated data-side variation as the
-cause; the M0a-clean rename eliminated the constraint-handling artifact.
-If predicted participation is still 1.0000 in M0a-clean, the bug is in
-the choice-index evaluation or in the post-estimation reporting code,
-not in the spec.
+V_ij = U_ij
+     + O_E_ij
+     + O_H_ij
+     + O_market_ij
+     + O_W_ij
+     + O_Occ_ij
+     - log_prior_ij
+```
 
-This prompt decomposes the choice index V_ij at the M0a-clean converged
-theta into its components and identifies which component is driving the
-work-vs-nonwork imbalance.
+Use `log_prior` directly from the parquet for the final prior correction.
 
-INPUT FILES (read-only, no modifications):
-- outputs/estimates/fr/spec/ruro_occ/gamspy/estimation_spec_ruro_occ_M0a_clean/run_<latest>/estimation_results.json
-- scripts/enhanced/estimation_spec_ruro_occ_M0a_clean.yaml
-- Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__singles.parquet
-- Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__couples.parquet
+Report component medians for work and non-work alternatives, plus the
+work-minus-nonwork gap:
 
-If M0a-clean's negative eigenvalue count is non-zero in Prompt 1's
-patch report, still run this diagnostic on the M0a-clean run: a
-non-PSD Hessian does not invalidate the V decomposition (V is computed
-from theta directly, not from the Hessian).
+| group | component | median work | median nonwork | work - nonwork |
 
-GOAL: produce a single Markdown report at
-Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md that decomposes
-the work/non-work choice-index imbalance per group and identifies the
-dominant culprit term.
+At minimum include:
 
-STEP A — LOAD CONVERGED THETA AND DATA:
-Read estimation_results.json. Extract the converged theta vector and
-the parameter-name list. Confirm theta has 47 entries. Print the values
-of the most relevant parameters for the diagnostic:
-beta_E, beta_h_pt1, beta_h_pt2, beta_h_ft, beta_E_gsur, beta_E_educH,
-beta_c, beta_c_sm, beta_c_sf, theta_c, theta_c_sm,
-beta_l0_*, theta_l_*, beta_w0, sigma.
+- `U`
+- `O_E`
+- `O_H`
+- `O_market`
+- `O_W`
+- `O_Occ`
+- `-log_prior`
+- total `V`
 
-Load the two parquets. Apply the same per-group structure used in the
-proposal-adequacy diagnostic:
-- singles_male (dgn==1), singles_female (dgn==0): use `working`,
-  `consumption`, `leisure`, `hours`, `loc4`, `log_q_E`, `log_prior`.
-- couples_male: use `working_male`, `consumption` (household-shared),
-  `leisure_male`, `hours_male`, `loc4_male`, `log_q_E_male`,
-  `log_prior`.
-- couples_female: same with `_female` suffixes.
+### D3 - Structural non-work probability
 
-STEP B — V DECOMPOSITION ON A 100-HOUSEHOLD SAMPLE PER GROUP:
-For each of the four groups, sample 100 households uniformly at
-random (set seed = 42 for reproducibility). For each sampled
-household, compute the following at every alternative (100 alts/hh):
+For each sampled household, compute a softmax over all 100 alternatives.
 
-  U_ij        = preference utility term
-                = beta_c_g * BC(C_ij, theta_c_g) + beta_l_g(Z_i) * BC(L_ij, theta_l_g)
-                where for sm/sf:  beta_c_g  = beta_c_sm or beta_c_sf
-                                   theta_c_g = theta_c_sm (shared singles)
-                                   theta_l_g = theta_l_sm or theta_l_sf
-                       for cm/cf: beta_c_g  = beta_c
-                                   theta_c_g = theta_c
-                                   theta_l_g = theta_l_m or theta_l_f
-                beta_l_g(Z_i) includes age, age^2, n_children (female
-                only) shifters.
+Report:
 
-  O_E_ij      = beta_E * working_ij
-  O_H_ij      = beta_h_pt1 * working_pt1_ij + beta_h_pt2 * working_pt2_ij
-                + beta_h_ft * working_ft_ij
-  O_market_ij = beta_E_gsur * gsur_i * working_ij
-                + beta_E_educH * educH_i * working_ij
-  O_W_ij      = log_normal_density(wage_ij | Mincer mean, sigma)
-                on working alts; 0 on non-work alts.
-                = -0.5 * z^2 - log(sigma) - log(wage_ij)
-                  z = (log wage_ij - mu_W(X_i)) / sigma
-                  mu_W = beta_w0 + beta_w_educL * educL + beta_w_educH * educH
-                         + beta_w_pexp * pexp + beta_w_pexp2 * pexp2
-                NOTE: include the -log(wage) Jacobian. Without it, V_W
-                will systematically over-weight high-wage alternatives.
+- median structural `P(nonwork)` per group
+- q10, q25, q75, q90 of structural `P(nonwork)`
+- observed chosen non-work share per group
+- post-estimation reported predicted participation, if available
 
-  O_Occ_ij    = sum_k beta_occ_k_g * 1{loc4_ij = k} * working_ij
-                with reference loc4 = 1 (omitted).
-                k in {2, 3, 4}; g in {sm, sf, cm, cf} for couples
-                partner-specific.
+Interpretation:
 
-  V_ij        = U_ij + O_E_ij + O_H_ij + O_market_ij + O_W_ij + O_Occ_ij
-                - log_prior_ij
+- If structural `P(nonwork)` is roughly non-zero and comparable to observed
+  non-work rates, but the report says participation is 1.0000, the root cause
+  is post-estimation reporting.
+- If structural `P(nonwork)` is essentially zero, the issue is in the
+  structural index, prior correction, or the specification.
 
-Where the data column log_prior_ij is taken directly from the parquet
-(it's pre-built by enh_RURO_prep_mnl_basic.py and already validated by
-the MNL validation report; do NOT recompute it).
+### D4 - Audit likely code paths
 
-Box-Cox safety: clip C, L >= 1e-6 before transforming.
+Use `rg` and file reads to inspect relevant code paths. Cite file and line
+numbers in the report.
 
-STEP C — V-COMPONENT TABLES PER GROUP:
-For each group, compute the per-household average across alternatives,
-SEPARATELY for working alts and for non-working alts (where working =
-0 on at least one of the 100 alts). Report the median across the 100
-sampled households of each component.
+Check these hypotheses:
 
-Output table per group:
+H1. Working gate or sign convention bug:
 
-  | term        | median over hh of mean on work alts | median over hh of mean on non-work alts | work - nonwork (median diff) |
-  | U           |                                      |                                          |                              |
-  | O_E         |                                      |                                          |                              |
-  | O_H         |                                      |                                          |                              |
-  | O_market    |                                      |                                          |                              |
-  | O_W         |                                      |                                          |                              |
-  | O_Occ       |                                      |                                          |                              |
-  | - log_prior |                                      |                                          |                              |
-  | V (total)   |                                      |                                          |                              |
+- `working == 1` is used where non-work should be used, or vice versa.
+- Working-gated opportunity shifters fire on non-work alternatives.
 
-The work-minus-nonwork column tells us which term contributes the most
-to the work/non-work choice-index gap. The signs and magnitudes of
-those gaps should be economically interpretable.
+H2. Prior correction bug:
 
-EXPECTED MAGNITUDES (rough sanity benchmarks):
-  - U: small gap, sign ambiguous (consumption higher on work due to
-    earnings; leisure lower).
-  - O_E: equals beta_E ~ -2.76 on work, 0 on non-work; gap = -2.76.
-    Negative gap means work is penalised; should DECREASE work
-    probability.
-  - O_H: 0 to ~1.5 on work (depending on hours bin), 0 on non-work.
-    Positive gap, magnitude up to ~1.5.
-  - O_market: beta_E_gsur*gsur + beta_E_educH*educH on work, 0 on
-    non-work. Roughly -0.07 to +0.25 depending on covariates.
-  - O_W: -0.5*z^2 - log(sigma) - log(wage). At median wage ~15,
-    sigma=0.42, this is ~-0.5*(0)^2 - log(0.42) - log(15) ~ -1.83.
-    Gap ~ -1.83 (work has more negative O_W).
-  - O_Occ: 0 to ~1.15 on work depending on occupation, 0 on non-work.
-    Gap is positive in nonroutine-cognitive groups.
-  - -log_prior: large positive on work (proposal is wide), small
-    positive on non-work (only q_E correction). Typical gap is
-    +log(q_H * q_W * q_Occ) ~ +log(65 * 168 * empirical_loc4_share)
-    ~ +log(65) + log(168) + log(0.3) ~ +4.17 + 5.12 - 1.20 ~ +8.09.
-    POSITIVE GAP of ~+8 in favour of WORK.
+- `-log_prior` is applied twice.
+- `+log_prior` is used instead of `-log_prior`.
+- `log_q_E` is combined with another employment-prior term already included
+  in `log_prior`.
 
-The sum of all gaps should approximately equal V_work_mean -
-V_nonwork_mean. If V_work >> V_nonwork (say by 10+), then
-P(non-work | household) is essentially zero, matching the reported
-predicted participation = 1.0000.
+H3. Wage opportunity/Jacobian bug:
 
-STEP D — IDENTIFY THE DOMINANT CULPRIT:
-The expected magnitudes above suggest -log_prior is the largest
-positive contributor to the work-nonwork gap (~+8) and U+O_E is the
-largest negative contributor (~-2.76 from O_E plus whatever U
-contributes). The net expected gap is roughly +5 in favour of work
-before O_H and O_Occ are added.
+- `O_W` is missing the `-log(wage)` Jacobian for the log-normal density.
+- Non-work alternatives receive a wage-density contribution.
 
-A net gap of +5 would imply P(non-work) ~ exp(-5) ~ 0.0067 per
-non-work alternative, summed over ~10 non-work alts ~ 0.067 = 6.7%
-non-employment. That's roughly consistent with observed 5-7%
-non-employment rates.
+H4. Post-estimation aggregation bug:
 
-A net gap of +10 or +15 would imply P(non-work) << 1%, matching
-the reported 1.0000 participation pathology.
+- predicted participation is computed only over working alternatives.
+- non-work alternatives are filtered out before aggregation.
+- couples non-work is misclassified because only one partner's working
+  indicator is checked.
 
-So the diagnostic question is: which component is overshooting?
-Possibilities:
-  (a) -log_prior is too large because the prior is being added with
-      the wrong sign somewhere (e.g., the data column log_prior
-      represents log(q) but the engine is treating it as log(1/q)
-      and the formula V = U + O - log_prior is computing V = U + O +
-      log(1/q) instead of V = U + O - log(q)). Symptom: -log_prior
-      gap is ~+16 instead of ~+8.
-  (b) O_W is being computed without the -log(wage) Jacobian. Symptom:
-      O_W gap is ~0 instead of ~-1.83 (i.e., positive instead of
-      negative). This would make work more attractive by ~1.83.
-  (c) Box-Cox transform applied wrong on non-work consumption. At
-      non-work the household still has positive disposable income
-      (from transfers, partner). If U on non-work is computed using
-      a clipped C ~ 0 instead of the actual transfer income,
-      U_nonwork is artificially low. Symptom: U gap is very positive
-      (>> +2).
-  (d) Leisure normalization wrong at h = 0. If L_nonwork is normalized
-      to a value that makes BC(L_nonwork, theta_l) very large in
-      magnitude, U_nonwork could blow up in either direction. Symptom:
-      U gap has unusual sign or magnitude.
+### D5 - Non-work contribution audit
 
-Report which expected magnitude is most off in the actual numbers, and
-identify the suspect engine code path.
+For non-work rows in the sample, print and store:
 
-STEP E — POST-ESTIMATION VS STRUCTURAL P(NON-WORK):
-For the same 100 sampled households per group, compute:
-  P(non-work | household) = sum_{j: working_j=0} exp(V_ij) /
-                            sum_{k=1..100} exp(V_ik)
+- `O_H`
+- `O_market`
+- `O_W`
+- `O_Occ`
+- `log_prior`
+- each proposal alias used for the group
 
-Use the standard log-sum-exp stabilisation:
-  V_max = max_j V_ij
-  P(j) = exp(V_ij - V_max) / sum_k exp(V_ik - V_max)
+Expected:
 
-Report the median, q10, q25, q75, q90 of P(non-work) across the 100
-sampled households per group.
+- working-gated opportunity contributions are zero on non-work rows.
+- occupation opportunity is zero on non-work rows.
+- wage opportunity is zero on non-work rows.
+- `log_prior` for non-work alternatives equals the employment proposal
+  component relevant to non-work, not the full working draw density.
 
-Compare to:
-  - The post-estimation reported predicted_participation (this is
-    `1 - mean[P(non-work | household)]`, so the comparison is direct).
-  - The observed (chosen-alt) non-employment rate: roughly 3-7% per
-    group from M0a's chosen sample.
+If these expectations fail, identify the responsible code path.
 
-If structural P(non-work) is essentially 0 for nearly all 100 households,
-the choice-index evaluation is the bug. Identify the term from STEP C
-that drives it.
+## Output Report
 
-If structural P(non-work) is non-zero (say 5-10% median) but the
-post-estimation report says 1.0000, the bug is in the post-estimation
-script's participation calculation. Look at the RURO_post_estimation_styled.py
-code path that computes pred_participation.
+Write:
 
-STEP F — WRITE THE REPORT:
+```text
 Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md
-
-Structure:
-
-  # RURO ruro_occ_M0a_clean — Participation Diagnostic v1
-
-  ## Verdict (one paragraph)
-  One of:
-  - REPORTING BUG: structural P(non-work) is non-zero per household
-    but post-estimation predicted_participation is 1.0000. Identify the
-    post-estimation code path.
-  - ENGINE BUG: structural P(non-work) is ~0 per household; one V
-    component is overshooting. Identify the suspect term and the
-    likely engine code path.
-  - SPEC ARTIFACT: structural P(non-work) is ~0 and all V components
-    match expected magnitudes; the model genuinely predicts no
-    non-employment at this theta. (Unlikely given the inputs.)
-
-  ## Converged theta highlights
-  (parameter values that matter for V, from STEP A)
-
-  ## V decomposition tables per group
-  (four tables from STEP C)
-
-  ## Sanity check vs expected magnitudes
-  (per-group: which term is most off relative to STEP D's benchmarks)
-
-  ## Structural P(non-work) per household
-  (table from STEP E, per group)
-
-  ## Comparison to post-estimation predicted_participation
-  (one row per group)
-
-  ## Suspect code path
-  (specific file:line references in
-   scripts/enhanced/gamspy_estimation_vectorized.py or
-   scripts/enhanced/RURO_post_estimation_styled.py)
-
-  ## Recommended next action
-  ONE specific next step, tied to the verdict. Examples:
-  - "Fix the sign of log_prior in gamspy_estimation_vectorized.py
-    line NNN" if the prior is overshooting.
-  - "Add the -log(wage) Jacobian to estimation_engine.py line NNN"
-    if O_W is missing it.
-  - "Fix pred_participation aggregation in
-    RURO_post_estimation_styled.py line NNN" if reporting is the bug.
-
-  ## Files produced
-  Results/_participation_diag_ruro_occ_M0a_clean.py    (script)
-  Results/_participation_diag_ruro_occ_M0a_clean.json  (numbers)
-  Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md (this report)
-
-TECHNICAL REQUIREMENTS:
-- Use pandas + numpy only. No estimator, no GAMSPy, no EUROMOD.
-- Read-only on the parquet files and estimation_results.json.
-- Total runtime under 5 minutes on 400 households x 100 alts = 40k
-  observations.
-- Save the script to Results/_participation_diag_ruro_occ_M0a_clean.py
-  so it can be re-run after any subsequent estimation.
-- Save a machine-readable JSON with the per-group component medians.
-- Use the same seed (42) so the sampled households are reproducible.
-
-DO NOT:
-- Modify any source code in scripts/. This is a diagnostic, not a
-  patch. The "recommended next action" section names suspect code
-  paths but does not change them.
-- Re-run the estimator.
-- Modify the M0a-clean YAML or run folder.
-
-After the report is written, confirm the three output file paths and
-stop. The next prompt (a code-side patch) will be issued separately
-based on the diagnostic's verdict.
 ```
+
+Keep it short, but include:
+
+1. Input files and timestamps.
+2. Parameter sanity checks.
+3. Sample size used per group.
+4. Component decomposition table.
+5. Structural `P(nonwork)` table.
+6. Non-work contribution audit summary.
+7. Suspect code paths with file:line references.
+8. Final verdict.
+
+The final verdict must end with exactly one of these sentences:
+
+```text
+ROOT CAUSE: post-estimation reporting code at <file>:<lineno>. Spec-side and engine code are correct. Recommended fix: <one-line description>.
+```
+
+or
+
+```text
+ROOT CAUSE: engine code at <file>:<lineno>. The structural index itself produces P(nonwork) approximately zero. Recommended fix: <one-line description>.
+```
+
+or
+
+```text
+ROOT CAUSE: prior-correction logic at <file>:<lineno>. log_prior is <double-counted | mis-signed | applied to the wrong alternatives>. Recommended fix: <one-line description>.
+```
+
+or, if no bug is found and the decomposition shows the model truly predicts
+almost universal work:
+
+```text
+ROOT CAUSE: specification/data fit artifact, not a code bug. The structural index assigns near-zero probability to non-work alternatives. Recommended fix: inspect the largest V component gaps and revise the specification or proposal design.
+```
+
+After writing the three files, print their paths and stop. Do not implement
+the fix in this task.
 
 ---
 
-## Sequencing and what to do with results
+# Sequencing Summary
 
-Run Prompt 1. Wait for the patch report. Three possible outcomes:
+1. Run Prompt 1.
+2. Confirm `Results/_M0a_clean_spec_check.py` passes.
+3. User runs the M0a-clean estimation and post-estimation commands.
+4. Run Prompt 2.
+5. Paste back only:
+   - the verdict line,
+   - the component table,
+   - the suspect code path section.
 
-| Patch report says | What it means | Next |
-|---|---|---|
-| Gate B2 PASSED (0 negative eigenvalues, κ < 10⁷) | Rename alone fixed identification | Run Prompt 2 to diagnose the participation pathology |
-| Gate B2 partially improved (1 → 0 negative eigenvalues but κ still > 10⁷) | Rename removed the constraint artifact; the high κ is now a real high-correlation issue but not a singularity | Run Prompt 2; address κ later via targeted pooling if needed |
-| Gate B2 still failed (1+ negative eigenvalues) | A real residual identification problem exists beyond the constraint artifact | Run Prompt 2 anyway (V decomposition does not need the Hessian) and plan M0b based on the residual eigenvector |
-
-Run Prompt 2 against the M0a-clean run. Three possible verdicts:
-
-| Verdict | Likely fix |
-|---|---|
-| REPORTING BUG | One-line patch in `RURO_post_estimation_styled.py` to the `pred_participation` aggregation |
-| ENGINE BUG | A specific term in `gamspy_estimation_vectorized.py` or `estimation_engine.py` is computed wrong — most likely candidates are the wage Jacobian, the prior sign, or the consumption at non-work |
-| SPEC ARTIFACT | Genuine model failure (unlikely given the diagnostics so far) |
-
-Paste the verdict and the "Suspect code path" section into this chat after Prompt 2 finishes. I'll write the engine-side patch prompt as a Prompt 3 once we know what we're patching.
-
-## Suggested filename for this prompt pair
-
-Save as: `prompts/RURO_ruro_occ_M0a_clean_rename_and_participation_diag_prompts_v1.md`
-(category: coding prompt).
+Then decide whether the next task is a one-line post-estimation reporting fix
+or a more careful engine/prior-correction patch.

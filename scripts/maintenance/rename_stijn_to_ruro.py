@@ -24,7 +24,6 @@ from __future__ import annotations
 import argparse
 import csv
 import datetime
-import os
 import re
 import shutil
 import subprocess
@@ -332,7 +331,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 rename_entries.append({"old": p, "new": new_abs})
 
     # Manifest CSV
-    ts = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     manifest_path = REPO_ROOT / "Results" / f"rename_stijn_to_ruro_manifest_{ts}.csv"
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     with manifest_path.open("w", newline="", encoding="utf-8") as f:
@@ -353,9 +352,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"Binary files skipped (content)      : {n_binary_skipped}")
     print(f"Citation guard hits (preserved)     : {len(all_warnings)}")
     if all_warnings[:10]:
-        print("First citation-guarded lines (≤10):")
+        print("First citation-guarded lines (up to 10):")
         for w in all_warnings[:10]:
-            print(f"  - {w}")
+            try:
+                print(f"  - {w}")
+            except UnicodeEncodeError:
+                print(f"  - {w.encode('ascii', 'replace').decode('ascii')}")
 
     if not args.apply:
         print("\nDRY-RUN. Use --apply to execute.")

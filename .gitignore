@@ -78,3 +78,7 @@ Microsoft/
 
 # generated package metadata
 src/*.egg-info/
+
+# Keep curated report deliverables under version control.
+!reports/
+!reports/**

@@ -1753,6 +1753,487 @@ def generate_identification_diagnostics_html(
     """
 
 
+# ============================================================================
+# Spec-driven opportunity-block rendering
+# ----------------------------------------------------------------------------
+# These helpers consume the raw YAML spec to render symbolic and numerical
+# equations for the hours, market, wage, and occupation opportunity blocks.
+# They are intentionally country/year/spec agnostic: they iterate over
+# whichever shifters the YAML declares and bind them to estimated parameter
+# values from `ParsedParameters`. Group suffixes (`_sm`, `_sf`, `_cm`, `_cf`,
+# `_m`, `_f`) are tolerated when looking up estimates for a shared coefficient.
+# Falls back gracefully if the YAML cannot be read; in that case the legacy
+# hard-coded renderers below are used.
+# ============================================================================
+
+_GROUP_SUFFIXES: Tuple[str, ...] = (
+    "_sm", "_sf", "_cm", "_cf", "_m", "_f",
+    "_singles_male", "_singles_female", "_couples_male", "_couples_female",
+    "_couples", "_joint",
+)
+
+
+def _load_yaml_spec_blocks(spec_path: Optional[Union[str, Path]]) -> Dict[str, Any]:
+    """
+    Re-parse the YAML spec to recover the four opportunity blocks distinctly.
+
+    ``estimation_spec_parser.parse_specification`` appends occupation shifters
+    into ``market_opportunity_shifters`` for engine convenience; we read the
+    raw YAML directly so the renderer can keep the blocks separate.
+    """
+    if not spec_path:
+        return {}
+    try:
+        import yaml
+        with open(spec_path, "r", encoding="utf-8") as f:
+            raw = yaml.safe_load(f) or {}
+    except Exception as exc:  # noqa: BLE001
+        LOGGER.warning(
+            f"   Spec-driven rendering disabled: could not load YAML at "
+            f"{spec_path}: {exc}"
+        )
+        return {}
+
+    hours = (raw.get("hours_opportunity") or {}).get("shifters", []) or []
+    market = (raw.get("market_opportunity") or {}).get("shifters", []) or []
+    wage_opp = raw.get("wage_opportunity") or {}
+    wage_mean = wage_opp.get("mean_shifters", []) or []
+    wage_var = wage_opp.get("variance") or {}
+    wage_sigma = wage_var.get("parameter") if isinstance(wage_var, dict) else None
+    occ_opp = raw.get("occupation_opportunity") or {}
+    occupation = occ_opp.get("shifters", []) or []
+    occ_var = occ_opp.get("variable")
+    occ_ref = occ_opp.get("reference")
+    utility = raw.get("utility") or {}
+    return {
+        "hours": hours,
+        "market": market,
+        "wage_mean": wage_mean,
+        "wage_sigma": wage_sigma,
+        "wage_form": wage_opp.get("specification"),
+        "occupation": occupation,
+        "occ_var": occ_var,
+        "occ_ref": occ_ref,
+        "utility_leisure": (utility.get("leisure") or {}),
+        "utility_consumption": (utility.get("consumption") or {}),
+    }
+
+
+def _strip_group_suffix(name: str) -> str:
+    """Return ``name`` with any known group suffix removed."""
+    for suf in _GROUP_SUFFIXES:
+        if name.endswith(suf):
+            return name[: -len(suf)]
+    return name
+
+
+def _coef_to_block_map(blocks: Dict[str, Any]) -> Dict[str, str]:
+    """Map each declared coefficient to its block category."""
+    out: Dict[str, str] = {}
+    for sh in blocks.get("hours", []) or []:
+        coef = (sh or {}).get("coefficient")
+        if coef:
+            out[coef] = "hours"
+    for sh in blocks.get("market", []) or []:
+        coef = (sh or {}).get("coefficient")
+        if coef:
+            out[coef] = "market"
+    for sh in blocks.get("wage_mean", []) or []:
+        coef = (sh or {}).get("coefficient")
+        if coef:
+            out[coef] = "wage"
+    sigma = blocks.get("wage_sigma")
+    if sigma:
+        out[sigma] = "wage"
+    for sh in blocks.get("occupation", []) or []:
+        coef = (sh or {}).get("coefficient")
+        if coef:
+            out[coef] = "occupation"
+    util_leisure = blocks.get("utility_leisure") or {}
+    for key in ("intercept", "coefficient", "box_cox_exponent"):
+        c = util_leisure.get(key)
+        if c:
+            out[c] = "preference"
+    for sh in (util_leisure.get("shifters") or []):
+        coef = (sh or {}).get("coefficient")
+        if coef:
+            out[coef] = "preference"
+    util_cons = blocks.get("utility_consumption") or {}
+    for key in ("coefficient", "box_cox_exponent"):
+        c = util_cons.get(key)
+        if c:
+            out[c] = "preference"
+    return out
+
+
+_GROUP_PREFIXES: Tuple[str, ...] = (
+    "joint.", "pref.", "sm.", "sf.", "cm.", "cf.", "m.", "f.",
+    "singles_male.", "singles_female.", "couples_male.", "couples_female.",
+    "couples.",
+)
+
+
+def _strip_group_prefix(name: str) -> str:
+    """Return ``name`` with any known group prefix removed (e.g. joint.beta_E -> beta_E)."""
+    for pref in _GROUP_PREFIXES:
+        if name.startswith(pref):
+            return name[len(pref):]
+    return name
+
+
+def _classify_param_via_blocks(name: str, coef_map: Dict[str, str]) -> Optional[str]:
+    """Try exact match, then prefix-stripped, then suffix-stripped, then both."""
+    if not coef_map:
+        return None
+    if name in coef_map:
+        return coef_map[name]
+    no_prefix = _strip_group_prefix(name)
+    if no_prefix in coef_map:
+        return coef_map[no_prefix]
+    no_suffix = _strip_group_suffix(name)
+    if no_suffix in coef_map:
+        return coef_map[no_suffix]
+    no_both = _strip_group_suffix(no_prefix)
+    if no_both in coef_map:
+        return coef_map[no_both]
+    return None
+
+
+def _format_coef_value(value: Any, fmt: str = ".4f") -> str:
+    """Compact numeric formatting tolerant of NaN/None."""
+    if value is None:
+        return "?"
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return "?"
+    if np.isnan(v):
+        return "?"
+    return format(v, fmt)
+
+
+def _shifter_symbolic_term(shifter: Dict[str, Any]) -> str:
+    coef = (shifter or {}).get("coefficient", "?")
+    var = (shifter or {}).get("variable", "?")
+    parts = [coef, var]
+    for ix in (shifter.get("interaction") or []):
+        if ix:
+            parts.append(str(ix))
+    return " · ".join(parts)
+
+
+def _shifter_numerical_term(shifter: Dict[str, Any], value: Any) -> str:
+    coef_str = _format_coef_value(value)
+    var = (shifter or {}).get("variable", "?")
+    parts = [coef_str, var]
+    for ix in (shifter.get("interaction") or []):
+        if ix:
+            parts.append(str(ix))
+    return " · ".join(parts)
+
+
+def _pick_value_for_group(
+    coef: str,
+    group_label: str,
+    parsed_params: "ParsedParameters",
+) -> Optional[float]:
+    """Resolve a coefficient's value for one group, with suffix fallback."""
+    gp = parsed_params.get_all_params_for_group(group_label) if group_label else {}
+    if not gp:
+        return None
+    if coef in gp:
+        return gp[coef]
+    for suf in _GROUP_SUFFIXES:
+        cand = coef + suf
+        if cand in gp:
+            return gp[cand]
+    alias_map = {
+        "singles_male": "_sm",
+        "singles_female": "_sf",
+        "couples_male": "_cm",
+        "couples_female": "_cf",
+    }
+    alias = alias_map.get(group_label)
+    if alias and (coef + alias) in gp:
+        return gp[coef + alias]
+    return None
+
+
+def _pick_value_for_coef(
+    coef: str,
+    parsed_params: "ParsedParameters",
+    group_priority: Optional[List[str]] = None,
+) -> Tuple[Optional[float], Optional[str]]:
+    """Search for the first group that has a value (shared or suffixed)."""
+    if group_priority is None:
+        group_priority = list(getattr(parsed_params, "groups", []) or []) + [
+            "joint", "sm", "sf", "cm", "cf", "m", "f",
+            "couples_male", "couples_female", "couples",
+        ]
+    seen = set()
+    for grp in group_priority:
+        if grp in seen:
+            continue
+        seen.add(grp)
+        val = _pick_value_for_group(coef, grp, parsed_params)
+        if val is not None:
+            return val, grp
+    return None, None
+
+
+def build_model_index_equation_html(blocks: Dict[str, Any]) -> str:
+    """Render the top-level model-index equation, adapted to declared blocks."""
+    has_hours = bool(blocks.get("hours") or blocks.get("market"))
+    has_wage = bool(blocks.get("wage_mean") or blocks.get("wage_sigma"))
+    has_occ = bool(blocks.get("occupation"))
+
+    rhs_terms = ["U<sub>ij</sub>"]
+    if has_hours:
+        rhs_terms.append("O<sup>E</sup><sub>ij</sub> + O<sup>H</sup><sub>ij</sub>")
+    if has_wage:
+        rhs_terms.append("O<sup>W</sup><sub>ij</sub>")
+    if has_occ:
+        rhs_terms.append("O<sup>Occ</sup><sub>ij</sub>")
+    rhs_terms.append("&minus; log&nbsp;prior<sub>ij</sub>")
+
+    rhs = " &nbsp;+&nbsp; ".join(rhs_terms)
+    return f"""
+    <section>
+        <h2>📐 Model Index</h2>
+        <div class="stats-box">
+            <div class="math-block symbolic">
+                V<sub>ij</sub> = {rhs}
+            </div>
+            <div class="math-block symbolic" style="margin-top: 0.6em;">
+                P<sub>ij</sub> = exp(V<sub>ij</sub>) / &Sigma;<sub>k&isin;C<sub>i</sub></sub> exp(V<sub>ik</sub>)
+            </div>
+            <p style="margin: 0.6em 0 0 0; font-size: 0.9em;">
+                U is the utility of consumption and leisure; the O<sup>·</sup> terms
+                are opportunity-density contributions (employment/hours, wage,
+                occupation); <code>log&nbsp;prior</code> rescales each alternative
+                to the data-generating measure. The terms displayed reflect the
+                opportunity blocks declared in the active YAML specification.
+            </p>
+        </div>
+    </section>
+    """
+
+
+def build_employment_hours_opportunity_html_specdriven(
+    blocks: Dict[str, Any],
+    parsed_params: "ParsedParameters",
+    group_labels: Optional[Dict[str, str]] = None,
+) -> str:
+    """Render O^E + O^H from hours_opportunity + market_opportunity shifters."""
+    hours_shifters = list(blocks.get("hours") or [])
+    market_shifters = list(blocks.get("market") or [])
+    all_shifters = hours_shifters + market_shifters
+    if not all_shifters:
+        return ""
+
+    symb_parts = [_shifter_symbolic_term(sh) for sh in all_shifters]
+    symbolic_html = "<br>&nbsp;&nbsp;&nbsp;&nbsp;+ ".join(symb_parts)
+
+    groups = list(getattr(parsed_params, "groups", []) or []) or ["joint"]
+    numerical_blocks: List[str] = []
+    for grp in groups:
+        terms: List[str] = []
+        for sh in all_shifters:
+            coef = (sh or {}).get("coefficient")
+            if not coef:
+                continue
+            val = _pick_value_for_group(coef, grp, parsed_params)
+            if val is None:
+                val, _ = _pick_value_for_coef(coef, parsed_params, [grp] + groups)
+            terms.append(_shifter_numerical_term(sh, val))
+        if terms:
+            label = (group_labels or {}).get(grp, grp)
+            numerical_blocks.append(
+                f"<div style='margin-top: 0.4em;'><strong>{escape(str(label))}:</strong> "
+                + " &nbsp;+&nbsp; ".join(terms) + "</div>"
+            )
+    numerical_html = "\n".join(numerical_blocks) or "(no estimated values resolved)"
+
+    return f"""
+    <section>
+        <h2>⏰ Employment and Hours Opportunity Parameters</h2>
+        <p>Working-gated employment and hours intercepts. Combines
+        <code>hours_opportunity.shifters</code> (base employment intercept and
+        PT/FT focal-point indicators) with
+        <code>market_opportunity.shifters</code> (working-gated residual market
+        access terms like gsur, education).</p>
+        <div class="stats-box">
+            <h4 style="margin-top:0;">Symbolic form</h4>
+            <div class="math-block symbolic">
+                O<sup>E</sup> + O<sup>H</sup> =<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;{symbolic_html}
+            </div>
+            <h4 style="margin-top:1em;">Numerical form (by group)</h4>
+            <div class="math-block numerical">{numerical_html}</div>
+        </div>
+    </section>
+    """
+
+
+def build_wage_opportunity_html_specdriven(
+    blocks: Dict[str, Any],
+    parsed_params: "ParsedParameters",
+    group_labels: Optional[Dict[str, str]] = None,
+) -> str:
+    """Render the Mincer μ_w equation from wage_opportunity.mean_shifters."""
+    mean_shifters = list(blocks.get("wage_mean") or [])
+    if not mean_shifters and not blocks.get("wage_sigma"):
+        return ""
+
+    parts: List[str] = []
+    for sh in mean_shifters:
+        var = (sh or {}).get("variable")
+        coef = (sh or {}).get("coefficient", "?")
+        if var == "intercept":
+            parts.append(coef)
+        else:
+            term_parts = [coef, str(var)]
+            for ix in (sh.get("interaction") or []):
+                if ix:
+                    term_parts.append(str(ix))
+            parts.append(" · ".join(term_parts))
+    symbolic_mu = "<br>&nbsp;&nbsp;&nbsp;&nbsp;+ ".join(parts) if parts else "(no mean shifters)"
+    sigma_name = blocks.get("wage_sigma") or "σ"
+
+    groups = list(getattr(parsed_params, "groups", []) or []) or ["joint"]
+    numerical_blocks: List[str] = []
+    for grp in groups:
+        terms: List[str] = []
+        for sh in mean_shifters:
+            coef = (sh or {}).get("coefficient")
+            if not coef:
+                continue
+            val = _pick_value_for_group(coef, grp, parsed_params)
+            if val is None:
+                val, _ = _pick_value_for_coef(coef, parsed_params, [grp] + groups)
+            var = (sh or {}).get("variable")
+            if var == "intercept":
+                terms.append(_format_coef_value(val))
+            else:
+                terms.append(_shifter_numerical_term(sh, val))
+        if terms:
+            sigma_val = None
+            if blocks.get("wage_sigma"):
+                sigma_val = _pick_value_for_group(blocks["wage_sigma"], grp, parsed_params)
+                if sigma_val is None:
+                    sigma_val, _ = _pick_value_for_coef(blocks["wage_sigma"], parsed_params, [grp] + groups)
+            label = (group_labels or {}).get(grp, grp)
+            sigma_html = (
+                f"<br><span style='font-family: monospace;'>{escape(str(sigma_name))} = "
+                f"{_format_coef_value(sigma_val)}</span>"
+                if sigma_val is not None else ""
+            )
+            numerical_blocks.append(
+                f"<div style='margin-top: 0.4em;'><strong>{escape(str(label))}:</strong> "
+                f"μ<sub>w</sub> = " + " &nbsp;+&nbsp; ".join(terms)
+                + sigma_html + "</div>"
+            )
+
+    numerical_html = "\n".join(numerical_blocks) or "(no estimated values resolved)"
+
+    return f"""
+    <section>
+        <h2>💰 Wage Opportunity / Mincer Parameters</h2>
+        <p>Log-normal wage opportunity:
+        <code>log(wage) = μ<sub>w</sub>(X) + ε</code>,
+        <code>ε ~ N(0, σ²)</code>. The mean μ<sub>w</sub> is built from
+        <code>wage_opportunity.mean_shifters</code>.</p>
+        <div class="stats-box">
+            <h4 style="margin-top:0;">Symbolic form</h4>
+            <div class="math-block symbolic">
+                μ<sub>w</sub> =<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;{symbolic_mu}
+                <br><br>
+                log(wage) = μ<sub>w</sub> + ε,&nbsp;&nbsp; ε ~ N(0, {escape(str(sigma_name))}²)
+            </div>
+            <h4 style="margin-top:1em;">Numerical form (by group)</h4>
+            <div class="math-block numerical">{numerical_html}</div>
+        </div>
+    </section>
+    """
+
+
+def build_occupation_opportunity_html_specdriven(
+    blocks: Dict[str, Any],
+    parsed_params: "ParsedParameters",
+    group_labels: Optional[Dict[str, str]] = None,
+) -> str:
+    """Render occupation_opportunity grouped by ``applies_to``."""
+    occ_shifters = list(blocks.get("occupation") or [])
+    if not occ_shifters:
+        return ""
+
+    occ_var = blocks.get("occ_var") or "occ"
+    occ_ref = blocks.get("occ_ref")
+
+    by_group: Dict[str, List[Dict[str, Any]]] = {}
+    for sh in occ_shifters:
+        applies = (sh or {}).get("applies_to") or "both"
+        by_group.setdefault(applies, []).append(sh)
+
+    group_aliases = {
+        "sm": "singles_male", "sf": "singles_female",
+        "cm": "couples_male", "cf": "couples_female",
+    }
+
+    sections_html: List[str] = []
+    for applies, sh_list in by_group.items():
+        symb_parts = [_shifter_symbolic_term(sh) for sh in sh_list]
+        symb_html = "<br>&nbsp;&nbsp;&nbsp;&nbsp;+ ".join(symb_parts)
+
+        target_group = group_aliases.get(applies, applies)
+        num_terms: List[str] = []
+        groups = list(getattr(parsed_params, "groups", []) or []) or ["joint"]
+        for sh in sh_list:
+            coef = (sh or {}).get("coefficient")
+            if not coef:
+                continue
+            val = _pick_value_for_group(coef, target_group, parsed_params)
+            if val is None:
+                val, _ = _pick_value_for_coef(coef, parsed_params, [target_group] + groups)
+            num_terms.append(_shifter_numerical_term(sh, val))
+        num_html = " &nbsp;+&nbsp; ".join(num_terms) if num_terms else "(no values)"
+        label = (group_labels or {}).get(target_group, target_group)
+
+        sections_html.append(f"""
+        <div class="stats-box" style="margin-top: 0.6em;">
+            <h4 style="margin-top:0;">{escape(str(label))} &nbsp;(<code>applies_to = {escape(str(applies))}</code>)</h4>
+            <div class="math-block symbolic">
+                O<sup>Occ</sup><sub>{escape(str(applies))}</sub> =<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;{symb_html}
+            </div>
+            <div class="math-block numerical" style="margin-top: 0.5em;">
+                {num_html}
+            </div>
+        </div>
+        """)
+
+    ref_note = (
+        f" Reference category: <code>{escape(str(occ_var))} = {escape(str(occ_ref))}</code>."
+        if occ_ref is not None else ""
+    )
+
+    return f"""
+    <section>
+        <h2>🧭 Occupation Opportunity Parameters</h2>
+        <p>Working-gated occupation shifters. Each <code>applies_to</code>
+        group has its own coefficient set on the non-reference categories of
+        <code>{escape(str(occ_var))}</code>.{ref_note}</p>
+        {''.join(sections_html)}
+    </section>
+    """
+
+
+# ============================================================================
+# Legacy hard-coded renderers (used as fallback when YAML is unavailable)
+# ============================================================================
+
+
 def build_wage_equation_html_dynamic(wage_params: Dict[str, float]) -> str:
     """
     Build wage equation HTML dynamically based on actual parameters in wage_params.
@@ -3220,8 +3701,31 @@ def generate_html_report_styled(
         elasticities_html = elasticities_df.to_html(classes='table table-striped', border=0, index=False)
 
     # Build model-specific specification blocks.
-    # Regular RURO: hours + wage opportunity sections.
-    # Job-choice RURO: dedicated market-opportunity section (beta_offer_*).
+    # Spec-driven path: re-load the YAML and render the four opportunity blocks
+    # generically. Falls back to legacy hard-coded renderers if YAML unavailable.
+    _spec_path_for_blocks = run_metadata.get("spec_config_path") if run_metadata else None
+    _spec_blocks = _load_yaml_spec_blocks(_spec_path_for_blocks)
+
+    model_specific_sections_html = ""
+    if _spec_blocks:
+        # Top-of-section model index equation
+        model_specific_sections_html += build_model_index_equation_html(_spec_blocks)
+
+        # Employment / Hours Opportunity (hours + market shifters together)
+        emp_hours_html = build_employment_hours_opportunity_html_specdriven(
+            _spec_blocks, parsed_params, group_labels
+        )
+        # Wage Opportunity / Mincer
+        wage_html_spec = build_wage_opportunity_html_specdriven(
+            _spec_blocks, parsed_params, group_labels
+        )
+        # Occupation Opportunity
+        occ_html_spec = build_occupation_opportunity_html_specdriven(
+            _spec_blocks, parsed_params, group_labels
+        )
+        model_specific_sections_html += emp_hours_html + wage_html_spec + occ_html_spec
+
+    # Always also resolve the legacy path for job-choice models / fallback.
     wage_params = {}
     for group in parsed_params.groups:
         params = parsed_params.get_all_params_for_group(group)
@@ -3231,20 +3735,20 @@ def generate_html_report_styled(
     if not wage_params and parsed_params.groups:
         wage_params = parsed_params.get_all_params_for_group(parsed_params.groups[0])
 
-    wage_equation_html = build_wage_equation_html_dynamic(wage_params)
-    hours_opportunity_html = build_hours_opportunity_html_dynamic(wage_params)
-
     market_opportunity_params = _extract_market_opportunity_params(parsed_params)
     is_job_choice_model = len(market_opportunity_params) > 0
-    market_opportunity_html = build_job_market_opportunity_html_dynamic(market_opportunity_params)
 
     if is_job_choice_model:
-        model_specific_sections_html = f"""
+        market_opportunity_html = build_job_market_opportunity_html_dynamic(market_opportunity_params)
+        model_specific_sections_html += f"""
         <h3>Job Market Opportunity Equation (All Groups)</h3>
         {market_opportunity_html}
         """
-    else:
-        model_specific_sections_html = f"""
+    elif not _spec_blocks:
+        # YAML unavailable AND not a job-choice model -> legacy renderers
+        wage_equation_html = build_wage_equation_html_dynamic(wage_params)
+        hours_opportunity_html = build_hours_opportunity_html_dynamic(wage_params)
+        model_specific_sections_html += f"""
         <h3>Hours Opportunity Function (All Groups)</h3>
         {hours_opportunity_html}
 
@@ -3613,25 +4117,40 @@ def generate_html_report_styled(
         return True
 
     param_df = param_df[param_df.apply(is_estimable_param, axis=1)].copy()
-    
-    # Classify parameters into preference vs opportunity
+
+    # Build YAML-driven coefficient -> block-category map (spec-driven, generic).
+    # Falls back to substring heuristics for legacy specs or when the YAML is unavailable.
+    _spec_blocks_for_class = _spec_blocks if isinstance(_spec_blocks, dict) else {}
+    _coef_map_for_class = _coef_to_block_map(_spec_blocks_for_class)
+    _block_to_category = {
+        "hours": "hours_opp",
+        "market": "hours_opp",       # market shifters are working-gated, shown together with hours
+        "wage": "wage_opp",
+        "occupation": "occupation_opp",
+        "preference": "preference",
+    }
+
     def classify_param(name):
-        """Classify parameter as 'preference', 'market_opp', 'hours_opp', 'wage_opp', or 'other'."""
+        """Classify parameter via YAML spec, then by name conventions."""
+        block = _classify_param_via_blocks(name, _coef_map_for_class)
+        if block is not None:
+            return _block_to_category.get(block, "other")
         name_lower = name.lower()
-        # Job-choice market opportunity
         if 'beta_offer_' in name_lower:
             return 'market_opp'
-        # Preference parameters: beta_l*, beta_c*, theta_l*, theta_c*, beta_interact
+        if 'beta_occ_' in name_lower:
+            return 'occupation_opp'
         if any(x in name_lower for x in ['beta_l', 'beta_c', 'theta_l', 'theta_c', 'beta_interact']):
             return 'preference'
-        # Hours opportunity: beta_work, beta_pt*, beta_ft, beta_gsur, beta_work_educ*
-        if any(x in name_lower for x in ['beta_work', 'beta_pt', 'beta_ft', 'beta_gsur']):
+        if any(x in name_lower for x in ['beta_work', 'beta_pt', 'beta_ft', 'beta_gsur',
+                                          'beta_e_', 'beta_e ', 'beta_h_']):
             return 'hours_opp'
-        # Wage opportunity: beta_w*, beta_pexp*, sigma
+        if name_lower in ('beta_e',):
+            return 'hours_opp'
         if any(x in name_lower for x in ['beta_w', 'beta_pexp', 'sigma']):
             return 'wage_opp'
         return 'other'
-    
+
     param_df['category'] = param_df['parameter'].apply(classify_param)
     
     def build_param_table_html(df_subset, title, description=""):
@@ -3746,7 +4265,7 @@ def generate_html_report_styled(
         "🎯 Preference Parameters (Utility Function)",
         "Parameters determining the utility from consumption (β_c, θ_c) and leisure (β_l*, θ_l) by demographic group."
     )
-    
+
     market_opp_table = build_param_table_html(
         param_df[param_df['category'] == 'market_opp'],
         "Job Market Opportunity Parameters",
@@ -3755,23 +4274,38 @@ def generate_html_report_styled(
 
     hours_opp_table = build_param_table_html(
         param_df[param_df['category'] == 'hours_opp'],
-        "⏰ Hours Opportunity Parameters",
-        "Parameters for the hours density: working indicator, focal hours (PT/FT), education interactions, unemployment rate effects."
+        "⏰ Employment and Hours Opportunity Parameters",
+        ("Working-gated employment intercept and hours focal-point indicators, "
+         "plus residual market-access shifters (gsur, education) declared in "
+         "<code>market_opportunity.shifters</code>.")
     )
-    
+
     wage_opp_table = build_param_table_html(
         param_df[param_df['category'] == 'wage_opp'],
-        "💰 Wage Opportunity Parameters (Mincer Equation)",
-        "Log-wage equation parameters: intercept, education effects, experience effects, and residual standard deviation (σ)."
+        "💰 Wage Opportunity / Mincer Parameters",
+        ("Log-normal wage opportunity: μ<sub>w</sub>(X) intercept, education, "
+         "experience, and residual standard deviation σ.")
     )
-    
+
+    occupation_opp_table = build_param_table_html(
+        param_df[param_df['category'] == 'occupation_opp'],
+        "🧭 Occupation Opportunity Parameters",
+        ("Working-gated occupation shifters declared in "
+         "<code>occupation_opportunity.shifters</code>; routed by "
+         "<code>applies_to</code> group (sm/sf/cm/cf). Reference category is "
+         "the YAML's <code>occupation_opportunity.reference</code>.")
+    )
+
     other_table = build_param_table_html(
         param_df[param_df['category'] == 'other'],
         "📋 Other Parameters",
         ""
     )
-    
-    param_table_rows = pref_table + market_opp_table + hours_opp_table + wage_opp_table + other_table
+
+    param_table_rows = (
+        pref_table + market_opp_table + hours_opp_table + wage_opp_table
+        + occupation_opp_table + other_table
+    )
 
     # Generate specification HTML
     specification_html = generate_specification_html(parsed_params)

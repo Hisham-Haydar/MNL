@@ -183,6 +183,15 @@ verified present in the regenerated HTML:
 
 ## Remaining reporting limitations
 
+- **Legacy `Group-Specific Parameters` section still needs cleanup.**
+  The new spec-driven opportunity equation sections and the new
+  "Parameter Estimates by Category" section are correctly separated, but the
+  older `Group-Specific Parameters` block is still emitted later in the HTML.
+  In the joint `M0_stijn_occ` report it can show parameters from other groups
+  under a group heading, for example couple-male or couple-female occupation
+  parameters under single-male/single-female headings. Until that legacy block
+  is removed or rewritten, use the spec-driven opportunity sections and the
+  categorized parameter tables as the authoritative parameter display.
 - **Per-group numerical equations** for the employment/hours and wage
   blocks rely on `ParsedParameters.groups`. In joint estimation the parser
   collapses to a single `joint` group; the renderer therefore shows one

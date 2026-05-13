@@ -5823,6 +5823,369 @@ def _md_table(headers: List[str], rows: List[List[Any]]) -> str:
     return "\n".join([header, sep] + body) + "\n"
 
 
+# =============================================================================
+# Low-token Markdown summary — enrichment helpers
+# Country/year/specification agnostic: each helper degrades gracefully when
+# inputs are absent (empty list / "_None._").
+# =============================================================================
+
+
+def _git_revision_info() -> Dict[str, Any]:
+    """Compact git rev + dirty + branch info; empty dict on any failure."""
+    import subprocess  # local import to keep top-level light
+    out: Dict[str, Any] = {}
+    for label, args in [
+        ("git_sha", ["git", "rev-parse", "--short=12", "HEAD"]),
+        ("git_branch", ["git", "rev-parse", "--abbrev-ref", "HEAD"]),
+    ]:
+        try:
+            r = subprocess.run(args, capture_output=True, text=True, timeout=5, check=False)
+            if r.returncode == 0 and r.stdout.strip():
+                out[label] = r.stdout.strip()
+        except Exception:  # noqa: BLE001
+            pass
+    try:
+        s = subprocess.run(["git", "status", "--porcelain"],
+                           capture_output=True, text=True, timeout=5, check=False)
+        if s.returncode == 0:
+            out["git_dirty"] = bool(s.stdout.strip())
+    except Exception:  # noqa: BLE001
+        pass
+    return out
+
+
+def _read_mnl_dataframes_for_summary(
+    mnl_base: Optional[Union[str, Path]],
+) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
+    """Best-effort load of MNL singles/couples parquets. Returns (None, None) silently on failure."""
+    if mnl_base is None:
+        return None, None
+    try:
+        base = str(mnl_base)
+        sp = Path(base + "__singles.parquet")
+        cp = Path(base + "__couples.parquet")
+        s = pd.read_parquet(sp) if sp.exists() else None
+        c = pd.read_parquet(cp) if cp.exists() else None
+        return s, c
+    except Exception as exc:  # noqa: BLE001
+        LOGGER.warning(f"   _read_mnl_dataframes_for_summary: {exc}")
+        return None, None
+
+
+def _sample_size_rows(
+    df_singles: Optional[pd.DataFrame],
+    df_couples: Optional[pd.DataFrame],
+) -> List[List[Any]]:
+    """Per-group n_obs, n_households, n_chosen, n_working."""
+    rows: List[List[Any]] = []
+
+    def _stat(df, label, dgn_value, work_col, hours_col):
+        if df is None or "idhh" not in df.columns:
+            return
+        sub = df
+        if dgn_value is not None and "dgn" in df.columns:
+            sub = df[df["dgn"] == dgn_value]
+        if len(sub) == 0:
+            return
+        chosen_col = "is_chosen" if "is_chosen" in sub.columns else ("chosen" if "chosen" in sub.columns else None)
+        n_obs = len(sub)
+        n_hh = int(sub["idhh"].nunique())
+        n_chosen = int((sub[chosen_col] == 1).sum()) if chosen_col else None
+        n_working: Optional[int] = None
+        if work_col in sub.columns:
+            n_working = int((sub[work_col] == 1).sum())
+        elif hours_col in sub.columns:
+            n_working = int((pd.to_numeric(sub[hours_col], errors="coerce") > 0).sum())
+        alts_per_hh = (n_obs / n_hh) if n_hh else None
+        rows.append([label, n_obs, n_hh,
+                     round(alts_per_hh, 2) if alts_per_hh is not None else None,
+                     n_chosen, n_working])
+
+    _stat(df_singles, "singles_male", 1, "working", "hours")
+    _stat(df_singles, "singles_female", 0, "working", "hours")
+    _stat(df_couples, "couples_male", None, "working_male", "hours_male")
+    _stat(df_couples, "couples_female", None, "working_female", "hours_female")
+    return rows
+
+
+def _x_descriptives_rows(
+    df_singles: Optional[pd.DataFrame],
+    df_couples: Optional[pd.DataFrame],
+) -> List[List[Any]]:
+    """Means on chosen-alt rows for canonical X variables, per group."""
+    rows: List[List[Any]] = []
+    base_vars = ["age_norm", "age_norm2", "educL", "educM", "educH",
+                 "pexp_years", "n_children", "gsur"]
+
+    def _emit(df, label, dgn_value, suffix=""):
+        if df is None:
+            return
+        chosen = df
+        if "is_chosen" in chosen.columns:
+            chosen = chosen[chosen["is_chosen"] == 1]
+        elif "chosen" in chosen.columns:
+            chosen = chosen[chosen["chosen"] == 1]
+        if dgn_value is not None and "dgn" in chosen.columns:
+            chosen = chosen[chosen["dgn"] == dgn_value]
+        if len(chosen) == 0:
+            return
+        for v in base_vars:
+            col = v + suffix
+            if col in chosen.columns:
+                series = pd.to_numeric(chosen[col], errors="coerce").dropna()
+                if len(series):
+                    rows.append([label, v, round(float(series.mean()), 4),
+                                 round(float(series.std()), 4),
+                                 round(float(series.min()), 4),
+                                 round(float(series.max()), 4),
+                                 int(len(series))])
+
+    _emit(df_singles, "singles_male", 1)
+    _emit(df_singles, "singles_female", 0)
+    _emit(df_couples, "couples_male", None, "_male")
+    _emit(df_couples, "couples_female", None, "_female")
+    return rows
+
+
+def _observed_log_wage_rows(
+    df_singles: Optional[pd.DataFrame],
+    df_couples: Optional[pd.DataFrame],
+    implied_sigma: Optional[float],
+) -> List[List[Any]]:
+    """Observed log-wage mean & std on chosen working rows, with implied σ comparison."""
+    rows: List[List[Any]] = []
+
+    def _row(df, label, wage_col, work_col, hours_col, dgn_value=None):
+        if df is None or wage_col not in df.columns:
+            return
+        sub = df
+        if "is_chosen" in df.columns:
+            sub = sub[sub["is_chosen"] == 1]
+        elif "chosen" in df.columns:
+            sub = sub[sub["chosen"] == 1]
+        if dgn_value is not None and "dgn" in sub.columns:
+            sub = sub[sub["dgn"] == dgn_value]
+        if work_col in sub.columns:
+            sub = sub[sub[work_col] == 1]
+        elif hours_col in sub.columns:
+            sub = sub[pd.to_numeric(sub[hours_col], errors="coerce") > 0]
+        wage = pd.to_numeric(sub[wage_col], errors="coerce")
+        wage = wage[(wage > 0) & wage.notna()]
+        if len(wage) < 2:
+            return
+        logw = np.log(wage.to_numpy())
+        rows.append([label, int(len(logw)),
+                     round(float(np.mean(logw)), 4),
+                     round(float(np.std(logw, ddof=1)), 4),
+                     _md_clean(implied_sigma)])
+
+    _row(df_singles, "singles_male", "wage", "working", "hours", 1)
+    _row(df_singles, "singles_female", "wage", "working", "hours", 0)
+    _row(df_couples, "couples_male", "wage_male", "working_male", "hours_male")
+    _row(df_couples, "couples_female", "wage_female", "working_female", "hours_female")
+    return rows
+
+
+def _hours_quantile_rows(
+    df_singles: Optional[pd.DataFrame],
+    df_couples: Optional[pd.DataFrame],
+) -> List[List[Any]]:
+    """Observed hours quantiles on chosen working alternatives."""
+    quants = [0.10, 0.25, 0.50, 0.75, 0.90]
+    rows: List[List[Any]] = []
+
+    def _emit(df, label, hours_col, work_col, dgn_value=None):
+        if df is None or hours_col not in df.columns:
+            return
+        sub = df
+        if "is_chosen" in sub.columns:
+            sub = sub[sub["is_chosen"] == 1]
+        elif "chosen" in sub.columns:
+            sub = sub[sub["chosen"] == 1]
+        if dgn_value is not None and "dgn" in sub.columns:
+            sub = sub[sub["dgn"] == dgn_value]
+        if work_col in sub.columns:
+            sub = sub[sub[work_col] == 1]
+        else:
+            sub = sub[pd.to_numeric(sub[hours_col], errors="coerce") > 0]
+        h = pd.to_numeric(sub[hours_col], errors="coerce").dropna()
+        if not len(h):
+            return
+        qs = h.quantile(quants).to_dict()
+        rows.append([label, int(len(h)),
+                     round(float(qs[0.10]), 2), round(float(qs[0.25]), 2),
+                     round(float(qs[0.50]), 2), round(float(qs[0.75]), 2),
+                     round(float(qs[0.90]), 2)])
+
+    _emit(df_singles, "singles_male", "hours", "working", 1)
+    _emit(df_singles, "singles_female", "hours", "working", 0)
+    _emit(df_couples, "couples_male", "hours_male", "working_male")
+    _emit(df_couples, "couples_female", "hours_female", "working_female")
+    return rows
+
+
+def _distribution_fit_l1_rows(fit_results: Dict[str, Dict[str, Any]]) -> List[List[Any]]:
+    """L1 and L2 distance between observed and predicted hours-bin shares per group."""
+    rows: List[List[Any]] = []
+    for group, vals in sorted((fit_results or {}).items()):
+        obs = vals.get("hours_distribution_observed") or {}
+        pred = vals.get("hours_distribution_predicted") or {}
+        if not obs and not pred:
+            continue
+        keys = sorted(set(obs) | set(pred), key=str)
+        diffs = [abs(float(obs.get(k, 0.0)) - float(pred.get(k, 0.0))) for k in keys]
+        l1 = sum(diffs)
+        l2 = float(np.sqrt(sum(d * d for d in diffs)))
+        rows.append([group, "hours_bins", len(keys),
+                     round(l1, 4), round(l2, 4)])
+    return rows
+
+
+def _bound_proximity_rows(param_df: pd.DataFrame, pct: float = 0.05) -> List[List[Any]]:
+    """Estimates within `pct` of a bound but not exactly at it."""
+    rows: List[List[Any]] = []
+    for _, row in param_df.iterrows():
+        est = row.get("estimate")
+        lb = row.get("lower_bound")
+        ub = row.get("upper_bound")
+        if not isinstance(est, (int, float)) or (np.isnan(est) if hasattr(np, "isnan") else False):
+            continue
+        if not (isinstance(lb, (int, float)) or isinstance(ub, (int, float))):
+            continue
+        if isinstance(lb, (int, float)) and isinstance(ub, (int, float)):
+            width = float(ub) - float(lb)
+        else:
+            width = max(abs(float(est)), 1.0)
+        if width <= 0:
+            continue
+        tol = pct * abs(width)
+        flags = []
+        if isinstance(lb, (int, float)):
+            d = abs(float(est) - float(lb))
+            if 1e-6 < d <= tol:
+                flags.append(f"near_lower(Δ={d:.3g})")
+        if isinstance(ub, (int, float)):
+            d = abs(float(est) - float(ub))
+            if 1e-6 < d <= tol:
+                flags.append(f"near_upper(Δ={d:.3g})")
+        if flags:
+            rows.append([row.get("block"), row.get("parameter"),
+                         _md_clean(est), _md_clean(lb), _md_clean(ub),
+                         "; ".join(flags)])
+    return rows
+
+
+def _convergence_warning_rows(
+    param_df: pd.DataFrame,
+    hessian_diagnostics: Optional[Dict[str, Any]],
+    prob_diagnostics: Optional[Dict[str, Any]],
+    bound_diagnostics: Optional[List[Dict[str, Any]]],
+    fit_stats: Optional[Dict[str, Any]],
+) -> List[List[Any]]:
+    """Aggregated convergence/health summary for fast LLM review."""
+    rows: List[List[Any]] = []
+    n = len(param_df)
+    p_vals = pd.to_numeric(param_df.get("p_value"), errors="coerce")
+    se = pd.to_numeric(param_df.get("std_error"), errors="coerce")
+    t_vals = pd.to_numeric(param_df.get("t_value"), errors="coerce").abs()
+    n_degen = int((se.abs() < 1e-12).sum()) if se is not None else 0
+    n_sig_05 = int((p_vals < 0.05).sum())
+    n_t_under_1 = int((t_vals < 1.0).sum())
+    pct_sig = (n_sig_05 / n * 100) if n else 0.0
+    pct_noise = (n_t_under_1 / n * 100) if n else 0.0
+    n_at_bound = len(bound_diagnostics or [])
+    p_min = ((prob_diagnostics or {}).get("p_chosen_dist") or {}).get("min")
+    p_q10 = ((prob_diagnostics or {}).get("p_chosen_dist") or {}).get("q10")
+    cond = (hessian_diagnostics or {}).get("condition_number")
+    n_neg = (hessian_diagnostics or {}).get("n_negative_eigenvalues") or 0
+    ll = (fit_stats or {}).get("log_likelihood")
+    aic = (fit_stats or {}).get("AIC")
+    bic = (fit_stats or {}).get("BIC")
+    rho2 = (fit_stats or {}).get("rho_squared")
+
+    rows.append(["n_estimated_params", n])
+    rows.append(["log_likelihood", ll])
+    rows.append(["AIC", aic])
+    rows.append(["BIC", bic])
+    rows.append(["rho_squared", rho2])
+    rows.append(["n_significant_p<0.05", n_sig_05])
+    rows.append(["pct_significant_p<0.05", f"{pct_sig:.1f}%" if n else "NA"])
+    rows.append(["n_low_t<1.0", n_t_under_1])
+    rows.append(["pct_low_t<1.0", f"{pct_noise:.1f}%" if n else "NA"])
+    rows.append(["n_degenerate_se", n_degen])
+    rows.append(["n_at_bound_strict", n_at_bound])
+    rows.append(["hessian_condition_number", cond])
+    rows.append(["n_negative_eigenvalues", n_neg])
+    rows.append(["p_chosen_min", p_min])
+    rows.append(["p_chosen_q10", p_q10])
+
+    verdicts: List[str] = []
+    if isinstance(cond, (int, float)) and cond > 1e10:
+        verdicts.append("ill_conditioned_hessian")
+    if n_neg and int(n_neg) > 0:
+        verdicts.append("negative_eigenvalues_present")
+    if n_degen > 0:
+        verdicts.append("degenerate_standard_errors")
+    if n_at_bound > 0:
+        verdicts.append("parameters_at_bounds")
+    if isinstance(p_min, (int, float)) and p_min < 1e-6:
+        verdicts.append("very_small_p_chosen_min")
+    if pct_noise > 25.0:
+        verdicts.append("over_25pct_low_t")
+    rows.append(["review_priority_flags", ", ".join(verdicts) if verdicts else "none"])
+    return rows
+
+
+def _top_significant_rows(param_df: pd.DataFrame, n: int = 15) -> List[List[Any]]:
+    """Top-n estimated coefficients by |t-value|."""
+    df = param_df.copy()
+    df["abs_t"] = pd.to_numeric(df.get("t_value"), errors="coerce").abs()
+    df = df.dropna(subset=["abs_t"])
+    df = df.sort_values("abs_t", ascending=False).head(n)
+    out: List[List[Any]] = []
+    for _, r in df.iterrows():
+        out.append([r.get("block"), r.get("parameter"),
+                    r.get("estimate"), r.get("std_error"),
+                    r.get("t_value"), r.get("p_value")])
+    return out
+
+
+def _utility_leisure_inventory(blocks: Dict[str, Any]) -> List[List[Any]]:
+    """Inventory rows for the utility.leisure block (intercept, theta, shifters)."""
+    u_leis = (blocks.get("utility_leisure") or {}) if isinstance(blocks, dict) else {}
+    if not u_leis:
+        return []
+    out: List[List[Any]] = []
+    intercept = u_leis.get("intercept")
+    theta = u_leis.get("box_cox_exponent")
+    if intercept:
+        out.append(["utility.leisure.intercept", "leisure intercept", 1, "—", intercept])
+    if theta:
+        out.append(["utility.leisure.box_cox_exponent", "leisure θ_l", 1, "—", theta])
+    shifters = u_leis.get("shifters") or []
+    if shifters:
+        coefs = ", ".join(sh.get("coefficient", "?") for sh in shifters)
+        vars_set = ", ".join(sorted({(sh or {}).get("variable", "?") for sh in shifters}))
+        out.append(["utility.leisure.shifters", "Utility-leisure shifters",
+                    len(shifters), vars_set, coefs])
+    return out
+
+
+def _utility_consumption_inventory(blocks: Dict[str, Any]) -> List[List[Any]]:
+    """Inventory rows for the utility.consumption block."""
+    u_c = (blocks.get("utility_consumption") or {}) if isinstance(blocks, dict) else {}
+    if not u_c:
+        return []
+    out: List[List[Any]] = []
+    coef = u_c.get("coefficient")
+    theta = u_c.get("box_cox_exponent")
+    if coef:
+        out.append(["utility.consumption.coefficient", "consumption scale", 1, "—", coef])
+    if theta:
+        out.append(["utility.consumption.box_cox_exponent", "consumption θ_c", 1, "—", theta])
+    return out
+
+
 def _parameter_block_for_markdown(
     name: str,
     coef_map: Dict[str, str],
@@ -6343,6 +6706,8 @@ def generate_llm_markdown_summary(
 
     spec_inventory_rows: List[List[Any]] = []
     if isinstance(blocks, dict) and blocks:
+        spec_inventory_rows.extend(_utility_consumption_inventory(blocks))
+        spec_inventory_rows.extend(_utility_leisure_inventory(blocks))
         spec_inventory_rows.append(_shifter_inventory_row("hours_opportunity", "Employment/Hours", blocks.get("hours") or []))
         spec_inventory_rows.append(_shifter_inventory_row("market_opportunity", "Market residual", blocks.get("market") or []))
         spec_inventory_rows.append(_shifter_inventory_row("wage_opportunity.mean_shifters", "Mincer mean", blocks.get("wage_mean") or []))
@@ -6514,6 +6879,34 @@ def generate_llm_markdown_summary(
     wage_distribution_rows = _wage_distribution_summary_rows(parsed_params, mnl_base, spec)
     occupation_share_rows = _occupation_share_rows(parsed_params, mnl_base, spec)
 
+    # Enrichments: load MNL data once for per-group breakdowns and observed stats.
+    _mnl_singles_df, _mnl_couples_df = _read_mnl_dataframes_for_summary(mnl_base)
+    sample_size_rows = _sample_size_rows(_mnl_singles_df, _mnl_couples_df)
+    x_descriptive_rows = _x_descriptives_rows(_mnl_singles_df, _mnl_couples_df)
+    # Implied sigma from estimated parameters (works across joint/per-group runs)
+    implied_sigma_val: Optional[float] = None
+    if isinstance(blocks, dict) and blocks.get("wage_sigma"):
+        sig_val, _ = _pick_value_for_coef(
+            blocks["wage_sigma"], parsed_params,
+            list(getattr(parsed_params, "groups", []) or []) or ["joint"],
+        )
+        if sig_val is not None:
+            try:
+                implied_sigma_val = float(sig_val)
+            except (TypeError, ValueError):
+                implied_sigma_val = None
+    observed_log_wage_rows_list = _observed_log_wage_rows(
+        _mnl_singles_df, _mnl_couples_df, implied_sigma_val,
+    )
+    hours_quantile_rows = _hours_quantile_rows(_mnl_singles_df, _mnl_couples_df)
+    distribution_fit_rows = _distribution_fit_l1_rows(fit_results)
+    bound_proximity_rows = _bound_proximity_rows(param_df, pct=0.05)
+    convergence_warning_rows = _convergence_warning_rows(
+        param_df, hessian_diagnostics, prob_diagnostics, bound_diagnostics, fit_stats,
+    )
+    top_significant_rows = _top_significant_rows(param_df, n=15)
+    git_info = _git_revision_info()
+
     fit_rows = [
         ["log_likelihood", fit_stats.get("log_likelihood")],
         ["ll_null_uniform", fit_stats.get("ll_null_uniform")],
@@ -6615,12 +7008,34 @@ def generate_llm_markdown_summary(
                 ["estimation_walltime_seconds", summary.get("total_walltime_seconds")],
             ],
         ),
+        "## Source Environment",
+        "",
+        _md_table(
+            ["field", "value"],
+            [
+                ["git_sha", git_info.get("git_sha")],
+                ["git_branch", git_info.get("git_branch")],
+                ["git_dirty", git_info.get("git_dirty")],
+            ],
+        ) if git_info else "_Git info unavailable._\n",
         "## Choice Data Footprint",
         "",
         _md_table(
             ["dataset", "rows", "groups", "alt_min", "alt_median", "alt_max", "chosen_rows", "working_rows", "n_columns"],
             footprint_rows,
         ) if footprint_rows else "_MNL base not provided or not readable._\n",
+        "## Per-Group Sample Sizes",
+        "",
+        _md_table(
+            ["group", "n_obs", "n_households", "alts_per_hh", "n_chosen", "n_working"],
+            sample_size_rows,
+        ) if sample_size_rows else "_MNL data not loaded._\n",
+        "## Sample Descriptives (chosen alternatives, by group)",
+        "",
+        _md_table(
+            ["group", "variable", "mean", "std", "min", "max", "n"],
+            x_descriptive_rows,
+        ) if x_descriptive_rows else "_No X-variable descriptives available._\n",
         "## Proposal And Prior Diagnostics",
         "",
         _md_table(
@@ -6630,6 +7045,10 @@ def generate_llm_markdown_summary(
         "## Warnings And Review Flags",
         "",
         _md_table(["type", "message"], warning_rows) if warning_rows else "_No automatic warnings raised._\n",
+        "## Convergence Health Summary",
+        "",
+        _md_table(["metric", "value"], convergence_warning_rows)
+            if convergence_warning_rows else "_Convergence summary unavailable._\n",
         "## Model Index Equation",
         "",
         (
@@ -6694,6 +7113,24 @@ def generate_llm_markdown_summary(
             ["group", "participation_observed", "participation_predicted", "mean_hours_observed", "mean_hours_predicted"],
             _fit_moment_rows(fit_results),
         ),
+        "## Observed Hours Quantiles (chosen working alts)",
+        "",
+        _md_table(
+            ["group", "n", "q10", "q25", "q50", "q75", "q90"],
+            hours_quantile_rows,
+        ) if hours_quantile_rows else "_Observed hours quantiles unavailable._\n",
+        "## Distribution Fit Summary (observed vs predicted hours bins)",
+        "",
+        _md_table(
+            ["group", "dimension", "n_bins", "L1_distance", "L2_distance"],
+            distribution_fit_rows,
+        ) if distribution_fit_rows else "_Distribution fit summary unavailable._\n",
+        "## Observed vs Implied Log-Wage σ (chosen working alts)",
+        "",
+        _md_table(
+            ["group", "n", "observed_mean_log_wage", "observed_std_log_wage", "implied_sigma"],
+            observed_log_wage_rows_list,
+        ) if observed_log_wage_rows_list else "_Observed wage stats unavailable._\n",
         "## Structural Elasticity Heuristics",
         "",
         "These are curvature-based heuristics from the post-estimation script, not",
@@ -6753,6 +7190,18 @@ def generate_llm_markdown_summary(
         "## Parameters At Bounds",
         "",
         _md_table(["parameter", "estimate", "bound", "side"], bound_rows),
+        "## Parameters Near Bounds (within 5% of bound width)",
+        "",
+        _md_table(
+            ["block", "parameter", "estimate", "lower_bound", "upper_bound", "flags"],
+            bound_proximity_rows,
+        ) if bound_proximity_rows else "_No parameters within 5% of a bound._\n",
+        "## Top Significant Coefficients (top 15 by |t|)",
+        "",
+        _md_table(
+            ["block", "parameter", "estimate", "std_error", "t_value", "p_value"],
+            top_significant_rows,
+        ) if top_significant_rows else "_No t-values available._\n",
         "## Parameter Estimates By Block",
         "",
         _md_table(

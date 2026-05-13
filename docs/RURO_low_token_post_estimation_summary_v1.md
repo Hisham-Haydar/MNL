@@ -96,7 +96,39 @@ The Markdown summary includes:
 - wage-distribution summaries by group, with observed and predicted means and
   q10/q50/q90 for working alternatives;
 - occupation-distribution shares for loc4-style columns when available,
-  including loc4 labels and observed/predicted shares.
+  including loc4 labels and observed/predicted shares;
+- **source environment** banner: `git_sha`, `git_branch`, and a `git_dirty`
+  flag (best-effort, silent if git is unavailable);
+- **per-group sample sizes**: `n_obs`, `n_households`, `alts_per_hh`,
+  `n_chosen`, `n_working` for `singles_male`, `singles_female`,
+  `couples_male`, `couples_female`;
+- **sample descriptives** on chosen-alt rows for canonical X variables
+  (`age_norm`, `age_norm2`, `educL`, `educM`, `educH`, `pexp_years`,
+  `n_children`, `gsur`) — mean, std, min, max, n per group;
+- **convergence health summary** — aggregated counts:
+  `n_estimated_params`, log-likelihood, AIC, BIC, ρ², `n_significant_p<0.05`,
+  `pct_significant_p<0.05`, `n_low_t<1.0`, `pct_low_t<1.0`,
+  `n_degenerate_se`, `n_at_bound_strict`, Hessian condition number,
+  `n_negative_eigenvalues`, `p_chosen_min`, `p_chosen_q10`, and a
+  `review_priority_flags` field that lists any conditions warranting
+  attention (e.g. `ill_conditioned_hessian`, `negative_eigenvalues_present`,
+  `parameters_at_bounds`, `over_25pct_low_t`);
+- **utility-block inventory rows** inside the Specification Block
+  Inventory: `utility.consumption.coefficient`,
+  `utility.consumption.box_cox_exponent`, `utility.leisure.intercept`,
+  `utility.leisure.box_cox_exponent`, and `utility.leisure.shifters`;
+- **observed hours quantiles** (q10/q25/q50/q75/q90) on chosen working
+  alternatives by group, alongside the bin-based fit moments;
+- **distribution-fit summary**: L1 and L2 distance between observed and
+  predicted hours-bin shares, per group — a single-number summary of
+  hours-fit quality per group;
+- **observed vs implied log-wage σ**: observed mean and std of `log(wage)`
+  on chosen working alternatives, alongside the model's estimated σ —
+  per group;
+- **parameters near bounds** (within 5% of the bound width) — picks up
+  near-binding behaviour the strict "at bounds" check misses;
+- **top significant coefficients** (top 15 by |t-value|) for fast
+  identification of the strongest estimated effects.
 
 It intentionally excludes:
 

@@ -2110,7 +2110,10 @@ def main() -> None:
     # 1. Load drawsmeta and override prior parameters
     # -------------------------------------------------------------------------
     if args.drawsmeta:
-        meta = _load_drawsmeta(Path(args.drawsmeta))
+        meta_full = _load_drawsmeta(Path(args.drawsmeta))
+        # enh_RURO_draws.py writes prior parameters under "distributional_params";
+        # accept that nested form first, fall back to flat for older sidecars.
+        meta = meta_full.get("distributional_params", meta_full)
 
         # Override with draws parameters
         args.h_min = meta["h_min"]

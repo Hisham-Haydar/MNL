@@ -235,6 +235,23 @@ loc4_3
 loc4_4
 ```
 
+Occupation sentinels:
+
+```text
+loc4 = -1  non-worker or non-work alternative
+loc4 = -2  working observed row with unknown/invalid occupation
+loc4 = 1   routine-manual reference group
+loc4 = 2   nonroutine-manual
+loc4 = 3   routine-cognitive
+loc4 = 4   nonroutine-cognitive
+```
+
+`loc4 = -2` is not an occupation. It may remain on observed working rows
+(`draw = 0`) when the original occupation cannot be classified. The Stijn M0
+occupation layer uses only the dummies for `loc4 = 2`, `3`, and `4`, so
+`loc4 = -2` contributes zero to `O^Occ`. Simulated working alternatives must
+draw only valid `loc4` values in `{1, 2, 3, 4}`.
+
 Key budget columns:
 
 ```text

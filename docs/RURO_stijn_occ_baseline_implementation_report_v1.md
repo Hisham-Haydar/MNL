@@ -122,6 +122,15 @@ opportunity all contribute zero. The non-work index is:
 U(nonwork) - log_q_E(nonwork)
 ```
 
+Observed working rows with `loc4 = -2` are retained as unknown occupation
+rows, not as a fifth occupation category. In M0, only `loc4 = 2`, `loc4 = 3`,
+and `loc4 = 4` enter the occupation-opportunity layer; `loc4 = 1` is omitted.
+Therefore `loc4 = -2` sets all occupation dummies to zero and contributes zero
+to `O^Occ`. This is numerically safe for estimation, but it should be
+documented as unknown observed occupation rather than interpreted as the
+reference category. Simulated working alternatives draw only valid
+`loc4 in {1, 2, 3, 4}`.
+
 ## 6. How prior correction is handled
 
 The final MNL convention is:

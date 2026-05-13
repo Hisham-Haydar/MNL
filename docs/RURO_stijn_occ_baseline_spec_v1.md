@@ -240,6 +240,16 @@ The non-employment alternative contributes only `U_h,0 − log_q_E(e=0)` to the 
 
 Both `estimation_engine.py` and `gamspy_estimation_vectorized.py` must implement the `· working` gate on every employment-conditional term. The audit must verify this for singles and couples.
 
+**Unknown observed occupation convention.** `loc4 = -2` is not an occupation
+category. It means a working observed row has an unknown or invalid occupation
+classification. These rows may be retained in the observed alternative
+(`draw = 0`). Because M0 estimates only the dummies `1{loc4 = 2}`,
+`1{loc4 = 3}`, and `1{loc4 = 4}` with `loc4 = 1` omitted, `loc4 = -2`
+sets all occupation dummies to zero and contributes zero to `O^Occ`. This
+does not break estimation, but it must be reported as an unknown observed
+occupation convention, not interpreted as routine-manual work. Simulated
+working alternatives must draw only valid `loc4` values in `{1, 2, 3, 4}`.
+
 ---
 
 ## 11. Prior correction

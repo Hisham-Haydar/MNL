@@ -118,7 +118,10 @@
       "Bash(ls -la \"Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/\" 2>&1 | grep -i mnl | head -20)",
       "Read(//z/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/**)",
       "Bash(\"U:/Desktop/Nizam_Hisham/MNL/.venv/Scripts/python.exe\" \"U:/Desktop/Nizam_Hisham/MNL/Results/_canary_stijn_occ_M0.py\")",
-      "Bash(time U:/Desktop/Nizam_Hisham/MNL/.venv/Scripts/python.exe U:/Desktop/Nizam_Hisham/MNL/scripts/enhanced/enh_RURO_draws.py --singles-path Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready.parquet --couples-path Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready.parquet --n-draws 99 --wage-spec vw --occ-spec empirical --occ-strata __all__ --occ-min-cell 30 --h-min 5.0 --h-max 70.0 --w-min 2.0 --w-max 170.0 --rng-seed 17)"
+      "Bash(time U:/Desktop/Nizam_Hisham/MNL/.venv/Scripts/python.exe U:/Desktop/Nizam_Hisham/MNL/scripts/enhanced/enh_RURO_draws.py --singles-path Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready.parquet --couples-path Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready.parquet --n-draws 99 --wage-spec vw --occ-spec empirical --occ-strata __all__ --occ-min-cell 30 --h-min 5.0 --h-max 70.0 --w-min 2.0 --w-max 170.0 --rng-seed 17)",
+      "Read(//z/hisham/EUROMOD-STORAGE/interim/ruro/fr/2016/stijn_occ/**)",
+      "Read(//z/hisham/EUROMOD-STORAGE/EUROMOD_RELEASES_J1.0+/EUROMOD_RELEASES_J1.0+/**)",
+      "Read(//z/hisham/EUROMOD-STORAGE/Data/raw/**)"
     ],
     "deny": [],
     "ask": [],

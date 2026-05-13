@@ -1,31 +1,36 @@
 # RURO Stijn Occ M0 — Full Rebuild Report v1
 
-Date: 2026-05-13 (Step 1 patched + re-run; Step 2 held for review)
+Date: 2026-05-13 (rebuild complete — all 9 canary checks PASS)
 
 ## Status
 
-**Step 1 (draws) complete and C1/C2 PASS.** Step 2 (EUROMOD) and Step 3
-(MNL prep) are paused for user review per the chosen workflow ("Patch and
-stop after Step 1 + C1/C2 for review").
+**Full rebuild complete. All 9 post-MNL canary checks PASS.** The
+France 2016 continuous MNL parquets are now in the `M0_stijn_occ` state
+with occupation drawn from the pooled empirical distribution.
 
 ### Timeline of this session
 
 1. Step 0 (read-only pre-flight): PASS — `loc4` present in both
    RURO-ready files with 5 distinct values among `lhw > 0` rows.
-2. Step 1 first attempt: ran in 30 s with no script-level errors, but
-   the post-draw canary revealed a **latent bug** in
-   `_sample_occ_vectorized_by_stratum` and `_log_q_occ_for_given_occ` —
-   the empirical sampler silently fell through to the
-   observed-occupation fallback under the pooled `--occ-strata __all__`
-   path. Held EUROMOD per the plan's stop-condition.
-3. **Patch applied** to both helpers in
-   `scripts/enhanced/enh_RURO_draws.py`: replaced the buggy
-   `pd.unique`/`np.where(stratum_keys == k)` pattern with an explicit
-   Python-level dict group-by that is correct for object arrays of
-   single-element tuples.
-4. Step 1 re-run: 25 s, all sanity checks PASS.
-5. C1 + C2 canaries on patched output: **PASS** (see numbers below).
-6. **Stop here** for user review before touching EUROMOD.
+2. Step 1 first attempt: 30 s; sanity checks PASS but post-draw canary
+   revealed a latent bug in `_sample_occ_vectorized_by_stratum` and
+   `_log_q_occ_for_given_occ` (pooled `__all__` stratum fell through to
+   fallback). EUROMOD held.
+3. **Sampler patch** applied to `scripts/enhanced/enh_RURO_draws.py`.
+4. Step 1 re-run: 25 s, C1 + C2 PASS (median distinct `loc4` per hh = 4.0
+   for singles and both couples partners).
+5. **Pre-Step 3 archive**: old `fr_2016_RURO_mnl__{singles,couples}.parquet`
+   and `__mnlmeta.json` renamed with `__pre_stijn_occ_20260513` suffix.
+6. Step 2 (EUROMOD): 2 minutes wall (much faster than the 30–90 min the
+   plan budgeted — the underlying data is small).
+7. Step 3 first attempt: crashed with `KeyError: 'h_min'` —
+   `enh_RURO_prep_mnl_basic.py` reads drawsmeta keys from the top level,
+   but `enh_RURO_draws.py` writes them under `distributional_params`.
+8. **Drawsmeta-reader patch** applied to
+   `scripts/enhanced/enh_RURO_prep_mnl_basic.py` (accepts nested form,
+   falls back to flat for older sidecars).
+9. Step 3 re-run: 2m28s, sanity checks PASS, MNL parquets written.
+10. Final canary (`Results/_canary_stijn_occ_M0.py`): **all 9 PASS**.
 
 The user's instruction was conditional: *"If the canary passed, run the full
 France 2016 rebuild."* Per
@@ -271,11 +276,120 @@ Same command as the first attempt, after patching both helpers in
 Sanity checks: all PASS. C1 + C2 canaries: **PASS** (see numbers table at
 the top of this report).
 
-### Step 2 — EUROMOD (NOT executed; paused for review)
+### Step 2 — EUROMOD (executed)
 
-Held pending the fix.
+Command:
 
-### Step 3 — MNL prep (NOT executed; paused for review)
+```powershell
+& $PY scripts/enhanced/enh_RURO_euromod.py `
+  --singles-draws "$DATA/singles_RURO_ready_RURO_draws.parquet" `
+  --couples-draws "$DATA/couples_RURO_ready_RURO_draws.parquet" `
+  --microdata-template "$RAW/FR_2016.txt" `
+  --euromod-system FR_2015 `
+  --euromod-dataset FR_2016 `
+  --euromod-root "$EM" `
+  --scenario-dir "$SCEN"
+```
+
+Runtime: **2 minutes wall** (10:29:06 → 10:31). Far below the
+30–90 min plan budget because the underlying FR_2016 microdata is small
+(26,560 individuals → 10,873 RURO-ready deciders+non-deciders).
+
+Output:
+
+| File | Size | mtime |
+| --- | --- | --- |
+| `$SCEN/combined_draws_em.parquet` | 487,855,335 B (488 MB) | 2026-05-13 10:31 |
+| `$SCEN/combined_draws_em__euromodmeta.json` | 381 B | 2026-05-13 10:31 |
+
+Warnings:
+
+- `[RURO_euromod] 375851 rows (34.6%) have ils_dispy=0` — consistent with
+  non-working draws (~10 % π0 zero-employment mass per draw plus children
+  / non-deciders propagated at draw=0). Not a problem.
+- EUROMOD log line: `Simulation for system FR_2015 with dataset
+  FR_training_data finished.` This dataset name is a **cosmetic label**
+  from the EUROMOD public release's FR.xml `DataConfigs` block; the
+  script supplies the actual microdata via `--microdata-template`, which
+  resolves to `Z:/hisham/EUROMOD-STORAGE/Data/raw/FR_2016.txt` — verified
+  as **real EU-SILC FR 2016 microdata** (26,560 individuals,
+  11,459 households, IDs `1,483,000 – 93,789,900`), not the HHoT
+  synthetic training data (which would be 2,397 hh / 7,482 individuals
+  and is not present in `Data/raw/`).
+- `DeprecationWarning: datetime.utcnow()` — upstream, harmless.
+
+### Step 3 — MNL prep (executed after drawsmeta-reader patch)
+
+**Pre-step archive (replacement behaviour, explicit):**
+
+```bash
+mv fr_2016_RURO_mnl__singles.parquet \
+   fr_2016_RURO_mnl__singles__pre_stijn_occ_20260513.parquet
+mv fr_2016_RURO_mnl__couples.parquet \
+   fr_2016_RURO_mnl__couples__pre_stijn_occ_20260513.parquet
+mv fr_2016_RURO_mnl__mnlmeta.json \
+   fr_2016_RURO_mnl__mnlmeta__pre_stijn_occ_20260513.json
+```
+
+The old files (from 2026-02-05) are retained under
+`__pre_stijn_occ_20260513` so they remain available for diff/inspection.
+
+**First attempt failed** with `KeyError: 'h_min'` because the drawsmeta
+reader expected flat keys but the writer puts them under
+`distributional_params`. Patched the reader to accept the nested form
+(falls back to flat for older sidecars).
+
+**Command** (Step 3 retry):
+
+```powershell
+& $PY scripts/enhanced/enh_RURO_prep_mnl_basic.py `
+  --singles-draws "$DATA/singles_RURO_ready_RURO_draws.parquet" `
+  --couples-draws "$DATA/couples_RURO_ready_RURO_draws.parquet" `
+  --euromod-combined "$SCEN/combined_draws_em.parquet" `
+  --out-base "$DATA/fr_2016_RURO_mnl" `
+  --wage-spec vw `
+  --year 2016 `
+  --gsur-file "$GSUR" `
+  --drawsmeta "$DATA/singles_RURO_ready_RURO_draws__drawsmeta.json"
+```
+
+**Runtime**: 2 m 28 s wall.
+
+**Output**:
+
+| File | Rows | Cols | Size | mtime |
+| --- | --- | --- | --- | --- |
+| `fr_2016_RURO_mnl__singles.parquet` | 167,600 | 75 | 21,500,551 B (20.5 MB) | 2026-05-13 10:38 |
+| `fr_2016_RURO_mnl__couples.parquet` | 257,700 | 93 | 43,108,822 B (41.1 MB) | 2026-05-13 10:38 |
+| `fr_2016_RURO_mnl__mnlmeta.json` | — | — | sidecar | 2026-05-13 10:38 |
+
+**Household / group counts and alternatives per household**:
+
+| File | Households | Alts / hh | Working alts | Non-working alts |
+| --- | --- | --- | --- | --- |
+| singles | 1,676 | 100 | 150,787 (89.97/hh) | 16,813 (10.03/hh) |
+| couples | 2,577 | 100 | varies per partner | varies per partner |
+
+For couples, the working filter is per partner: 231,647 rows with
+`working_male = 1` (≈ 89.9 / hh) and 232,007 rows with
+`working_female = 1` (≈ 90.0 / hh). Non-work counts: 26,053 (male) /
+25,693 (female).
+
+**Column-filter outcome**:
+
+- singles: 962 → 75 cols (92.2 % reduction). All required Stijn aliases
+  (`log_q_E`, `log_q_H`, `log_q_W`, `log_q_Occ`) and `loc4` retained.
+- couples: 1468 → 93 cols (93.7 % reduction). `working_{male,female}` and
+  the four gendered Stijn aliases retained (per the earlier keep-set
+  fix). M0-forbidden columns (`lindi`, `industry`, `nace`, `log_q_job`,
+  `log_q_total`, `log_q_state`, `job_id`, `type_id`, `hours_bin`,
+  `wage_bin`) confirmed absent — `raw/forbidden cols present: []` for
+  both files in the canary.
+
+**Sanity checks** (script-internal): all PASS.
+
+- singles: consumption std = 8456.30, leisure std = 21.01, 1,676 hh × 100 draws.
+- couples: consumption std = 8456.30, leisure std = 21.01, 2,577 hh × 100 draws.
 
 ---
 
@@ -421,33 +535,80 @@ does not change.
 
 ---
 
-## Decision needed (now)
+## Final canary (C1–C9) on rebuilt MNL files
 
-Step 1 is green. EUROMOD is the next step and the long one (30–90 min) and
-overwrites no files outside `$SCEN`. Choose one:
+Ran `Results/_canary_stijn_occ_M0.py` on the new MNL parquets:
 
-1. **Proceed with Step 2 (EUROMOD) → Step 3 (MNL prep) → C3 + C4 canaries.**
-   The estimated tail is ~45 min – 2 h. I'll report row counts, runtimes,
-   warnings, and the canary outcome by overwriting this report.
-2. **Hold.** Leave the patched draws in place; do not touch EUROMOD or MNL
-   prep. The pre-rebuild MNL parquets remain in place (unchanged by today)
-   and are still incompatible with the M0 spec.
+| # | Check | Status | Detail |
+| --- | --- | --- | --- |
+| 1 | `loc4` varies across working alts | **PASS** | singles median = 4.0 (max 5), couples-male 4.0 (max 5), couples-female 4.0 (max 5). Zero households with only 1 distinct `loc4`. |
+| 2 | Median distinct `loc4` per hh ≥ 3 | **PASS** | all medians = 4.0. |
+| 3 | `log_q_Occ` exists | **PASS** | singles + both couples partners. |
+| 4 | All required Stijn alias columns exist | **PASS** | `log_q_{E,H,W,Occ}` (singles); `_male` / `_female` analogues (couples). No missing. |
+| 5 | `prior > 0` | **PASS** | singles min = 7.819e-06, couples min = 6.290e-11; no zeros, no NaNs. |
+| 6 | `log_prior == log(prior)` | **PASS** | max diff = 0.0 on both files (167,600 + 257,700 rows). |
+| 7 | Singles `log_prior` reconstruction | **PASS** | max\|`log_prior − recon`\| = 0.0. |
+| 8 | Couples `log_prior` reconstruction (male + female) | **PASS** | max\|`log_prior − recon`\| = 0.0 using `working_male` / `working_female`. |
+| 9 | Non-work alts gate off `log_q_Occ` | **PASS** | singles 16,813 non-work rows: all `log_q_Occ = 0`, all `loc4 = -1`. Couples-male 26,053 non-work: all gated. Couples-female 25,693 non-work: all gated. |
+
+Saved details: `Results/_canary_stijn_occ_M0_results.json`.
+
+### `loc4 = -2` observed-row convention
+
+`loc4 = -2` is an unknown-worker sentinel, not an occupation category. It is
+present only on a small number of observed working alternatives (`draw = 0`):
+
+| File / partner | Count |
+| --- | ---: |
+| Singles | 7 |
+| Couples male | 31 |
+| Couples female | 3 |
+
+These rows are retained. Because M0 estimates only the occupation dummies for
+`loc4 = 2`, `loc4 = 3`, and `loc4 = 4` with `loc4 = 1` omitted, `loc4 = -2`
+sets all occupation dummies to zero and contributes zero to `O^Occ`. This is
+numerically safe for estimation, but it should be described in methodology
+text as unknown observed occupation, not as routine-manual work. Simulated
+working alternatives contain valid `loc4` draws in `{1, 2, 3, 4}`.
 
 ---
 
-## What this report does NOT yet contain
+## Summary
 
-Until execution is authorised, the following sections will remain
-placeholders:
+| Item | Value |
+| --- | --- |
+| Rebuild status | **Complete and green** |
+| Total wall time (Step 1 + 2 + 3 + canary, including the two patch loops) | ~10 minutes |
+| Net Step 1 + 2 + 3 runtime (final, clean) | 25 s + 2 min + 2 m 28 s ≈ **5 m** |
+| Code patches landed today | 2 (sampler in `enh_RURO_draws.py`, drawsmeta reader in `enh_RURO_prep_mnl_basic.py`) |
+| Code patch landed earlier today | gendered `working_{male,female}` indicators added to the MNL keep set (essential for C8 / C9 on couples) |
+| Old MNL files | archived as `__pre_stijn_occ_20260513.*` |
+| Draws files | regenerated (timestamp 10:24) |
+| EUROMOD scenario file | newly created (`$SCEN/combined_draws_em.parquet`, 488 MB) |
+| Final MNL singles | 167,600 rows × 75 cols, 1,676 hh × 100 alts |
+| Final MNL couples | 257,700 rows × 93 cols, 2,577 hh × 100 alts |
+| Canary | 9/9 PASS |
 
-- Actual commands run (with timestamps)
-- Actual output file sizes and mtimes
-- Actual row counts per file
-- Actual households / groups
-- Alternatives per household (final)
-- Actual runtimes (per step and total)
-- Warnings emitted (verbatim, with provenance)
-- Final rebuild success / failure status
-- Post-rebuild canary result (all 9 checks)
+Estimation is **not** run per instruction.
 
-These will be filled in by overwriting this report after Step 3 completes.
+---
+
+## Files of record
+
+| Artefact | Path |
+| --- | --- |
+| Draws (singles) | `Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready_RURO_draws.parquet` |
+| Draws (couples) | `Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready_RURO_draws.parquet` |
+| Drawsmeta sidecars | `..._RURO_draws__drawsmeta.json` (each) |
+| EUROMOD output | `Z:/hisham/EUROMOD-STORAGE/interim/ruro/fr/2016/stijn_occ/scenarios/combined_draws_em.parquet` |
+| MNL singles (new) | `Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__singles.parquet` |
+| MNL couples (new) | `Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__couples.parquet` |
+| MNL mnlmeta (new) | `Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__mnlmeta.json` |
+| MNL singles (archived) | `..._RURO_mnl__singles__pre_stijn_occ_20260513.parquet` |
+| MNL couples (archived) | `..._RURO_mnl__couples__pre_stijn_occ_20260513.parquet` |
+| MNL mnlmeta (archived) | `..._RURO_mnl__mnlmeta__pre_stijn_occ_20260513.json` |
+| Step 2 log | `Results/_step2_euromod.log` |
+| Step 3 log | `Results/_step3_mnl_prep.log` |
+| Canary script | `Results/_canary_stijn_occ_M0.py` |
+| Canary JSON | `Results/_canary_stijn_occ_M0_results.json` |
+| This report | `Results/RURO_stijn_occ_M0_full_rebuild_report_v1.md` |

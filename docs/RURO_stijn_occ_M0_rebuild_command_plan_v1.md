@@ -132,6 +132,12 @@ New column added by `--occ-spec empirical`: `log_q_occ` (log-proposal
 density for the drawn occupation on working alternatives; zero for
 non-work alternatives and for draw=0 non-workers).
 
+`loc4 = -2` is an unknown-worker sentinel, not an occupation category. It may
+remain only on observed working alternatives (`draw = 0`) when the original
+occupation cannot be classified. In M0 it sets all `loc4 = 2/3/4` dummies to
+zero and does not break estimation. Simulated working alternatives should draw
+only valid `loc4` values in `{1, 2, 3, 4}`.
+
 ### C1 — Post-draw canary (run before EUROMOD, ~30 s)
 
 Replace `OCC_COL` below with the column reported by Step 0:

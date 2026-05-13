@@ -1,76 +1,59 @@
 {
   "meta": {
     "singles": {
-      "size": 21299439,
-      "mtime": "2026-02-05T14:11:02.036634"
+      "size": 21500551,
+      "mtime": "2026-05-13T10:38:21.929304"
     },
     "couples": {
-      "size": 42433564,
-      "mtime": "2026-02-05T14:11:01.898637"
+      "size": 43108822,
+      "mtime": "2026-05-13T10:38:22.968306"
     }
   },
   "singles_rows": 167600,
-  "singles_cols": 74,
+  "singles_cols": 75,
   "couples_rows": 257700,
-  "couples_cols": 80,
-  "check4_singles_missing": [
-    "log_q_E",
-    "log_q_H",
-    "log_q_W",
-    "log_q_Occ"
-  ],
-  "check4_couples_missing": [
-    "log_q_E_male",
-    "log_q_H_male",
-    "log_q_W_male",
-    "log_q_Occ_male",
-    "log_q_E_female",
-    "log_q_H_female",
-    "log_q_W_female",
-    "log_q_Occ_female"
-  ],
-  "check4_pass": false,
+  "couples_cols": 93,
+  "check4_singles_missing": [],
+  "check4_couples_missing": [],
+  "check4_pass": true,
   "raw_cols": {
-    "singles": [
-      "log_q_state",
-      "log_q_total"
-    ],
+    "singles": [],
     "couples": []
   },
-  "check3_pass": false,
+  "check3_pass": true,
   "check1_2": {
     "singles": {
-      "median": 1.0,
-      "mean": 1.0041766109785202,
-      "frac_hh_eq_1": 0.9958233890214797,
+      "median": 4.0,
+      "mean": 4.00417661097852,
+      "frac_hh_eq_1": 0.0,
       "n_hh": 1676,
       "working_source": "working"
     },
     "couples_male": {
-      "median": 1.0,
-      "mean": 1.0120294916569654,
-      "frac_hh_eq_1": 0.9879705083430346,
+      "median": 4.0,
+      "mean": 4.012029491656966,
+      "frac_hh_eq_1": 0.0,
       "n_hh": 2577,
-      "working_source": "hours_male > 0 (fallback)"
+      "working_source": "working_male"
     },
     "couples_female": {
-      "median": 1.0,
-      "mean": 1.0011641443538999,
-      "frac_hh_eq_1": 0.9988358556461001,
+      "median": 4.0,
+      "mean": 4.000776096235933,
+      "frac_hh_eq_1": 0.0,
       "n_hh": 2577,
-      "working_source": "hours_female > 0 (fallback)"
+      "working_source": "working_female"
     }
   },
-  "check1_pass": false,
-  "check2_pass": false,
+  "check1_pass": true,
+  "check2_pass": true,
   "check5": {
     "singles": {
-      "min": 8.241758241758249e-05,
+      "min": 7.819103972950115e-06,
       "n_nonpos": 0,
       "n_nan": 0
     },
     "couples": {
-      "min": 6.7926578915590025e-09,
+      "min": 6.289826448992587e-11,
       "n_nonpos": 0,
       "n_nan": 0
     }
@@ -90,50 +73,48 @@
   },
   "check6_pass": true,
   "check7": {
-    "status": "missing",
-    "missing": [
-      "log_q_E",
-      "log_q_H",
-      "log_q_W",
-      "log_q_Occ"
-    ]
+    "max_diff": 0.0,
+    "n_diff_gt_1e6": 0
   },
-  "check7_pass": false,
+  "check7_pass": "True",
   "check8": {
-    "status": "missing",
-    "missing": [
-      "log_q_E_male",
-      "log_q_H_male",
-      "log_q_W_male",
-      "log_q_Occ_male",
-      "log_q_E_female",
-      "log_q_H_female",
-      "log_q_W_female",
-      "log_q_Occ_female"
-    ],
-    "male_work_src": "hours_male > 0 (fallback)",
-    "female_work_src": "hours_female > 0 (fallback)"
+    "max_diff": 0.0,
+    "n_diff_gt_1e6": 0,
+    "male_work_src": "working_male",
+    "female_work_src": "working_female"
   },
-  "check8_pass": false,
+  "check8_pass": "True",
   "check9": {
     "singles": {
       "working_source": "working",
+      "log_q_Occ": {
+        "n_nonzero": 0,
+        "max_abs": 0.0
+      },
       "loc4_uniques_nonwork": [
         -1
       ]
     },
     "couples_male": {
-      "working_source": "hours_male > 0 (fallback)",
+      "working_source": "working_male",
+      "log_q_Occ_male": {
+        "n_nonzero": 0,
+        "max_abs": 0.0
+      },
       "loc4_male_uniques_nonwork": [
         -1
       ]
     },
     "couples_female": {
-      "working_source": "hours_female > 0 (fallback)",
+      "working_source": "working_female",
+      "log_q_Occ_female": {
+        "n_nonzero": 0,
+        "max_abs": 0.0
+      },
       "loc4_female_uniques_nonwork": [
         -1
       ]
     }
   },
-  "check9_pass": false
+  "check9_pass": true
 }

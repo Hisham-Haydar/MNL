@@ -56,7 +56,6 @@ Important orientation documents:
 - [docs/PIPELINE_ENTRYPOINTS.md](docs/PIPELINE_ENTRYPOINTS.md): active commands and canonical scripts.
 - [docs/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md](docs/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md): self-contained A-to-Z methods, data, pipeline, estimation, and validation guide.
 - [docs/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md](docs/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md): country/year portability target and archive-first cleanup policy.
-- [docs/MIRRORED_DOCUMENTS_INDEX.md](docs/MIRRORED_DOCUMENTS_INDEX.md): index of important documentation mirrored into `docs/`.
 - [docs/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/RURO_ACTIVE_RESULTS_REGISTRY.md): current baseline result folders.
 - [docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md](docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md): current ability to separate preferences and opportunities.
 - [docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md](docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md): parameter-by-parameter explanation of preference estimation.

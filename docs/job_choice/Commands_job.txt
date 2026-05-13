@@ -1,0 +1,85 @@
+# Step 1: France prep
+python .\scripts\enhanced\enh_france_data_prep.py `
+  --year 2016 `
+  --raw-dir "Z:/hisham/EUROMOD-STORAGE/Data/raw" `
+  --out-dir "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016" `
+  --system-year 2015 `
+  --export-format parquet
+
+# Step 2: RURO prep
+python .\scripts\enhanced\enh_RURO_prep.py `
+  --processed-dir "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016" `
+  --base-year 2016 `
+  --export-format parquet
+
+
+python .\scripts\Job_model\enh_job_universe.py `
+  --singles-path "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready.parquet" `
+  --couples-path "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready.parquet" `
+  --output-dir "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/job_model_gmm" `
+  --year 2016 `
+  --universe-mode gmm_occ `
+  --gmm-kmax 6 `
+  --gmm-min-comp-count 50 `
+  --gmm-min-comp-weight 0.03 `
+  --gmm-rep-stat mean `
+  --gmm-cov-type full `
+  --gmm-contract-draws 3 `
+  --job-id-mode deterministic `
+  --include-isco0 0 `
+  --seed 13
+
+
+
+python .\scripts\Job_model\enh_job_draws.py `
+  --singles-path "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready.parquet" `
+  --couples-path "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready.parquet" `
+  --job-universe "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/job_model_gmm/job_universe_2016.parquet" `
+  --job-metadata "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/job_model_gmm/job_universe_2016__meta.json" `
+  --n-draws 199 `
+  --baseline-mode posted `
+  --seed 13
+
+
+python .\scripts\enhanced\enh_RURO_euromod.py `
+  --singles-draws "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready_jobdraws.parquet" `
+  --couples-draws "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready_jobdraws.parquet" `
+  --microdata-template "Z:/hisham/EUROMOD-STORAGE/Data/raw/FR_2016.txt" `
+  --euromod-system FR_2015 `
+  --euromod-dataset FR_2016 `
+  --euromod-root "Z:/hisham/EUROMOD-STORAGE/EUROMOD_RELEASES_J1.0+/EUROMOD_RELEASES_J1.0+" `
+  --scenario-dir "Z:/hisham/EUROMOD-STORAGE/interim/ruro/fr/2016/job_model_gmm/scenarios"
+
+
+python .\scripts\enhanced\enh_RURO_prep_mnl_basic.py `
+  --singles-draws "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready_jobdraws.parquet" `
+  --couples-draws "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready_jobdraws.parquet" `
+  --euromod-combined "Z:/hisham/EUROMOD-STORAGE/interim/ruro/fr/2016/job_model_gmm/scenarios/combined_draws_em.parquet" `
+  --out-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl_job_gmm" `
+  --wage-spec fw `
+  --year 2016 `
+  --gsur-file "U:/Desktop/Nizam_Hisham/MNL/Data/external/FR_gsur_ruro.parquet" `
+  --no-column-filter
+
+
+python .\scripts\enhanced\enh_RURO_estimate_FR.py `     
+>>   --mnl-base "\\aff300msh.cifs.myliser.lu\ComputeShare\Hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_mnl_job_gmm" `
+>>   --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/job_choice/gamspy" `
+>>   --group joint `
+>>   --solver gamspy-conopt `
+>>   --vectorized `
+>>   --spec-config "scripts/enhanced/estimation_spec_job_M2c.yaml" `
+>>   --warm-start none `
+>>   --auto-timestamp `
+>>   --verbose
+
+
+python scripts/enhanced/RURO_post_estimation_styled.py `
+>>   --results-json "U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/job_choice/gamspy/run_2026-02-19_13-37-33/estimation_results.json" `
+>>   --mnl-base "Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl_job_gmm" `
+>>   --output-dir "U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/job_choice/gamspy" `
+>>   --prefix "fr_2016_jobchoice_gmm_gamspy_" `
+>>   --compute-se `
+>>   --spec-config "scripts/enhanced/estimation_spec_job_M2c.yaml" `
+>>   --auto-timestamp   
+

@@ -207,7 +207,12 @@ else:
     diff = np.abs(c["log_prior"].to_numpy() - recon)
     print(f"  couples: max |log_prior - recon| = {diff.max():.6e}  "
           f"rows |diff|>1e-6: {(diff > 1e-6).sum()}")
-    results["check8"] = {"max_diff": float(diff.max()), "n_diff_gt_1e6": int((diff > 1e-6).sum())}
+    results["check8"] = {
+        "max_diff": float(diff.max()),
+        "n_diff_gt_1e6": int((diff > 1e-6).sum()),
+        "male_work_src": m_src,
+        "female_work_src": f_src,
+    }
     results["check8_pass"] = diff.max() < 1e-9
 
 # ----------------------------------------------------------------------

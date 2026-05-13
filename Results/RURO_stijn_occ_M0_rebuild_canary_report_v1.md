@@ -42,15 +42,15 @@ What this means for the rebuild ladder:
 
 | # | Check | Status | Evidence |
 | --- | --- | --- | --- |
-| 1 | `loc4` varies across working alternatives within household | **FAIL** | Singles median distinct `loc4` per `idhh` (over `working == 1`) = **1.0**; 99.58 % of households have a single occupation across all working alts; max is 2. Couples (using `hours_{male,female} > 0` since `working_male/female` are absent): median 1.0; 98.8 %/99.88 % of households at distinct = 1. |
+| 1 | `loc4` varies across working alternatives within household | **FAIL** | Singles median distinct `loc4` per `idhh` (over `working == 1`) = **1.0**; 99.58 % of households have a single occupation across all working alts; max is 2. Couples (working indicator falls back to `hours_{male,female} > 0`): median 1.0; 98.8 % (male) / 99.88 % (female) of households at distinct = 1. |
 | 2 | Median distinct `loc4` per household ≥ 3 | **FAIL** | Same evidence; medians are 1.0 across singles, couples-male, couples-female. Target is ≥ 3. |
-| 3 | `log_q_Occ` exists | **FAIL** | Singles: `log_q_Occ` missing. Couples: `log_q_Occ_male` and `log_q_Occ_female` both missing. |
-| 4 | `log_q_E`, `log_q_H`, `log_q_W`, `log_q_Occ` exist (singles); `_male`/`_female` analogues (couples) | **FAIL** | Singles missing: `log_q_E`, `log_q_H`, `log_q_W`, `log_q_Occ`. Couples missing all 8 partner-suffixed aliases plus `working_male` and `working_female`. The couples file uses the older `hours_male`/`hours_female` working convention instead. |
+| 3 | `log_q_Occ` exists | **FAIL** | Singles: `log_q_Occ` missing. Couples: `log_q_Occ_male` and `log_q_Occ_female` both missing. *This is the immediate cause of the C7/C8/C9 failures below.* |
+| 4 | `log_q_E`, `log_q_H`, `log_q_W`, `log_q_Occ` exist (singles); `_male`/`_female` analogues (couples) | **FAIL** | Singles missing: `log_q_E`, `log_q_H`, `log_q_W`, `log_q_Occ`. Couples missing all 8 partner-suffixed aliases. `working_male`/`working_female` are also absent on this old file, but the canary now resolves that via the `hours > 0` fallback — see the working-indicator section below. |
 | 5 | `prior > 0` | **PASS** | Singles min `prior` = 8.241758e-05 (no zeros, no NaNs). Couples min `prior` = 6.792658e-09 (no zeros, no NaNs). |
 | 6 | `log_prior == log(prior)` | **PASS** | Max `\|log(prior) − log_prior\|` = 0.000000e+00 on both singles (n=167,600) and couples (n=257,700). The prior-density / log_prior storage convention is correct. |
 | 7 | Singles: `log_prior == log_q_E + working*(log_q_H + log_q_W + log_q_Occ)` | **FAIL** | Cannot evaluate — all four `log_q_E/H/W/Occ` alias columns are absent. The MNL prep that creates them has not been run on this file. |
-| 8 | Couples: `log_prior` decomposes as male + female components with `log_q_{E,H,W,Occ}_{male,female}` | **FAIL** | Cannot evaluate — all 8 per-partner alias columns plus `working_male` / `working_female` are absent. |
-| 9 | Non-work alternatives have occupation contribution gated off (`working == 0` ⇒ `log_q_Occ == 0`) | **FAIL** | Cannot evaluate the contribution magnitude because `log_q_Occ`/`log_q_Occ_male`/`log_q_Occ_female` are absent. The only partial evidence is that on singles non-work alts (n=16,813) `loc4` is uniformly `-1`, which is consistent with the draw convention — but the gating identity itself cannot be verified without the column. |
+| 8 | Couples: `log_prior` decomposes as male + female components with `log_q_{E,H,W,Occ}_{male,female}` | **FAIL** | Cannot evaluate — all 8 per-partner alias columns are absent. Working indicators are no longer a blocker for this check (resolved via `hours > 0` fallback in the canary). |
+| 9 | Non-work alternatives have occupation contribution gated off (`working == 0` ⇒ `log_q_Occ == 0`) | **FAIL** | Cannot evaluate the contribution magnitude because `log_q_Occ`/`log_q_Occ_male`/`log_q_Occ_female` are absent. Partial evidence: on non-work alts `loc4` is uniformly `-1` for singles (n=16,813), couples-male (n=26,053), and couples-female (n=25,693) — consistent with the draw convention — but the gating identity itself cannot be verified without the column. |
 
 ---
 

@@ -25,6 +25,8 @@ The biggest documentation risk is not absence. It is fragmentation. Some details
 | Need | Read this |
 | --- | --- |
 | Overall project/package orientation | `README.md` |
+| Self-contained A-to-Z methods and pipeline guide | `docs/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md` |
+| Country/year portability and cleanup policy | `docs/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md` |
 | Active command entrypoints | `docs/PIPELINE_ENTRYPOINTS.md` |
 | Practical return guide | `docs/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md` |
 | External storage audit and cleanup plan | `docs/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md` |

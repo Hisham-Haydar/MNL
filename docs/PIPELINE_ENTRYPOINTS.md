@@ -6,6 +6,8 @@ For a topic-by-topic memory map of GMM, GSUR, job-choice, commands, and current 
 
 Focused method notes:
 
+- `docs/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md`
+- `docs/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md`
 - `docs/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md`
 - `docs/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
 - `docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
@@ -32,6 +34,7 @@ Main step scripts:
 
 Current continuous-RURO spec candidates:
 
+- `scripts/enhanced/estimation_spec_stijn_occ_M0.yaml` (requires occupation-draw rebuild and canary pass)
 - `scripts/enhanced/estimation_spec_v3.yaml`
 - `scripts/enhanced/estimation_spec_v2.yaml`
 - `scripts/enhanced/estimation_spec.yaml`

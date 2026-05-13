@@ -54,6 +54,8 @@ package API: early scaffold, not yet the main production interface
 Important orientation documents:
 
 - [docs/PIPELINE_ENTRYPOINTS.md](docs/PIPELINE_ENTRYPOINTS.md): active commands and canonical scripts.
+- [docs/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md](docs/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md): self-contained A-to-Z methods, data, pipeline, estimation, and validation guide.
+- [docs/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md](docs/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md): country/year portability target and archive-first cleanup policy.
 - [docs/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/RURO_ACTIVE_RESULTS_REGISTRY.md): current baseline result folders.
 - [docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md](docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md): current ability to separate preferences and opportunities.
 - [docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md](docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md): parameter-by-parameter explanation of preference estimation.
@@ -145,6 +147,7 @@ Main scripts:
 
 Current continuous specification candidates:
 
+- `scripts/enhanced/estimation_spec_stijn_occ_M0.yaml` (requires occupation-draw rebuild and canary pass before estimation)
 - `scripts/enhanced/estimation_spec_v3.yaml`
 - `scripts/enhanced/estimation_spec_v2.yaml`
 - `scripts/enhanced/estimation_spec.yaml`

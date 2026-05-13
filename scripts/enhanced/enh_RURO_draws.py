@@ -554,12 +554,19 @@ def _sample_occ_vectorized_by_stratum(
     occ_out = fallback_occ.astype(np.int16, copy=True)
     logq = np.zeros(n, dtype=float)
 
-    # For speed: handle each stratum in a small loop (few strata)
-    # stratum_keys elements are tuples; stored as object dtype
-    uniq = pd.unique(stratum_keys)
-    for k in uniq:
-        key = tuple(k) if isinstance(k, (list, tuple, np.ndarray)) else (k,)
-        idx = np.where(stratum_keys == k)[0]
+    # Group indices by stratum key via a Python-level dict.
+    # We previously used `pd.unique` + `np.where(stratum_keys == k)`, which
+    # silently returns empty for object arrays of single-element tuples:
+    # NumPy treats the length-1 tuple as a sequence and broadcasts it, so
+    # every comparison evaluates False. The dict-based group-by avoids that
+    # by comparing tuples with Python `==` semantics.
+    groups: dict[tuple, list[int]] = {}
+    for i, sk in enumerate(stratum_keys):
+        key_i = tuple(sk) if isinstance(sk, (list, tuple, np.ndarray)) else (sk,)
+        groups.setdefault(key_i, []).append(i)
+
+    for key, idx_list in groups.items():
+        idx = np.asarray(idx_list, dtype=np.int64)
         spec = probs_map.get(key, None)
         if spec is None:
             spec = probs_map.get(POOLED_STRATUM_KEY, None)
@@ -572,8 +579,7 @@ def _sample_occ_vectorized_by_stratum(
         occ_out[idx] = occ_draw
 
         # log probability of the drawn occ
-        # map occ_vals->p
-        # small dict OK since occ_vals length ≤ 4
+        # map occ_vals->p (occ_vals length ≤ 4, dict is fine)
         p_map = {int(o): float(pp) for o, pp in zip(occ_vals, p)}
         logq[idx] = np.log([p_map[int(o)] for o in occ_draw])
 
@@ -599,16 +605,21 @@ def _log_q_occ_for_given_occ(
     if n == 0 or not probs_map:
         return out
 
-    uniq = pd.unique(stratum_keys)
     pooled = probs_map.get(POOLED_STRATUM_KEY, None)
     pooled_map = None
     if pooled is not None:
         occ_vals_p, p_p = pooled
         pooled_map = {int(o): float(pp) for o, pp in zip(occ_vals_p, p_p)}
 
-    for k in uniq:
-        key = tuple(k) if isinstance(k, (list, tuple, np.ndarray)) else (k,)
-        idx = np.where(stratum_keys == k)[0]
+    # Group indices by stratum key. See note in _sample_occ_vectorized_by_stratum
+    # for why we don't use pd.unique + np.where on object arrays of tuples.
+    groups: dict[tuple, list[int]] = {}
+    for i, sk in enumerate(stratum_keys):
+        key_i = tuple(sk) if isinstance(sk, (list, tuple, np.ndarray)) else (sk,)
+        groups.setdefault(key_i, []).append(i)
+
+    for key, idx_list in groups.items():
+        idx = np.asarray(idx_list, dtype=np.int64)
         spec = probs_map.get(key, None)
         if spec is None:
             spec = pooled

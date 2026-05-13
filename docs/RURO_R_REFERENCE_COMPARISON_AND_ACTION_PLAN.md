@@ -69,7 +69,7 @@ The job-choice pruned spec is intentionally conservative:
 - `scripts/enhanced/estimation_spec_job_M2h_pruned.yaml:53-105` defines market opportunity terms.
 - `scripts/enhanced/estimation_spec_job_M2h_pruned.yaml:171-174` fixes `theta_c_sm` tightly.
 
-## Main Differences From Stijn
+## Main Differences From R Reference Design
 
 | Dimension | R reference simulation | Current French code |
 | --- | --- | --- |
@@ -134,7 +134,7 @@ Current issue to fix:
 
 The recent `log_q_total` path is correct, but the fallback should not remain inconsistent.
 
-### 2. Add A Stijn-Style Recovery Test
+### 2. Add A Continuous-RURO Recovery Test
 
 This is the most important missing piece.
 

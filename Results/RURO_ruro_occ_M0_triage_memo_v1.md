@@ -1,4 +1,4 @@
-# RURO Stijn-Occ M0 — Strict Estimation Triage Memo v1
+# RURO Occupation-Opportunity M0 — Strict Estimation Triage Memo v1
 
 Date: 2026-05-13
 
@@ -22,7 +22,7 @@ preference parameters have no standard error.**
 The data and code pipeline is in good standing. This is the first time the
 M0_ruro_occ spec has both estimable inputs and an executing solver run.
 
-- The full Stijn-occupation rebuild has landed. Per the rebuild report,
+- The full RURO occupation-opportunity rebuild has landed. Per the rebuild report,
   all 9 post-MNL canary checks pass: `loc4` varies within household (median
   4.0 distinct values across simulated working alternatives for singles and
   for each partner of couples), all four proposal-component aliases

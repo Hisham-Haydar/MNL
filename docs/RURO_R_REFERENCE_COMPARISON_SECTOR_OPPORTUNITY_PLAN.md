@@ -144,7 +144,7 @@ So the structure is:
 
 ### 2.1 Continuous RURO Branch
 
-Your continuous branch is closest to Stijn.
+Your continuous branch is closest to the R reference design.
 
 The active likelihood in Python/GAMSPy has the same form:
 
@@ -473,7 +473,7 @@ log_sector = beta_sector_isco2 * isco1_2 + ...
 
 This is the fastest path, but `log_q_job` still bundles sector, hours, and wage.
 
-#### Path 2: Clean Stijn-Style Factorization
+#### Path 2: Clean Continuous-RURO Factorization
 
 Build a new sector-aware draw system:
 
@@ -549,11 +549,11 @@ sector does not enter utility
 
 Then, after the opportunity layer is stable, test a separate sector-preference layer.
 
-## 7. How This Would Differ From Stijn
+## 7. How This Would Differ From The R Reference Design
 
-Your proposed model would be a real extension of Stijn, not just a translation.
+Your proposed model would be a real extension of the R reference design, not just a translation.
 
-Stijn:
+R reference design:
 
 ```text
 V = U + O_time + O_wage - log q(time, wage)

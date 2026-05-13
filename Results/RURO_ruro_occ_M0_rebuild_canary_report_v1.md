@@ -85,7 +85,7 @@ described in `docs/RURO_ruro_occ_baseline_implementation_report_v1.md`.
 ## Couples working-indicator: a real code-side bug, now fixed
 
 The current couples file uses `hours_{male,female}` (continuous) as the only
-working indicator. The Stijn-aliased rebuild is expected to expose binary
+working indicator. The proposal-alias rebuild is expected to expose binary
 `working_{male,female}` — that is what the M0 engine routing and the C8
 reconstruction identity assume.
 

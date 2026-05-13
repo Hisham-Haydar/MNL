@@ -5742,6 +5742,384 @@ def _compute_and_update_standard_errors(
 
 
 # =============================================================================
+# LOW-TOKEN MARKDOWN SUMMARY EXPORT
+# =============================================================================
+
+def _md_clean(value: Any) -> str:
+    """Render a value for a Markdown table cell."""
+    if value is None:
+        return "NA"
+    if isinstance(value, (float, np.floating)):
+        if not np.isfinite(value):
+            return "NA"
+        return f"{float(value):.6g}"
+    if isinstance(value, (int, np.integer)):
+        return str(int(value))
+    text = str(value).replace("\n", " ").replace("\r", " ").strip()
+    replacements = {
+        "β": "beta",
+        "θ": "theta",
+        "σ": "sigma",
+        "✓": "yes",
+        "✗": "no",
+        "Î²": "beta",
+        "Î¸": "theta",
+        "Ïƒ": "sigma",
+        "Â·": "*",
+        "âœ“": "yes",
+        "âœ—": "no",
+        "â‰¤": "<=",
+        "â‰¥": ">=",
+        "âˆ’": "-",
+        "â€”": "-",
+        "ðŸŽ¯": "",
+        "ðŸ’°": "",
+        "ðŸ§­": "",
+        "â°": "",
+        "ðŸ“‹": "",
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return text.replace("|", "\\|") if text else "NA"
+
+
+def _md_table(headers: List[str], rows: List[List[Any]]) -> str:
+    """Build a compact GitHub-flavored Markdown table."""
+    if not rows:
+        return "_None._\n"
+    header = "| " + " | ".join(_md_clean(h) for h in headers) + " |"
+    sep = "| " + " | ".join("---" for _ in headers) + " |"
+    body = [
+        "| " + " | ".join(_md_clean(cell) for cell in row) + " |"
+        for row in rows
+    ]
+    return "\n".join([header, sep] + body) + "\n"
+
+
+def _parameter_block_for_markdown(
+    name: str,
+    coef_map: Dict[str, str],
+) -> str:
+    """Classify a parameter into a compact reporting block."""
+    block = _classify_param_via_blocks(name, coef_map)
+    if block:
+        labels = {
+            "preference": "preference",
+            "hours": "employment_hours_opportunity",
+            "market": "market_residual_opportunity",
+            "wage": "wage_opportunity",
+            "occupation": "occupation_opportunity",
+        }
+        return labels.get(block, block)
+
+    lower = name.lower()
+    if "beta_occ_" in lower:
+        return "occupation_opportunity"
+    if lower.endswith(".beta_e") or lower == "beta_e" or "beta_h_" in lower:
+        return "employment_hours_opportunity"
+    if "beta_e_" in lower:
+        return "market_residual_opportunity"
+    if "beta_w" in lower or "sigma" in lower:
+        return "wage_opportunity"
+    if any(x in lower for x in ["beta_l", "beta_c", "theta_l", "theta_c"]):
+        return "preference"
+    return "other"
+
+
+def _fit_moment_rows(fit_results: Dict[str, Dict[str, Any]]) -> List[List[Any]]:
+    rows = []
+    for group, vals in sorted((fit_results or {}).items()):
+        rows.append([
+            group,
+            vals.get("participation_observed"),
+            vals.get("participation_predicted"),
+            vals.get("mean_hours_observed"),
+            vals.get("mean_hours_predicted"),
+        ])
+    return rows
+
+
+def _hours_distribution_rows(fit_results: Dict[str, Dict[str, Any]]) -> List[List[Any]]:
+    rows = []
+    for group, vals in sorted((fit_results or {}).items()):
+        obs = vals.get("hours_distribution_observed") or {}
+        pred = vals.get("hours_distribution_predicted") or {}
+        for bin_label in sorted(set(obs) | set(pred), key=str):
+            rows.append([group, bin_label, obs.get(bin_label), pred.get(bin_label)])
+    return rows
+
+
+def _row_get_suffix(row: Dict[str, Any], suffix: str, default: Any = None) -> Any:
+    """Get a dict value by exact key or by ASCII-safe suffix match."""
+    if suffix in row:
+        return row.get(suffix)
+    for key, value in row.items():
+        if str(key).endswith(suffix):
+            return value
+    return default
+
+
+def _muc_beta_theta_values(row: Dict[str, Any]) -> Tuple[Any, Any]:
+    """Resolve beta_c/theta_c from MUC rows without depending on Greek glyphs."""
+    beta_c = row.get("beta_c")
+    theta_c = row.get("theta_c")
+    if beta_c is not None and theta_c is not None:
+        return beta_c, theta_c
+
+    c_like_values = [
+        value for key, value in row.items()
+        if str(key).endswith("_c") and str(key) not in {"MUC at Median C"}
+    ]
+    if beta_c is None and c_like_values:
+        beta_c = c_like_values[0]
+    if theta_c is None and len(c_like_values) > 1:
+        theta_c = c_like_values[1]
+    return beta_c, theta_c
+
+
+def generate_llm_markdown_summary(
+    parsed_params: ParsedParameters,
+    data: Dict[str, Any],
+    fit_stats: Dict[str, Any],
+    fit_results: Dict[str, Dict[str, Any]],
+    elasticities_df: pd.DataFrame,
+    muc_analysis: List[Dict[str, Any]],
+    prob_diagnostics: Dict[str, Any],
+    bound_diagnostics: List[Dict[str, Any]],
+    hessian_diagnostics: Optional[Dict[str, Any]],
+    run_metadata: Dict[str, Any],
+    output_path: Path,
+    estimation_results_path: Path,
+    html_report_path: Optional[Path] = None,
+    param_csv_path: Optional[Path] = None,
+    elasticities_csv_path: Optional[Path] = None,
+    post_output_dir: Optional[Path] = None,
+    mnl_base: Optional[Path] = None,
+    spec_config: Optional[Path] = None,
+) -> Path:
+    """
+    Write a compact, graph-free Markdown report for LLM/paper workflows.
+
+    This is intentionally text/table only. Large plots, HTML, and household-
+    level dumps stay in the post-estimation output folder.
+    """
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    blocks = _load_yaml_spec_blocks(spec_config)
+    coef_map = _coef_to_block_map(blocks)
+    param_df = parsed_params.to_dataframe().copy()
+    param_df["block"] = param_df["parameter"].apply(
+        lambda x: _parameter_block_for_markdown(str(x), coef_map)
+    )
+
+    summary = data.get("summary", {}) if isinstance(data.get("summary"), dict) else {}
+    result_groups = data.get("results", {}) if isinstance(data.get("results"), dict) else {}
+    group_rows = []
+    for group, group_data in sorted(result_groups.items()):
+        group_rows.append([
+            group,
+            group_data.get("success"),
+            group_data.get("message"),
+            group_data.get("n_iterations"),
+            group_data.get("log_likelihood"),
+            group_data.get("walltime_seconds"),
+        ])
+
+    param_rows = []
+    for _, row in param_df.sort_values(["block", "parameter"]).iterrows():
+        param_rows.append([
+            row.get("block"),
+            row.get("parameter"),
+            row.get("estimate"),
+            row.get("std_error"),
+            row.get("t_value"),
+            row.get("p_value"),
+            row.get("lower_bound"),
+            row.get("upper_bound"),
+            row.get("initial_value"),
+        ])
+
+    fit_rows = [
+        ["log_likelihood", fit_stats.get("log_likelihood")],
+        ["ll_null_uniform", fit_stats.get("ll_null_uniform")],
+        ["ll_null_prior_corrected", fit_stats.get("ll_null_prior_corrected")],
+        ["rho_squared", fit_stats.get("rho_squared")],
+        ["rho_squared_adj", fit_stats.get("rho_squared_adj")],
+        ["rho_squared_uniform", fit_stats.get("rho_squared_uniform")],
+        ["rho_squared_prior_corrected", fit_stats.get("rho_squared_prior_corrected")],
+        ["AIC", fit_stats.get("AIC")],
+        ["BIC", fit_stats.get("BIC")],
+        ["AIC_per_obs", fit_stats.get("AIC_per_obs")],
+        ["n_observations", fit_stats.get("n_observations")],
+        ["n_groups", fit_stats.get("n_groups")],
+        ["n_parameters", fit_stats.get("n_parameters")],
+        ["n_obs_long", fit_stats.get("n_obs_long")],
+    ]
+
+    probability_rows = []
+    for key, value in (prob_diagnostics.get("prob_sum_errors") or {}).items():
+        probability_rows.append([f"prob_sum_{key}", value])
+    for key, value in (prob_diagnostics.get("p_chosen_dist") or {}).items():
+        probability_rows.append([f"p_chosen_{key}", value])
+
+    worst_rows = [
+        [i + 1, row.get("idhh"), row.get("group"), row.get("p_chosen"), row.get("ll_i")]
+        for i, row in enumerate((prob_diagnostics.get("worst_fit_households") or [])[:10])
+    ]
+
+    hessian_rows = []
+    for key in [
+        "condition_number",
+        "min_eigenvalue",
+        "max_eigenvalue",
+        "n_negative_eigenvalues",
+    ]:
+        if hessian_diagnostics and key in hessian_diagnostics:
+            hessian_rows.append([key, hessian_diagnostics.get(key)])
+    top_corr_rows = [
+        [row.get("param_i"), row.get("param_j"), row.get("corr")]
+        for row in ((hessian_diagnostics or {}).get("top_correlations") or [])[:10]
+    ]
+    eig_rows = []
+    for idx, row in enumerate(((hessian_diagnostics or {}).get("eigenvector_diagnostics") or [])[:3], 1):
+        loads = "; ".join(
+            f"{x.get('param')}={_md_clean(x.get('loading'))}"
+            for x in row.get("top_loadings", [])[:5]
+        )
+        eig_rows.append([idx, row.get("eigenvalue"), loads])
+
+    bound_rows = [
+        [row.get("parameter"), row.get("estimate"), row.get("bound"), row.get("side")]
+        for row in (bound_diagnostics or [])
+    ]
+
+    lines = [
+        "# RURO Low-Token Post-Estimation Summary",
+        "",
+        f"Generated: {datetime.now().isoformat(timespec='seconds')}",
+        "",
+        "## Purpose",
+        "",
+        "Compact text-only report for Git, paper drafting, and LLM review.",
+        "Figures and large HTML output are intentionally omitted.",
+        "",
+        "## Sources",
+        "",
+        _md_table(
+            ["item", "path_or_value"],
+            [
+                ["estimation_results_json", estimation_results_path],
+                ["html_report", html_report_path],
+                ["post_output_dir", post_output_dir],
+                ["params_csv", param_csv_path],
+                ["elasticities_csv", elasticities_csv_path],
+                ["mnl_base", mnl_base],
+                ["spec_config", spec_config],
+            ],
+        ),
+        "## Run Metadata",
+        "",
+        _md_table(
+            ["field", "value"],
+            [
+                ["specification", run_metadata.get("spec_name") or data.get("specification")],
+                ["model_family", run_metadata.get("model_family")],
+                ["market_opportunity_tier", run_metadata.get("market_opportunity_tier")],
+                ["prior_correction_applied", run_metadata.get("prior_correction_applied")],
+                ["prior_correction_form", run_metadata.get("prior_correction_form")],
+                ["market_centering_applied", run_metadata.get("market_centering_applied")],
+                ["wage_spec", data.get("wage_spec")],
+                ["estimation_walltime_seconds", summary.get("total_walltime_seconds")],
+            ],
+        ),
+        "## Convergence By Result Block",
+        "",
+        _md_table(
+            ["group", "success", "message", "iterations", "log_likelihood", "walltime_seconds"],
+            group_rows,
+        ),
+        "## Fit Statistics",
+        "",
+        _md_table(["metric", "value"], fit_rows),
+        "## Fit Moments",
+        "",
+        _md_table(
+            ["group", "participation_observed", "participation_predicted", "mean_hours_observed", "mean_hours_predicted"],
+            _fit_moment_rows(fit_results),
+        ),
+        "## Structural Elasticity Heuristics",
+        "",
+        "These are curvature-based heuristics from the post-estimation script, not",
+        "policy-counterfactual elasticities.",
+        "",
+        _md_table(
+            list(elasticities_df.columns),
+            elasticities_df.values.tolist(),
+        ) if elasticities_df is not None and len(elasticities_df) else "_None._\n",
+        "## Marginal Utility Diagnostics",
+        "",
+        _md_table(
+            ["Group", "beta_c", "theta_c", "MUC Positive?", "MUC Diminishing?", "Well-Behaved?", "MUC at Median C", "C where MUC=1", "Notes"],
+            [
+                [
+                    row.get("Group"),
+                    _muc_beta_theta_values(row)[0],
+                    _muc_beta_theta_values(row)[1],
+                    row.get("MUC Positive?"),
+                    row.get("MUC Diminishing?"),
+                    row.get("Well-Behaved?"),
+                    row.get("MUC at Median C"),
+                    row.get("C where MUC=1"),
+                    row.get("Notes"),
+                ]
+                for row in (muc_analysis or [])
+            ],
+        ),
+        "## Probability Diagnostics",
+        "",
+        _md_table(["metric", "value"], probability_rows),
+        "## Worst-Fit Households",
+        "",
+        _md_table(["rank", "idhh", "group", "p_chosen", "ll_i"], worst_rows),
+        "## Identification Diagnostics",
+        "",
+        _md_table(["metric", "value"], hessian_rows),
+        "## Top High-Correlation Parameter Pairs",
+        "",
+        _md_table(["param_i", "param_j", "correlation"], top_corr_rows),
+        "## Weakest Eigenvector Diagnostics",
+        "",
+        _md_table(["rank", "eigenvalue", "top_loadings"], eig_rows),
+        "## Parameters At Bounds",
+        "",
+        _md_table(["parameter", "estimate", "bound", "side"], bound_rows),
+        "## Parameter Estimates By Block",
+        "",
+        _md_table(
+            ["block", "parameter", "estimate", "std_error", "t_value", "p_value", "lower_bound", "upper_bound", "initial_value"],
+            param_rows,
+        ),
+        "## Hours Distribution Shares",
+        "",
+        _md_table(
+            ["group", "hours_bin", "observed_share", "predicted_share"],
+            _hours_distribution_rows(fit_results),
+        ),
+        "## Notes For Use",
+        "",
+        "- This Markdown file is the preferred low-token artifact for LLM review.",
+        "- Use the HTML report only when plots or visual diagnostics are needed.",
+        "- Generated output folders remain local unless explicitly added to Git.",
+        "",
+    ]
+
+    output_path.write_text("\n".join(lines), encoding="utf-8")
+    LOGGER.info(f"   Low-token Markdown summary: {output_path}")
+    return output_path
+
+
+# =============================================================================
 # MAIN POST-ESTIMATION PIPELINE
 # =============================================================================
 
@@ -5752,6 +6130,7 @@ def run_styled_post_estimation(
     prefix: str = "",
     compute_se: bool = False,
     spec_config: Path = None,
+    llm_summary_dir: Optional[Path] = Path("reports"),
 ) -> Dict[str, Any]:
     """
     Main entry point for styled post-estimation.
@@ -5770,6 +6149,8 @@ def run_styled_post_estimation(
         If True, compute standard errors if not present
     spec_config : Path, optional
         Path to YAML specification file (required for compute_se)
+    llm_summary_dir : Path, optional
+        Directory for compact Markdown summaries. If None, skip this artifact.
 
     Returns
     -------
@@ -6165,10 +6546,40 @@ def run_styled_post_estimation(
     elasticities_df.to_csv(elast_csv, index=False)
     LOGGER.info(f"   Elasticities: {elast_csv}")
 
+    llm_summary_path = None
+    if llm_summary_dir is not None:
+        safe_prefix = prefix or ""
+        llm_summary_path = (
+            Path(llm_summary_dir)
+            / f"{safe_prefix}llm_summary_{report_timestamp}.md"
+        )
+        generate_llm_markdown_summary(
+            parsed_params=parsed,
+            data=data,
+            fit_stats=fit_stats,
+            fit_results=fit_results,
+            elasticities_df=elasticities_df,
+            muc_analysis=muc_analysis,
+            prob_diagnostics=prob_diagnostics,
+            bound_diagnostics=bound_diagnostics,
+            hessian_diagnostics=hessian_diagnostics,
+            run_metadata=run_metadata,
+            output_path=llm_summary_path,
+            estimation_results_path=results_json_path,
+            html_report_path=html_path,
+            param_csv_path=param_csv,
+            elasticities_csv_path=elast_csv,
+            post_output_dir=output_dir,
+            mnl_base=mnl_base,
+            spec_config=spec_config,
+        )
+
     LOGGER.info("\n" + "=" * 70)
     LOGGER.info("POST-ESTIMATION COMPLETE")
     LOGGER.info("=" * 70)
     LOGGER.info(f"  HTML Report: {html_path}")
+    if llm_summary_path is not None:
+        LOGGER.info(f"  Low-token Summary: {llm_summary_path}")
     LOGGER.info(f"  Total Time: {post_estimation_time:.1f}s")
 
     return {
@@ -6179,6 +6590,7 @@ def run_styled_post_estimation(
         'html_report': html_path,
         'param_csv': param_csv,
         'elasticities_csv': elast_csv,
+        'llm_summary': llm_summary_path,
         'plot_paths': plot_paths,
         'prob_diagnostics': prob_diagnostics,
         'bound_diagnostics': bound_diagnostics,
@@ -6295,6 +6707,22 @@ def main():
         help='Path to YAML specification file (required for --compute-se)'
     )
 
+    parser.add_argument(
+        '--llm-summary-dir',
+        type=Path,
+        default=Path("reports"),
+        help=(
+            'Directory for compact Markdown summaries designed for Git/LLM use '
+            '(default: reports)'
+        )
+    )
+
+    parser.add_argument(
+        '--no-llm-summary',
+        action='store_true',
+        help='Do not write the compact Markdown summary artifact'
+    )
+
     args = parser.parse_args()
     
     # Set random seed if provided
@@ -6336,6 +6764,7 @@ def main():
             prefix=args.prefix,
             compute_se=args.compute_se,
             spec_config=args.spec_config,
+            llm_summary_dir=None if args.no_llm_summary else args.llm_summary_dir,
             # bootstrap=args.bootstrap,  # Future: pass to function when implemented
         )
         return 0

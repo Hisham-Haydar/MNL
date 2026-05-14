@@ -2755,6 +2755,129 @@ def _compute_log_w(
     return working * log_w_density
 
 
+def _compute_opportunity_from_spec(
+    df: pd.DataFrame,
+    params: Dict[str, float],
+    spec: 'EstimationSpec',
+    applies_key: str,
+    partner: Optional[str] = None,
+) -> np.ndarray:
+    """Reconstruct O = O_E + O_H + O_market + O_W + O_Occ from the spec.
+
+    Mirrors ``Results/_participation_diag_ruro_occ_M0a_clean.py``'s V
+    decomposition so the fit diagnostic matches the structural diagnostic.
+
+    Parameters
+    ----------
+    applies_key : 'sm' | 'sf' | 'cm' | 'cf'
+        Used to filter occupation shifters whose ``applies_to`` matches.
+    partner : 'male' | 'female' | None
+        For couples (``cm``/``cf``) selects the partner-specific columns
+        (``working_male``, ``hours_male``, ``wage_male``, ``loc4_male``, …).
+        For singles (``sm``/``sf``) pass ``None`` — bare column names are
+        used (``working``, ``hours``, ``wage``, ``loc4``).
+    """
+    n = len(df)
+    O = np.zeros(n)
+
+    def col(name: str) -> Optional[np.ndarray]:
+        # Resolve a column preferring the partner-suffixed variant.
+        if partner is not None:
+            for c in (f"{name}_{partner}", name):
+                if c in df.columns:
+                    return df[c].to_numpy(dtype=float)
+        elif name in df.columns:
+            return df[name].to_numpy(dtype=float)
+        return None
+
+    working = col('working')
+    if working is None:
+        hours = col('hours')
+        working = (hours > 0).astype(float) if hours is not None else np.zeros(n)
+
+    # --- O_E + O_H -- hours_opportunity shifters (working / working_pt1/2/ft).
+    for shifter in (getattr(spec, 'hours_shifters', []) or []):
+        coef_name = shifter.get('coefficient')
+        var_name = shifter.get('variable')
+        if not coef_name or not var_name or coef_name not in params:
+            continue
+        x = col(var_name)
+        if x is None:
+            continue
+        O = O + float(params[coef_name]) * x
+
+    # --- O_market AND O_Occ -- both live on spec.market_opportunity_shifters
+    # (occupation shifters were appended by the spec parser).
+    var_scales = getattr(spec, 'market_opportunity_variable_scales', {}) or {}
+    for shifter in (getattr(spec, 'market_opportunity_shifters', []) or []):
+        coef_name = shifter.get('coefficient')
+        var_name = shifter.get('variable')
+        if not coef_name or not var_name or coef_name not in params:
+            continue
+        applies_to = shifter.get('applies_to')
+        if applies_to in ('sm', 'sf', 'cm', 'cf') and applies_to != applies_key:
+            continue
+        if var_name and var_name.startswith(('loc4_', 'loc_')):
+            # Occupation indicator: loc4_k -> (loc4 == k).
+            base, _, k_str = var_name.partition('_')
+            try:
+                k = int(k_str)
+            except ValueError:
+                continue
+            loc = col(base)
+            if loc is None:
+                continue
+            x = (loc.astype(int) == k).astype(float)
+            scale = 1.0
+        else:
+            x = col(var_name)
+            if x is None:
+                continue
+            scale = float(var_scales.get(var_name, 1.0)) if var_scales else 1.0
+        contrib = float(params[coef_name]) * (x / scale)
+        for ix in (shifter.get('interaction', []) or []):
+            ix_arr = col(ix)
+            if ix_arr is not None:
+                contrib = contrib * ix_arr
+        O = O + contrib
+
+    # --- O_W -- log-normal wage density (zero on non-work rows).
+    sigma_name = 'sigma'
+    if getattr(spec, 'wage_mean_shifters', None) is not None:
+        try:
+            sigma_name = (spec.__dict__.get('wage_sigma_parameter') or 'sigma')
+        except Exception:
+            sigma_name = 'sigma'
+    sigma_val = params.get(sigma_name, params.get('sigma'))
+    if sigma_val is not None:
+        sigma = float(abs(sigma_val)) if abs(float(sigma_val)) > 1e-12 else 1e-12
+        mu = np.zeros(n)
+        for shifter in (getattr(spec, 'wage_mean_shifters', []) or []):
+            coef_name = shifter.get('coefficient')
+            var_name = shifter.get('variable')
+            if not coef_name or coef_name not in params:
+                continue
+            if var_name == 'intercept':
+                mu = mu + float(params[coef_name])
+                continue
+            x = col(var_name)
+            if x is None:
+                continue
+            mu = mu + float(params[coef_name]) * x
+        wage = col('wage')
+        if wage is not None:
+            w_safe = np.clip(wage, 1e-12, None)
+            log_w = (
+                -np.log(w_safe)
+                - np.log(sigma)
+                - 0.5 * np.log(2.0 * np.pi)
+                - 0.5 * ((np.log(w_safe) - mu) / sigma) ** 2
+            )
+            O = O + np.where(working > 0.5, log_w, 0.0)
+
+    return O
+
+
 def _add_predicted_probabilities(
     df: pd.DataFrame,
     params: Dict[str, float],
@@ -2781,24 +2904,19 @@ def _add_predicted_probabilities(
     if theta_c is None:
         theta_c = params.get(f'theta_c{group_suffix}', params.get('theta_c', 0.5))
 
-    if 'c_norm' in df.columns:
-        c = df['c_norm'].values
-    else:
-        c = df['consumption'].values
+    # Use RAW consumption/leisure to match the estimator (gamspy_estimation_vectorized
+    # applies the Box-Cox to data.consumption / data.leisure, not the c_norm/l_norm
+    # rescaled views in the parquet). The structural participation diagnostic uses
+    # the same raw columns.
+    c = df['consumption'].values
     c_bc = boxcox_transform(c, theta_c)
     V = beta_c * c_bc
 
     if is_couples:
         theta_l_m = params.get('theta_l_m', params.get('theta_l', 0.5))
         theta_l_f = params.get('theta_l_f', params.get('theta_l', 0.5))
-        if 'l_norm_male' in df.columns:
-            l_m = df['l_norm_male'].values
-        else:
-            l_m = df['leisure_male'].values
-        if 'l_norm_female' in df.columns:
-            l_f = df['l_norm_female'].values
-        else:
-            l_f = df['leisure_female'].values
+        l_m = df['leisure_male'].values
+        l_f = df['leisure_female'].values
         beta_l_m = compute_beta_l_full(df, params, '_m', spec=spec)
         beta_l_f = compute_beta_l_full(df, params, '_f', spec=spec)
         l_bc_m = boxcox_transform(l_m, theta_l_m)
@@ -2822,17 +2940,18 @@ def _add_predicted_probabilities(
                 opp_added = True
 
         if not opp_added:
-            log_h_m = _compute_log_h(df, params, 'hours_male', gender='male', is_couple=True, spec=spec)
-            log_h_f = _compute_log_h(df, params, 'hours_female', gender='female', is_couple=True, spec=spec)
-            log_w_m = _compute_log_w(df, params, 'wage_male', 'hours_male', gender='male', is_couple=True, spec=spec)
-            log_w_f = _compute_log_w(df, params, 'wage_female', 'hours_female', gender='female', is_couple=True, spec=spec)
-            V += log_h_m + log_h_f + log_w_m + log_w_f
+            if spec is not None:
+                V += _compute_opportunity_from_spec(df, params, spec, applies_key='cm', partner='male')
+                V += _compute_opportunity_from_spec(df, params, spec, applies_key='cf', partner='female')
+            else:
+                log_h_m = _compute_log_h(df, params, 'hours_male', gender='male', is_couple=True, spec=spec)
+                log_h_f = _compute_log_h(df, params, 'hours_female', gender='female', is_couple=True, spec=spec)
+                log_w_m = _compute_log_w(df, params, 'wage_male', 'hours_male', gender='male', is_couple=True, spec=spec)
+                log_w_f = _compute_log_w(df, params, 'wage_female', 'hours_female', gender='female', is_couple=True, spec=spec)
+                V += log_h_m + log_h_f + log_w_m + log_w_f
     else:
         theta_l = params.get(f'theta_l{group_suffix}', params.get('theta_l', 0.5))
-        if 'l_norm' in df.columns:
-            l = df['l_norm'].values
-        else:
-            l = df['leisure'].values
+        l = df['leisure'].values
         beta_l = compute_beta_l_full(df, params, group_suffix, spec=spec)
         l_bc = boxcox_transform(l, theta_l)
         V += beta_l * l_bc
@@ -2850,10 +2969,14 @@ def _add_predicted_probabilities(
                 break
 
         if not opp_added:
-            gender = 'female' if group_suffix in ('_sf', '_f') else 'male'
-            log_h = _compute_log_h(df, params, 'hours', gender=gender, group_suffix=group_suffix, spec=spec)
-            log_w = _compute_log_w(df, params, 'wage', 'hours', gender=gender, group_suffix=group_suffix, spec=spec)
-            V += log_h + log_w
+            if spec is not None:
+                applies_key = 'sf' if group_suffix in ('_sf', '_f') else 'sm'
+                V += _compute_opportunity_from_spec(df, params, spec, applies_key=applies_key, partner=None)
+            else:
+                gender = 'female' if group_suffix in ('_sf', '_f') else 'male'
+                log_h = _compute_log_h(df, params, 'hours', gender=gender, group_suffix=group_suffix, spec=spec)
+                log_w = _compute_log_w(df, params, 'wage', 'hours', gender=gender, group_suffix=group_suffix, spec=spec)
+                V += log_h + log_w
 
     # Correct for sampling/proposal density: subtract log(prior).
     if 'log_prior' in df.columns:

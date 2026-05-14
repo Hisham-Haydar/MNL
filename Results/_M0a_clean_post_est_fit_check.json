@@ -1,26 +1,26 @@
 {
   "sm": {
     "participation_observed": 0.9295039164490861,
-    "participation_predicted": 0.9990233462343525,
+    "participation_predicted": 0.9128941724475956,
     "mean_hours_observed": 39.30477528089887,
-    "mean_hours_predicted": 37.26001123573774
+    "mean_hours_predicted": 35.65433054172837
   },
   "sf": {
     "participation_observed": 0.9395604395604396,
-    "participation_predicted": 0.9981477539773073,
+    "participation_predicted": 0.9539918399206202,
     "mean_hours_observed": 36.29707602339181,
-    "mean_hours_predicted": 34.75303732527295
+    "mean_hours_predicted": 35.03252785291296
   },
   "cou_m": {
     "participation_observed": 0.9716724873884361,
-    "participation_predicted": 0.9979601915369516,
+    "participation_predicted": 0.9999999189886973,
     "mean_hours_observed": 41.60623003194888,
-    "mean_hours_predicted": 41.03349593600432
+    "mean_hours_predicted": 59.686244697824506
   },
   "cou_f": {
     "participation_observed": 0.9650756693830035,
-    "participation_predicted": 0.9951079558847545,
+    "participation_predicted": 0.9999999351146349,
     "mean_hours_observed": 35.64656212303981,
-    "mean_hours_predicted": 34.934402584103665
+    "mean_hours_predicted": 59.58281608946708
   }
 }

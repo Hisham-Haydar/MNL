@@ -13,6 +13,13 @@ production estimator.
 The design goal is country/year portability, but the production code is not yet
 fully country/year-agnostic.
 
+**Variable lookup:** use
+`docs/euromod_reference/euromod_fr_2015_2017_input_output_reference.md` for
+EUROMOD input/output variables and
+`docs/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md` for RURO-derived MNL
+variables such as `working`, `loc4`, proposal aliases, and group conventions
+(`dgn == 1` male, `dgn == 0` female).
+
 ---
 
 ## 1. What RURO Means In This Project

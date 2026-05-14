@@ -2768,7 +2768,18 @@ def _add_predicted_probabilities(
     df = df.copy()
 
     beta_c = params.get(f'beta_c{group_suffix}', params.get('beta_c', 1.0))
-    theta_c = params.get(f'theta_c{group_suffix}', params.get('theta_c', 0.5))
+
+    # Resolve theta_c via the spec helper when available so M0a-clean's shared
+    # singles curvature `theta_c_singles` is preferred for singles groups
+    # instead of silently falling back to couples' `theta_c`.
+    theta_c = None
+    if spec is not None and group_suffix in ('_sm', '_sf') and hasattr(spec, 'theta_c_param_name'):
+        group_key = 'singles_male' if group_suffix == '_sm' else 'singles_female'
+        theta_name = spec.theta_c_param_name(group_key)
+        if theta_name and theta_name in params:
+            theta_c = params[theta_name]
+    if theta_c is None:
+        theta_c = params.get(f'theta_c{group_suffix}', params.get('theta_c', 0.5))
 
     if 'c_norm' in df.columns:
         c = df['c_norm'].values
@@ -2788,8 +2799,8 @@ def _add_predicted_probabilities(
             l_f = df['l_norm_female'].values
         else:
             l_f = df['leisure_female'].values
-        beta_l_m = compute_beta_l_full(df, params, '_m')
-        beta_l_f = compute_beta_l_full(df, params, '_f')
+        beta_l_m = compute_beta_l_full(df, params, '_m', spec=spec)
+        beta_l_f = compute_beta_l_full(df, params, '_f', spec=spec)
         l_bc_m = boxcox_transform(l_m, theta_l_m)
         l_bc_f = boxcox_transform(l_f, theta_l_f)
         V += beta_l_m * l_bc_m
@@ -2822,7 +2833,7 @@ def _add_predicted_probabilities(
             l = df['l_norm'].values
         else:
             l = df['leisure'].values
-        beta_l = compute_beta_l_full(df, params, group_suffix)
+        beta_l = compute_beta_l_full(df, params, group_suffix, spec=spec)
         l_bc = boxcox_transform(l, theta_l)
         V += beta_l * l_bc
 
@@ -4620,73 +4631,47 @@ def compute_fit_diagnostics_from_data(
         LOGGER.warning(f"Could not load MNL data: {e}")
         return {}
     
-    # Process singles (male=0, female=1)
-    for gender_code, gender_name, group_key in [(0, 'male', 'sm'), (1, 'female', 'sf')]:
+    # Process singles. In the MNL parquets the convention is dgn=1 → male,
+    # dgn=0 → female (verified against sample sizes 766 male / 910 female).
+    for gender_code, gender_name, group_key in [(1, 'male', 'sm'), (0, 'female', 'sf')]:
         if df_singles is None:
             continue
-        
+
         # Try 'dgn' first (dataset convention), then 'gender'
         gender_col = 'dgn' if 'dgn' in df_singles.columns else 'gender'
         df_g = df_singles[df_singles[gender_col] == gender_code].copy()
         if len(df_g) == 0:
             continue
-          # Get parameters for this group
+        # Get the FULL joint param vector (so theta_c_singles is visible to
+        # the spec-driven theta_c resolver inside _add_predicted_probabilities).
         params = None
-        for try_key in [group_key, f'singles_{gender_name}', group_key.upper()]:
-            if try_key in parsed_params.params_by_group:
-                params = parsed_params.get_all_params_for_group(try_key)
-                break
-        
-        if params is None or 'beta_c' not in params:
+        if 'joint' in parsed_params.params_by_group:
+            params = parsed_params.get_all_params_for_group('joint')
+        if params is None:
+            for try_key in [group_key, f'singles_{gender_name}', group_key.upper()]:
+                if try_key in parsed_params.params_by_group:
+                    params = parsed_params.get_all_params_for_group(try_key)
+                    break
+
+        group_suffix = f'_{group_key}'  # '_sm' or '_sf'
+        has_beta_c = (
+            params is not None
+            and (f'beta_c{group_suffix}' in params or 'beta_c' in params)
+        )
+        if not has_beta_c:
             LOGGER.warning(f"No parameters found for {group_key}, skipping fit diagnostics")
             continue
-        
+
         try:
             # Compute observed moments
             chosen_col = 'is_chosen' if 'is_chosen' in df_g.columns else 'chosen'
             chosen = df_g[df_g[chosen_col] == 1].copy()
             obs_participation = (chosen['hours'] > 0).mean()
             obs_hours = chosen.loc[chosen['hours'] > 0, 'hours'].mean() if (chosen['hours'] > 0).any() else 0.0
-            
-            # Compute predicted probabilities
-            beta_c = params.get('beta_c', 1.0)
-            theta_c = params.get('theta_c', 0.5)
-            theta_l = params.get('theta_l', 0.5)
-            beta_cl = params.get('beta_cl', 0.0)
-            if beta_cl is None:
-                beta_cl = 0.0
-            
-            # Utility from preferences
-            c = df_g['consumption'].values
-            l = df_g['leisure'].values
-            
-            # Compute full beta_l(X) for each observation (not just beta_l0)
-            beta_l = compute_beta_l_full(df_g, params, suffix='')
-            
-            c_bc = boxcox_transform(c, theta_c)
-            l_bc = boxcox_transform(l, theta_l)
-            U_pref = beta_c * c_bc + beta_l * l_bc + beta_cl * c_bc * l_bc
-            
-            # Add opportunity terms if available
-            if 'log_opp' in df_g.columns:
-                V = U_pref + df_g['log_opp'].values
-            else:
-                V = U_pref
-            
-            # Subtract prior if available
-            if 'log_prior' in df_g.columns:
-                V = V - df_g['log_prior'].values
-            
-            # Compute choice probabilities within each household
-            df_g['V'] = V
-            df_g['prob'] = 0.0
-            
-            for idhh, group_df in df_g.groupby('idhh'):
-                V_group = group_df['V'].values
-                V_shifted = V_group - V_group.max()
-                exp_V = np.exp(V_shifted)
-                probs = exp_V / exp_V.sum()
-                df_g.loc[group_df.index, 'prob'] = probs
+            df_g = _add_predicted_probabilities(
+                df_g, params, spec=spec, is_couples=False, group_suffix=group_suffix,
+            )
+            df_g['prob'] = df_g['pred_prob']
             
             # Predicted participation
             pred_participation = (df_g.groupby('idhh').apply(
@@ -4763,65 +4748,18 @@ def compute_fit_diagnostics_from_data(
         # Use params_m as the main params dict for shared parameters
         params = params_m
         
+        # Prefer the full joint param vector so theta_l_m / theta_l_f and all
+        # leisure-shifter coefficients are visible regardless of grouping.
+        if 'joint' in parsed_params.params_by_group:
+            params = parsed_params.get_all_params_for_group('joint')
+
         if params is not None:
             try:
-                beta_c = params.get('beta_c', 1.0)
-                theta_c = params.get('theta_c', 0.5)
-                params_female = params_f if params_f is not None else params
-                # Use sex-specific curvature when available (theta_l_m, theta_l_f)
-                theta_l_m = params.get('theta_l_m', params.get('theta_l', 0.5))
-                theta_l_f = params_female.get('theta_l_f', params_female.get('theta_l', 0.5))
-                beta_cl_m = params.get('beta_cl_m', params.get('beta_cl', 0.0))
-                beta_cl_f = params_female.get('beta_cl_f', params_female.get('beta_cl', 0.0))
-                if beta_cl_m is None:
-                    beta_cl_m = 0.0
-                if beta_cl_f is None:
-                    beta_cl_f = 0.0
-                
                 df_cou = df_couples.copy()
-                
-                # Compute joint utility V = U_pref + log_opp - log_prior
-                c = df_cou['consumption'].values
-                l_m = df_cou['leisure_male'].values
-                l_f = df_cou['leisure_female'].values
-                
-                # Preference utility
-                c_bc = boxcox_transform(c, theta_c)
-                U_c = beta_c * c_bc
-
-                # Leisure for male and female (using full beta_l with shifters and sex-specific curvature)
-                beta_l_m = compute_beta_l_full(df_cou, params, '_m')
-                beta_l_f = compute_beta_l_full(df_cou, params_female, '_f')
-                l_bc_m = boxcox_transform(l_m, theta_l_m)
-                l_bc_f = boxcox_transform(l_f, theta_l_f)
-                U_l_m = beta_l_m * l_bc_m
-                U_l_f = beta_l_f * l_bc_f
-                U_cl = beta_cl_m * c_bc * l_bc_m + beta_cl_f * c_bc * l_bc_f
-
-                V = U_c + U_l_m + U_l_f + U_cl
-                
-                # Add opportunity terms
-                if 'log_opp_male' in df_cou.columns:
-                    V = V + df_cou['log_opp_male'].values
-                if 'log_opp_female' in df_cou.columns:
-                    V = V + df_cou['log_opp_female'].values
-                if 'log_opp' in df_cou.columns:
-                    V = V + df_cou['log_opp'].values
-                
-                # Subtract prior
-                if 'log_prior' in df_cou.columns:
-                    V = V - df_cou['log_prior'].values
-                
-                df_cou['V'] = V
-                df_cou['prob'] = 0.0
-                
-                # Compute probabilities within each household
-                for idhh, group_df in df_cou.groupby('idhh'):
-                    V_group = group_df['V'].values
-                    V_shifted = V_group - V_group.max()
-                    exp_V = np.exp(V_shifted)
-                    probs = exp_V / exp_V.sum()
-                    df_cou.loc[group_df.index, 'prob'] = probs
+                df_cou = _add_predicted_probabilities(
+                    df_cou, params, spec=spec, is_couples=True, group_suffix='',
+                )
+                df_cou['prob'] = df_cou['pred_prob']
                 
                 # Now compute predicted moments for each gender
                 for gender, suffix in [('male', '_m'), ('female', '_f')]:
@@ -4900,69 +4838,101 @@ def compute_fit_diagnostics_from_data(
     return fit_results
 
 
-def compute_beta_l_full(df: pd.DataFrame, params: Dict[str, float], suffix: str = '') -> np.ndarray:
+def compute_beta_l_full(
+    df: pd.DataFrame,
+    params: Dict[str, float],
+    suffix: str = '',
+    spec: Optional['EstimationSpec'] = None,
+) -> np.ndarray:
     """
     Compute full beta_l(X) = beta_l0 + sum(beta_l_k * X_k) for each observation.
-    
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Data with demographic columns
-    params : Dict[str, float]
-        Parameter dictionary with beta_l0, beta_l_age_norm, etc.
-    suffix : str
-        Suffix for couples ('_m' or '_f')
-    
-    Returns
-    -------
-    np.ndarray
-        beta_l value for each observation
+
+    When `spec` is provided the YAML's utility_leisure_shifters list drives the
+    mapping from coefficient names to data column names (the only authoritative
+    source — earlier heuristic stripping of `beta_l_` silently lost shifters
+    whose coefficient base did not match a data column).
     """
     n = len(df)
     beta_l0_key = f'beta_l0{suffix}' if suffix else 'beta_l0'
     beta_l = np.full(n, params.get(beta_l0_key, params.get('beta_l0', 0.0)))
-    
-    # Mapping of parameter suffixes to column names
+
+    gender = None
+    if suffix in ('_m', '_sm'):
+        gender = 'male'
+    elif suffix in ('_f', '_sf'):
+        gender = 'female'
+
+    def _resolve(col_base: str) -> Optional[str]:
+        # Prefer gender-specific column when available (couples data), else base.
+        if gender is not None:
+            for c in (f'{col_base}_{gender}', f'{col_base}{suffix}'):
+                if c in df.columns:
+                    return c
+        if col_base in df.columns:
+            return col_base
+        return None
+
+    if spec is not None and getattr(spec, 'utility_leisure_shifters', None):
+        for shifter in spec.utility_leisure_shifters:
+            coef = shifter.get('coefficient')
+            var_name = shifter.get('variable')
+            gender_specific = shifter.get('gender_specific', False)
+            if not coef or not var_name:
+                continue
+            # Resolve parameter value via suffixed lookup.
+            param_keys = []
+            if suffix:
+                param_keys.append(f'{coef}{suffix}')
+            param_keys.append(coef)
+            val = None
+            for k in param_keys:
+                if k in params and params[k] is not None:
+                    val = params[k]
+                    break
+            if val is None:
+                continue
+            if gender_specific and gender == 'male':
+                # `gender_specific: true` on YAML means female-only.
+                continue
+            col = _resolve(var_name)
+            if col is None:
+                continue
+            beta_l = beta_l + val * df[col].values
+        return beta_l
+
+    # Legacy fallback: heuristic strip of `beta_l_` prefix.
     covariate_mapping = {
         'age_norm': ['age_norm', 'age_normalized'],
         'age_norm2': ['age_norm2', 'age_normalized2', 'age_norm_sq'],
         'n_children': ['n_children', 'nch', 'num_children'],
         'educL': ['educL', 'educ_low', 'low_education'],
         'educH': ['educH', 'educ_high', 'high_education'],
+        'age': ['age_norm', 'age_normalized'],
+        'age2': ['age_norm2', 'age_normalized2', 'age_norm_sq'],
+        'nkids': ['n_children', 'nch', 'num_children'],
     }
-    
+
     for param_name, param_value in params.items():
-        # Match beta_l_* parameters (but not beta_l0)
         if not param_name.startswith('beta_l_'):
             continue
         if 'beta_l0' in param_name:
             continue
-        
-        # Extract covariate name (e.g., 'age_norm' from 'beta_l_age_norm')
         cov_base = param_name.replace('beta_l_', '').replace(suffix, '')
-        
-        # Try to find the column in the dataframe
         col_found = None
         possible_cols = covariate_mapping.get(cov_base, [cov_base])
-        
-        # For couples, try gender-specific columns first
         if suffix:
-            gender = 'male' if suffix == '_m' else 'female'
-            for col in [f'{cov_base}_{gender}', f'{cov_base}{suffix}']:
-                if col in df.columns:
-                    col_found = col
+            for c in [f'{cov_base}_{gender}' if gender else None, f'{cov_base}{suffix}']:
+                if c and c in df.columns:
+                    col_found = c
                     break
-        
-        # Then try general columns
         if col_found is None:
             for col in possible_cols:
                 if col in df.columns:
                     col_found = col
                     break
-        
         if col_found is not None:
-            beta_l += param_value * df[col_found].values
-    
+            beta_l = beta_l + param_value * df[col_found].values
+
     return beta_l
 
 
@@ -7487,7 +7457,7 @@ def run_styled_post_estimation(
     
     if mnl_base is not None:
         try:
-            fit_results = compute_fit_diagnostics_from_data(parsed, mnl_base)
+            fit_results = compute_fit_diagnostics_from_data(parsed, mnl_base, spec=spec)
             mu_results = compute_marginal_utilities_at_chosen(parsed, mnl_base)
             
             # Compute LL0 diagnostics if not in JSON

@@ -16,6 +16,9 @@ This is a compact project reference for France systems `FR_2015`, `FR_2016`, and
 - `Data/documentation/euromod_fr_2015_2017_input_variables.csv`: full DRD input-variable index.
 - `Data/documentation/euromod_fr_2015_2017_output_variable_index.csv`: standard-output policy configuration for `FR_2015`, `FR_2016`, and `FR_2017`.
 - `Data/documentation/euromod_fr_2015_2017_standard_income_concepts.csv`: standardized income-concept components from `IlsDef_fr`.
+- `docs/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md`: RURO
+  continuous-MNL variables derived after EUROMOD, including `working`,
+  `loc4`, `log_q_E/H/W/Occ`, and the singles/couples group conventions.
 
 ## One-page rule for LLM use
 
@@ -23,6 +26,11 @@ This is a compact project reference for France systems `FR_2015`, `FR_2016`, and
 - Standard-output structure is common across the three years; only output file names change by year.
 - The year-specific differences found in `IlsDef_fr` are limited to the PPE/PA switch listed below: `tinrf_s` is active in 2015 and `bsawk_s` is active in 2016/2017 for the affected means-tested benefit concepts.
 - Use the CSV companions for exact lookup; this Markdown is the compact orientation file.
+- Do not treat RURO-derived variables as EUROMOD source variables. For example,
+  `dgn` is documented here as an EUROMOD input (`0 = female`, `1 = male`),
+  while `working`, `loc4`, `loc4_male`, `log_q_Occ`, and `theta_c_singles`
+  are RURO pipeline/specification variables documented in
+  `docs/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md`.
 
 ## DRD input data: common across FR_2015-FR_2017
 

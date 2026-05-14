@@ -95,6 +95,13 @@ class EstimationSpec:
     # YAML key: utility.consumption.singles_box_cox_exponent
     utility_consumption_theta_singles_shared: Optional[str] = None
 
+    # Fixed (non-estimated) couples consumption Box-Cox exponent (M0c-b).
+    # When set to a float, this value is used as a compile-time constant for
+    # the couples BC-C transform; theta_c is NOT added to all_param_names.
+    # Singles are unaffected (they still use utility_consumption_theta_singles_shared).
+    # YAML key: utility.consumption.couples_fixed_box_cox_exponent
+    utility_consumption_theta_couples_fixed: Optional[float] = None
+
     # Occupation choice configuration (NEW)
     occupation_choice: bool = False
     occupation_preferences: List[Dict[str, Any]] = field(default_factory=list)
@@ -434,6 +441,30 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
             f"Singles theta_c POOLED: singles_male and singles_female share "
             f"'{utility_consumption_theta_singles_shared}'."
         )
+
+    # Fixed (non-estimated) couples consumption Box-Cox exponent (M0c-b).
+    # When set, couples BC-C uses this float constant; theta_c is omitted from
+    # all_param_names. Mutually exclusive with pool_consumption_across_groups.
+    _raw_couples_fixed = consumption_config.get("couples_fixed_box_cox_exponent", None)
+    utility_consumption_theta_couples_fixed: Optional[float] = None
+    if _raw_couples_fixed is not None:
+        try:
+            utility_consumption_theta_couples_fixed = float(_raw_couples_fixed)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "utility.consumption.couples_fixed_box_cox_exponent must be numeric."
+            ) from exc
+        if pool_consumption_across_groups:
+            raise ValueError(
+                "utility.consumption.couples_fixed_box_cox_exponent and "
+                "utility.consumption.pool_across_groups are mutually exclusive."
+            )
+        logger.info(
+            "Couples theta_c FIXED: couples consumption BC exponent = %g "
+            "(not estimated; theta_c removed from parameter vector).",
+            utility_consumption_theta_couples_fixed,
+        )
+
     consumption_leisure_interaction_config = utility_config.get("consumption_leisure_interaction", {})
     if isinstance(consumption_leisure_interaction_config, dict):
         utility_consumption_leisure_interaction_coef = consumption_leisure_interaction_config.get("coefficient", None)
@@ -702,6 +733,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
             occupation_availability=occupation_availability,
             pool_consumption=pool_consumption_across_groups,
             singles_shared_consumption_theta=utility_consumption_theta_singles_shared,
+            couples_fixed_theta=utility_consumption_theta_couples_fixed,
         )
 
     logger.info(f"Total parameters: {len(all_param_names)}")
@@ -787,6 +819,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         market_opportunity_variable_scales=market_opportunity_variable_scales,
         pool_consumption_across_groups=pool_consumption_across_groups,
         utility_consumption_theta_singles_shared=utility_consumption_theta_singles_shared,
+        utility_consumption_theta_couples_fixed=utility_consumption_theta_couples_fixed,
         ac2013_use_log_age=(model_version == "AC2013"),
         ac2013_children_age_groups=(model_version == "AC2013"),
         ac2013_experience_in_wage=(model_version == "AC2013"),
@@ -1208,6 +1241,7 @@ def _build_parameter_list(
     occupation_availability: Optional[List[Dict[str, Any]]] = None,
     pool_consumption: bool = False,
     singles_shared_consumption_theta: Optional[str] = None,
+    couples_fixed_theta: Optional[float] = None,
 ) -> List[str]:
     """
     Build ordered list of all parameter names.
@@ -1336,7 +1370,9 @@ def _build_parameter_list(
 
     # COUPLES HOUSEHOLD: Consumption (shared for couples, no suffix)
     params.append(utility_consumption_coef)  # beta_c
-    if utility_form == "box_cox" and utility_consumption_theta:
+    # Skip theta_c when couples_fixed_theta is set — it's a compile-time constant,
+    # not an estimated parameter.
+    if utility_form == "box_cox" and utility_consumption_theta and couples_fixed_theta is None:
         params.append(utility_consumption_theta)  # theta_c
 
     # SHARED OPPORTUNITY: Hours parameters (all groups)

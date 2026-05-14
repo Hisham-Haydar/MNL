@@ -274,12 +274,21 @@ def evaluate_constraint_value_numpy(
 
     c = _at_value(at, "consumption", 1.0)
     theta_c_group = "couples_household" if group.startswith("couples") else group
-    theta_c = _resolve_param_value(
-        params,
-        spec.utility_consumption_theta,
-        theta_c_group,
-        required=(spec.utility_form == "box_cox" and spec.utility_consumption_theta is not None),
-    )
+    fixed_couples_theta = getattr(spec, "utility_consumption_theta_couples_fixed", None)
+    if group.startswith("couples") and fixed_couples_theta is not None:
+        theta_c = float(fixed_couples_theta)
+    else:
+        theta_c_base = (
+            spec.theta_c_param_name(theta_c_group)
+            if hasattr(spec, "theta_c_param_name")
+            else spec.utility_consumption_theta
+        )
+        theta_c = _resolve_param_value(
+            params,
+            theta_c_base,
+            theta_c_group,
+            required=(spec.utility_form == "box_cox" and theta_c_base is not None),
+        )
     beta_c = _resolve_param_value(params, spec.utility_consumption_coef, theta_c_group, required=True)
     bc_c = _utility_component_scalar(c, theta_c, spec.utility_form)
     dbc_c = _utility_derivative_scalar(c, theta_c, spec.utility_form)
@@ -522,12 +531,21 @@ def evaluate_constraint_value_gamspy(
 
     c = _at_value(at, "consumption", 1.0)
     theta_c_group = "couples_household" if group.startswith("couples") else group
-    theta_c = _resolve_param_symbol(
-        param_vars,
-        spec.utility_consumption_theta,
-        theta_c_group,
-        required=(spec.utility_form == "box_cox" and spec.utility_consumption_theta is not None),
-    )
+    fixed_couples_theta = getattr(spec, "utility_consumption_theta_couples_fixed", None)
+    if group.startswith("couples") and fixed_couples_theta is not None:
+        theta_c = float(fixed_couples_theta)
+    else:
+        theta_c_base = (
+            spec.theta_c_param_name(theta_c_group)
+            if hasattr(spec, "theta_c_param_name")
+            else spec.utility_consumption_theta
+        )
+        theta_c = _resolve_param_symbol(
+            param_vars,
+            theta_c_base,
+            theta_c_group,
+            required=(spec.utility_form == "box_cox" and theta_c_base is not None),
+        )
     beta_c = _resolve_param_symbol(param_vars, spec.utility_consumption_coef, theta_c_group, required=True)
     bc_c = _utility_component_symbol(
         c, theta_c, spec.utility_form, box_cox_transform_fn, gp_log, log_eps

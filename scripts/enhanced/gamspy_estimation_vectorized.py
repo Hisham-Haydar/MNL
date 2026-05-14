@@ -711,7 +711,11 @@ def _build_couples_ll_vectorized(
     beta_c_name = get_param_name(spec.utility_consumption_coef, "couples_household", param_vars)
     beta_c = param_vars[beta_c_name]
 
-    if spec.utility_consumption_theta:
+    _couples_fixed_theta = getattr(spec, "utility_consumption_theta_couples_fixed", None)
+    if _couples_fixed_theta is not None:
+        # M0c-b: theta_c is structurally fixed — use compile-time constant, no param lookup.
+        bc_c = box_cox_transform(consumption_param, float(_couples_fixed_theta))
+    elif spec.utility_consumption_theta:
         # Couples group -> spec.theta_c_param_name returns the legacy shared
         # `theta_c`; routed via the helper for symmetry with the singles path.
         theta_c_base = (

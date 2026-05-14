@@ -2902,7 +2902,12 @@ def _add_predicted_probabilities(
         if theta_name and theta_name in params:
             theta_c = params[theta_name]
     if theta_c is None:
-        theta_c = params.get(f'theta_c{group_suffix}', params.get('theta_c', 0.5))
+        # M0c-b: when couples theta_c is structurally fixed, use the constant directly.
+        _fixed = getattr(spec, "utility_consumption_theta_couples_fixed", None) if spec is not None else None
+        if _fixed is not None and group_suffix not in ('_sm', '_sf'):
+            theta_c = float(_fixed)
+        else:
+            theta_c = params.get(f'theta_c{group_suffix}', params.get('theta_c', 0.5))
 
     # Use RAW consumption/leisure to match the estimator (gamspy_estimation_vectorized
     # applies the Box-Cox to data.consumption / data.leisure, not the c_norm/l_norm

@@ -141,6 +141,7 @@ This prevents the fallback from returning `0.5` (the generic default) for couple
 | `scripts/enhanced/estimation_spec_parser.py` | **Modified** | New field, parse logic, `_build_parameter_list` guard, constructor/call-site kwargs |
 | `scripts/enhanced/gamspy_estimation_vectorized.py` | **Modified** | Couples BC-C priority branch for fixed theta |
 | `scripts/enhanced/expression_constraints.py` | **Modified** | MUL/MUC constraint evaluator uses fixed couples theta when `theta_c` is not estimated |
+| `scripts/enhanced/estimation_engine.py` | **Modified** | Couples utility and gradient functions use fixed theta constant; theta_c gradient term suppressed |
 | `scripts/enhanced/RURO_post_estimation_styled.py` | **Modified** | Couples theta_c fallback uses fixed constant |
 | `docs/RURO_occ_M0c_b_implementation_report_v1.md` | **Created** | This document |
 | `Results/RURO_occ_M0c_b_gate_A_parse_report_v1.md` | **Created** | Gate-A parse verification |

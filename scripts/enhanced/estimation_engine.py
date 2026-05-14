@@ -1345,7 +1345,10 @@ def _compute_utility_couples(
         theta_l_male = 0.0
         theta_l_female = 0.0
 
-    if spec.utility_consumption_theta:
+    _couples_fixed_theta = getattr(spec, "utility_consumption_theta_couples_fixed", None)
+    if _couples_fixed_theta is not None:
+        theta_c = float(_couples_fixed_theta)
+    elif spec.utility_consumption_theta:
         theta_c = params[spec.utility_consumption_theta]
     else:
         theta_c = 0.0  # Log utility if theta not specified
@@ -1776,7 +1779,10 @@ def _compute_utility_derivatives_couples(
         theta_l_male = 0.0
         theta_l_female = 0.0
 
-    if spec.utility_consumption_theta:
+    _couples_fixed_theta = getattr(spec, "utility_consumption_theta_couples_fixed", None)
+    if _couples_fixed_theta is not None:
+        theta_c = float(_couples_fixed_theta)
+    elif spec.utility_consumption_theta:
         theta_c = params[spec.utility_consumption_theta]
     else:
         theta_c = 0.0  # Log utility if theta not specified
@@ -1982,9 +1988,11 @@ def _compute_utility_derivatives_couples(
             dV_dtheta[:, idx_theta_l_m] += beta_interact * dbc_l_male_dtheta * bc_l_female
             dV_dtheta[:, idx_theta_l_f] += beta_interact * bc_l_male * dbc_l_female_dtheta
 
-    # Derivative w.r.t. theta_c (consumption Box-Cox parameter) - only if theta_c exists
+    # Derivative w.r.t. theta_c (consumption Box-Cox parameter) - only if theta_c is estimated.
+    # When utility_consumption_theta_couples_fixed is set, theta_c is a constant — no gradient.
     # CRITICAL: Consumption is HOUSEHOLD-LEVEL (normalized sum already computed)
-    if spec.utility_consumption_theta:
+    _couples_fixed_theta_d = getattr(spec, "utility_consumption_theta_couples_fixed", None)
+    if spec.utility_consumption_theta and _couples_fixed_theta_d is None:
         idx_theta_c = spec.get_param_index(spec.utility_consumption_theta)
         dbc_c_dtheta = box_cox_derivative_theta(data.consumption, theta_c)
         dV_dtheta[:, idx_theta_c] = (

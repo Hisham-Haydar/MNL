@@ -2933,6 +2933,14 @@ def _add_predicted_probabilities(
         V += beta_cl_m * c_bc * l_bc_m
         V += beta_cl_f * c_bc * l_bc_f
 
+        # Leisure-leisure interaction (M0b+): beta_ll * BC(L_m) * BC(L_f).
+        # Zero contribution for M0a-clean (couples_interaction_coef is None).
+        if spec is not None and hasattr(spec, 'couples_interaction_coef') \
+                and spec.couples_interaction_coef \
+                and spec.couples_interaction_coef in params:
+            beta_ll = params[spec.couples_interaction_coef]
+            V += beta_ll * l_bc_m * l_bc_f
+
         opp_added = False
         for col in ['log_opp_male', 'log_opp_female', 'log_opp']:
             if col in df.columns:

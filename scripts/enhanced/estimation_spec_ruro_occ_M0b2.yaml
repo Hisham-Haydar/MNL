@@ -1,0 +1,326 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - RURO occupation-opportunity M0b2
+# ==============================================================================
+# M0b2 extends M0b1 with one additional bound change: the upper bound on the
+# couples consumption Box-Cox exponent theta_c is tightened from 0.95 to 0.0.
+# This forces couples consumption to be at most logarithmic (at theta_c=0 the
+# BC limit is log(C)), preventing the near-linear curvature (theta_c=+0.319 at
+# M0a-clean) that drives the +91-nat couples utility gap.
+#
+# Changes vs `estimation_spec_ruro_occ_M0b1.yaml`:
+#   1. specification.name -> "ruro_occ_M0b2"
+#   2. optimization.bounds: theta_c changed from [-8.0, 0.95] to [-8.0, 0.0]
+#
+# Everything else is byte-identical to ruro_occ_M0b1. No changes to initial
+# values, opportunity blocks, singles parameters, proposal-density correction,
+# or expression constraints.
+#
+# Expected parameter count: 48 (identical to M0b1).
+#
+# Sign-convention note: with theta_c <= 0, consumption Box-Cox is concave or
+# logarithmic. This forbids the near-linear region that produces the large
+# couples utility gap in M0a-clean. The new upper bound 0.0 is the natural
+# log-utility barrier; it does not pool couples and singles theta_c, and does
+# not force a specific value.
+#
+# Reference docs:
+#   docs/RURO_occ_M0b_design_memo_v1.md  (sections 6, 10)
+#   docs/RURO_occ_M0b_implementation_audit_v1.md
+#   docs/RURO_occ_M0b_implementation_report_v1.md
+# ==============================================================================
+
+specification:
+  name: "ruro_occ_M0b2"
+  description: "M0b2: M0b1 plus theta_c upper bound tightened to 0.0 (at most log-utility on couples consumption). Prevents near-linear curvature that drove the +91-nat couples utility gap in M0a-clean."
+  wage_spec: "vw"
+  model_family: "regular"
+
+utility:
+  functional_form: "box_cox"
+
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"                  # couples shared
+    singles_box_cox_exponent: "theta_c_singles"  # singles shared (M0a-clean)
+    box_cox_bounds: [-8.0, 0.95]
+
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: "theta_l"
+    box_cox_bounds: [-8.0, 0.95]
+    shifters:
+      - variable: "age_norm"
+        coefficient: "beta_l_age"
+      - variable: "age_norm2"
+        coefficient: "beta_l_age2"
+      - variable: "n_children"
+        coefficient: "beta_l_nkids"
+        gender_specific: true   # female only
+
+hours_opportunity:
+  # IDENTICAL to M0b1 / M0a-clean.
+  shifters:
+    - variable: "working"
+      coefficient: "beta_E"
+    - variable: "working_pt1"
+      coefficient: "beta_h_pt1"
+    - variable: "working_pt2"
+      coefficient: "beta_h_pt2"
+    - variable: "working_ft"
+      coefficient: "beta_h_ft"
+
+wage_opportunity:
+  # IDENTICAL to M0b1 / M0a-clean.
+  specification: "log_normal"
+  mean_shifters:
+    - variable: "intercept"
+      coefficient: "beta_w0"
+    - variable: "educL"
+      coefficient: "beta_w_educL"
+    - variable: "educH"
+      coefficient: "beta_w_educH"
+    - variable: "pexp_years"
+      coefficient: "beta_w_pexp"
+    - variable: "pexp_years2"
+      coefficient: "beta_w_pexp2"
+  variance:
+    parameter: "sigma"
+
+market_opportunity:
+  # IDENTICAL to M0b1 / M0a-clean.
+  applies_to: "both"
+  employment_indicator: "working"
+  gsur_variable: "gsur"
+  offer_only_vars: ["gsur"]
+  center_within_choice_set: true
+  center_weights: "proposal"
+  variable_scales:
+    gsur: 10.0
+
+  shifters:
+    - variable: "gsur"
+      coefficient: "beta_E_gsur"
+      interaction: ["working"]
+    - variable: "educH"
+      coefficient: "beta_E_educH"
+      interaction: ["working"]
+
+occupation_opportunity:
+  # IDENTICAL to M0b1 / M0a-clean.
+  variable: "loc4"
+  reference: 1
+  shifters:
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_sm"
+      applies_to: "sm"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_sm"
+      applies_to: "sm"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_sm"
+      applies_to: "sm"
+      interaction: ["working"]
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_sf"
+      applies_to: "sf"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_sf"
+      applies_to: "sf"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_sf"
+      applies_to: "sf"
+      interaction: ["working"]
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_cm"
+      applies_to: "cm"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_cm"
+      applies_to: "cm"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_cm"
+      applies_to: "cm"
+      interaction: ["working"]
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_cf"
+      applies_to: "cf"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_cf"
+      applies_to: "cf"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_cf"
+      applies_to: "cf"
+      interaction: ["working"]
+
+couples:
+  leisure_interaction:
+    coefficient: "beta_ll"
+
+initial_values:
+  # Preferences - neutral starts (no warm-start from M0a-clean).
+  beta_l0_sm: 1.0
+  beta_l_age_sm: 0.0
+  beta_l_age2_sm: 0.0
+  beta_c_sm: 1.0
+  theta_l_sm: -1.0
+
+  beta_l0_sf: 1.0
+  beta_l_age_sf: 0.0
+  beta_l_age2_sf: 0.0
+  beta_l_nkids_sf: 0.0
+  beta_c_sf: 1.0
+  theta_l_sf: -1.0
+
+  # Singles-shared consumption Box-Cox curvature (M0a-clean).
+  theta_c_singles: -1.0
+
+  beta_l0_m: 1.0
+  beta_l_age_m: 0.0
+  beta_l_age2_m: 0.0
+  theta_l_m: -1.0
+
+  beta_l0_f: 1.0
+  beta_l_age_f: 0.0
+  beta_l_age2_f: 0.0
+  beta_l_nkids_f: 0.0
+  theta_l_f: -1.0
+
+  beta_c: 1.0
+  theta_c: -1.0    # couples shared curvature (initial value unchanged; bound tightened)
+
+  # Employment intercept and hours focal-point shifters.
+  beta_E:     0.0
+  beta_h_pt1: 0.0
+  beta_h_pt2: 0.0
+  beta_h_ft:  0.0
+
+  # Market opportunity residual.
+  beta_E_gsur:  0.0
+  beta_E_educH: 0.0
+
+  # Wage opportunity Mincer mean.
+  beta_w0:       2.0
+  beta_w_educL: -0.1
+  beta_w_educH:  0.2
+  beta_w_pexp:   0.02
+  beta_w_pexp2: -0.0003
+
+  # Occupation opportunity.
+  beta_occ_2_sm: 0.0
+  beta_occ_3_sm: 0.0
+  beta_occ_4_sm: 0.0
+  beta_occ_2_sf: 0.0
+  beta_occ_3_sf: 0.0
+  beta_occ_4_sf: 0.0
+  beta_occ_2_cm: 0.0
+  beta_occ_3_cm: 0.0
+  beta_occ_4_cm: 0.0
+  beta_occ_2_cf: 0.0
+  beta_occ_3_cf: 0.0
+  beta_occ_4_cf: 0.0
+
+  sigma: 0.5
+
+  # Leisure-leisure interaction (couples only).
+  beta_ll: 0.0
+
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 6000
+  tolerance: 1.0e-8
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+  bounds:
+    # Box-Cox exponents.
+    theta_l_sm: [-8.0, 0.95]
+    theta_l_sf: [-8.0, 0.95]
+    theta_l_m:  [-8.0, 0.95]
+    theta_l_f:  [-8.0, 0.95]
+    theta_c_singles: [-8.0, 0.95]   # singles-shared
+    theta_c:    [-8.0, 0.0]         # CHANGED at M0b2: tightened from 0.95 to 0.0
+
+    # Preference scales.
+    beta_c_sm: [0.05, 50.0]
+    beta_c_sf: [0.05, 50.0]
+    beta_c:    [0.05, 50.0]
+    beta_l0_sm: [0.05, 50.0]
+    beta_l0_sf: [0.05, 50.0]
+    beta_l0_m:  [0.05, 50.0]
+    beta_l0_f:  [0.05, 50.0]
+
+    # Leisure shifters.
+    beta_l_age_sm:   [-5.0, 5.0]
+    beta_l_age2_sm:  [-1.0, 1.0]
+    beta_l_age_sf:   [-5.0, 5.0]
+    beta_l_age2_sf:  [-1.0, 1.0]
+    beta_l_age_m:    [-5.0, 5.0]
+    beta_l_age2_m:   [-1.0, 1.0]
+    beta_l_age_f:    [-5.0, 5.0]
+    beta_l_age2_f:   [-1.0, 1.0]
+    beta_l_nkids_sf: [-5.0, 5.0]
+    beta_l_nkids_f:  [-5.0, 5.0]
+
+    # Employment intercept and hours focal-point shifters.
+    beta_E:     [-25.0, 25.0]
+    beta_h_pt1: [-10.0, 10.0]
+    beta_h_pt2: [-10.0, 10.0]
+    beta_h_ft:  [-10.0, 10.0]
+
+    # Wage opportunity Mincer mean.
+    beta_w0:       [-10.0, 20.0]
+    beta_w_educL:  [-5.0, 5.0]
+    beta_w_educH:  [-5.0, 5.0]
+    beta_w_pexp:   [-1.0, 1.0]
+    beta_w_pexp2:  [-0.1, 0.1]
+
+    # Market opportunity residual.
+    beta_E_gsur:  [-10.0, 10.0]
+    beta_E_educH: [-10.0, 10.0]
+
+    # Occupation opportunity (reference loc4=1).
+    beta_occ_2_sm: [-10.0, 10.0]
+    beta_occ_3_sm: [-10.0, 10.0]
+    beta_occ_4_sm: [-10.0, 10.0]
+    beta_occ_2_sf: [-10.0, 10.0]
+    beta_occ_3_sf: [-10.0, 10.0]
+    beta_occ_4_sf: [-10.0, 10.0]
+    beta_occ_2_cm: [-10.0, 10.0]
+    beta_occ_3_cm: [-10.0, 10.0]
+    beta_occ_4_cm: [-10.0, 10.0]
+    beta_occ_2_cf: [-10.0, 10.0]
+    beta_occ_3_cf: [-10.0, 10.0]
+    beta_occ_4_cf: [-10.0, 10.0]
+
+    sigma: [0.1, 20.0]
+
+    # Leisure-leisure interaction.
+    beta_ll: [-2.0, 2.0]
+
+  expression_constraints:
+    enabled: true
+    default_mode: soft
+    default_weight: 1000.0
+    constraints:
+      - name: mul_cou_m_positive
+        expression: mul
+        group: couples_male
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        lower: 1.0e-6
+      - name: mul_cou_f_positive
+        expression: mul
+        group: couples_female
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        lower: 1.0e-6
+
+gradient_verification:
+  enabled: false

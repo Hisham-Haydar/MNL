@@ -254,6 +254,19 @@ def boxcox_transform(x: np.ndarray, theta: float, eps: float = 1e-10) -> np.ndar
         return (np.power(x, theta) - 1.0) / theta
 
 
+def _resolve_couples_theta_c(
+    params: Dict[str, Any],
+    spec: Optional[Any] = None,
+    fallback: float = 0.5,
+) -> float:
+    """Return couples theta_c: fixed constant if spec says so, else from params, else fallback."""
+    _fixed = getattr(spec, "utility_consumption_theta_couples_fixed", None) if spec is not None else None
+    if _fixed is not None:
+        return float(_fixed)
+    v = params.get("theta_c", None)
+    return float(v) if v is not None else fallback
+
+
 def d_boxcox_dx(x: np.ndarray, theta: float, eps: float = 1e-10) -> np.ndarray:
     """Derivative of Box-Cox: d/dx [(x^θ - 1) / θ] = x^(θ-1)"""
     x = np.asarray(x)
@@ -660,7 +673,7 @@ def load_estimation_results_legacy(json_path: Path) -> Tuple[ParsedParameters, D
 # MUC BEHAVIOR ANALYSIS
 # =============================================================================
 
-def analyze_muc_behavior(parsed_params: ParsedParameters) -> List[Dict[str, Any]]:
+def analyze_muc_behavior(parsed_params: ParsedParameters, spec: Optional[Any] = None) -> List[Dict[str, Any]]:
     """Analyze MUC behavior for well-behavedness checks."""
     rows = []
 
@@ -673,7 +686,9 @@ def analyze_muc_behavior(parsed_params: ParsedParameters) -> List[Dict[str, Any]
         beta_cl = _get_param_value(params, 'beta_cl', (suffix,)) if suffix else _get_param_value(params, 'beta_cl')
 
         beta_c = 1.0 if beta_c is None else beta_c
-        theta_c = 0.5 if theta_c is None else theta_c
+        # Use fixed couples theta_c when available (M0c_b); falls back to 0.5 for singles if absent.
+        _is_couples = group not in ('sm', 'sf', 'singles_male', 'singles_female')
+        theta_c = _resolve_couples_theta_c(params, spec) if (theta_c is None and _is_couples) else (0.5 if theta_c is None else theta_c)
         theta_l = 0.5 if theta_l is None else theta_l
         beta_cl = 0.0 if beta_cl is None else beta_cl
 
@@ -724,7 +739,7 @@ def analyze_muc_behavior(parsed_params: ParsedParameters) -> List[Dict[str, Any]
 # ELASTICITY COMPUTATION
 # =============================================================================
 
-def compute_structural_elasticities(parsed_params: ParsedParameters) -> pd.DataFrame:
+def compute_structural_elasticities(parsed_params: ParsedParameters, spec: Optional[Any] = None) -> pd.DataFrame:
     """Compute structural labor supply elasticities."""
     rows = []
     group_labels = GROUP_LABELS
@@ -735,7 +750,7 @@ def compute_structural_elasticities(parsed_params: ParsedParameters) -> pd.DataF
         if group in ['cou', 'couples']:
             # Handle couples - male
             theta_l_m = params.get('theta_l_m', params.get('theta_l', 0.5))
-            theta_c = params.get('theta_c', 0.5)
+            theta_c = _resolve_couples_theta_c(params, spec)
             beta_l0_m = params.get('beta_l0_m', params.get('beta_l0', 0.0))
             beta_c = params.get('beta_c', 1.0)
 
@@ -7576,11 +7591,11 @@ def run_styled_post_estimation(
             fit_stats['AIC'] = -2 * fit_stats['log_likelihood'] + 2 * fit_stats['n_parameters']
             fit_stats['BIC'] = -2 * fit_stats['log_likelihood'] + np.log(fit_stats['n_observations']) * fit_stats['n_parameters']    # Compute elasticities
     LOGGER.info("\n2. Computing elasticities...")
-    elasticities_df = compute_structural_elasticities(parsed)
+    elasticities_df = compute_structural_elasticities(parsed, spec=spec)
 
     # MUC behavior analysis
     LOGGER.info("\n3. Analyzing MUC behavior...")
-    muc_analysis = analyze_muc_behavior(parsed)
+    muc_analysis = analyze_muc_behavior(parsed, spec=spec)
 
     # Compute fit diagnostics from data
     LOGGER.info("\n4. Computing fit diagnostics from MNL data...")

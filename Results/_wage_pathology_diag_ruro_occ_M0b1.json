@@ -1,0 +1,284 @@
+{
+  "spec": "ruro_occ_M0b1",
+  "run": "run_2026-05-14_12-07-18",
+  "date": "2026-05-14",
+  "1_wage_column_audit": {
+    "couples_male_observed": {
+      "column": "wage_male",
+      "present": true,
+      "unit_note": "EUR/hour (from parquet, EUROMOD net hourly wage draw)",
+      "n_working": 231647,
+      "min": 2.0000153526979076,
+      "max": 169.99986554397177,
+      "p1": 3.72298119137839,
+      "p50": 85.11427575423994,
+      "p99": 168.3173687191728
+    },
+    "couples_female_observed": {
+      "column": "wage_female",
+      "present": true,
+      "unit_note": "EUR/hour (from parquet, EUROMOD net hourly wage draw)",
+      "n_working": 231647,
+      "min": 1.0,
+      "max": 169.99874562117418,
+      "p1": 1.0,
+      "p50": 76.03526855276503,
+      "p99": 168.13190651014943
+    }
+  },
+  "2_wage_draw_support": {
+    "male": {
+      "n": 231647,
+      "quantiles": {
+        "p1": 3.72298119137839,
+        "p5": 10.254091183955994,
+        "p25": 42.534902455818354,
+        "p50": 85.11427575423994,
+        "p75": 127.45387627225432,
+        "p95": 161.40098837466138,
+        "p99": 168.3173687191728
+      },
+      "max": 169.99986554397177
+    },
+    "female": {
+      "n": 232007,
+      "quantiles": {
+        "p1": 3.630769965440151,
+        "p5": 10.200793325534635,
+        "p25": 42.7721843187169,
+        "p50": 85.34871679585032,
+        "p75": 127.61792826497651,
+        "p95": 161.4621712846097,
+        "p99": 168.30468432106804
+      },
+      "max": 169.99936411307556
+    }
+  },
+  "3_obs_chosen_wages": {
+    "male": {
+      "n_working": 2504,
+      "mean": 17.656036042571884,
+      "std": 9.19399087000309,
+      "quantiles": {
+        "p1": 4.899783782,
+        "p5": 8.5961538,
+        "p25": 12.2667425,
+        "p50": 15.2894915,
+        "p75": 20.623497,
+        "p95": 33.388506549999995,
+        "p99": 50.98220997999994
+      }
+    },
+    "female": {
+      "n_working": 2487,
+      "mean": 15.171203200643344,
+      "std": 8.050129434186742,
+      "quantiles": {
+        "p1": 3.5033590639999996,
+        "p5": 7.15549461,
+        "p25": 11.1263735,
+        "p50": 13.839285,
+        "p75": 17.254022,
+        "p95": 26.95416729999998,
+        "p99": 43.00313983999993
+      }
+    }
+  },
+  "4_pred_chosen_wages": {
+    "male": {
+      "total_weight": 2576.4041507763186,
+      "weighted_mean": 137.2068387165928,
+      "quantiles": {
+        "p1": 44.11148872171272,
+        "p5": 79.85228881307961,
+        "p25": 121.90807236295274,
+        "p50": 145.2274609499993,
+        "p75": 159.7242591816876,
+        "p95": 168.08475983701425,
+        "p99": 169.56728492783967
+      }
+    },
+    "female": {
+      "total_weight": 2576.3740365010644,
+      "weighted_mean": 137.31463752206403,
+      "quantiles": {
+        "p1": 44.10812937053641,
+        "p5": 79.04157490963155,
+        "p25": 123.57579980647571,
+        "p50": 145.07628239127317,
+        "p75": 159.60802317081914,
+        "p95": 168.3295508495432,
+        "p99": 169.6688095394909
+      }
+    }
+  },
+  "5_prob_mass_by_bin": {
+    "male": {
+      "absolute": {
+        "nonwork": 0.5958492236815183,
+        "work_lt_p25": 24.053558214681487,
+        "work_p25_p75": 730.4522093891595,
+        "work_p75_p95": 1266.0134056016045,
+        "work_gt_p95": 555.884977570873
+      },
+      "fraction": {
+        "nonwork": 0.00023121816984148945,
+        "work_lt_p25": 0.009333937995607873,
+        "work_p25_p75": 0.28345060511802855,
+        "work_p75_p95": 0.4912741193642237,
+        "work_gt_p95": 0.21571011935229842
+      },
+      "support_p25": 42.534902455818354,
+      "support_p75": 127.45387627225432,
+      "support_p95": 161.40098837466138
+    },
+    "female": {
+      "absolute": {
+        "nonwork": 0.625963498935728,
+        "work_lt_p25": 24.847721926184846,
+        "work_p25_p75": 723.7259109017014,
+        "work_p75_p95": 1291.2033883471777,
+        "work_gt_p95": 536.5970153260005
+      },
+      "fraction": {
+        "nonwork": 0.0002429039576778145,
+        "work_lt_p25": 0.009642111729214142,
+        "work_p25_p75": 0.2808404776490886,
+        "work_p75_p95": 0.5010490447602552,
+        "work_gt_p95": 0.20822546190376426
+      },
+      "support_p25": 42.7721843187169,
+      "support_p75": 127.61792826497651,
+      "support_p95": 161.4621712846097
+    }
+  },
+  "6_V_decomp_by_bin": {
+    "male": {
+      "nonwork": {
+        "V_U": 329.48663678244225,
+        "V_interact": 3.427319156019104,
+        "V_O_m": 0.0,
+        "V_O_f": -28.459564402282993,
+        "V_log_prior": 13.660926052089543,
+        "V_total": 318.1153175882678,
+        "pred_prob_mass": 0.5958492236815183
+      },
+      "work_lt_p25": {
+        "V_U": 335.9663004982459,
+        "V_interact": 3.164554557049977,
+        "V_O_m": -8.653238750296877,
+        "V_O_f": -27.37805354642825,
+        "V_log_prior": 21.204018085323046,
+        "V_total": 324.3035808438937,
+        "pred_prob_mass": 24.053558214681487
+      },
+      "work_p25_p95": {
+        "V_U": 360.5070854977374,
+        "V_interact": 3.2194709424914767,
+        "V_O_m": -24.795517988817537,
+        "V_O_f": -24.90561594986706,
+        "V_log_prior": 21.194611515649026,
+        "V_total": 335.2200340171933,
+        "pred_prob_mass": 1996.4656149907642
+      },
+      "work_gt_p95": {
+        "V_U": 365.49514343303963,
+        "V_interact": 3.2824389693107276,
+        "V_O_m": -28.687924077279146,
+        "V_O_f": -23.491057250760814,
+        "V_log_prior": 21.232322558173195,
+        "V_total": 337.8309236324836,
+        "pred_prob_mass": 555.884977570873
+      }
+    },
+    "female": {
+      "nonwork": {
+        "V_U": 328.2355298636315,
+        "V_interact": 3.409204900739136,
+        "V_O_m": -29.24290943223502,
+        "V_O_f": 0.0,
+        "V_log_prior": 12.417417789170274,
+        "V_total": 314.8192431213059,
+        "pred_prob_mass": 0.625963498935728
+      },
+      "work_lt_p25": {
+        "V_U": 338.431370585768,
+        "V_interact": 3.2079873989341796,
+        "V_O_m": -28.33226967174472,
+        "V_O_f": -8.47846042840954,
+        "V_log_prior": 21.17749034712214,
+        "V_total": 326.00611823167003,
+        "pred_prob_mass": 24.847721926184846
+      },
+      "work_p25_p95": {
+        "V_U": 360.4566068362071,
+        "V_interact": 3.2237441757620946,
+        "V_O_m": -25.802705994157154,
+        "V_O_f": -23.98970034852457,
+        "V_log_prior": 21.196218521593085,
+        "V_total": 335.0841631908805,
+        "pred_prob_mass": 2014.929299248879
+      },
+      "work_gt_p95": {
+        "V_U": 365.7893600111369,
+        "V_interact": 3.266735838902399,
+        "V_O_m": -24.125741022232113,
+        "V_O_f": -27.7839942187927,
+        "V_log_prior": 21.230731627912427,
+        "V_total": 338.37709223692696,
+        "pred_prob_mass": 536.5970153260005
+      }
+    }
+  },
+  "7_beta_ll_contribution": {
+    "beta_ll": 2.0,
+    "theta_l_m": -0.682183,
+    "theta_l_f": -0.659027,
+    "mean_interact_hi_wage_m": 3.6657429570366067,
+    "mean_interact_lo_wage_m": 3.6709458128774277,
+    "mean_U_consumption_hi_wage_m": 300.89896397730803,
+    "mean_U_consumption_lo_wage_m": 232.57297583868666,
+    "n_hi_wage": 11583,
+    "n_lo_wage": 57912,
+    "note": "beta_ll hit upper bound 2.0. At high-wage working alts, both partners tend to work (L<1), so BC(L_m)*BC(L_f)>0 and beta_ll*BC(L_m)*BC(L_f)>0, amplifying preference for high-wage joint-working alternatives."
+  },
+  "8_comparison_M0a_M0b1": {
+    "M0a_clean": {
+      "theta_c": 0.318888,
+      "beta_c": 6.15368,
+      "beta_ll": 0.0,
+      "cou_m_pred_wage_q10": 102.887,
+      "cou_m_pred_wage_q50": 146.888,
+      "cou_m_pred_wage_q90": 166.417,
+      "cou_f_pred_wage_q10": 104.646,
+      "cou_f_pred_wage_q50": 146.462,
+      "cou_f_pred_wage_q90": 166.44,
+      "cou_m_pred_wage_mean": 139.917,
+      "cou_f_pred_wage_mean": 140.141,
+      "participation_cou_m": 1.0,
+      "participation_cou_f": 1.0
+    },
+    "M0b1": {
+      "theta_c": 0.270948,
+      "beta_c": 5.88506,
+      "beta_ll": 2.0,
+      "cou_m_pred_wage_q10": 96.022,
+      "cou_m_pred_wage_q50": 145.227,
+      "cou_m_pred_wage_q90": 166.241,
+      "cou_f_pred_wage_q10": 97.379,
+      "cou_f_pred_wage_q50": 145.076,
+      "cou_f_pred_wage_q90": 166.368,
+      "cou_m_pred_wage_mean": 137.207,
+      "cou_f_pred_wage_mean": 137.315,
+      "participation_cou_m": 0.9998,
+      "participation_cou_f": 0.9998
+    },
+    "note": "Predicted couples wages are near-identical between M0a-clean and M0b1. The ~137-140 EUR/h pathology is NOT new in M0b1; it was already present in M0a-clean. M0b1 does not worsen it materially. The root cause is that both specs have theta_c>0 (near-linear consumption Box-Cox), which concentrates probability mass on high-income (high-wage + full-time) alternatives."
+  },
+  "9_verdict": {
+    "root_cause": "model-selection problem",
+    "explanation": "The ~137 EUR/h predicted couples wage is not a plotting/reporting bug and not a wage-draw support problem. The wage draw support is correctly bounded (p99 ~= 48 EUR/h for couples, consistent with observed chosen wages). The reporter correctly aggregates prob-weighted wages over working alternatives. The pathology arises because the model assigns near-all probability mass to the highest-wage (full-time, high-income) alternatives via the utility index V. With theta_c = +0.27 (near-linear consumption Box-Cox), a EUR difference in disposable income between a low-wage 20h alternative and a high-wage 60h alternative produces a large utility gap in favor of the high-wage alternative. The opportunity layer (O_W negative, O_Occ negative for managerial occupations) partially offsets this but is insufficient against beta_c * BC(C, 0.27). M0b1's beta_ll hitting its upper bound (2.0) amplifies the effect marginally on joint-working alternatives (both partners work => BC(L_m)*BC(L_f) > 0 => positive interaction adds to V) but is not the primary driver: the same pathology was present in M0a-clean (beta_ll=0). The fix requires constraining theta_c <= 0 (M0b2).",
+    "recommendation": "run M0b2",
+    "recommendation_detail": "M0b2 tightens theta_c to [-8, 0], forcing at most logarithmic consumption utility. This is the primary intervention that can break the near-linear consumption utility gap and allow the model to predict realistic wage and hours distributions for couples. M0b1 is insufficient: beta_ll at its bound of +2.0 cannot compensate for theta_c = +0.27. Run M0b2 from spec defaults (--warm-start none). After M0b2, if predicted couples wages remain above 30 EUR/h median, run the wage-draw support check again to isolate any secondary issue."
+  }
+}

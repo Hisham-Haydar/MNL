@@ -27,10 +27,10 @@ merged or promoted to canonical paths until the block is lifted.
 | Reference spec | `docs/RURO_GSUR_rebuild_specification_v2_1.md` |
 | Spec version | v2.1 (supersedes v2 in full) |
 | This memo | `docs/RURO_GSUR_v2_1_open_decisions_resolution_v1.md` v1 |
-| Resolved decisions | O3, O4, O5, O7, O8, O10 |
+| Resolved decisions | O1, O2, O3, O4, O5, O7, O8, O9, O10 |
 | Deferred decisions | O6 (Stage B necessity — deferred to post-Stage-A review) |
-| Unresolved decisions | O1, O2, O9 |
-| Overall readiness for implementation | BLOCKED — see §4 |
+| Unresolved decisions | none |
+| Overall readiness for implementation | AUTHORIZED — pending O7 crosswalk sign-off before merge |
 
 ---
 
@@ -164,100 +164,171 @@ Stage A is in violation of this rule.
 
 ---
 
-## Decisions requiring external acquisition
+## Decisions resolved by external acquisition
 
-The following three decisions cannot be resolved from files currently in
-the repository. They are hard blockers for implementation. No GSUR rebuild
-code may be executed until each is resolved.
+The following three decisions were unresolved at initial memo writing
+and have since been resolved by the external acquisition task completed
+2026-05-17. Evidence and source files are in `Data/external/`.
 
 ### O1 — Crosswalk source requirement
 
-**Status: UNRESOLVED.**
+**Status: RESOLVED (2026-05-17).**
 
-The spec requires a documented NUTS2-to-drgn1 crosswalk that is traceable
-to an official Eurostat or INSEE source. The audit identified that the
-current `FR_gsur.xlsx` source workbook uses a region coding that does not
-unambiguously map to `drgn1` categories 1–8 as derived from `drgn2`.
+The `drgn1`-to-NUTS2 crosswalk is constructed and verified. The
+three-step chain is fully documented:
 
-**Blocking question:** Which authoritative crosswalk document maps the
-GSUR workbook's regional dimension to the `drgn1` codes used in the
-EUROMOD France 2016 data?
+1. `drgn1` groupings → `drgn2` values: from EUROMOD France 2016 DRD
+   (`docs/euromod_reference/DRD_FR_2016_a3_export.txt`)
+2. `drgn2` → old NUTS-2 (FR10–FR83): from the same DRD
+3. Old NUTS-2 → new NUTS-2 (NUTS 2016 codes): verified against
+   `Data/external/NUTS2013-NUTS2016.xlsx` (Eurostat, downloaded
+   2026-05-17, sheet "Correspondence NUTS-2")
 
-**To resolve:** Acquire and commit the crosswalk document (or a
-reproducible extract of it) to `Data/external/` and record the source URL
-and date of access.
+All 22 metropolitan NUTS-2 codes resolved without ambiguity. FR10
+(Île-de-France) is unchanged; all others recoded 1:1.
+
+**Deliverable:** `Data/external/fr_drgn1_to_nuts2_crosswalk.csv`
+Schema: `drgn1, old_nuts2_code, region_name, new_nuts2_code_2016,
+verified_against_eurostat`. All 22 rows have
+`verified_against_eurostat = YES`.
+
+Provenance: `Data/external/gsur_crosswalk_source.txt`.
+
+O7 sign-off (mandatory before merge into MNL parquets) remains a
+separate procedural step at crosswalk-construction time.
 
 ---
 
 ### O2 — Denominator data requirement
 
-**Status: UNRESOLVED.**
+**Status: RESOLVED (2026-05-17) — see addendum below.**
 
-The spec requires labour-force denominators by (modern NUTS-2 or NUTS-3
-× sex × education × age band) for France 2016, sourced from Eurostat LFS
-microdata or published LFS aggregates per §5(D1) of the spec. If
-education-stratified denominators are unavailable, population denominators
-may be used (§5(D2)); if neither is available, the aggregation must be
-flagged as approximate per §5(D3). The current GSUR workbook's denominator
-source is not documented in the audit.
+**Initial question:** Are labour-force or population denominators
+available at (NUTS-2 × sex × education × age band) granularity for
+France 2016?
 
-**Blocking question:** Are labour-force denominators by (region × sex ×
-education × age band) available for France 2016 in Eurostat or INSEE? If
-not, are population denominators available at that granularity?
+**Finding from acquisition (2026-05-17):**
 
-**To resolve:** Identify the specific Eurostat dataset (table code and
-reference period), confirm its dimensional coverage (must include education
-or document why the D3 fallback applies), download or confirm access, and
-record the citation in `Data/external/gsur_denominator_source.txt`.
+The preferred D1 source (`lfst_r_lfp2acedu`, Eurostat labour-force
+by NUTS-2 × sex × age × education) does not publish Y20-64 or any
+narrow 10-year age band for France or any EU country. The full 2016
+SDMX-CSV download contains zero rows with Y20-64, Y15-24, Y25-34,
+Y35-44, Y45-54, or Y55-64. D1 cannot serve as the operational
+denominator for either Stage A (Y20-64) or Stage B (narrow bands).
+
+The D2 source (`lfst_r_lfsd2pop`, Eurostat population in private
+households by NUTS-2 × sex × age × education) provides all required
+age bands including Y20-64 and all five narrow bands, for all 22
+France metropolitan NUTS-2 regions. No alternative D1 source at the
+required age-education granularity exists in the Eurostat NUTS-2
+catalogue.
+
+Full analysis: `docs/RURO_GSUR_O2_denominator_resolution_v1.md`.
+
+**O2 addendum — denominator-source binding decision:**
+
+D2 (`lfst_r_lfsd2pop`, population in private households) is the
+operational denominator source for both Stage A (Y20-64) and Stage B
+(narrow age bands). All cells in the v2.1 GSUR lookup carry
+`weighting_source = 'population'`. This is authorised by v2.1 §5(D2),
+which states that population weighting is an acceptable approximation
+when labour-force denominators at the required disaggregation are
+unavailable.
+
+D1 (`lfst_r_lfp2acedu`, Y15-74 only) is used exclusively as a
+diagnostic comparison: at Y15-74, compute the aggregated GSUR rate
+under D1 and D2 weighting and report the difference in the Stage A
+validation report, satisfying v2.1 §5(D2)'s documentation requirement.
+D1 does not appear in the operational lookup or in the MNL parquets.
+
+**Fallback cells:**
+
+FRI2 (Limousin) narrow bands: all five age-band cells flagged `u`
+(unreliable) in `lfst_r_lfsd2pop`; OBS_VALUE present. Use these
+values; flag as `weighting_source = 'population'`; note reliability
+caveat in the validation report.
+
+FRM0 (Corse) narrow bands: all five age-band cells flagged `u`; 2
+cells have missing OBS_VALUE (F/Y25-34/ED0-2 and F/Y15-24/ED5-8).
+For the 2 missing cells, apply D3 (approximate_uniform) with reviewer
+sign-off per v2.1 §5(D3)(b): set weight = 1/3 (drgn1=8 has three
+NUTS-2 components: FRJ1, FRL0, FRM0). Flag as
+`weighting_source = 'approximate_uniform'`. All other FRM0 cells use
+D2 with `weighting_source = 'population'`.
+
+FRM0 Y20-64 (Stage A): 6 cells flagged `u`; OBS_VALUE present. Use
+D2; flag in validation report.
+
+**Deliverables:**
+- `Data/external/lfst_r_lfsd2pop_FR_2016.tsv` (operational: 4,057 rows)
+- `Data/external/lfst_r_lfp2acedu_FR_2016.tsv` (diagnostic only: 986 rows)
+- `Data/external/gsur_denominator_source.txt`
 
 ---
 
 ### O9 — National benchmark requirement
 
-**Status: UNRESOLVED.**
+**Status: RESOLVED (2026-05-17).**
 
-§14 of the spec requires a national-level unemployment rate benchmark
-for France 2016 (aggregate, age-specific, and sex-specific) against which
-the rebuilt GSUR regional rates can be validated. The benchmark source
-must be cited in the validation report; it cannot be hard-coded.
+The correct benchmark is INSEE BDM série `001688526`:
+- Title: "Taux de chômage au sens du BIT — Ensemble — France
+  métropolitaine — CVS" (ILO unemployment rate, Metropolitan France,
+  seasonally adjusted)
+- REF_AREA: FM (metropolitan France only — correct for this sample,
+  which excludes DOM)
+- URL: `https://api.insee.fr/series/BDM/V1/data/SERIES_BDM/001688526`
+- Extraction date: 2026-05-17
 
-**Blocking question:** Which published Eurostat or OECD table provides the
-national unemployment rate for France 2016 by age band and sex, at the
-level of granularity required by the validation checks in §14?
+Why not Eurostat `une_rt_a` / `geo=FR` (10.1%): that figure covers
+France hors Mayotte (métropole + 4 DOM). The MNL sample is
+metropolitan France only (drgn1=1–8). INSEE REF_AREA=FM is the
+correct perimeter.
 
-**To resolve:** Identify the specific table (dataset code, filter
-parameters, and reference period), confirm the values, and record the
-citation.
+**2016 annual average: 9.725%**
+Quarterly values: Q1=9.9%, Q2=9.7%, Q3=9.6%, Q4=9.7%.
+Annual average = simple mean of four quarters.
+
+Tolerance for Stage A validation: 0.001 absolute (per O8 resolution).
+
+**Deliverables:**
+- `Data/external/insee_001688526_2016.csv`
+- `Data/external/gsur_benchmark_source.txt`
 
 ---
 
-## Files to acquire
+## Files acquired (2026-05-17)
 
-The following files must be obtained before implementation can proceed:
+All external files required for O1, O2, and O9 are now committed to
+`Data/external/`. No further downloads are required.
 
 | File | Purpose | Decision |
 |------|---------|---------|
-| NUTS2-to-drgn1 crosswalk (official source) | Regional join key for GSUR merge | O1 |
-| LFS denominator table for France 2016 by region × age × sex | Unemployment rate computation | O2 |
-| National unemployment rate benchmark for France 2016 by age × sex | Stage A validation reference | O9 |
-
-Target location for all acquired files: `Data/external/`.
+| `NUTS2013-NUTS2016.xlsx` | Official NUTS renaming correspondence | O1 |
+| `fr_drgn1_to_nuts2_crosswalk.csv` | Verified drgn1→NUTS2 crosswalk | O1 |
+| `gsur_crosswalk_source.txt` | O1 provenance | O1 |
+| `lfst_r_lfsd2pop_FR_2016.tsv` | Population denominators (operational) | O2 |
+| `lfst_r_lfp2acedu_FR_2016.tsv` | Labour-force denominators (diagnostic only) | O2 |
+| `gsur_denominator_source.txt` | O2 provenance + suppression inventory | O2 |
+| `insee_001688526_2016.csv` | National benchmark (9.725% annual 2016) | O9 |
+| `gsur_benchmark_source.txt` | O9 provenance | O9 |
 
 ---
 
 ## Sources to cite
 
-Once the external files are acquired, each must be cited with:
-- Dataset or document name
-- Publisher (Eurostat, INSEE, OECD, or other)
-- Reference period (France 2016 or closest available)
-- Date of access
-- URL or DOI if publicly available
+External sources are acquired and documented. Citations are already
+recorded in the three provenance files. The Stage A validation report
+must copy citations from these sources:
 
-The citations must appear in:
-1. The validation report produced at Stage A (`Results/RURO_GSUR_v2_stage_A_validation_report_v1.md`).
-2. The crosswalk documentation file (`Data/external/gsur_crosswalk_source.txt`).
-3. The denominator source file (`Data/external/gsur_denominator_source.txt`).
+| Source | Provenance file |
+|---|---|
+| Eurostat NUTS2013-NUTS2016.xlsx (O1) | `Data/external/gsur_crosswalk_source.txt` |
+| Eurostat lfst_r_lfsd2pop (O2 operational) | `Data/external/gsur_denominator_source.txt` |
+| Eurostat lfst_r_lfp2acedu (O2 diagnostic) | `Data/external/gsur_denominator_source.txt` |
+| INSEE BDM 001688526 (O9) | `Data/external/gsur_benchmark_source.txt` |
+
+The validation report (`Results/RURO_GSUR_v2_stage_A_validation_report_v1.md`)
+must reproduce these citations in full, with date of access and URL.
 
 ---
 
@@ -265,19 +336,26 @@ The citations must appear in:
 
 | Decision | Status | Blocking? |
 |----------|--------|-----------|
-| O1 | UNRESOLVED — crosswalk source not acquired | YES |
-| O2 | UNRESOLVED — denominator source not acquired | YES |
+| O1 | RESOLVED — crosswalk verified; fr_drgn1_to_nuts2_crosswalk.csv created | no — O7 sign-off pending |
+| O2 | RESOLVED — D2 (population) operational; D1 diagnostic; 2 FRM0 cells → D3 with sign-off | no — D3 sign-off at implementation |
 | O3 | RESOLVED — A65-3 broad-age fallback with flag | no |
 | O4 | RESOLVED — deh 0/1/2→0, 3/4→1, 5→2 | no |
 | O5 | RESOLVED — drgn1=9 in schema, NaN for FR 2016 metropolitan | no |
 | O6 | DEFERRED — Stage B necessity; deferred to post-Stage-A review | no |
-| O7 | RESOLVED — mandatory manual sign-off before merge | no |
+| O7 | RESOLVED — mandatory manual sign-off before merge | PENDING (sign-off required before merge step) |
 | O8 | RESOLVED — Île-de-France parity tolerance 0.001 | no |
-| O9 | UNRESOLVED — national benchmark source not acquired | YES |
+| O9 | RESOLVED — INSEE BDM 001688526; 2016 annual average = 9.725% | no |
 | O10 | RESOLVED — versioned-first; canonical after Stage A + user approval | no |
 
-**Overall status: BLOCKED on O1, O2, O9.**
+**Overall status: AUTHORIZED for implementation.**
 
-No GSUR rebuild code may be executed, and no output parquets may be
-written, until O1, O2, and O9 are resolved and the required files are
-committed to `Data/external/`.
+All hard-blocker decisions (O1, O2, O9) are resolved. Stage A
+implementation may proceed. The remaining procedural requirement is
+O7 crosswalk sign-off, which must be obtained as an explicit user
+approval message before the merge step that writes to versioned
+GSURv2 parquet paths. It does not block writing the implementation
+prompt or running the pre-merge build steps.
+
+The 2 FRM0 D3 cells (approximate_uniform) require reviewer sign-off
+per v2.1 §5(D3)(b) at the point those cells are first encountered
+in the implementation. This does not block the implementation prompt.

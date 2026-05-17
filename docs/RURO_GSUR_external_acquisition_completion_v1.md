@@ -125,21 +125,22 @@ downloaded and filtered (`lfst_r_lfsd2pop_FR_2016.tsv`, 4,057 rows).
 
 ### 5.2 Dimensional mismatch
 
-The v2.1 specification §6 requires denominators at narrow 10-year age
-bands (Y15-24, Y25-34, Y35-44, Y45-54, Y55-64) matching the GSUR
-source workbook's age structure.
+The v2.1 specification §9 requires the Stage A `gsur` column to use
+the Y20-64 broad-age cell. The v2.1 specification §6 additionally
+requires Stage B denominators at narrow 10-year bands (Y15-24,
+Y25-34, Y35-44, Y45-54, Y55-64).
 
-**`lfst_r_lfp2acedu` does not provide narrow age bands.** The full
-downloaded dataset — covering all EU countries and all NUTS levels —
-contains zero rows with Y15-24, Y25-34, Y35-44, Y45-54, or Y55-64.
-The age dimension is limited to Y15-74, Y25-64, and Y_GE15 only.
-This is a structural publication limitation of the table, not a
-France-specific suppression issue and not resolvable by a different
-extract.
+**`lfst_r_lfp2acedu` does not provide Y20-64, nor any narrow age
+band.** The full downloaded dataset — covering all EU countries and
+all NUTS levels — contains zero rows with Y20-64, Y15-24, Y25-34,
+Y35-44, Y45-54, or Y55-64. The age dimension is limited to Y15-74,
+Y25-64, and Y_GE15 only. This is a structural publication limitation
+of the table, not a France-specific suppression issue.
 
 Implication: `lfst_r_lfp2acedu` cannot serve as D1 denominator for
-any narrow-age-band cell. The v2.1 §5(D1) preference for labour-force
-weighting cannot be satisfied at narrow age-band granularity.
+Stage A (Y20-64 absent) or for any Stage B narrow-age cell. The v2.1
+§5(D1) preference for labour-force weighting cannot be operationalised
+for any cell the rebuild requires.
 
 ### 5.3 Population fallback availability
 
@@ -150,8 +151,8 @@ sex × 3 ISCED = 660), with the following caveat:
 - 56 cells carry OBS_FLAG=`u` (unreliable): concentrated in smaller
   regions (FRC2, FRD1, FRE2, FRF2, FRI2, FRI3, FRK1, FRM0) and the
   Y15-24 / Y25-34 bands where sample sizes are small
-- 29 of the 660 cells have missing OBS_VALUE (2 cells: FRM0 Y15-24
-  and FRM0 Y35-44 for some sex×isced combos)
+- 2 of the 660 cells have missing OBS_VALUE: FRM0/F/Y25-34/ED0-2 and
+  FRM0/F/Y15-24/ED5-8
 - The remaining cells (600+ of 660) are populated
 
 Suppressed narrow-band cells by region and age band:
@@ -291,15 +292,17 @@ downloaded.
 
 The resolution options are:
 
-**(R1) Accept D2 (population) as narrow-age denominator throughout.**
-Use `lfst_r_lfsd2pop` for all narrow-age cells. Set
-`weighting_source = 'population'` for all age-disaggregated cells.
-Use D1 (labour-force, `lfst_r_lfp2acedu`) for broad-age cells only
-(Y15-74 as the Y20-64 fallback per O3 resolution).
-Document D1 vs D2 comparison at Y15-74 level in the validation report.
-For FRI2 and FRM0 cells where D2 is also suppressed, apply D3
-(approximate_uniform) with reviewer sign-off.
+**(R1) Accept D2 (population) as the operational denominator for both
+Stage A (Y20-64) and Stage B (narrow bands).**
+Use `lfst_r_lfsd2pop` for all cells. Set `weighting_source = 'population'`
+throughout. D1 (`lfst_r_lfp2acedu`, Y15-74 only) is used exclusively
+as a diagnostic comparison at Y15-74 to estimate the D1-vs-D2
+approximation error, as required by v2.1 §5(D2). D1 does not appear
+in the operational lookup. For FRI2 and FRM0 cells where D2 is also
+suppressed or missing, apply D3 (approximate_uniform) with reviewer
+sign-off per v2.1 §5(D3)(b).
 Record this as an addendum to the open-decisions resolution memo.
+See docs/RURO_GSUR_O2_denominator_resolution_v1.md for full analysis.
 
 **(R2) Drop age disaggregation; use only Y15-74 broad-age GSUR rates.**
 This reverses the v2.1 key improvement over v1. Not recommended.

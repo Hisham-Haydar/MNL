@@ -2,113 +2,98 @@
 
 Date: 2026-05-17
 Prepared by: Claude Code (claude-sonnet-4-6)
-Reference: docs/RURO_GSUR_external_acquisition_decision_v2.md (governing decision memo)
+Reference: docs/RURO_GSUR_external_acquisition_decision_v2.md (governing
+decision memo); docs/RURO_GSUR_rebuild_specification_v2_1.md (governing spec)
 
 This memo records the outcome of the GSUR external asset acquisition
 task specified in the decision memo §16. It documents the three
-required downloads, the suppression inventory, the benchmark
-extraction, and the updated readiness verdict. It does not authorize
-or describe implementation; no GSUR rebuild code has been run and no
-MNL parquets have been written.
+required downloads, the crosswalk construction, the suppression
+inventory, the benchmark extraction, and the updated readiness verdict.
+No GSUR rebuild code has been run; no MNL parquets have been written.
 
 ---
 
-## 1. Acquisition task scope
+## 1. Acquisition verdict
 
-The decision memo §15 identified three concrete blockers before GSUR
-Stage A implementation could be authorized:
+**PARTIAL ACQUISITION SUCCESS. O1 and O9 resolved. O2 remains
+unresolved. Stage A implementation is NOT authorized.**
 
-| Blocker | Asset | Decision |
+Summary of blocker status:
+
+| Blocker | Decision | Status |
 |---|---|---|
-| Blocker 1 | `NUTS2013-NUTS2016.xlsx` — verify §5(S2) old→new NUTS-2 renaming | O1 |
-| Blocker 2 | `lfst_r_lfp2acedu` France 2016 extract — inventory suppression | O2 |
-| Blocker 3 | INSEE BDM `001688526` exact 2016 annual average | O9 |
+| Blocker 1 — NUTS2013-NUTS2016.xlsx | O1 | RESOLVED |
+| Blocker 2 — lfst_r_lfp2acedu denominator | O2 | UNRESOLVED — dimensional mismatch |
+| Blocker 3 — INSEE BDM 001688526 benchmark | O9 | RESOLVED |
 
-All three acquisition tasks were executed in this session. Results
-are documented section by section below.
+O2 is unresolved because the acquired labour-force denominator
+(`lfst_r_lfp2acedu`) does not provide the narrow age-band structure
+(Y15-24, Y25-34, Y35-44, Y45-54, Y55-64) that the v2.1 specification
+§6 requires for source-aligned age binning. This is a structural
+limitation of the Eurostat publication — the table is not published at
+narrow age bands for France NUTS-2 at any level. A denominator-
+resolution decision is required before implementation can proceed.
+
+O1 and O9 are fully resolved and their evidence is archived.
 
 ---
 
-## 2. Asset 1: NUTS2013-NUTS2016.xlsx — download and verification
+## 2. Files downloaded
 
-**Download status: SUCCESS.**
+All three required downloads were successful:
 
-- URL: `https://ec.europa.eu/eurostat/documents/345175/629341/NUTS2013-NUTS2016.xlsx`
-- Archive location: `Data/external/NUTS2013-NUTS2016.xlsx`
-- File size: 373,947 bytes
-- Date of download: 2026-05-17
-- Sheet used for verification: "Correspondence NUTS-2"
+| File | Source | Size | Date |
+|---|---|---|---|
+| `Data/external/NUTS2013-NUTS2016.xlsx` | Eurostat History of NUTS | 373,947 bytes | 2026-05-17 |
+| `Data/external/lfst_r_lfp2acedu_2016_full.csv` | Eurostat SDMX-CSV API | 1,732,181 bytes | 2026-05-17 |
+| `Data/external/lfst_r_lfsd2pop_2016_full.csv` | Eurostat SDMX-CSV API | 7,214,941 bytes | 2026-05-17 |
+| `Data/external/insee_001688526_raw` | INSEE BDM API (values captured) | n/a | 2026-05-17 |
 
-**§5(S2) verification result: CONFIRMED — all 22 metropolitan
-NUTS-2 codes resolved.**
+The population fallback (`lfst_r_lfsd2pop`) was downloaded because
+denominator suppression in `lfst_r_lfp2acedu` was confirmed non-trivial
+(Corse FRM0 suppressed), per the decision memo §15 instruction.
 
-The "Correspondence NUTS-2" sheet contains one row per renamed
-NUTS-2 region. France metropolitan NUTS-2 codes were extracted by
-filtering rows where `code_2013` matches `FR[0-9A-Z]{2}`. This
-returned 26 rows: 22 metropolitan (FR10–FR83) plus 4 DOM (FRA1–FRA4)
-and Mayotte (FRA5). The DOM/Mayotte rows were excluded (outside the
-sample perimeter per §10 of the decision memo).
+---
 
-FR10 (Île-de-France) was not listed in the correspondence sheet
-because its code was unchanged under the NUTS 2016 reform. It was
-added to the lookup manually with `change = unchanged` — consistent
-with its absence from the change table.
+## 3. Files created manually
 
-The complete 22-row old→new mapping verified against the workbook:
-
-| old (NUTS 2013) | new (NUTS 2016) | change type |
+| File | Purpose | Status |
 |---|---|---|
-| FR10 | FR10 | unchanged |
-| FR21 | FRF2 | recoded |
-| FR22 | FRE2 | recoded |
-| FR23 | FRD2 | recoded |
-| FR24 | FRB0 | recoded and relabelled |
-| FR25 | FRD1 | recoded |
-| FR26 | FRC1 | recoded |
-| FR30 | FRE1 | recoded |
-| FR41 | FRF3 | recoded |
-| FR42 | FRF1 | recoded |
-| FR43 | FRC2 | recoded |
-| FR51 | FRG0 | recoded |
-| FR52 | FRH0 | recoded |
-| FR53 | FRI3 | recoded |
-| FR61 | FRI1 | recoded |
-| FR62 | FRJ2 | recoded |
-| FR63 | FRI2 | recoded |
-| FR71 | FRK2 | recoded |
-| FR72 | FRK1 | recoded |
-| FR81 | FRJ1 | recoded |
-| FR82 | FRL0 | recoded |
-| FR83 | FRM0 | recoded |
+| `Data/external/fr_drgn1_to_nuts2_crosswalk.csv` | O1 verified crosswalk | created |
+| `Data/external/lfst_r_lfp2acedu_FR_2016.tsv` | O2 filtered primary extract | created |
+| `Data/external/lfst_r_lfsd2pop_FR_2016.tsv` | O2 filtered population fallback | created |
+| `Data/external/insee_001688526_2016.csv` | O9 benchmark quarterly + annual | created |
+| `Data/external/gsur_crosswalk_source.txt` | O1 provenance | created |
+| `Data/external/gsur_denominator_source.txt` | O2 provenance + suppression | created |
+| `Data/external/gsur_benchmark_source.txt` | O9 provenance | created |
 
-All 22 codes resolved without ambiguity. No boundary changes at the
-NUTS-2 level affecting metropolitan France. The renaming is 1:1
-(old code → new code; the underlying 22-region geography is
-preserved). This confirms the Claude verification §3 finding (C1):
-the NUTS-2 level still reflects the 22 former régions under new
-letter codes; only NUTS-1 hosts the 13 post-reform grandes régions.
+Schema of `fr_drgn1_to_nuts2_crosswalk.csv`:
+`drgn1, old_nuts2_code, region_name, new_nuts2_code_2016, verified_against_eurostat`
+(22 rows; all `verified_against_eurostat = YES`).
 
 ---
 
-## 3. Asset 1 crosswalk: fr_drgn1_to_nuts2_crosswalk.csv
+## 4. O1 — NUTS-2 crosswalk resolution
 
-**File created: `Data/external/fr_drgn1_to_nuts2_crosswalk.csv`**
+**O1: RESOLVED.**
 
-The crosswalk file was constructed by chaining three locally
-documented mappings:
+`NUTS2013-NUTS2016.xlsx` downloaded from:
+`https://ec.europa.eu/eurostat/documents/345175/629341/NUTS2013-NUTS2016.xlsx`
 
-1. drgn1 → drgn2 groupings (from DRD `DRD_FR_2016_a3_export.txt`)
-2. drgn2 → old NUTS-2 (from DRD)
-3. old NUTS-2 → new NUTS-2 (from `NUTS2013-NUTS2016.xlsx`, verified above)
+Verification used the "Correspondence NUTS-2" sheet. 26 France rows
+were found (22 metropolitan + 4 DOM + Mayotte). The 22 metropolitan
+rows were extracted. FR10 (Île-de-France) was not listed because
+its code was unchanged; it was added with `verified_against_eurostat=YES`
+and `change=unchanged`.
 
-The resulting 22-row crosswalk covers drgn1 groups 1–8 (metropolitan
-France). drgn1=9 (DOM) and drgn1=10 (residual FRZZ) are absent from
-the FR 2016 sample and are not included. The file schema is:
-`drgn1, drgn2, old_nuts2, new_nuts2, region_label, nuts2013_to_2016_change`.
+All 22 old NUTS-2 codes resolved to new codes without ambiguity.
+The change type is `recoded` for all 21 codes that changed (pure
+letter-code renaming; no boundary changes at NUTS-2 level). FR10
+is `unchanged`. This confirms the decision memo §3(C1) finding.
 
-drgn1 → constituent new NUTS-2 codes:
+drgn1 → new NUTS-2 constituent codes:
 
-| drgn1 | new NUTS-2 codes |
+| drgn1 | new NUTS-2 codes (NUTS 2016) |
 |---|---|
 | 1 | FR10 |
 | 2 | FRF2, FRE2, FRD2, FRB0, FRD1, FRC1 |
@@ -119,296 +104,291 @@ drgn1 → constituent new NUTS-2 codes:
 | 7 | FRK2, FRK1 |
 | 8 | FRJ1, FRL0, FRM0 |
 
-Provenance: `Data/external/gsur_crosswalk_source.txt`.
-
-**O7 sign-off status**: Per O7 resolution, crosswalk sign-off is
-required before merging into MNL parquets (not at this acquisition
-step). This memo records the crosswalk as constructed and verified;
-sign-off is a separate procedural step.
+O7 sign-off (per O7 resolution): crosswalk sign-off is required before
+merging into MNL parquets, not at this acquisition step.
 
 ---
 
-## 4. Asset 2: lfst_r_lfp2acedu — download and filtering
+## 5. O2 — denominator acquisition and dimensional mismatch
 
-**Download status: SUCCESS.**
+**O2: UNRESOLVED — dimensional mismatch on age bands.**
 
-- URL: `https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/lfst_r_lfp2acedu?format=SDMX-CSV&startPeriod=2016&endPeriod=2016`
-- Full download: `Data/external/lfst_r_lfp2acedu_2016_full.csv`
-- File size: 1,732,181 bytes (all EU countries, 2016)
-- Filtered extract: `Data/external/lfst_r_lfp2acedu_FR_2016.tsv`
-- Date of download: 2026-05-17
+### 5.1 What was acquired
 
-**Filter parameters applied:**
-- `geo`: 22 metropolitan France NUTS-2 codes (NUTS 2016: FR10,
-  FRB0, FRC1, FRC2, FRD1, FRD2, FRE1, FRE2, FRF1, FRF2, FRF3,
-  FRG0, FRH0, FRI1, FRI2, FRI3, FRJ1, FRJ2, FRK1, FRK2, FRL0, FRM0)
-- `unit`: THS_PER (thousand persons)
-- `freq`: A (annual)
-- `TIME_PERIOD`: 2016
+`lfst_r_lfp2acedu` (labour-force, primary denominator D1) was
+downloaded as a full 2016 SDMX-CSV (all EU countries) and filtered to
+the 22 France metropolitan NUTS-2 codes. The filtered extract
+(`lfst_r_lfp2acedu_FR_2016.tsv`) has 986 rows.
 
-**Filtered extract dimensions observed:**
-- `sex`: F, M, T
-- `age`: Y15-74, Y25-64, Y_GE15
-- `isced11`: ED0-2, ED3_4, ED5-8, NRP, TOTAL
-- `geo`: all 22 expected codes present
-- Total rows in filtered extract: 986
-- No duplicate keys on (geo, sex, age, isced11)
+`lfst_r_lfsd2pop` (population, fallback denominator D2) was likewise
+downloaded and filtered (`lfst_r_lfsd2pop_FR_2016.tsv`, 4,057 rows).
 
----
+### 5.2 Dimensional mismatch
 
-## 5. Asset 2: cell-suppression inventory
+The v2.1 specification §6 requires denominators at narrow 10-year age
+bands (Y15-24, Y25-34, Y35-44, Y45-54, Y55-64) matching the GSUR
+source workbook's age structure.
 
-**Suppression summary:**
-- Total cells in filtered extract: 986
-- Suppressed cells (OBS_FLAG = `u`): 220 (22.3%)
-- Only suppression flag present: `u` (unreliable) — no `:`, `c`,
-  or `e` flags
-- Suppression is concentrated on two patterns:
+**`lfst_r_lfp2acedu` does not provide narrow age bands.** The full
+downloaded dataset — covering all EU countries and all NUTS levels —
+contains zero rows with Y15-24, Y25-34, Y35-44, Y45-54, or Y55-64.
+The age dimension is limited to Y15-74, Y25-64, and Y_GE15 only.
+This is a structural publication limitation of the table, not a
+France-specific suppression issue and not resolvable by a different
+extract.
 
-**Pattern A — NRP dimension (not reported / no response):**
-All 219 NRP-flagged cells across all 22 geo codes are marked `u`.
-The NRP category is not a usable education dimension for the GSUR
-rebuild (it is not one of ED0-2, ED3_4, ED5-8) and would be
-excluded regardless. NRP suppression has no impact on the primary
-denominator cells.
+Implication: `lfst_r_lfp2acedu` cannot serve as D1 denominator for
+any narrow-age-band cell. The v2.1 §5(D1) preference for labour-force
+weighting cannot be satisfied at narrow age-band granularity.
 
-**Pattern B — Corse (FRM0), all education categories:**
-FRM0 (Corse, drgn1=8) has flag `u` on all cells including ED0-2,
-ED3_4, and ED5-8. The OBS_VALUE is present (cells are flagged as
-unreliable rather than missing), but using unreliable flagged values
-as primary denominators is not appropriate without further investigation.
+### 5.3 Population fallback availability
 
-FRM0 cells affected (sex M/F, age Y15-74, education ED0-2/ED3_4/ED5-8):
+`lfst_r_lfsd2pop` **does** provide the narrow age bands for France
+NUTS-2. Confirmed coverage: 660 cells (22 regions × 5 age bands × 2
+sex × 3 ISCED = 660), with the following caveat:
 
-| sex | age | isced11 | OBS_VALUE | OBS_FLAG |
-|---|---|---|---|---|
-| F | Y15-74 | ED0-2 | 8.0 | u |
-| F | Y15-74 | ED3_4 | 20.8 | u |
-| F | Y15-74 | ED5-8 | 24.4 | u |
-| M | Y15-74 | ED0-2 | 9.9 | u |
-| M | Y15-74 | ED3_4 | 28.5 | u |
-| M | Y15-74 | ED5-8 | 17.0 | u |
+- 56 cells carry OBS_FLAG=`u` (unreliable): concentrated in smaller
+  regions (FRC2, FRD1, FRE2, FRF2, FRI2, FRI3, FRK1, FRM0) and the
+  Y15-24 / Y25-34 bands where sample sizes are small
+- 29 of the 660 cells have missing OBS_VALUE (2 cells: FRM0 Y15-24
+  and FRM0 Y35-44 for some sex×isced combos)
+- The remaining cells (600+ of 660) are populated
 
-**Coverage of usable education cells (ED0-2, ED3_4, ED5-8, sex M/F):**
-- 21 of 22 regions: zero suppressed education cells — full Y15-74
-  coverage matrix is 1 per (geo, sex, isced11) combination
-- FRM0 (Corse): all 18 cells (sex×age×isced) flagged `u`
+Suppressed narrow-band cells by region and age band:
 
-**Suppression threshold check (per §15 of decision memo):**
-The decision memo flags "more than ~10% of cells or any large
-metropolitan region (Île-de-France, Hauts-de-France/Nord)" as a
-potential spec revision trigger. The suppression pattern here is
-qualitatively different:
-- The 22.3% overall rate is driven entirely by NRP rows (unusable
-  regardless).
-- Among the 6 primary education cells (M/F × 3 ISCED) for each
-  region, suppression affects only FRM0: 1 of 22 regions.
-- No large metropolitan region is suppressed.
-- Île-de-France (FR10), Nord-Pas de Calais (FRE1), and all other
-  major regions are fully available.
+| region | suppressed age bands |
+|---|---|
+| FRC1 | Y25-34 |
+| FRC2 | Y15-24, Y25-34, Y55-64 |
+| FRD1 | Y15-24, Y25-34 |
+| FRE2 | Y15-24 |
+| FRF2 | Y15-24, Y55-64 |
+| FRI2 | all five bands |
+| FRI3 | Y15-24 |
+| FRK1 | Y15-24, Y25-34, Y35-44 |
+| FRM0 | all five bands |
 
-**Conclusion**: suppression is non-trivial (Corse FRM0 requires
-fallback), but not severe. No v3 specification is needed. The
-population fallback (`lfst_r_lfsd2pop`) applies for FRM0 per §8(F2).
+FRI2 (Limousin) and FRM0 (Corse) have all narrow bands suppressed or
+flagged unreliable in the population fallback.
 
----
+### 5.4 Decision required
 
-## 6. Asset 2 fallback: lfst_r_lfsd2pop
+Using `lfst_r_lfsd2pop` as the narrow-age denominator changes the
+weighting method from D1 (labour-force) to D2 (population) for
+**all** age-disaggregated cells, not just Corse. Per v2.1 §5(D2),
+population weighting is an acceptable approximation, but:
+- It must be documented empirically where possible
+- All cells using population weighting must be flagged
+  `weighting_source = 'population'`
+- The approximation error (D1 vs D2) must be estimated wherever
+  both sources are available
 
-**Decision: population fallback required for FRM0 (Corse) only.**
+Additionally, for FRI2 and FRM0 cells where the population fallback
+is itself suppressed/unreliable, D3 (approximate_uniform) or D1/D2
+at broad age band would be the only remaining option — requiring an
+explicit decision per v2.1 §5(D3).
 
-Per §8(F2) of the decision memo and the suppression result above,
-`lfst_r_lfsd2pop` ("Population in private households by educational
-attainment level and NUTS 2 region") was downloaded to provide clean
-F2 fallback values for FRM0.
+**The denominator-resolution decision for O2 is: accept D2
+(population, `lfst_r_lfsd2pop`) as the narrow-age denominator for
+all cells, with D1 (labour-force, broad age only) used where an
+explicit broad-age rate is needed; document the D1-vs-D2 comparison
+at Y15-74 level. This requires a v2.1 §5 clarification note
+(or a v2.2 addendum) acknowledging that D1 at narrow age bands is
+structurally unavailable from Eurostat for France NUTS-2.**
 
-- URL: `https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/lfst_r_lfsd2pop?format=SDMX-CSV&startPeriod=2016&endPeriod=2016`
-- Archive location: `Data/external/lfst_r_lfsd2pop_2016_full.csv`
-- Date of download: 2026-05-17
-
-Note: per the decision memo §8(F2), `lfst_r_lfsd2pop` shares the
-same four-dimensional grid as `lfst_r_lfp2acedu` (NUTS-2 × sex ×
-age × ISCED11). No education-share approximation is required. The
-population fallback is a clean substitute for the labour-force
-denominator in cells where the latter is suppressed.
-
-**FRM0 in lfst_r_lfsd2pop**: FRM0 population cells also carry
-flag `u` (unreliable) — consistent with `lfst_r_lfp2acedu` and
-expected for a small-population NUTS-2 region. Crucially, the
-OBS_VALUE is present for all relevant cells (Y15-74,
-sex M/F, isced ED0-2/ED3_4/ED5-8). The `u` flag reflects
-statistical sampling uncertainty, not actual data suppression.
-Values are usable as F2 fallback denominators; the lookup should
-record `gsur_weighting_source = 'population'` and note the
-unreliable flag in the validation report.
-
-For all 21 non-FRM0 regions: `gsur_weighting_source = 'labour_force'`
-(primary denominator from `lfst_r_lfp2acedu`).
-For FRM0: `gsur_weighting_source = 'population'`
-(fallback denominator from `lfst_r_lfsd2pop`; values present,
-OBS_FLAG=`u`).
-
-No cells are unaggregatable (F4). The v2.1 schema does not require
-clarification for F4 at this stage.
+Until this decision is recorded as a binding resolution (analogous
+to O3–O10 in the open-decisions memo), O2 remains unresolved.
 
 ---
 
-## 7. Asset 3: INSEE BDM 001688526 — 2016 annual average
+## 6. O2 — suppression inventory summary
 
-**Extraction status: SUCCESS.**
+This section documents the cell-level suppression in `lfst_r_lfp2acedu`
+(the acquired primary extract) for implementation reference.
+
+**Primary extract (`lfst_r_lfp2acedu`, labour force):**
+- Total cells: 986
+- Suppressed (OBS_FLAG=`u`): 220 (22.3%)
+- Pattern A — NRP isced category: 219 cells, all regions. NRP is not
+  a usable education category; excluded regardless.
+- Pattern B — FRM0 (Corse): all 45 cells flagged `u`, including the
+  3 usable isced categories. OBS_VALUE present but unreliable.
+- Among usable education cells (ED0-2, ED3_4, ED5-8; sex M/F):
+  18 cells suppressed, all in FRM0.
+- 21 of 22 regions: zero suppressed usable cells.
+
+**Narrow-age population fallback (`lfst_r_lfsd2pop`):**
+- 660 narrow-band education cells for 22 regions
+- 56 cells with OBS_FLAG=`u` (8.5%)
+- Concentrated in FRI2 (Limousin) and FRM0 (Corse): fully suppressed
+- 7 additional regions with partial suppression on Y15-24/Y25-34
+
+**Broad-age coverage (`lfst_r_lfp2acedu`, Y15-74, Y25-64):**
+- All 22 regions, 21 clean; FRM0 flagged `u` but OBS_VALUE present
+- Usable as broad-age fallback for cells where narrow-age fails
+
+---
+
+## 7. O9 — benchmark extraction
+
+**O9: RESOLVED.**
 
 - Series: INSEE BDM `001688526`
 - Title: "Taux de chômage au sens du BIT — Ensemble — France
-  métropolitaine — CVS"
-- English: "ILO unemployment rate — Total — Metropolitan France —
-  SA data"
+  métropolitaine — CVS" (ILO unemployment rate, Metropolitan France,
+  seasonally adjusted)
+- REF_AREA: FM (metropolitan France only — correct for this sample)
 - URL: `https://api.insee.fr/series/BDM/V1/data/SERIES_BDM/001688526`
-- REF_AREA: FM (France métropolitaine — metropolitan France only)
-- UNIT_MEASURE: POURCENT
-- LAST_UPDATE: 2026-05-13
-- Date of extraction: 2026-05-17
-- Archive location: `Data/external/insee_001688526_2016.csv`
+- Extraction date: 2026-05-17
+- Archive: `Data/external/insee_001688526_2016.csv`
 
-**2016 quarterly values (seasonally adjusted, CVS):**
+**2016 quarterly values:**
 
-| period | value (%) |
+| Quarter | Rate (%) |
 |---|---|
-| 2016-Q1 | 9.9 |
-| 2016-Q2 | 9.7 |
-| 2016-Q3 | 9.6 |
-| 2016-Q4 | 9.7 |
+| Q1 2016 | 9.9 |
+| Q2 2016 | 9.7 |
+| Q3 2016 | 9.6 |
+| Q4 2016 | 9.7 |
 
 **2016 annual average (simple mean of four quarters): 9.725%**
 
-Concept: ILO (BIT) definition, metropolitan France, all ages 15+,
-seasonally adjusted (CVS), annual average computed as the simple
-arithmetic mean of the four quarterly values.
-
-Why this series is correct (per §9 of decision memo): Eurostat
-`geo=FR` gives 10.1% for 2016 but covers France hors Mayotte
-(métropole + 4 DOM). The MNL sample is metropolitan France only
-(drgn1=1–8, no DOM). DOM regions have systematically higher
-unemployment rates; using 10.1% as benchmark against a metropolitan
-sample would overstate the target by ~0.4 percentage points.
-INSEE `001688526` REF_AREA=FM covers metropolitan France only and
-is the correct benchmark for this project.
-
-The Eurostat `tps00203` value (10.1%) and INSEE `001688527` (France
-hors Mayotte) may be cited for comparison only and are not the
-validation benchmark.
+Why INSEE `001688526` not Eurostat `FR`: Eurostat `geo=FR` gives
+10.1% (France hors Mayotte, includes DOM). The MNL sample is
+metropolitan France only (drgn1=1–8). INSEE REF_AREA=FM is the
+correct benchmark.
 
 ---
 
-## 8. O1, O2, O9 resolution status
-
-| Decision | Pre-acquisition | Post-acquisition |
-|---|---|---|
-| O1 (crosswalk) | UNRESOLVED — asset not acquired | **RESOLVED** — NUTS2013-NUTS2016.xlsx downloaded and verified; fr_drgn1_to_nuts2_crosswalk.csv constructed; all 22 codes confirmed |
-| O2 (denominator) | UNRESOLVED — suppression unknown | **RESOLVED** — primary D1 (labour_force) available for 21/22 regions; FRM0 uses F2 fallback (population); no F4 unaggregatable cells |
-| O9 (benchmark) | UNRESOLVED — exact value not extracted | **RESOLVED** — 2016 annual average = 9.725% (mean of Q1=9.9, Q2=9.7, Q3=9.6, Q4=9.7) |
-
----
-
-## 9. Updated readiness ladder
+## 8. Updated readiness ladder
 
 | Level | Pre-acquisition | Post-acquisition |
 |---|---|---|
-| acquisition-ready (sources identified and resolved) | YES | YES |
-| asset-inventory-ready (files downloaded and archived) | NO | **YES** |
-| crosswalk-construction-ready (methodology verifiable, files in hand) | NO | **YES** |
-| GSUR-lookup-generation-ready (denominators confirmed available/usable) | NO | **YES** |
-| MNL-rebuild-ready (GSUR lookup validated against benchmarks) | NO | NO |
-| estimation-ready (versioned GSURv2 parquets validated) | NO | NO |
+| acquisition-ready | YES | YES |
+| asset-inventory-ready | NO | YES |
+| crosswalk-construction-ready | NO | YES (O1 resolved) |
+| GSUR-lookup-generation-ready | NO | NO (O2 denominator decision pending) |
+| MNL-rebuild-ready | NO | NO |
+| estimation-ready | NO | NO |
 
-The project has moved from acquisition-ready to
-**crosswalk-construction-ready / GSUR-lookup-generation-ready**.
-The next step is the GSUR rebuild implementation (v2.1 spec §15),
-which requires crosswalk sign-off (O7) before the lookup is merged
-into MNL parquets.
+The project has moved from acquisition-ready to crosswalk-construction-
+ready / asset-inventory-ready. GSUR-lookup-generation-ready requires O2
+to be resolved first.
 
 ---
 
-## 10. Suppression detail for implementation reference
+## 9. Remaining blocker: O2 denominator-resolution decision
 
-This section records the cell-level suppression findings for use
-when the GSUR lookup is built. Implementation must apply the fallback
-hierarchy per §8 of the decision memo cell by cell.
+One concrete decision is needed before implementation can proceed:
 
-**Usable primary cells (labour_force, F1):**
-All 21 metropolitan regions except FRM0: full coverage of
-(sex=M/F) × (age=Y15-74) × (isced11=ED0-2/ED3_4/ED5-8).
-132 cells (21 regions × 2 sex × 3 ISCED = 126, plus Y25-64/Y_GE15
-bands also available).
+**O2 denominator-resolution decision**: The v2.1 spec §5(D1) preference
+for labour-force denominators cannot be satisfied at narrow age-band
+granularity for France NUTS-2. Eurostat does not publish
+`lfst_r_lfp2acedu` (or any labour-force table with education) at
+narrow age bands below Y15-74 for NUTS-2 regions. The population
+fallback `lfst_r_lfsd2pop` does provide narrow age bands and is fully
+downloaded.
 
-**Fallback cells (population, F2):**
-FRM0 (Corse), all (sex=M/F) × (age=Y15-74/Y25-64/Y_GE15) × (isced11=ED0-2/ED3_4/ED5-8).
-These cells carry OBS_VALUE but OBS_FLAG=`u` (unreliable) in the
-labour-force dataset. The population fallback from `lfst_r_lfsd2pop`
-replaces these values. The implementation must check whether
-`lfst_r_lfsd2pop` FRM0 cells are themselves suppressed; if so,
-F3 (approximate_uniform) applies for those specific cells.
+The resolution options are:
 
-**Unaggregatable cells (F4): NONE at this stage.**
-The v2.1 schema `gsur_weighting_source` fourth-value question is moot.
+**(R1) Accept D2 (population) as narrow-age denominator throughout.**
+Use `lfst_r_lfsd2pop` for all narrow-age cells. Set
+`weighting_source = 'population'` for all age-disaggregated cells.
+Use D1 (labour-force, `lfst_r_lfp2acedu`) for broad-age cells only
+(Y15-74 as the Y20-64 fallback per O3 resolution).
+Document D1 vs D2 comparison at Y15-74 level in the validation report.
+For FRI2 and FRM0 cells where D2 is also suppressed, apply D3
+(approximate_uniform) with reviewer sign-off.
+Record this as an addendum to the open-decisions resolution memo.
 
-**NRP category (isced11=NRP):** excluded from the rebuild entirely.
-It is not one of the three GSUR education categories and is not
-mapped to any MNL `educ3` value.
+**(R2) Drop age disaggregation; use only Y15-74 broad-age GSUR rates.**
+This reverses the v2.1 key improvement over v1. Not recommended.
 
-**ISCED11 ↔ MNL educ3 alignment (P2 check):**
-The Eurostat dataset uses ED0-2, ED3_4, ED5-8 — these correspond
-exactly to the mapping confirmed in the O4 resolution:
-- ED0-2 (ISCED 0–2, lower secondary and below) → `educ3=0`
-- ED3_4 (ISCED 3–4, upper secondary and post-secondary) → `educ3=1`
-- ED5-8 (ISCED 5–8, tertiary) → `educ3=2`
+**(R3) Issue v2.2 specification** clarifying that narrow-age
+denominators use D2 (population) as primary in lieu of the
+structurally unavailable D1. Formalises R1 in the governing document.
 
----
-
-## 11. Files committed to Data/external/
-
-| File | Purpose | Status |
-|---|---|---|
-| `NUTS2013-NUTS2016.xlsx` | O1 documentary source | downloaded 2026-05-17 |
-| `fr_drgn1_to_nuts2_crosswalk.csv` | O1 verified crosswalk | created 2026-05-17 |
-| `gsur_crosswalk_source.txt` | O1 provenance | created 2026-05-17 |
-| `lfst_r_lfp2acedu_2016_full.csv` | O2 full download (all EU, 2016) | downloaded 2026-05-17 |
-| `lfst_r_lfp2acedu_FR_2016.tsv` | O2 filtered FR extract | created 2026-05-17 |
-| `lfst_r_lfsd2pop_2016_full.csv` | O2 F2 fallback (population) | downloaded 2026-05-17 |
-| `gsur_denominator_source.txt` | O2 provenance + suppression | created 2026-05-17 |
-| `insee_001688526_2016.csv` | O9 benchmark (quarterly + annual avg) | created 2026-05-17 |
-| `gsur_benchmark_source.txt` | O9 provenance | created 2026-05-17 |
-
-Note: `lfst_r_lfsd2pop_FR_2016.tsv` (filtered FR extract of the
-population fallback) has not yet been created from the full download.
-It should be filtered at the start of the implementation task using
-the same geo/unit/freq/year parameters as `lfst_r_lfp2acedu_FR_2016.tsv`.
+R1 (with a binding O2 addendum in the open-decisions memo) or R3 are
+the viable paths. Either requires an explicit user decision before the
+implementation prompt is written.
 
 ---
 
-## 12. Implementation authorization verdict
+## 10. Implementation authorization
 
-**Stage A implementation is NOW AUTHORIZED, subject to O7 crosswalk sign-off.**
+**Stage A implementation is NOT authorized.**
 
-All three acquisition blockers have been cleared:
-- O1: RESOLVED (crosswalk verified and constructed)
-- O2: RESOLVED (primary denominators available for 21/22 regions;
-  population fallback acquired for FRM0)
-- O9: RESOLVED (2016 annual average = 9.725%)
+O2 remains unresolved. The dimensional mismatch on the denominator
+age structure must be resolved — either by accepting D2 (population)
+as the narrow-age denominator (R1/R3 above) or by revising the spec.
 
-The remaining open decisions prior to merge are:
-- **O7**: crosswalk sign-off required before merging the GSUR lookup
-  into MNL parquets (not at specification or code-authoring step)
-- **O6**: deferred (Stage B necessity; decided post-Stage-A)
+O1 and O9 are fully resolved. The crosswalk is constructed and
+verified. The benchmark annual average is confirmed at 9.725%.
 
-No v3 specification is needed. Suppression affects only Corse (FRM0,
-drgn1=8) and only the labour-force denominator; the population
-fallback resolves it cleanly. No unaggregatable cells (F4) exist.
+The denominator files are all downloaded and available:
+- `lfst_r_lfp2acedu_FR_2016.tsv`: usable for broad-age cells (Y15-74)
+- `lfst_r_lfsd2pop_FR_2016.tsv`: usable for narrow-age cells (D2)
 
-The next concrete task is the GSUR rebuild implementation per
-v2.1 specification §15, using:
-- `Data/external/fr_drgn1_to_nuts2_crosswalk.csv` (O1 crosswalk)
-- `Data/external/lfst_r_lfp2acedu_FR_2016.tsv` (O2 primary denominator)
-- `Data/external/lfst_r_lfsd2pop_2016_full.csv` → filter to FR for FRM0 fallback (O2 F2)
-- `Data/external/insee_001688526_2016.csv` annual average 9.725% (O9 benchmark)
-- `Data/external/FR_gsur_full.csv` or `Data/external/FR_gsur.xlsx` at NUTS-2 level
-  (NOT `FR_gsur_ruro.csv`, which is at wrong NUTS-1 granularity per K3)
+Implementation can proceed immediately once O2 is resolved.
+
+---
+
+## 11. Corrections to prior outputs
+
+This section records corrections to deliverables that were wrong in
+the first draft of this memo.
+
+**(E1) Crosswalk schema**: the first draft used column names `drgn2,
+old_nuts2, new_nuts2, region_label, nuts2013_to_2016_change`.
+The required schema is `drgn1, old_nuts2_code, region_name,
+new_nuts2_code_2016, verified_against_eurostat`. The file has been
+rebuilt with the correct schema. `drgn2` (the intermediate step) is
+not included in the deliverable file; it is documented in
+`gsur_crosswalk_source.txt`.
+
+**(E2) lfst_r_lfsd2pop_FR_2016.tsv missing**: the first draft
+created only the full download (`lfst_r_lfsd2pop_2016_full.csv`)
+without creating the filtered FR extract. The filtered extract has
+been created.
+
+**(E3) gsur_denominator_source.txt schema drift**: the first draft
+wrote `F4=national` as a fourth weighting-source value. The v2.1
+spec allows only `labour_force`, `population`, `approximate_uniform`.
+The file has been corrected.
+
+**(E4) Overstatement of FRM0 fallback**: the first draft said FRM0
+was "cleanly resolved" by the population fallback. In fact, the
+population fallback cells for FRM0 also carry OBS_FLAG=`u`. The
+values are present but flagged unreliable — this is an approximation
+decision, not a clean resolution.
+
+**(E5) O2 verdict**: the first draft declared O2 resolved and
+implementation authorized. The correct verdict is O2 unresolved
+because the primary denominator lacks the required narrow age-band
+dimension. Implementation is not authorized.
+
+---
+
+## 12. Exact next step
+
+The next task is a narrow **O2 denominator-resolution decision**,
+not the GSUR rebuild implementation.
+
+The decision must record: whether R1 (accept D2 population for
+narrow-age cells), R2 (drop age disaggregation), or R3 (issue v2.2
+spec) is the binding path; and how FRI2 / FRM0 fully-suppressed cells
+are handled (D3 approximate_uniform with sign-off, or D1 broad-age
+fallback per v2.1 §5(D3)).
+
+Once that decision is recorded as an O2 addendum in
+`docs/RURO_GSUR_v2_1_open_decisions_resolution_v1.md`, the
+implementation prompt for the GSUR v2.1 rebuild (per decision memo
+§16 final paragraph and v2.1 spec §15) can be written.
+
+**Files ready for implementation** (no further download needed):
+- `Data/external/fr_drgn1_to_nuts2_crosswalk.csv`
+- `Data/external/lfst_r_lfp2acedu_FR_2016.tsv` (broad-age D1)
+- `Data/external/lfst_r_lfsd2pop_FR_2016.tsv` (narrow-age D2)
+- `Data/external/insee_001688526_2016.csv` (O9 benchmark)
+- `Data/external/FR_gsur_full.csv` or `FR_gsur.xlsx` (GSUR source,
+  at NUTS-2 level; NOT `FR_gsur_ruro.csv` which is at wrong granularity)

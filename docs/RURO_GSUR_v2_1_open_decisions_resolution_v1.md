@@ -28,6 +28,7 @@ merged or promoted to canonical paths until the block is lifted.
 | Spec version | v2.1 (supersedes v2 in full) |
 | This memo | `docs/RURO_GSUR_v2_1_open_decisions_resolution_v1.md` v1 |
 | Resolved decisions | O3, O4, O5, O7, O8, O10 |
+| Deferred decisions | O6 (Stage B necessity — deferred to post-Stage-A review) |
 | Unresolved decisions | O1, O2, O9 |
 | Overall readiness for implementation | BLOCKED — see §4 |
 
@@ -37,26 +38,26 @@ merged or promoted to canonical paths until the block is lifted.
 
 ### O3 — Age-65 handling
 
-**Decision: A65-3 (map to broad-age fallback with an explicit flag).**
+**Decision: A65-3 (map age 65 to Y20-64 broad fallback with explicit flag).**
 
-Individuals aged 65 and over are assigned the Y15-64 broad-age GSUR
+Individuals aged 65 are assigned the Y20-64 broad working-age GSUR
 (`gsur`) as fallback. The output column `gsur_age_band_used` must carry
-the value `"Y15-64_fallback_age65"` for these rows, distinguishing them
-from the standard `"Y55-64"` assignment.
+the value `"Y20-64_fallback_age65"` for these rows, distinguishing them
+from the standard `"Y55-64"` assignment. This is the A65-3 option as
+defined in §7 of the canonical spec.
 
-**File evidence (confirmed 2026-05-17):**
-- Singles: 400 rows with `dag >= 65` out of 335,200 (0.12%).
-- Couples: 0 rows with `dag_male >= 65` or `dag_female >= 65` out of
-  515,400.
-- Sample impact is negligible. The A65-3 fallback introduces no
-  identifiable bias risk.
+**File evidence (confirmed 2026-05-17, canonical MNL parquet):**
+- Singles: 200 rows with `dag == 65` out of 167,600 total rows,
+  representing 2 households. Couples: 0 rows.
+- Sample impact is negligible (2 households, 0.12% of the singles
+  estimation sample).
 
 **Why not A65-1 (exclude) or A65-2 (map to Y55-64):**
-A65-1 would silently drop 400 singles who are otherwise valid
-respondents in the estimation sample. A65-2 would misrepresent the
-age-specific unemployment rate since the Y55-64 band excludes those aged
-65 and over by Eurostat definition. A65-3 provides honest broad-age
-coverage and is self-documenting via the flag column.
+A65-1 would silently drop 2 valid single-household respondents from the
+estimation sample. A65-2 would assign the Y55-64 rate, which by Eurostat
+definition covers ages 55 to 64 and does not include age 65; the
+resulting rate is a systematic misassignment. A65-3 provides honest
+broad working-age coverage and is self-documenting via the flag column.
 
 ---
 
@@ -73,12 +74,12 @@ joining GSUR source data to individual respondents.
 
 | deh | educ3 | n (singles) |
 |-----|-------|-------------|
-| 0.0 | 0 | 9,600 |
-| 1.0 | 0 | 8,800 |
-| 2.0 | 0 | 32,800 |
-| 3.0 | 1 | 147,200 |
-| 4.0 | 1 | 1,000 |
-| 5.0 | 2 | 135,800 |
+| 0.0 | 0 | 4,800 |
+| 1.0 | 0 | 4,400 |
+| 2.0 | 0 | 16,400 |
+| 3.0 | 1 | 73,600 |
+| 4.0 | 1 | 500 |
+| 5.0 | 2 | 67,900 |
 
 The crosstab is perfectly monotone — each deh value maps to exactly one
 educ3 value with no overlap. The proposed mapping is already encoded in
@@ -94,13 +95,13 @@ Couples use gender-specific variants: `deh_male` → `educ3_male` and
 **Decision: retain drgn1 = 9 in the output schema but leave it empty
 (NaN) for the France 2016 metropolitan sample.**
 
-The output schema must include `drgn1 = 9` as a valid category so that
-the pipeline remains portable to DOM-inclusive datasets. For France 2016
-(metropolitan sample), no respondents carry `drgn1 = 9`; those rows would
-receive NaN for all GSUR columns derived from a region lookup. If DOM
-respondents ever appear upstream (e.g., from a DOM-inclusive future data
-pull), the rebuild pipeline will propagate their regional code correctly
-without modification.
+For France 2016 (metropolitan sample), no respondents carry `drgn1 = 9`;
+those rows receive NaN for all GSUR columns. The output schema retains
+`drgn1 = 9` as a valid category slot so that the lookup table structure
+remains portable. If DOM respondents appear in a future data pull, the
+lookup must be extended with DOM-specific Eurostat data to populate those
+cells; the schema slot alone is not sufficient and would not be populated
+automatically.
 
 No special-casing, exclusion, or warning is required for `drgn1 = 9` in
 the current run.
@@ -111,14 +112,15 @@ the current run.
 
 **Decision: mandatory manual sign-off before merge.**
 
-The `drgn1`-to-NUTS2 crosswalk (§4 of the spec) and the GSUR
-age-education join key must be reviewed and approved by the user before
-any output parquet is written to either versioned (`_GSURv2`) or canonical
-paths. The sign-off must be recorded as an explicit user approval message
-referencing the crosswalk file and the merge key used.
+Once the O1 crosswalk is constructed, the `drgn1`-to-NUTS2 crosswalk
+(§4 of the spec) and the GSUR age-education join key must be reviewed and
+approved by the user before merging into the MNL parquets — that is,
+before any output parquet is written to versioned (`_GSURv2`) paths. The
+sign-off must be recorded as an explicit user approval message referencing
+the crosswalk file and the merge key used.
 
-This requirement applies once, at the end of Stage A verification, before
-Stage A promotion.
+This requirement applies once, at crosswalk-construction time, before
+the merge step that produces the GSURv2 versioned parquets.
 
 ---
 
@@ -150,8 +152,11 @@ versioned paths:
 
 The canonical paths (`fr_2016_RURO_mnl__singles.parquet`,
 `fr_2016_RURO_mnl__couples.parquet`) are not touched until:
-1. Stage A verification passes all checks in §14 of the spec.
-2. The user explicitly approves promotion in a recorded approval message.
+
+1. Stage A produces a verdict of SA-STANDS or SA-REVISION (per §9.3 of
+   the spec); SA-OVERTURNED does not authorise promotion.
+2. The user explicitly approves promotion in a recorded approval message
+   after the Stage A verdict is issued.
 
 Scripts and specifications must reference the versioned paths during
 Stage A. Any script that writes to or reads from canonical paths during
@@ -188,18 +193,22 @@ and date of access.
 
 **Status: UNRESOLVED.**
 
-The spec requires a denominator (labour force count by region × age ×
-sex) sourced from Eurostat Labour Force Survey microdata or published LFS
-aggregates. The current GSUR workbook provides unemployment counts but the
-denominator source is not documented in the audit.
+The spec requires labour-force denominators by (modern NUTS-2 or NUTS-3
+× sex × education × age band) for France 2016, sourced from Eurostat LFS
+microdata or published LFS aggregates per §5(D1) of the spec. If
+education-stratified denominators are unavailable, population denominators
+may be used (§5(D2)); if neither is available, the aggregation must be
+flagged as approximate per §5(D3). The current GSUR workbook's denominator
+source is not documented in the audit.
 
-**Blocking question:** Which Eurostat LFS table or microdata file provides
-the labour-force denominator used to compute unemployment rates by region,
-age band, and sex for France 2016?
+**Blocking question:** Are labour-force denominators by (region × sex ×
+education × age band) available for France 2016 in Eurostat or INSEE? If
+not, are population denominators available at that granularity?
 
 **To resolve:** Identify the specific Eurostat dataset (table code and
-reference period), download or confirm access, and record the citation in
-`Data/external/gsur_denominator_source.txt`.
+reference period), confirm its dimensional coverage (must include education
+or document why the D3 fallback applies), download or confirm access, and
+record the citation in `Data/external/gsur_denominator_source.txt`.
 
 ---
 

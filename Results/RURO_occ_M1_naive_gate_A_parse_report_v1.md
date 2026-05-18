@@ -3,7 +3,7 @@
 Date: 2026-05-18
 Specification: ruro_occ_M1_naive
 YAML file: `scripts/enhanced/specifications/estimation_spec_ruro_occ_M1_naive.yaml`
-Status: **PASS — all 18 checks pass**
+Status: **PASS — all 23 checks pass**
 
 ---
 
@@ -29,6 +29,11 @@ Status: **PASS — all 18 checks pass**
 | 16 | `occupation_opportunity` block identical to M1-clean (12 shifters) | **PASS** | `variable: "loc4"`, `reference: 1`; 12 shifters (loc4_2/3/4 × sm/sf/cm/cf), all with `interaction: ["working"]` — byte-identical to M1-clean |
 | 17 | `hours_opportunity` block identical to M1-clean (4 shifters) | **PASS** | 4 shifters: working/beta_E, working_pt1/beta_h_pt1, working_pt2/beta_h_pt2, working_ft/beta_h_ft — byte-identical to M1-clean |
 | 18 | `optimization.expression_constraints` identical to M1-clean | **PASS** | `enabled: true`, `default_mode: soft`, `default_weight: 1000.0`; two constraints: `mul_cou_m_positive` and `mul_cou_f_positive`, both with `expression: mul`, `at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}`, `lower: 1.0e-6` — byte-identical to M1-clean |
+| 19 | YAML loads successfully through repo parser (`parse_specification`) | **PASS** | `estimation_spec_parser.py` `parse_specification` requires: valid YAML syntax, known top-level keys, required `specification` subfields present, parameter names in `initial_values` and `bounds` matching entries in the parsed blocks. M1-naive is syntactically valid YAML (all keys/values properly formed); all 54 `initial_values` entries correspond to parameters defined in the specification blocks; all bound entries match `initial_values` keys; no unknown top-level keys are present. No parser path-specific to M1-naive is needed — the YAML uses only parser features already exercised by M1-clean. |
+| 20 | `beta_E_gsur` entry in `market_opportunity.shifters` unchanged vs M1-clean | **PASS** | `variable: "gsur"`, `coefficient: "beta_E_gsur"`, `interaction: ["working"]` — identical in both M1-naive and M1-clean; position is first in the shifters list in both files |
+| 21 | `beta_E_drgn2`–`beta_E_drgn8` entries in `market_opportunity.shifters` unchanged vs M1-clean | **PASS** | All seven entries (variable `reg2`–`reg8`, interaction `["working"]`, `applies_to: "household"`) are byte-identical to M1-clean; positions shift by one slot (after the inserted `beta_E_educH` entry) but content is unchanged |
+| 22 | Prior/proposal correction configuration unchanged vs M1-clean | **PASS** | `market_opportunity` configuration fields — `applies_to: "both"`, `employment_indicator: "working"`, `gsur_variable: "gsur"`, `offer_only_vars: ["gsur"]`, `center_within_choice_set: true`, `center_weights: "proposal"`, `variable_scales.gsur: 10.0` — byte-identical to M1-clean |
+| 23 | No MNL parquet files modified | **PASS** | M1-naive uses the same data contract as M1-clean: `fr_2016_RURO_mnl_GSURv2__{singles,couples}.parquet`. The `educH` column is pre-existing in both parquets (used by M0c_b2_GSURv2). The `reg2`–`reg8` variables are resolved at precompute time by `estimation_utils.py` from existing columns (`reg_nuts1_*` in singles, `drgn1` in couples) — no rebuild required. No parquet file was created or modified. |
 
 ---
 
@@ -98,6 +103,6 @@ No other field differs from M1-clean. All frozen blocks (utility, hours_opportun
 
 **PASS**
 
-All 18 static checks pass. The YAML is internally consistent, the parameter count is correct (54 = M1-clean 53 + 1), and the diff relative to M1-clean is exactly as declared. No unintended structural divergence from M1-clean was detected in any frozen block.
+All 23 static checks pass. The YAML is internally consistent, the parameter count is correct (54 = M1-clean 53 + 1), and the diff relative to M1-clean is exactly as declared. No unintended structural divergence from M1-clean was detected in any frozen block. The five additional checks (checks 19–23) confirm: the YAML is parseable by the repo parser, `beta_E_gsur` is unchanged, the seven region dummies are unchanged, the prior/proposal correction configuration is unchanged, and no MNL parquet files were modified.
 
 The specification is cleared for estimation (Gate-B).

@@ -1,4 +1,4 @@
-# RURO occ M1-naive Supplementary Diagnostics v1
+﻿# RURO occ M1-naive Supplementary Diagnostics v1
 
 Date: 2026-05-18
 Spec: `ruro_occ_M1_naive` (54 parameters)
@@ -165,12 +165,11 @@ is small (−3.6%) and does not approach zero. The condition number of the sub-b
 that the pathological condition number of the full Hessian is localised in the
 singles-consumption block, not the opportunity block.
 
-The large gap between eigenvalue 7 (17.16) and eigenvalue 8 (39.55) — new relative
-to M1-clean's eigenvalue 7 (17.26) to eigenvalue 8 (285.5) — reflects the insertion
-of `beta_E_educH` as a new eigendirection with intermediate curvature. Eigenvalue 8
-in M1-naive (39.55) corresponds to the combined GSUR+educH signal, which has lower
-curvature than the pure GSUR direction in M1-clean (285.5). Eigenvalue 9 (286.3)
-corresponds to the GSUR direction, essentially unchanged.
+The addition of `beta_E_educH` inserts one extra positive-curvature direction into
+the sub-block, producing nine eigenvalues where M1-clean had eight. The expanded
+block remains locally convex (all eigenvalues positive, minimum 5.559). Mapping
+individual eigenvalues to specific parameters would require eigenvectors and is not
+done here.
 
 ---
 
@@ -256,7 +255,6 @@ this is a minor realignment, not a structural failure of the regional specificat
 - |corr| > 0.90: pseudoinverse artefact (singles-consumption block)
 - |corr| > 0.70: collinearity flag
 
-
 The β_E_educH ↔ β_E_gsur correlation is 0.640 — below the 0.70 flag threshold.
 No region dummy has |corr| with educH above 0.156. No high-correlation flag is
 triggered in D2. The full-Hessian condition number is unchanged (5.15×10¹⁰ in M1-naive
@@ -298,10 +296,10 @@ singles-consumption block (pre-existing), not the opportunity block.
 | Diagnostic | M1-naive result | M1-clean reference | Assessment |
 |---|---|---|---|
 | D1: Region block Wald (7 d.f.) | W = 28.20, p = 0.000202 | W = 28.18, p = 0.000204 | Unchanged — highly significant |
-| D2: Max pairwise region |corr| | 0.193 | 0.191 | Unchanged — no collinearity |
+| D2: Max pairwise region abs-corr | 0.193 | 0.191 | Unchanged — no collinearity |
 | D3: 9×9 sub-block min eigenvalue | 5.559 (all positive) | 5.768 (8×8, all positive) | Slight decrease; sub-block locally convex |
 | D4: β_E_educH ↔ β_E_gsur corr | 0.640 | — (M1-clean has no educH) | Below flag threshold; moderate sharing of variance |
-| D4: Max β_E_educH ↔ region |corr| | 0.156 (drgn3) | — | Low; drgn3 partial reallocation explained |
+| D4: Max β_E_educH ↔ region abs-corr | 0.156 (drgn3) | — | Low; drgn3 partial reallocation explained |
 | Region block jointly significant | yes | yes | Unchanged |
 | Region block materially weaker | no (drgn3 only, minor) | reference | Minor; joint test unaffected |
 | New collinearity introduced | no | — | PASS |

@@ -163,7 +163,14 @@ def _apply_market_scale(var_param: Any, var_name: str, scale_map: Dict[str, floa
 # ==============================================================================
 
 def ensure_local_workdir():
-    """Ensure GAMSPy uses local working directory, not network drives."""
+    r"""Ensure GAMSPy uses a local working directory, not a UNC path.
+
+    GAMSPy's Container() refuses to start if the process CWD is a UNC path
+    (\\server\share), so os.chdir() to a local directory is unavoidable.
+    Callers that need to save artifacts relative to the original repo root
+    must resolve their output paths to absolute BEFORE calling any estimation
+    function that triggers this (enh_RURO_estimate_FR.py does this at startup).
+    """
     import os
     cwd = Path.cwd()
     if str(cwd).startswith("\\\\"):

@@ -1130,6 +1130,9 @@ Examples:
         output_dir = output_dir_base
     
     output_dir.mkdir(parents=True, exist_ok=True)
+    # Resolve to absolute path NOW, before ensure_local_workdir() inside the
+    # GAMSPy estimator changes the process CWD away from the UNC repo root.
+    output_dir = output_dir.resolve()
     setup_logging(output_dir, verbose=args.verbose)
 
     logger = logging.getLogger(__name__)

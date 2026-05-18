@@ -195,10 +195,12 @@ def ensure_dir(path: Path) -> Path:
 
 def ensure_local_workdir() -> Path:
     r"""
-    Ensure the current working directory is not a UNC path (GAMS/GAMSPy limitation).
+    Ensure GAMSPy uses a local working directory, not a UNC network path.
 
-    If running from a UNC share (e.g., \\server\share\repo), switch to a user-configurable
-    local directory instead. Use MNL_LOCAL_WORKDIR to override the fallback.
+    Sets GAMSPY_WORKING_DIR to a local directory so GAMS solver files stay
+    local, but does NOT change the process CWD. Changing CWD would redirect
+    all subsequent relative-path saves away from the UNC repo root.
+    Use MNL_LOCAL_WORKDIR env-var to override the default local path.
     """
     cwd = Path.cwd()
     anchor = cwd.anchor
@@ -209,10 +211,12 @@ def ensure_local_workdir() -> Path:
         else:
             target = Path.home() / "MNL_LOCAL_WORKDIR"
         target.mkdir(parents=True, exist_ok=True)
-        os.chdir(target)
+        # Do NOT os.chdir here — that would redirect relative saves away
+        # from the UNC repo root.  GAMSPY_WORKING_DIR is sufficient.
+        os.environ["GAMSPY_WORKING_DIR"] = str(target)
         print(
             "[path_helpers] INFO: Current directory is a UNC share "
-            f"({cwd}); switched working directory to {target} for solver compatibility."
+            f"({cwd}); GAMSPY_WORKING_DIR set to {target} (CWD unchanged)."
         )
         return target
     return cwd

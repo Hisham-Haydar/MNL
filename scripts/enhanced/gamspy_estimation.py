@@ -403,22 +403,24 @@ def validate_gamspy_result(model, ll_final: float, theta_final: np.ndarray,
 
 def ensure_local_workdir():
     r"""
-    Ensure we're on a local (non-UNC) working directory for GAMS/GAMSPy.
+    Ensure GAMSPy uses a local working directory, not a UNC path.
 
-    GAMS has issues with UNC paths (\\server\share). If current directory
-    is on UNC path, this function changes to a local temp directory.
+    GAMSPy's Container() refuses to start if the process CWD is a UNC path
+    (\\server\share), so os.chdir() to a local directory is unavoidable.
+    Callers must resolve output paths to absolute BEFORE calling estimation
+    functions that trigger this (enh_RURO_estimate_FR.py does this at startup).
     """
     import os
     cwd = Path.cwd()
-    
-    # Check if on UNC path
+
     if str(cwd).startswith('\\\\'):
         import tempfile
         local_temp = Path(tempfile.gettempdir()) / "gamspy_workspace"
         local_temp.mkdir(parents=True, exist_ok=True)
         os.chdir(local_temp)
-        logging.info(f"Changed to local working directory: {local_temp}")
-        logging.info(f"(GAMS doesn't work well with UNC paths like {cwd})")
+        os.environ["GAMSPY_WORKING_DIR"] = str(local_temp)
+        logging.info(f"Changed CWD to local path for GAMSPy: {local_temp}")
+        logging.info(f"(output paths resolved to absolute before this chdir)")
 
 
 def _extract_var_level(var: Variable) -> float:

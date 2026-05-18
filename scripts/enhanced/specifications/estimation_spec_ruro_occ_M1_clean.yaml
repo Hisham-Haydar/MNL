@@ -1,0 +1,369 @@
+# ==============================================================================
+# RURO MNL Estimation Specification - RURO occupation-opportunity M1-clean
+# ==============================================================================
+# M1-clean is the first specification in which the market-opportunity block
+# is conceptually aligned with the JMP's ability/opportunity welfare partition.
+#
+# Two structural amendments relative to M0c_b2_GSURv2:
+#
+#   1. beta_E_educH REMOVED.  Education attainment is classified as an ability
+#      dimension under the JMP's weak Dworkinian welfare criterion; it must not
+#      enter the opportunity-side index.
+#
+#   2. beta_E_drgn2 through beta_E_drgn8 ADDED.  Region of residence (EUROMOD
+#      drgn1, groups 2-8 relative to IDF=1) enters the employment-opportunity
+#      index as a circumstance for which individuals are not normatively
+#      responsible, over and above the demographic-conditional regional
+#      unemployment rate already absorbed by the corrected GSUR variable.
+#
+# The estimated coefficients of M1-clean are not in themselves the JMP's
+# welfare results; they are the structural inputs for the welfare-scaffolding
+# stage that follows.
+#
+# Implementation notes:
+#   - Region dummies use applies_to: "household" so the couples likelihood
+#     resolves reg2-reg8 directly on the household-level precomputed attribute
+#     (derived from drgn1) rather than looking for non-existent reg2_male /
+#     reg2_female attributes.
+#   - No MNL parquet rebuild required: reg2-reg8 are constructed at precompute
+#     time by estimation_utils.py for both singles (from reg_nuts1_* columns)
+#     and couples (from drgn1 via indicator comparison).
+#   - IDF (drgn1 = 1) is the reference category; reg2-reg8 are zero for IDF
+#     observations.
+#
+# Changes vs `estimation_spec_ruro_occ_M0c_b2_GSURv2.yaml`:
+#   1. specification.name -> "ruro_occ_M1_clean"
+#   2. specification.description -> updated (see below)
+#   3. market_opportunity.shifters:
+#      - removed: beta_E_educH entry
+#      - added:   beta_E_drgn2 through beta_E_drgn8 entries
+#   4. initial_values:
+#      - removed: beta_E_educH: 0.0
+#      - added:   beta_E_drgn2 through beta_E_drgn8, each: 0.0
+#   5. optimization.bounds:
+#      - removed: beta_E_educH: [-10.0, 10.0]
+#      - added:   beta_E_drgn2 through beta_E_drgn8, each: [-10.0, 10.0]
+#
+# Everything else byte-identical to M0c_b2_GSURv2.
+# Expected parameter count: 53 (47 - 1 + 7).
+#
+# Reference docs:
+#   docs/RURO_occ_M1_clean_design_memo_v2.md
+#   docs/RURO_occ_M1_clean_implementation_audit_v1.md
+#   scripts/enhanced/specifications/estimation_spec_ruro_occ_M0c_b2_GSURv2.yaml
+# ==============================================================================
+
+specification:
+  name: "ruro_occ_M1_clean"
+  description: "M1-clean: ability/opportunity-clean specification derived from M0c_b2_GSURv2. Removes beta_E_educH (education reclassified as ability, not opportunity) and adds seven EUROMOD drgn1 region dummies beta_E_drgn2 through beta_E_drgn8 (region of residence as a normative circumstance). First specification aligned with the JMP welfare partition."
+  wage_spec: "vw"
+  model_family: "regular"
+
+utility:
+  functional_form: "box_cox"
+
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"                   # still used for singles routing
+    singles_box_cox_exponent: "theta_c_singles"   # singles shared (M0a-clean)
+    couples_fixed_box_cox_exponent: 0.0           # theta_c FIXED at 0.0 (log-utility)
+    box_cox_bounds: [-8.0, 0.95]
+
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: "theta_l"
+    box_cox_bounds: [-8.0, 0.95]
+    shifters:
+      - variable: "age_norm"
+        coefficient: "beta_l_age"
+      - variable: "age_norm2"
+        coefficient: "beta_l_age2"
+      - variable: "n_children"
+        coefficient: "beta_l_nkids"
+        gender_specific: true   # female only
+
+hours_opportunity:
+  shifters:
+    - variable: "working"
+      coefficient: "beta_E"
+    - variable: "working_pt1"
+      coefficient: "beta_h_pt1"
+    - variable: "working_pt2"
+      coefficient: "beta_h_pt2"
+    - variable: "working_ft"
+      coefficient: "beta_h_ft"
+
+wage_opportunity:
+  specification: "log_normal"
+  mean_shifters:
+    - variable: "intercept"
+      coefficient: "beta_w0"
+    - variable: "educL"
+      coefficient: "beta_w_educL"
+    - variable: "educH"
+      coefficient: "beta_w_educH"
+    - variable: "pexp_years"
+      coefficient: "beta_w_pexp"
+    - variable: "pexp_years2"
+      coefficient: "beta_w_pexp2"
+  variance:
+    parameter: "sigma"
+
+market_opportunity:
+  applies_to: "both"
+  employment_indicator: "working"
+  gsur_variable: "gsur"
+  offer_only_vars: ["gsur"]
+  center_within_choice_set: true
+  center_weights: "proposal"
+  variable_scales:
+    gsur: 10.0
+
+  shifters:
+    - variable: "gsur"
+      coefficient: "beta_E_gsur"
+      interaction: ["working"]
+    - variable: "reg2"
+      coefficient: "beta_E_drgn2"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg3"
+      coefficient: "beta_E_drgn3"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg4"
+      coefficient: "beta_E_drgn4"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg5"
+      coefficient: "beta_E_drgn5"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg6"
+      coefficient: "beta_E_drgn6"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg7"
+      coefficient: "beta_E_drgn7"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg8"
+      coefficient: "beta_E_drgn8"
+      interaction: ["working"]
+      applies_to: "household"
+
+occupation_opportunity:
+  variable: "loc4"
+  reference: 1
+  shifters:
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_sm"
+      applies_to: "sm"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_sm"
+      applies_to: "sm"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_sm"
+      applies_to: "sm"
+      interaction: ["working"]
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_sf"
+      applies_to: "sf"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_sf"
+      applies_to: "sf"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_sf"
+      applies_to: "sf"
+      interaction: ["working"]
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_cm"
+      applies_to: "cm"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_cm"
+      applies_to: "cm"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_cm"
+      applies_to: "cm"
+      interaction: ["working"]
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_cf"
+      applies_to: "cf"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_cf"
+      applies_to: "cf"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_cf"
+      applies_to: "cf"
+      interaction: ["working"]
+
+couples:
+  leisure_interaction:
+    coefficient: "beta_ll"
+
+initial_values:
+  beta_l0_sm: 1.0
+  beta_l_age_sm: 0.0
+  beta_l_age2_sm: 0.0
+  beta_c_sm: 1.0
+  theta_l_sm: -1.0
+
+  beta_l0_sf: 1.0
+  beta_l_age_sf: 0.0
+  beta_l_age2_sf: 0.0
+  beta_l_nkids_sf: 0.0
+  beta_c_sf: 1.0
+  theta_l_sf: -1.0
+
+  theta_c_singles: -1.0
+
+  beta_l0_m: 0.01
+  beta_l_age_m: 0.0
+  beta_l_age2_m: 0.0
+  theta_l_m: -1.0
+
+  beta_l0_f: 1.0
+  beta_l_age_f: 0.0
+  beta_l_age2_f: 0.0
+  beta_l_nkids_f: 0.0
+  theta_l_f: -1.0
+
+  beta_c: 1.0
+  # theta_c is NOT listed — fixed at 0.0 and not estimated.
+
+  beta_E:     0.0
+  beta_h_pt1: 0.0
+  beta_h_pt2: 0.0
+  beta_h_ft:  0.0
+
+  beta_E_gsur:   0.0
+  beta_E_drgn2:  0.0
+  beta_E_drgn3:  0.0
+  beta_E_drgn4:  0.0
+  beta_E_drgn5:  0.0
+  beta_E_drgn6:  0.0
+  beta_E_drgn7:  0.0
+  beta_E_drgn8:  0.0
+
+  beta_w0:       2.0
+  beta_w_educL: -0.1
+  beta_w_educH:  0.2
+  beta_w_pexp:   0.02
+  beta_w_pexp2: -0.0003
+
+  beta_occ_2_sm: 0.0
+  beta_occ_3_sm: 0.0
+  beta_occ_4_sm: 0.0
+  beta_occ_2_sf: 0.0
+  beta_occ_3_sf: 0.0
+  beta_occ_4_sf: 0.0
+  beta_occ_2_cm: 0.0
+  beta_occ_3_cm: 0.0
+  beta_occ_4_cm: 0.0
+  beta_occ_2_cf: 0.0
+  beta_occ_3_cf: 0.0
+  beta_occ_4_cf: 0.0
+
+  sigma: 0.5
+
+  beta_ll: 2.0
+
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 6000
+  tolerance: 1.0e-8
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+  bounds:
+    theta_l_sm: [-8.0, 0.95]
+    theta_l_sf: [-8.0, 0.95]
+    theta_l_m:  [-8.0, 0.95]
+    theta_l_f:  [-8.0, 0.95]
+    theta_c_singles: [-8.0, 0.95]
+    # theta_c NOT listed — fixed at 0.0, not estimated.
+
+    beta_c_sm: [0.05, 50.0]
+    beta_c_sf: [0.05, 50.0]
+    beta_c:    [0.05, 50.0]
+    beta_l0_sm: [0.05, 50.0]
+    beta_l0_sf: [0.05, 50.0]
+    beta_l0_m:  [1.0e-6, 50.0]
+    beta_l0_f:  [0.05, 50.0]
+
+    beta_l_age_sm:   [-5.0, 5.0]
+    beta_l_age2_sm:  [-1.0, 1.0]
+    beta_l_age_sf:   [-5.0, 5.0]
+    beta_l_age2_sf:  [-1.0, 1.0]
+    beta_l_age_m:    [-5.0, 5.0]
+    beta_l_age2_m:   [-1.0, 1.0]
+    beta_l_age_f:    [-5.0, 5.0]
+    beta_l_age2_f:   [-1.0, 1.0]
+    beta_l_nkids_sf: [-5.0, 5.0]
+    beta_l_nkids_f:  [-5.0, 5.0]
+
+    beta_E:     [-25.0, 25.0]
+    beta_h_pt1: [-10.0, 10.0]
+    beta_h_pt2: [-10.0, 10.0]
+    beta_h_ft:  [-10.0, 10.0]
+
+    beta_w0:       [-10.0, 20.0]
+    beta_w_educL:  [-5.0, 5.0]
+    beta_w_educH:  [-5.0, 5.0]
+    beta_w_pexp:   [-1.0, 1.0]
+    beta_w_pexp2:  [-0.1, 0.1]
+
+    beta_E_gsur:   [-10.0, 10.0]
+    beta_E_drgn2:  [-10.0, 10.0]
+    beta_E_drgn3:  [-10.0, 10.0]
+    beta_E_drgn4:  [-10.0, 10.0]
+    beta_E_drgn5:  [-10.0, 10.0]
+    beta_E_drgn6:  [-10.0, 10.0]
+    beta_E_drgn7:  [-10.0, 10.0]
+    beta_E_drgn8:  [-10.0, 10.0]
+
+    beta_occ_2_sm: [-10.0, 10.0]
+    beta_occ_3_sm: [-10.0, 10.0]
+    beta_occ_4_sm: [-10.0, 10.0]
+    beta_occ_2_sf: [-10.0, 10.0]
+    beta_occ_3_sf: [-10.0, 10.0]
+    beta_occ_4_sf: [-10.0, 10.0]
+    beta_occ_2_cm: [-10.0, 10.0]
+    beta_occ_3_cm: [-10.0, 10.0]
+    beta_occ_4_cm: [-10.0, 10.0]
+    beta_occ_2_cf: [-10.0, 10.0]
+    beta_occ_3_cf: [-10.0, 10.0]
+    beta_occ_4_cf: [-10.0, 10.0]
+
+    sigma: [0.1, 20.0]
+
+    beta_ll: [0.0, 10.0]
+
+  expression_constraints:
+    enabled: true
+    default_mode: soft
+    default_weight: 1000.0
+    constraints:
+      - name: mul_cou_m_positive
+        expression: mul
+        group: couples_male
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        lower: 1.0e-6
+      - name: mul_cou_f_positive
+        expression: mul
+        group: couples_female
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        lower: 1.0e-6
+
+gradient_verification:
+  enabled: false

@@ -79,12 +79,14 @@ This directory contains the complete enhanced RURO (Random Utility Random Opport
   - Reads model specifications
   - Validates parameter structure
 
-- **[estimation_spec.yaml](estimation_spec.yaml)** - Model Specification (Variable Wages)
+- **[specifications/](specifications/)** - Canonical home for estimation-spec YAML files
+  - Includes `estimation_spec.yaml`, active RURO specs, and historical model variants
+  - Legacy commands that still name `scripts/enhanced/<spec>.yaml` are resolved automatically
   - Defines preferences structure
   - Specifies opportunity equations
   - 60 parameters total (vw)
 
-- **[estimation_spec_loc_empirical.yaml](estimation_spec_loc_empirical.yaml)** - Alternative Spec
+- **[specifications/estimation_spec_loc_empirical.yaml](specifications/estimation_spec_loc_empirical.yaml)** - Alternative Spec
   - Location-empirical wage specification
   - Different wage equation structure
 

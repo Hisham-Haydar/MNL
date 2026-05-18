@@ -34,10 +34,10 @@ Main step scripts:
 
 Current continuous-RURO spec candidates:
 
-- `scripts/enhanced/estimation_spec_ruro_occ_M0.yaml` (requires occupation-draw rebuild and canary pass)
-- `scripts/enhanced/estimation_spec_v3.yaml`
-- `scripts/enhanced/estimation_spec_v2.yaml`
-- `scripts/enhanced/estimation_spec.yaml`
+- `scripts/enhanced/specifications/estimation_spec_ruro_occ_M0.yaml` (requires occupation-draw rebuild and canary pass)
+- `scripts/enhanced/specifications/estimation_spec_v3.yaml`
+- `scripts/enhanced/specifications/estimation_spec_v2.yaml`
+- `scripts/enhanced/specifications/estimation_spec.yaml`
 
 ## Active Job-Choice RURO Pipeline
 
@@ -58,9 +58,9 @@ Main step scripts:
 
 Current job-choice spec candidates:
 
-- `scripts/enhanced/estimation_spec_job_M2h_pruned.yaml`
-- `scripts/enhanced/estimation_spec_job_M2e_a.yaml`
-- `scripts/enhanced/estimation_spec_job_M2g_unified_opportunity.yaml`
+- `scripts/enhanced/specifications/estimation_spec_job_M2h_pruned.yaml`
+- `scripts/enhanced/specifications/estimation_spec_job_M2e_a.yaml`
+- `scripts/enhanced/specifications/estimation_spec_job_M2g_unified_opportunity.yaml`
 
 ## Reference Implementation
 

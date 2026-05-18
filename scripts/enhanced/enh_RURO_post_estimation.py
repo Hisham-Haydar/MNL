@@ -401,7 +401,7 @@ def find_spec_file(results_json_path: Path, mnl_base: Path) -> Path:
     enhanced_dir = Path(__file__).parent
 
     if wage_spec == 'loc_empirical':
-        fallback_path = enhanced_dir / "estimation_spec_loc_empirical.yaml"
+        fallback_path = enhanced_dir / "specifications" / "estimation_spec_loc_empirical.yaml"
     else:
         fallback_path = enhanced_dir / "estimation_spec.yaml"
 

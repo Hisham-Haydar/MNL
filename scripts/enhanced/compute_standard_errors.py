@@ -10,7 +10,7 @@ Usage:
     python compute_standard_errors.py \
         --results-json outputs/estimates/fr/2016_v2/estimation_results.json \
         --mnl-base "U:/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl" \
-        --spec-config scripts/enhanced/estimation_spec_v2.yaml
+        --spec-config scripts/enhanced/specifications/estimation_spec_v2.yaml
 
 Author: Enhanced RURO Pipeline
 Created: 2026-01-09

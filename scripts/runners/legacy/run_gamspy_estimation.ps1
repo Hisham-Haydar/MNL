@@ -19,7 +19,7 @@ Write-Host "Activating virtual environment..." -ForegroundColor Cyan
 # Set paths
 $MNL_BASE = "U:/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl"
 $OUTPUT_DIR = "outputs/estimates/fr/2016_gamspy"
-$SPEC_CONFIG = "scripts/enhanced/estimation_spec.yaml"
+$SPEC_CONFIG = "scripts/enhanced/specifications/estimation_spec.yaml"
 
 # Create output directory
 New-Item -ItemType Directory -Force -Path $OUTPUT_DIR | Out-Null

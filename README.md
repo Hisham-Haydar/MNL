@@ -150,10 +150,10 @@ Main scripts:
 
 Current continuous specification candidates:
 
-- `scripts/enhanced/estimation_spec_ruro_occ_M0.yaml` (requires occupation-draw rebuild and canary pass before estimation)
-- `scripts/enhanced/estimation_spec_v3.yaml`
-- `scripts/enhanced/estimation_spec_v2.yaml`
-- `scripts/enhanced/estimation_spec.yaml`
+- `scripts/enhanced/specifications/estimation_spec_ruro_occ_M0.yaml` (requires occupation-draw rebuild and canary pass before estimation)
+- `scripts/enhanced/specifications/estimation_spec_v3.yaml`
+- `scripts/enhanced/specifications/estimation_spec_v2.yaml`
+- `scripts/enhanced/specifications/estimation_spec.yaml`
 
 The continuous branch implements a standard RURO opportunity-set workflow. It draws non-work, hours, and wages, then estimates a likelihood with preference, hours opportunity, wage opportunity, and proposal correction terms.
 
@@ -176,9 +176,9 @@ Main scripts:
 
 Current job-choice specification candidates:
 
-- `scripts/enhanced/estimation_spec_job_M2h_pruned.yaml`
-- `scripts/enhanced/estimation_spec_job_M2e_a.yaml`
-- `scripts/enhanced/estimation_spec_job_M2g_unified_opportunity.yaml`
+- `scripts/enhanced/specifications/estimation_spec_job_M2h_pruned.yaml`
+- `scripts/enhanced/specifications/estimation_spec_job_M2e_a.yaml`
+- `scripts/enhanced/specifications/estimation_spec_job_M2g_unified_opportunity.yaml`
 
 The job-choice branch changes the opportunity object. Instead of drawing continuous hours and wages independently, it builds alternatives like:
 
@@ -427,7 +427,7 @@ python scripts\enhanced\enh_RURO_estimate_FR.py `
   --group joint `
   --solver gamspy-conopt `
   --vectorized `
-  --spec-config "scripts/enhanced/estimation_spec_job_M2h_pruned.yaml" `
+  --spec-config "scripts/enhanced/specifications/estimation_spec_job_M2h_pruned.yaml" `
   --warm-start "none" `
   --auto-timestamp `
   --verbose

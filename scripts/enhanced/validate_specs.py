@@ -15,7 +15,7 @@ import yaml
 # Add scripts/enhanced to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from estimation_spec_parser import parse_specification
+from estimation_spec_parser import SPECIFICATIONS_DIR, parse_specification
 
 
 def validate_spec(spec_file: Path) -> dict:
@@ -49,9 +49,9 @@ def validate_spec(spec_file: Path) -> dict:
 
 
 def main():
-    """Validate all specification files in scripts/enhanced/."""
+    """Validate representative specification files in the canonical specs folder."""
 
-    spec_dir = Path(__file__).parent
+    spec_dir = SPECIFICATIONS_DIR
     spec_files = [
         'estimation_spec.yaml',
         'estimation_spec_AC2013.yaml',

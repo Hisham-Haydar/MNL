@@ -946,7 +946,7 @@ Examples:
   python enh_RURO_estimate_FR.py \\
     --mnl-base "..." \\
     --output-dir "..." \\
-    --spec-config estimation_spec_loc_empirical.yaml
+    --spec-config scripts/enhanced/specifications/estimation_spec_loc_empirical.yaml
 
   # Singles only (males)
   python enh_RURO_estimate_FR.py \\

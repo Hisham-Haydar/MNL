@@ -260,7 +260,7 @@ def main():
     # Paths
     baseline_path = Path("outputs/estimates/fr/2016/estimation_results.json")
     gamspy_path = Path("outputs/estimates/fr/2016_gamspy/estimation_results.json")
-    spec_path = Path("scripts/enhanced/estimation_spec.yaml")
+    spec_path = Path("scripts/enhanced/specifications/estimation_spec.yaml")
 
     # Check files exist
     if not baseline_path.exists():

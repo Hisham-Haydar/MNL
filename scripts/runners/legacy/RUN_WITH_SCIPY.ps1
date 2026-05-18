@@ -21,7 +21,7 @@ python scripts\enhanced\enh_RURO_estimate_FR.py `
     --output-dir outputs\estimates\fr\2016_scipy `
     --group joint `
     --solver scipy `
-    --spec-config scripts\enhanced\estimation_spec.yaml `
+    --spec-config scripts\enhanced\specifications\estimation_spec.yaml `
     --auto-timestamp
 
 if ($LASTEXITCODE -eq 0) {

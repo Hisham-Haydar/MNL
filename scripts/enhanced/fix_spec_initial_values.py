@@ -246,7 +246,7 @@ def main():
     print(f"\nLoaded {len(defaults)} default initial values")
 
     # Specification files to check
-    spec_dir = Path(__file__).parent
+    spec_dir = Path(__file__).parent / "specifications"
     spec_files = [
         'estimation_spec_AC2013.yaml',
         'estimation_spec_loc_empirical.yaml',

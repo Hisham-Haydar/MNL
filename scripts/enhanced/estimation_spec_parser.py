@@ -26,6 +26,39 @@ import numpy as np
 import yaml
 
 
+SPECIFICATIONS_DIR = Path(__file__).parent / "specifications"
+
+
+def resolve_specification_path(yaml_path: Path) -> Path:
+    """
+    Resolve estimation-spec YAML paths after the specifications-folder migration.
+
+    The canonical location is ``scripts/enhanced/specifications/``. Historical
+    commands often still pass either ``scripts/enhanced/<file>.yaml`` or only a
+    bare ``estimation_spec_*.yaml`` filename, so retain those paths as accepted
+    aliases when a matching canonical file exists.
+    """
+    requested = Path(yaml_path)
+    if requested.exists():
+        return requested
+
+    if requested.suffix.lower() not in {".yaml", ".yml"}:
+        return requested
+
+    if not requested.name.startswith("estimation_spec"):
+        return requested
+
+    candidates = [SPECIFICATIONS_DIR / requested.name]
+    if requested.parent.name == "enhanced":
+        candidates.insert(0, requested.parent / "specifications" / requested.name)
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    return requested
+
+
 @dataclass
 class EstimationSpec:
     """
@@ -366,9 +399,18 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     ValueError
         If specification is invalid    """
     logger = logging.getLogger(__name__)
+    requested_yaml_path = Path(yaml_path)
+    yaml_path = resolve_specification_path(requested_yaml_path)
     logger.info("="*80)
     logger.info(f"Parsing specification: {yaml_path}")
     logger.info("="*80)
+
+    if yaml_path != requested_yaml_path:
+        logger.info(
+            "Resolved legacy specification path '%s' to canonical path '%s'.",
+            requested_yaml_path,
+            yaml_path,
+        )
     
     if not yaml_path.exists():
         raise FileNotFoundError(f"Specification file not found: {yaml_path}")

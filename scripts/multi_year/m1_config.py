@@ -7,8 +7,11 @@ Stage M1 — YAML configuration loader.
 Loads a stage-config YAML file (e.g. config/multi_year/fr_p3a_stage_m1.yaml)
 and provides a typed StageConfig object consumed by all reusable M1 scripts.
 
-The --config p3a shortcut resolves to the canonical France P3a YAML at:
-    config/multi_year/fr_p3a_stage_m1.yaml
+Shortcut map (--config <name> resolves to its own YAML):
+    p2   → config/multi_year/fr_p2_stage_m1.yaml   (2015+2016)
+    p3a  → config/multi_year/fr_p3a_stage_m1.yaml  (2015+2016+2017)
+    p3b  → config/multi_year/fr_p3b_stage_m1.yaml  (2015+2016+2018, blocked)
+    p4   → config/multi_year/fr_p4_stage_m1.yaml   (2015+2017+2018, blocked)
 
 Reference: docs/JMP_multi_year_stage_M1_generalization_report_v1.md
 """
@@ -27,11 +30,10 @@ import yaml
 REPO = Path(__file__).resolve().parents[2]
 
 _SHORTCUT_MAP: Dict[str, str] = {
-    "p2":  "config/multi_year/fr_p3a_stage_m1.yaml",   # P2 uses FR config, years subset
+    "p2":  "config/multi_year/fr_p2_stage_m1.yaml",
     "p3a": "config/multi_year/fr_p3a_stage_m1.yaml",
-    "p3b": "config/multi_year/fr_p3a_stage_m1.yaml",
-    "p3b_robustness": "config/multi_year/fr_p3a_stage_m1.yaml",
-    "p4":  "config/multi_year/fr_p3a_stage_m1.yaml",
+    "p3b": "config/multi_year/fr_p3b_stage_m1.yaml",
+    "p4":  "config/multi_year/fr_p4_stage_m1.yaml",
 }
 
 

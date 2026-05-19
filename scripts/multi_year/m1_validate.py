@@ -53,6 +53,11 @@ if sys.stderr.encoding and sys.stderr.encoding.lower() not in ("utf-8", "utf-8-s
     import io  # noqa: F811
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
+# Ensure repo root is on sys.path so this script runs without PYTHONPATH set.
+_SCRIPT_REPO = Path(__file__).resolve().parents[2]
+if str(_SCRIPT_REPO) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_REPO))
+
 from scripts.multi_year.m1_config import StageConfig, load_stage_config  # noqa: E402
 
 LOGGER = logging.getLogger(__name__)

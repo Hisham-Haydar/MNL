@@ -1,0 +1,155 @@
+# config/multi_year/fr_p2_stage_m1.yaml
+# ======================================
+# Stage M1 configuration — France P2 (2015+2016)
+#
+# Usage (any reusable script):
+#   python scripts/multi_year/<script>.py \
+#       --stage-config config/multi_year/fr_p2_stage_m1.yaml
+#
+# Backward-compatible shortcut (resolves to this file internally):
+#   python scripts/multi_year/<script>.py --config p2
+#
+# Reference: docs/JMP_multi_year_stage_M1_generalization_report_v1.md
+# Plan:      docs/JMP_multi_year_stage_M1_implementation_plan_v2.md
+
+# ---------------------------------------------------------------------------
+# Project identity
+# ---------------------------------------------------------------------------
+country_code:   FR
+country_slug:   fr
+project_label:  JMP_multi_year
+config_name:    p2
+
+# ---------------------------------------------------------------------------
+# Year / tag mapping
+# ---------------------------------------------------------------------------
+years: [2015, 2016]
+year_tags:
+  2015: 1
+  2016: 2
+  2017: 3   # included for tag-lookup completeness
+  2018: 4
+
+# ---------------------------------------------------------------------------
+# UID scheme
+# ---------------------------------------------------------------------------
+uid_base: 100000000000   # B = 10**11
+
+# ---------------------------------------------------------------------------
+# Column names
+# ---------------------------------------------------------------------------
+household_id_col:      idhh
+person_id_col:         idperson
+raw_household_id_col:  idorighh
+raw_person_id_col:     idorigperson
+cluster_id_col:        cluster_id
+cluster_source_col:    idorighh
+
+# ---------------------------------------------------------------------------
+# Raw identifier columns
+# ---------------------------------------------------------------------------
+raw_id_cols:
+  - idorighh
+  - idorigperson
+  - idhh
+  - idperson
+
+# ---------------------------------------------------------------------------
+# Monetary variables to deflate (§8)
+# ---------------------------------------------------------------------------
+monetary_variables:
+  - ils_dispy
+  - ils_earns
+  - yem
+  - yse
+  - ypen
+  - ypt
+  - ils_ben
+
+# ---------------------------------------------------------------------------
+# Variables excluded from deflation (§9)
+# ---------------------------------------------------------------------------
+variables_excluded_from_deflation:
+  - dgn
+  - dag
+  - dms
+  - deh
+  - drgn1
+  - idhh
+  - idperson
+  - idorighh
+  - idorigperson
+  - dwt
+  - gsur
+  - gsur_v2
+  - year_tag
+  - year
+  - tpr
+  - stacked_hh_uid
+  - stacked_person_uid
+  - cluster_id
+
+# ---------------------------------------------------------------------------
+# File paths (relative to repo root)
+# ---------------------------------------------------------------------------
+processed_root:    Data/processed/fr
+pooled_output_dir: Data/processed/fr/pooled
+results_dir:       Results
+external_data_dir: Data/external
+
+cpi_template_path: Data/external/cpi_hicp_fr_harmonisation_TEMPLATE.csv
+cpi_final_path:    Data/external/cpi_hicp_fr_harmonisation.csv
+
+input_parquet_dir: Data/processed/fr
+
+input_parquet_patterns:
+  - "*{year}*RURO*mnl*job*gmm*.parquet"
+  - "*{year}*RURO*mnl*job*.parquet"
+  - "*{year}*RURO*mnl*.parquet"
+  - "*{year}*mnl*.parquet"
+
+output_file_stems:
+  stacked_raw:  "{country_slug}_{config_name}_stacked_raw"
+  harmonised:   "{country_slug}_{config_name}_harmonised"
+
+# ---------------------------------------------------------------------------
+# Expected counts
+# ---------------------------------------------------------------------------
+# P2: 2015 (tag=1) and 2016 (tag=2) — disjoint panels, zero overlap
+expected_row_counts:
+  p2:  22849
+  p3a: 33917
+  p3b: 33725
+  p4:  33334
+
+expected_overlap_counts:
+  "2015-2016": 0
+  "2015-2017": 0
+  "2015-2018": 0
+  "2016-2017": 8796
+  "2016-2018": 7065
+  "2017-2018": 8521
+
+p3a_overlap_tolerance: 200
+
+ils_dispy_real_range:
+  min: 25000.0
+  max: 55000.0
+
+# ---------------------------------------------------------------------------
+# Identity validation thresholds (§13)
+# ---------------------------------------------------------------------------
+identity_validation_thresholds:
+  sex_stability_min:    0.9990
+  age_progression_min:  0.9950
+  suspicious_warn_max:  0.0020
+  suspicious_block_max: 0.0100
+  hh_continuity_min:    0.9700
+
+# ---------------------------------------------------------------------------
+# Special gates
+# ---------------------------------------------------------------------------
+special_gates:
+  p3b_isf_memo_path: Results/M1_ISF_tpr_comparability_check_2018.md
+  p3b_isf_proceed_phrase: "proceed with p3b"
+  blocked_configs: {}

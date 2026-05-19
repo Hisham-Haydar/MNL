@@ -2,6 +2,15 @@
 m1_isf_check_2018.py
 ====================
 
+FRANCE-2018-SPECIFIC RESEARCH WRAPPER
+--------------------------------------
+This script is intentionally country- and year-specific. It implements the
+ISF / tpr comparability check that is required before activating the France
+P3b robustness branch (2015+2016+2018). It is NOT a reusable Stage M1 script
+and does NOT accept --stage-config. A corresponding country-agnostic version
+would require a separate design for the ISF-concept check. This script will
+remain France-specific until that design is undertaken.
+
 Stage M1 — ISF / tpr comparability check for the 2018 robustness branch (P3b).
 
 Implements the four required steps from §16 of the Stage M1 plan:

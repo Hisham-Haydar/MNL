@@ -2,32 +2,38 @@
 m1_harmonise_cpi.py
 ===================
 
-Stage M1 — CPI/HICP deflation for the RURO multi-year pooled dataset.
+Stage M1 — CPI/HICP deflation for multi-year pooled datasets.
 
 Reads a stacked-raw pooled parquet produced by m1_stack_years.py, deflates
-nominal income variables to 2016 prices using the φ_t factor table, writes
-a harmonised parquet with *_real columns appended.
+nominal income variables to base-year prices using the phi_t factor table,
+and writes a harmonised parquet with *_real columns appended.
 
-Reference: docs/JMP_multi_year_stage_M1_implementation_plan_v2.md §§7–9, 18.
+All country/year/config-specific values are read from a stage-config YAML.
+Pass --stage-config config/multi_year/fr_p3a_stage_m1.yaml or use the
+backward-compatible shortcut --config p3a.
+
+Reference: docs/JMP_multi_year_stage_M1_implementation_plan_v2.md §§7-9, 18.
+           docs/JMP_multi_year_stage_M1_generalization_report_v1.md
 
 Deflation rule (§8):
-    {var}_real = {var} × φ_t
-    φ_t looked up from cpi_hicp_fr_harmonisation.csv by year.
+    {var}_real = {var} * phi_t
+    phi_t looked up from the CPI final CSV by year.
     Nominal columns are PRESERVED alongside real columns.
 
 Source file (§7):
-    Data/external/cpi_hicp_fr_harmonisation.csv  (must be created after the
-    CPI source decision — see §7 of the plan).  Use the TEMPLATE at
-    Data/external/cpi_hicp_fr_harmonisation_TEMPLATE.csv as a starting point.
+    Configured via cpi_final_path in the stage-config YAML.
+    Use the template (cpi_template_path) as a starting point.
 
 IMPORTANT — CPI source decision (§7):
-    This script must NOT be run until cpi_hicp_fr_harmonisation.csv exists
-    and has been authorised via the §7 decision process. Do not hard-code
-    φ_t values; they must always be read from the CSV.
+    This script must NOT be run until the CPI CSV exists and has been
+    authorised via the §7 decision process. Do not hard-code phi_t values;
+    they must always be read from the CSV.
 
 Usage
 -----
     python scripts/multi_year/m1_harmonise_cpi.py --config p3a [--dry-run]
+    python scripts/multi_year/m1_harmonise_cpi.py \\
+        --stage-config config/multi_year/fr_p3a_stage_m1.yaml [--dry-run]
     python scripts/multi_year/m1_harmonise_cpi.py --config p3a \\
         --cpi-source hicp --stacked-file path/to/override.parquet
     python scripts/multi_year/m1_harmonise_cpi.py --help
@@ -52,77 +58,41 @@ if sys.stderr.encoding and sys.stderr.encoding.lower() not in ("utf-8", "utf-8-s
     import io  # noqa: F811
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
+from scripts.multi_year.m1_config import StageConfig, load_stage_config  # noqa: E402
+
 LOGGER = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-REPO = Path(__file__).resolve().parents[2]
-POOLED_DIR = REPO / "Data" / "processed" / "fr" / "pooled"
-EXTERNAL_DIR = REPO / "Data" / "external"
-RESULTS_DIR = REPO / "Results"
-
-CPI_SOURCE_FILE = EXTERNAL_DIR / "cpi_hicp_fr_harmonisation.csv"
-CPI_TEMPLATE_FILE = EXTERNAL_DIR / "cpi_hicp_fr_harmonisation_TEMPLATE.csv"
-
-# Monetary variables to deflate (§8).  Only columns present in the parquet
-# are deflated; absent columns are silently skipped with a log message.
-MONETARY_VARS: List[str] = [
-    "ils_dispy",
-    "ils_earns",
-    "yem",
-    "yse",
-    "ypen",
-    "ypt",
-    "ils_ben",
-]
-
-# Variables explicitly excluded from deflation (§9)
-EXCLUDED_VARS = frozenset([
-    "dgn", "dag", "dms", "deh", "drgn1",
-    "idhh", "idperson", "idorighh", "idorigperson",
-    "dwt",
-    "gsur", "gsur_v2",
-    "year_tag", "year",
-    "tpr",
-    "stacked_hh_uid", "stacked_person_uid", "cluster_id",
-])
-
-YEAR_TAG: Dict[int, int] = {2015: 1, 2016: 2, 2017: 3, 2018: 4}
-TAG_YEAR: Dict[int, int] = {v: k for k, v in YEAR_TAG.items()}
-
 
 # ---------------------------------------------------------------------------
-# Load φ_t table
+# Load phi_t table
 # ---------------------------------------------------------------------------
 
-def _load_phi_table(cpi_source: Optional[str] = None) -> Dict[int, float]:
+def _load_phi_table(
+    cfg: StageConfig,
+    cpi_source: Optional[str] = None,
+) -> Dict[int, float]:
     """
-    Load φ_t (deflation factor) from the authorised CPI/HICP harmonisation CSV.
+    Load phi_t (deflation factor) from the authorised CPI/HICP CSV.
 
     Returns dict mapping {year: phi_t}.
-
-    If cpi_source is provided ('hicp' or 'insee'), the CSV is filtered to that
-    source; otherwise all rows are used (they should already be source-filtered
-    in the CSV after the §7 decision).
     """
-    if not CPI_SOURCE_FILE.exists():
+    cpi_file = cfg.cpi_final_path
+    if not cpi_file.exists():
         raise FileNotFoundError(
-            f"CPI harmonisation file not found:\n  {CPI_SOURCE_FILE}\n\n"
+            f"CPI harmonisation file not found:\n  {cpi_file}\n\n"
             "This file must be created after the CPI source decision (§7 of the "
             "Stage M1 plan). Use the template at:\n"
-            f"  {CPI_TEMPLATE_FILE}\n\n"
+            f"  {cfg.cpi_template_path}\n\n"
             "Do NOT run harmonisation until this decision is documented."
         )
 
-    df = pd.read_csv(CPI_SOURCE_FILE, dtype=str)
+    df = pd.read_csv(cpi_file, dtype=str)
     required_cols = {"year", "phi_t"}
     missing = required_cols - set(df.columns)
     if missing:
         raise ValueError(
-            f"cpi_hicp_fr_harmonisation.csv is missing columns: {missing}\n"
-            f"Check the template: {CPI_TEMPLATE_FILE}"
+            f"CPI CSV is missing columns: {missing}\n"
+            f"Check the template: {cfg.cpi_template_path}"
         )
 
     if cpi_source:
@@ -130,7 +100,7 @@ def _load_phi_table(cpi_source: Optional[str] = None) -> Dict[int, float]:
             df = df[df["price_index_source"].str.lower() == cpi_source.lower()]
             if df.empty:
                 raise ValueError(
-                    f"No rows for cpi_source='{cpi_source}' in {CPI_SOURCE_FILE}"
+                    f"No rows for cpi_source='{cpi_source}' in {cpi_file}"
                 )
         else:
             LOGGER.warning(
@@ -143,7 +113,7 @@ def _load_phi_table(cpi_source: Optional[str] = None) -> Dict[int, float]:
     invalid = df[df["phi_t"].isna() | df["year"].isna()]
     if not invalid.empty:
         raise ValueError(
-            f"{len(invalid)} rows have null year or phi_t in {CPI_SOURCE_FILE}"
+            f"{len(invalid)} rows have null year or phi_t in {cpi_file}"
         )
 
     phi_map: Dict[int, float] = dict(zip(df["year"].astype(int), df["phi_t"]))
@@ -158,18 +128,20 @@ def _load_phi_table(cpi_source: Optional[str] = None) -> Dict[int, float]:
 def _deflate(
     pooled: pd.DataFrame,
     phi_map: Dict[int, float],
+    cfg: StageConfig,
 ) -> pd.DataFrame:
     """
     Deflate monetary variables in pooled DataFrame.
 
-    For each year_tag present in the data, look up φ_t and multiply every
-    MONETARY_VARS column by φ_t, writing the result as {var}_real.
+    For each year_tag present in the data, look up phi_t and multiply every
+    monetary variable column by phi_t, writing the result as {var}_real.
     Nominal columns are untouched.
     """
     df = pooled.copy()
+    monetary_vars: List[str] = cfg.monetary_variables
 
-    present_monetary = [v for v in MONETARY_VARS if v in df.columns]
-    absent_monetary = [v for v in MONETARY_VARS if v not in df.columns]
+    present_monetary = [v for v in monetary_vars if v in df.columns]
+    absent_monetary = [v for v in monetary_vars if v not in df.columns]
     if absent_monetary:
         LOGGER.warning(
             "Monetary variables not found in parquet (skipped): %s", absent_monetary
@@ -182,19 +154,19 @@ def _deflate(
 
     tags_present = sorted(df["year_tag"].unique())
     for tag in tags_present:
-        year = TAG_YEAR.get(int(tag))
+        year = cfg.tag_year.get(int(tag))
         if year is None:
             raise ValueError(f"year_tag={tag} has no mapping to a calendar year.")
         phi = phi_map.get(year)
         if phi is None:
             raise KeyError(
-                f"No phi_t found for year={year} in cpi_hicp_fr_harmonisation.csv. "
+                f"No phi_t found for year={year} in CPI CSV. "
                 "Add this year to the CPI table."
             )
         mask = df["year_tag"] == tag
         for var in present_monetary:
             real_col = f"{var}_real"
-            df.loc[mask, real_col] = df.loc[mask, var].astype(float) * phi
+            df.loc[mask, real_col] = pd.to_numeric(df.loc[mask, var], errors="coerce") * phi
             LOGGER.debug(
                 "  year=%d  phi_t=%.6f  %s -> %s  (rows=%d)",
                 year, phi, var, real_col, mask.sum()
@@ -212,13 +184,15 @@ def _deflate(
 # ---------------------------------------------------------------------------
 
 def _dry_run_report(
-    config: str,
+    config_name: str,
+    cfg: StageConfig,
     stacked_path: Path,
     out_path: Path,
     cpi_source: Optional[str],
 ) -> None:
     print(f"\n{'='*70}")
-    print(f"DRY RUN — config={config}  cpi_source={cpi_source or 'not specified'}")
+    print(f"DRY RUN -- config={config_name}  cpi_source={cpi_source or 'not specified'}")
+    print(f"Config YAML: {cfg.yaml_path}")
     print(f"{'='*70}")
 
     print(f"\nInput stacked parquet: {stacked_path}")
@@ -228,19 +202,19 @@ def _dry_run_report(
     else:
         print("  Status: NOT FOUND  (run m1_stack_years.py first)")
 
-    print(f"\nCPI source file:       {CPI_SOURCE_FILE}")
-    if CPI_SOURCE_FILE.exists():
+    print(f"\nCPI source file:       {cfg.cpi_final_path}")
+    if cfg.cpi_final_path.exists():
         print("  Status: FOUND")
         try:
-            phi_map = _load_phi_table(cpi_source)
+            phi_map = _load_phi_table(cfg, cpi_source)
             for yr, phi in sorted(phi_map.items()):
                 print(f"    year={yr}  phi_t={phi:.6f}")
         except Exception as e:
             print(f"  ERROR reading: {e}")
     else:
-        print("  Status: NOT FOUND  — §7 CPI source decision required before running")
+        print("  Status: NOT FOUND  -- §7 CPI source decision required before running")
 
-    print(f"\nMonetary variables to deflate (§8): {MONETARY_VARS}")
+    print(f"\nMonetary variables to deflate (§8): {cfg.monetary_variables}")
     print(f"Planned output: {out_path}")
     print("\nNo file written (dry-run mode).\n")
 
@@ -250,20 +224,19 @@ def _dry_run_report(
 # ---------------------------------------------------------------------------
 
 def harmonise(
-    config: str,
+    config_name: Optional[str] = None,
+    stage_config_path: Optional[str] = None,
     stacked_file: Optional[str] = None,
     cpi_source: Optional[str] = None,
     dry_run: bool = False,
 ) -> None:
-    config = config.lower()
+    cfg = load_stage_config(config_name, stage_config_path)
 
-    stacked_path = Path(stacked_file) if stacked_file else (
-        POOLED_DIR / f"fr_{config}_stacked_raw.parquet"
-    )
-    out_path = POOLED_DIR / f"fr_{config}_harmonised.parquet"
+    stacked_path = Path(stacked_file) if stacked_file else cfg.stacked_raw_path()
+    out_path = cfg.harmonised_path()
 
     if dry_run:
-        _dry_run_report(config, stacked_path, out_path, cpi_source)
+        _dry_run_report(config_name or cfg.config_name, cfg, stacked_path, out_path, cpi_source)
         return
 
     if not stacked_path.exists():
@@ -272,34 +245,37 @@ def harmonise(
             "Run m1_stack_years.py first."
         )
 
-    phi_map = _load_phi_table(cpi_source)
+    phi_map = _load_phi_table(cfg, cpi_source)
 
     LOGGER.info("Loading stacked-raw parquet: %s", stacked_path)
     pooled = pd.read_parquet(stacked_path)
     LOGGER.info("Loaded %d rows, %d columns.", len(pooled), len(pooled.columns))
 
-    harmonised = _deflate(pooled, phi_map)
+    harmonised = _deflate(pooled, phi_map, cfg)
 
-    POOLED_DIR.mkdir(parents=True, exist_ok=True)
+    cfg.pooled_output_dir.mkdir(parents=True, exist_ok=True)
     harmonised.to_parquet(out_path, index=False)
     LOGGER.info("Harmonised parquet written: %s  (%d rows)", out_path, len(harmonised))
 
-    # CPI check manifest
+    # Manifest
     ts = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
-    manifest_path = RESULTS_DIR / f"M1_cpi_harmonisation_check_{ts}.csv"
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    manifest_path = cfg.results_dir / f"M1_cpi_harmonisation_check_{ts}.csv"
+    cfg.results_dir.mkdir(parents=True, exist_ok=True)
 
     rows = []
-    tag_year = {v: k for k, v in YEAR_TAG.items()}
     for tag in sorted(harmonised["year_tag"].unique()):
-        year = tag_year.get(int(tag), int(tag))
+        year = cfg.tag_year.get(int(tag), int(tag))
         phi = phi_map.get(year, float("nan"))
         sub = harmonised[harmonised["year_tag"] == tag]
-        row: dict = {"year": year, "year_tag": int(tag), "phi_t": phi, "n_rows": len(sub)}
-        for var in MONETARY_VARS:
+        row: dict = {
+            "year": year, "year_tag": int(tag), "phi_t": phi, "n_rows": len(sub),
+        }
+        for var in cfg.monetary_variables:
             real_col = f"{var}_real"
             if real_col in sub.columns:
-                row[f"{var}_mean_nominal"] = float(sub[var].mean()) if var in sub.columns else None
+                row[f"{var}_mean_nominal"] = (
+                    float(sub[var].mean()) if var in sub.columns else None
+                )
                 row[f"{var}_mean_real"] = float(sub[real_col].mean())
         rows.append(row)
 
@@ -315,31 +291,37 @@ def _parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description=(
             "Stage M1 CPI/HICP harmonisation. Deflates nominal income variables "
-            "to 2016 prices using phi_t factors from cpi_hicp_fr_harmonisation.csv.\n\n"
-            "IMPORTANT: The CPI source file must be created after the S7 decision. "
-            "See Data/external/cpi_hicp_fr_harmonisation_TEMPLATE.csv."
+            "to base-year prices using phi_t factors from the CPI CSV.\n\n"
+            "IMPORTANT: The CPI source file must be created after the S7 decision.\n"
+            "All country/year-specific values come from the stage-config YAML.\n"
+            "Use --stage-config for an explicit path, or --config for a shortcut."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    ap.add_argument(
+    group = ap.add_mutually_exclusive_group(required=True)
+    group.add_argument(
         "--config",
-        choices=["p2", "p3a", "p3b", "p4"],
-        required=True,
-        help="Pooled configuration (must match the stacked-raw parquet filename).",
+        type=str,
+        help="Shortcut config name (e.g. p3a). Resolves to the canonical YAML.",
+    )
+    group.add_argument(
+        "--stage-config",
+        type=str,
+        dest="stage_config",
+        metavar="YAML_PATH",
+        help="Explicit path to a stage-config YAML file.",
     )
     ap.add_argument(
         "--stacked-file",
         type=str,
         default=None,
-        help="Override path to stacked-raw parquet (default: "
-             "Data/processed/fr/pooled/fr_<config>_stacked_raw.parquet).",
+        help="Override path to stacked-raw parquet (default: from stage config).",
     )
     ap.add_argument(
         "--cpi-source",
         choices=["hicp", "insee"],
         default=None,
-        help="Filter cpi_hicp_fr_harmonisation.csv to this source. "
-             "If omitted, all rows are used.",
+        help="Filter CPI CSV to this source. If omitted, all rows are used.",
     )
     ap.add_argument(
         "--dry-run",
@@ -362,7 +344,8 @@ def main() -> None:
     )
     try:
         harmonise(
-            config=args.config,
+            config_name=args.config,
+            stage_config_path=args.stage_config,
             stacked_file=args.stacked_file,
             cpi_source=args.cpi_source,
             dry_run=args.dry_run,

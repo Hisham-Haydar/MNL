@@ -2,27 +2,34 @@
 m1_validate.py
 ==============
 
-Stage M1 — validation checks V1–V9 for the RURO multi-year pooled dataset.
+Stage M1 — validation checks V1-V9 for multi-year pooled datasets.
 
 Implements all validation checks specified in §17 of the Stage M1 plan.
 Writes Results/M1_* manifests and prints a pass/fail summary to stdout.
 
+All country/year/config-specific values are read from a stage-config YAML.
+Pass --stage-config config/multi_year/fr_p3a_stage_m1.yaml or use the
+backward-compatible shortcut --config p3a.
+
 Reference: docs/JMP_multi_year_stage_M1_implementation_plan_v2.md §17, 19.
+           docs/JMP_multi_year_stage_M1_generalization_report_v1.md
 
 Checks implemented:
     V1  stacked_person_uid unique per row; stacked_hh_uid unique per hh-year
     V2  row-count agreement with expected totals
-    V3  raw-ID completeness (idorighh, idorigperson, idhh, idperson non-null)
+    V3  raw-ID completeness (raw_id_cols non-null)
     V4  year_tag coverage matches config
     V5  CPI deflation correctness (spot sample + range check)
-    V6  cluster_id == idorighh; repeat-household count for P3a
+    V6  cluster_id == cluster_source_col; expected overlap counts
     V7  person-identity validation (delegates to m1_identity_validation.py logic)
     V8  GSUR coverage (zero missing gsur values; warns if gsur column absent)
     V9  no 'stijn' token in output file path or column names
 
 Usage
 -----
-    python scripts/multi_year/m1_validate.py --config p3a [--file path/to/override.parquet]
+    python scripts/multi_year/m1_validate.py --config p3a [--file path/override.parquet]
+    python scripts/multi_year/m1_validate.py \\
+        --stage-config config/multi_year/fr_p3a_stage_m1.yaml
     python scripts/multi_year/m1_validate.py --config p3a --skip V7
     python scripts/multi_year/m1_validate.py --help
 """
@@ -46,61 +53,9 @@ if sys.stderr.encoding and sys.stderr.encoding.lower() not in ("utf-8", "utf-8-s
     import io  # noqa: F811
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
+from scripts.multi_year.m1_config import StageConfig, load_stage_config  # noqa: E402
+
 LOGGER = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-REPO = Path(__file__).resolve().parents[2]
-POOLED_DIR = REPO / "Data" / "processed" / "fr" / "pooled"
-RESULTS_DIR = REPO / "Results"
-EXTERNAL_DIR = REPO / "Data" / "external"
-
-CPI_SOURCE_FILE = EXTERNAL_DIR / "cpi_hicp_fr_harmonisation.csv"
-
-YEAR_TAG: Dict[int, int] = {2015: 1, 2016: 2, 2017: 3, 2018: 4}
-TAG_YEAR: Dict[int, int] = {v: k for k, v in YEAR_TAG.items()}
-
-# Expected year_tags per config
-CONFIG_TAGS: Dict[str, Set[int]] = {
-    "p2":  {1, 2},
-    "p3a": {1, 2, 3},
-    "p3b": {1, 2, 4},
-    "p4":  {1, 3, 4},
-}
-
-# Expected household-row totals (§5, Table); tolerance ±10 rows
-EXPECTED_HH_ROWS: Dict[str, int] = {
-    "p2":  22_849,
-    "p3a": 33_917,
-    "p3b": 33_725,
-    "p4":  33_334,
-}
-
-# Expected person-row approx (§17 V2 note)
-EXPECTED_PERSON_ROWS_APPROX: Dict[str, int] = {
-    "p3a": 97_000,
-}
-
-# Expected repeat-household overlap for P3a: 2016 ∩ 2017 ≈ 8,796 (±200)
-P3A_EXPECTED_OVERLAP_2016_2017 = 8_796
-P3A_OVERLAP_TOLERANCE = 200
-
-# V5: plausible range for mean ils_dispy_real per year (2016 prices)
-ILS_DISPY_REAL_MIN = 25_000.0
-ILS_DISPY_REAL_MAX = 55_000.0
-
-RAW_ID_COLS = ["idorighh", "idorigperson", "idhh", "idperson"]
-
-# Person-identity thresholds from §13
-IDENTITY_THRESHOLDS = {
-    "sex_stability_min": 0.9990,
-    "age_progression_min": 0.9950,
-    "suspicious_warn_max": 0.0020,
-    "suspicious_block_max": 0.0100,
-    "hh_continuity_min": 0.9700,
-}
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +90,7 @@ class CheckResult:
 # V1 — stacked UID uniqueness
 # ---------------------------------------------------------------------------
 
-def check_v1(df: pd.DataFrame, result: CheckResult) -> None:
+def check_v1(df: pd.DataFrame, cfg: StageConfig, result: CheckResult) -> None:
     if "stacked_person_uid" not in df.columns:
         result.fail("Column 'stacked_person_uid' not found.")
         return
@@ -146,7 +101,6 @@ def check_v1(df: pd.DataFrame, result: CheckResult) -> None:
         result.fail("Column 'year_tag' not found.")
         return
 
-    # stacked_person_uid must be unique per row
     n_unique = df["stacked_person_uid"].nunique()
     if n_unique != len(df):
         result.fail(
@@ -158,16 +112,15 @@ def check_v1(df: pd.DataFrame, result: CheckResult) -> None:
             f"stacked_person_uid unique per row: {n_unique} values."
         )
 
-    # stacked_hh_uid: unique per household-year
-    # ngroups of (year_tag, stacked_hh_uid) == ngroups of (year_tag, idhh)
-    if "idhh" in df.columns:
+    idhh_col = cfg.household_id_col
+    if idhh_col in df.columns:
         n_hh_uid_groups = df.groupby(["year_tag", "stacked_hh_uid"]).ngroups
-        n_hh_idhh_groups = df[["year_tag", "idhh"]].drop_duplicates().shape[0]
+        n_hh_idhh_groups = df[["year_tag", idhh_col]].drop_duplicates().shape[0]
         if n_hh_uid_groups != n_hh_idhh_groups:
             result.fail(
                 f"stacked_hh_uid groupby year_tag mismatch: "
                 f"stacked_hh_uid groups={n_hh_uid_groups}, "
-                f"(year_tag,idhh) groups={n_hh_idhh_groups}."
+                f"(year_tag,{idhh_col}) groups={n_hh_idhh_groups}."
             )
         else:
             result.details.append(
@@ -175,7 +128,7 @@ def check_v1(df: pd.DataFrame, result: CheckResult) -> None:
                 f"{n_hh_uid_groups} hh-year groups."
             )
     else:
-        result.warn("Column 'idhh' not found; skipping hh-uid group check.")
+        result.warn(f"Column '{idhh_col}' not found; skipping hh-uid group check.")
 
     if result.passed is None:
         result.ok()
@@ -185,8 +138,8 @@ def check_v1(df: pd.DataFrame, result: CheckResult) -> None:
 # V2 — row-count agreement
 # ---------------------------------------------------------------------------
 
-def check_v2(df: pd.DataFrame, config: str, result: CheckResult) -> None:
-    expected = EXPECTED_HH_ROWS.get(config)
+def check_v2(df: pd.DataFrame, config_key: str, cfg: StageConfig, result: CheckResult) -> None:
+    expected = cfg.expected_rows_for(config_key)
     n = len(df)
     result.details.append(f"Total rows in parquet: {n:,}")
 
@@ -201,20 +154,22 @@ def check_v2(df: pd.DataFrame, config: str, result: CheckResult) -> None:
             )
         else:
             result.details.append(
-                f"Row count {n:,} ≈ expected {expected:,} (diff={diff})."
+                f"Row count {n:,} approx expected {expected:,} (diff={diff})."
             )
     else:
         result.warn(
-            f"No expected row count for config='{config}'. Manual check required."
+            f"No expected row count for config='{config_key}'. Manual check required."
         )
 
-    # Per-year breakdown
     if "year_tag" in df.columns:
-        for tag, grp in df.groupby("year_tag"):
-            yr = TAG_YEAR.get(int(tag), int(tag))
+        idhh_col = cfg.household_id_col
+        for tag_val in sorted(df["year_tag"].unique()):
+            tag_int = int(tag_val)  # type: ignore[arg-type]
+            grp = df[df["year_tag"] == tag_val]
+            yr = cfg.tag_year.get(tag_int, tag_int)
             result.details.append(
-                f"  year={yr} (tag={tag}): {len(grp):,} rows, "
-                f"{grp['idhh'].nunique() if 'idhh' in grp.columns else '?'} households"
+                f"  year={yr} (tag={tag_int}): {len(grp):,} rows, "
+                f"{grp[idhh_col].nunique() if idhh_col in grp.columns else '?'} households"
             )
 
     result.ok()
@@ -224,61 +179,59 @@ def check_v2(df: pd.DataFrame, config: str, result: CheckResult) -> None:
 # V3 — raw-ID completeness
 # ---------------------------------------------------------------------------
 
-def check_v3(df: pd.DataFrame, result: CheckResult) -> None:
-    missing_cols = [c for c in RAW_ID_COLS if c not in df.columns]
+def check_v3(df: pd.DataFrame, cfg: StageConfig, result: CheckResult) -> None:
+    raw_id_cols = cfg.raw_id_cols
+    missing_cols = [c for c in raw_id_cols if c not in df.columns]
     if missing_cols:
         result.fail(f"Raw ID columns missing: {missing_cols}")
         return
 
-    null_counts = {c: int(df[c].isna().sum()) for c in RAW_ID_COLS}
+    null_counts = {c: int(df[c].isna().sum()) for c in raw_id_cols}
     any_null = any(v > 0 for v in null_counts.values())
     if any_null:
         result.fail(
-            f"Null values found in raw ID columns: "
+            "Null values found in raw ID columns: "
             + ", ".join(f"{c}={n}" for c, n in null_counts.items() if n > 0)
         )
     else:
-        result.ok(f"All raw IDs present and non-null: {RAW_ID_COLS}")
+        result.ok(f"All raw IDs present and non-null: {raw_id_cols}")
 
 
 # ---------------------------------------------------------------------------
 # V4 — year_tag coverage
 # ---------------------------------------------------------------------------
 
-def check_v4(df: pd.DataFrame, config: str, result: CheckResult) -> None:
-    expected_tags = CONFIG_TAGS.get(config)
-    if expected_tags is None:
-        result.warn(f"No expected year_tags defined for config='{config}'.")
-        return
+def check_v4(df: pd.DataFrame, cfg: StageConfig, result: CheckResult) -> None:
+    expected_tags: Set[int] = cfg.expected_year_tags()
 
     if "year_tag" not in df.columns:
         result.fail("Column 'year_tag' not found.")
         return
 
-    actual_tags = set(df["year_tag"].unique())
+    actual_tags = set(int(t) for t in df["year_tag"].unique())
     if actual_tags != expected_tags:
         result.fail(
             f"year_tag set {actual_tags} != expected {expected_tags} "
-            f"for config='{config}'."
+            f"for config='{cfg.config_name}'."
         )
     else:
-        result.ok(f"year_tags {actual_tags} match config='{config}'.")
+        result.ok(f"year_tags {actual_tags} match config='{cfg.config_name}'.")
 
 
 # ---------------------------------------------------------------------------
 # V5 — CPI deflation correctness
 # ---------------------------------------------------------------------------
 
-def check_v5(df: pd.DataFrame, result: CheckResult) -> None:
-    if not CPI_SOURCE_FILE.exists():
+def check_v5(df: pd.DataFrame, cfg: StageConfig, result: CheckResult) -> None:
+    if not cfg.cpi_final_path.exists():
         result.skipped(
-            "cpi_hicp_fr_harmonisation.csv not found; "
+            f"{cfg.cpi_final_path.name} not found; "
             "§7 CPI source decision not yet completed."
         )
         return
 
     try:
-        cpi_df = pd.read_csv(CPI_SOURCE_FILE, dtype=str)
+        cpi_df = pd.read_csv(cfg.cpi_final_path, dtype=str)
         phi_map: Dict[int, float] = {}
         for _, row in cpi_df.iterrows():
             try:
@@ -291,9 +244,12 @@ def check_v5(df: pd.DataFrame, result: CheckResult) -> None:
         result.warn(f"Could not read CPI file: {e}")
         return
 
-    if "ils_dispy_real" not in df.columns or "ils_dispy" not in df.columns:
+    nominal_col = cfg.monetary_variables[0] if cfg.monetary_variables else "ils_dispy"
+    real_col = f"{nominal_col}_real"
+
+    if real_col not in df.columns or nominal_col not in df.columns:
         result.warn(
-            "Columns 'ils_dispy' and/or 'ils_dispy_real' not found. "
+            f"Columns '{nominal_col}' and/or '{real_col}' not found. "
             "CPI deflation spot-check skipped."
         )
         return
@@ -303,8 +259,10 @@ def check_v5(df: pd.DataFrame, result: CheckResult) -> None:
         return
 
     errors: List[str] = []
-    for tag, grp in df.groupby("year_tag"):
-        yr = TAG_YEAR.get(int(tag), None)
+    for tag_val in sorted(df["year_tag"].unique()):
+        tag_int = int(tag_val)  # type: ignore[arg-type]
+        grp = df[df["year_tag"] == tag_val]
+        yr = cfg.tag_year.get(tag_int, None)
         if yr is None:
             continue
         phi = phi_map.get(yr)
@@ -314,24 +272,27 @@ def check_v5(df: pd.DataFrame, result: CheckResult) -> None:
 
         sample = grp.sample(min(100, len(grp)), random_state=42)
         tol = 1e-4
-        diffs = (sample["ils_dispy_real"] - sample["ils_dispy"].astype(float) * phi).abs()
+        diffs = (
+            sample[real_col]
+            - pd.to_numeric(sample[nominal_col], errors="coerce") * phi
+        ).abs()
         bad = diffs[diffs > tol]
         if not bad.empty:
             errors.append(
-                f"year={yr}: {len(bad)} rows have |ils_dispy_real - ils_dispy*{phi:.6f}| > {tol}"
+                f"year={yr}: {len(bad)} rows have |{real_col} - {nominal_col}*{phi:.6f}| > {tol}"
             )
 
-        # Range check
-        mean_real = float(grp["ils_dispy_real"].mean())
-        if not (ILS_DISPY_REAL_MIN <= mean_real <= ILS_DISPY_REAL_MAX):
+        mean_real = float(grp[real_col].mean())
+        if not (cfg.ils_dispy_real_min <= mean_real <= cfg.ils_dispy_real_max):
             result.warn(
-                f"year={yr}: mean ils_dispy_real={mean_real:,.0f} "
-                f"outside expected range [{ILS_DISPY_REAL_MIN:,}-{ILS_DISPY_REAL_MAX:,}]. "
+                f"year={yr}: mean {real_col}={mean_real:,.0f} "
+                f"outside expected range "
+                f"[{cfg.ils_dispy_real_min:,}-{cfg.ils_dispy_real_max:,}]. "
                 "Check RURO sample filter and phi_t."
             )
         else:
             result.details.append(
-                f"year={yr}: mean ils_dispy_real={mean_real:,.0f}  phi_t={phi:.6f}  OK"
+                f"year={yr}: mean {real_col}={mean_real:,.0f}  phi_t={phi:.6f}  OK"
             )
 
     if errors:
@@ -344,36 +305,55 @@ def check_v5(df: pd.DataFrame, result: CheckResult) -> None:
 # V6 — clustering key integrity
 # ---------------------------------------------------------------------------
 
-def check_v6(df: pd.DataFrame, config: str, result: CheckResult) -> None:
-    if "cluster_id" not in df.columns:
-        result.fail("Column 'cluster_id' not found (run m1_add_cluster_key.py).")
+def check_v6(df: pd.DataFrame, cfg: StageConfig, result: CheckResult) -> None:
+    cluster_dest = cfg.cluster_id_col
+    cluster_src = cfg.cluster_source_col
+
+    if cluster_dest not in df.columns:
+        result.fail(
+            f"Column '{cluster_dest}' not found (run m1_add_cluster_key.py)."
+        )
         return
-    if "idorighh" not in df.columns:
-        result.fail("Column 'idorighh' not found.")
+    if cluster_src not in df.columns:
+        result.fail(f"Column '{cluster_src}' not found.")
         return
 
-    if not (df["cluster_id"] == df["idorighh"]).all():
-        n_bad = (df["cluster_id"] != df["idorighh"]).sum()
-        result.fail(f"cluster_id != idorighh for {n_bad} rows.")
+    if not (df[cluster_dest] == df[cluster_src]).all():
+        n_bad = (df[cluster_dest] != df[cluster_src]).sum()
+        result.fail(f"{cluster_dest} != {cluster_src} for {n_bad} rows.")
         return
 
-    result.details.append("cluster_id == idorighh for all rows ✓")
+    result.details.append(f"{cluster_dest} == {cluster_src} for all rows")
 
-    # For P3a: check 2016 ∩ 2017 repeat-household overlap
-    if config == "p3a" and "year_tag" in df.columns:
-        if 2 in df["year_tag"].values and 3 in df["year_tag"].values:
-            hh_2016 = set(df.loc[df["year_tag"] == 2, "idorighh"])
-            hh_2017 = set(df.loc[df["year_tag"] == 3, "idorighh"])
-            overlap = len(hh_2016 & hh_2017)
-            diff = abs(overlap - P3A_EXPECTED_OVERLAP_2016_2017)
+    if "year_tag" not in df.columns:
+        result.ok()
+        return
+
+    # Check expected overlap counts from config
+    tags: List[int] = sorted(int(t) for t in df["year_tag"].unique())
+    for i, t1 in enumerate(tags):
+        for t2 in tags[i+1:]:
+            yr1: int = cfg.tag_year.get(t1, t1)
+            yr2: int = cfg.tag_year.get(t2, t2)
+            overlap_key: Tuple[int, int] = (min(yr1, yr2), max(yr1, yr2))
+            expected = cfg.expected_overlap_counts.get(overlap_key)
+            if expected is None:
+                continue
+
+            hh1: set = set(df[df["year_tag"] == t1][cluster_src].tolist())
+            hh2: set = set(df[df["year_tag"] == t2][cluster_src].tolist())
+            overlap = len(hh1 & hh2)
+            diff = abs(overlap - expected)
             msg = (
-                f"P3a 2016∩2017 repeat-household overlap: {overlap:,} "
-                f"(expected ≈ {P3A_EXPECTED_OVERLAP_2016_2017:,}, diff={diff})"
+                f"{yr1} x {yr2} repeat-hh overlap: {overlap:,} "
+                f"(expected approx {expected:,}, diff={diff})"
             )
-            if diff > P3A_OVERLAP_TOLERANCE:
-                result.warn(f"{msg} — exceeds tolerance {P3A_OVERLAP_TOLERANCE}.")
+            if diff > cfg.p3a_overlap_tolerance:
+                result.warn(
+                    f"{msg} -- exceeds tolerance {cfg.p3a_overlap_tolerance}."
+                )
             else:
-                result.details.append(f"{msg} ✓")
+                result.details.append(f"{msg}")
 
     result.ok()
 
@@ -382,108 +362,102 @@ def check_v6(df: pd.DataFrame, config: str, result: CheckResult) -> None:
 # V7 — person-identity validation (inline version)
 # ---------------------------------------------------------------------------
 
-def check_v7(df: pd.DataFrame, result: CheckResult) -> None:
-    """
-    Inline repeat-person identity check on the pooled file.
+def check_v7(df: pd.DataFrame, cfg: StageConfig, result: CheckResult) -> None:
+    raw_person = cfg.raw_person_id_col
+    raw_hh = cfg.raw_household_id_col
+    thr = cfg.identity_thresholds
 
-    For each overlapping year pair (those sharing rows in df), identifies
-    repeat persons by idorigperson and checks sex stability, age progression,
-    household continuity.  Delegates to m1_identity_validation.py for the
-    full per-year-pair report; here we perform a fast inline gate check.
-    """
-    if "idorigperson" not in df.columns:
-        result.fail("Column 'idorigperson' not found; V7 cannot run.")
+    if raw_person not in df.columns:
+        result.fail(f"Column '{raw_person}' not found; V7 cannot run.")
         return
     if "year_tag" not in df.columns:
         result.fail("Column 'year_tag' not found; V7 cannot run.")
         return
 
-    tags = sorted(df["year_tag"].unique())
+    tags: List[int] = sorted(int(t) for t in df["year_tag"].unique())
     any_overlap = False
 
     for i, t1 in enumerate(tags):
         for t2 in tags[i+1:]:
-            p1 = set(df.loc[df["year_tag"] == t1, "idorigperson"])
-            p2 = set(df.loc[df["year_tag"] == t2, "idorigperson"])
+            p1: set = set(df[df["year_tag"] == t1][raw_person].tolist())
+            p2: set = set(df[df["year_tag"] == t2][raw_person].tolist())
             repeat = p1 & p2
             if not repeat:
                 continue
             any_overlap = True
-            yr1 = TAG_YEAR.get(int(t1), int(t1))
-            yr2 = TAG_YEAR.get(int(t2), int(t2))
-            n_repeat = len(repeat)
+            yr1 = cfg.tag_year.get(t1, t1)
+            yr2 = cfg.tag_year.get(t2, t2)
+            pair_label = f"{yr1}->{yr2}"
 
-            sub1 = df.loc[df["year_tag"] == t1].set_index("idorigperson")
-            sub2 = df.loc[df["year_tag"] == t2].set_index("idorigperson")
+            s1 = df[df["year_tag"] == t1].set_index(raw_person)
+            s2 = df[df["year_tag"] == t2].set_index(raw_person)
             common = list(repeat)
-            s1 = sub1.loc[common]
-            s2 = sub2.loc[common]
+            s1 = s1.loc[common]
+            s2 = s2.loc[common]
 
-            pair_label = f"{yr1}→{yr2}"
-
-            # Sex stability
             if "dgn" in s1.columns and "dgn" in s2.columns:
-                sex_ok = (s1["dgn"] == s2["dgn"]).mean()
-                if sex_ok < IDENTITY_THRESHOLDS["sex_stability_min"]:
+                sex_ok = float((s1["dgn"] == s2["dgn"]).mean())
+                if sex_ok < thr["sex_stability_min"]:
                     result.warn(
                         f"{pair_label}: sex stability {sex_ok:.4f} < "
-                        f"{IDENTITY_THRESHOLDS['sex_stability_min']}"
+                        f"{thr['sex_stability_min']}"
                     )
                 else:
                     result.details.append(
-                        f"{pair_label}: sex_stability={sex_ok:.4f} ✓"
+                        f"{pair_label}: sex_stability={sex_ok:.4f}"
                     )
 
-            # Age progression
             if "dag" in s1.columns and "dag" in s2.columns:
                 expected_gap = yr2 - yr1
                 delta = s2["dag"] - s1["dag"]
-                within_1 = ((delta - expected_gap).abs() <= 1).mean()
-                if within_1 < IDENTITY_THRESHOLDS["age_progression_min"]:
+                within_1 = float(((delta - expected_gap).abs() <= 1).mean())
+                if within_1 < thr["age_progression_min"]:
                     result.warn(
-                        f"{pair_label}: age_progression within±1 = {within_1:.4f} < "
-                        f"{IDENTITY_THRESHOLDS['age_progression_min']}"
+                        f"{pair_label}: age_progression within_1 = {within_1:.4f} < "
+                        f"{thr['age_progression_min']}"
                     )
                 else:
                     result.details.append(
-                        f"{pair_label}: age_progression_within_1={within_1:.4f} ✓"
+                        f"{pair_label}: age_progression_within_1={within_1:.4f}"
                     )
 
-                # Suspicious records
-                sex_mismatch = (s1["dgn"] != s2["dgn"]) if "dgn" in s1.columns else pd.Series(False, index=s1.index)
+                sex_mismatch = (
+                    (s1["dgn"] != s2["dgn"])
+                    if "dgn" in s1.columns
+                    else pd.Series(False, index=s1.index)
+                )
                 age_off = (delta - expected_gap).abs() > 1
-                suspicious = (sex_mismatch | age_off).mean()
-                if suspicious > IDENTITY_THRESHOLDS["suspicious_block_max"]:
+                suspicious = float((sex_mismatch | age_off).mean())
+                if suspicious > thr["suspicious_block_max"]:
                     result.fail(
                         f"{pair_label}: suspicious_rate={suspicious:.4f} > "
-                        f"block threshold {IDENTITY_THRESHOLDS['suspicious_block_max']}"
+                        f"block threshold {thr['suspicious_block_max']}"
                     )
-                elif suspicious > IDENTITY_THRESHOLDS["suspicious_warn_max"]:
+                elif suspicious > thr["suspicious_warn_max"]:
                     result.warn(
                         f"{pair_label}: suspicious_rate={suspicious:.4f} > "
-                        f"warn threshold {IDENTITY_THRESHOLDS['suspicious_warn_max']}"
+                        f"warn threshold {thr['suspicious_warn_max']}"
                     )
                 else:
                     result.details.append(
-                        f"{pair_label}: suspicious_rate={suspicious:.4f} ✓"
+                        f"{pair_label}: suspicious_rate={suspicious:.4f}"
                     )
 
-            # Household continuity
-            if "idorighh" in s1.columns and "idorighh" in s2.columns:
-                hh_cont = (s1["idorighh"] == s2["idorighh"]).mean()
-                if hh_cont < IDENTITY_THRESHOLDS["hh_continuity_min"]:
+            if raw_hh in s1.columns and raw_hh in s2.columns:
+                hh_cont = float((s1[raw_hh] == s2[raw_hh]).mean())
+                if hh_cont < thr["hh_continuity_min"]:
                     result.warn(
                         f"{pair_label}: hh_continuity={hh_cont:.4f} < "
-                        f"{IDENTITY_THRESHOLDS['hh_continuity_min']}"
+                        f"{thr['hh_continuity_min']}"
                     )
                 else:
                     result.details.append(
-                        f"{pair_label}: hh_continuity={hh_cont:.4f} ✓"
+                        f"{pair_label}: hh_continuity={hh_cont:.4f}"
                     )
 
     if not any_overlap:
         result.details.append(
-            "No overlapping persons found across year pairs (expected for P2/disjoint)."
+            "No overlapping persons found across year pairs (expected for disjoint panel)."
         )
         result.ok()
     elif result.passed is None:
@@ -501,7 +475,7 @@ def check_v8(df: pd.DataFrame, result: CheckResult) -> None:
         result.warn(
             "No 'gsur*' columns found in pooled file. "
             "GSUR merge must be performed before V8 can pass. "
-            "Expected after m1_stack_years → GSUR merge step."
+            "Expected after m1_stack_years -> GSUR merge step."
         )
         return
 
@@ -514,9 +488,7 @@ def check_v8(df: pd.DataFrame, result: CheckResult) -> None:
             )
             return
 
-    result.ok(
-        f"GSUR columns {gsur_candidates}: zero missing values ✓"
-    )
+    result.ok(f"GSUR columns {gsur_candidates}: zero missing values")
 
 
 # ---------------------------------------------------------------------------
@@ -524,18 +496,16 @@ def check_v8(df: pd.DataFrame, result: CheckResult) -> None:
 # ---------------------------------------------------------------------------
 
 def check_v9(file_path: Path, df: pd.DataFrame, result: CheckResult) -> None:
-    # Check file path
     if "stijn" in str(file_path).lower():
         result.fail(f"File path contains 'stijn': {file_path}")
         return
 
-    # Check column names
     stijn_cols = [c for c in df.columns if "stijn" in c.lower()]
     if stijn_cols:
         result.fail(f"Columns contain 'stijn' token: {stijn_cols}")
         return
 
-    result.ok("No 'stijn' token in file path or column names ✓")
+    result.ok("No 'stijn' token in file path or column names")
 
 
 # ---------------------------------------------------------------------------
@@ -543,39 +513,40 @@ def check_v9(file_path: Path, df: pd.DataFrame, result: CheckResult) -> None:
 # ---------------------------------------------------------------------------
 
 def _write_manifests(
-    config: str,
-    file_path: Path,
+    config_key: str,
     df: pd.DataFrame,
+    cfg: StageConfig,
     results: Dict[str, CheckResult],
     ts: str,
 ) -> None:
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    cfg.results_dir.mkdir(parents=True, exist_ok=True)
 
-    # Stacked ID manifest
-    sid_path = RESULTS_DIR / f"M1_stacked_id_manifest_{ts}.csv"
+    sid_path = cfg.results_dir / f"M1_stacked_id_manifest_{ts}.csv"
     if "year_tag" in df.columns:
         rows = []
-        for tag, grp in df.groupby("year_tag"):
-            yr = TAG_YEAR.get(int(tag), int(tag))
+        for tag_val in sorted(df["year_tag"].unique()):
+            tag_int = int(tag_val)  # type: ignore[arg-type]
+            grp = df[df["year_tag"] == tag_val]
+            yr = cfg.tag_year.get(tag_int, tag_int)
             r: dict = {
-                "config": config,
+                "config": config_key,
                 "year": yr,
-                "year_tag": int(tag),
+                "year_tag": tag_int,
                 "n_rows": len(grp),
             }
-            for col in RAW_ID_COLS + ["stacked_hh_uid", "stacked_person_uid"]:
+            track_cols = cfg.raw_id_cols + ["stacked_hh_uid", "stacked_person_uid"]
+            for col in track_cols:
                 if col in grp.columns:
                     r[f"{col}_null"] = int(grp[col].isna().sum())
-                    r[f"{col}_min"] = int(grp[col].min())
-                    r[f"{col}_max"] = int(grp[col].max())
+                    r[f"{col}_min"] = int(grp[col].min())  # type: ignore[arg-type]
+                    r[f"{col}_max"] = int(grp[col].max())  # type: ignore[arg-type]
                     r[f"{col}_unique"] = grp[col].nunique()
             rows.append(r)
         pd.DataFrame(rows).to_csv(sid_path, index=False)
 
-    # Raw ID preservation manifest
-    rid_path = RESULTS_DIR / f"M1_raw_id_preservation_check_{ts}.csv"
+    rid_path = cfg.results_dir / f"M1_raw_id_preservation_check_{ts}.csv"
     rid_rows = []
-    for col in RAW_ID_COLS:
+    for col in cfg.raw_id_cols:
         rid_rows.append({
             "column": col,
             "present": col in df.columns,
@@ -584,8 +555,7 @@ def _write_manifests(
         })
     pd.DataFrame(rid_rows).to_csv(rid_path, index=False)
 
-    # Summary
-    summary_path = RESULTS_DIR / f"M1_validation_summary_{ts}.csv"
+    summary_path = cfg.results_dir / f"M1_validation_summary_{ts}.csv"
     sum_rows = []
     for name, res in results.items():
         status = "PASS" if res.passed is True else ("SKIP" if res.passed is None else "FAIL")
@@ -608,21 +578,21 @@ def _write_manifests(
 # ---------------------------------------------------------------------------
 
 def validate(
-    config: str,
+    config_name: Optional[str] = None,
+    stage_config_path: Optional[str] = None,
     file_path: Optional[str] = None,
     skip_checks: Optional[List[str]] = None,
 ) -> bool:
-    config = config.lower()
+    cfg = load_stage_config(config_name, stage_config_path)
+    config_key = config_name or cfg.config_name
     skip = {s.upper() for s in (skip_checks or [])}
 
-    resolved_path = Path(file_path) if file_path else (
-        POOLED_DIR / f"fr_{config}_harmonised.parquet"
-    )
+    resolved_path = Path(file_path) if file_path else cfg.harmonised_path()
 
     if not resolved_path.exists():
         LOGGER.error(
             "Harmonised parquet not found: %s\n"
-            "Run m1_stack_years.py → m1_harmonise_cpi.py → m1_add_cluster_key.py first.",
+            "Run m1_stack_years.py -> m1_harmonise_cpi.py -> m1_add_cluster_key.py first.",
             resolved_path
         )
         return False
@@ -634,37 +604,37 @@ def validate(
     checks: Dict[str, CheckResult] = {f"V{i}": CheckResult(f"V{i}") for i in range(1, 10)}
 
     if "V1" not in skip:
-        check_v1(df, checks["V1"])
+        check_v1(df, cfg, checks["V1"])
     else:
         checks["V1"].skipped("skipped by --skip argument")
 
     if "V2" not in skip:
-        check_v2(df, config, checks["V2"])
+        check_v2(df, config_key, cfg, checks["V2"])
     else:
         checks["V2"].skipped("skipped by --skip argument")
 
     if "V3" not in skip:
-        check_v3(df, checks["V3"])
+        check_v3(df, cfg, checks["V3"])
     else:
         checks["V3"].skipped("skipped by --skip argument")
 
     if "V4" not in skip:
-        check_v4(df, config, checks["V4"])
+        check_v4(df, cfg, checks["V4"])
     else:
         checks["V4"].skipped("skipped by --skip argument")
 
     if "V5" not in skip:
-        check_v5(df, checks["V5"])
+        check_v5(df, cfg, checks["V5"])
     else:
         checks["V5"].skipped("skipped by --skip argument")
 
     if "V6" not in skip:
-        check_v6(df, config, checks["V6"])
+        check_v6(df, cfg, checks["V6"])
     else:
         checks["V6"].skipped("skipped by --skip argument")
 
     if "V7" not in skip:
-        check_v7(df, checks["V7"])
+        check_v7(df, cfg, checks["V7"])
     else:
         checks["V7"].skipped("skipped by --skip argument")
 
@@ -678,10 +648,10 @@ def validate(
     else:
         checks["V9"].skipped("skipped by --skip argument")
 
-    # Summary
     print(f"\n{'='*70}")
-    print(f"M1 Validation Summary — config={config}")
+    print(f"M1 Validation Summary -- config={config_key}")
     print(f"File: {resolved_path}")
+    print(f"Config YAML: {cfg.yaml_path}")
     print(f"{'='*70}")
     all_passed = True
     for name, res in checks.items():
@@ -695,7 +665,7 @@ def validate(
             print(f"       {w}")
 
     ts = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
-    _write_manifests(config, resolved_path, df, checks, ts)
+    _write_manifests(config_key, df, cfg, checks, ts)
 
     overall = "PASS" if all_passed else "FAIL"
     print(f"\nOverall: {overall}\n")
@@ -709,16 +679,25 @@ def validate(
 def _parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description=(
-            "Stage M1 validation — runs checks V1–V9 on a harmonised pooled parquet. "
-            "Writes Results/M1_* manifests."
+            "Stage M1 validation -- runs checks V1-V9 on a harmonised pooled parquet. "
+            "Writes Results/M1_* manifests.\n\n"
+            "All country/year-specific values come from the stage-config YAML.\n"
+            "Use --stage-config for an explicit path, or --config for a shortcut."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    ap.add_argument(
+    group = ap.add_mutually_exclusive_group(required=True)
+    group.add_argument(
         "--config",
-        choices=["p2", "p3a", "p3b", "p4"],
-        required=True,
-        help="Pooled configuration.",
+        type=str,
+        help="Shortcut config name (e.g. p3a). Resolves to the canonical YAML.",
+    )
+    group.add_argument(
+        "--stage-config",
+        type=str,
+        dest="stage_config",
+        metavar="YAML_PATH",
+        help="Explicit path to a stage-config YAML file.",
     )
     ap.add_argument(
         "--file",
@@ -748,7 +727,8 @@ def main() -> None:
         format="%(levelname)s  %(message)s",
     )
     ok = validate(
-        config=args.config,
+        config_name=args.config,
+        stage_config_path=args.stage_config,
         file_path=args.file,
         skip_checks=args.skip,
     )

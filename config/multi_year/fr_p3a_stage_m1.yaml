@@ -1,0 +1,180 @@
+# config/multi_year/fr_p3a_stage_m1.yaml
+# =======================================
+# Stage M1 configuration — France P3a (2015+2016+2017)
+#
+# This file contains ALL France-P3a-specific values that were previously
+# hard-coded in the Stage M1 reusable scripts. Passing this file via
+# --stage-config makes every reusable script country/year/config agnostic.
+#
+# Reference: docs/JMP_multi_year_stage_M1_generalization_report_v1.md
+# Plan:      docs/JMP_multi_year_stage_M1_implementation_plan_v2.md
+#
+# Usage (any reusable script):
+#   python scripts/multi_year/<script>.py \
+#       --stage-config config/multi_year/fr_p3a_stage_m1.yaml
+#
+# Backward-compatible shortcut (resolves to this file internally):
+#   python scripts/multi_year/<script>.py --config p3a
+
+# ---------------------------------------------------------------------------
+# Project identity
+# ---------------------------------------------------------------------------
+country_code:   FR
+country_slug:   fr
+project_label:  JMP_multi_year
+config_name:    p3a
+
+# ---------------------------------------------------------------------------
+# Year / tag mapping
+# ---------------------------------------------------------------------------
+# years: ordered list of calendar years in this configuration
+# year_tags: mapping from calendar year to integer tag used for UID computation
+years: [2015, 2016, 2017]
+year_tags:
+  2015: 1
+  2016: 2
+  2017: 3
+  2018: 4   # included so tag-lookup works if a 2018 file is ever passed
+
+# ---------------------------------------------------------------------------
+# UID scheme
+# ---------------------------------------------------------------------------
+uid_base: 100000000000   # B = 10**11; sufficient since max idperson < B
+
+# ---------------------------------------------------------------------------
+# Column names
+# ---------------------------------------------------------------------------
+household_id_col:      idhh          # EUROMOD household identifier
+person_id_col:         idperson      # EUROMOD person identifier
+raw_household_id_col:  idorighh      # original EU-SILC household ID (cross-wave)
+raw_person_id_col:     idorigperson  # original EU-SILC person ID (cross-wave)
+cluster_id_col:        cluster_id    # cluster-robust SE key (written by m1_add_cluster_key)
+cluster_source_col:    idorighh      # cluster_id = copy of this column (§12)
+
+# ---------------------------------------------------------------------------
+# Raw identifier columns (must be present and non-null after stacking)
+# ---------------------------------------------------------------------------
+raw_id_cols:
+  - idorighh
+  - idorigperson
+  - idhh
+  - idperson
+
+# ---------------------------------------------------------------------------
+# Monetary variables to deflate (§8)
+# Only columns present in the parquet are deflated; others are skipped.
+# ---------------------------------------------------------------------------
+monetary_variables:
+  - ils_dispy
+  - ils_earns
+  - yem
+  - yse
+  - ypen
+  - ypt
+  - ils_ben
+
+# ---------------------------------------------------------------------------
+# Variables explicitly excluded from deflation (§9)
+# ---------------------------------------------------------------------------
+variables_excluded_from_deflation:
+  - dgn
+  - dag
+  - dms
+  - deh
+  - drgn1
+  - idhh
+  - idperson
+  - idorighh
+  - idorigperson
+  - dwt
+  - gsur
+  - gsur_v2
+  - year_tag
+  - year
+  - tpr
+  - stacked_hh_uid
+  - stacked_person_uid
+  - cluster_id
+
+# ---------------------------------------------------------------------------
+# File paths (relative to repo root; scripts resolve against REPO)
+# ---------------------------------------------------------------------------
+processed_root:   Data/processed/fr
+pooled_output_dir: Data/processed/fr/pooled
+results_dir:      Results
+external_data_dir: Data/external
+
+# CPI harmonisation files
+cpi_template_path: Data/external/cpi_hicp_fr_harmonisation_TEMPLATE.csv
+cpi_final_path:    Data/external/cpi_hicp_fr_harmonisation.csv
+
+# Input parquet search directory (relative to repo root)
+input_parquet_dir: Data/processed/fr
+
+# Input parquet glob patterns per year (ordered by specificity)
+input_parquet_patterns:
+  - "*{year}*RURO*mnl*job*gmm*.parquet"
+  - "*{year}*RURO*mnl*job*.parquet"
+  - "*{year}*RURO*mnl*.parquet"
+  - "*{year}*mnl*.parquet"
+
+# Output file stems (config name used in stem; scripts prefix with country_slug)
+# e.g. fr_p3a_stacked_raw.parquet
+output_file_stems:
+  stacked_raw:  "{country_slug}_{config_name}_stacked_raw"
+  harmonised:   "{country_slug}_{config_name}_harmonised"
+
+# ---------------------------------------------------------------------------
+# Expected row / overlap counts (for validation checks V2, V6)
+# ---------------------------------------------------------------------------
+# expected_row_counts: approximate household-row totals per config (tolerance ±10)
+expected_row_counts:
+  p2:  22849
+  p3a: 33917
+  p3b: 33725
+  p4:  33334
+
+# expected_overlap_counts: repeat-household counts between year pairs
+# Key format: "YYYY-YYYY" (smaller year first)
+# Value: expected count (addendum v2)
+expected_overlap_counts:
+  "2015-2016": 0
+  "2015-2017": 0
+  "2015-2018": 0
+  "2016-2017": 8796
+  "2016-2018": 7065
+  "2017-2018": 8521
+
+# Expected P3a 2016 x 2017 overlap tolerance for V6
+p3a_overlap_tolerance: 200
+
+# Plausible mean ils_dispy_real per year (2016 prices) for V5 range check
+ils_dispy_real_range:
+  min: 25000.0
+  max: 55000.0
+
+# ---------------------------------------------------------------------------
+# Identity validation thresholds (§13; used by m1_identity_validation.py and V7)
+# ---------------------------------------------------------------------------
+identity_validation_thresholds:
+  sex_stability_min:    0.9990
+  age_progression_min:  0.9950
+  suspicious_warn_max:  0.0020
+  suspicious_block_max: 0.0100
+  hh_continuity_min:    0.9700
+
+# ---------------------------------------------------------------------------
+# Special gates
+# ---------------------------------------------------------------------------
+special_gates:
+  # P3b is hard-blocked until this memo exists AND concludes "proceed with P3b"
+  p3b_isf_memo_path: Results/M1_ISF_tpr_comparability_check_2018.md
+  p3b_isf_proceed_phrase: "proceed with p3b"
+
+  # Configs that are completely blocked (no execution allowed at any point)
+  blocked_configs:
+    p3b: >
+      P3b is blocked until Results/M1_ISF_tpr_comparability_check_2018.md
+      concludes 'proceed'. See §16 of the Stage M1 plan.
+    p4: >
+      P4 is not a priority configuration. No authorisation in Stage M1.

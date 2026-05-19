@@ -1,5 +1,13 @@
 # run_m1_p3a.ps1
 # ==============
+# FRANCE P3a RESEARCH ORCHESTRATION WRAPPER
+# ------------------------------------------
+# This script is intentionally France-P3a-specific. It hard-codes France
+# EUROMOD paths, step labels, and the P3a year set (2015+2016+2017). It is
+# NOT a reusable Stage M1 runner and does NOT accept --stage-config. A
+# country-agnostic orchestration wrapper would read all paths and steps from
+# a YAML and is a separate future task.
+#
 # Stage M1 — ordered execution sequence for P3a (2015+2016+2017).
 #
 # Reference: docs/JMP_multi_year_stage_M1_implementation_plan_v2.md §18 (Orchestration).

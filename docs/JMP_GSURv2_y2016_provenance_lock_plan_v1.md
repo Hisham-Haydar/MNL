@@ -233,7 +233,8 @@ time.
 ## 6. Whether y2016 rebuild under the parameterised script is preferred
 
 **Verdict: YES. The y2016 rebuild under the parameterised script is
-the preferred and authorized lock procedure.**
+the preferred lock procedure, to be authorized by the GSURv2
+construction authorization.**
 
 The rebuild approach produces:
 1. `Data/external/FR_gsur_ruro_v2_stageA_y2016.parquet` — the
@@ -258,11 +259,11 @@ The rebuild approach produces:
 - The rebuild resolves K1 (missing sidecar) and the C6 output-naming
   issue (un-tagged filename) simultaneously and automatically, without
   manual intervention.
-- The rebuild is authorised under the construction authorization. It
-  does not require a separate or special authorization; it is the
-  first step of the standard construction workflow (run
-  `--opportunity-year 2016`, verify value-identity, accept and retire
-  un-tagged file, then proceed to y2015 and y2014).
+- The rebuild is the first step of the standard construction workflow
+  (run `--opportunity-year 2016`, verify value-identity, accept and
+  retire un-tagged file, then proceed to y2015 and y2014). It will be
+  authorized by the GSURv2 construction authorization, which is a
+  separate document not yet produced.
 
 **Risk assessment:** Low. The inputs for y2016 are all present and
 verified:
@@ -472,12 +473,21 @@ plan and of the remediation as a whole.
 
 ## 10. Exact next task
 
-The construction authorization memo is the next task. It must be a
-separate document that:
+The GSURv2 readiness re-audit is the next task. It must confirm that
+all remediation outputs (O1–O5, and O6–O7 if complete) are in place
+before the construction authorization is issued. The construction
+authorization is conditional on the re-audit returning READY or
+READY WITH MINOR FIXES; it must not be issued if the re-audit returns
+NOT READY.
+
+The construction authorization memo, issued only after a READY or
+READY WITH MINOR FIXES re-audit verdict, must be a separate document
+that:
 
 1. Confirms all remediation preconditions are met (referencing the
    script remediation report `docs/JMP_GSURv2_script_remediation_report_v1.md`
-   and validation report `Results/JMP_GSURv2_script_remediation_static_validation_v1.md`).
+   and validation report `Results/JMP_GSURv2_script_remediation_static_validation_v1.md`)
+   and that the re-audit returned READY or READY WITH MINOR FIXES.
 2. Explicitly authorizes running:
    ```
    .venv\Scripts\python.exe scripts/enhanced/enh_prepare_FR_gsur_v2.py --opportunity-year 2016

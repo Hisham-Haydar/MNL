@@ -244,7 +244,7 @@ Processed RURO MNL parquets in `Z:\hisham\EUROMOD-STORAGE\interim\ruro\fr\`:
 
 | Path | Description | Status |
 | --- | --- | --- |
-| `2016/stijn_occ/scenarios/combined_draws_em.parquet` | Active 2016 MNL parquet | ✓ Present (487.9 MB) |
+| `2016/ruro_occ/scenarios/combined_draws_em.parquet` | Active 2016 MNL parquet | ✓ Present (487.9 MB) |
 | `2016/job_model_gmm/scenarios/combined_draws_em.parquet` | 2016 GMM variant | ✓ Present (457.8 MB) |
 | `2016/job_model/scenarios/combined_draws_em.parquet` | 2016 older variant | ✓ Present (206.5 MB) |
 | `2015/...` | 2015 MNL parquet | **✗ Absent** |

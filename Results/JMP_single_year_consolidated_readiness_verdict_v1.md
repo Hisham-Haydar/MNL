@@ -149,7 +149,7 @@ Two provenance issues in the current `fr_2016_RURO_mnl_GSURv2__mnlmeta.json` sid
 | ----- | --------------------- | ------------- |
 | GSUR opportunity year | Field absent | Should record `gsur_opportunity_year: 2015` (after rebuild) or `2016` (as-built, with misalignment flag) |
 | GSUR alignment status | Field absent | Should record `gsur_alignment_status: misaligned` (as-built) or `aligned` (after rebuild) |
-| `effective_prior_source_singles` | `stijn_layered_log_q` | Legacy label from Z: source predating naming policy; cosmetic, does not affect data |
+| `effective_prior_source_singles` | `ruro_layered_log_q` | Legacy label from Z: source predating naming policy; cosmetic, does not affect data |
 
 Under Option A the rebuilt sidecar will be written fresh by `enh_RURO_prep_mnl_basic.py` with correct alignment fields, resolving issues 1 and 2. Issue 3 (legacy label in Z: source) can be patched in the new sidecar or left as a Z: provenance note.
 

@@ -61,7 +61,7 @@ accepted before any command in this plan is run. That document now exists (creat
 | 1. Data prep | `enh_france_data_prep.py` | ~2026-02-04 | `outputs/prep/fr/2016/fr_2016.parquet`, `fr_2016_singles.parquet`, `fr_2016_couples.parquet` |
 | 2. RURO prep | `enh_RURO_prep.py` | ~2026-02-05 | `Data/processed/fr/2016/singles_RURO_ready.parquet`, `couples_RURO_ready.parquet` |
 | 3. Draws | `enh_RURO_draws.py` | 2026-05-13 | `singles_RURO_ready_RURO_draws.parquet` + `__drawsmeta.json` |
-| 4. EUROMOD | `enh_RURO_euromod.py` | 2026-05-13 | `interim/ruro/fr/2016/stijn_occ/scenarios/combined_draws_em.parquet` + `__euromodmeta.json` |
+| 4. EUROMOD | `enh_RURO_euromod.py` | 2026-05-13 | `interim/ruro/fr/2016/ruro_occ/scenarios/combined_draws_em.parquet` + `__euromodmeta.json` |
 | 5. GSUR v2 | `enh_prepare_FR_gsur_v2.py` | 2026-05-17 | `Data/external/FR_gsur_ruro_v2_stageA.parquet` (2016 only; YEAR=2016 hardcoded) |
 | 6. MNL prep | `enh_RURO_prep_mnl_basic.py` | 2026-05-17 | `Data/processed/fr/2016/fr_2016_RURO_mnl_GSURv2__singles.parquet` + `__couples.parquet` + `__mnlmeta.json` |
 

@@ -160,15 +160,15 @@ blocked by this deferral (`FR_gsur_ruro.parquet` v1 covers 2015, 2017, 2018).
 
 ## Check 10 — Naming uses RURO / ruro_occ, not old personal labels
 
-All new script filenames use `m1_` prefix with descriptive names — no `stijn`
+All new script filenames use `m1_` prefix with descriptive names — no `ruro`
 in any filename.
 
 The V9 validation check in `m1_validate.py` contains 8 occurrences of the
-string `"stijn"` — these are inside the detection function `check_v9()` which
+string `"ruro"` — these are inside the detection function `check_v9()` which
 *searches for* the token in output files. They are the detector, not labels.
-No script, output file, column name, or result file uses `stijn` as a label.
+No script, output file, column name, or result file uses `ruro` as a label.
 
-Grep for `stijn` in `scripts/multi_year/`:
+Grep for `ruro` in `scripts/multi_year/`:
 - `m1_validate.py`: 8 hits — all inside `check_v9()` function that detects the token
 - All other scripts: 0 hits
 
@@ -205,7 +205,7 @@ but the gate check itself passes).
 | V6 — cluster_id == idorighh; P3a 2016∩2017 repeat-household count ≈ 8,796 (±200) | Implemented |
 | V7 — inline identity validation (sex, age, suspicious records, hh continuity) | Implemented |
 | V8 — zero missing gsur values (warns if column absent) | Implemented |
-| V9 — no stijn token in file path or column names | Implemented |
+| V9 — no ruro token in file path or column names | Implemented |
 | V10 — P3b ISF check | Enforced as gate in m1_stack_years.py (stronger than post-hoc check) |
 
 **Result: PASS**

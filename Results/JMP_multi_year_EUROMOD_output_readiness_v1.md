@@ -51,7 +51,7 @@ All three microdata files needed for P3a are present.
 | --- | --- | --- |
 | `combined_draws_em.parquet` (job_gmm spec) | `Z:\hisham\EUROMOD-STORAGE\interim\ruro\fr\2016\job_model_gmm\scenarios\combined_draws_em.parquet` | **PRESENT** (2026-02-08) |
 | `combined_draws_em__euromodmeta.json` | Same folder | **PRESENT** |
-| `combined_draws_em.parquet` (stijn_occ spec) | `Z:\hisham\EUROMOD-STORAGE\interim\ruro\fr\2016\stijn_occ\scenarios\combined_draws_em.parquet` | **PRESENT** (2026-05-13) |
+| `combined_draws_em.parquet` (ruro_occ spec) | `Z:\hisham\EUROMOD-STORAGE\interim\ruro\fr\2016\stijn_occ\scenarios\combined_draws_em.parquet` | **PRESENT** (2026-05-13) |
 | Raw EUROMOD output txt for FR_2016 | `Z:\hisham\EUROMOD-STORAGE\EUROMOD_RELEASES_J1.0+\...\Output\` | **ABSENT** (not retained; processed form present) |
 
 **FR_2016 verdict:** EUROMOD output is present in processed parquet form (via the job_gmm scenario run). This is the form consumed by `enh_RURO_prep_mnl_basic.py`. The raw `.txt` output was not retained, but the downstream processed files are present and were used to produce the canonical 2016 MNL parquets.

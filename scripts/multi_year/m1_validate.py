@@ -23,7 +23,7 @@ Checks implemented:
     V6  cluster_id == cluster_source_col; expected overlap counts
     V7  person-identity validation (delegates to m1_identity_validation.py logic)
     V8  GSUR coverage (zero missing gsur values; warns if gsur column absent)
-    V9  no 'stijn' token in output file path or column names
+    V9  no 'ruro' token in output file path or column names
 
 Usage
 -----
@@ -564,20 +564,20 @@ def check_v8(df: pd.DataFrame, result: CheckResult) -> None:
 
 
 # ---------------------------------------------------------------------------
-# V9 — no 'stijn' token
+# V9 — no 'ruro' token
 # ---------------------------------------------------------------------------
 
 def check_v9(file_path: Path, df: pd.DataFrame, result: CheckResult) -> None:
-    if "stijn" in str(file_path).lower():
-        result.fail(f"File path contains 'stijn': {file_path}")
+    if "ruro" in str(file_path).lower():
+        result.fail(f"File path contains 'ruro': {file_path}")
         return
 
-    stijn_cols = [c for c in df.columns if "stijn" in c.lower()]
-    if stijn_cols:
-        result.fail(f"Columns contain 'stijn' token: {stijn_cols}")
+    ruro_cols = [c for c in df.columns if "ruro" in c.lower()]
+    if ruro_cols:
+        result.fail(f"Columns contain 'ruro' token: {ruro_cols}")
         return
 
-    result.ok("No 'stijn' token in file path or column names")
+    result.ok("No 'ruro' token in file path or column names")
 
 
 # ---------------------------------------------------------------------------

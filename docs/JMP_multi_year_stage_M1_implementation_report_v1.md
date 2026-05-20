@@ -96,7 +96,7 @@ Implements checks V1–V9 from §17 of the plan:
 - V6: `cluster_id == idorighh`; P3a 2016∩2017 repeat-household count ≈ 8,796 (±200)
 - V7: inline identity validation on pooled file (sex, age, suspicious records, hh continuity)
 - V8: zero missing `gsur*` values (warns if column absent)
-- V9: no `stijn` token in file path or column names
+- V9: no `ruro` token in file path or column names
 
 Writes `Results/M1_stacked_id_manifest_<UTC>.csv`, `Results/M1_raw_id_preservation_check_<UTC>.csv`,
 `Results/M1_validation_summary_<UTC>.csv`. Exits 1 on any FAIL.

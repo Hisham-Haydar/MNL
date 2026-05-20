@@ -360,11 +360,11 @@ Singles `gsur` mean: not reported (v1 scalar GSUR; couples-calibrated reference 
 
 ---
 
-## §23 Step 5 — V9: No stijn Token
+## §23 Step 5 — V9: No ruro Token
 
 **Result: PASS**
 
-No `stijn` token in file path (`fr_p3a_harmonised.parquet`) or column names. ✓
+No `ruro` token in file path (`fr_p3a_harmonised.parquet`) or column names. ✓
 
 ---
 

@@ -55,7 +55,7 @@ The `fr_2016_RURO_mnl_GSURv2__mnlmeta.json` sidecar was copied alongside the two
 | `normalization.singles.c_scale` | 7,590.29 |
 | `normalization.couples.c_scale` | 15,106.18 |
 
-Note: `effective_prior_source_singles` reads `stijn_layered_log_q` in the sidecar — this is a legacy internal label in the Z: source sidecar predating the RURO naming policy. The file itself is the canonical M1-clean operative parquet; the label is a provenance artefact in the Z: storage copy and does not affect Stage M1 usage.
+Note: `effective_prior_source_singles` reads `ruro_layered_log_q` in the sidecar — this is a legacy internal label in the Z: source sidecar predating the RURO naming policy. The file itself is the canonical M1-clean operative parquet; the label is a provenance artefact in the Z: storage copy and does not affect Stage M1 usage.
 
 ---
 

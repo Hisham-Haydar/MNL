@@ -452,10 +452,10 @@ Run the thresholds in Section 13 on the pooled file. All criteria must pass at t
 
 For every row in the pooled file, the GSUR merge must produce a non-null `gsur` value. Zero missing GSUR values allowed.
 
-### V9 — No `stijn` token in any output file
+### V9 — No `ruro` token in any output file
 
 ```bash
-grep -ri "stijn" Data/processed/fr/pooled/
+grep -ri "ruro" Data/processed/fr/pooled/
 ```
 
 Must return zero matches. Naming conventions follow the RURO package standard (Section 18, script naming).
@@ -543,7 +543,7 @@ The following must not be modified during Stage M1:
 | `scripts/enhanced/RURO_post_estimation_styled.py` | Post-estimation outputs are not modified in Stage M1. |
 | `outputs/estimates/fr/spec/ruro_occ/` | Existing M0/M1-clean single-year results must not be overwritten. |
 | `outputs/post_estimation/fr/spec/ruro_occ/` | Same. |
-| `stijn/` | Safe haven (R notebook authorship). |
+| `ruro/` | Safe haven (R notebook authorship). |
 | `docs/archive/` | Sealed historical snapshot. |
 | `docs/ACKNOWLEDGEMENTS.md` | Personal acknowledgement; not touched. |
 | GSUR v1 parquet `FR_gsur_ruro.parquet` | Existing v1 rates are inputs; they are read, not modified. |
@@ -616,4 +616,4 @@ Both IDs are `int64`. B = 10^11 is sufficient: max `idperson` across all years i
 
 **Validation:** After writing the pooled file, run `m1_validate.py` and confirm all V1–V9 checks pass (Section 17). Write results to `Results/M1_*` manifests.
 
-**Naming convention:** All output files and script names use `ruro_occ` (not `stijn_occ`). See `docs/RURO_NAMING_AND_PACKAGE_SCOPE_v1.md`.
+**Naming convention:** All output files and script names use `ruro_occ` (not `ruro_occ`). See `docs/RURO_NAMING_AND_PACKAGE_SCOPE_v1.md`.

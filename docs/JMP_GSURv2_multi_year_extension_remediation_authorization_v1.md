@@ -191,23 +191,21 @@ mapping and the current GSURv2 status by opportunity year.
 |---|---|---|---|
 | 2014 | FR_2015 | NOT BUILT | external inputs to retrieve; construction deferred |
 | 2015 | FR_2016 | NOT BUILT | external inputs to retrieve; construction deferred |
-| 2016 | FR_2017 | BUILT (un-tagged, no sidecar) | provenance lock to prepare (K1, K3); year-tag to apply (C6) |
+| 2016 | FR_2017 | BUILT (un-tagged, no sidecar) | provenance lock plan to prepare (K1, K3); year-tag scheme decided (C6); rebuild deferred to construction authorization |
 
 The required opportunity years are 2014, 2015, and 2016. The
-remediation prepares all three: it retrieves the external inputs
-for opportunity years 2014 and 2015 (the two not yet built), and
-it prepares the provenance lock and year-tagging for opportunity
-year 2016 (the one already built but lacking a sidecar and a
-year-tagged filename).
+remediation prepares inputs for all three: it retrieves the
+external inputs for opportunity years 2014 and 2015 (the two not
+yet built), and it prepares the provenance and sidecar lock plan
+for opportunity year 2016 (the one already built but lacking a
+sidecar and a year-tagged filename).
 
 The remediation does not construct the y2014 and y2015 lookups;
-it retrieves and prepares their inputs. The y2016 provenance-lock
-preparation (§9) is the one opportunity-year-specific construction-
-adjacent activity the remediation authorises, and it is bounded
-narrowly: it reproduces an existing validated lookup under the
-parameterised script for the purpose of validating the
-parameterisation and generating the missing sidecar, not for
-constructing a new lookup.
+it retrieves and prepares their inputs. The y2016 provenance lock
+plan (§9) specifies the required sidecar fields and lock procedure,
+but the actual y2016 rebuild or reproduction under the parameterised
+script is deferred to the subsequent GSURv2 construction
+authorization.
 
 ---
 
@@ -383,11 +381,13 @@ in the canary and validation scripts must be updated to the
 year-tagged y2016 path, and the existing un-tagged file must be
 retired (archived or deleted, not silently left in place) when the
 year-tagged y2016 lookup is produced. The reference updates and
-the retirement are authorised as part of the remediation (§11).
+the retirement are deferred to the construction authorization,
+when the year-tagged y2016 lookup will actually be produced.
 
-The C6 decision is recorded. All three lookups use year-tagged
-filenames with matching sidecars; the un-tagged y2016 file is
-retired when the year-tagged y2016 lookup is produced.
+The C6 decision is recorded. All three lookups will use year-tagged
+filenames with matching sidecars; the un-tagged y2016 file will be
+retired when the year-tagged y2016 lookup is produced under the
+construction authorization.
 
 ---
 
@@ -448,90 +448,88 @@ remediation commit, atomically with the config YAML update (the K2
 decision, §6), per the audit R4 mitigation.
 
 The authorisation to implement C1–C7 does not authorise running
-the parameterised script to construct the y2014 and y2015 lookups.
-The implementation produces a parameterised script; the
-construction that the parameterised script enables is separately
-gated (§12). The one bounded exception is the y2016 reproduction
-authorised in §9, which validates the parameterisation and
-generates the y2016 provenance lock without constructing a new
-lookup.
+the parameterised script for any year. The implementation produces
+a parameterised script; the construction that the parameterised
+script enables is separately gated (§12). No year-tagged lookup
+parquet is written during the remediation.
 
 ---
 
 ## 9. y2016 provenance and sidecar lock
 
 The remediation authorises the preparation of the y2016 provenance
-and sidecar lock, which resolves the K1 failure (the absent y2016
-sidecar) and produces the year-tagged y2016 lookup (the C6
-decision, §7). The preparation is bounded narrowly: it reproduces
-the existing validated y2016 lookup under the parameterised script
-for the purpose of validating the parameterisation and generating
-the missing sidecar, not for constructing a new lookup.
+and sidecar lock plan, which documents the required fields and lock
+procedure for the existing y2016 lookup. The actual y2016 rebuild
+or reproduction under the parameterised script — generating the
+year-tagged y2016 lookup and its sidecar — is deferred to the
+subsequent GSURv2 construction authorization.
 
 The audit (§9) established that the y2016 sidecar JSON
 (`FR_gsur_ruro_v2_stageA__sidecar.json`) is absent and that the
-existing construction script does not write one. The audit offered
-two resolution paths (§9): write the sidecar post-hoc for the
-existing lookup, or rebuild y2016 under the parameterised script
-(which writes the sidecar via C7). This memo adopts the rebuild-
-reproduction path, for two reasons. First, the rebuild
-reproduction simultaneously validates the parameterisation (by
-confirming the parameterised script reproduces the existing y2016
-lookup value-identically) and generates the missing sidecar (via
-C7), accomplishing both the K1 resolution and the parameterisation
-regression check in one step. Second, the rebuild reproduction
-produces the year-tagged y2016 lookup
-(`FR_gsur_ruro_v2_stageA_y2016.parquet`) required by the C6
-decision (§7), aligning the y2016 lookup with the year-tagged
-naming of the y2014 and y2015 lookups.
+existing construction script does not write one. This memo records
+the provenance lock plan as documentation; the plan specifies the
+required sidecar fields and the lock procedure so that the
+construction authorization can execute the y2016 reproduction with
+the correct provenance record in one step.
 
-The y2016 reproduction is bounded by three constraints that
-distinguish it from construction.
+**Sidecar fields required for the y2016 lock (K1 resolution).**
+When the year-tagged y2016 lookup is eventually produced under the
+parameterised script (construction authorization), the C7 sidecar
+block must write the following fields to
+`FR_gsur_ruro_v2_stageA_y2016__sidecar.json`:
 
-First, it reproduces an existing validated lookup. The y2016
-inputs all exist locally (the unemployment-rate workbook, the 2016
-D2 and D1 denominators, the 2016 INSEE benchmark). Running the
-parameterised script with `--opportunity-year 2016` reproduces the
-y2016 lookup from the same inputs that produced the existing
-lookup. The reproduction is not a new construction; it regenerates
-an existing validated data product under the parameterised script.
+- `opportunity_year`: 2016
+- `gsur_column_name`: `gsur` (the K2 decision, §6)
+- `output_path`: `Data/external/FR_gsur_ruro_v2_stageA_y2016.parquet`
+- `input_d2`: `Data/external/lfst_r_lfsd2pop_FR_2016.tsv`
+- `input_d1`: `Data/external/lfst_r_lfp2acedu_FR_2016.tsv`
+- `input_unemployment_workbook`: `Data/external/FR_gsur.xlsx`
+- `input_benchmark_csv`: `Data/external/insee_001688526_2016.csv`
+- `benchmark_pct`: the annual-average benchmark value read from the
+  2016 INSEE CSV (the C5 value for y2016)
+- `nuts_vintage`: NUTS2016
+- `idf_parity_difference`: the IDF parity check result
+- `benchmark_difference`: the benchmark validation result
+- `row_count`: the number of rows in the output parquet
+- `build_timestamp`: UTC ISO 8601
+- `script_version`: the commit SHA of
+  `scripts/enhanced/enh_prepare_FR_gsur_v2.py` at build time
 
-Second, it is subject to a value-identity regression check
-(§14). The reproduced y2016 lookup must be compared value-
-identically (under schema-aligned column-wise comparison, per the
-rebuild specification cleanup edit 7) against the existing y2016
-lookup (`FR_gsur_ruro_v2_stageA.parquet`). If the reproduced
-lookup matches the existing lookup value-identically, the
-parameterisation is validated (the C1–C7 changes preserve the
-construction logic) and the reproduction is accepted. If the
-reproduced lookup differs from the existing lookup, the
-parameterisation has altered the construction logic — a remediation
-failure that must be diagnosed before any further work. The value-
-identity check is the load-bearing validation of the
-parameterisation.
+**Lock procedure.** When the construction authorization executes
+the y2016 reproduction:
 
-Third, it generates the y2016 provenance lock. The C7 sidecar
-block writes the y2016 sidecar
-(`FR_gsur_ruro_v2_stageA_y2016__sidecar.json`), resolving K1. The
-sidecar records the y2016 provenance (the inputs, the GSUR column
-name `gsur` per the K2 decision, the NUTS vintage, the IDF parity
-difference, the benchmark difference, the row count). The existing
-un-tagged y2016 lookup is retired when the year-tagged y2016
-lookup and its sidecar are accepted (the C6 decision, §7).
+1. Run the parameterised script with `--opportunity-year 2016`.
+2. The C7 sidecar block writes
+   `FR_gsur_ruro_v2_stageA_y2016__sidecar.json` with the fields
+   above, resolving K1.
+3. Compare the reproduced `FR_gsur_ruro_v2_stageA_y2016.parquet`
+   value-identically against the existing un-tagged lookup
+   (`FR_gsur_ruro_v2_stageA.parquet`) under schema-aligned column-
+   wise comparison. A value-identical match confirms the C1–C7
+   changes preserve the construction logic. A mismatch is a failure
+   requiring diagnosis before any further work.
+4. If value-identical, accept the year-tagged y2016 lookup and its
+   sidecar, and retire the existing un-tagged y2016 file (archive,
+   not silent deletion).
+5. Update all references to the un-tagged path
+   `FR_gsur_ruro_v2_stageA.parquet` in the canary and validation
+   scripts to the year-tagged y2016 path.
 
-The K3 provenance-lock requirement (the O7 crosswalk sign-off)
-is not resolved by the y2016 reproduction. K3 requires an MNL-
-merge check (§10) that is downstream of the lookup construction
-and is not authorised here. The y2016 reproduction resolves K1
-(the sidecar) and applies C6 (the year-tag); K3 is prepared (§10)
-but not resolved in the remediation.
+**K1, K3 status.** K1 (the absent sidecar) is resolved at
+construction authorization time when the year-tagged y2016 lookup
+and its sidecar are produced and locked by the procedure above. K3
+(the O7 crosswalk sign-off) is not resolved by the y2016
+reproduction; it requires an MNL-merge check downstream of the
+lookup construction (§10) and is not authorised here. K3 is
+prepared (§10) but not resolved in the remediation.
 
-The y2016 provenance-lock preparation is authorised as a bounded
-reproduction-and-sidecar step. It is the one construction-adjacent
-activity the remediation authorises, and it is bounded to the
-reproduction of an existing validated lookup under value-identity
-control. It does not authorise the construction of the y2014 and
-y2015 lookups.
+The provenance lock plan document
+(`docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`) is a
+remediation output (§13 O5). It contains the sidecar field
+specification and lock procedure above, ready for execution at
+construction authorization time. No parameterised script is run
+during the remediation; no year-tagged y2016 parquet is written
+during the remediation.
 
 ---
 
@@ -608,11 +606,13 @@ preservation behaviour (`gsur_v1_fallback` at MNL-merge time) is
 recorded as a forward decision.
 
 (A2) **C6 output-naming decision implemented.** All three
-opportunity-year lookups use year-tagged filenames
+opportunity-year lookups will use year-tagged filenames
 (`_y2014`, `_y2015`, `_y2016`) with matching `__sidecar.json`
-files (§7). References to the un-tagged y2016 path in the canary
-and validation scripts are updated; the un-tagged y2016 file is
-retired when the year-tagged y2016 lookup is produced.
+files (§7). The parameterised script (A4) implements the year-
+tagged output path. Reference updates to the canary and validation
+scripts and retirement of the un-tagged y2016 file are deferred
+to the construction authorization, when the year-tagged y2016
+lookup will actually be produced.
 
 (A3) **Retrieval of the six missing external files.** The four
 Eurostat denominator files and the two INSEE benchmark files (§5)
@@ -628,13 +628,14 @@ input-selection and output-tagging layers, with the year-invariant
 construction logic preserved unchanged. The implementation is
 committed atomically with the config YAML update (A1).
 
-(A5) **Preparation of the y2016 provenance and sidecar lock.** The
-parameterised script is run with `--opportunity-year 2016` to
-reproduce the existing y2016 lookup, subject to the value-identity
-regression check (§9, §14), generating the year-tagged y2016
-lookup and its sidecar (resolving K1). This is a bounded
-reproduction of an existing validated lookup, not a new
-construction.
+(A5) **Preparation of the y2016 provenance and sidecar lock plan.**
+The lock-plan document
+(`docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`) is prepared,
+specifying the required sidecar fields and the lock procedure
+(§9). The actual y2016 reproduction — running the parameterised
+script with `--opportunity-year 2016`, producing the year-tagged
+y2016 parquet and its sidecar, and retiring the un-tagged file —
+is deferred to the construction authorization.
 
 (A6) **Preparation of the O7 crosswalk sign-off request.** The
 O7 sign-off documentation (the crosswalk, the merge key, the
@@ -659,15 +660,14 @@ The remediation does not authorise the following. Each is
 separately gated and requires its own authorization after the
 remediation is complete.
 
-(N1) **GSURv2 construction of the y2014 and y2015 lookups.** The
-construction of the new opportunity-year lookups — running the
-parameterised script with `--opportunity-year 2014` and
-`--opportunity-year 2015` to build the y2014 and y2015 GSURv2
-lookups — is not authorised. It requires the separate construction
-authorization specified in the audit addendum §24, issued after the
-remediation is complete and validated. The y2016 reproduction (A5)
-is the one bounded exception, and it reproduces an existing
-validated lookup rather than constructing a new one.
+(N1) **GSURv2 lookup construction or reproduction for any year.**
+No GSURv2 lookup construction or reproduction is authorised for
+y2014, y2015, or y2016 during this remediation. Running the
+parameterised script with `--opportunity-year` for any year is not
+authorised. The construction of the y2014, y2015, and y2016 lookups
+requires the separate construction authorization specified in the
+audit addendum §24, issued after the remediation is complete and
+validated.
 
 (N2) **MNL-parquet rebuilding.** The merge of the GSURv2 lookups
 into the FR_2015, FR_2016, and FR_2017 MNL parquets — the step that
@@ -742,11 +742,12 @@ unchanged.
 `gsur_v2`) in the `variables_excluded_from_deflation` list,
 committed atomically with the script changes.
 
-(O5) **The year-tagged y2016 lookup and its sidecar**:
-`FR_gsur_ruro_v2_stageA_y2016.parquet` and
-`FR_gsur_ruro_v2_stageA_y2016__sidecar.json`, produced by the
-y2016 reproduction (A5), with the existing un-tagged y2016 file
-retired.
+(O5) **The y2016 provenance and sidecar lock-plan document**:
+`docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`, prepared by
+the lock-plan step (A5), containing the required sidecar fields
+and the lock procedure for execution at construction authorization
+time. No year-tagged y2016 parquet is written during the
+remediation.
 
 (O6) **The O7 crosswalk sign-off request document**, assembling
 the crosswalk, the merge key, the drgn1 compositions, and the
@@ -792,23 +793,27 @@ INSEE CSVs and recorded in `gsur_benchmark_source.txt` (O2). The
 values become the C5 benchmark inputs for the eventual y2014 and
 y2015 construction.
 
-(V4) **Parameterisation regression check (y2016 value-identity).**
-Run the parameterised script with `--opportunity-year 2016` and
-confirm the reproduced y2016 lookup matches the existing y2016
-lookup (`FR_gsur_ruro_v2_stageA.parquet`) value-identically under
-schema-aligned column-wise comparison. A value-identical match
-confirms the C1–C7 parameterisation preserves the construction
-logic. A mismatch indicates the parameterisation altered the logic
-and must be diagnosed before any further work. This is the load-
-bearing validation of the parameterisation.
+(V4) **Static parameterisation check (no-write validation).**
+Confirm the parameterised script passes the following static checks
+without writing any output parquet: (a) the script imports without
+error; (b) `--help` runs without error and lists the
+`--opportunity-year` argument; (c) calling the script with
+`--opportunity-year 2016 --dry-run` (or equivalent import-time
+path-computation test) resolves the output path to
+`Data/external/FR_gsur_ruro_v2_stageA_y2016.parquet` and the
+sidecar path to
+`Data/external/FR_gsur_ruro_v2_stageA_y2016__sidecar.json`; (d)
+the C7 sidecar block is present in the script and contains the
+required fields (§9). No lookup parquet is written during this
+validation. The value-identity regression check is deferred to
+the construction authorization.
 
-(V5) **y2016 sidecar parse check (K1).** Confirm the y2016 sidecar
-(`FR_gsur_ruro_v2_stageA_y2016__sidecar.json`) is written, parses
-without error, and records the GSUR column name as `gsur` (the K2
-decision), the opportunity year 2016, the inputs, the NUTS vintage,
-the IDF parity difference, the benchmark difference, and the row
-count. The K1 provenance-lock requirement is resolved by this
-check.
+(V5) **Lock-plan document check.** Confirm the lock-plan document
+(`docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`) is present,
+contains the required sidecar fields (§9), and specifies the lock
+procedure. The K1 provenance-lock requirement will be resolved
+when the construction authorization executes the y2016
+reproduction per the lock procedure.
 
 (V6) **Config-consistency check (K2).** Confirm the config YAML
 (O4) lists `gsur` in the `variables_excluded_from_deflation` list
@@ -827,14 +832,14 @@ The seven validations confirm the remediation outputs are complete
 and correct. If all seven pass, the construction preconditions are
 met and the construction authorization may be issued. If any
 validation fails — particularly V2 (NUTS vintage), V4
-(parameterisation regression), or V5 (sidecar) — the failing
-remediation step must be diagnosed and corrected before the
-construction authorization is issued.
+(static parameterisation check), or V5 (lock-plan document) —
+the failing remediation step must be diagnosed and corrected before
+the construction authorization is issued.
 
-The validations do not construct the y2014 and y2015 lookups. V4
-reproduces the existing y2016 lookup under value-identity control;
-it does not build a new lookup. The y2014 and y2015 construction is
-deferred to the separate construction authorization.
+No lookup parquet is written by any validation. The y2016
+value-identity regression check and all y2014 and y2015 lookup
+construction are deferred to the separate construction
+authorization.
 
 ---
 
@@ -843,9 +848,10 @@ deferred to the separate construction authorization.
 The following prompt initiates the remediation task in Claude Code
 Sonnet. The prompt executes the authorised remediation steps
 (A1–A7) and produces the remediation outputs (O1–O7) under the
-validation checks (V1–V7). It does not construct the y2014 and
-y2015 lookups, does not rebuild any MNL parquet, does not estimate
-any model, and does not compute welfare.
+validation checks (V1–V7). It does not run the parameterised
+script for any year, does not write any year-tagged lookup parquet,
+does not rebuild any MNL parquet, does not estimate any model, and
+does not compute welfare.
 
 Tool path: Claude Code Sonnet (local codebase, external-data
 retrieval, code changes).
@@ -865,7 +871,10 @@ Prompt to use:
 
 > Execute the GSURv2 multi-year extension remediation per
 > `docs/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md`.
-> Do NOT construct the y2014 or y2015 GSURv2 lookups. Do NOT
+> Do NOT run the parameterised script with `--opportunity-year` for
+> any year. Do NOT write any year-tagged GSURv2 lookup parquet. Do
+> NOT construct the y2014, y2015, or y2016 GSURv2 lookups. Do NOT
+> retire or archive the existing un-tagged y2016 file. Do NOT
 > rebuild any MNL parquet. Do NOT estimate any model. Do NOT
 > compute welfare. Do NOT promote any file to a canonical path.
 >
@@ -899,25 +908,28 @@ Prompt to use:
 >    JSON recording the GSUR column name `gsur`, the opportunity
 >    year, the inputs, the NUTS vintage, the IDF parity difference,
 >    the benchmark difference, and the row count. Keep the year-
->    invariant construction logic unchanged.
+>    invariant construction logic unchanged. Do NOT run the script.
 >
 > 4. Update `config/multi_year/fr_p3a_stage_m1.yaml` to list `gsur`
 >    (not `gsur_v2`) in `variables_excluded_from_deflation`. Commit
 >    this atomically with the script changes.
 >
-> 5. Run the parameterised script with `--opportunity-year 2016` to
->    reproduce the y2016 lookup. Compare the reproduced
->    `FR_gsur_ruro_v2_stageA_y2016.parquet` value-identically
->    (schema-aligned column-wise) against the existing
->    `FR_gsur_ruro_v2_stageA.parquet`. If value-identical, accept
->    the year-tagged y2016 lookup and its sidecar, and retire the
->    existing un-tagged y2016 file (archive, do not silently
->    delete). If not value-identical, stop and report the
->    discrepancy; do not proceed.
+> 5. Run the static parameterisation check (V4 per the authorization
+>    §14): (a) confirm the script imports without error; (b) confirm
+>    `--help` runs without error and lists `--opportunity-year`;
+>    (c) confirm path computation resolves the y2016 output path to
+>    `Data/external/FR_gsur_ruro_v2_stageA_y2016.parquet` and the
+>    sidecar path to
+>    `Data/external/FR_gsur_ruro_v2_stageA_y2016__sidecar.json`;
+>    (d) confirm the C7 sidecar block is present and contains the
+>    required fields. Do NOT run the script to produce any output.
 >
-> 6. Update all references to the un-tagged path
->    `FR_gsur_ruro_v2_stageA.parquet` in the canary and validation
->    scripts to the year-tagged y2016 path.
+> 6. Prepare the y2016 provenance and sidecar lock-plan document:
+>    `docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`. The
+>    document must contain the required sidecar fields (§9 of the
+>    authorization) and the lock procedure for execution at
+>    construction authorization time. Do NOT run the script. Do NOT
+>    write any y2016 parquet.
 >
 > 7. Assemble the O7 crosswalk sign-off request: the crosswalk
 >    (`fr_drgn1_to_nuts2_crosswalk.csv`), the merge key
@@ -932,31 +944,34 @@ Prompt to use:
 > `Results/JMP_GSURv2_multi_year_extension_remediation_report_v1.md`,
 > recording the status of each step, the validation results, and
 > the readiness of the construction preconditions. Do NOT construct
-> the y2014 or y2015 lookups; the construction is authorised
+> any GSURv2 lookup for any year; the construction is authorised
 > separately after this remediation is complete and validated.
 
 Output to save: the remediation completion report at
 `Results/JMP_GSURv2_multi_year_extension_remediation_report_v1.md`,
-together with the remediation outputs O1–O6.
+together with the remediation outputs O1–O7.
 
 What to do next: return the remediation completion report to this
 chat for a construction-authorization decision. If all seven
 validations pass, the next step is the GSURv2 construction
 authorization memo (per the audit addendum §24), which authorises
-running the parameterised script with `--opportunity-year 2014`
-and `--opportunity-year 2015` to construct the new lookups. If any
+running the parameterised script with `--opportunity-year 2016`
+(value-identity regression check and y2016 sidecar lock per §9)
+and subsequently with `--opportunity-year 2014` and
+`--opportunity-year 2015` to construct the new lookups. If any
 validation fails — particularly V2 (NUTS vintage), V4
-(parameterisation regression), or V5 (sidecar) — the remediation
-report identifies the failing step, and the construction
-authorization is deferred until the failing step is corrected.
+(static parameterisation check), or V5 (lock-plan document) — the
+remediation report identifies the failing step, and the
+construction authorization is deferred until the failing step is
+corrected.
 
 The remediation task is the immediate next operational step. It
-does not authorise GSURv2 construction, MNL-parquet rebuilding,
-pooled estimation, welfare implementation, or welfare computation;
-it establishes and validates the preconditions so that the
-subsequent construction authorization can proceed against confirmed
-inputs, a parameterised script, resolved naming decisions, and a
-locked y2016 provenance.
+does not authorise GSURv2 construction for any year, MNL-parquet
+rebuilding, pooled estimation, welfare implementation, or welfare
+computation; it establishes and validates the preconditions so that
+the subsequent construction authorization can proceed against
+confirmed inputs, a parameterised script, resolved naming
+decisions, and a prepared y2016 provenance lock plan.
 
 The single-year M1-clean 2016 specification remains the active JMP
 baseline throughout the remediation and until a future SA2 verdict

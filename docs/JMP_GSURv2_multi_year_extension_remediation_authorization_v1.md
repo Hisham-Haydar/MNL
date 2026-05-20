@@ -795,14 +795,15 @@ y2015 construction.
 
 (V4) **Static parameterisation check (no-write validation).**
 Confirm the parameterised script passes the following static checks
-without writing any output parquet: (a) the script imports without
-error; (b) `--help` runs without error and lists the
-`--opportunity-year` argument; (c) calling the script with
-`--opportunity-year 2016 --dry-run` (or equivalent import-time
-path-computation test) resolves the output path to
-`Data/external/FR_gsur_ruro_v2_stageA_y2016.parquet` and the
-sidecar path to
-`Data/external/FR_gsur_ruro_v2_stageA_y2016__sidecar.json`; (d)
+without writing any output parquet and without invoking the script
+with an opportunity year: (a) the script imports without error;
+(b) `--help` runs without error and lists the `--opportunity-year`
+argument; (c) by source inspection or import-time path-template
+evaluation (not by invoking the script with `--opportunity-year`),
+confirm the output path template resolves to the pattern
+`Data/external/FR_gsur_ruro_v2_stageA_y{YEAR}.parquet` and the
+sidecar path template to
+`Data/external/FR_gsur_ruro_v2_stageA_y{YEAR}__sidecar.json`; (d)
 the C7 sidecar block is present in the script and contains the
 required fields (§9). No lookup parquet is written during this
 validation. The value-identity regression check is deferred to
@@ -825,8 +826,12 @@ changes are confined to the input-selection and output-tagging
 layers and that the year-invariant construction logic (the
 aggregation, education alignment, age-band selection, drgn1=9 stub
 handling, IDF parity check, benchmark validation, output schema) is
-unchanged. The V4 value-identity check provides the empirical
-confirmation; this check provides the code-inspection confirmation.
+unchanged. The V4 static parameterisation check provides no-write
+confirmation that the parser, path templates, and sidecar block
+are present; the value-identity regression is deferred to
+construction authorization. This check provides the code-
+inspection confirmation that the year-invariant logic is
+untouched.
 
 The seven validations confirm the remediation outputs are complete
 and correct. If all seven pass, the construction preconditions are
@@ -917,12 +922,15 @@ Prompt to use:
 > 5. Run the static parameterisation check (V4 per the authorization
 >    §14): (a) confirm the script imports without error; (b) confirm
 >    `--help` runs without error and lists `--opportunity-year`;
->    (c) confirm path computation resolves the y2016 output path to
->    `Data/external/FR_gsur_ruro_v2_stageA_y2016.parquet` and the
->    sidecar path to
->    `Data/external/FR_gsur_ruro_v2_stageA_y2016__sidecar.json`;
+>    (c) by source inspection or import-time path-template
+>    evaluation — do NOT invoke the script with `--opportunity-year`
+>    — confirm the output path template resolves to the pattern
+>    `Data/external/FR_gsur_ruro_v2_stageA_y{YEAR}.parquet` and
+>    the sidecar path template to
+>    `Data/external/FR_gsur_ruro_v2_stageA_y{YEAR}__sidecar.json`;
 >    (d) confirm the C7 sidecar block is present and contains the
->    required fields. Do NOT run the script to produce any output.
+>    required fields. Do NOT invoke the script with an opportunity
+>    year. Do NOT write any output parquet.
 >
 > 6. Prepare the y2016 provenance and sidecar lock-plan document:
 >    `docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`. The

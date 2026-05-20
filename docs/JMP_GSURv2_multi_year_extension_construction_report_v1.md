@@ -263,7 +263,7 @@ The IDF parity check (drgn1=1 = single-component FR10) passed at 0.0
 for all three years, confirming the crosswalk-weighted aggregation
 reduces correctly to the single-component value for Île-de-France.
 
-FRM0 (Mayotte) and FRI2 (Corsica) suppression is year-invariant: the
+FRM0 (Corse) and FRI2 (Limousin) suppression is year-invariant: the
 same `approximate_uniform` fallback pattern applies across 2014, 2015,
 and 2016 where denominator data is suppressed. This is reflected in the
 `denom_flag` and `gsur_unreliable` columns of each output parquet, and

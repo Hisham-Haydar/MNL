@@ -198,8 +198,8 @@ confirming the D2 weighting was applied correctly.
 The `L8_approximation_flags` check reported PASS for all three years.
 Approximation flags (`denom_flag`, `gsur_unreliable`) are populated in
 the output parquets where the script applies the `approximate_uniform`
-fallback for suppressed denominator cells (e.g., FRM0 Mayotte, FRI2
-Corsica). This fallback is year-invariant and is attested in the output
+fallback for suppressed denominator cells (e.g., FRM0 Corse, FRI2
+Limousin). This fallback is year-invariant and is attested in the output
 parquet via the flag columns.
 
 D2 row counts: 1,584 (y2016), 1,583 (y2015), 1,584 (y2014). Variation

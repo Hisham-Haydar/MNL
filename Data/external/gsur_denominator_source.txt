@@ -1,0 +1,195 @@
+# gsur_denominator_source.txt
+# Provenance for lfst_r_lfp2acedu_FR_YEAR.tsv and lfst_r_lfsd2pop_FR_YEAR.tsv (2014, 2015, 2016)
+# Created: 2026-05-17
+# Revised: 2026-05-17 (corrected age-band limitation note; removed schema-drift F4 entry)
+# Revised: 2026-05-20 (added y2014 and y2015 entries; Assets 3–6)
+
+ASSET 1: lfst_r_lfp2acedu_FR_2016.tsv
+PURPOSE: Labour force denominators (economically active population) by NUTS-2 x sex x age x
+         education, France 2016. Usable only at BROAD age bands (Y15-74, Y25-64). The narrow
+         10-year age bands required by v2.1 spec section 6 are NOT available in this table
+         at any NUTS level -- the table is published at broad age bands only.
+
+DATASET: lfst_r_lfp2acedu
+TITLE: Economically active population by sex, age, educational attainment level and NUTS 2
+       regions (1,000)
+SOURCE: Eurostat SDMX-CSV API
+URL: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/lfst_r_lfp2acedu?format=SDMX-CSV&startPeriod=2016&endPeriod=2016
+Downloaded: 2026-05-17
+Full download: Data/external/lfst_r_lfp2acedu_2016_full.csv (all countries, 2016)
+Filtered to: France metropolitan NUTS-2 codes (22 regions), unit=THS_PER, freq=A, TIME_PERIOD=2016
+Saved as: Data/external/lfst_r_lfp2acedu_FR_2016.tsv
+
+AGE BANDS AVAILABLE:
+  Y15-74, Y25-64, Y_GE15 ONLY.
+  Y15-24, Y25-34, Y35-44, Y45-54, Y55-64 are NOT published in this table at any level.
+  This is a structural limitation of the Eurostat publication, not a filter or suppression issue.
+  Confirmed by inspecting the full all-countries download: zero rows with narrow age bands.
+
+CELL SUPPRESSION (usable education cells ED0-2, ED3_4, ED5-8, sex M/F):
+  21 of 22 regions: zero suppressed cells. Full Y15-74 coverage.
+  FRM0 (Corse): all cells flagged u (unreliable). OBS_VALUE present.
+  See RURO_GSUR_external_acquisition_completion_v1.md section 6 for full inventory.
+
+USAGE NOTE:
+  This file provides D1 denominators (labour_force) for BROAD-AGE cells only.
+  Per v2.1 spec section 5, the weighting_source column takes one of three values:
+    labour_force, population, approximate_uniform.
+  (No fourth value. Unaggregatable cells use the broad-age national value as described
+  in spec section 5(D3)(a); they are not a separate weighting_source category.)
+  For narrow-age cells, use lfst_r_lfsd2pop_FR_2016.tsv (population, weighting_source=population).
+
+---
+
+ASSET 2: lfst_r_lfsd2pop_FR_2016.tsv
+PURPOSE: Population denominators for GSUR v2. Primary source for NARROW age-band cells
+         (Y15-24, Y25-34, Y35-44, Y45-54, Y55-64) because lfst_r_lfp2acedu does not publish
+         these bands. Also used as fallback for FRM0 broad-age cells where lfst_r_lfp2acedu
+         is flagged unreliable.
+
+DATASET: lfst_r_lfsd2pop
+TITLE: Population in private households by educational attainment level and NUTS 2 region
+SOURCE: Eurostat SDMX-CSV API
+URL: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/lfst_r_lfsd2pop?format=SDMX-CSV&startPeriod=2016&endPeriod=2016
+Downloaded: 2026-05-17
+Full download: Data/external/lfst_r_lfsd2pop_2016_full.csv (all countries, 2016)
+Filtered to: France metropolitan NUTS-2 codes (22 regions), unit=THS_PER, freq=A, TIME_PERIOD=2016
+Saved as: Data/external/lfst_r_lfsd2pop_FR_2016.tsv
+
+AGE BANDS AVAILABLE:
+  Y15-24, Y25-34, Y35-44, Y45-54, Y55-64, Y15-74, Y20-64, Y15-64, Y25-64,
+  Y_GE15, Y_GE25, Y_GE65.
+  All required narrow bands present for all 22 regions.
+
+NARROW-BAND SUPPRESSION (OBS_FLAG=u, education cells ED0-2/ED3_4/ED5-8, sex M/F):
+  660 cells total (22 regions x 5 age bands x 2 sex x 3 ISCED).
+  56 cells suppressed (8.5%). Affected regions and bands:
+    FRC1: Y25-34
+    FRC2: Y15-24, Y25-34, Y55-64
+    FRD1: Y15-24, Y25-34
+    FRE2: Y15-24
+    FRF2: Y15-24, Y55-64
+    FRI2: all five bands (Limousin -- small region)
+    FRI3: Y15-24
+    FRK1: Y15-24, Y25-34, Y35-44
+    FRM0: all five bands (Corse -- small region)
+  Note: suppressed cells carry OBS_FLAG=u; most have OBS_VALUE present (unreliable
+  estimate). Cells with missing OBS_VALUE require D3 (approximate_uniform) fallback
+  with explicit reviewer sign-off per v2.1 spec section 5(D3).
+
+USAGE NOTE:
+  weighting_source = 'population' for all cells using this file.
+  Per v2.1 spec section 5(D2), population weighting is an acceptable approximation.
+  D1 vs D2 comparison at Y15-74 level must be reported in the Stage A validation report
+  (for cells where both are available).
+  FRI2 and FRM0 fully-suppressed narrow-age cells: use D3 (approximate_uniform) with
+  reviewer sign-off, or broad-age fallback, per O2 resolution decision.
+
+---
+
+ASSET 3: lfst_r_lfp2acedu_FR_2014.tsv
+PURPOSE: Labour force denominators (economically active population) by NUTS-2 x sex x age x
+         education, France 2014. Diagnostic/D1 source only (same broad-age-band limitation as
+         2016 reference; see Asset 1).
+
+DATASET: lfst_r_lfp2acedu
+TITLE: Economically active population by sex, age, educational attainment level and NUTS 2
+       regions (1,000)
+SOURCE: Eurostat SDMX-CSV API
+URL: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/lfst_r_lfp2acedu?format=SDMX-CSV&startPeriod=2014&endPeriod=2014
+Downloaded: 2026-05-20
+Full download: Data/external/lfst_r_lfp2acedu_2014_full.csv (all countries, 2014; 19,484 lines)
+Filtered to: France metropolitan NUTS-2 codes (22 regions), unit=THS_PER, freq=A, TIME_PERIOD=2014
+Saved as: Data/external/lfst_r_lfp2acedu_FR_2014.tsv (988 data rows + 1 header)
+Schema: identical to Asset 1 (columns: DATAFLOW, LAST UPDATE, freq, unit, sex, age, isced11,
+        geo, TIME_PERIOD, OBS_VALUE, OBS_FLAG, CONF_STATUS; tab-separated)
+NUTS vintage: NUTS-2016 codes confirmed (FR10, FRB0, FRC1, ... FRM0 - same 22 as 2016 reference)
+
+AGE BANDS AVAILABLE:
+  Y_GE15, Y15-74, Y25-64 ONLY. Same broad-band limitation as 2016.
+
+CELL SUPPRESSION (Y20-64, usable education cells, sex M/F):
+  FRM0 all ED cells flagged u (unreliable) - identical pattern to 2016 reference.
+  NRP category flagged u across all 21 non-FRM0 regions (same as 2016).
+  226 of 988 D1 cells carry OBS_FLAG=u across all age bands.
+
+---
+
+ASSET 4: lfst_r_lfsd2pop_FR_2014.tsv
+PURPOSE: Population denominators for GSUR v2 Stage A, opportunity year 2014. Primary operative
+         D2 source (same role as Asset 2 for 2016).
+
+DATASET: lfst_r_lfsd2pop
+TITLE: Population in private households by educational attainment level and NUTS 2 region
+SOURCE: Eurostat SDMX-CSV API
+URL: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/lfst_r_lfsd2pop?format=SDMX-CSV&startPeriod=2014&endPeriod=2014
+Downloaded: 2026-05-20
+Full download: Data/external/lfst_r_lfsd2pop_2014_full.csv (all countries, 2014; 82,159 lines)
+Filtered to: France metropolitan NUTS-2 codes (22 regions), unit=THS_PER, freq=A, TIME_PERIOD=2014
+Saved as: Data/external/lfst_r_lfsd2pop_FR_2014.tsv (4,058 data rows + 1 header)
+Schema: identical to Asset 2 (columns: DATAFLOW, LAST UPDATE, freq, isced11, sex, age, unit,
+        geo, TIME_PERIOD, OBS_VALUE, OBS_FLAG, CONF_STATUS; tab-separated)
+NUTS vintage: NUTS-2016 codes confirmed (FR10, FRB0, FRC1, ... FRM0 - same 22 as 2016 reference)
+
+AGE BANDS AVAILABLE:
+  Y15-24, Y25-34, Y35-44, Y45-54, Y55-64, Y15-74, Y20-64, Y15-64, Y25-64,
+  Y_GE15, Y_GE25, Y_GE65. All required narrow bands and Y20-64 operative band present.
+
+NARROW-BAND SUPPRESSION (OBS_FLAG=u, Y20-64, usable education cells ED0-2/ED3_4/ED5-8, sex M/F):
+  Y20-64 rows: 330 total, 74 suppressed (22.4%), 11 with empty OBS_VALUE.
+  FRM0: ED0-2, ED3_4, ED5-8 all flagged u for all sex x isced cells (same as 2016).
+  NRP category flagged u across most regions - year-invariant suppression pattern.
+  FRM0: most heavily suppressed (179 cells across all age bands flagged u).
+  FRI2: second-most suppressed (53 cells) - Limousin, small region, same as 2016.
+  Construction impact: same D3/approximate_uniform fallback applies for FRM0 and FRI2
+  narrow-age ED cells as in 2016.
+
+---
+
+ASSET 5: lfst_r_lfp2acedu_FR_2015.tsv
+PURPOSE: Labour force denominators (economically active population) by NUTS-2 x sex x age x
+         education, France 2015. Diagnostic/D1 source only.
+
+DATASET: lfst_r_lfp2acedu
+TITLE: Economically active population by sex, age, educational attainment level and NUTS 2
+       regions (1,000)
+SOURCE: Eurostat SDMX-CSV API
+URL: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/lfst_r_lfp2acedu?format=SDMX-CSV&startPeriod=2015&endPeriod=2015
+Downloaded: 2026-05-20
+Full download: Data/external/lfst_r_lfp2acedu_2015_full.csv (all countries, 2015; 19,427 lines)
+Filtered to: France metropolitan NUTS-2 codes (22 regions), unit=THS_PER, freq=A, TIME_PERIOD=2015
+Saved as: Data/external/lfst_r_lfp2acedu_FR_2015.tsv (978 data rows + 1 header)
+Schema: identical to Assets 1 and 3 (tab-separated). NUTS vintage: NUTS-2016.
+
+AGE BANDS AVAILABLE:
+  Y_GE15, Y15-74, Y25-64 ONLY.
+
+CELL SUPPRESSION: 213 of 978 cells carry OBS_FLAG=u.
+  FRM0 all ED cells flagged u. NRP category flagged u across most regions.
+
+---
+
+ASSET 6: lfst_r_lfsd2pop_FR_2015.tsv
+PURPOSE: Population denominators for GSUR v2 Stage A, opportunity year 2015. Primary operative
+         D2 source.
+
+DATASET: lfst_r_lfsd2pop
+TITLE: Population in private households by educational attainment level and NUTS 2 region
+SOURCE: Eurostat SDMX-CSV API
+URL: https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/lfst_r_lfsd2pop?format=SDMX-CSV&startPeriod=2015&endPeriod=2015
+Downloaded: 2026-05-20
+Full download: Data/external/lfst_r_lfsd2pop_2015_full.csv (all countries, 2015; 82,141 lines)
+Filtered to: France metropolitan NUTS-2 codes (22 regions), unit=THS_PER, freq=A, TIME_PERIOD=2015
+Saved as: Data/external/lfst_r_lfsd2pop_FR_2015.tsv (4,027 data rows + 1 header)
+Schema: identical to Asset 2 (tab-separated). NUTS vintage: NUTS-2016.
+
+AGE BANDS AVAILABLE:
+  Y15-24, Y25-34, Y35-44, Y45-54, Y55-64, Y15-74, Y20-64, Y15-64, Y25-64,
+  Y_GE15, Y_GE25, Y_GE65. All required narrow bands and Y20-64 operative band present.
+
+NARROW-BAND SUPPRESSION (OBS_FLAG=u, Y20-64):
+  Y20-64 rows: 326 total, 70 suppressed (21.5%), 6 with empty OBS_VALUE.
+  FRM0: ED0-2, ED3_4, ED5-8 all flagged u - same pattern as 2014 and 2016.
+  NRP category flagged u across most regions.
+  Construction impact: same D3/approximate_uniform fallback applies for FRM0 narrow-age
+  ED cells as in 2014 and 2016.

@@ -1,0 +1,103 @@
+# gsur_benchmark_source.txt
+# Provenance for insee_001688526_YEAR.csv (2014, 2015, 2016)
+# Created: 2026-05-17
+# Revised: 2026-05-20 (added y2014 and y2015 entries)
+
+ASSET: insee_001688526_2016.csv
+PURPOSE: National unemployment rate benchmark for GSUR v2 Stage A verification (O9 resolution).
+         Used to sanity-check that implied national average from regional GSUR rates
+         matches the INSEE official series for metropolitan France 2016.
+
+SERIES: INSEE BDM series 001688526
+TITLE_FR: Taux de chômage au sens du BIT — Ensemble — France métropolitaine — Données CVS
+TITLE_EN: ILO unemployment rate — Total — Metropolitan France — SA data
+SOURCE: INSEE BDM (Banque de données macroéconomiques) API
+URL: https://api.insee.fr/series/BDM/V1/data/SERIES_BDM/001688526
+API accessed: 2026-05-17
+Local file: Data/external/insee_001688526_2016.csv
+
+SERIES METADATA:
+  FREQ: T (quarterly)
+  REF_AREA: FM (France métropolitaine — metropolitan France only, excludes DOM)
+  UNIT_MEASURE: POURCENT (percentage)
+  DECIMALS: 1
+  LAST_UPDATE: 2026-05-13
+
+2016 QUARTERLY VALUES (seasonally adjusted):
+  Q1 2016: 9.9%
+  Q2 2016: 9.7%
+  Q3 2016: 9.6%
+  Q4 2016: 9.7%
+
+2016 ANNUAL AVERAGE (simple mean of 4 quarters):
+  9.725%
+
+WHY INSEE BDM NOT EUROSTAT:
+  Eurostat dataset lfst_r_lfu3rt geo=FR gives 10.1% for 2016. This includes DOM
+  (France hors Mayotte). INSEE series 001688526 REF_AREA=FM covers metropolitan
+  France only, matching the MNL sample perimeter (drgn2=1-22, no DOM).
+  Tolerance for Stage A benchmark verification: ±0.001 (absolute rate, per O8 resolution).
+
+USAGE:
+  O9 resolution requires 2016 annual average from official INSEE series.
+  Value: 9.725% (simple mean Q1-Q4 2016).
+  See RURO_GSUR_v2_1_open_decisions_resolution_v1.md §O9.
+
+---
+
+ASSET: insee_001688526_2014.csv
+PURPOSE: National unemployment rate benchmark for GSUR v2 Stage A verification, opportunity
+         year 2014. Used to sanity-check regional GSUR implied national average against INSEE
+         official series for metropolitan France 2014.
+
+SERIES: INSEE BDM series 001688526
+TITLE_FR: Taux de chomage au sens du BIT - Ensemble - France metropolitaine - Donnees CVS
+TITLE_EN: ILO unemployment rate - Total - Metropolitan France - SA data
+SOURCE: INSEE BDM (Banque de donnees macroeconomiques) API
+URL: https://api.insee.fr/series/BDM/V1/data/SERIES_BDM/001688526
+API accessed: 2026-05-20
+Local file: Data/external/insee_001688526_2014.csv
+
+SERIES METADATA:
+  FREQ: T (quarterly)
+  REF_AREA: FM (France metropolitaine - metropolitan France only, excludes DOM)
+  UNIT_MEASURE: POURCENT (percentage)
+  DECIMALS: 1
+  LAST_UPDATE: 2026-05-13 (as of retrieval date)
+
+2014 QUARTERLY VALUES (seasonally adjusted):
+  Q1 2014: 9.8%
+  Q2 2014: 9.8%
+  Q3 2014: 9.9%
+  Q4 2014: 10.1%
+
+2014 ANNUAL AVERAGE (simple mean of 4 quarters):
+  9.9% (exact: 9.9000; sum=39.6/4)
+
+USAGE:
+  BENCHMARK_PCT for opportunity year 2014 = 9.9 (C5 value in parameterised script).
+  Same metropolitan-France-only scope as 2016 benchmark; same justification applies.
+
+---
+
+ASSET: insee_001688526_2015.csv
+PURPOSE: National unemployment rate benchmark for GSUR v2 Stage A verification, opportunity
+         year 2015.
+
+SERIES: INSEE BDM series 001688526
+SOURCE: INSEE BDM API
+URL: https://api.insee.fr/series/BDM/V1/data/SERIES_BDM/001688526
+API accessed: 2026-05-20
+Local file: Data/external/insee_001688526_2015.csv
+
+2015 QUARTERLY VALUES (seasonally adjusted):
+  Q1 2015: 10.0%
+  Q2 2015: 10.2%
+  Q3 2015: 10.0%
+  Q4 2015: 9.9%
+
+2015 ANNUAL AVERAGE (simple mean of 4 quarters):
+  10.025% (exact: 10.0250; sum=40.1/4)
+
+USAGE:
+  BENCHMARK_PCT for opportunity year 2015 = 10.025 (C5 value in parameterised script).

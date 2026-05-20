@@ -1,0 +1,6 @@
+﻿series_id,period,freq,value_pct,obs_status,note
+001688526,2014-Q1,quarterly,9.8,A,"ILO unemployment rate, SA, Metropolitan France"
+001688526,2014-Q2,quarterly,9.8,A,"ILO unemployment rate, SA, Metropolitan France"
+001688526,2014-Q3,quarterly,9.9,A,"ILO unemployment rate, SA, Metropolitan France"
+001688526,2014-Q4,quarterly,10.1,A,"ILO unemployment rate, SA, Metropolitan France"
+001688526,2014,annual_average,9.9,computed,simple mean of Q1-Q4 2014 quarterly SA values

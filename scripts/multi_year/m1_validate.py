@@ -572,12 +572,23 @@ def check_v9(file_path: Path, df: pd.DataFrame, result: CheckResult) -> None:
         result.fail(f"File path contains 'ruro': {file_path}")
         return
 
+    # Known upstream sampling-control columns from france_data_prep.py /
+    # old_ruro_pre_enhanced pipeline; carried into the parquet by the prep
+    # scripts and not a naming error in the Stage M1 output.
+    _UPSTREAM_RURO_COLS = frozenset(
+        {"ruro_decider", "ruro_group", "ruro_sample", "year_for_ruro"}
+    )
     ruro_cols = [c for c in df.columns if "ruro" in c.lower()]
-    if ruro_cols:
-        result.fail(f"Columns contain 'ruro' token: {ruro_cols}")
+    unexpected = [c for c in ruro_cols if c not in _UPSTREAM_RURO_COLS]
+    if unexpected:
+        result.fail(f"Columns contain unexpected 'ruro' token: {unexpected}")
         return
+    if ruro_cols:
+        result.details.append(
+            f"Known upstream ruro columns present (not an error): {sorted(ruro_cols)}"
+        )
 
-    result.ok("No 'ruro' token in file path or column names")
+    result.ok("No unexpected 'ruro' token in file path or column names")
 
 
 # ---------------------------------------------------------------------------

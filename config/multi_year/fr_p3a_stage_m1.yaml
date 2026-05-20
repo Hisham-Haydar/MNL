@@ -118,6 +118,9 @@ input_parquet_patterns:
   - "*{year}*RURO*mnl*.parquet"
   - "*{year}*mnl*.parquet"
 
+# Components to load per year (both singles and couples stacked together)
+input_parquet_components: [singles, couples]
+
 # Output file stems (config name used in stem; scripts prefix with country_slug)
 # e.g. fr_p3a_stacked_raw.parquet
 output_file_stems:
@@ -127,10 +130,10 @@ output_file_stems:
 # ---------------------------------------------------------------------------
 # Expected row / overlap counts (for validation checks V2, V6)
 # ---------------------------------------------------------------------------
-# expected_row_counts: approximate household-row totals per config (tolerance ±10)
+# expected_row_counts: draw-expanded row totals per config (singles+couples, 100 draws/HH)
 expected_row_counts:
   p2:  22849
-  p3a: 33917
+  p3a: 1244500
   p3b: 33725
   p4:  33334
 

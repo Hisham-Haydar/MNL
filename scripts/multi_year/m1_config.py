@@ -127,6 +127,9 @@ class StageConfig:
         self.cpi_final_path: Path = REPO / raw["cpi_final_path"]
         self.input_parquet_dir: Path = REPO / raw["input_parquet_dir"]
         self.input_parquet_patterns: List[str] = list(raw["input_parquet_patterns"])
+        self.input_parquet_components: List[str] = list(
+            raw.get("input_parquet_components", ["singles", "couples"])
+        )
 
         # Output file stems
         stems_raw = raw.get("output_file_stems", {})

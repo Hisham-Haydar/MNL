@@ -107,11 +107,25 @@ def check_v1(df: pd.DataFrame, cfg: StageConfig, result: CheckResult) -> None:
         return
 
     n_unique = df["stacked_person_uid"].nunique()
-    if n_unique != len(df):
-        result.fail(
-            f"stacked_person_uid not unique per row: "
-            f"{len(df) - n_unique} duplicates."
-        )
+    if n_unique < len(df):
+        # Draw-expanded format: stacked_person_uid is person-year unique, not row-unique.
+        if "draw" in df.columns:
+            n_dup_draw = int(df.duplicated(subset=["stacked_person_uid", "draw"]).sum())
+            if n_dup_draw > 0:
+                result.fail(
+                    f"(stacked_person_uid, draw) not unique: {n_dup_draw} duplicates."
+                )
+            else:
+                n_draws = df["draw"].nunique()
+                result.details.append(
+                    f"Draw-expanded format: stacked_person_uid unique at person-year level "
+                    f"({n_unique} person-years, {n_draws} draws each, {len(df):,} total rows)."
+                )
+        else:
+            result.fail(
+                f"stacked_person_uid not unique per row: "
+                f"{len(df) - n_unique} duplicates (no 'draw' column found)."
+            )
     else:
         result.details.append(
             f"stacked_person_uid unique per row: {n_unique} values."
@@ -413,40 +427,52 @@ def check_v7(df: pd.DataFrame, cfg: StageConfig, result: CheckResult) -> None:
                     )
 
             if "dag" in s1.columns and "dag" in s2.columns:
-                expected_gap = yr2 - yr1
-                delta = s2["dag"] - s1["dag"]
-                within_1 = float(((delta - expected_gap).abs() <= 1).mean())
-                if within_1 < thr["age_progression_min"]:
-                    result.warn(
-                        f"{pair_label}: age_progression within_1 = {within_1:.4f} < "
-                        f"{thr['age_progression_min']}"
+                # Filter to rows where dag is non-null in both years.
+                # In mixed singles+couples datasets, dag is NaN for couples rows;
+                # age progression is only meaningful for singles (who have dag).
+                dag_mask = s1["dag"].notna() & s2["dag"].notna()
+                if not dag_mask.any():
+                    result.details.append(
+                        f"{pair_label}: all repeat persons have dag=NaN "
+                        "(couples-only repeats); age progression not checked."
                     )
                 else:
-                    result.details.append(
-                        f"{pair_label}: age_progression_within_1={within_1:.4f}"
-                    )
+                    s1_dag = s1.loc[dag_mask]
+                    s2_dag = s2.loc[dag_mask]
+                    expected_gap = yr2 - yr1
+                    delta = s2_dag["dag"] - s1_dag["dag"]
+                    within_1 = float(((delta - expected_gap).abs() <= 1).mean())
+                    if within_1 < thr["age_progression_min"]:
+                        result.warn(
+                            f"{pair_label}: age_progression within_1 = {within_1:.4f} < "
+                            f"{thr['age_progression_min']}"
+                        )
+                    else:
+                        result.details.append(
+                            f"{pair_label}: age_progression_within_1={within_1:.4f}"
+                        )
 
-                sex_mismatch = (
-                    (s1["dgn"] != s2["dgn"])
-                    if "dgn" in s1.columns
-                    else pd.Series(False, index=s1.index)
-                )
-                age_off = (delta - expected_gap).abs() > 1
-                suspicious = float((sex_mismatch | age_off).mean())
-                if suspicious > thr["suspicious_block_max"]:
-                    result.fail(
-                        f"{pair_label}: suspicious_rate={suspicious:.4f} > "
-                        f"block threshold {thr['suspicious_block_max']}"
+                    sex_mismatch_dag = (
+                        (s1_dag["dgn"] != s2_dag["dgn"])
+                        if "dgn" in s1_dag.columns
+                        else pd.Series(False, index=s1_dag.index)
                     )
-                elif suspicious > thr["suspicious_warn_max"]:
-                    result.warn(
-                        f"{pair_label}: suspicious_rate={suspicious:.4f} > "
-                        f"warn threshold {thr['suspicious_warn_max']}"
-                    )
-                else:
-                    result.details.append(
-                        f"{pair_label}: suspicious_rate={suspicious:.4f}"
-                    )
+                    age_off = (delta - expected_gap).abs() > 1
+                    suspicious = float((sex_mismatch_dag | age_off).mean())
+                    if suspicious > thr["suspicious_block_max"]:
+                        result.fail(
+                            f"{pair_label}: suspicious_rate={suspicious:.4f} > "
+                            f"block threshold {thr['suspicious_block_max']}"
+                        )
+                    elif suspicious > thr["suspicious_warn_max"]:
+                        result.warn(
+                            f"{pair_label}: suspicious_rate={suspicious:.4f} > "
+                            f"warn threshold {thr['suspicious_warn_max']}"
+                        )
+                    else:
+                        result.details.append(
+                            f"{pair_label}: suspicious_rate={suspicious:.4f}"
+                        )
 
             if raw_hh in s1.columns and raw_hh in s2.columns:
                 hh_cont = float((s1[raw_hh] == s2[raw_hh]).mean())
@@ -474,6 +500,47 @@ def check_v7(df: pd.DataFrame, cfg: StageConfig, result: CheckResult) -> None:
 # ---------------------------------------------------------------------------
 
 def check_v8(df: pd.DataFrame, result: CheckResult) -> None:
+    if "household_type" in df.columns:
+        # Per-component GSUR coverage: singles use 'gsur'; couples use 'gsur_female'/'gsur_male'.
+        # Columns from the other component are legitimately NaN — check only within-component.
+        singles_mask = df["household_type"] == "singles"
+        couples_mask = df["household_type"] == "couples"
+        errors: List[str] = []
+
+        if singles_mask.any():
+            if "gsur" not in df.columns:
+                errors.append("'gsur' column not found for singles rows")
+            else:
+                n_null = int(df.loc[singles_mask, "gsur"].isna().sum())
+                if n_null > 0:
+                    errors.append(f"'gsur' has {n_null} null values in singles rows")
+                else:
+                    result.details.append(
+                        f"singles ({singles_mask.sum():,} rows): gsur zero missing"
+                    )
+
+        if couples_mask.any():
+            for col in ["gsur_female", "gsur_male"]:
+                if col not in df.columns:
+                    errors.append(f"'{col}' not found for couples rows")
+                else:
+                    n_null = int(df.loc[couples_mask, col].isna().sum())
+                    if n_null > 0:
+                        errors.append(
+                            f"'{col}' has {n_null} null values in couples rows"
+                        )
+                    else:
+                        result.details.append(
+                            f"couples ({couples_mask.sum():,} rows): {col} zero missing"
+                        )
+
+        if errors:
+            result.fail("  ".join(errors))
+        else:
+            result.ok("Per-component GSUR coverage: all zero missing")
+        return
+
+    # Original global check (no household_type column present)
     gsur_candidates = [c for c in df.columns
                        if c.startswith("gsur") and "uid" not in c.lower()]
     if not gsur_candidates:

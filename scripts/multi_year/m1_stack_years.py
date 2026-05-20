@@ -38,7 +38,7 @@ import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -70,24 +70,39 @@ TAG_YEAR: Dict[int, int] = {}  # populated at runtime from config
 # Path resolution
 # ---------------------------------------------------------------------------
 
-def _find_parquet(year: int, cfg: StageConfig) -> Optional[Path]:
-    """Locate the MNL parquet for a given year using patterns from the config."""
-    for pat_template in cfg.input_parquet_patterns:
-        pat = pat_template.replace("{year}", str(year))
-        candidates = sorted(cfg.input_parquet_dir.glob(pat))
-        combined = [p for p in candidates
-                    if "combined" in p.name.lower()
-                    or ("singles" not in p.name.lower()
-                        and "couples" not in p.name.lower())]
-        if combined:
-            return combined[0]
-        if candidates:
-            return candidates[0]
-    return None
+def _find_component_parquets(
+    year: int, cfg: StageConfig
+) -> List[Tuple[str, Path]]:
+    """
+    Locate the singles and couples MNL parquets for a given year.
+
+    For each component listed in cfg.input_parquet_components (e.g. "singles",
+    "couples"), searches the configured glob patterns and returns the first
+    candidate whose filename contains that component name.
+
+    Returns a list of (component_name, path) pairs in the order of
+    cfg.input_parquet_components.  Missing components produce no entry (the
+    caller detects and reports them).
+    """
+    found: List[Tuple[str, Path]] = []
+    for component in cfg.input_parquet_components:
+        matched: Optional[Path] = None
+        for pat_template in cfg.input_parquet_patterns:
+            pat = pat_template.replace("{year}", str(year))
+            candidates = sorted(cfg.input_parquet_dir.glob(pat))
+            comp_candidates = [p for p in candidates if component in p.name.lower()]
+            if comp_candidates:
+                matched = comp_candidates[0]
+                break
+        if matched is not None:
+            found.append((component, matched))
+    return found
 
 
-def _resolve_inputs(years: List[int], cfg: StageConfig) -> Dict[int, Optional[Path]]:
-    return {yr: _find_parquet(yr, cfg) for yr in years}
+def _resolve_inputs(
+    years: List[int], cfg: StageConfig
+) -> Dict[int, List[Tuple[str, Path]]]:
+    return {yr: _find_component_parquets(yr, cfg) for yr in years}
 
 
 # ---------------------------------------------------------------------------
@@ -156,19 +171,40 @@ def _add_stacked_ids(df: pd.DataFrame, year: int, cfg: StageConfig) -> pd.DataFr
         tag * B + df[idperson_col].astype("int64")
     ).astype("int64")
 
-    assert df["stacked_person_uid"].nunique() == len(df), (
-        f"Year {year}: stacked_person_uid is not unique per row — collision detected."
-    )
-
-    LOGGER.info(
-        "  year=%d  tag=%d  rows=%d  "
-        "%s_max=%d  %s_max=%d  "
-        "stacked_hh_uid in [%d,%d]  stacked_person_uid in [%d,%d]",
-        year, tag, len(df),
-        idhh_col, idhh_max, idperson_col, idperson_max,
-        int(df["stacked_hh_uid"].min()), int(df["stacked_hh_uid"].max()),
-        int(df["stacked_person_uid"].min()), int(df["stacked_person_uid"].max()),
-    )
+    n_unique_uid = df["stacked_person_uid"].nunique()
+    if n_unique_uid < len(df):
+        # Draw-expanded format: multiple rows per person (one per simulation draw).
+        # stacked_person_uid is person-year unique, not row-unique — allowed.
+        if "draw" not in df.columns:
+            raise ValueError(
+                f"Year {year}: stacked_person_uid not unique per row "
+                "and no 'draw' column found. Expected draw-expanded format."
+            )
+        n_dup_draw = int(df.duplicated(subset=["stacked_person_uid", "draw"]).sum())
+        if n_dup_draw > 0:
+            raise ValueError(
+                f"Year {year}: (stacked_person_uid, draw) has {n_dup_draw} duplicates."
+            )
+        n_draws = df["draw"].nunique()
+        LOGGER.info(
+            "  year=%d  tag=%d  draw-expanded: %d person-years × %d draws = %d rows  "
+            "%s_max=%d  %s_max=%d  "
+            "stacked_hh_uid in [%d,%d]  stacked_person_uid in [%d,%d]",
+            year, tag, n_unique_uid, n_draws, len(df),
+            idhh_col, idhh_max, idperson_col, idperson_max,
+            int(df["stacked_hh_uid"].min()), int(df["stacked_hh_uid"].max()),
+            int(df["stacked_person_uid"].min()), int(df["stacked_person_uid"].max()),
+        )
+    else:
+        LOGGER.info(
+            "  year=%d  tag=%d  rows=%d  "
+            "%s_max=%d  %s_max=%d  "
+            "stacked_hh_uid in [%d,%d]  stacked_person_uid in [%d,%d]",
+            year, tag, len(df),
+            idhh_col, idhh_max, idperson_col, idperson_max,
+            int(df["stacked_hh_uid"].min()), int(df["stacked_hh_uid"].max()),
+            int(df["stacked_person_uid"].min()), int(df["stacked_person_uid"].max()),
+        )
     return df
 
 
@@ -179,7 +215,7 @@ def _add_stacked_ids(df: pd.DataFrame, year: int, cfg: StageConfig) -> pd.DataFr
 def _dry_run_report(
     config_name: str,
     cfg: StageConfig,
-    inputs: Dict[int, Optional[Path]],
+    inputs: Dict[int, List[Tuple[str, Path]]],
     out_path: Path,
 ) -> None:
     years = cfg.years
@@ -188,16 +224,20 @@ def _dry_run_report(
     print(f"DRY RUN -- config={config_name}  years={years}")
     print(f"Config YAML: {cfg.yaml_path}")
     print(f"{'='*70}")
+    print(f"\nComponents: {cfg.input_parquet_components}")
     print("\nInputs:")
     all_present = True
     for yr in years:
-        p = inputs[yr]
-        if p and p.exists():
-            size_mb = p.stat().st_size / 1_048_576
-            print(f"  [{yr}]  FOUND  {p}  ({size_mb:.1f} MB)")
-        else:
-            print(f"  [{yr}]  NOT FOUND  (searched {cfg.input_parquet_dir}/)")
-            all_present = False
+        comp_paths = inputs[yr]
+        found_components = {comp for comp, _ in comp_paths}
+        for component in cfg.input_parquet_components:
+            match = next((p for c, p in comp_paths if c == component), None)
+            if match and match.exists():
+                size_mb = match.stat().st_size / 1_048_576
+                print(f"  [{yr}] [{component}]  FOUND  {match}  ({size_mb:.1f} MB)")
+            else:
+                print(f"  [{yr}] [{component}]  NOT FOUND  (searched {cfg.input_parquet_dir}/)")
+                all_present = False
 
     print(f"\nPlanned output:  {out_path}")
     if all_present:
@@ -246,28 +286,60 @@ def stack(
         _dry_run_report(effective_config, cfg, inputs, out_path)
         return
 
-    missing = [yr for yr, p in inputs.items() if p is None or not p.exists()]
-    if missing:
+    # Check for missing inputs
+    missing_desc: List[str] = []
+    for yr in years:
+        comp_paths = inputs[yr]
+        found_components = {comp for comp, _ in comp_paths}
+        for component in cfg.input_parquet_components:
+            match = next((p for c, p in comp_paths if c == component), None)
+            if match is None or not match.exists():
+                missing_desc.append(f"{yr}/{component}")
+    if missing_desc:
         raise FileNotFoundError(
-            f"Config '{effective_config}': missing MNL parquets for years {missing}.\n"
+            f"Config '{effective_config}': missing MNL parquets: {missing_desc}.\n"
             "Run EUROMOD + enh_RURO_prep_mnl_basic.py for those years first."
         )
 
-    LOGGER.info("Stacking config=%s  years=%s", effective_config, years)
+    LOGGER.info(
+        "Stacking config=%s  years=%s  components=%s",
+        effective_config, years, cfg.input_parquet_components,
+    )
     frames: List[pd.DataFrame] = []
 
     for yr in years:
-        p = inputs[yr]
-        assert p is not None
-        LOGGER.info("Loading year=%d from %s", yr, p)
-        df = pd.read_parquet(p)
-        df = _add_stacked_ids(df, yr, cfg)
-        frames.append(df)
+        comp_paths = inputs[yr]
+        year_frames: List[pd.DataFrame] = []
+        for component, p in comp_paths:
+            LOGGER.info("Loading year=%d  component=%s  from %s", yr, component, p)
+            df = pd.read_parquet(p)
+            df = df.copy()
+            df["household_type"] = component
+            year_frames.append(df)
+        # Schema union: missing columns in one component filled with NaN
+        if len(year_frames) > 1:
+            year_df = pd.concat(year_frames, ignore_index=True, join="outer")
+        else:
+            year_df = year_frames[0]
+        year_df = _add_stacked_ids(year_df, yr, cfg)
+        frames.append(year_df)
 
     pooled = pd.concat(frames, ignore_index=True)
 
-    if pooled["stacked_person_uid"].duplicated().any():
-        n_dup = pooled["stacked_person_uid"].duplicated().sum()
+    # For draw-expanded parquets, stacked_person_uid repeats once per draw within a
+    # person-year — that is expected.  The cross-year collision guard must therefore
+    # check (stacked_person_uid, draw) uniqueness when a draw column is present;
+    # otherwise fall back to stacked_person_uid row-uniqueness.
+    if "draw" in pooled.columns:
+        n_dup = int(pooled.duplicated(subset=["stacked_person_uid", "draw"]).sum())
+        if n_dup > 0:
+            raise ValueError(
+                f"Cross-year UID collision: {n_dup} duplicate "
+                "(stacked_person_uid, draw) pairs. "
+                "Check uid_base sufficiency for this dataset."
+            )
+    elif pooled["stacked_person_uid"].duplicated().any():
+        n_dup = int(pooled["stacked_person_uid"].duplicated().sum())
         raise ValueError(
             f"Cross-year UID collision: {n_dup} duplicate stacked_person_uid values. "
             "Check uid_base sufficiency for this dataset."
@@ -282,12 +354,12 @@ def stack(
     cfg.results_dir.mkdir(parents=True, exist_ok=True)
 
     rows = []
+    idhh_col = cfg.household_id_col
+    idperson_col = cfg.person_id_col
     for yr in years:
         tag = cfg.year_tags[yr]
         sub = pooled[pooled["year_tag"] == tag]
-        idhh_col = cfg.household_id_col
-        idperson_col = cfg.person_id_col
-        rows.append({
+        row: dict = {
             "year": yr,
             "year_tag": tag,
             "n_rows": len(sub),
@@ -302,7 +374,14 @@ def stack(
             "raw_id_null_count": int(
                 sub[cfg.raw_id_cols].isna().any(axis=1).sum()
             ),
-        })
+        }
+        # Per-component breakdown
+        if "household_type" in sub.columns:
+            for comp in cfg.input_parquet_components:
+                csub = sub[sub["household_type"] == comp]
+                row[f"n_rows_{comp}"] = len(csub)
+                row[f"n_households_{comp}"] = csub[idhh_col].nunique()
+        rows.append(row)
 
     pd.DataFrame(rows).to_csv(manifest_path, index=False)
     LOGGER.info("Manifest written: %s", manifest_path)

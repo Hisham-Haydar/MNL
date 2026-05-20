@@ -144,53 +144,89 @@ def _diagnose_pair(
         sex_ok = 1.0
 
     # Age progression
+    # In mixed singles+couples datasets, dag is NaN for couples rows.
+    # Filter to rows where dag is non-null in both years (singles only).
     if "dag" in s1.columns and "dag" in s2.columns:
-        delta_dag = s2["dag"] - s1["dag"]
-        pct_exact = float((delta_dag == gap).mean())
-        pct_within1 = float(((delta_dag - gap).abs() <= 1).mean())
-        result["age_pct_exact"] = pct_exact
-        result["age_pct_within1"] = pct_within1
-
-        result["delta_dag_dist"] = (
-            delta_dag.value_counts().sort_index().head(10).to_dict()
-        )
-
-        if pct_within1 < thr["age_progression_min"]:
-            result["warnings"].append(
-                f"age_progression within_1: {pct_within1:.4f} < "
-                f"{thr['age_progression_min']}"
-            )
-        else:
+        dag_mask = s1["dag"].notna() & s2["dag"].notna()
+        if not dag_mask.any():
+            result["age_pct_within1"] = None
             result["outcomes"].append(
-                f"age_progression_within1={pct_within1:.4f}"
+                "dag=NaN for all repeat persons (couples-only repeats); "
+                "age progression not checked"
             )
-
-        # Suspicious records
-        sex_mismatch = (
-            (s1["dgn"] != s2["dgn"])
-            if "dgn" in s1.columns
-            else pd.Series(False, index=s1.index)
-        )
-        age_off = (delta_dag - gap).abs() > 1
-        suspicious = sex_mismatch | age_off
-        susp_rate = float(suspicious.mean())
-        result["suspicious_rate"] = susp_rate
-        result["suspicious_count"] = int(suspicious.sum())
-
-        if susp_rate > thr["suspicious_block_max"]:
-            result["blocked"] = True
-            result["outcomes"].append(
-                f"FAIL: suspicious_rate={susp_rate:.4f} > BLOCK threshold "
-                f"{thr['suspicious_block_max']}"
+            # Suspicious rate: sex mismatch only (no age component available)
+            sex_mismatch = (
+                (s1["dgn"] != s2["dgn"])
+                if "dgn" in s1.columns
+                else pd.Series(False, index=s1.index)
             )
-        elif susp_rate > thr["suspicious_warn_max"]:
-            result["warnings"].append(
-                f"suspicious_rate={susp_rate:.4f} > warn threshold "
-                f"{thr['suspicious_warn_max']}"
-            )
-            result["outcomes"].append(f"suspicious_rate={susp_rate:.4f} WARN")
+            susp_rate = float(sex_mismatch.mean())
+            result["suspicious_rate"] = susp_rate
+            result["suspicious_count"] = int(sex_mismatch.sum())
+            if susp_rate > thr["suspicious_block_max"]:
+                result["blocked"] = True
+                result["outcomes"].append(
+                    f"FAIL: suspicious_rate={susp_rate:.4f} > BLOCK threshold "
+                    f"{thr['suspicious_block_max']}"
+                )
+            elif susp_rate > thr["suspicious_warn_max"]:
+                result["warnings"].append(
+                    f"suspicious_rate={susp_rate:.4f} > warn threshold "
+                    f"{thr['suspicious_warn_max']}"
+                )
+                result["outcomes"].append(f"suspicious_rate={susp_rate:.4f} WARN")
+            else:
+                result["outcomes"].append(f"suspicious_rate={susp_rate:.4f}")
         else:
-            result["outcomes"].append(f"suspicious_rate={susp_rate:.4f}")
+            s1_dag = s1.loc[dag_mask]
+            s2_dag = s2.loc[dag_mask]
+            delta_dag = s2_dag["dag"] - s1_dag["dag"]
+            pct_exact = float((delta_dag == gap).mean())
+            pct_within1 = float(((delta_dag - gap).abs() <= 1).mean())
+            result["age_pct_exact"] = pct_exact
+            result["age_pct_within1"] = pct_within1
+            result["n_dag_checked"] = int(dag_mask.sum())
+
+            result["delta_dag_dist"] = (
+                delta_dag.value_counts().sort_index().head(10).to_dict()
+            )
+
+            if pct_within1 < thr["age_progression_min"]:
+                result["warnings"].append(
+                    f"age_progression within_1: {pct_within1:.4f} < "
+                    f"{thr['age_progression_min']}"
+                )
+            else:
+                result["outcomes"].append(
+                    f"age_progression_within1={pct_within1:.4f}"
+                )
+
+            # Suspicious records (dag-filtered subset only)
+            sex_mismatch_dag = (
+                (s1_dag["dgn"] != s2_dag["dgn"])
+                if "dgn" in s1_dag.columns
+                else pd.Series(False, index=s1_dag.index)
+            )
+            age_off = (delta_dag - gap).abs() > 1
+            suspicious = sex_mismatch_dag | age_off
+            susp_rate = float(suspicious.mean())
+            result["suspicious_rate"] = susp_rate
+            result["suspicious_count"] = int(suspicious.sum())
+
+            if susp_rate > thr["suspicious_block_max"]:
+                result["blocked"] = True
+                result["outcomes"].append(
+                    f"FAIL: suspicious_rate={susp_rate:.4f} > BLOCK threshold "
+                    f"{thr['suspicious_block_max']}"
+                )
+            elif susp_rate > thr["suspicious_warn_max"]:
+                result["warnings"].append(
+                    f"suspicious_rate={susp_rate:.4f} > warn threshold "
+                    f"{thr['suspicious_warn_max']}"
+                )
+                result["outcomes"].append(f"suspicious_rate={susp_rate:.4f} WARN")
+            else:
+                result["outcomes"].append(f"suspicious_rate={susp_rate:.4f}")
     else:
         result["age_pct_within1"] = None
         result["warnings"].append("'dag' column missing; age progression not checked")

@@ -19,12 +19,14 @@ The approved conceptual merge key is:
 The actual MNL schema is:
 
 Singles:
+
 - `drgn1`
 - `educ3`
 - `dgn`
 - `gsur`
 
 Couples:
+
 - `drgn1`
 - `educ3_male`
 - `educ3_female`
@@ -40,12 +42,14 @@ Approved survey-year / opportunity-year mapping:
 For singles, the rebuild must map GSURv2 `sex` to the observed MNL `dgn` coding after verifying the coding convention.
 
 For couples, the rebuild must use partner-specific merges:
+
 - male partner: `(drgn1, educ3_male, sex = male)`
 - female partner: `(drgn1, educ3_female, sex = female)`
 
 This approval authorizes only the crosswalk and merge-key sign-off required before the GSURv2 MNL-parquet rebuild authorization.
 
 This approval does not authorize:
+
 - MNL parquet rebuild by itself;
 - pooled Stage M1 stacking re-run;
 - pooled estimation;
@@ -54,4 +58,4 @@ This approval does not authorize:
 - P3b or P4;
 - replacement of M1-clean 2016 as the active JMP baseline.
 
-M1-clean 2016 remains the active JMP baseline until a later SA2 verdict explicitly promotes a fina
+M1-clean 2016 remains the active JMP baseline until a later SA2 verdict explicitly promotes a final pooled specification.

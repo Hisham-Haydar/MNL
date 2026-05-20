@@ -1,0 +1,52 @@
+Year,Sample,Step,Households Remaining,Female Heads,Male Heads,Pct Remaining,Households Dropped,Incremental Drop Pct
+2015,Couples,Baseline,6707,1995,4712,100.0,0,0.0
+2015,Couples,Age (Head),5121,1628,3493,76.35,1586,23.65
+2015,Couples,Education (Head),5059,1591,3468,75.43,62,0.92
+2015,Couples,Retirement/Disability (HH level),3910,1029,2881,58.3,1149,17.13
+2015,Couples,Allowed LES (Deciders),3152,849,2303,47.0,758,11.3
+2015,Couples,Age (Partner),3151,848,2303,46.98,1,0.01
+2015,Couples,Education (Partner),3078,833,2245,45.89,73,1.09
+2015,Couples,Opposite-Sex Couples,3048,822,2226,45.45,30,0.45
+2015,Couples,Other Household Members,2606,724,1882,38.85,442,6.59
+2015,Couples,Hours Capping & Wage Filter,2566,717,1849,38.26,40,0.6
+2015,Singles,Baseline,4683,2948,1735,100.0,0,0.0
+2015,Singles,Age (Head),3131,1779,1352,66.86,1552,33.14
+2015,Singles,Education (Head),2996,1696,1300,63.98,135,2.88
+2015,Singles,Retirement/Disability (HH level),2084,1192,892,44.5,912,19.47
+2015,Singles,Allowed LES (Deciders),1927,1097,830,41.15,157,3.35
+2015,Singles,Other Household Members,1677,945,732,35.81,250,5.34
+2015,Singles,Hours Capping & Wage Filter,1669,940,729,35.64,8,0.17
+2016,Couples,Baseline,6733,1994,4739,100.0,0,0.0
+2016,Couples,Age (Head),5134,1618,3516,76.25,1599,23.75
+2016,Couples,Education (Head),5061,1587,3474,75.17,73,1.08
+2016,Couples,Retirement/Disability (HH level),3895,995,2900,57.85,1166,17.32
+2016,Couples,Allowed LES (Deciders),3143,831,2312,46.68,752,11.17
+2016,Couples,Age (Partner),3140,830,2310,46.64,3,0.04
+2016,Couples,Education (Partner),3079,815,2264,45.73,61,0.91
+2016,Couples,Opposite-Sex Couples,3044,800,2244,45.21,35,0.52
+2016,Couples,Other Household Members,2626,710,1916,39.0,418,6.21
+2016,Couples,Hours Capping & Wage Filter,2577,703,1874,38.27,49,0.73
+2016,Singles,Baseline,4726,2915,1811,100.0,0,0.0
+2016,Singles,Age (Head),3146,1738,1408,66.57,1580,33.43
+2016,Singles,Education (Head),3005,1666,1339,63.58,141,2.98
+2016,Singles,Retirement/Disability (HH level),2072,1154,918,43.84,933,19.74
+2016,Singles,Allowed LES (Deciders),1934,1080,854,40.92,138,2.92
+2016,Singles,Other Household Members,1685,913,772,35.65,249,5.27
+2016,Singles,Hours Capping & Wage Filter,1676,910,766,35.46,9,0.19
+2017,Couples,Baseline,6371,1945,4426,100.0,0,0.0
+2017,Couples,Age (Head),4796,1568,3228,75.28,1575,24.72
+2017,Couples,Education (Head),4718,1534,3184,74.05,78,1.22
+2017,Couples,Retirement/Disability (HH level),3522,935,2587,55.28,1196,18.77
+2017,Couples,Allowed LES (Deciders),2821,748,2073,44.28,701,11.0
+2017,Couples,Age (Partner),2820,747,2073,44.26,1,0.02
+2017,Couples,Education (Partner),2744,731,2013,43.07,76,1.19
+2017,Couples,Opposite-Sex Couples,2702,712,1990,42.41,42,0.66
+2017,Couples,Other Household Members,2329,624,1705,36.56,373,5.85
+2017,Couples,Hours Capping & Wage Filter,2295,619,1676,36.02,34,0.53
+2017,Singles,Baseline,4697,2891,1806,100.0,0,0.0
+2017,Singles,Age (Head),3135,1737,1398,66.74,1562,33.26
+2017,Singles,Education (Head),2991,1667,1324,63.68,144,3.07
+2017,Singles,Retirement/Disability (HH level),2060,1161,899,43.86,931,19.82
+2017,Singles,Allowed LES (Deciders),1915,1077,838,40.77,145,3.09
+2017,Singles,Other Household Members,1666,917,749,35.47,249,5.3
+2017,Singles,Hours Capping & Wage Filter,1662,914,748,35.38,4,0.09

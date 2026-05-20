@@ -46,7 +46,7 @@ The MNL validation report records all eight check categories as PASS on
 the rebuilt 2026-05-13 parquet files. `loc4` varies within household
 with median = 4.0 distinct values across working alternatives for all
 three groups, `is_chosen` sums to exactly 1 per household, all 100
-alternatives per household are present, all required Stijn/RURO
+alternatives per household are present, all required RURO
 proposal aliases (`log_q_E`, `log_q_H`, `log_q_W`, `log_q_Occ`, and
 partner-suffixed analogues) are present and consistent, the per-layer
 prior reconstruction is exact (`max | log_prior − Σ_layers | = 0` on

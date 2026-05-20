@@ -1,19 +1,21 @@
 """
-Stage A GSUR lookup builder for RURO MNL France 2016.
+Stage A GSUR lookup builder for RURO MNL France — parameterised by opportunity year.
 
 Authorization: docs/RURO_GSUR_StageA_authorization_v1.md (2026-05-17)
+               docs/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md
 Specification: docs/RURO_GSUR_rebuild_specification_v2_1.md
 Decisions:     docs/RURO_GSUR_v2_1_open_decisions_resolution_v1.md
 
-Inputs:
-  Data/external/FR_gsur.xlsx               -- unemployment rates (lfst_r_lfu3rt)
+Inputs (year-parameterised):
+  Data/external/FR_gsur.xlsx                       -- unemployment rates (lfst_r_lfu3rt; multi-year)
   Data/external/fr_drgn1_to_nuts2_crosswalk.csv
-  Data/external/lfst_r_lfsd2pop_FR_2016.tsv -- D2 population denominators (operational)
-  Data/external/lfst_r_lfp2acedu_FR_2016.tsv -- D1 labour-force denominators (diagnostic only)
-  Data/external/insee_001688526_2016.csv    -- national benchmark 9.725%
+  Data/external/lfst_r_lfsd2pop_FR_{YEAR}.tsv      -- D2 population denominators (operational)
+  Data/external/lfst_r_lfp2acedu_FR_{YEAR}.tsv     -- D1 labour-force denominators (diagnostic only)
+  Data/external/insee_001688526_{YEAR}.csv          -- national benchmark (annual average read at runtime)
 
-Output:
-  Data/external/FR_gsur_ruro_v2_stageA.parquet
+Outputs (year-tagged):
+  Data/external/FR_gsur_ruro_v2_stageA_y{YEAR}.parquet
+  Data/external/FR_gsur_ruro_v2_stageA_y{YEAR}__sidecar.json
 
 This script builds the Stage A lookup only (broad-age Y20-64 gsur per
 drgn1 x educ3 x sex). It does NOT write MNL parquets, does NOT estimate,
@@ -25,13 +27,19 @@ Restrictions enforced:
   - O7 sign-off (required before MNL merge) is NOT performed here
 
 Usage:
-  python scripts/enhanced/enh_prepare_FR_gsur_v2.py
+  python scripts/enhanced/enh_prepare_FR_gsur_v2.py --opportunity-year 2016
+  python scripts/enhanced/enh_prepare_FR_gsur_v2.py --opportunity-year 2015
+  python scripts/enhanced/enh_prepare_FR_gsur_v2.py --opportunity-year 2014
 """
 
 import pathlib
 import re
 import sys
 import warnings
+import argparse
+import datetime
+import json
+import subprocess
 import numpy as np
 import pandas as pd
 
@@ -39,10 +47,11 @@ warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 EXT  = REPO / "Data" / "external"
-OUT  = EXT / "FR_gsur_ruro_v2_stageA.parquet"
+OUT     = None   # set in main() from --opportunity-year (C6)
+SIDECAR = None   # set in main() from --opportunity-year (C6)
 
 YEAR = 2016
-BENCHMARK_PCT = 9.725          # INSEE BDM 001688526 annual average (O9)
+BENCHMARK_PCT  = 9.725         # overridden in main() via C5 CSV read
 BENCHMARK_PROP = BENCHMARK_PCT / 100.0
 BENCHMARK_TOL  = 0.010         # +/- 1 ppt tolerance for L5 (O9)
 IDF_TOL        = 0.001         # Ile-de-France parity tolerance (O8)
@@ -189,7 +198,7 @@ def load_gsur_workbook() -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 def load_d2() -> pd.DataFrame:
-    d2 = pd.read_csv(EXT / "lfst_r_lfsd2pop_FR_2016.tsv", sep="\t", dtype=str)
+    d2 = pd.read_csv(EXT / f"lfst_r_lfsd2pop_FR_{YEAR}.tsv", sep="\t", dtype=str)
     d2["OBS_VALUE"] = pd.to_numeric(d2["OBS_VALUE"], errors="coerce")
     d2["OBS_FLAG"]  = d2["OBS_FLAG"].fillna("").str.strip()
     # Restrict to metro NUTS-2, educ3 ISCED codes, M/F sex
@@ -206,7 +215,7 @@ def load_d2() -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 def load_d1() -> pd.DataFrame:
-    d1 = pd.read_csv(EXT / "lfst_r_lfp2acedu_FR_2016.tsv", sep="\t", dtype=str)
+    d1 = pd.read_csv(EXT / f"lfst_r_lfp2acedu_FR_{YEAR}.tsv", sep="\t", dtype=str)
     d1["OBS_VALUE"] = pd.to_numeric(d1["OBS_VALUE"], errors="coerce")
     d1["OBS_FLAG"]  = d1["OBS_FLAG"].fillna("").str.strip()
     d1 = d1[
@@ -618,7 +627,7 @@ def run_validations(lookup: pd.DataFrame, gsur_df: pd.DataFrame, cw: pd.DataFram
         "benchmark_pct": BENCHMARK_PCT,
         "diff_pct": round(diff_from_benchmark * 100, 4) if not np.isnan(diff_from_benchmark) else None,
         "tolerance_pct": BENCHMARK_TOL * 100,
-        "benchmark_source": "INSEE BDM 001688526, 2016 annual average (O9)",
+        "benchmark_source": f"INSEE BDM 001688526, {YEAR} annual average (O9)",
     }
 
     # -- L7: Weighting-source documentation --
@@ -715,8 +724,40 @@ def run_validations(lookup: pd.DataFrame, gsur_df: pd.DataFrame, cw: pd.DataFram
 # ---------------------------------------------------------------------------
 
 def main():
+    global YEAR, BENCHMARK_PCT, BENCHMARK_PROP, OUT, SIDECAR
+
+    # C1: parse --opportunity-year
+    parser = argparse.ArgumentParser(
+        description="Stage A GSUR lookup builder — parameterised by opportunity year."
+    )
+    parser.add_argument(
+        "--opportunity-year", type=int, required=True,
+        metavar="YEAR",
+        help="Opportunity year for GSURv2 construction (2014, 2015, or 2016).",
+    )
+    args = parser.parse_args()
+    YEAR = args.opportunity_year
+
+    # C5: read BENCHMARK_PCT from year-specific INSEE CSV (annual_average row)
+    benchmark_csv = EXT / f"insee_001688526_{YEAR}.csv"
+    bdf = pd.read_csv(benchmark_csv)
+    avg_row = bdf[bdf["period"].astype(str) == str(YEAR)]
+    if len(avg_row) == 0:
+        raise ValueError(
+            f"Annual-average row (period={YEAR}) not found in {benchmark_csv}"
+        )
+    BENCHMARK_PCT  = float(avg_row.iloc[0]["value_pct"])
+    BENCHMARK_PROP = BENCHMARK_PCT / 100.0
+
+    # C6: year-tagged output and sidecar paths
+    OUT     = EXT / f"FR_gsur_ruro_v2_stageA_y{YEAR}.parquet"
+    SIDECAR = EXT / f"FR_gsur_ruro_v2_stageA_y{YEAR}__sidecar.json"
+
     print("=" * 70)
     print("enh_prepare_FR_gsur_v2.py — Stage A GSUR lookup build")
+    print(f"  Opportunity year : {YEAR}")
+    print(f"  Benchmark PCT    : {BENCHMARK_PCT}")
+    print(f"  Output           : {OUT}")
     print("=" * 70)
 
     # Safety guard: refuse to write MNL parquets
@@ -727,8 +768,7 @@ def main():
         REPO / "fr_2016_RURO_mnl__couples.parquet",
     ]
     for f in FORBIDDEN:
-        assert not str(OUT).endswith(f.name) or OUT != f, \
-            f"GUARD: script must not write to {f}"
+        assert OUT != f, f"GUARD: script must not write to {f}"
 
     lookup = build_lookup()
 
@@ -757,14 +797,15 @@ def main():
     # Drop private diagnostic attribute before writing
     diag = getattr(lookup, "_d1_vs_d2_diagnostic", None)
 
-    print(f"\nWriting lookup to {OUT} ...")
     cols_order = [
-        "year","drgn1","educ3","sex",
-        "gsur","weighting_source","gsur_age_band_used",
+        "year", "drgn1", "educ3", "sex",
+        "gsur", "weighting_source", "gsur_age_band_used",
         "gsur_legacy_misaligned",
-        "denom_flag","n_components","gsur_unreliable",
+        "denom_flag", "n_components", "gsur_unreliable",
     ]
     lookup_out = lookup[[c for c in cols_order if c in lookup.columns]]
+
+    print(f"\nWriting lookup to {OUT} ...")
     lookup_out.to_parquet(OUT, index=False, engine="pyarrow")
     print(f"  Wrote {len(lookup_out)} rows x {len(lookup_out.columns)} columns")
 
@@ -774,7 +815,39 @@ def main():
         print(f"  Mean |D2-D1| = {diag['abs_diff'].mean()*100:.3f} ppt")
         print(f"  Max  |D2-D1| = {diag['abs_diff'].max()*100:.3f} ppt")
 
-    # Attach diagnostics for use by caller (returned)
+    # C7: write sidecar JSON with provenance metadata
+    try:
+        script_sha = subprocess.check_output(
+            ["git", "log", "-1", "--format=%H", "--",
+             str(pathlib.Path(__file__).resolve())],
+            cwd=str(REPO), stderr=subprocess.DEVNULL,
+        ).decode().strip()
+    except Exception:
+        script_sha = "unknown"
+
+    idf_diff       = val.get("IDF_parity", {}).get("max_abs_diff")
+    benchmark_diff = val.get("L5_national_benchmark", {}).get("diff_pct")
+
+    sidecar_data = {
+        "opportunity_year":            YEAR,
+        "gsur_column_name":            "gsur",
+        "output_path":                 str(OUT.relative_to(REPO)).replace("\\", "/"),
+        "input_d2":                    f"Data/external/lfst_r_lfsd2pop_FR_{YEAR}.tsv",
+        "input_d1":                    f"Data/external/lfst_r_lfp2acedu_FR_{YEAR}.tsv",
+        "input_unemployment_workbook": "Data/external/FR_gsur.xlsx",
+        "input_benchmark_csv":         f"Data/external/insee_001688526_{YEAR}.csv",
+        "benchmark_pct":               BENCHMARK_PCT,
+        "nuts_vintage":                "NUTS2016",
+        "idf_parity_difference":       idf_diff,
+        "benchmark_difference_pct":    benchmark_diff,
+        "row_count":                   len(lookup_out),
+        "build_timestamp":             datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "script_version":              script_sha,
+    }
+    with open(SIDECAR, "w", encoding="utf-8") as fh:
+        json.dump(sidecar_data, fh, indent=2)
+    print(f"  Wrote sidecar to {SIDECAR}")
+
     return lookup_out, val, diag
 
 

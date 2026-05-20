@@ -1,5 +1,6 @@
 # JMP Multi-Year Sample Construction and Descriptive Statistics Report
-## France 2015–2016–2017 | v1 | 2026-05-20
+
+*France 2015–2016–2017 | v1 | 2026-05-20*
 
 ---
 
@@ -45,11 +46,11 @@ The pipeline operates at the **household** level. All decision-makers within a r
 
 1. Baseline (EU-SILC universe)
 2. Age: head aged 18–65
-3. Education: head education observed and non-missing
+3. Not in education (Head): head not currently enrolled in education (`dec == 0`)
 4. Retirement/disability household filter
-5. Allowed LES: head's labour status in {3, 5, 7}
+5. Allowed LES: all deciders' (head and partner) labour status in {3, 5, 7}
 6. Age: partner aged 18–65
-7. Education: partner education observed
+7. Not in education (Partner): partner not currently enrolled in education (`dec == 0`)
 8. Opposite-sex couple requirement
 9. Other household member filter
 10. Hours capping and wage filter
@@ -58,7 +59,7 @@ The pipeline operates at the **household** level. All decision-makers within a r
 
 1. Baseline
 2. Age: head aged 18–65
-3. Education: head education observed
+3. Not in education (Head): head not currently enrolled in education (`dec == 0`)
 4. Retirement/disability household filter
 5. Allowed LES: head's labour status in {3, 5, 7}
 6. Other household member filter
@@ -77,7 +78,7 @@ Each exclusion serves a specific purpose in the labour-supply modelling framewor
 | Exclusion | Conceptual purpose |
 |-----------|-------------------|
 | Age 18–65 | Labour supply model is designed for working-age adults. Younger individuals are typically in education; older individuals may face retirement-age incentive structures that are outside the modelling scope. |
-| Education observed | Education enters the wage equation and the discrete-choice utility specification as a stratifying variable. Households with missing education cannot be assigned predicted wages or utility parameters. |
+| Not currently in education (`dec == 0`) | Decision-makers who are currently enrolled in formal education face an education-accumulation trade-off that lies outside the labour-supply model scope. Their observed hours and wages do not reflect the standard employment–unemployment–inactivity margin modelled in RURO. |
 | Retirement/disability benefit | Individuals receiving old-age or disability benefits are institutionally outside the labour-supply margin. Keeping them would require modelling pension and disability-benefit-replacement incentives that are out of scope. |
 | Allowed LES | Farmers (LES = 1) and the self-employed (LES = 2) face distinct tax and benefit schedules that are not captured by the employee wage-and-hours model. Including them would conflate different structural equations. |
 | Opposite-sex couples | The RURO model uses gender as a stratifying dimension for labour supply and uses spouse-specific wage offers. Same-sex couples would require separate identification of gender-role assignment, which has not been modelled. |
@@ -100,16 +101,16 @@ These exclusions reflect the model's structural scope, not data quality:
 
 ## 6. Data-quality exclusions
 
-**Education missing** — households where the head (or for couples, either partner) has education recorded as missing, implausible, or zero. These account for approximately 0.9–1.1 percentage points of the couples baseline and 2.9–3.4 percentage points of the singles baseline after the age filter, reflecting higher non-response among younger singles.
+**Currently in education (`dec == 1` excluded)** — households where the head (or for couples, either partner) is currently enrolled in education. The pipeline retains only individuals with `dec == 0`. The step is labelled "Education (Head)" and "Education (Partner)" in the attrition table; that label reflects the pipeline step name, not a test on whether education-level data are present or valid. These account for approximately 0.9–1.1 percentage points of the couples baseline and 2.9–3.4 percentage points of the singles baseline after the age filter.
 
-**Hours capping and wage filter** — the final pipeline step. For couples, this removes approximately 0.60 percentage points of the baseline; for singles, approximately 0.17 percentage points. The small size indicates that the retired/disabled and age filters upstream have already removed the bulk of individuals with zero hours or extreme wages. The residual captures edge-case imputed wages outside the €2–€170 bound and households where hours were borderline.
+**Hours capping and wage filter** — the final pipeline step. For couples, this removes approximately 0.53–0.73 percentage points of the baseline; for singles, approximately 0.09–0.19 percentage points.
 
-Note: hours capping is a **recoding step**, not a filtering step, for values above the threshold but within the plausible range:
-- `lhw > 70` → capped at 70 h/wk
-- `5 < lhw ≤ 10` → capped at 10 h/wk
-- `lhw ≤ 5` → reclassified as inactive (`les_enforced = 7`, `lhw = 0`)
+Hours capping is a **recoding step**, not a filtering step:
+- `lhw > 70` → recoded to 70 h/wk
+- `5 < lhw ≤ 10` → recoded to 10 h/wk
+- `lhw ≤ 5` (employed decider) → reclassified as inactive: `les_enforced = 7`, `lhw = 0`, employment income zeroed
 
-Only households where the reclassification triggers a budget-constraint inconsistency are dropped.
+Households are **dropped** only when an employed decider's pre-clipping wage (`wage_unbounded`) falls outside the [€2, €170] per-hour bounds. The hours-driven drop path (`must_filter_out` in the code) applies to cases where a very-low-hours decider has LES outside {3, 5, 7}; since step 4 already screens all deciders to LES ∈ {3, 5, 7}, this path is effectively empty by the time the final step runs. The observed household losses at this step are therefore attributable to the wage bounds filter.
 
 ---
 
@@ -218,7 +219,7 @@ The small but growing share (0.45→0.80 ppt) is consistent with increased same-
 
 The larger attrition among singles reflects the EU-SILC age distribution: single-person households include many elderly individuals living alone, whereas couple-households are more concentrated in the working-age range.
 
-**Education:** Education is required to be observed and valid (non-missing, non-zero) for all decision-makers. This removes approximately 1 ppt from couples and 3 ppt from singles at the couples step; for singles the higher rate is consistent with lower educational-record completeness among older single respondents.
+**Not currently in education (`dec == 0`):** Decision-makers must not be currently enrolled in formal education. The EUROMOD variable `dec` equals 1 for individuals currently in education; the pipeline retains only those with `dec == 0`. The step is labelled "Education (Head)" and "Education (Partner)" in the attrition table to match the pipeline step name; it tests enrolment status, not whether education-attainment data are present or valid. This removes approximately 0.9–1.1 percentage points of couples households and 2.9–3.4 percentage points of singles households after the age filter.
 
 ---
 
@@ -420,7 +421,7 @@ Note: hours and wage conditional on workers (`lhw > 0` and non-null `wage_final`
 | Other HH member income threshold (§9) | Sensitivity-check only (see §19). The €50 threshold is not empirically motivated; a stricter €0 or €200 threshold would be more defensible. However, the magnitude of this filter (~6 ppt) is large enough that changing the threshold would materially affect the sample. Any change requires a new authorisation decision. | Medium |
 | Age upper bound (§12) | Consider whether 65 should be hardened to 60 for couples in a sensitivity check. Couples with one partner aged 61–65 may face near-retirement incentives not captured by the model. | Low |
 | Same-sex couple exclusion (§11) | Document only. As the share grows (0.45 → 0.80 ppt), plan a separate modelling extension for a future version. | Low |
-| Education missing (§12) | Imputation rather than exclusion is feasible using the modal education category by age × sex × region. This would recover approximately 1–3 ppt of the baseline. Not recommended without a formal imputation plan. | Low |
+| Currently-in-education exclusion (§12) | No change. Decision-makers currently enrolled in education (`dec == 1`) are correctly excluded: their hours and wages do not reflect the standard employment–unemployment–inactivity margin. The step label "Education (Head/Partner)" in the attrition table reflects pipeline naming, not a data-quality filter. | — |
 | Hours lower bound recoding (§13) | The 5-hour threshold for reclassification as inactive is ad hoc. A review of EU-SILC reporting conventions for very-low-hours workers is recommended before any change. | Low |
 
 ---

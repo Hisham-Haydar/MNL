@@ -12,6 +12,13 @@ All checks in this report are static or import-time only. The script
 was NOT invoked with `--opportunity-year` for any year. No output
 parquet was written. No MNL parquet was touched.
 
+**Interpreter:** All commands were run with the project virtual
+environment:
+`.venv\Scripts\python.exe`
+(resolved to `U:\Desktop\Nizam_Hisham\MNL\.venv\Scripts\python.exe`).
+System Python was not used and is not the validated interpreter for
+this project.
+
 ---
 
 ## V1 — No parquet written
@@ -41,7 +48,7 @@ touched.
 
 **Verdict: PASS**
 
-Command: `python scripts/enhanced/enh_prepare_FR_gsur_v2.py --help`
+Command: `.venv\Scripts\python.exe scripts/enhanced/enh_prepare_FR_gsur_v2.py --help`
 
 Output (relevant excerpt):
 ```
@@ -67,7 +74,7 @@ options:
 
 Command:
 ```
-python -c "import scripts.enhanced.enh_prepare_FR_gsur_v2; print('IMPORT: OK')"
+.venv\Scripts\python.exe -c "import scripts.enhanced.enh_prepare_FR_gsur_v2; print('IMPORT: OK')"
 ```
 
 Output: `IMPORT: OK`
@@ -111,7 +118,7 @@ All 14 C7 sidecar fields confirmed present in source:
 
 Check command:
 ```
-python -c "
+.venv\Scripts\python.exe -c "
 import pathlib
 src = pathlib.Path('scripts/enhanced/enh_prepare_FR_gsur_v2.py').read_text(encoding='utf-8')
 assert 'FR_gsur_ruro_v2_stageA_y{YEAR}.parquet' in src

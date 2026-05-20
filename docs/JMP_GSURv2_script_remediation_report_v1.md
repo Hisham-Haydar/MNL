@@ -236,7 +236,7 @@ authorization. The preconditions are:
 | Precondition | Status |
 |---|---|
 | C1–C7 implemented | PASS (this remediation) |
-| All 6 external files present | PASS (external-file remediation, commit `df873d0`) |
+| All 6 external files present | PASS (external-file remediation: files in commit `e4dd6c2`, report in commit `df873d0`) |
 | Authorization memo internally consistent | PASS (final wording fix, commit `372237b`) |
 | Static validation V4a/V4b/V4c all PASS | PASS (this remediation) |
 | K2 naming decision applied | PASS (this remediation) |

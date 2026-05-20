@@ -2067,6 +2067,17 @@ def parse_args() -> argparse.Namespace:
         help="Path to GSUR lookup file (FR_gsur_ruro.parquet from enh_prepare_FR_gsur.py). "
              "Required for estimation with unemployment-rate-adjusted opportunities."
     )
+    ap.add_argument(
+        "--gsur-year",
+        type=int,
+        default=None,
+        help="Filter the GSUR lookup file to this year before merging. "
+             "Should equal the EUROMOD system year (opportunity year), not the survey data "
+             "year. When omitted the full GSUR file is passed to the merge functions, which "
+             "then key on the 'year' column already present in the draws data (default "
+             "behavior, unchanged). Supplying this flag records gsur_alignment_status and "
+             "related fields in the mnlmeta sidecar."
+    )
 
     # Output options
     ap.add_argument(
@@ -2149,6 +2160,31 @@ def main() -> None:
             raise FileNotFoundError(f"GSUR file not found: {gsur_path}")
         gsur_df = _read_df(gsur_path)
         logging.info(f"Loaded GSUR lookup: {len(gsur_df):,} rows")
+
+        if args.gsur_year is not None:
+            if "year" not in gsur_df.columns:
+                raise KeyError(
+                    f"--gsur-year {args.gsur_year} supplied but GSUR file has no 'year' column."
+                )
+            available = sorted(gsur_df["year"].unique().tolist())
+            if args.gsur_year not in available:
+                raise ValueError(
+                    f"--gsur-year {args.gsur_year} not found in GSUR file. "
+                    f"Available years: {available}"
+                )
+            gsur_df = gsur_df[gsur_df["year"] == args.gsur_year].copy()
+            logging.info(
+                f"GSUR filtered to opportunity year {args.gsur_year}: {len(gsur_df):,} rows"
+            )
+            # Overwrite the year column in the filtered lookup to the survey data year
+            # so the merge key (year, drgn1, dgn, educ3) aligns with the draws parquet.
+            # The opportunity-year selection is recorded in the sidecar, not in the merge key.
+            if args.year is not None:
+                gsur_df["year"] = args.year
+                logging.info(
+                    f"GSUR lookup year column set to data year {args.year} "
+                    f"for merge-key alignment (opportunity year: {args.gsur_year})."
+                )
 
     # -------------------------------------------------------------------------
     # 4. Process singles
@@ -2313,6 +2349,18 @@ def main() -> None:
         },
         "year": args.year,
     }
+
+    if args.gsur_year is not None:
+        metadata["gsur_data_year"] = args.year
+        metadata["gsur_alignment_rule"] = "opportunity_year = euromod_system_year"
+        metadata["gsur_alignment_status"] = "aligned"
+        metadata["gsur_note"] = (
+            f"GSUR filtered to opportunity year {args.gsur_year} "
+            f"(EUROMOD system year) before merge. "
+            f"Data year: {args.year}. "
+            "v1_fallback_opportunity_year_aligned / not final for pooled estimation "
+            "until GSURv2 opportunity-year-aligned rates are available."
+        )
 
     # -------------------------------------------------------------------------
     # 6.5. Runtime sanity checks on final MNL datasets

@@ -463,7 +463,8 @@ def estimate_singles_gamspy(
     group: str = "singles_male",
     solver: str = "conopt",
     verbose: bool = True,
-    solver_options: Optional[Dict[str, str]] = None
+    solver_options: Optional[Dict[str, str]] = None,
+    solver_artifacts: Optional[Dict[str, str]] = None
 ) -> Dict[str, Any]:
     """
     Estimate singles MNL using GAMSPy + CONOPT/IPOPT.
@@ -735,10 +736,27 @@ def estimate_singles_gamspy(
     # ========================================================================
     logger.info(f"  Solving with {solver_name.upper()}...")
 
-    # Pass solver-specific options if provided
-    if solver_options:
+    # Build GAMS options for artifact capture when requested
+    gams_options = None
+    if solver_artifacts:
+        logger.info(f"  Artifact capture: solver_log={solver_artifacts.get('solver_log')}")
+        logger.info(f"  Artifact capture: listing_file={solver_artifacts.get('listing_file')}")
+        gams_options = Options(
+            log_file=solver_artifacts.get('solver_log'),
+            listing_file=solver_artifacts.get('listing_file'),
+            write_listing_file=True,
+            report_solution=1,
+        )
+
+    # Pass solver-specific options and artifact options if provided
+    if solver_options and gams_options:
+        logger.info(f"  Solver options: {solver_options}")
+        result = model.solve(solver=solver_name, solver_options=solver_options, options=gams_options)
+    elif solver_options:
         logger.info(f"  Solver options: {solver_options}")
         result = model.solve(solver=solver_name, solver_options=solver_options)
+    elif gams_options:
+        result = model.solve(solver=solver_name, options=gams_options)
     else:
         result = model.solve(solver=solver_name)
 
@@ -803,7 +821,8 @@ def estimate_couples_gamspy(
     theta_init: np.ndarray,
     solver: str = "conopt",
     verbose: bool = True,
-    solver_options: Optional[Dict[str, str]] = None
+    solver_options: Optional[Dict[str, str]] = None,
+    solver_artifacts: Optional[Dict[str, str]] = None
 ) -> Dict[str, Any]:
     """
     Estimate couples MNL using GAMSPy + CONOPT/IPOPT.
@@ -1078,10 +1097,27 @@ def estimate_couples_gamspy(
 
     logger.info(f"  Solving with {solver_name.upper()}...")
 
-    # Pass solver-specific options if provided
-    if solver_options:
+    # Build GAMS options for artifact capture when requested
+    gams_options = None
+    if solver_artifacts:
+        logger.info(f"  Artifact capture: solver_log={solver_artifacts.get('solver_log')}")
+        logger.info(f"  Artifact capture: listing_file={solver_artifacts.get('listing_file')}")
+        gams_options = Options(
+            log_file=solver_artifacts.get('solver_log'),
+            listing_file=solver_artifacts.get('listing_file'),
+            write_listing_file=True,
+            report_solution=1,
+        )
+
+    # Pass solver-specific options and artifact options if provided
+    if solver_options and gams_options:
+        logger.info(f"  Solver options: {solver_options}")
+        result = model.solve(solver=solver_name, solver_options=solver_options, options=gams_options)
+    elif solver_options:
         logger.info(f"  Solver options: {solver_options}")
         result = model.solve(solver=solver_name, solver_options=solver_options)
+    elif gams_options:
+        result = model.solve(solver=solver_name, options=gams_options)
     else:
         result = model.solve(solver=solver_name)
     walltime = time.time() - start_time
@@ -1480,7 +1516,8 @@ def estimate_joint_gamspy(
     theta_init: Optional[np.ndarray] = None,
     solver: str = "conopt",
     verbose: bool = True,
-    solver_options: Optional[Dict[str, str]] = None
+    solver_options: Optional[Dict[str, str]] = None,
+    solver_artifacts: Optional[Dict[str, str]] = None
 ) -> Dict[str, Any]:
     """
     Estimate joint MNL (singles male + singles female + couples) using GAMSPy.
@@ -2385,14 +2422,31 @@ def estimate_joint_gamspy(
     logger.info(f"  Solving joint model with {solver_name.upper()}...")
     logger.info("  (This may take 5-15 minutes depending on data size)")
 
-    # Pass solver-specific options if provided
-    if solver_options:
+    # Build GAMS options for artifact capture when requested
+    gams_options = None
+    if solver_artifacts:
+        logger.info(f"  Artifact capture: solver_log={solver_artifacts.get('solver_log')}")
+        logger.info(f"  Artifact capture: listing_file={solver_artifacts.get('listing_file')}")
+        gams_options = Options(
+            log_file=solver_artifacts.get('solver_log'),
+            listing_file=solver_artifacts.get('listing_file'),
+            write_listing_file=True,
+            report_solution=1,
+        )
+
+    # Pass solver-specific options and artifact options if provided
+    if solver_options and gams_options:
+        logger.info(f"  Solver options: {solver_options}")
+        result = model.solve(solver=solver_name, solver_options=solver_options, options=gams_options)
+    elif solver_options:
         logger.info(f"  Solver options: {solver_options}")
         result = model.solve(solver=solver_name, solver_options=solver_options)
+    elif gams_options:
+        result = model.solve(solver=solver_name, options=gams_options)
     else:
         result = model.solve(solver=solver_name)
     walltime = time.time() - start_time
-    
+
     # ========================================================================
     # 7. Extract results
     # ========================================================================

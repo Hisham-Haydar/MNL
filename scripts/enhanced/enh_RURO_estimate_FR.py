@@ -416,7 +416,8 @@ def save_results_json(
     metadata: dict,
     output_dir: Path,
     args: argparse.Namespace,
-    theta_init: Optional[np.ndarray] = None
+    theta_init: Optional[np.ndarray] = None,
+    solver_artifacts: Optional[Dict[str, str]] = None
 ) -> None:
     """
     Save estimation results to JSON file.
@@ -451,7 +452,12 @@ def save_results_json(
             'n_jobs': args.n_jobs,
             'opt_method': spec.opt_method,
             'analytical_gradient': spec.opt_analytical_gradient,
-            'strict_validation': not args.no_strict_validation
+            'strict_validation': not args.no_strict_validation,
+            'solver_artifacts': {
+                'saved': solver_artifacts is not None,
+                'solver_log': solver_artifacts['solver_log'] if solver_artifacts else None,
+                'listing_file': solver_artifacts['listing_file'] if solver_artifacts else None,
+            },
         },
 
         'results': {}
@@ -1067,6 +1073,36 @@ Examples:
         help="CONOPT solver options as key=value pairs separated by commas. "
              "Example: --solver-options 'Tol_Optimality=1e-9,Lim_Iteration=10000'"
     )
+
+    # Solver artifact capture
+    parser.add_argument(
+        "--save-solver-artifacts",
+        action="store_true",
+        help=(
+            "Save GAMSPy solver artifacts (solver.log, solver.lst) to the run output "
+            "directory. Enables post-estimation CONOPT RGmax / reduced-gradient "
+            "diagnostics via --solver-log / --listing-file in RURO_post_estimation_styled.py."
+        )
+    )
+    parser.add_argument(
+        "--solver-log",
+        type=str,
+        default=None,
+        help=(
+            "Explicit path for the GAMSPy solver log file (implies --save-solver-artifacts). "
+            "Defaults to <run_output_dir>/solver.log when --save-solver-artifacts is given."
+        )
+    )
+    parser.add_argument(
+        "--listing-file",
+        type=str,
+        default=None,
+        help=(
+            "Explicit path for the GAMS listing file (implies --save-solver-artifacts). "
+            "Defaults to <run_output_dir>/solver.lst when --save-solver-artifacts is given."
+        )
+    )
+
     parser.add_argument(
         "--no-gradient",
         action="store_true",
@@ -1133,6 +1169,19 @@ Examples:
     # Resolve to absolute path NOW, before ensure_local_workdir() inside the
     # GAMSPy estimator changes the process CWD away from the UNC repo root.
     output_dir = output_dir.resolve()
+
+    # Resolve solver artifact paths to absolute now (before GAMSPy changes CWD).
+    _want_artifacts = args.save_solver_artifacts or args.solver_log or args.listing_file
+    if _want_artifacts:
+        _log_path = Path(args.solver_log).resolve() if args.solver_log else output_dir / "solver.log"
+        _lst_path = Path(args.listing_file).resolve() if args.listing_file else output_dir / "solver.lst"
+        solver_artifacts: Optional[Dict[str, str]] = {
+            'solver_log': str(_log_path),
+            'listing_file': str(_lst_path),
+        }
+    else:
+        solver_artifacts = None
+
     setup_logging(output_dir, verbose=args.verbose)
 
     logger = logging.getLogger(__name__)
@@ -1145,6 +1194,9 @@ Examples:
         logger.info(f"Specification folder: {spec_folder_name}")
     if args.auto_timestamp:
         logger.info(f"  (Timestamped run folder created automatically)")
+    if solver_artifacts:
+        logger.info(f"Solver artifacts: solver_log={solver_artifacts['solver_log']}")
+        logger.info(f"Solver artifacts: listing_file={solver_artifacts['listing_file']}")
     logger.info("")
 
     try:        # ===== 1. LOAD SPECIFICATION =====
@@ -1500,7 +1552,8 @@ Examples:
                     theta_init=theta_init,  # Pass warm-start initial values!
                     solver=gamspy_solver,
                     verbose=args.verbose,
-                    solver_options=solver_options
+                    solver_options=solver_options,
+                    solver_artifacts=solver_artifacts
                 )
                 
                 # Convert to format compatible with downstream code
@@ -1545,7 +1598,8 @@ Examples:
                     gamspy_result = estimate_singles_gamspy(
                         data=data, spec=spec, theta_init=theta_init,
                         solver=gamspy_solver, verbose=args.verbose,
-                        solver_options=solver_options
+                        solver_options=solver_options,
+                        solver_artifacts=solver_artifacts
                     )
 
                 elif args.group == "singles_female":
@@ -1555,7 +1609,8 @@ Examples:
                     gamspy_result = estimate_singles_gamspy(
                         data=data, spec=spec, theta_init=theta_init,
                         solver=gamspy_solver, verbose=args.verbose,
-                        solver_options=solver_options
+                        solver_options=solver_options,
+                        solver_artifacts=solver_artifacts
                     )
 
                 elif args.group == "couples":
@@ -1565,7 +1620,8 @@ Examples:
                     gamspy_result = estimate_couples_gamspy(
                         data=data, spec=spec, theta_init=theta_init,
                         solver=gamspy_solver, verbose=args.verbose,
-                        solver_options=solver_options
+                        solver_options=solver_options,
+                        solver_artifacts=solver_artifacts
                     )
                 
                 # Convert GAMSPy result to SciPy-like OptimizeResult format
@@ -1717,7 +1773,8 @@ Examples:
         logger.info("Step 8: Saving Results")
         logger.info("="*80)
 
-        save_results_json(results, spec, metadata, output_dir, args, theta_init=theta_init)
+        save_results_json(results, spec, metadata, output_dir, args, theta_init=theta_init,
+                          solver_artifacts=solver_artifacts)
         save_results_csv(results, spec, output_dir)
         save_specification_copy(spec_path, output_dir)
 

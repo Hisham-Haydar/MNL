@@ -29,7 +29,7 @@ from typing import Dict, Optional, Tuple, Any, List
 import numpy as np
 
 try:
-    from gamspy import Container, Model, Variable, Set, Parameter, Equation, Alias, Sum as GamsSum
+    from gamspy import Container, Model, Variable, Set, Parameter, Equation, Alias, Sum as GamsSum, Options
     from gamspy.math import exp as gp_exp, log as gp_log
     HAS_GAMSPY = True
 except ImportError:
@@ -1084,6 +1084,7 @@ def estimate_singles_vectorized_gamspy(
     solver: str = "conopt",
     verbose: bool = True,
     solver_options: Optional[Dict[str, Any]] = None,
+    solver_artifacts: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """
     Estimate singles MNL model using vectorized GAMSPy operations.
@@ -1269,10 +1270,27 @@ def estimate_singles_vectorized_gamspy(
     logger.info("  (Vectorized approach should be 3-5x faster than line-by-line)")
     logger.info("  Proposal correction active: utility includes -log(prior) exactly once.")
 
+    # Build GAMS options for artifact capture when requested
+    gams_options = None
+    if solver_artifacts:
+        logger.info(f"  Artifact capture: solver_log={solver_artifacts.get('solver_log')}")
+        logger.info(f"  Artifact capture: listing_file={solver_artifacts.get('listing_file')}")
+        gams_options = Options(
+            log_file=solver_artifacts.get('solver_log'),
+            listing_file=solver_artifacts.get('listing_file'),
+            write_listing_file=True,
+            report_solution=1,
+        )
+
     # Solve
-    if solver_options:
+    if solver_options and gams_options:
+        logger.info(f"  Solver options: {solver_options}")
+        solve_result = model.solve(solver=solver_name, solver_options=solver_options, options=gams_options)
+    elif solver_options:
         logger.info(f"  Solver options: {solver_options}")
         solve_result = model.solve(solver=solver_name, solver_options=solver_options)
+    elif gams_options:
+        solve_result = model.solve(solver=solver_name, options=gams_options)
     else:
         solve_result = model.solve(solver=solver_name)
 
@@ -1339,6 +1357,7 @@ def estimate_couples_vectorized_gamspy(
     solver: str = "conopt",
     verbose: bool = True,
     solver_options: Optional[Dict[str, Any]] = None,
+    solver_artifacts: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """
     Estimate couples MNL model using vectorized GAMSPy operations.
@@ -1437,9 +1456,26 @@ def estimate_couples_vectorized_gamspy(
     logger.info("  (Vectorized approach should be 3-5x faster than line-by-line)")
     logger.info("  Proposal correction active: utility includes -log(prior) exactly once.")
 
-    if solver_options:
+    # Build GAMS options for artifact capture when requested
+    gams_options = None
+    if solver_artifacts:
+        logger.info(f"  Artifact capture: solver_log={solver_artifacts.get('solver_log')}")
+        logger.info(f"  Artifact capture: listing_file={solver_artifacts.get('listing_file')}")
+        gams_options = Options(
+            log_file=solver_artifacts.get('solver_log'),
+            listing_file=solver_artifacts.get('listing_file'),
+            write_listing_file=True,
+            report_solution=1,
+        )
+
+    if solver_options and gams_options:
+        logger.info(f"  Solver options: {solver_options}")
+        solve_result = model.solve(solver=solver_name, solver_options=solver_options, options=gams_options)
+    elif solver_options:
         logger.info(f"  Solver options: {solver_options}")
         solve_result = model.solve(solver=solver_name, solver_options=solver_options)
+    elif gams_options:
+        solve_result = model.solve(solver=solver_name, options=gams_options)
     else:
         solve_result = model.solve(solver=solver_name)
 
@@ -1506,6 +1542,7 @@ def estimate_joint_vectorized_gamspy(
     solver: str = "conopt",
     verbose: bool = True,
     solver_options: Optional[Dict[str, Any]] = None,
+    solver_artifacts: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """
     Joint estimation (singles male + singles female + couples) using vectorized GAMSPy.
@@ -1662,9 +1699,27 @@ def estimate_joint_vectorized_gamspy(
 
     logger.info("  Solving joint model...")
     logger.info("  Proposal correction active: utility includes -log(prior) exactly once per group.")
-    if solver_options:
+
+    # Build GAMS options for artifact capture when requested
+    gams_options = None
+    if solver_artifacts:
+        logger.info(f"  Artifact capture: solver_log={solver_artifacts.get('solver_log')}")
+        logger.info(f"  Artifact capture: listing_file={solver_artifacts.get('listing_file')}")
+        gams_options = Options(
+            log_file=solver_artifacts.get('solver_log'),
+            listing_file=solver_artifacts.get('listing_file'),
+            write_listing_file=True,
+            report_solution=1,
+        )
+
+    if solver_options and gams_options:
+        logger.info(f"  Solver options: {solver_options}")
+        solve_result = model.solve(solver=solver_name, solver_options=solver_options, options=gams_options)
+    elif solver_options:
         logger.info(f"  Solver options: {solver_options}")
         solve_result = model.solve(solver=solver_name, solver_options=solver_options)
+    elif gams_options:
+        solve_result = model.solve(solver=solver_name, options=gams_options)
     else:
         solve_result = model.solve(solver=solver_name)
 

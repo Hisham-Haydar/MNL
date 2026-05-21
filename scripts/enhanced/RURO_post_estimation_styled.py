@@ -7379,6 +7379,7 @@ def run_styled_post_estimation(
     compute_se: bool = False,
     spec_config: Path = None,
     llm_summary_dir: Optional[Path] = Path("reports"),
+    report_title: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Main entry point for styled post-estimation.
@@ -7399,6 +7400,8 @@ def run_styled_post_estimation(
         Path to YAML specification file (required for compute_se)
     llm_summary_dir : Path, optional
         Directory for compact Markdown summaries. If None, skip this artifact.
+    report_title : str, optional
+        Custom title for the HTML report header. Defaults to spec-derived title.
 
     Returns
     -------
@@ -7848,6 +7851,1168 @@ def run_styled_post_estimation(
 
 
 # =============================================================================
+# EXTENDED DIAGNOSTICS — general-purpose inference & convergence reporting
+# =============================================================================
+
+_DIAG_NA = "Not available in supplied solver artifacts"
+
+
+def _load_cluster_se_json(path: Path) -> Dict[str, Any]:
+    """Load and return a cluster-robust SE JSON artifact. Raises on failure."""
+    with open(path, "r", encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def _parse_listing_file(listing_path: Path) -> Dict[str, Any]:
+    """Parse a GAMS .lst listing file for solver/CONOPT diagnostics.
+
+    All fields are optional; missing ones are omitted from the returned dict.
+    """
+    out: Dict[str, Any] = {}
+
+    if not listing_path.exists():
+        out["_parse_error"] = f"Listing file not found: {listing_path}"
+        return out
+
+    try:
+        text = listing_path.read_text(encoding="utf-8", errors="replace")
+    except Exception as exc:
+        out["_parse_error"] = str(exc)
+        return out
+
+    lines = text.splitlines()
+
+    # Solver / model status lines
+    for line in lines:
+        ls = line.strip()
+        if re.search(r"SOLVER STATUS|Solver Status", ls, re.IGNORECASE):
+            m = re.search(r"(\d+)\s+(.+)$", ls)
+            if m:
+                out["solver_status"] = m.group(2).strip()
+        elif re.search(r"MODEL STATUS|Model Status", ls, re.IGNORECASE):
+            m = re.search(r"(\d+)\s+(.+)$", ls)
+            if m:
+                out["model_status"] = m.group(2).strip()
+
+    # Model statistics block: equations, variables, nonzeros
+    for line in lines:
+        ls = line.strip()
+        m = re.match(r"Equations\s+(\d+)", ls, re.IGNORECASE)
+        if m:
+            out["equations"] = int(m.group(1))
+        m = re.match(r"Variables\s+(\d+)", ls, re.IGNORECASE)
+        if m:
+            out["variables"] = int(m.group(1))
+        m = re.match(r"Non(?:zeros?|linear elements?)\s+(\d+)", ls, re.IGNORECASE)
+        if m:
+            out["nonzeros"] = int(m.group(1))
+
+    # Resource / solve time
+    for line in lines:
+        ls = line.strip()
+        m = re.match(r"Resource\s+usage.*?([\d.]+)", ls, re.IGNORECASE)
+        if m:
+            try:
+                out["solve_time_s"] = float(m.group(1))
+            except ValueError:
+                pass
+        m = re.match(r"Generation\s+time\s+([\d.]+)", ls, re.IGNORECASE)
+        if m:
+            try:
+                out["generation_time_s"] = float(m.group(1))
+            except ValueError:
+                pass
+
+    # Max infeasibility
+    for line in lines:
+        m = re.search(r"[Mm]ax(?:imum)?\s+infeasib[a-z]*\s*[=:\s]*([\d.eE+\-]+)", line)
+        if m:
+            try:
+                out["max_infeasibility"] = float(m.group(1))
+            except ValueError:
+                pass
+
+    # CONOPT RGmax (reduced gradient norm, solver-internal)
+    for line in lines:
+        m = re.search(r"RGmax\s*[=:]\s*([\d.eE+\-]+)", line, re.IGNORECASE)
+        if m:
+            try:
+                out["rgmax"] = float(m.group(1))
+                break
+            except ValueError:
+                pass
+    if "rgmax" not in out:
+        for line in lines:
+            m = re.search(r"Reduced gradient\s+norm\s*[=:]\s*([\d.eE+\-]+)", line, re.IGNORECASE)
+            if m:
+                try:
+                    out["rgmax"] = float(m.group(1))
+                    break
+                except ValueError:
+                    pass
+
+    # CONOPT tolerances
+    for line in lines:
+        m = re.search(r"\bRTOL\b\s*[=:]\s*([\d.eE+\-]+)", line, re.IGNORECASE)
+        if m:
+            try:
+                out["conopt_rtol"] = float(m.group(1))
+            except ValueError:
+                pass
+        m = re.search(r"\bFTOL\b\s*[=:]\s*([\d.eE+\-]+)", line, re.IGNORECASE)
+        if m:
+            try:
+                out["conopt_ftol"] = float(m.group(1))
+            except ValueError:
+                pass
+
+    if "rgmax" in out and "conopt_rtol" in out:
+        out["rgmax_below_tol"] = out["rgmax"] <= out["conopt_rtol"]
+
+    # Active bounds
+    active_bound_count = sum(
+        1 for line in lines
+        if re.search(r"(active|binding)\s+(lower|upper)\s+bound", line, re.IGNORECASE)
+    )
+    if active_bound_count:
+        out["active_bounds"] = active_bound_count
+
+    # Solver warnings (*** WARNING lines)
+    warnings_found = [
+        line.strip() for line in lines
+        if re.search(r"^\*\*\*\s*warning", line.strip(), re.IGNORECASE)
+    ]
+    if warnings_found:
+        out["solver_warnings"] = warnings_found[:10]
+
+    # Solver name from header
+    for line in lines[:30]:
+        m = re.search(r"Using\s+solver\s+([A-Za-z0-9_]+)", line, re.IGNORECASE)
+        if m:
+            out["gams_solver"] = m.group(1).upper()
+            break
+        m = re.search(r"Solver\s*:\s*([A-Za-z0-9_]+)", line, re.IGNORECASE)
+        if m:
+            out.setdefault("gams_solver", m.group(1).upper())
+
+    return out
+
+
+def _parse_solver_log_file(log_path: Path) -> Dict[str, Any]:
+    """Parse a plain-text solver log for convergence information. Degrades gracefully."""
+    out: Dict[str, Any] = {}
+
+    if not log_path.exists():
+        out["_parse_error"] = f"Solver log not found: {log_path}"
+        return out
+
+    try:
+        text = log_path.read_text(encoding="utf-8", errors="replace")
+    except Exception as exc:
+        out["_parse_error"] = str(exc)
+        return out
+
+    lines = text.splitlines()
+
+    for line in lines:
+        m = re.search(r"objective\s*[=:]\s*([\-\d.eE+]+)", line, re.IGNORECASE)
+        if m:
+            try:
+                out["log_objective"] = float(m.group(1))
+            except ValueError:
+                pass
+        m = re.search(r"iterations?\s*[=:]\s*(\d+)", line, re.IGNORECASE)
+        if m:
+            try:
+                out.setdefault("log_iterations", int(m.group(1)))
+            except ValueError:
+                pass
+
+    meaningful = [l.strip() for l in lines if l.strip() and not l.startswith("#")]
+    if meaningful:
+        out["log_last_lines"] = meaningful[-3:]
+
+    return out
+
+
+def _extract_solver_convergence_diagnostics(
+    results_data: Dict[str, Any],
+    solver_log_path: Optional[Path] = None,
+    listing_file_path: Optional[Path] = None,
+) -> Dict[str, Any]:
+    """Combine results JSON metadata + optional GAMS artifacts into a diagnostics dict.
+
+    Missing values use the sentinel _DIAG_NA so callers can test for absence.
+    """
+    out: Dict[str, Any] = {}
+    metadata = results_data.get("metadata", {}) or {}
+    out["gamspy_version"] = metadata.get("gamspy_version", _DIAG_NA)
+    out["solver"] = metadata.get("solver", _DIAG_NA)
+
+    groups_info = []
+    for grp_name, grp_data in (results_data.get("results", {}) or {}).items():
+        if not isinstance(grp_data, dict):
+            continue
+        info: Dict[str, Any] = {"group": grp_name}
+        info["final_ll"] = grp_data.get("final_ll", _DIAG_NA)
+        info["n_iterations"] = grp_data.get("n_iterations", _DIAG_NA)
+        info["n_function_evals"] = grp_data.get("n_function_evals", _DIAG_NA)
+        info["walltime_s"] = grp_data.get("walltime_seconds", _DIAG_NA)
+        info["success"] = grp_data.get("success", _DIAG_NA)
+        msg = grp_data.get("message", _DIAG_NA)
+        info["message"] = msg
+        if isinstance(msg, str):
+            m = re.search(r"SolveStatus[.:\s]+([A-Za-z]+)", msg)
+            if m:
+                info["solve_status_parsed"] = m.group(1)
+            m = re.search(r"ModelStatus[.:\s]+([A-Za-z]+)", msg)
+            if m:
+                info["model_status_parsed"] = m.group(1)
+        groups_info.append(info)
+    out["groups"] = groups_info
+
+    out["listing_diagnostics"] = (
+        _parse_listing_file(listing_file_path)
+        if listing_file_path is not None
+        else {"_note": _DIAG_NA}
+    )
+    out["solver_log_diagnostics"] = (
+        _parse_solver_log_file(solver_log_path)
+        if solver_log_path is not None
+        else {"_note": _DIAG_NA}
+    )
+    return out
+
+
+def _compute_gradient_diagnostics(
+    results_json_path: Path,
+    mnl_base: Optional[Path],
+    spec_config: Optional[Path],
+) -> Dict[str, Any]:
+    """Compute the Python likelihood gradient (score vector) at the converged theta.
+
+    This is the RURO Python-side gradient of log L, computed via central-difference
+    numerical differentiation.  It is DISTINCT from CONOPT RGmax (solver-internal
+    reduced gradient).  Both should be near zero at a local optimum but are produced
+    by entirely different computations.
+
+    Returns available=False with a descriptive note when data/spec are unavailable.
+    """
+    result: Dict[str, Any] = {
+        "available": False,
+        "note": _DIAG_NA,
+        "distinction_note": (
+            "Python likelihood gradient (score at convergence) — "
+            "computed by the RURO Python engine via central-difference numerical "
+            "differentiation of the log-likelihood function.  "
+            "DISTINCT from CONOPT RGmax / reduced gradient, "
+            "which is an internal solver quantity produced by GAMS/CONOPT."
+        ),
+    }
+
+    if mnl_base is None or spec_config is None:
+        result["note"] = (
+            "Gradient computation requires --mnl-base and --spec-config. "
+            "Both must be supplied and point to accessible files."
+        )
+        return result
+
+    try:
+        import sys as _sys
+        _script_dir = Path(__file__).parent
+        if str(_script_dir) not in _sys.path:
+            _sys.path.insert(0, str(_script_dir))
+
+        from estimation_engine import compute_gradient_joint  # type: ignore
+        from estimation_spec_parser import load_spec           # type: ignore
+        from estimation_utils import precompute_mnl_arrays     # type: ignore
+
+        spec = load_spec(spec_config)
+
+        base = str(mnl_base)
+        singles_path = Path(base + "__singles.parquet")
+        couples_path = Path(base + "__couples.parquet")
+
+        if not singles_path.exists() or not couples_path.exists():
+            result["note"] = (
+                f"MNL data files not found at {base}__singles.parquet / "
+                f"{base}__couples.parquet — cannot compute gradient."
+            )
+            return result
+
+        df_singles = pd.read_parquet(singles_path)
+        df_couples = pd.read_parquet(couples_path)
+        data_sm, data_sf, data_cou = precompute_mnl_arrays(df_singles, df_couples, spec)
+
+        with open(results_json_path, "r", encoding="utf-8") as fh:
+            res_data = json.load(fh)
+
+        theta = None
+        param_names: List[str] = []
+        for grp_data in (res_data.get("results", {}) or {}).values():
+            if isinstance(grp_data, dict) and "parameters" in grp_data:
+                params = grp_data["parameters"]
+                if isinstance(params, dict) and params:
+                    param_names = list(params.keys())
+                    theta = np.array(list(params.values()), dtype=float)
+                    break
+
+        if theta is None:
+            result["note"] = "Could not extract converged parameter vector from results JSON."
+            return result
+
+        grad = np.asarray(
+            compute_gradient_joint(theta, data_sm, data_sf, data_cou, spec), dtype=float
+        )
+        max_abs_idx = int(np.argmax(np.abs(grad)))
+        top10_idx = np.argsort(np.abs(grad))[-10:][::-1]
+
+        result.update({
+            "available": True,
+            "note": "Computed successfully via central-difference numerical differentiation.",
+            "gradient_norm_l2": float(np.linalg.norm(grad)),
+            "gradient_norm_inf": float(np.max(np.abs(grad))),
+            "max_abs_param": param_names[max_abs_idx] if param_names else None,
+            "n_params": len(grad),
+            "top10_by_magnitude": {
+                (param_names[i] if i < len(param_names) else f"param_{i}"): float(grad[i])
+                for i in top10_idx
+            },
+        })
+    except ImportError as exc:
+        result["note"] = f"estimation_engine not importable ({exc}); gradient unavailable."
+    except Exception as exc:
+        result["note"] = f"Gradient computation failed: {exc}"
+
+    return result
+
+
+def _extract_extended_hessian_diagnostics(
+    results_data: Dict[str, Any],
+    cluster_se_data: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Extract Hessian / VCV diagnostics, preferring cluster-SE JSON over results JSON."""
+    out: Dict[str, Any] = {
+        "condition_number": _DIAG_NA,
+        "eigenvalue_min": _DIAG_NA,
+        "eigenvalue_max": _DIAG_NA,
+        "n_free": _DIAG_NA,
+        "near_singular_warning": False,
+        "source": _DIAG_NA,
+    }
+
+    if cluster_se_data is not None:
+        art = cluster_se_data.get("cluster_robust_se_artifacts", {}) or {}
+        checks = cluster_se_data.get("checks", {}) or {}
+        pe6 = checks.get("PE6_true_hessian", {}) or {}
+
+        cond = pe6.get("condition_number")
+        if cond is not None:
+            out["condition_number"] = float(cond)
+            out["near_singular_warning"] = float(cond) > 1e12
+            out["source"] = "cluster_robust_se_json (PE6_true_hessian)"
+
+        n_free = art.get("n_free")
+        if n_free is not None:
+            out["n_free"] = int(n_free)
+
+        hess_shape = pe6.get("hessian_shape_free")
+        if hess_shape:
+            out["hessian_shape_free"] = hess_shape
+
+        se_h = art.get("se_hessian_vector")
+        se_r = art.get("se_robust_vector")
+        if se_h is not None:
+            arr = np.array(se_h, dtype=float)
+            pos = arr[arr > 1e-15]
+            if len(pos):
+                out["se_hessian_min"] = float(pos.min())
+                out["se_hessian_max"] = float(pos.max())
+        if se_r is not None:
+            arr = np.array(se_r, dtype=float)
+            pos = arr[arr > 1e-15]
+            if len(pos):
+                out["se_robust_min"] = float(pos.min())
+                out["se_robust_max"] = float(pos.max())
+
+        t5 = checks.get("T5_robust_vs_hessian")
+        if t5:
+            out["t5_robust_vs_hessian"] = t5
+        return out
+
+    # Fallback: results JSON
+    metadata = results_data.get("metadata", {}) or {}
+    se_block = metadata.get("standard_errors", {}) or {}
+    cond = se_block.get("hessian_condition_number")
+    if cond is not None:
+        out["condition_number"] = float(cond)
+        out["near_singular_warning"] = float(cond) > 1e12
+        out["source"] = "estimation_results.json metadata"
+
+    return out
+
+
+def _build_reproducibility_metadata(
+    results_json_path: Path,
+    spec_config: Optional[Path],
+    mnl_base: Optional[Path],
+    output_dir: Optional[Path],
+) -> Dict[str, Any]:
+    """Assemble reproducibility metadata: git state, Python version, key packages, hashes."""
+    import sys as _sys
+    import platform
+    import hashlib
+    import importlib
+
+    out: Dict[str, Any] = {
+        "timestamp_utc": datetime.utcnow().isoformat() + "Z",
+        "python_version": _sys.version,
+        "platform": platform.platform(),
+    }
+    out["git"] = _git_revision_info()
+
+    pkg_versions: Dict[str, str] = {}
+    for pkg in ("numpy", "pandas", "scipy", "gamspy", "pyarrow", "yaml"):
+        try:
+            mod = importlib.import_module(pkg)
+            pkg_versions[pkg] = getattr(mod, "__version__", "unknown")
+        except ImportError:
+            pkg_versions[pkg] = "not installed"
+    out["package_versions"] = pkg_versions
+
+    hashes: Dict[str, str] = {}
+    file_targets = [
+        ("results_json", results_json_path),
+        ("spec_config", spec_config),
+        ("mnl_base_singles", Path(str(mnl_base) + "__singles.parquet") if mnl_base else None),
+        ("mnl_base_couples", Path(str(mnl_base) + "__couples.parquet") if mnl_base else None),
+    ]
+    import hashlib as _hl
+    for label, path in file_targets:
+        if path is not None and Path(path).exists():
+            try:
+                h = _hl.sha256()
+                with open(path, "rb") as fh:
+                    for chunk in iter(lambda: fh.read(65536), b""):
+                        h.update(chunk)
+                hashes[label] = h.hexdigest()[:16]
+            except Exception:
+                hashes[label] = "hash_error"
+        else:
+            hashes[label] = "not_available"
+    out["file_hashes_sha256_prefix16"] = hashes
+
+    try:
+        with open(results_json_path, "r", encoding="utf-8") as fh:
+            res_data = json.load(fh)
+        meta = res_data.get("metadata", {}) or {}
+        for key in ("run_timestamp", "spec_name", "specification", "solver",
+                    "gamspy_version", "command_line"):
+            if key in meta:
+                out[f"results_json_{key}"] = meta[key]
+    except Exception:
+        pass
+
+    return out
+
+
+def _build_comparison_diagnostics(
+    main_results_path: Path,
+    comp_results_path: Path,
+    comp_label: str = "Comparison",
+    main_cluster_se_path: Optional[Path] = None,
+    comp_cluster_se_path: Optional[Path] = None,
+) -> Dict[str, Any]:
+    """Compute L-infinity parameter differences between two estimation runs."""
+    out: Dict[str, Any] = {"available": False}
+
+    def _theta_from_cluster_se(se_path: Path) -> Tuple[List[str], Optional[np.ndarray]]:
+        with open(se_path, "r", encoding="utf-8") as fh:
+            d = json.load(fh)
+        art = d.get("cluster_robust_se_artifacts", {}) or {}
+        if "converged_theta" in art:
+            names = art.get("param_names", [])
+            return names, np.array(art["converged_theta"], dtype=float)
+        return [], None
+
+    def _theta_from_results(path: Path) -> Tuple[List[str], Optional[np.ndarray]]:
+        with open(path, "r", encoding="utf-8") as fh:
+            d = json.load(fh)
+        for grp_data in (d.get("results", {}) or {}).values():
+            if isinstance(grp_data, dict) and "parameters" in grp_data:
+                params = grp_data["parameters"]
+                if isinstance(params, dict) and params:
+                    return list(params.keys()), np.array(list(params.values()), dtype=float)
+        return [], None
+
+    def _get_theta(se_path: Optional[Path], res_path: Path) -> Tuple[List[str], Optional[np.ndarray]]:
+        if se_path is not None and se_path.exists():
+            names, theta = _theta_from_cluster_se(se_path)
+            if theta is not None:
+                return names, theta
+        return _theta_from_results(res_path)
+
+    try:
+        main_names, main_theta = _get_theta(main_cluster_se_path, main_results_path)
+        comp_names, comp_theta = _get_theta(comp_cluster_se_path, comp_results_path)
+
+        if main_theta is None or comp_theta is None or len(main_theta) == 0 or len(comp_theta) == 0:
+            out["note"] = "Could not extract parameter vectors from one or both result files."
+            return out
+
+        if len(main_theta) != len(comp_theta):
+            out["note"] = (
+                f"Parameter vector length mismatch: main={len(main_theta)}, "
+                f"comparison={len(comp_theta)}."
+            )
+            return out
+
+        diff = np.abs(main_theta - comp_theta)
+        linf = float(diff.max())
+        linf_idx = int(diff.argmax())
+        names = main_names if main_names else [f"param_{i}" for i in range(len(main_theta))]
+
+        top5_idx = list(np.argsort(diff)[-5:][::-1])
+        top5 = [
+            {
+                "param": names[i] if i < len(names) else f"param_{i}",
+                "theta_main": float(main_theta[i]),
+                "theta_comp": float(comp_theta[i]),
+                "abs_diff": float(diff[i]),
+            }
+            for i in top5_idx
+        ]
+
+        comp_key = f"theta_{comp_label.lower().replace(' ', '_')}"
+        param_diff_table = [
+            {
+                "param": names[i] if i < len(names) else f"param_{i}",
+                "theta_main": float(main_theta[i]),
+                comp_key: float(comp_theta[i]),
+                "abs_diff": float(diff[i]),
+            }
+            for i in range(len(main_theta))
+        ]
+
+        out.update({
+            "available": True,
+            "comp_label": comp_label,
+            "n_params": len(main_theta),
+            "linf_distance": linf,
+            "linf_param": names[linf_idx] if linf_idx < len(names) else f"param_{linf_idx}",
+            "top5_diffs": top5,
+            "param_diff_table": param_diff_table,
+            "agreement_note": f"L∞ = {linf:.2e} between main and {comp_label}.",
+        })
+    except Exception as exc:
+        out["note"] = f"Comparison diagnostics failed: {exc}"
+
+    return out
+
+
+def _build_enhanced_param_df(
+    parsed_results: Dict[str, Any],
+    cluster_se_data: Optional[Dict[str, Any]] = None,
+    bound_diag: Optional[Any] = None,
+) -> pd.DataFrame:
+    """Build a comprehensive parameter DataFrame with SE, t-ratios, and bound status."""
+    from scipy.stats import norm as _norm
+
+    # Collect parameter names and theta from parsed results blocks
+    param_data: Dict[str, float] = {}
+    for grp_data in parsed_results.values():
+        if not isinstance(grp_data, dict):
+            continue
+        params = grp_data.get("parameters", {})
+        if isinstance(params, dict):
+            for pname, pval in params.items():
+                if pname not in param_data:
+                    param_data[pname] = float(pval) if is_num(pval) else float("nan")
+
+    if not param_data:
+        return pd.DataFrame()
+
+    param_names_list = list(param_data.keys())
+
+    # Overlay cluster SE vectors
+    se_hessian_map: Dict[str, float] = {}
+    se_robust_map: Dict[str, float] = {}
+    free_mask_map: Dict[str, bool] = {}
+
+    if cluster_se_data is not None:
+        art = cluster_se_data.get("cluster_robust_se_artifacts", {}) or {}
+        cnames: List[str] = art.get("param_names") or param_names_list
+        name_to_idx = {n: i for i, n in enumerate(cnames)}
+        se_h = art.get("se_hessian_vector", [])
+        se_r = art.get("se_robust_vector", [])
+        fm = art.get("free_mask", [])
+        theta_c = art.get("converged_theta", [])
+
+        for pname in param_names_list:
+            idx = name_to_idx.get(pname)
+            if idx is not None:
+                se_hessian_map[pname] = float(se_h[idx]) if idx < len(se_h) else float("nan")
+                se_robust_map[pname] = float(se_r[idx]) if idx < len(se_r) else float("nan")
+                free_mask_map[pname] = bool(fm[idx]) if idx < len(fm) else True
+                if idx < len(theta_c):
+                    param_data[pname] = float(theta_c[idx])
+            else:
+                se_hessian_map[pname] = float("nan")
+                se_robust_map[pname] = float("nan")
+                free_mask_map[pname] = True
+
+    # Bound diagnostics
+    at_lower: Dict[str, bool] = {}
+    at_upper: Dict[str, bool] = {}
+    if bound_diag is not None:
+        for p in getattr(bound_diag, "at_lower_bound", []):
+            at_lower[str(p)] = True
+        for p in getattr(bound_diag, "at_upper_bound", []):
+            at_upper[str(p)] = True
+
+    records = []
+    for pname in param_names_list:
+        theta_val = param_data[pname]
+        se_h = se_hessian_map.get(pname, float("nan"))
+        se_r = se_robust_map.get(pname, float("nan"))
+        in_free = free_mask_map.get(pname, True)
+
+        if is_num(se_r) and se_r > 0 and is_num(theta_val):
+            t_rob = theta_val / se_r
+            p_rob = float(2.0 * _norm.sf(abs(t_rob)))
+        else:
+            t_rob = float("nan")
+            p_rob = float("nan")
+
+        records.append({
+            "param": pname,
+            "theta": theta_val,
+            "se_hessian": se_h,
+            "se_robust": se_r,
+            "t_robust": t_rob,
+            "p_robust": p_rob,
+            "at_lower_bound": at_lower.get(pname, False),
+            "at_upper_bound": at_upper.get(pname, False),
+            "in_free_mask": in_free,
+        })
+
+    return pd.DataFrame(records)
+
+
+def _fmt_solver_diag_md(solver_diag: Dict[str, Any]) -> str:
+    """Render solver convergence diagnostics as Markdown (internal helper)."""
+    lines = []
+    lines.append(f"**GAMSPy version**: {solver_diag.get('gamspy_version', _DIAG_NA)}")
+    lines.append(f"**Solver**: {solver_diag.get('solver', _DIAG_NA)}")
+    lines.append("")
+
+    groups = solver_diag.get("groups", [])
+    if groups:
+        lines.append("**Per-group convergence:**")
+        lines.append("")
+        lines.append("| Group | Final LL | Iterations | Fn Evals | Wall (s) | Success | Solve Status | Model Status |")
+        lines.append("|-------|----------|------------|----------|----------|---------|--------------|--------------|")
+        for g in groups:
+            ll = g.get("final_ll", _DIAG_NA)
+            ll_s = f"{ll:.6f}" if is_num(ll) else str(ll)
+            lines.append(
+                f"| {g['group']} | {ll_s} | {g.get('n_iterations', _DIAG_NA)} | "
+                f"{g.get('n_function_evals', _DIAG_NA)} | {g.get('walltime_s', _DIAG_NA)} | "
+                f"{g.get('success', _DIAG_NA)} | {g.get('solve_status_parsed', _DIAG_NA)} | "
+                f"{g.get('model_status_parsed', _DIAG_NA)} |"
+            )
+        lines.append("")
+
+    listing = solver_diag.get("listing_diagnostics", {}) or {}
+    note = listing.get("_note", "")
+    parse_err = listing.get("_parse_error", "")
+
+    lines.append("**GAMS listing file diagnostics** (from `--listing-file`):")
+    lines.append("")
+    if note == _DIAG_NA or parse_err:
+        lines.append(f"*{parse_err if parse_err else _DIAG_NA}*")
+    else:
+        rows = [
+            ("GAMS solver", listing.get("gams_solver", _DIAG_NA)),
+            ("Solver status", listing.get("solver_status", _DIAG_NA)),
+            ("Model status", listing.get("model_status", _DIAG_NA)),
+            ("Equations", listing.get("equations", _DIAG_NA)),
+            ("Variables", listing.get("variables", _DIAG_NA)),
+            ("Nonzeros", listing.get("nonzeros", _DIAG_NA)),
+            ("Max infeasibility", listing.get("max_infeasibility", _DIAG_NA)),
+            ("Solve time (s)", listing.get("solve_time_s", _DIAG_NA)),
+            ("Generation time (s)", listing.get("generation_time_s", _DIAG_NA)),
+            ("Active bounds count", listing.get("active_bounds", _DIAG_NA)),
+        ]
+        lines.append("| Field | Value |")
+        lines.append("|-------|-------|")
+        for k, v in rows:
+            lines.append(f"| {k} | {v} |")
+        warnings = listing.get("solver_warnings", [])
+        if warnings:
+            lines.append("")
+            lines.append(f"**Solver warnings ({len(warnings)}):**")
+            for w in warnings[:5]:
+                lines.append(f"- `{w}`")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _fmt_conopt_md(listing: Dict[str, Any]) -> str:
+    """Render CONOPT-specific fields as Markdown (internal helper)."""
+    lines = []
+    note = listing.get("_note", "")
+    parse_err = listing.get("_parse_error", "")
+
+    if note == _DIAG_NA or parse_err:
+        msg = parse_err if parse_err else _DIAG_NA
+        lines.append(f"*{msg}*")
+    else:
+        rgmax = listing.get("rgmax", _DIAG_NA)
+        rtol = listing.get("conopt_rtol", _DIAG_NA)
+        rows = [
+            ("RGmax (solver-internal reduced gradient norm)", rgmax),
+            ("CONOPT RTOL (optimality tolerance)", rtol),
+            ("CONOPT FTOL (feasibility tolerance)", listing.get("conopt_ftol", _DIAG_NA)),
+            ("RGmax ≤ RTOL", listing.get("rgmax_below_tol", _DIAG_NA)),
+        ]
+        lines.append("| Field | Value |")
+        lines.append("|-------|-------|")
+        for k, v in rows:
+            lines.append(f"| {k} | {v} |")
+        lines.append("")
+        lines.append(
+            "> **Note**: CONOPT RGmax is the solver-internal reduced gradient norm from GAMS/CONOPT. "
+            "It is **not** the Python likelihood gradient (score) shown in the next section."
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _fmt_gradient_md(grad_diag: Dict[str, Any]) -> str:
+    """Render Python likelihood gradient diagnostics as Markdown (internal helper)."""
+    lines = []
+    lines.append(
+        "> **Scope**: This section reports the *Python-side* likelihood gradient — "
+        "the score vector ∂ log L / ∂ θ at the converged parameter vector, "
+        "computed via central-difference numerical differentiation by the RURO Python engine.  "
+        "It is **distinct** from the CONOPT solver’s reduced gradient (RGmax)."
+    )
+    lines.append("")
+    if not grad_diag.get("available", False):
+        lines.append(f"*{grad_diag.get('note', _DIAG_NA)}*")
+        return "\n".join(lines)
+
+    lines.append(f"**Status**: {grad_diag['note']}")
+    lines.append("")
+    rows = [
+        ("‖∇‖₂ (Euclidean norm)", f"{grad_diag['gradient_norm_l2']:.4e}"),
+        ("‖∇‖∞ (max-abs component)", f"{grad_diag['gradient_norm_inf']:.4e}"),
+        ("Param with largest |∂LL/∂θ|", grad_diag.get("max_abs_param", _DIAG_NA)),
+        ("n_params", grad_diag.get("n_params", _DIAG_NA)),
+    ]
+    lines.append("| Metric | Value |")
+    lines.append("|--------|-------|")
+    for k, v in rows:
+        lines.append(f"| {k} | {v} |")
+
+    top10 = grad_diag.get("top10_by_magnitude", {})
+    if top10:
+        lines.append("")
+        lines.append("**Top-10 gradient components by magnitude:**")
+        lines.append("")
+        lines.append("| Param | ∂LL/∂θ |")
+        lines.append("|-------|--------|")
+        for pname, gval in list(top10.items())[:10]:
+            lines.append(f"| {pname} | {gval:.4e} |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _fmt_hessian_md(hess_diag: Dict[str, Any]) -> str:
+    """Render Hessian / VCV diagnostics as Markdown (internal helper)."""
+    lines = []
+    rows = [
+        ("Source", hess_diag.get("source", _DIAG_NA)),
+        ("n_free (identified block)", hess_diag.get("n_free", _DIAG_NA)),
+        ("Hessian shape (free × free)", hess_diag.get("hessian_shape_free", _DIAG_NA)),
+        ("VCV condition number", hess_diag.get("condition_number", _DIAG_NA)),
+        ("Near-singular warning (cond > 1e12)", hess_diag.get("near_singular_warning", _DIAG_NA)),
+        ("SE Hessian range (positive SEs)", f"{hess_diag.get('se_hessian_min', _DIAG_NA)} – {hess_diag.get('se_hessian_max', _DIAG_NA)}"),
+        ("SE Robust range (positive SEs)", f"{hess_diag.get('se_robust_min', _DIAG_NA)} – {hess_diag.get('se_robust_max', _DIAG_NA)}"),
+    ]
+    lines.append("| Field | Value |")
+    lines.append("|-------|-------|")
+    for k, v in rows:
+        lines.append(f"| {k} | {v} |")
+    t5 = hess_diag.get("t5_robust_vs_hessian")
+    if t5:
+        lines.append("")
+        lines.append(f"**T5 robust-vs-hessian**: {t5}")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _fmt_comparison_md(comp_diag: Dict[str, Any]) -> str:
+    """Render comparison-run L-inf diagnostics as Markdown (internal helper)."""
+    lines = []
+    if not comp_diag.get("available", False):
+        lines.append(f"*{comp_diag.get('note', _DIAG_NA)}*")
+        return "\n".join(lines)
+
+    lines.append(f"**Comparison label**: {comp_diag.get('comp_label', 'Comparison')}")
+    lines.append(f"**n_params**: {comp_diag.get('n_params', _DIAG_NA)}")
+    linf = comp_diag.get("linf_distance")
+    lines.append(f"**L∞ distance**: {linf:.4e}" if is_num(linf) else f"**L∞ distance**: {_DIAG_NA}")
+    lines.append(f"**L∞ at param**: `{comp_diag.get('linf_param', _DIAG_NA)}`")
+    lines.append(f"**Summary**: {comp_diag.get('agreement_note', '')}")
+    lines.append("")
+
+    top5 = comp_diag.get("top5_diffs", [])
+    if top5:
+        comp_lbl = comp_diag.get("comp_label", "comp")
+        lines.append("**Top-5 parameter differences:**")
+        lines.append("")
+        lines.append(f"| Param | θ (main) | θ ({comp_lbl}) | |Δ| |")
+        lines.append("|-------|----------|---------|------|")
+        for row in top5:
+            lines.append(
+                f"| {row['param']} | {row['theta_main']:.6f} | "
+                f"{row['theta_comp']:.6f} | {row['abs_diff']:.2e} |"
+            )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def run_extended_diagnostics(
+    results_json_path: Path,
+    output_dir: Path,
+    prefix: str = "",
+    cluster_se_json: Optional[Path] = None,
+    solver_log: Optional[Path] = None,
+    listing_file: Optional[Path] = None,
+    gamspy_diagnostics: bool = False,
+    comparison_results_json: Optional[Path] = None,
+    comparison_label: str = "Comparison",
+    gradient_diagnostics: bool = False,
+    mnl_base: Optional[Path] = None,
+    spec_config: Optional[Path] = None,
+    strict_report: bool = False,
+    cluster_col: Optional[str] = None,
+    report_title: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Orchestrate all extended post-estimation diagnostics and write artifacts.
+
+    Produces:
+      - ``{prefix}extended_diagnostics.md``   Markdown report
+      - ``{prefix}extended_diagnostics.json`` Machine-readable diagnostics bundle
+
+    Parameters
+    ----------
+    results_json_path : Path
+        Required. Path to ``estimation_results.json``.
+    output_dir : Path
+        Directory for output artifacts (created if absent).
+    prefix : str
+        Filename prefix for output files.
+    cluster_se_json : Path, optional
+        Cluster-robust SE artifact from ``cluster_robust_se.py``.
+    solver_log : Path, optional
+        Plain-text GAMS/CONOPT solver log file.
+    listing_file : Path, optional
+        GAMS ``.lst`` listing file (enables CONOPT RGmax, tolerances, etc.).
+    gamspy_diagnostics : bool
+        If True, include a GAMSPy/CONOPT diagnostics section even when no
+        listing file is supplied (high-level info from results JSON only).
+    comparison_results_json : Path, optional
+        Second ``estimation_results.json`` for parameter L-inf comparison.
+    comparison_label : str
+        Label for the comparison run.
+    gradient_diagnostics : bool
+        If True, compute the Python likelihood gradient at convergence.
+        Requires ``--mnl-base`` and ``--spec-config``.
+    mnl_base : Path, optional
+        MNL data base path (required for gradient diagnostics).
+    spec_config : Path, optional
+        YAML specification path (required for gradient diagnostics).
+    strict_report : bool
+        If True, raise RuntimeError when critical diagnostics are unavailable.
+    cluster_col : str, optional
+        Cluster column name (informational, for report header).
+    report_title : str, optional
+        Custom Markdown report title.
+
+    Returns
+    -------
+    dict
+        All computed diagnostics plus ``extended_diagnostics_md`` and
+        ``extended_diagnostics_json`` artifact paths.
+
+    Notes
+    -----
+    If ``--listing-file`` / ``--solver-log`` were not saved during estimation,
+    GAMS/CONOPT fields (RGmax, tolerances, equations/variables/nonzeros, active
+    bounds) will be reported as *Not available in supplied solver artifacts*.
+    The recommended practice is to configure the estimator to save the GAMS
+    listing file and solver log for every run so these fields are always
+    populated.
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    LOGGER.info("run_extended_diagnostics: loading results JSON")
+    with open(results_json_path, "r", encoding="utf-8") as fh:
+        results_data = json.load(fh)
+
+    # 1. Cluster SE JSON
+    cluster_se_data = None
+    if cluster_se_json is not None:
+        try:
+            cluster_se_data = _load_cluster_se_json(cluster_se_json)
+            LOGGER.info(f"  Loaded cluster SE JSON: {cluster_se_json}")
+        except Exception as exc:
+            LOGGER.warning(f"  Could not load cluster SE JSON: {exc}")
+
+    # 2. Solver convergence diagnostics
+    include_solver = gamspy_diagnostics or (solver_log is not None) or (listing_file is not None)
+    if include_solver:
+        LOGGER.info("  Building solver convergence diagnostics")
+    solver_diag = _extract_solver_convergence_diagnostics(
+        results_data,
+        solver_log_path=solver_log,
+        listing_file_path=listing_file,
+    )
+
+    # 3. Python likelihood gradient (distinct from CONOPT RGmax)
+    grad_diag: Dict[str, Any] = {
+        "available": False,
+        "note": _DIAG_NA,
+        "distinction_note": (
+            "Python likelihood gradient (score at convergence) — "
+            "computed via central-difference numerical differentiation. "
+            "DISTINCT from CONOPT RGmax / reduced gradient."
+        ),
+    }
+    if gradient_diagnostics:
+        LOGGER.info("  Computing Python likelihood gradient (score)")
+        grad_diag = _compute_gradient_diagnostics(results_json_path, mnl_base, spec_config)
+
+    # 4. Hessian / VCV diagnostics
+    LOGGER.info("  Extracting Hessian diagnostics")
+    hess_diag = _extract_extended_hessian_diagnostics(results_data, cluster_se_data)
+
+    # 5. Reproducibility metadata
+    LOGGER.info("  Building reproducibility metadata")
+    repro_meta = _build_reproducibility_metadata(results_json_path, spec_config, mnl_base, output_dir)
+
+    # 6. Comparison diagnostics
+    comp_diag: Dict[str, Any] = {"available": False, "note": _DIAG_NA}
+    if comparison_results_json is not None:
+        LOGGER.info(f"  Building comparison diagnostics vs {comparison_results_json}")
+        comp_diag = _build_comparison_diagnostics(
+            main_results_path=results_json_path,
+            comp_results_path=comparison_results_json,
+            comp_label=comparison_label,
+            main_cluster_se_path=cluster_se_json,
+        )
+
+    # 7. Enhanced parameter table
+    LOGGER.info("  Building enhanced parameter table")
+    parsed_for_param: Dict[str, Any] = {
+        k: v for k, v in (results_data.get("results", {}) or {}).items()
+        if isinstance(v, dict) and "parameters" in v
+    }
+    param_df = _build_enhanced_param_df(parsed_for_param, cluster_se_data)
+
+    # 8. Data diagnostics (from cluster SE JSON checks block)
+    data_diag: Dict[str, Any] = {}
+    if cluster_se_data is not None:
+        checks = cluster_se_data.get("checks", {}) or {}
+        data_diag = {
+            "T3_cluster_count": checks.get("T3_cluster_count", _DIAG_NA),
+            "T4_se_positivity": checks.get("T4_se_positivity", _DIAG_NA),
+            "T5_robust_vs_hessian": checks.get("T5_robust_vs_hessian", _DIAG_NA),
+            "PE3_data_loaded": checks.get("PE3_data_loaded", _DIAG_NA),
+            "cluster_col": cluster_col or _DIAG_NA,
+        }
+
+    # ------------------------------------------------------------------
+    # Compose Markdown report
+    # ------------------------------------------------------------------
+    title = report_title or "Extended Post-Estimation Diagnostics"
+    ts = repro_meta.get("timestamp_utc", "")
+    results_json_name = results_json_path.name
+    spec_name = (
+        repro_meta.get("results_json_specification")
+        or repro_meta.get("results_json_spec_name")
+        or _DIAG_NA
+    )
+
+    md: List[str] = [
+        f"# {title}",
+        "",
+        f"**Results JSON**: `{results_json_name}`  ",
+        f"**Specification**: {spec_name}  ",
+        f"**Generated**: {ts}  ",
+        f"**Cluster column**: {cluster_col or _DIAG_NA}",
+        "",
+        "---",
+        "",
+        "## 1. Inference Table",
+        "",
+        ("Full parameter table with Hessian SE, cluster-robust SE, t-ratios, and bound status. "
+         "Supply `--cluster-se-json` to populate `se_robust` and `t_robust` columns."),
+        "",
+    ]
+
+    if not param_df.empty:
+        cols = [c for c in ["param", "theta", "se_hessian", "se_robust", "t_robust", "p_robust",
+                             "at_lower_bound", "at_upper_bound", "in_free_mask"]
+                if c in param_df.columns]
+        md.append("| " + " | ".join(cols) + " |")
+        md.append("|" + "|".join(["---"] * len(cols)) + "|")
+        for _, row in param_df.iterrows():
+            cells = []
+            for c in cols:
+                v = row[c]
+                if c in ("theta", "se_hessian", "se_robust"):
+                    cells.append(f"{v:.6f}" if is_num(v) and not np.isnan(float(v)) else str(v))
+                elif c == "t_robust":
+                    cells.append(f"{v:.3f}" if is_num(v) and not np.isnan(float(v)) else str(v))
+                elif c == "p_robust":
+                    cells.append(f"{v:.4f}" if is_num(v) and not np.isnan(float(v)) else str(v))
+                else:
+                    cells.append(str(v))
+            md.append("| " + " | ".join(cells) + " |")
+        md.append("")
+    else:
+        md.append("*Parameter table could not be constructed from the supplied artifacts.*")
+    md.append("")
+
+    md += [
+        "## 2. Solver Convergence Diagnostics",
+        "",
+        _fmt_solver_diag_md(solver_diag),
+        "",
+        "## 3. CONOPT / GAMS Solver Diagnostics",
+        "",
+        ("> CONOPT-specific fields (RGmax, tolerances, equations/variables/nonzeros) are parsed "
+         "from the GAMS listing file supplied via `--listing-file`.  "
+         "If not supplied all fields report «Not available in supplied solver artifacts».  "
+         "**Best practice**: configure the estimator to save the GAMS listing file and solver log "
+         "for every run so these fields are always populated."),
+        "",
+        _fmt_conopt_md(solver_diag.get("listing_diagnostics", {"_note": _DIAG_NA})),
+        "",
+        "## 4. Python Likelihood Gradient Diagnostics",
+        "",
+        _fmt_gradient_md(grad_diag),
+        "",
+        "## 5. Hessian Diagnostics",
+        "",
+        _fmt_hessian_md(hess_diag),
+        "",
+        "## 6. Data Diagnostics",
+        "",
+    ]
+
+    if data_diag:
+        md += [
+            f"**Cluster column**: `{data_diag.get('cluster_col', _DIAG_NA)}`",
+            "",
+            f"**T3 cluster count**: {data_diag.get('T3_cluster_count', _DIAG_NA)}",
+            f"**T4 SE positivity**: {data_diag.get('T4_se_positivity', _DIAG_NA)}",
+            f"**T5 robust-vs-hessian**: {data_diag.get('T5_robust_vs_hessian', _DIAG_NA)}",
+            f"**PE3 data loaded**: {data_diag.get('PE3_data_loaded', _DIAG_NA)}",
+            "",
+        ]
+    else:
+        md.append(
+            "*Data diagnostics require `--cluster-se-json`. "
+            "Provide a cluster-robust SE artifact to populate T3/T4/T5/PE3.*"
+        )
+    md.append("")
+
+    md += [
+        "## 7. Comparison Run",
+        "",
+        _fmt_comparison_md(comp_diag),
+        "",
+        "## 8. Reproducibility Metadata",
+        "",
+        f"**Timestamp (UTC)**: {repro_meta.get('timestamp_utc', _DIAG_NA)}  ",
+        f"**Python**: {repro_meta.get('python_version', _DIAG_NA)}  ",
+        f"**Platform**: {repro_meta.get('platform', _DIAG_NA)}  ",
+        f"**Git SHA**: {repro_meta.get('git', {}).get('git_sha', _DIAG_NA)}  ",
+        f"**Git branch**: {repro_meta.get('git', {}).get('git_branch', _DIAG_NA)}  ",
+        f"**Git dirty**: {repro_meta.get('git', {}).get('git_dirty', _DIAG_NA)}  ",
+        "",
+        "**Package versions:**",
+        "",
+        "| Package | Version |",
+        "|---------|---------|",
+    ]
+    for pkg, ver in (repro_meta.get("package_versions", {}) or {}).items():
+        md.append(f"| {pkg} | {ver} |")
+
+    md += [
+        "",
+        "**File hashes (SHA-256, first 16 hex digits):**",
+        "",
+        "| Artifact | Hash |",
+        "|----------|------|",
+    ]
+    for label, h in (repro_meta.get("file_hashes_sha256_prefix16", {}) or {}).items():
+        md.append(f"| {label} | `{h}` |")
+    md.append("")
+
+    # ------------------------------------------------------------------
+    # Write artifacts
+    # ------------------------------------------------------------------
+    md_content = "\n".join(md)
+    md_path = output_dir / f"{prefix}extended_diagnostics.md"
+    md_path.write_text(md_content, encoding="utf-8")
+    LOGGER.info(f"  Wrote: {md_path}")
+
+    diag_bundle: Dict[str, Any] = {
+        "solver_diagnostics": solver_diag,
+        "gradient_diagnostics": grad_diag,
+        "hessian_diagnostics": hess_diag,
+        "comparison_diagnostics": comp_diag,
+        "data_diagnostics": data_diag,
+        "reproducibility": repro_meta,
+    }
+    json_path = output_dir / f"{prefix}extended_diagnostics.json"
+    with open(json_path, "w", encoding="utf-8") as fh:
+        json.dump(diag_bundle, fh, indent=2, default=str)
+    LOGGER.info(f"  Wrote: {json_path}")
+
+    if strict_report:
+        issues = []
+        if hess_diag.get("condition_number") == _DIAG_NA:
+            issues.append("Hessian condition number unavailable (supply --cluster-se-json).")
+        if not data_diag:
+            issues.append("Data diagnostics unavailable (supply --cluster-se-json).")
+        if issues:
+            raise RuntimeError(
+                f"--strict-report: {len(issues)} required diagnostic(s) missing:\n"
+                + "\n".join(f"  - {i}" for i in issues)
+            )
+
+    return {
+        "extended_diagnostics_md": md_path,
+        "extended_diagnostics_json": json_path,
+        "param_df": param_df,
+        "solver_diagnostics": solver_diag,
+        "gradient_diagnostics": grad_diag,
+        "hessian_diagnostics": hess_diag,
+        "comparison_diagnostics": comp_diag,
+        "data_diagnostics": data_diag,
+        "reproducibility": repro_meta,
+    }
+
+
+# =============================================================================
 # CLI INTERFACE
 # =============================================================================
 
@@ -7973,6 +9138,116 @@ def main():
         help='Do not write the compact Markdown summary artifact'
     )
 
+    # ------------------------------------------------------------------
+    # Extended diagnostics options
+    # ------------------------------------------------------------------
+    parser.add_argument(
+        '--cluster-se-json',
+        type=Path,
+        default=None,
+        metavar='PATH',
+        help=(
+            'Path to cluster-robust SE JSON artifact produced by cluster_robust_se.py. '
+            'Enables inference table (se_robust, t-ratios), Hessian diagnostics, '
+            'and data-quality checks (T3/T4/T5).'
+        )
+    )
+
+    parser.add_argument(
+        '--solver-log',
+        type=Path,
+        default=None,
+        metavar='PATH',
+        help=(
+            'Path to plain-text GAMS/CONOPT solver log file. '
+            'Parsed for convergence information (objective, iterations, termination). '
+            'Best practice: configure the estimator to save this file for every run.'
+        )
+    )
+
+    parser.add_argument(
+        '--listing-file',
+        type=Path,
+        default=None,
+        metavar='PATH',
+        help=(
+            'Path to GAMS .lst listing file. '
+            'Parsed for CONOPT diagnostics: RGmax, RTOL/FTOL tolerances, '
+            'equations/variables/nonzeros counts, max infeasibility, active bounds. '
+            'If not supplied, all CONOPT fields report "Not available". '
+            'Best practice: configure the estimator to save this file for every run.'
+        )
+    )
+
+    parser.add_argument(
+        '--gamspy-diagnostics',
+        action='store_true',
+        help=(
+            'Include a GAMSPy/CONOPT diagnostics section in the extended report. '
+            'Automatically enabled when --listing-file or --solver-log are supplied. '
+            'Without those files only the high-level status from estimation_results.json '
+            'is available; CONOPT fields (RGmax, tolerances) will be reported as '
+            '"Not available in supplied solver artifacts".'
+        )
+    )
+
+    parser.add_argument(
+        '--gradient-diagnostics',
+        action='store_true',
+        help=(
+            'Compute the Python likelihood gradient (score vector) at the converged '
+            'parameter vector via central-difference numerical differentiation. '
+            'Requires --mnl-base and --spec-config. '
+            'NOTE: this is the RURO Python-side gradient of log L and is DISTINCT '
+            'from the CONOPT solver-internal reduced gradient (RGmax).'
+        )
+    )
+
+    parser.add_argument(
+        '--comparison-results-json',
+        type=Path,
+        default=None,
+        metavar='PATH',
+        help=(
+            'Path to a second estimation_results.json for parameter comparison. '
+            'Produces an L-infinity distance table between the two runs.'
+        )
+    )
+
+    parser.add_argument(
+        '--comparison-label',
+        type=str,
+        default='Comparison',
+        metavar='LABEL',
+        help='Label for the comparison run in the extended report (default: "Comparison")'
+    )
+
+    parser.add_argument(
+        '--cluster-col',
+        type=str,
+        default=None,
+        metavar='COL',
+        help='Name of the cluster column used for sandwich SE computation (informational)'
+    )
+
+    parser.add_argument(
+        '--report-title',
+        type=str,
+        default=None,
+        metavar='TITLE',
+        help='Custom title for the extended diagnostics Markdown report'
+    )
+
+    parser.add_argument(
+        '--strict-report',
+        action='store_true',
+        help=(
+            'Raise an error if critical diagnostics are unavailable '
+            '(Hessian condition number, data checks). '
+            'Use to enforce complete diagnostic coverage in automated pipelines.'
+        )
+    )
+
     args = parser.parse_args()
     
     # Set random seed if provided
@@ -8015,12 +9290,51 @@ def main():
             compute_se=args.compute_se,
             spec_config=args.spec_config,
             llm_summary_dir=None if args.no_llm_summary else args.llm_summary_dir,
+            report_title=args.report_title,
             # bootstrap=args.bootstrap,  # Future: pass to function when implemented
         )
-        return 0
     except Exception as e:
         LOGGER.error(f"Post-estimation failed: {e}", exc_info=True)
         return 1
+
+    # Run extended diagnostics when any extended option is requested
+    _run_ext = any([
+        args.cluster_se_json is not None,
+        args.solver_log is not None,
+        args.listing_file is not None,
+        args.gamspy_diagnostics,
+        args.gradient_diagnostics,
+        args.comparison_results_json is not None,
+        args.strict_report,
+    ])
+    if _run_ext:
+        try:
+            run_extended_diagnostics(
+                results_json_path=args.results_json,
+                output_dir=output_dir,
+                prefix=args.prefix,
+                cluster_se_json=args.cluster_se_json,
+                solver_log=args.solver_log,
+                listing_file=args.listing_file,
+                gamspy_diagnostics=args.gamspy_diagnostics,
+                comparison_results_json=args.comparison_results_json,
+                comparison_label=args.comparison_label,
+                gradient_diagnostics=args.gradient_diagnostics,
+                mnl_base=args.mnl_base,
+                spec_config=args.spec_config,
+                strict_report=args.strict_report,
+                cluster_col=args.cluster_col,
+                report_title=args.report_title,
+            )
+        except RuntimeError as e:
+            # --strict-report failures surface as RuntimeError
+            LOGGER.error(f"Extended diagnostics strict-report failure: {e}")
+            return 1
+        except Exception as e:
+            LOGGER.error(f"Extended diagnostics failed: {e}", exc_info=True)
+            return 1
+
+    return 0
 
 
 if __name__ == "__main__":

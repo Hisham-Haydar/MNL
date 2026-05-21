@@ -83,6 +83,104 @@ def parse_args():
     return p.parse_args()
 
 
+def derive_couples_region_dummies(df_couples: pd.DataFrame) -> pd.DataFrame:
+    """
+    R1 (2026-05-21): populate reg_nuts1_2..8 in the couples split from drgn1 when
+    the existing columns are absent or entirely NaN.
+
+    Guard: fires only when reg_nuts1_2 is absent OR entirely NaN in df_couples.
+    Does not overwrite columns that already contain valid values.
+
+    Region 1 (Ile-de-France) remains the omitted reference; no dummy is derived for it.
+    """
+    _reg_cols = [f"reg_nuts1_{k}" for k in range(2, 9)]
+    col_present = all(c in df_couples.columns for c in _reg_cols)
+    if col_present:
+        any_valid = any(df_couples[c].notna().any() for c in _reg_cols)
+        any_nondegenerate = any(df_couples[c].fillna(0).nunique() > 1 for c in _reg_cols)
+        if any_valid and any_nondegenerate:
+            logger.info("R1: reg_nuts1_2..8 already valid in couples split — no repair needed")
+            return df_couples
+
+    # Columns absent or all-NaN or all-zero: derive from drgn1
+    if "drgn1" not in df_couples.columns or df_couples["drgn1"].isna().all():
+        raise ValueError(
+            "R1 HALT: drgn1 column is absent or entirely NaN in couples split — "
+            "cannot derive region dummies. Diagnose the source parquet before proceeding."
+        )
+    drgn1_vals = df_couples["drgn1"].values
+    n_unique_drgn = len(set(drgn1_vals[~np.isnan(drgn1_vals.astype(float))]))
+    if n_unique_drgn < 2:
+        raise ValueError(
+            f"R1 HALT: drgn1 has only {n_unique_drgn} unique code(s) — "
+            "not a valid region source for deriving region dummies."
+        )
+
+    df_couples = df_couples.copy()
+    for k in range(2, 9):
+        df_couples[f"reg_nuts1_{k}"] = (df_couples["drgn1"] == k).astype(float)
+
+    logger.info("R1: derived reg_nuts1_2..8 from drgn1 for couples split (R1 repair applied)")
+    for k in range(2, 9):
+        n_ones = int((df_couples[f"reg_nuts1_{k}"] == 1.0).sum())
+        logger.info(f"  reg_nuts1_{k}: {n_ones} rows = 1")
+    return df_couples
+
+
+def validate_couples_region_dummies(df_couples: pd.DataFrame) -> bool:
+    """V1/V2: couples region dummies are non-NaN, binary, and match drgn1 exactly."""
+    ok = True
+    _reg_cols = [f"reg_nuts1_{k}" for k in range(2, 9)]
+
+    # V1: all columns present, zero NaN, binary values
+    for col in _reg_cols:
+        if col not in df_couples.columns:
+            logger.error(f"V1 FAIL: {col} missing from couples split")
+            ok = False
+            continue
+        n_miss = df_couples[col].isna().sum()
+        if n_miss > 0:
+            logger.error(f"V1 FAIL: {col} has {n_miss} NaN values in couples split")
+            ok = False
+        vals = df_couples[col].dropna().unique()
+        if not set(vals).issubset({0.0, 1.0}):
+            logger.error(f"V1 FAIL: {col} has non-binary values: {vals[:10]}")
+            ok = False
+        if (df_couples[col].fillna(0) == 0).all():
+            logger.error(f"V1 FAIL: {col} is all-zero in couples split")
+            ok = False
+
+    if not ok:
+        return False
+
+    # V2: exact match with drgn1
+    if "drgn1" in df_couples.columns:
+        for k in range(2, 9):
+            col = f"reg_nuts1_{k}"
+            expected = (df_couples["drgn1"] == k).astype(float)
+            mismatch = (df_couples[col] != expected).sum()
+            if mismatch > 0:
+                logger.error(f"V2 FAIL: {col} does not match 1[drgn1=={k}] for {mismatch} rows")
+                ok = False
+            else:
+                n_ones = int((df_couples[col] == 1.0).sum())
+                logger.info(f"V2: {col} == 1[drgn1=={k}]: PASS ({n_ones} households in region {k})")
+        # Confirm all-zero iff drgn1==1
+        region1_rows = df_couples["drgn1"] == 1
+        sum_of_dummies_region1 = sum(
+            df_couples.loc[region1_rows, f"reg_nuts1_{k}"].sum() for k in range(2, 9)
+        )
+        if sum_of_dummies_region1 != 0:
+            logger.error(f"V2 FAIL: for drgn1==1 rows, some reg_nuts1_k dummy is non-zero ({sum_of_dummies_region1} total)")
+            ok = False
+        else:
+            logger.info("V2: all dummies zero for drgn1==1 rows  PASS")
+
+    if ok:
+        logger.info("V1/V2 couples region dummies: PASS")
+    return ok
+
+
 def derive_year_indicators(df: pd.DataFrame) -> pd.DataFrame:
     """
     Derive year_2015_indicator and year_2017_indicator from year_tag.
@@ -172,6 +270,15 @@ def build_mnlmeta(df_singles: pd.DataFrame, df_couples: pd.DataFrame) -> dict:
             "couples_male":   "ils_dispy_male",
             "couples_female": "ils_dispy_female",
             "note": "couples path does NOT use ils_dispy_real",
+        },
+        "region_dummy_repair": {
+            "repair": "R1",
+            "authorization": "docs/JMP_pooled_P3a_region_dummy_repair_authorization_v1.md",
+            "description": (
+                "reg_nuts1_2..8 derived from drgn1 for couples split when original columns were all-NaN. "
+                "Diagnostic v1 classified cause as B/DEGENERATE_OR_MISWIRED_COLUMNS."
+            ),
+            "applied_date": "2026-05-21",
         },
     }
     return meta
@@ -371,6 +478,12 @@ def run(dry_run: bool, unified_parquet: Path, out_base: Path) -> bool:
     logger.info("Deriving year indicators from year_tag...")
     df_singles = derive_year_indicators(df_singles)
     df_couples = derive_year_indicators(df_couples)
+
+    # ------------------------------------------------------------------
+    # 4a. R1: repair couples region dummies from drgn1 if absent/all-NaN
+    # ------------------------------------------------------------------
+    logger.info("\nR1: repairing couples region dummies (if needed)...")
+    df_couples = derive_couples_region_dummies(df_couples)
     logger.info(f"  year_2015_indicator: {int(df_singles['year_2015_indicator'].sum())} singles, "
                 f"{int(df_couples['year_2015_indicator'].sum())} couples")
     logger.info(f"  year_2017_indicator: {int(df_singles['year_2017_indicator'].sum())} singles, "
@@ -380,6 +493,11 @@ def run(dry_run: bool, unified_parquet: Path, out_base: Path) -> bool:
     # 5. Validation
     # ------------------------------------------------------------------
     logger.info("\n--- Validation ---")
+
+    v1v2_ok = validate_couples_region_dummies(df_couples)
+    if not v1v2_ok:
+        logger.error("HALT (H2/V1/V2): couples region dummy validation failed")
+        return False
 
     v2_ok = validate_conservation(df, df_singles, df_couples)
     if not v2_ok:

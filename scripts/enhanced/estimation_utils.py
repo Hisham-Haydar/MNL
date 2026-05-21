@@ -1067,7 +1067,18 @@ def precompute_data_couples(
     drgn1_female = drgn1
     
     # Create region dummies (region 1 = Île-de-France is reference) - household level
-    if "reg_nuts1_2" in df.columns:
+    # R2 value-presence guard (2026-05-21): use the direct reg_nuts1_* path only when
+    # all seven columns are present AND at least one has non-missing values AND at least
+    # one is non-degenerate (not all-zero after fillna). If the columns are present-but-NaN
+    # (schema presence without value presence), fall through to the drgn1 fallback. If
+    # neither source is usable, raise an explicit error rather than silently zeroing.
+    _reg_direct_cols = [f"reg_nuts1_{k}" for k in range(2, 9)]
+    _reg_direct_usable = (
+        all(c in df.columns for c in _reg_direct_cols)
+        and any(df[c].notna().any() for c in _reg_direct_cols)
+        and any(df[c].fillna(0).nunique() > 1 for c in _reg_direct_cols)
+    )
+    if _reg_direct_usable:
         reg2 = df["reg_nuts1_2"].fillna(0.0).values
         reg3 = df["reg_nuts1_3"].fillna(0.0).values
         reg4 = df["reg_nuts1_4"].fillna(0.0).values
@@ -1075,8 +1086,9 @@ def precompute_data_couples(
         reg6 = df["reg_nuts1_6"].fillna(0.0).values
         reg7 = df["reg_nuts1_7"].fillna(0.0).values
         reg8 = df["reg_nuts1_8"].fillna(0.0).values
+        logger.debug("precompute_data_couples: region dummies sourced from reg_nuts1_* columns (direct path)")
     elif "drgn1" in df.columns:
-        # Create dummies from drgn1 code
+        # drgn1 fallback: now reachable when reg_nuts1_* columns are absent, all-NaN, or all-zero
         reg2 = (drgn1 == 2).astype(float)
         reg3 = (drgn1 == 3).astype(float)
         reg4 = (drgn1 == 4).astype(float)
@@ -1084,8 +1096,16 @@ def precompute_data_couples(
         reg6 = (drgn1 == 6).astype(float)
         reg7 = (drgn1 == 7).astype(float)
         reg8 = (drgn1 == 8).astype(float)
+        logger.warning(
+            "precompute_data_couples: reg_nuts1_* columns absent, all-NaN, or all-zero; "
+            "falling back to drgn1-derived region dummies (R2 fallback path)"
+        )
     else:
-        reg2 = reg3 = reg4 = reg5 = reg6 = reg7 = reg8 = np.zeros(n_obs)
+        raise ValueError(
+            "precompute_data_couples: no usable region source. "
+            "reg_nuts1_2..8 are absent/all-NaN/all-zero AND drgn1 is not available. "
+            "Repair the couples split or add drgn1 to the input data before estimation."
+        )
 
     # Group structure: for pooled multi-year data group by (idhh, year_tag) so each
     # household-year is one independent choice situation (100 alternatives, 1 chosen).

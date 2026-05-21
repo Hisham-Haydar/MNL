@@ -592,7 +592,7 @@ def _build_minimal_metadata(df_singles: pd.DataFrame, df_couples: pd.DataFrame) 
 def _collect_extra_vars(spec) -> list:
     """Collect extra variable names required by the spec's market/hours shifters."""
     extra = []
-    for s in getattr(spec, "market_shifters", []):
+    for s in getattr(spec, "market_opportunity_shifters", getattr(spec, "market_shifters", [])):
         var = s.get("variable", "")
         if var and var not in extra:
             extra.append(var)
@@ -702,21 +702,456 @@ def _write_md_report(results: dict, output_path: Path) -> None:
 # CLI
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Post-estimation mode
+# ---------------------------------------------------------------------------
+
+def _load_theta_from_results_json(results_json: Path, start_label: Optional[str]) -> np.ndarray:
+    """
+    Load the converged theta vector from an estimation_results.json.
+
+    The JSON produced by enh_RURO_estimate_FR.py stores parameters under
+    results.<group>.parameters  (e.g. results.singles_male.parameters or
+    results.joint.parameters).  We prefer the joint key; fall back to the
+    first available results key.
+
+    start_label: if provided (e.g. "start_1"), look in that sub-key first.
+    """
+    with open(results_json, "r") as f:
+        data = json.load(f)
+
+    # Navigate to the parameter list
+    results_block = data.get("results", data)  # some JSONs are flat
+
+    def _extract_theta(block) -> Optional[list]:
+        """Return a flat list of floats from various result block formats."""
+        if not isinstance(block, dict):
+            return None
+        # Prefer 'theta' (raw float list) over 'parameters' (may be a dict)
+        for key in ["theta", "parameter_values"]:
+            val = block.get(key)
+            if isinstance(val, (list, tuple)) and len(val) > 0:
+                try:
+                    return [float(v) for v in val]
+                except (TypeError, ValueError):
+                    pass
+        # 'parameters' may be a dict {name: value} or a list
+        val = block.get("parameters")
+        if isinstance(val, dict) and len(val) > 0:
+            try:
+                return [float(v) for v in val.values()]
+            except (TypeError, ValueError):
+                pass
+        if isinstance(val, (list, tuple)) and len(val) > 0:
+            try:
+                return [float(v) for v in val]
+            except (TypeError, ValueError):
+                pass
+        return None
+
+    theta_list = None
+
+    # Try start_label first
+    if start_label and start_label in results_block:
+        theta_list = _extract_theta(results_block[start_label])
+
+    # Try common group keys
+    if theta_list is None:
+        for key in ["joint", "singles_male", "singles_female", "singles", "couples"]:
+            if key in results_block:
+                theta_list = _extract_theta(results_block[key])
+                if theta_list:
+                    logger.info(f"  Loaded theta from results.{key} ({len(theta_list)} values)")
+                    break
+
+    # Last resort: top-level theta / parameter_values
+    if theta_list is None:
+        theta_list = _extract_theta(data)
+
+    if theta_list is None or len(theta_list) == 0:
+        raise ValueError(
+            f"Could not find non-empty parameter vector in {results_json}. "
+            "Expected at results.<group>.theta or results.<group>.parameters."
+        )
+
+    return np.array(theta_list, dtype=float)
+
+
+def run_post_estimation(
+    spec_path: Path,
+    mnl_base: Path,
+    results_json: Path,
+    output_path: Path,
+    cluster_col: str = "idorighh",
+    start_label: Optional[str] = None,
+) -> dict:
+    """
+    Post-estimation cluster-robust SE computation.
+
+    Requires a converged theta from results_json.
+    Loads the full split-stem estimation-ready data (no row bound).
+    Computes the TRUE Hessian via central differences at the converged theta.
+    Assembles the sandwich covariance and runs T3/T4/T5.
+
+    Parameters
+    ----------
+    spec_path : Path
+        YAML specification.
+    mnl_base : Path
+        Split-stem base path (stem without __singles.parquet / __couples.parquet).
+        E.g. Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready
+    results_json : Path
+        Converged estimation_results.json.
+    output_path : Path
+        Output path for the results JSON.
+    cluster_col : str
+        Cluster column name (default: idorighh).
+    start_label : str, optional
+        Which start to load from results_json (e.g. "start_1").
+    """
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    results = {
+        "run_timestamp": ts,
+        "mode": "post-estimation",
+        "spec": str(spec_path),
+        "mnl_base": str(mnl_base),
+        "results_json": str(results_json),
+        "cluster_col": cluster_col,
+        "checks": {},
+    }
+
+    # ------------------------------------------------------------------
+    # PE1: Parse spec
+    # ------------------------------------------------------------------
+    try:
+        spec = parse_specification(spec_path)
+        n_params = len(spec.all_param_names)
+        results["checks"]["PE1_spec_parses"] = {"passed": True, "n_params": n_params}
+        logger.info(f"[PE1] Spec parses: PASS  (n_params={n_params})")
+    except Exception as exc:
+        results["checks"]["PE1_spec_parses"] = {"passed": False, "error": str(exc)}
+        logger.error(f"[PE1] Spec parse FAILED: {exc}")
+        _write_output(results, output_path)
+        return results
+
+    # ------------------------------------------------------------------
+    # PE2: Load converged theta
+    # ------------------------------------------------------------------
+    try:
+        theta = _load_theta_from_results_json(results_json, start_label)
+        if len(theta) != n_params:
+            raise ValueError(f"Theta length {len(theta)} != n_params {n_params}")
+        results["checks"]["PE2_theta_loaded"] = {
+            "passed": True, "n_params": len(theta),
+            "theta_norm": float(np.linalg.norm(theta)),
+        }
+        logger.info(f"[PE2] Converged theta loaded: {len(theta)} params, ||theta||={np.linalg.norm(theta):.4f}")
+    except Exception as exc:
+        results["checks"]["PE2_theta_loaded"] = {"passed": False, "error": str(exc)}
+        logger.error(f"[PE2] Theta load FAILED: {exc}")
+        _write_output(results, output_path)
+        return results
+
+    # ------------------------------------------------------------------
+    # PE3: Load full split-stem data (no row bound)
+    # ------------------------------------------------------------------
+    singles_path = Path(str(mnl_base) + "__singles.parquet")
+    couples_path = Path(str(mnl_base) + "__couples.parquet")
+    meta_path    = Path(str(mnl_base) + "__mnlmeta.json")
+
+    try:
+        from estimation_utils import load_and_validate_mnl_data
+        df_singles, df_couples, metadata = load_and_validate_mnl_data(
+            singles_path=singles_path,
+            couples_path=couples_path if couples_path.exists() else None,
+            metadata_path=meta_path,
+            strict_validation=True,
+        )
+        logger.info(f"[PE3] Data loaded: singles={len(df_singles):,} rows, couples={len(df_couples) if df_couples is not None else 0:,} rows")
+        results["checks"]["PE3_data_loaded"] = {
+            "passed": True,
+            "n_singles": len(df_singles),
+            "n_couples": len(df_couples) if df_couples is not None else 0,
+        }
+    except Exception as exc:
+        results["checks"]["PE3_data_loaded"] = {"passed": False, "error": str(exc)}
+        logger.error(f"[PE3] Data load FAILED: {exc}")
+        _write_output(results, output_path)
+        return results
+
+    # ------------------------------------------------------------------
+    # PE4: Build precomputed data objects
+    # ------------------------------------------------------------------
+    include_wage = (spec.wage_spec in ["vw", "loc_empirical"])
+    include_loc  = (spec.wage_spec == "loc_empirical")
+    extra_vars   = _collect_extra_vars(spec)
+
+    gender_col = "dgn" if "dgn" in df_singles.columns else None
+    if gender_col:
+        df_sm = df_singles[df_singles[gender_col] == 1].copy()
+        df_sf = df_singles[df_singles[gender_col] == 0].copy()
+    else:
+        df_sm = df_singles.copy()
+        df_sf = pd.DataFrame()
+
+    # Ensure sorted by idhh
+    if "idhh" in df_sm.columns and not df_sm["idhh"].is_monotonic_increasing:
+        df_sm = df_sm.sort_values("idhh").reset_index(drop=True)
+    if len(df_sf) > 0 and "idhh" in df_sf.columns and not df_sf["idhh"].is_monotonic_increasing:
+        df_sf = df_sf.sort_values("idhh").reset_index(drop=True)
+    df_c = df_couples if df_couples is not None else pd.DataFrame()
+    if len(df_c) > 0 and "idhh" in df_c.columns and not df_c["idhh"].is_monotonic_increasing:
+        df_c = df_c.sort_values("idhh").reset_index(drop=True)
+
+    try:
+        data_sm = data_sf = data_cou = None
+        if len(df_sm) > 0:
+            data_sm = precompute_data_singles(
+                df=df_sm, metadata=metadata, is_male=True,
+                include_wage_vars=include_wage, include_loc_vars=include_loc,
+                include_extra_vars=extra_vars,
+            )
+        if len(df_sf) > 0:
+            data_sf = precompute_data_singles(
+                df=df_sf, metadata=metadata, is_male=False,
+                include_wage_vars=include_wage, include_loc_vars=include_loc,
+                include_extra_vars=extra_vars,
+            )
+        if len(df_c) > 0:
+            data_cou = precompute_data_couples(
+                df=df_c, metadata=metadata,
+                include_wage_vars=include_wage, include_loc_vars=include_loc,
+                include_extra_vars=extra_vars,
+            )
+        groups_built = {
+            "singles_male":   data_sm.n_groups  if data_sm  else 0,
+            "singles_female": data_sf.n_groups  if data_sf  else 0,
+            "couples":        data_cou.n_groups if data_cou else 0,
+        }
+        results["checks"]["PE4_precompute"] = {"passed": True, "groups": groups_built}
+        logger.info(f"[PE4] Precompute: {groups_built}")
+    except Exception as exc:
+        results["checks"]["PE4_precompute"] = {"passed": False, "error": str(exc)}
+        logger.error(f"[PE4] Precompute FAILED: {exc}")
+        _write_output(results, output_path)
+        return results
+
+    # ------------------------------------------------------------------
+    # PE5: Extract per-choice-set scores (compute_scores_joint)
+    # ------------------------------------------------------------------
+    try:
+        scores_all, cluster_ids_all = compute_scores_joint(
+            theta, data_sm, data_sf, data_cou, spec
+        )
+        results["checks"]["PE5_scores_extracted"] = {
+            "passed": True,
+            "scores_shape": list(scores_all.shape),
+            "n_cluster_ids": int(len(cluster_ids_all)),
+        }
+        logger.info(f"[PE5] Scores extracted: shape={scores_all.shape}")
+    except Exception as exc:
+        results["checks"]["PE5_scores_extracted"] = {"passed": False, "error": str(exc)}
+        logger.error(f"[PE5] Score extraction FAILED: {exc}")
+        _write_output(results, output_path)
+        return results
+
+    # ------------------------------------------------------------------
+    # T3: Full cluster count (9,657 unique idorighh on full dataset)
+    # ------------------------------------------------------------------
+    t3 = run_t3_cluster_count_check(cluster_ids_all, expected=9657)
+    results["checks"]["T3_cluster_count"] = t3
+    logger.info(f"[T3] Cluster count {t3['n_unique_clusters']} (expected 9,657): {'PASS' if t3['passed'] else 'FAIL'}")
+
+    # ------------------------------------------------------------------
+    # PE6: Compute TRUE Hessian via central differences at converged theta
+    # ------------------------------------------------------------------
+    # The true Hessian is the numerical Hessian of the negative LL at theta.
+    # We use the same central-differences method as compute_standard_errors in
+    # enh_RURO_estimate_FR.py, applied directly here so we control free_mask
+    # alignment with the sandwich assembly.
+    logger.info("[PE6] Computing TRUE Hessian (central differences on compute_gradient_joint)...")
+    logger.info("  This is NOT the dummy Hessian H=0.1*I used in smoke-test.")
+
+    try:
+        # Determine free parameters (at bounds -> fixed)
+        bounds = spec.get_bounds_tuple() if hasattr(spec, "get_bounds_tuple") else None
+        bound_tol = 1e-6
+
+        free_mask = np.ones(n_params, dtype=bool)
+        if bounds is not None and len(bounds) == n_params:
+            for i, (lb, ub) in enumerate(bounds):
+                if lb is None and ub is None:
+                    continue
+                if lb is not None and ub is not None and (ub - lb) <= 1e-6:
+                    free_mask[i] = False
+                    continue
+                if lb is not None and abs(theta[i] - lb) <= bound_tol:
+                    free_mask[i] = False
+                elif ub is not None and abs(theta[i] - ub) <= bound_tol:
+                    free_mask[i] = False
+
+        free_idx = np.where(free_mask)[0]
+        n_free   = int(free_mask.sum())
+        logger.info(f"  Free parameters: {n_free}/{n_params}")
+
+        # Build gradient function closure
+        def grad_func(t):
+            return compute_gradient_joint(t, data_sm, data_sf, data_cou, spec)
+
+        eps = 1e-5
+        H_free = np.zeros((n_free, n_free))
+        for col_idx, i in enumerate(free_idx):
+            theta_plus  = theta.copy(); theta_plus[i]  += eps
+            theta_minus = theta.copy(); theta_minus[i] -= eps
+            g_plus  = grad_func(theta_plus)
+            g_minus = grad_func(theta_minus)
+            H_free[:, col_idx] = (g_plus[free_idx] - g_minus[free_idx]) / (2 * eps)
+            if (col_idx + 1) % 10 == 0:
+                logger.info(f"  Hessian column {col_idx+1}/{n_free} done")
+
+        H_free = 0.5 * (H_free + H_free.T)  # symmetrize
+
+        # Also compute Hessian-based SEs for T5 comparison
+        try:
+            H_free_inv = np.linalg.pinv(H_free, rcond=1e-10)
+            se_hessian_free = np.sqrt(np.abs(np.diag(H_free_inv)))
+        except Exception:
+            se_hessian_free = np.full(n_free, np.nan)
+
+        se_hessian = np.full(n_params, np.nan)
+        se_hessian[free_idx] = se_hessian_free
+
+        # Embed n_free × n_free Hessian into full n_params × n_params matrix
+        # for compute_cluster_robust_se (which indexes by free_mask)
+        H_full = np.zeros((n_params, n_params))
+        H_full[np.ix_(free_idx, free_idx)] = H_free
+
+        cond_number = float(np.linalg.cond(H_free)) if n_free > 0 else np.inf
+        results["checks"]["PE6_true_hessian"] = {
+            "passed": True,
+            "hessian_shape_free": [n_free, n_free],
+            "condition_number": cond_number,
+            "note": "TRUE Hessian (central differences on compute_gradient_joint at converged theta). NOT dummy Hessian.",
+        }
+        logger.info(f"[PE6] True Hessian computed: shape=({n_free},{n_free}), cond={cond_number:.2e}")
+    except Exception as exc:
+        results["checks"]["PE6_true_hessian"] = {"passed": False, "error": str(exc)}
+        logger.error(f"[PE6] True Hessian FAILED: {exc}")
+        _write_output(results, output_path)
+        return results
+
+    # ------------------------------------------------------------------
+    # PE7: Cluster-robust sandwich VCV
+    # ------------------------------------------------------------------
+    try:
+        se_robust, varcov_robust, _ = compute_cluster_robust_se(
+            hessian=H_full,
+            scores_all=scores_all,
+            cluster_ids_all=cluster_ids_all,
+            free_mask=free_mask,
+        )
+        results["checks"]["PE7_sandwich"] = {
+            "passed": True,
+            "varcov_shape": list(varcov_robust.shape),
+            "n_finite_se": int(np.sum(np.isfinite(se_robust))),
+        }
+        logger.info(f"[PE7] Sandwich VCV assembled: {np.sum(np.isfinite(se_robust))}/{n_params} finite SEs")
+    except Exception as exc:
+        results["checks"]["PE7_sandwich"] = {"passed": False, "error": str(exc)}
+        logger.error(f"[PE7] Sandwich FAILED: {exc}")
+        _write_output(results, output_path)
+        return results
+
+    # ------------------------------------------------------------------
+    # T4: Robust SE positivity for free parameters
+    # ------------------------------------------------------------------
+    t4 = run_t4_se_positivity_check(se_robust, free_mask)
+    results["checks"]["T4_se_positivity"] = t4
+    logger.info(f"[T4] SE positivity ({t4['n_free']} free params): {'PASS' if t4['passed'] else 'FAIL'} "
+                f"({t4['n_nonpositive']} non-positive)")
+
+    # ------------------------------------------------------------------
+    # T5: Robust vs Hessian SE comparison
+    # ------------------------------------------------------------------
+    t5 = run_t5_vs_hessian_check(
+        se_robust=se_robust,
+        se_hessian=se_hessian,
+        param_names=spec.all_param_names,
+        free_mask=free_mask,
+    )
+    results["checks"]["T5_robust_vs_hessian"] = t5
+    logger.info(f"[T5] Robust vs Hessian: {t5['n_below']} params where robust < hessian SE")
+
+    # ------------------------------------------------------------------
+    # PE8: Save VCV matrix
+    # ------------------------------------------------------------------
+    vcv_path = output_path.parent / (output_path.stem + "_vcv.npy")
+    try:
+        np.save(str(vcv_path), varcov_robust)
+        results["vcv_output_path"] = str(vcv_path)
+        results["checks"]["PE8_vcv_saved"] = {"passed": True, "path": str(vcv_path)}
+        logger.info(f"[PE8] VCV matrix saved: {vcv_path}")
+    except Exception as exc:
+        results["checks"]["PE8_vcv_saved"] = {"passed": False, "error": str(exc)}
+        logger.warning(f"[PE8] VCV save failed: {exc}")
+
+    # ------------------------------------------------------------------
+    # PE9: No welfare, no SA2, M1-clean active
+    # ------------------------------------------------------------------
+    results["checks"]["PE9_no_welfare"] = {"passed": True, "note": "No welfare computed (not authorized)."}
+    results["checks"]["PE9_m1clean_active"] = {"passed": True, "note": "M1-clean 2016 remains active JMP baseline."}
+
+    # ------------------------------------------------------------------
+    # Collect cluster-robust SE artifacts
+    # ------------------------------------------------------------------
+    results["cluster_robust_se_artifacts"] = {
+        "converged_theta": theta.tolist(),
+        "hessian_source": "TRUE Hessian — numerical Hessian of negative LL (central differences on compute_gradient_joint at converged theta). NOT the dummy Hessian H=0.1*I.",
+        "cluster_count_T3": t3,
+        "se_robust_vector": se_robust.tolist(),
+        "se_hessian_vector": se_hessian.tolist(),
+        "vcv_path": str(vcv_path) if "vcv_output_path" in results else None,
+        "T4_se_positivity": t4,
+        "T5_robust_vs_hessian": {**t5, "n_robust_below_hessian": t5["n_below"]},
+        "no_welfare": "CONFIRMED",
+        "m1clean_active": "CONFIRMED — M1-clean 2016 remains the active JMP baseline",
+        "free_mask": free_mask.tolist(),
+        "n_free": n_free,
+        "n_params": n_params,
+    }
+
+    _write_output(results, output_path)
+    logger.info(f"\nPost-estimation cluster-robust SE results written to: {output_path}")
+    return results
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Cluster-robust SE smoke-test and post-estimation CLI (GA17 clearance)"
     )
-    p.add_argument("--spec", type=Path, required=True,
-                   help="Path to YAML specification (e.g. estimation_spec_ruro_occ_P3a_pooled.yaml)")
-    p.add_argument("--parquet", type=Path, required=True,
-                   help="Path to pooled parquet (fr_p3a_gsurv2_harmonised.parquet)")
+    p.add_argument("--spec", "--spec-config", dest="spec", type=Path, required=True,
+                   help="Path to YAML specification (e.g. estimation_spec_ruro_occ_P3a_pooled.yaml). "
+                        "Alias: --spec-config")
+    p.add_argument("--parquet", type=Path, default=None,
+                   help="[smoke-test] Path to pooled parquet (fr_p3a_gsurv2_harmonised.parquet). "
+                        "Required for --mode smoke-test.")
+    p.add_argument("--mnl-base", dest="mnl_base", type=Path, default=None,
+                   help="[post-estimation] Split-stem base path "
+                        "(e.g. Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready). "
+                        "Suffixes __singles.parquet / __couples.parquet / __mnlmeta.json are appended.")
     p.add_argument("--output", type=Path, default=Path("Results/RURO_cluster_robust_SE_static_validation_v1.md"),
-                   help="Output path (.md or .json)")
+                   help="Output path (.md for smoke-test; .json for post-estimation). "
+                        "Default: Results/RURO_cluster_robust_SE_static_validation_v1.md")
     p.add_argument("--mode", choices=["smoke-test", "post-estimation"], default="smoke-test",
                    help="'smoke-test': GA17 clearance at initial_values (default). "
-                        "'post-estimation': compute robust SEs using converged theta.")
+                        "'post-estimation': compute true-Hessian cluster-robust SEs using converged theta.")
     p.add_argument("--results-json", type=Path, default=None,
-                   help="[post-estimation only] Path to estimation_results.json")
+                   help="[post-estimation only] Path to estimation_results.json with converged theta.")
+    p.add_argument("--cluster-col", dest="cluster_col", type=str, default="idorighh",
+                   help="[post-estimation] Cluster column name. Default: idorighh")
+    p.add_argument("--start-label", dest="start_label", type=str, default=None,
+                   help="[post-estimation] Which start to load from results JSON (e.g. start_1). "
+                        "Default: auto-detect from joint / singles_male / singles_female / couples.")
     return p
 
 
@@ -732,11 +1167,14 @@ def main() -> int:
     if not args.spec.exists():
         logger.error(f"Spec not found: {args.spec}")
         return 1
-    if not args.parquet.exists():
-        logger.error(f"Parquet not found: {args.parquet}")
-        return 1
 
     if args.mode == "smoke-test":
+        if args.parquet is None:
+            logger.error("--parquet is required for --mode smoke-test")
+            return 1
+        if not args.parquet.exists():
+            logger.error(f"Parquet not found: {args.parquet}")
+            return 1
         results = run_smoke_test(
             spec_path=args.spec,
             parquet_path=args.parquet,
@@ -748,10 +1186,39 @@ def main() -> int:
 
     elif args.mode == "post-estimation":
         if args.results_json is None or not args.results_json.exists():
-            logger.error("--results-json required and must exist for post-estimation mode")
+            logger.error("--results-json required and must exist for --mode post-estimation")
             return 1
-        logger.error("Post-estimation mode not yet implemented in this smoke-test release.")
-        return 1
+
+        # Determine data source: prefer --mnl-base, fall back to --parquet stem
+        if args.mnl_base is not None:
+            mnl_base = args.mnl_base
+        elif args.parquet is not None:
+            # Allow --parquet to act as the mnl_base stem (drop trailing suffixes if present)
+            stem = str(args.parquet)
+            for suf in ["__singles.parquet", "__couples.parquet", ".parquet"]:
+                if stem.endswith(suf):
+                    stem = stem[: -len(suf)]
+                    break
+            mnl_base = Path(stem)
+            logger.info(f"  --mnl-base derived from --parquet stem: {mnl_base}")
+        else:
+            logger.error("Either --mnl-base or --parquet must be provided for --mode post-estimation")
+            return 1
+
+        results = run_post_estimation(
+            spec_path=args.spec,
+            mnl_base=mnl_base,
+            results_json=args.results_json,
+            output_path=args.output,
+            cluster_col=args.cluster_col,
+            start_label=args.start_label,
+        )
+        all_pass = all(
+            v.get("passed", False)
+            for v in results.get("checks", {}).values()
+            if isinstance(v, dict) and "passed" in v
+        )
+        return 0 if all_pass else 1
 
     return 0
 

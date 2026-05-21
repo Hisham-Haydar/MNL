@@ -1,6 +1,6 @@
 # RURO Cluster-Robust SE Static Validation
 
-*Generated: 20260521T082333Z | Mode: smoke-test*
+*Generated: 20260521T113948Z | Mode: smoke-test*
 
 ---
 

@@ -744,8 +744,9 @@ def _compute_wage_opportunity_loc_singles(
 def compute_gradient_singles(
     theta: np.ndarray,
     data: PrecomputedDataSingles,
-    spec: EstimationSpec
-) -> np.ndarray:
+    spec: EstimationSpec,
+    return_scores: bool = False,
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Compute analytical gradient ∇_θ(-LL) for singles estimation.
 
@@ -769,11 +770,20 @@ def compute_gradient_singles(
         Precomputed data
     spec : EstimationSpec
         Specification
+    return_scores : bool, default=False
+        If True, also return per-choice-set score matrix for the POSITIVE
+        log-likelihood. Shape: (n_groups, n_params). The score for group g is
+        s_g = (dV_obs_g - dV_exp_g), i.e. the negation of the per-group
+        contribution to the negative-LL gradient. Satisfies:
+        scores.sum(axis=0) == -grad_func(theta)  (i.e. == gradient of +LL).
 
     Returns
     -------
-    np.ndarray, shape (n_params,)
-        Gradient vector (negative for minimization)
+    np.ndarray, shape (n_params,)  [return_scores=False]
+        Gradient vector of negative log-likelihood (for minimization).
+    Tuple[np.ndarray, np.ndarray]  [return_scores=True]
+        (grad, scores) where grad has shape (n_params,) and scores has
+        shape (n_groups, n_params).
     """
     n_params = len(spec.all_param_names)
     params = spec.unpack_parameters(theta)
@@ -807,6 +817,9 @@ def compute_gradient_singles(
     # Loop-based approach is faster than vectorized due to efficient NumPy @ operator
     grad = np.zeros(n_params)
 
+    if return_scores:
+        scores = np.zeros((data.n_groups, n_params))
+
     for g in range(data.n_groups):
         start, end = data.group_starts[g], data.group_ends[g]
 
@@ -820,8 +833,14 @@ def compute_gradient_singles(
         # Expected derivative (softmax-weighted average)
         dV_exp = P_group @ dV_dtheta[start:end, :]
 
-        # Add to gradient
-        grad += dV_obs - dV_exp
+        # Per-group score for the POSITIVE log-likelihood: s_g = dV_obs - dV_exp
+        score_g = dV_obs - dV_exp
+
+        # Add to gradient (of negative LL)
+        grad += score_g
+
+        if return_scores:
+            scores[g, :] = score_g
 
     # Validate gradient computation
     if not np.all(np.isfinite(grad)):
@@ -833,7 +852,13 @@ def compute_gradient_singles(
                 logger.error(f"  {spec.all_param_names[i]}: {grad[i]}")
         raise ValueError("Gradient contains NaN/Inf")
 
-    return -grad  # Negative for minimization
+    neg_grad = -grad  # Gradient of negative LL for minimization
+
+    if return_scores:
+        # scores[g] = s_g = dV_obs_g - dV_exp_g  (gradient of POSITIVE LL per group)
+        # Verify: scores.sum(axis=0) should equal -neg_grad = grad (positive LL gradient)
+        return neg_grad, scores
+    return neg_grad
 
 
 def _compute_utility_derivatives_singles(
@@ -1661,8 +1686,9 @@ def _compute_wage_opportunity_loc_couples_gender(
 def compute_gradient_couples(
     theta: np.ndarray,
     data: PrecomputedDataCouples,
-    spec: EstimationSpec
-) -> np.ndarray:
+    spec: EstimationSpec,
+    return_scores: bool = False,
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Compute analytical gradient for couples estimation.
 
@@ -1679,11 +1705,19 @@ def compute_gradient_couples(
         Precomputed data
     spec : EstimationSpec
         Specification
+    return_scores : bool, default=False
+        If True, also return per-choice-set score matrix for the POSITIVE
+        log-likelihood. Shape: (n_groups, n_params). The score for group g is
+        s_g = (dV_obs_g - dV_exp_g). Satisfies:
+        scores.sum(axis=0) == -grad_func(theta)  (gradient of +LL).
 
     Returns
     -------
-    np.ndarray
-        Gradient vector (negative for minimization)
+    np.ndarray  [return_scores=False]
+        Gradient vector of negative log-likelihood (for minimization).
+    Tuple[np.ndarray, np.ndarray]  [return_scores=True]
+        (grad, scores) where grad has shape (n_params,) and scores has
+        shape (n_groups, n_params).
     """
     n_params = len(spec.all_param_names)
     params = spec.unpack_parameters(theta)
@@ -1718,6 +1752,9 @@ def compute_gradient_couples(
     # Loop-based approach is faster than vectorized due to efficient NumPy @ operator
     grad = np.zeros(n_params)
 
+    if return_scores:
+        scores = np.zeros((data.n_groups, n_params))
+
     for g in range(data.n_groups):
         start, end = data.group_starts[g], data.group_ends[g]
 
@@ -1731,10 +1768,19 @@ def compute_gradient_couples(
         # Expected derivative (softmax-weighted average)
         dV_exp = P_group @ dV_dtheta[start:end, :]
 
-        # Add to gradient
-        grad += dV_obs - dV_exp
+        # Per-group score for the POSITIVE log-likelihood
+        score_g = dV_obs - dV_exp
 
-    return -grad
+        grad += score_g
+
+        if return_scores:
+            scores[g, :] = score_g
+
+    neg_grad = -grad
+
+    if return_scores:
+        return neg_grad, scores
+    return neg_grad
 
 
 def _compute_utility_derivatives_couples(
@@ -2294,6 +2340,77 @@ def compute_gradient_joint(
         grad_total += grad_c
 
     return grad_total
+
+
+def compute_scores_joint(
+    theta: np.ndarray,
+    data_singles_male: Optional[PrecomputedDataSingles],
+    data_singles_female: Optional[PrecomputedDataSingles],
+    data_couples: Optional[PrecomputedDataCouples],
+    spec: EstimationSpec,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Collect per-choice-set score matrix and cluster ids for all groups.
+
+    Returns the score matrix for the POSITIVE log-likelihood and the matching
+    cluster id (idorighh) for each choice-set row. Used to assemble the meat
+    matrix B for the clustered sandwich covariance estimator.
+
+    Sandwich formula:
+        V_cluster = H^{-1} B H^{-1},  B = sum_j s_j s_j',
+        s_j = sum_{g: cluster_ids[g]==j} scores_all[g]
+
+    Sign check (T1):
+        scores_all.sum(axis=0) == -compute_gradient_joint(theta, ...)
+        (i.e. equals the gradient of the positive LL)
+
+    GA15 note:
+        Singles data derives consumption from ils_dispy_real (singles only).
+        Couples data derives consumption from ils_dispy_male + ils_dispy_female.
+        The two paths are independent and must not be confused.
+
+    Parameters
+    ----------
+    theta : np.ndarray, shape (n_params,)
+        Parameter vector (may be initial_values for smoke test; need not be converged).
+    data_singles_male : PrecomputedDataSingles or None
+    data_singles_female : PrecomputedDataSingles or None
+    data_couples : PrecomputedDataCouples or None
+    spec : EstimationSpec
+
+    Returns
+    -------
+    scores_all : np.ndarray, shape (n_groups_total, n_params)
+        Per-choice-set score vectors for the positive log-likelihood.
+        Row order: singles-male groups, singles-female groups, couples groups.
+    cluster_ids_all : np.ndarray, shape (n_groups_total,)
+        idorighh value for each choice-set row (aligned to scores_all).
+    """
+    scores_list = []
+    cluster_ids_list = []
+
+    if data_singles_male is not None:
+        _, scores_sm = compute_gradient_singles(theta, data_singles_male, spec, return_scores=True)
+        scores_list.append(scores_sm)
+        cluster_ids_list.append(data_singles_male.cluster_ids)
+
+    if data_singles_female is not None:
+        _, scores_sf = compute_gradient_singles(theta, data_singles_female, spec, return_scores=True)
+        scores_list.append(scores_sf)
+        cluster_ids_list.append(data_singles_female.cluster_ids)
+
+    if data_couples is not None:
+        _, scores_c = compute_gradient_couples(theta, data_couples, spec, return_scores=True)
+        scores_list.append(scores_c)
+        cluster_ids_list.append(data_couples.cluster_ids)
+
+    if not scores_list:
+        raise ValueError("compute_scores_joint: all data objects are None")
+
+    scores_all = np.vstack(scores_list)
+    cluster_ids_all = np.concatenate(cluster_ids_list)
+
+    return scores_all, cluster_ids_all
 
 
 # ==============================================================================

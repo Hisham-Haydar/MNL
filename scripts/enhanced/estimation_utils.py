@@ -442,6 +442,10 @@ class PrecomputedDataSingles:
     # Chosen alternative indicator (for GAMSPy estimation)
     actual_choice: np.ndarray  # 1.0 if this is the observed choice, 0.0 otherwise
 
+    # Cluster ids for clustered sandwich SE (one per choice-set group, aligned to group_starts)
+    # Contains idorighh for each group; shape (n_groups,).
+    cluster_ids: np.ndarray
+
     # Metadata
     is_male: bool            # True if male dataset, False if female
 
@@ -541,6 +545,10 @@ class PrecomputedDataCouples:
     
     # Chosen alternative indicator (for GAMSPy estimation)
     actual_choice: np.ndarray  # 1.0 if this is the observed choice, 0.0 otherwise
+
+    # Cluster ids for clustered sandwich SE (one per choice-set group, aligned to group_starts)
+    # Contains idorighh for each group; shape (n_groups,).
+    cluster_ids: np.ndarray
 
 
 # ==============================================================================
@@ -731,6 +739,16 @@ def precompute_data_singles(
             "Invalid group boundaries detected. "            f"group_starts: {group_starts[:10]}, group_ends: {group_ends[:10]}"
         )
 
+    # Cluster ids for sandwich SE: one idorighh value per choice-set group.
+    # group_starts[g] is the first row of group g; all rows in a group share the same idorighh.
+    # GA15 note: singles consumption derives from ils_dispy_real (non-null for singles only).
+    if "idorighh" in df.columns:
+        cluster_ids = df["idorighh"].values[group_starts]
+    else:
+        # Fallback: use idhh as cluster key (household-year level, not pooled-year level).
+        logger.warning("  [WARN] 'idorighh' column not found; using 'idhh' as cluster_ids fallback")
+        cluster_ids = df["idhh"].values[group_starts]
+
     # Identify actual choice for each group (for GAMSPy estimation).
     # Priority: explicit chosen flags -> observed-hours match -> max prior fallback.
     actual_choice = np.zeros(n_obs)
@@ -766,7 +784,7 @@ def precompute_data_singles(
                 actual_choice[start + chosen_local_idx] = 1.0
 
     logger.info(f"  Extracted {n_groups:,} groups with {n_obs:,} total observations")
-    
+
     result = PrecomputedDataSingles(
         consumption=consumption,
         leisure=leisure,
@@ -809,6 +827,7 @@ def precompute_data_singles(
         n_groups=n_groups,
         n_obs=n_obs,
         actual_choice=actual_choice,
+        cluster_ids=cluster_ids,
         is_male=is_male
     )
 
@@ -1048,12 +1067,21 @@ def precompute_data_couples(
     group_sizes = df.groupby("idhh", sort=False).size().values
     group_ends = np.cumsum(group_sizes)
     group_starts = np.concatenate([[0], group_ends[:-1]])
-      # Validate group boundaries
+    # Validate group boundaries
     if not np.all(group_ends > group_starts):
         raise ValueError(
             "Invalid group boundaries detected. "
             f"group_starts: {group_starts[:10]}, group_ends: {group_ends[:10]}"
         )
+
+    # Cluster ids for sandwich SE: one idorighh value per choice-set group.
+    # group_starts[g] is the first row of group g; all rows in a group share the same idorighh.
+    # GA15 note: couples consumption derives from ils_dispy_male + ils_dispy_female (not ils_dispy_real).
+    if "idorighh" in df.columns:
+        cluster_ids = df["idorighh"].values[group_starts]
+    else:
+        logger.warning("  [WARN] 'idorighh' column not found; using 'idhh' as cluster_ids fallback")
+        cluster_ids = df["idhh"].values[group_starts]
 
     # Identify actual choice for each group (for GAMSPy estimation).
     # Priority: explicit chosen flags -> observed-hours match -> max prior fallback.
@@ -1153,11 +1181,13 @@ def precompute_data_couples(
         prior=prior,
         c_scale=c_scale,
         l_scale=l_scale,
-        group_ids=group_ids,        group_starts=group_starts,
+        group_ids=group_ids,
+        group_starts=group_starts,
         group_ends=group_ends,
         n_groups=n_groups,
         n_obs=n_obs,
-        actual_choice=actual_choice
+        actual_choice=actual_choice,
+        cluster_ids=cluster_ids,
     )
 
     # Optional dynamic extras (spec-driven job/market opportunity variables).

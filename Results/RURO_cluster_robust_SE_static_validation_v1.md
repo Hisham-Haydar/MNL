@@ -1,6 +1,6 @@
 # RURO Cluster-Robust SE Static Validation
 
-*Generated: 20260521T081051Z | Mode: smoke-test*
+*Generated: 20260521T082333Z | Mode: smoke-test*
 
 ---
 
@@ -9,6 +9,7 @@
 | # | Check | Status | Notes |
 |---|-------|--------|-------|
 | C1 | Module imports | **PASS** | all imports succeeded |
+| C2 | CLI --help works | **PASS** | argparse --help exited with code 0 |
 | C3 | P3a pooled YAML parses | **PASS** |  |
 | C4 | Free-parameter vector length = 55 | **PASS** | n=55, expected=55 |
 | C5 | Pooled parquet schema readable | **PASS** |  |
@@ -27,12 +28,13 @@
 
 ---
 
-## GA17 final status: **CONFIRMED**
+## GA17 final status: **smoke-test callability: CONFIRMED**
 
 | Item | Status |
 |------|--------|
-| GA17 | **CONFIRMED** |
+| GA17 | **smoke-test callability: CONFIRMED** |
+| T4/T5 note | T4 (SE positivity) and T5 (robust vs Hessian comparison) are post-estimation checks requiring converged theta and the true Hessian. They are not part of the smoke-test clearance. |
 | Pooled estimation | NOT authorized |
 | Welfare computation | NOT authorized |
 | Active JMP baseline | M1-clean 2016 |
-| Next gate | SA2 (requires full PASS on GA1-GA17 plus estimation convergence verification) |
+| Next gate | GA17 clearance addendum; if cleared, pooled-estimation execution authorization memo |

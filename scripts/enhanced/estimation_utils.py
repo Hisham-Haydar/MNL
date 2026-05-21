@@ -742,11 +742,24 @@ def precompute_data_singles(
     # Cluster ids for sandwich SE: one idorighh value per choice-set group.
     # group_starts[g] is the first row of group g; all rows in a group share the same idorighh.
     # GA15 note: singles consumption derives from ils_dispy_real (non-null for singles only).
+    #
+    # STRICT MODE: idorighh is the required cluster key for pooled P3a / GA17.
+    # Silent fallback to idhh is NOT acceptable for GA17 clearance.
+    # idhh clusters at the household-year level; idorighh clusters across years.
+    # The fallback path is retained only for legacy single-year datasets (pre-pooling)
+    # and must never be silently invoked on the P3a pooled parquet.
     if "idorighh" in df.columns:
         cluster_ids = df["idorighh"].values[group_starts]
     else:
-        # Fallback: use idhh as cluster key (household-year level, not pooled-year level).
-        logger.warning("  [WARN] 'idorighh' column not found; using 'idhh' as cluster_ids fallback")
+        # Legacy single-year fallback: idhh == idorighh in single-year data.
+        # NOT acceptable for pooled P3a GA17 clearance — log an explicit warning.
+        logger.warning(
+            "  [WARN] 'idorighh' column not found in singles data. "
+            "Falling back to 'idhh' as cluster_ids. "
+            "This fallback is NOT valid for pooled P3a / GA17 clearance: "
+            "idhh is a household-year key; only idorighh is the correct cross-year cluster key. "
+            "If this is the P3a pooled parquet, ensure idorighh is present."
+        )
         cluster_ids = df["idhh"].values[group_starts]
 
     # Identify actual choice for each group (for GAMSPy estimation).
@@ -1077,10 +1090,22 @@ def precompute_data_couples(
     # Cluster ids for sandwich SE: one idorighh value per choice-set group.
     # group_starts[g] is the first row of group g; all rows in a group share the same idorighh.
     # GA15 note: couples consumption derives from ils_dispy_male + ils_dispy_female (not ils_dispy_real).
+    # Silent fallback to idhh is NOT acceptable for GA17 clearance.
+    # idhh clusters at the household-year level; idorighh clusters across years.
+    # The fallback path is retained only for legacy single-year datasets (pre-pooling)
+    # and must never be silently invoked on the P3a pooled parquet.
     if "idorighh" in df.columns:
         cluster_ids = df["idorighh"].values[group_starts]
     else:
-        logger.warning("  [WARN] 'idorighh' column not found; using 'idhh' as cluster_ids fallback")
+        # Legacy single-year fallback: idhh == idorighh in single-year data.
+        # NOT acceptable for pooled P3a GA17 clearance — log an explicit warning.
+        logger.warning(
+            "  [WARN] 'idorighh' column not found in couples data. "
+            "Falling back to 'idhh' as cluster_ids. "
+            "This fallback is NOT valid for pooled P3a / GA17 clearance: "
+            "idhh is a household-year key; only idorighh is the correct cross-year cluster key. "
+            "If this is the P3a pooled parquet, ensure idorighh is present."
+        )
         cluster_ids = df["idhh"].values[group_starts]
 
     # Identify actual choice for each group (for GAMSPy estimation).

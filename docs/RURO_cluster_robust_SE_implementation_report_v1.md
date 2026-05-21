@@ -6,9 +6,11 @@
 
 ## 1. Implementation verdict
 
-**GA17: CONFIRMED.**
+**GA17 infrastructure smoke-test callability: CONFIRMED.**
 
-All 16 smoke-test checks pass (C1–C17). The score interface, cluster aggregation,
+All 17 smoke-test checks pass (C1–C17, including C2 CLI-help added in correction v1).
+T4 (SE positivity) and T5 (robust vs Hessian comparison) are post-estimation checks
+requiring converged theta and the true Hessian; they are not part of the smoke-test clearance. The score interface, cluster aggregation,
 sandwich covariance interface, and T1 sign check all pass at initial_values
 (dummy theta, no estimation required). The implementation is complete.
 
@@ -296,23 +298,23 @@ No memory or runtime risks beyond those of the existing SE computation.
 
 ## 17. Whether GA17 can be re-audited
 
-**Yes, and it is now CONFIRMED.**
+**Yes, and it is now infrastructure smoke-test callability: CONFIRMED.**
 
 The smoke-test CLI (`run_cluster_robust_se.py --mode smoke-test`) is fully
 reproducible: it reads the P3a pooled YAML and the pooled parquet (bounded
 read), builds precomputed data from initial_values, calls
 `compute_scores_joint`, assembles the meat matrix, and calls
-`compute_cluster_robust_se` with a dummy Hessian. All 16 checks (C1–C17)
-pass deterministically.
+`compute_cluster_robust_se` with a dummy Hessian. All 17 checks (C1–C17,
+including C2 CLI-help added in correction v1) pass deterministically.
 
 To re-audit post-estimation: run with `--mode post-estimation
 --results-json <path>` once converged theta is available. T3 (9,657 cluster
 count on full dataset), T4 (SE positivity), and T5 (robust vs. Hessian
 comparison) will be completed at that stage.
 
-**GA17: CONFIRMED.**
+**GA17 infrastructure smoke-test callability: CONFIRMED.**
+**T4/T5: post-estimation checks — not part of smoke-test clearance.**
 **Pooled estimation: NOT authorized.**
 **Welfare computation: NOT authorized.**
 **M1-clean 2016 remains the active JMP baseline.**
-**Next gate: SA2** — requires full PASS on GA1–GA17 plus estimation
-convergence verification.
+**Next gate: GA17 clearance addendum; if cleared, pooled-estimation execution authorization memo.**

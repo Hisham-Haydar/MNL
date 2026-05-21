@@ -179,6 +179,25 @@ def run_smoke_test(
     logger.info("[C1] Module imports: PASS")
 
     # ------------------------------------------------------------------
+    # C2: CLI --help works
+    # ------------------------------------------------------------------
+    try:
+        parser = build_parser()
+        parser.parse_args(["--spec", str(spec_path), "--parquet", str(parquet_path), "--help"])
+        # parse_args with --help raises SystemExit(0) — catch it as success
+        results["checks"]["C2_cli_help_works"] = {"passed": True, "note": "argparse --help exits cleanly"}
+    except SystemExit as exc:
+        c2_pass = (exc.code == 0)
+        results["checks"]["C2_cli_help_works"] = {
+            "passed": c2_pass,
+            "note": f"argparse --help exited with code {exc.code}",
+        }
+        logger.info(f"[C2] CLI --help: {'PASS' if c2_pass else 'FAIL'}")
+    except Exception as exc:
+        results["checks"]["C2_cli_help_works"] = {"passed": False, "error": str(exc)}
+        logger.error(f"[C2] CLI --help FAILED: {exc}")
+
+    # ------------------------------------------------------------------
     # C3: Parse spec
     # ------------------------------------------------------------------
     try:
@@ -513,18 +532,25 @@ def run_smoke_test(
     required_checks = ["C9_score_interface_callable", "C12_T1_sign_check",
                        "C13_T2_meat_symmetry", "C14_sandwich_callable", "C15_robust_se_finite"]
     all_required = all(results["checks"].get(k, {}).get("passed", False) for k in required_checks)
-    ga17_status = "CONFIRMED" if all_required else "PENDING"
-    results["GA17_status"] = ga17_status
+    ga17_label = "smoke-test callability: CONFIRMED" if all_required else "PENDING"
+    results["GA17_status"] = "CONFIRMED" if all_required else "PENDING"
     results["final_statements"] = {
-        "GA17": ga17_status,
+        "GA17": ga17_label,
+        "T4_T5_note": (
+            "T4 (SE positivity) and T5 (robust vs Hessian comparison) are post-estimation checks "
+            "requiring converged theta and the true Hessian. They are not part of the smoke-test clearance."
+        ),
         "pooled_estimation": "NOT authorized",
         "welfare_computation": "NOT authorized",
         "active_baseline": "M1-clean 2016",
-        "next_gate": "SA2 (requires full PASS on GA1-GA17 plus estimation convergence verification)",
+        "next_gate": (
+            "GA17 clearance addendum; if cleared, pooled-estimation execution authorization memo"
+        ),
     }
-    logger.info(f"\nGA17 status: {ga17_status}")
-    if ga17_status == "CONFIRMED":
-        logger.info("All required smoke-test checks passed. GA17 can be recorded as CONFIRMED.")
+    logger.info(f"\nGA17 status: {results['GA17_status']}")
+    if all_required:
+        logger.info("All required smoke-test checks passed. GA17 infrastructure smoke-test callability: CONFIRMED.")
+        logger.info("Note: T4/T5 robust-SE diagnostics using converged theta and true Hessian remain post-estimation checks.")
     else:
         failed = [k for k in required_checks if not results["checks"].get(k, {}).get("passed", False)]
         logger.warning(f"GA17 PENDING. Failed checks: {failed}")
@@ -617,6 +643,7 @@ def _write_md_report(results: dict, output_path: Path) -> None:
 
     check_rows = [
         ("C1",  "Module imports",                        "C1_module_imports"),
+        ("C2",  "CLI --help works",                      "C2_cli_help_works"),
         ("C3",  "P3a pooled YAML parses",                "C3_spec_parses"),
         ("C4",  "Free-parameter vector length = 55",     "C4_free_param_length"),
         ("C5",  "Pooled parquet schema readable",        "C5_schema_readable"),
@@ -646,17 +673,21 @@ def _write_md_report(results: dict, output_path: Path) -> None:
             note = f"max_diff={r['max_abs_diff']:.2e}"
         lines.append(f"| {num} | {label} | **{status}** | {note} |")
 
+    fs = results.get("final_statements", {})
+    ga17_display = fs.get("GA17", ga17)
     lines += [
         "",
         "---",
         "",
-        f"## GA17 final status: **{ga17}**",
+        f"## GA17 final status: **{ga17_display}**",
         "",
         "| Item | Status |",
         "|------|--------|",
     ]
-    fs = results.get("final_statements", {})
-    lines.append(f"| GA17 | **{fs.get('GA17', ga17)}** |")
+    lines.append(f"| GA17 | **{ga17_display}** |")
+    t45 = fs.get("T4_T5_note", "")
+    if t45:
+        lines.append(f"| T4/T5 note | {t45} |")
     lines.append(f"| Pooled estimation | {fs.get('pooled_estimation', 'NOT authorized')} |")
     lines.append(f"| Welfare computation | {fs.get('welfare_computation', 'NOT authorized')} |")
     lines.append(f"| Active JMP baseline | {fs.get('active_baseline', 'M1-clean 2016')} |")

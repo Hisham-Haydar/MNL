@@ -176,6 +176,7 @@ def main():
         "--auto-timestamp",
         "--group", "joint",
         "--solver", "gamspy-conopt",
+        "--vectorized",
         "--warm-start", "none",
         "--init-params", str(M1CLEAN_JSON),
         "--verbose",
@@ -229,6 +230,7 @@ def main():
         "--auto-timestamp",
         "--group", "joint",
         "--solver", "gamspy-conopt",
+        "--vectorized",
         "--warm-start", "none",
         "--verbose",
     ], "Start 2 estimation")
@@ -275,6 +277,7 @@ def main():
         "--auto-timestamp",
         "--group", "joint",
         "--solver", "gamspy-conopt",
+        "--vectorized",
         "--warm-start", "none",
         "--init-params", str(perturbed_json),
         "--verbose",

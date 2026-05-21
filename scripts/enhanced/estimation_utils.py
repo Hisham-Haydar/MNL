@@ -592,10 +592,14 @@ def precompute_data_singles(
         If required columns missing or data not sorted
     """
     logger = logging.getLogger(__name__)
-    logger.info(f"Precomputing data for {'male' if is_male else 'female'} singles ({len(df):,} rows)...")    # Check sorted
-    if not df["idhh"].is_monotonic_increasing:
+    logger.info(f"Precomputing data for {'male' if is_male else 'female'} singles ({len(df):,} rows)...")
+    # For pooled multi-year data sort by (idhh, year_tag) so each household-year block
+    # is contiguous; for single-year data this is a no-op.
+    if "year_tag" in df.columns and df["year_tag"].nunique() > 1:
+        df = df.sort_values(["idhh", "year_tag"]).reset_index(drop=True)
+    elif not df["idhh"].is_monotonic_increasing:
         raise ValueError("DataFrame must be sorted by idhh")
-    
+
     n_obs = len(df)
 
     # Get normalization constants (support both flat and nested structure)
@@ -723,15 +727,23 @@ def precompute_data_singles(
     else:
         reg2 = reg3 = reg4 = reg5 = reg6 = reg7 = reg8 = np.zeros(n_obs)
 
-    # Group structure
-    group_ids = df["idhh"].unique()
-    n_groups = len(group_ids)
+    # Group structure: for pooled multi-year data group by (idhh, year_tag) so each
+    # household-year is one independent choice situation (100 alternatives, 1 chosen).
+    # For single-year data year_tag is constant so this is equivalent to groupby(idhh).
+    # Requires data to be contiguous by group (P3a parquet guarantees sort by idhh, year_tag).
+    if "year_tag" in df.columns and df["year_tag"].nunique() > 1:
+        _group_col = (df["idhh"].astype(np.int64).values * 10
+                      + df["year_tag"].astype(np.int64).values)
+    else:
+        _group_col = df["idhh"].astype(np.int64).values
 
-    # Find group boundaries (assuming sorted by idhh)
-    # Use cumsum to get the size of each group, then compute cumulative positions
-    group_sizes = df.groupby("idhh", sort=False).size().values
-    group_ends = np.cumsum(group_sizes)
-    group_starts = np.concatenate([[0], group_ends[:-1]])
+    # O(n) boundary detection: find where group key changes
+    _changes = np.where(np.diff(_group_col) != 0)[0] + 1
+    group_starts = np.concatenate([[0], _changes])
+    group_ends = np.concatenate([_changes, [n_obs]])
+    group_sizes = group_ends - group_starts
+    n_groups = len(group_starts)
+    group_ids = _group_col[group_starts]  # representative key per group
     
     # Validate group boundaries
     if not np.all(group_ends > group_starts):
@@ -917,10 +929,13 @@ def precompute_data_couples(
     """
     logger = logging.getLogger(__name__)
     logger.info(f"Precomputing data for couples ({len(df):,} rows)...")
-
-    if not df["idhh"].is_monotonic_increasing:
+    # For pooled multi-year data sort by (idhh, year_tag) so each household-year block
+    # is contiguous; for single-year data this is a no-op.
+    if "year_tag" in df.columns and df["year_tag"].nunique() > 1:
+        df = df.sort_values(["idhh", "year_tag"]).reset_index(drop=True)
+    elif not df["idhh"].is_monotonic_increasing:
         raise ValueError("DataFrame must be sorted by idhh")
-    
+
     n_obs = len(df)
 
     # Get normalization constants (support both flat and nested structure)
@@ -1072,14 +1087,21 @@ def precompute_data_couples(
     else:
         reg2 = reg3 = reg4 = reg5 = reg6 = reg7 = reg8 = np.zeros(n_obs)
 
-    # Group structure
-    group_ids = df["idhh"].unique()
-    n_groups = len(group_ids)
-    
-    # Find group boundaries using cumulative sum for robustness
-    group_sizes = df.groupby("idhh", sort=False).size().values
-    group_ends = np.cumsum(group_sizes)
-    group_starts = np.concatenate([[0], group_ends[:-1]])
+    # Group structure: for pooled multi-year data group by (idhh, year_tag) so each
+    # household-year is one independent choice situation (100 alternatives, 1 chosen).
+    # For single-year data year_tag is constant so this is equivalent to groupby(idhh).
+    if "year_tag" in df.columns and df["year_tag"].nunique() > 1:
+        _group_col = (df["idhh"].astype(np.int64).values * 10
+                      + df["year_tag"].astype(np.int64).values)
+    else:
+        _group_col = df["idhh"].astype(np.int64).values
+
+    _changes = np.where(np.diff(_group_col) != 0)[0] + 1
+    group_starts = np.concatenate([[0], _changes])
+    group_ends = np.concatenate([_changes, [n_obs]])
+    group_sizes = group_ends - group_starts
+    n_groups = len(group_starts)
+    group_ids = _group_col[group_starts]
     # Validate group boundaries
     if not np.all(group_ends > group_starts):
         raise ValueError(

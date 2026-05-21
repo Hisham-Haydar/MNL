@@ -1,4 +1,6 @@
 {
+  "_artifact_label": "PLACEHOLDER-THETA INTERFACE CHECK — V7 repair diagnostic only. Theta = initial_values from spec, NOT converged pooled theta. T4 failure (15 non-positive SEs) is expected and is NOT a blocker: the Hessian is ill-conditioned (cond=3.5e73) at initial_values far from the optimum. T3 PASS (9,657 clusters) and PE1-PE7 PASS confirm the post-estimation mode is callable end-to-end. T4/T5 must be re-run after estimation with the converged pooled theta and true Hessian.",
+  "_authorization": "docs/JMP_pooled_P3a_estimation_execution_repair_authorization_v1.md §11 V7",
   "run_timestamp": "20260521T114944Z",
   "mode": "post-estimation",
   "spec": "scripts\\enhanced\\specifications\\estimation_spec_ruro_occ_P3a_pooled.yaml",

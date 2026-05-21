@@ -20,6 +20,7 @@ Created: 2026-01-16
 """
 
 import logging
+import math
 import time
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Any
@@ -919,13 +920,19 @@ def estimate_couples_gamspy(
 
             # Handle optional theta_c parameter (None = log utility)
             if spec.utility_consumption_theta:
-                # Couples_household routes via the helper for symmetry; under
-                # M0a-clean this still returns the legacy shared `theta_c`.
-                theta_c_base = (
-                    spec.theta_c_param_name('couples_household') or 'theta_c'
-                )
-                theta_c_param = get_param_name(theta_c_base, 'couples_household', param_vars)
-                bc_c = boxcox_gamspy(c_scaled, param_vars[theta_c_param])
+                if spec.utility_consumption_theta_couples_fixed is not None:
+                    # Fixed (non-estimated) couples theta_c: compile-time constant
+                    _tc = spec.utility_consumption_theta_couples_fixed
+                    _cv = max(float(c_scaled), LOG_EPS)
+                    bc_c = math.log(_cv) if abs(_tc) < 1e-10 else (math.exp(_tc * math.log(_cv)) - 1.0) / _tc
+                else:
+                    # Couples_household routes via the helper for symmetry; under
+                    # M0a-clean this still returns the legacy shared `theta_c`.
+                    theta_c_base = (
+                        spec.theta_c_param_name('couples_household') or 'theta_c'
+                    )
+                    theta_c_param = get_param_name(theta_c_base, 'couples_household', param_vars)
+                    bc_c = boxcox_gamspy(c_scaled, param_vars[theta_c_param])
             else:
                 # Log utility when theta=None
                 bc_c = gp_log(c_scaled)
@@ -2005,13 +2012,19 @@ def estimate_joint_gamspy(
 
             # Handle optional theta_c parameter (None = log utility)
             if spec.utility_consumption_theta:
-                # Couples_household: helper returns legacy shared `theta_c`
-                # (M0a-clean does NOT pool couples with singles).
-                theta_c_base = (
-                    spec.theta_c_param_name('couples_household') or 'theta_c'
-                )
-                theta_c_param = get_param_name(theta_c_base, 'couples_household', param_vars)
-                bc_c = boxcox_gamspy(c_val, param_vars[theta_c_param])
+                if spec.utility_consumption_theta_couples_fixed is not None:
+                    # Fixed (non-estimated) couples theta_c: compile-time constant
+                    _tc = spec.utility_consumption_theta_couples_fixed
+                    _cv = max(float(c_val), LOG_EPS)
+                    bc_c = math.log(_cv) if abs(_tc) < 1e-10 else (math.exp(_tc * math.log(_cv)) - 1.0) / _tc
+                else:
+                    # Couples_household: helper returns legacy shared `theta_c`
+                    # (M0a-clean does NOT pool couples with singles).
+                    theta_c_base = (
+                        spec.theta_c_param_name('couples_household') or 'theta_c'
+                    )
+                    theta_c_param = get_param_name(theta_c_base, 'couples_household', param_vars)
+                    bc_c = boxcox_gamspy(c_val, param_vars[theta_c_param])
             else:
                 # Log utility when theta=None
                 bc_c = gp_log(c_val)

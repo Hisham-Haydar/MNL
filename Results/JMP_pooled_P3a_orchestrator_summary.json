@@ -1,0 +1,28 @@
+{
+  "orchestrator": "run_pooled_P3a_estimation.py",
+  "started": "20260521T143815Z",
+  "starts": {
+    "start_1": {
+      "run_dir": "\\\\crc\\users\\hisham\\Desktop\\Nizam_Hisham\\MNL\\outputs\\estimates\\fr\\spec\\ruro_occ_P3a_pooled\\gamspy\\start_1\\run_2026-05-21_16-38-29",
+      "results_json": "\\\\crc\\users\\hisham\\Desktop\\Nizam_Hisham\\MNL\\outputs\\estimates\\fr\\spec\\ruro_occ_P3a_pooled\\gamspy\\start_1\\run_2026-05-21_16-38-29\\estimation_results.json",
+      "se_output": "\\\\crc\\users\\hisham\\Desktop\\Nizam_Hisham\\MNL\\Results\\JMP_pooled_P3a_start1_cluster_robust_se.json",
+      "returncode": 0,
+      "init_params_source": "\\\\crc\\users\\hisham\\Desktop\\Nizam_Hisham\\MNL\\outputs\\estimates\\fr\\spec\\ruro_occ_M1_clean\\gamspy\\estimation_spec_ruro_occ_M1_clean\\run_2026-05-18_12-38-37\\estimation_results.json",
+      "init_method": "init-params from M1-clean (load_custom_initial_values maps 53\u219255 by name; beta_E_y2015=beta_E_y2017=0.0 from spec default)"
+    },
+    "start_2": {
+      "run_dir": "\\\\crc\\users\\hisham\\Desktop\\Nizam_Hisham\\MNL\\outputs\\estimates\\fr\\spec\\ruro_occ_P3a_pooled\\gamspy\\start_2\\run_2026-05-21_17-10-39",
+      "results_json": "\\\\crc\\users\\hisham\\Desktop\\Nizam_Hisham\\MNL\\outputs\\estimates\\fr\\spec\\ruro_occ_P3a_pooled\\gamspy\\start_2\\run_2026-05-21_17-10-39\\estimation_results.json",
+      "se_output": "\\\\crc\\users\\hisham\\Desktop\\Nizam_Hisham\\MNL\\Results\\JMP_pooled_P3a_start2_cluster_robust_se.json",
+      "returncode": 0
+    },
+    "start_3": {
+      "run_dir": "\\\\crc\\users\\hisham\\Desktop\\Nizam_Hisham\\MNL\\outputs\\estimates\\fr\\spec\\ruro_occ_P3a_pooled\\gamspy\\start_3\\run_2026-05-21_17-42-29",
+      "results_json": "\\\\crc\\users\\hisham\\Desktop\\Nizam_Hisham\\MNL\\outputs\\estimates\\fr\\spec\\ruro_occ_P3a_pooled\\gamspy\\start_3\\run_2026-05-21_17-42-29\\estimation_results.json",
+      "se_output": "\\\\crc\\users\\hisham\\Desktop\\Nizam_Hisham\\MNL\\Results\\JMP_pooled_P3a_start3_cluster_robust_se.json",
+      "returncode": 0,
+      "perturbed_init_json": "\\\\crc\\users\\hisham\\Desktop\\Nizam_Hisham\\MNL\\Results\\JMP_pooled_P3a_start3_perturbed_init.json"
+    }
+  },
+  "finished": "20260521T161114Z"
+}

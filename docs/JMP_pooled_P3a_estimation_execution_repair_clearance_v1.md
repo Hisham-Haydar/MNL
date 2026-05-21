@@ -230,11 +230,11 @@ to an ill-conditioned Hessian (condition number ≈ 3.5 × 10⁷³) at a
 theta far from the optimum; the robust SE vector is degenerate (≈ 10⁻¹⁶
 or exactly 0.0) across roughly fifteen parameter positions. This T4
 failure is expected at non-converged theta and is NOT a preflight
-blocker. It is also NOT inference validation: the cluster-robust SEs in
-the V7 artifact are not valid standard errors and must be discarded.
-T4, T5, and the on-the-converged-run confirmation of T3 must be
-recomputed at estimation time with the converged pooled theta and the
-true Hessian.
+blocker. The V7 placeholder JSON records the placeholder VCV path
+historically, but the no-value placeholder VCV binary was intentionally
+removed in commit 85ee874. The placeholder robust-SE/VCV outputs carry
+no inference content and must not be used; T3/T4/T5 must be rerun after
+estimation with converged theta and the true Hessian.
 
 Preflight v2 therefore passes cleanly for the purpose of authorizing
 execution: the infrastructure is complete and callable, the data is

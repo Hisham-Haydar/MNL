@@ -312,6 +312,26 @@ spec defaults, and perturbed M1-clean) and the SA2 post-estimation
 diagnostics. The memo is a separate document; it is not authorised by
 this Gate-A audit.
 
+**GA15 structural carry-forward note (required in the authorization
+chain).** The `ils_dispy_real` column in the pooled parquet is
+singles-only: it is non-null for all 500,700 singles rows and null
+for all 743,800 couples rows. Couples real income enters the
+estimation engine via the gender-specific columns `ils_dispy_male`
+and `ils_dispy_female` (both present in the parquet schema), which
+carry the CPI-deflated disposable income for each partner. The scalar
+`ils_dispy_real` column is not the couples income variable.
+
+This is a structural property of the pooled parquet pipeline, not a
+data error. It does not invalidate Gate-A or the pooled construction.
+However, it must be explicitly acknowledged in the pooled-estimation
+authorization memo and in any cluster-robust SE implementation that
+reads income data, so that no downstream step assumes `ils_dispy_real`
+covers couples rows. The authorization memo must confirm that the
+estimation engine reads `ils_dispy_male` / `ils_dispy_female` for
+couples and `ils_dispy_real` for singles (matching the existing
+single-year M1-clean engine behaviour), and that the CPI deflation is
+correctly applied to both the scalar and gender-specific columns.
+
 **Required final statements:**
 
 **Gate-A verdict: PASS WITH BLOCKER.**

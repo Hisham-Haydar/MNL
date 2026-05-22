@@ -41,6 +41,26 @@ from typing import Dict, List, Any, Optional, Tuple, Callable, Union
 from dataclasses import dataclass, field
 from datetime import datetime
 
+# Diagnostics bundle: shared schema for HTML + Markdown rendering
+try:
+    from diagnostics_bundle import (
+        build_diagnostics_bundle,
+        write_bundle_artifacts,
+        render_fit_stats_split_html,
+        render_fit_stats_split_markdown,
+        render_solver_section_markdown,
+        render_gradient_section_markdown,
+        render_inference_section_markdown,
+        render_decision_summary_markdown,
+        PROFILE_CHOICES,
+        DEFAULT_PROFILE,
+    )
+    HAS_DIAGNOSTICS_BUNDLE = True
+except ImportError:  # pragma: no cover - defensive
+    HAS_DIAGNOSTICS_BUNDLE = False
+    PROFILE_CHOICES = ("decision", "standard", "full", "technical")
+    DEFAULT_PROFILE = "standard"
+
 
 # =============================================================================
 # NUMERIC HELPER FUNCTIONS
@@ -3633,11 +3653,20 @@ def generate_html_report_styled(
     hessian_diagnostics: Dict[str, Any] = None,
     estimation_results_path: Optional[Path] = None,
     run_metadata: Optional[Dict[str, Any]] = None,
+    diagnostics_bundle: Optional[Any] = None,
+    report_profile: str = DEFAULT_PROFILE,
 ) -> Path:
     """
     Generate comprehensive HTML report with professional styling.
 
     Matches the aesthetics of vw_pooled_post_estimation_report.html
+
+    If ``diagnostics_bundle`` is supplied, the report renders the four
+    reorganized fit-statistics sections (A/B/C/D) from the shared bundle
+    *before* the legacy combined "Model Fit Statistics" table, which is
+    preserved inside a collapsed <details> appendix for backward
+    compatibility (and is the only fit-stats view rendered under the
+    'technical' profile's appendix mode).
     """
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
@@ -3805,6 +3834,16 @@ def generate_html_report_styled(
     .math-block.numerical { background: #fef5e7; border-left: 3px solid #f39c12; }
     @media (max-width: 768px) { .two-col, .four-col, .contour-grid { grid-template-columns: 1fr; } }
     """    # Build fit stats section
+    # Bundle-driven split sections (A/B/C/D). Falls back to empty string if
+    # diagnostics_bundle was not supplied or the bundle module is unavailable.
+    fit_stats_split_html = ""
+    if diagnostics_bundle is not None and HAS_DIAGNOSTICS_BUNDLE:
+        try:
+            fit_stats_split_html = render_fit_stats_split_html(diagnostics_bundle)
+        except Exception as e:
+            LOGGER.warning(f"Could not render split fit-stats sections: {e}")
+            fit_stats_split_html = ""
+
     fit_stats_rows = ""
     for k, v in fit_stats.items():
         if is_num(v):
@@ -4519,12 +4558,17 @@ def generate_html_report_styled(
 
     {time_section}
 
+    {fit_stats_split_html}
+
     <section>
-        <h2>📈 Model Fit Statistics</h2>
-        <table class="table" style="width:auto;">
+        <details>
+          <summary><strong>📈 Legacy combined fit-statistics dump (technical appendix)</strong></summary>
+          <p style="margin-top:0.5em;"><em>This is the legacy "kitchen-sink" table preserved for backward compatibility. The four reorganized sections above (A–D) are the canonical view. This table mixes core fit, null-model, bound and economic-sanity values; prefer the sections above for adoption decisions.</em></p>
+          <table class="table" style="width:auto;">
             {fit_stats_rows}
-        </table>
-        {bounds_explanation}
+          </table>
+          {bounds_explanation}
+        </details>
     </section>
 
     {identification_html}
@@ -6770,6 +6814,8 @@ def generate_llm_markdown_summary(
     spec_config: Optional[Path] = None,
     mu_results: Optional[Dict[str, Any]] = None,
     spec: Optional[Any] = None,
+    diagnostics_bundle: Optional[Any] = None,
+    report_profile: str = DEFAULT_PROFILE,
 ) -> Path:
     """
     Write a compact, graph-free Markdown report for LLM/paper workflows.
@@ -7028,6 +7074,21 @@ def generate_llm_markdown_summary(
     top_significant_rows = _top_significant_rows(param_df, n=15)
     git_info = _git_revision_info()
 
+    # Bundle-driven reorganized fit-stats sections (A/B/C/D). Falls back
+    # to a placeholder note if the bundle is unavailable.
+    if diagnostics_bundle is not None and HAS_DIAGNOSTICS_BUNDLE:
+        try:
+            _bundle_fit_lines = render_fit_stats_split_markdown(diagnostics_bundle)
+            _bundle_fit_split_md_block = "\n".join(_bundle_fit_lines)
+        except Exception as _e:
+            LOGGER.warning(f"Could not render bundle Markdown fit sections: {_e}")
+            _bundle_fit_split_md_block = ""
+    else:
+        _bundle_fit_split_md_block = (
+            "## Fit Statistics (reorganized)\n\n"
+            "_Diagnostics bundle unavailable; see legacy combined table below._\n"
+        )
+
     fit_rows = [
         ["log_likelihood", fit_stats.get("log_likelihood")],
         ["ll_null_uniform", fit_stats.get("ll_null_uniform")],
@@ -7225,7 +7286,8 @@ def generate_llm_markdown_summary(
             ["group", "success", "message", "iterations", "n_function_evaluations", "gradient_norm", "log_likelihood", "walltime_seconds"],
             group_rows,
         ),
-        "## Fit Statistics",
+        _bundle_fit_split_md_block,
+        "## Fit Statistics (legacy combined table — kept for backward compatibility)",
         "",
         _md_table(["metric", "value"], fit_rows),
         "## Fit Moments",
@@ -7380,6 +7442,7 @@ def run_styled_post_estimation(
     spec_config: Path = None,
     llm_summary_dir: Optional[Path] = Path("reports"),
     report_title: Optional[str] = None,
+    report_profile: str = DEFAULT_PROFILE,
 ) -> Dict[str, Any]:
     """
     Main entry point for styled post-estimation.
@@ -7763,6 +7826,33 @@ def run_styled_post_estimation(
                 hessian_diagnostics = group_data['hessian_diagnostics']
                 break
 
+    # Build the diagnostics bundle BEFORE rendering HTML so the HTML can
+    # render the four reorganized fit-statistics sections (A/B/C/D) from
+    # the shared bundle. Solver-log / cluster-SE / gradient artifacts are
+    # supplied later by run_extended_diagnostics, which rebuilds the
+    # bundle with those inputs and rewrites the JSON.
+    diagnostics_bundle = None
+    if HAS_DIAGNOSTICS_BUNDLE:
+        try:
+            diagnostics_bundle = build_diagnostics_bundle(
+                profile=report_profile,
+                results_data=data,
+                parsed_params=parsed,
+                fit_stats=fit_stats,
+                bound_diagnostics=bound_diagnostics,
+                mu_results=mu_results,
+                prob_diagnostics=prob_diagnostics,
+                hessian_diagnostics=hessian_diagnostics,
+                cluster_se_data=None,
+                solver_diag=None,
+                gradient_diag=None,
+                repro_meta=None,
+                run_metadata=run_metadata,
+            )
+        except Exception as e:
+            LOGGER.warning(f"Diagnostics bundle build failed (pre-HTML): {e}", exc_info=True)
+            diagnostics_bundle = None
+
     # Generate timestamped filename for report
     report_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     html_path = output_dir / f'{prefix}post_estimation_report_{report_timestamp}.html'
@@ -7784,6 +7874,8 @@ def run_styled_post_estimation(
         hessian_diagnostics=hessian_diagnostics,
         estimation_results_path=results_json_path,
         run_metadata=run_metadata,
+        diagnostics_bundle=diagnostics_bundle,
+        report_profile=report_profile,
     )
 
     # Save CSV outputs
@@ -7825,6 +7917,8 @@ def run_styled_post_estimation(
             spec_config=spec_config,
             mu_results=mu_results,
             spec=spec,
+            diagnostics_bundle=diagnostics_bundle,
+            report_profile=report_profile,
         )
 
     LOGGER.info("\n" + "=" * 70)
@@ -7834,6 +7928,22 @@ def run_styled_post_estimation(
     if llm_summary_path is not None:
         LOGGER.info(f"  Low-token Summary: {llm_summary_path}")
     LOGGER.info(f"  Total Time: {post_estimation_time:.1f}s")
+
+    # ------------------------------------------------------------------
+    # Diagnostics bundle: write canonical artifact files. The bundle was
+    # built above (before HTML render); here we serialize it. Solver-log /
+    # cluster-SE / gradient artifacts are added later from
+    # run_extended_diagnostics, which rewrites the JSON if those inputs
+    # are supplied in the same invocation.
+    # ------------------------------------------------------------------
+    bundle_paths: Dict[str, Path] = {}
+    if HAS_DIAGNOSTICS_BUNDLE and diagnostics_bundle is not None:
+        try:
+            bundle_paths = write_bundle_artifacts(diagnostics_bundle, output_dir, prefix=prefix)
+            for label, p in bundle_paths.items():
+                LOGGER.info(f"   {label}: {p}")
+        except Exception as e:
+            LOGGER.warning(f"Diagnostics bundle write failed: {e}", exc_info=True)
 
     return {
         'parsed_params': parsed,
@@ -7847,6 +7957,11 @@ def run_styled_post_estimation(
         'plot_paths': plot_paths,
         'prob_diagnostics': prob_diagnostics,
         'bound_diagnostics': bound_diagnostics,
+        'report_profile': report_profile,
+        'diagnostics_bundle_json': bundle_paths.get("diagnostics_bundle"),
+        'enhanced_parameter_table_csv': bundle_paths.get("enhanced_parameter_table"),
+        'solver_diagnostics_json': bundle_paths.get("solver_diagnostics"),
+        'inference_diagnostics_json': bundle_paths.get("inference_diagnostics"),
     }
 
 
@@ -8700,6 +8815,7 @@ def run_extended_diagnostics(
     strict_report: bool = False,
     cluster_col: Optional[str] = None,
     report_title: Optional[str] = None,
+    report_profile: str = DEFAULT_PROFILE,
 ) -> Dict[str, Any]:
     """Orchestrate all extended post-estimation diagnostics and write artifacts.
 
@@ -8999,6 +9115,61 @@ def run_extended_diagnostics(
                 + "\n".join(f"  - {i}" for i in issues)
             )
 
+    # ------------------------------------------------------------------
+    # Enriched diagnostics bundle: now that extended inputs (solver log,
+    # cluster SE, gradient) are loaded, rebuild the bundle so the JSON
+    # artifact includes them. This overwrites the base bundle written
+    # by run_styled_post_estimation when both run in the same invocation.
+    # ------------------------------------------------------------------
+    enriched_bundle_paths: Dict[str, Path] = {}
+    if HAS_DIAGNOSTICS_BUNDLE:
+        try:
+            # Best-effort: load parsed params from results_data via the existing
+            # _build_enhanced_param_df route + the raw arrays. The bundle
+            # builder degrades gracefully when parsed_params is minimal.
+            class _MinimalParsed:
+                pass
+            mp = _MinimalParsed()
+            mp.param_names = []
+            mp.theta = []
+            mp.bounds = None
+            # Pull names/theta/bounds out of results JSON if available
+            for gd in (results_data.get("results", {}) or {}).values():
+                if isinstance(gd, dict) and "parameters" in gd:
+                    params_dict = gd["parameters"] or {}
+                    mp.param_names = list(params_dict.keys())
+                    mp.theta = list(params_dict.values())
+                    raw_bounds = gd.get("bounds")
+                    if isinstance(raw_bounds, dict):
+                        mp.bounds = [raw_bounds.get(n, (None, None)) for n in mp.param_names]
+                    elif isinstance(raw_bounds, list):
+                        mp.bounds = raw_bounds
+                    break
+            bundle = build_diagnostics_bundle(
+                profile=report_profile,
+                results_data=results_data,
+                parsed_params=mp,
+                fit_stats={
+                    "log_likelihood": (results_data.get("summary") or {}).get("joint_ll"),
+                    "n_observations": (results_data.get("summary") or {}).get("n_obs_total"),
+                    "n_groups": (results_data.get("summary") or {}).get("n_groups_total"),
+                    "n_parameters": len(mp.param_names),
+                },
+                bound_diagnostics=[],
+                mu_results=None,
+                prob_diagnostics=None,
+                hessian_diagnostics=None,
+                cluster_se_data=cluster_se_data,
+                solver_diag=solver_diag,
+                gradient_diag=grad_diag,
+                repro_meta=repro_meta,
+            )
+            enriched_bundle_paths = write_bundle_artifacts(bundle, output_dir, prefix=prefix)
+            for label, p in enriched_bundle_paths.items():
+                LOGGER.info(f"   (extended) {label}: {p}")
+        except Exception as e:
+            LOGGER.warning(f"Enriched diagnostics bundle build failed: {e}", exc_info=True)
+
     return {
         "extended_diagnostics_md": md_path,
         "extended_diagnostics_json": json_path,
@@ -9009,6 +9180,11 @@ def run_extended_diagnostics(
         "comparison_diagnostics": comp_diag,
         "data_diagnostics": data_diag,
         "reproducibility": repro_meta,
+        "report_profile": report_profile,
+        "diagnostics_bundle_json": enriched_bundle_paths.get("diagnostics_bundle"),
+        "enhanced_parameter_table_csv": enriched_bundle_paths.get("enhanced_parameter_table"),
+        "solver_diagnostics_json": enriched_bundle_paths.get("solver_diagnostics"),
+        "inference_diagnostics_json": enriched_bundle_paths.get("inference_diagnostics"),
     }
 
 
@@ -9248,6 +9424,19 @@ def main():
         )
     )
 
+    parser.add_argument(
+        '--report-profile',
+        type=str,
+        choices=list(PROFILE_CHOICES),
+        default=DEFAULT_PROFILE,
+        metavar='PROFILE',
+        help=(
+            'Report depth: decision (adoption-relevant only), '
+            'standard (default), full (all useful diagnostics), '
+            'technical (debugging + legacy combined fit-stats appendix).'
+        )
+    )
+
     args = parser.parse_args()
     
     # Set random seed if provided
@@ -9291,6 +9480,7 @@ def main():
             spec_config=args.spec_config,
             llm_summary_dir=None if args.no_llm_summary else args.llm_summary_dir,
             report_title=args.report_title,
+            report_profile=args.report_profile,
             # bootstrap=args.bootstrap,  # Future: pass to function when implemented
         )
     except Exception as e:
@@ -9325,6 +9515,7 @@ def main():
                 strict_report=args.strict_report,
                 cluster_col=args.cluster_col,
                 report_title=args.report_title,
+                report_profile=args.report_profile,
             )
         except RuntimeError as e:
             # --strict-report failures surface as RuntimeError

@@ -711,7 +711,7 @@ audit feed it.
 
 ---
 
-## Required final statements
+**Required final statements:**
 
 - **This is a next-cycle design memo only. It authorizes nothing** — no
   rebuild, no EUROMOD, no estimation, no welfare, no SA2.

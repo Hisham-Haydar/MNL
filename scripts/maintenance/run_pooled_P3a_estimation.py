@@ -179,6 +179,7 @@ def main():
         "--vectorized",
         "--warm-start", "none",
         "--init-params", str(M1CLEAN_JSON),
+        "--save-solver-artifacts",
         "--verbose",
     ], "Start 1 estimation")
 
@@ -232,6 +233,7 @@ def main():
         "--solver", "gamspy-conopt",
         "--vectorized",
         "--warm-start", "none",
+        "--save-solver-artifacts",
         "--verbose",
     ], "Start 2 estimation")
 
@@ -280,6 +282,7 @@ def main():
         "--vectorized",
         "--warm-start", "none",
         "--init-params", str(perturbed_json),
+        "--save-solver-artifacts",
         "--verbose",
     ], "Start 3 estimation")
 

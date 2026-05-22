@@ -2556,6 +2556,16 @@ def _get_param_value(params: Dict[str, float], base: str, suffixes: Tuple[str, .
     return None
 
 
+def _column_has_observed_values(df: pd.DataFrame, col: str) -> bool:
+    """Return True when a candidate covariate column exists and is not all null."""
+    if col not in df.columns:
+        return False
+    try:
+        return not pd.isna(df[col]).all()
+    except Exception:
+        return True
+
+
 def _resolve_column(df: pd.DataFrame, base: str, gender: Optional[str] = None) -> Optional[np.ndarray]:
     """Resolve a covariate column for a base name with optional gender suffix."""
     alias_map = {
@@ -2583,7 +2593,7 @@ def _resolve_column(df: pd.DataFrame, base: str, gender: Optional[str] = None) -
         candidates.append(b)
 
     for col in candidates:
-        if col in df.columns:
+        if _column_has_observed_values(df, col):
             return df[col].values
 
     if base.startswith('reg') and len(base) == 4 and base[3].isdigit():
@@ -5116,9 +5126,9 @@ def compute_beta_l_full(
         # Prefer gender-specific column when available (couples data), else base.
         if gender is not None:
             for c in (f'{col_base}_{gender}', f'{col_base}{suffix}'):
-                if c in df.columns:
+                if _column_has_observed_values(df, c):
                     return c
-        if col_base in df.columns:
+        if _column_has_observed_values(df, col_base):
             return col_base
         return None
 

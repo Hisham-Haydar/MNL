@@ -318,3 +318,38 @@ is captured as `termination_text`.
 
 See [`docs/RURO_post_estimation_dynamic_reporting_phase2_report_v1.md`](RURO_post_estimation_dynamic_reporting_phase2_report_v1.md)
 for the Phase-2 validation report.
+
+### Phase 2.1 update (technical CONOPT trace)
+
+Phase 2.1 adds an appendix-level CONOPT technical trace, *not* a
+headline statistic. The main solver section remains compact (solver
+status, model status, final objective/LL, final RGmax, final
+infeasibility, final Ninf, iteration count, termination message). The
+trace lives in `solver.data["conopt_trace"]` and is rendered inside a
+collapsible "🔧 CONOPT Technical Trace (appendix)" block in both HTML
+and Markdown.
+
+Trace fields parsed from `solver.log` / `solver.lst` when present:
+
+* final iteration index, parsed-row count;
+* final NSB (super-basic variables);
+* min / median / final Step;
+* OK = T / F counts and shares;
+* MX = T count and share;
+* max / mean inner-iteration count;
+* phase counts;
+* CONOPT warning indicators (evaluation errors, domain errors,
+  scaling / slow-convergence / time-limit / iteration-limit /
+  infeasibility), plus up to 20 raw `warning` lines.
+
+For non-CONOPT solvers the trace section emits *"Not applicable:
+solver is X (family=Y); CONOPT iteration-trace fields are
+CONOPT/GAMS-specific."* — not an error.
+
+**Naming:** the trace's `final_rgmax` is the CONOPT/GAMS reduced
+gradient. It is *not* the Python likelihood-gradient (score at θ),
+which lives in a separate bundle section (`gradient_score`) and is
+gated by `--gradient-diagnostics`.
+
+See [`docs/RURO_post_estimation_dynamic_reporting_phase2_1_report_v1.md`](RURO_post_estimation_dynamic_reporting_phase2_1_report_v1.md)
+for the Phase-2.1 validation report.

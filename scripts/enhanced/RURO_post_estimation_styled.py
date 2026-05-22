@@ -61,6 +61,9 @@ try:
         render_param_table_markdown,
         render_identification_markdown,
         render_probability_fit_markdown,
+        # Phase 2.1: CONOPT technical trace appendix renderer.
+        render_conopt_trace_html,
+        render_conopt_trace_markdown,
         PROFILE_CHOICES,
         DEFAULT_PROFILE,
     )
@@ -3849,6 +3852,7 @@ def generate_html_report_styled(
     # module is unavailable.
     fit_stats_split_html = ""
     solver_bundle_html = ""
+    conopt_trace_bundle_html = ""
     identification_bundle_html = ""
     probability_fit_bundle_html = ""
     param_table_bundle_html = ""
@@ -3863,6 +3867,11 @@ def generate_html_report_styled(
         except Exception as e:
             LOGGER.warning(f"Could not render bundle solver section: {e}")
             solver_bundle_html = ""
+        try:
+            conopt_trace_bundle_html = render_conopt_trace_html(diagnostics_bundle)
+        except Exception as e:
+            LOGGER.warning(f"Could not render CONOPT trace appendix: {e}")
+            conopt_trace_bundle_html = ""
         try:
             identification_bundle_html = render_identification_html(diagnostics_bundle)
         except Exception as e:
@@ -4594,6 +4603,8 @@ def generate_html_report_styled(
     {time_section}
 
     {solver_bundle_html}
+
+    {conopt_trace_bundle_html}
 
     {fit_stats_split_html}
 
@@ -7122,6 +7133,7 @@ def generate_llm_markdown_summary(
     # to a placeholder note if the bundle is unavailable.
     _bundle_param_table_md_block = ""
     _bundle_solver_md_block = ""
+    _bundle_conopt_trace_md_block = ""
     _bundle_identification_md_block = ""
     _bundle_probability_md_block = ""
     if diagnostics_bundle is not None and HAS_DIAGNOSTICS_BUNDLE:
@@ -7144,6 +7156,12 @@ def generate_llm_markdown_summary(
             )
         except Exception as _e:
             LOGGER.warning(f"Could not render bundle solver Markdown: {_e}")
+        try:
+            _bundle_conopt_trace_md_block = "\n".join(
+                render_conopt_trace_markdown(diagnostics_bundle)
+            )
+        except Exception as _e:
+            LOGGER.warning(f"Could not render CONOPT trace Markdown: {_e}")
         try:
             _bundle_identification_md_block = "\n".join(
                 render_identification_markdown(diagnostics_bundle)
@@ -7360,6 +7378,7 @@ def generate_llm_markdown_summary(
             group_rows,
         ),
         _bundle_solver_md_block,
+        _bundle_conopt_trace_md_block,
         _bundle_fit_split_md_block,
         _bundle_param_table_md_block,
         _bundle_identification_md_block,
@@ -8195,6 +8214,7 @@ def _parse_listing_file(listing_path: Path) -> Dict[str, Any]:
             from diagnostics_bundle import (
                 parse_conopt_rgmax_from_text,
                 parse_conopt_termination_text,
+                parse_conopt_trace_from_text,
             )
             rgmax_val = parse_conopt_rgmax_from_text(text)
             if rgmax_val is not None:
@@ -8202,6 +8222,12 @@ def _parse_listing_file(listing_path: Path) -> Dict[str, Any]:
             term = parse_conopt_termination_text(text)
             if term and "termination_text" not in out:
                 out["termination_text"] = term
+            # Phase 2.1: capture full CONOPT iteration trace for the
+            # technical appendix (NSB, Step stats, OK/MX, InItr, phases,
+            # warnings).
+            trace = parse_conopt_trace_from_text(text)
+            if trace:
+                out["conopt_trace"] = trace
         except Exception as _e:
             LOGGER.debug(f"CONOPT iteration-log parse failed in listing parser: {_e}")
 
@@ -8293,6 +8319,7 @@ def _parse_solver_log_file(log_path: Path) -> Dict[str, Any]:
             from diagnostics_bundle import (
                 parse_conopt_rgmax_from_text,
                 parse_conopt_termination_text,
+                parse_conopt_trace_from_text,
             )
             rgmax_val = parse_conopt_rgmax_from_text(text)
             if rgmax_val is not None and "rgmax" not in out:
@@ -8300,6 +8327,12 @@ def _parse_solver_log_file(log_path: Path) -> Dict[str, Any]:
             term = parse_conopt_termination_text(text)
             if term and "termination_text" not in out:
                 out["termination_text"] = term
+            # Phase 2.1: capture full CONOPT iteration trace for the
+            # technical appendix (NSB, Step stats, OK/MX, InItr, phases,
+            # warnings).
+            trace = parse_conopt_trace_from_text(text)
+            if trace:
+                out["conopt_trace"] = trace
         except Exception as _e:
             LOGGER.debug(f"CONOPT iteration-log parse failed: {_e}")
 

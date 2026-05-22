@@ -170,6 +170,206 @@ def parse_conopt_termination_text(text: str) -> Optional[str]:
     return None
 
 
+# CONOPT iteration row pattern (technical trace).
+# Tokens in order: Iter Phase Ninf {Objective|Infeasibility} RGmax NSB Step InItr MX OK
+# The terminal row in a block may be truncated (some trailing columns absent).
+_CONOPT_NUM_RE = r"[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?"
+_CONOPT_ROW_RE = re.compile(
+    r"^\s*(?P<iter>\d+)"
+    r"\s+(?P<phase>\d+)"
+    r"(?:\s+(?P<ninf>\d+))?"
+    r"\s+(?P<col4>" + _CONOPT_NUM_RE + r")"
+    r"(?:\s+(?P<rgmax>" + _CONOPT_NUM_RE + r"))?"
+    r"(?:\s+(?P<nsb>\d+))?"
+    r"(?:\s+(?P<step>" + _CONOPT_NUM_RE + r"))?"
+    r"(?:\s+(?P<initr>\d+))?"
+    r"(?:\s+(?P<mx>[FT]))?"
+    r"(?:\s+(?P<ok>[FT]))?"
+    r"\s*$"
+)
+_CONOPT_HEADER_OBJ_RE = re.compile(
+    r"^\s*Iter\s+Phase\s+Ninf\s+(Objective|Infeasibility)\s+RGmax\b",
+    re.IGNORECASE,
+)
+
+
+def parse_conopt_trace_from_text(text: str) -> Dict[str, Any]:
+    """Parse the CONOPT iteration table(s) and warning lines from a solver
+    log / listing text into a technical-trace dict.
+
+    The returned dict is intended for an appendix-level technical view —
+    not for the main solver section. Headline statistics (final RGmax,
+    final objective, status, model status, termination text) are produced
+    separately by ``parse_conopt_rgmax_from_text`` / the listing parser.
+
+    Returns an empty dict if no CONOPT iteration table is detected. All
+    fields below are optional and only populated when actually parsed.
+
+    Trace fields (populated when present):
+      * ``iteration_rows_parsed``  total number of CONOPT iteration rows
+      * ``final_iteration``        last ``Iter`` index seen
+      * ``final_objective``        last ``Objective``/``Infeasibility`` value
+      * ``final_rgmax``            last ``RGmax`` value
+      * ``final_ninf``             last ``Ninf`` value
+      * ``final_nsb``              last ``NSB`` value
+      * ``final_step``             last ``Step`` value
+      * ``step_min, step_median``  across parsed iteration rows
+      * ``ok_F_count, ok_T_count, ok_F_share, ok_T_share``
+      * ``mx_F_count, mx_T_count, mx_T_share``
+      * ``in_itr_max, in_itr_mean``
+      * ``phase_counts``           {"4": n4, "3": n3, ...}
+      * ``warnings``               dict of detected CONOPT warning categories
+      * ``warning_lines``          up to 20 raw warning lines from the artifact
+    """
+    if not isinstance(text, str) or "Iter Phase" not in text:
+        return {}
+
+    rows: List[Dict[str, Any]] = []
+    in_block = False
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        if _CONOPT_HEADER_OBJ_RE.match(line):
+            in_block = True
+            continue
+        if not in_block:
+            continue
+        stripped = line.strip()
+        if not stripped:
+            continue
+        # Stop the block when a non-iteration line appears
+        if not stripped[:1].isdigit():
+            in_block = False
+            continue
+        m = _CONOPT_ROW_RE.match(line)
+        if not m:
+            continue
+        row: Dict[str, Any] = {}
+        for key in ("iter", "phase", "ninf", "nsb", "initr"):
+            v = m.group(key)
+            if v is not None:
+                try:
+                    row[key] = int(v)
+                except ValueError:
+                    pass
+        for key in ("col4", "rgmax", "step"):
+            v = m.group(key)
+            if v is not None:
+                try:
+                    row[key] = float(v)
+                except ValueError:
+                    pass
+        for key in ("mx", "ok"):
+            v = m.group(key)
+            if v is not None:
+                row[key] = v
+        if row:
+            rows.append(row)
+
+    out: Dict[str, Any] = {}
+    if rows:
+        out["iteration_rows_parsed"] = len(rows)
+        last = rows[-1]
+        if "iter" in last:
+            out["final_iteration"] = last["iter"]
+        if "col4" in last:
+            out["final_objective"] = last["col4"]
+        if "rgmax" in last:
+            out["final_rgmax"] = last["rgmax"]
+        if "ninf" in last:
+            out["final_ninf"] = last["ninf"]
+        if "nsb" in last:
+            out["final_nsb"] = last["nsb"]
+        if "step" in last:
+            out["final_step"] = last["step"]
+
+        # Step statistics across all parsed rows
+        steps = [r["step"] for r in rows if "step" in r]
+        if steps:
+            out["step_min"] = float(min(steps))
+            out["step_median"] = float(np.median(steps))
+
+        # OK / MX counts and shares
+        ok_vals = [r.get("ok") for r in rows if r.get("ok") in ("F", "T")]
+        if ok_vals:
+            n = len(ok_vals)
+            ok_t = sum(1 for v in ok_vals if v == "T")
+            ok_f = n - ok_t
+            out["ok_T_count"] = ok_t
+            out["ok_F_count"] = ok_f
+            out["ok_T_share"] = ok_t / n if n else None
+            out["ok_F_share"] = ok_f / n if n else None
+        mx_vals = [r.get("mx") for r in rows if r.get("mx") in ("F", "T")]
+        if mx_vals:
+            n = len(mx_vals)
+            mx_t = sum(1 for v in mx_vals if v == "T")
+            mx_f = n - mx_t
+            out["mx_T_count"] = mx_t
+            out["mx_F_count"] = mx_f
+            out["mx_T_share"] = mx_t / n if n else None
+
+        # InItr stats
+        initrs = [r["initr"] for r in rows if "initr" in r]
+        if initrs:
+            out["in_itr_max"] = int(max(initrs))
+            out["in_itr_mean"] = float(sum(initrs) / len(initrs))
+
+        # Phase counts
+        phase_counts: Dict[str, int] = {}
+        for r in rows:
+            p = r.get("phase")
+            if p is None:
+                continue
+            phase_counts[str(p)] = phase_counts.get(str(p), 0) + 1
+        if phase_counts:
+            out["phase_counts"] = phase_counts
+
+    # --- CONOPT warning detection (works even if no iteration table parsed) ---
+    warning_categories = {
+        "evaluation_errors": re.compile(
+            r"EVALUATION\s+ERRORS\s+(\d+)\s+(\d+)", re.IGNORECASE),
+        "domain_errors": re.compile(
+            r"DOMAIN\s+ERRORS?\s+(\d+)", re.IGNORECASE),
+    }
+    warnings_out: Dict[str, Any] = {}
+    for key, pat in warning_categories.items():
+        m = pat.search(text)
+        if m:
+            try:
+                # Sum the numeric groups so "EVALUATION ERRORS 0 0" → 0
+                total = sum(int(g) for g in m.groups() if g and g.isdigit())
+                warnings_out[key] = total
+            except ValueError:
+                warnings_out[key] = m.group(0).strip()
+
+    # Free-text warning keywords (slow convergence, time limit, scaling, etc.)
+    text_warnings: List[str] = []
+    text_warning_patterns = (
+        ("scaling", re.compile(r"^\s*\*+\s*WARNING.*scal", re.IGNORECASE | re.MULTILINE)),
+        ("slow_convergence", re.compile(r"slow\s+convergence|stalled|small\s+step", re.IGNORECASE)),
+        ("time_limit", re.compile(r"time\s+limit|resource\s+limit", re.IGNORECASE)),
+        ("iteration_limit", re.compile(r"iteration\s+limit", re.IGNORECASE)),
+        ("infeasibility", re.compile(r"infeasible\s+solution", re.IGNORECASE)),
+    )
+    for key, pat in text_warning_patterns:
+        if pat.search(text):
+            warnings_out[key] = True
+
+    # Capture up to 20 raw lines containing the substring "warning" (case-insensitive)
+    raw_warning_lines: List[str] = []
+    for raw in text.splitlines():
+        if "warning" in raw.lower() and len(raw.strip()) < 300:
+            raw_warning_lines.append(raw.strip())
+            if len(raw_warning_lines) >= 20:
+                break
+    if raw_warning_lines:
+        warnings_out["warning_lines"] = raw_warning_lines
+
+    if warnings_out:
+        out["warnings"] = warnings_out
+
+    return out
+
+
 # ==============================================================================
 # Profile vocabulary
 # ==============================================================================
@@ -744,14 +944,38 @@ def build_diagnostics_bundle(
             family = SOLVER_FAMILY_CONOPT
     solver_data["solver_family"] = family
     is_conopt = family == SOLVER_FAMILY_CONOPT
+
+    # --- CONOPT technical trace (Phase 2.1) ---
+    # Trace data is only attached when the solver is CONOPT/GAMS *and* the
+    # listing or solver-log parser captured a trace. The trace lives in the
+    # appendix-level field ``solver.data["conopt_trace"]`` so the main
+    # solver section stays compact (status / model status / RGmax /
+    # infeasibility / ninf / iterations / termination).
+    trace: Dict[str, Any] = {}
+    if is_conopt:
+        for src in (listing, solver_log):
+            if isinstance(src, dict):
+                t = src.get("conopt_trace")
+                if isinstance(t, dict) and t:
+                    # Merge: prefer values from the listing file first
+                    # (richer), then fall back to the solver log.
+                    for k, v in t.items():
+                        if k not in trace:
+                            trace[k] = v
+        if trace:
+            solver_data["conopt_trace"] = trace
+
     # When the solver is not CONOPT/GAMS, mark CONOPT-only fields as
     # not-applicable so renderers can display the right message instead of
-    # silently omitting them.
+    # silently omitting them. The CONOPT trace is also added to the
+    # not-applicable list for non-CONOPT solvers.
     not_applicable_fields: List[str] = []
     if not is_conopt:
         for k in _CONOPT_ONLY_FIELDS:
             if k not in solver_data:
                 not_applicable_fields.append(k)
+        # Trace is CONOPT-only as well
+        not_applicable_fields.append("conopt_trace")
     if not_applicable_fields:
         solver_data["not_applicable_fields"] = not_applicable_fields
         solver_data["not_applicable_note"] = (
@@ -1727,6 +1951,214 @@ def render_solver_html(bundle: DiagnosticsBundle) -> str:
         f"{rgmax_explainer}"
         "</section>"
     )
+
+
+def render_conopt_trace_html(bundle: DiagnosticsBundle) -> str:
+    """CONOPT technical trace appendix (HTML).
+
+    Renders inside a <details> block so it does not crowd the main solver
+    section. For non-CONOPT solvers it shows a short "not applicable" line
+    using the solver family name; the trace is *not* an error.
+    """
+    s = bundle.solver
+    if not s.available:
+        return ""
+    d = s.data
+    family = d.get("solver_family") or classify_solver_family(d.get("solver_name"))
+    if family != SOLVER_FAMILY_CONOPT:
+        return (
+            "<section><details>"
+            "<summary><strong>🔧 CONOPT Technical Trace (appendix)</strong></summary>"
+            "<p style='margin-top:0.5em;'><em>Not applicable: solver is "
+            f"<code>{_html_esc(d.get('solver_name'))}</code> "
+            f"(family=<code>{_html_esc(family)}</code>). "
+            "CONOPT iteration-trace fields are CONOPT/GAMS-specific.</em></p>"
+            "</details></section>"
+        )
+    trace = d.get("conopt_trace") or {}
+    if not trace:
+        return (
+            "<section><details>"
+            "<summary><strong>🔧 CONOPT Technical Trace (appendix)</strong></summary>"
+            "<p style='margin-top:0.5em;'><em>Trace not available in supplied "
+            "solver artifacts. Pass <code>--solver-log</code> and "
+            "<code>--listing-file</code> from a GAMSPy run that saved CONOPT "
+            "iteration output.</em></p>"
+            "</details></section>"
+        )
+
+    base_rows = [
+        ("Iteration rows parsed", trace.get("iteration_rows_parsed"), 0),
+        ("Final iteration", trace.get("final_iteration"), 0),
+        ("Final objective", trace.get("final_objective"), 6),
+        ("Final RGmax (CONOPT reduced gradient)", trace.get("final_rgmax"), 6),
+        ("Final Ninf", trace.get("final_ninf"), 0),
+        ("Final NSB (super-basic variables)", trace.get("final_nsb"), 0),
+        ("Final Step", trace.get("final_step"), 6),
+        ("Step min / median", None, None),
+        ("OK = T / F counts", None, None),
+        ("OK = F share", trace.get("ok_F_share"), 4),
+        ("MX = T count / share", None, None),
+        ("Inner iters max / mean", None, None),
+    ]
+    rows_html = []
+    for label, value, prec in base_rows:
+        if label == "Step min / median":
+            v = (
+                f"{_fmt_cell_html(trace.get('step_min'), 6)} / "
+                f"{_fmt_cell_html(trace.get('step_median'), 6)}"
+            )
+            rows_html.append(f"<tr><th>{label}</th><td>{v}</td></tr>")
+        elif label == "OK = T / F counts":
+            v = (
+                f"{_fmt_cell_html(trace.get('ok_T_count'), 0)} / "
+                f"{_fmt_cell_html(trace.get('ok_F_count'), 0)}"
+            )
+            rows_html.append(f"<tr><th>{label}</th><td>{v}</td></tr>")
+        elif label == "MX = T count / share":
+            v = (
+                f"{_fmt_cell_html(trace.get('mx_T_count'), 0)} / "
+                f"{_fmt_cell_html(trace.get('mx_T_share'), 4)}"
+            )
+            rows_html.append(f"<tr><th>{label}</th><td>{v}</td></tr>")
+        elif label == "Inner iters max / mean":
+            v = (
+                f"{_fmt_cell_html(trace.get('in_itr_max'), 0)} / "
+                f"{_fmt_cell_html(trace.get('in_itr_mean'), 2)}"
+            )
+            rows_html.append(f"<tr><th>{label}</th><td>{v}</td></tr>")
+        else:
+            rows_html.append(
+                f"<tr><th>{label}</th><td>{_fmt_cell_html(value, prec or 0)}</td></tr>"
+            )
+
+    phase_html = ""
+    pc = trace.get("phase_counts") or {}
+    if pc:
+        body = "".join(
+            f"<tr><td>{_html_esc(k)}</td><td>{_fmt_cell_html(v, 0)}</td></tr>"
+            for k, v in sorted(pc.items())
+        )
+        phase_html = (
+            "<h4 style='margin-top:1em;'>Phase counts</h4>"
+            "<table class='table table-sm' style='width:auto;'>"
+            "<thead><tr><th>phase</th><th>iterations</th></tr></thead>"
+            f"<tbody>{body}</tbody></table>"
+        )
+
+    warn_html = ""
+    w = trace.get("warnings") or {}
+    if w:
+        warn_rows = ""
+        for k, v in w.items():
+            if k == "warning_lines":
+                continue
+            warn_rows += (
+                f"<tr><th>{_html_esc(k)}</th><td>{_fmt_cell_html(v, 0) if isinstance(v, (int, float)) and not isinstance(v, bool) else _html_esc(v)}</td></tr>"
+            )
+        wlines = w.get("warning_lines") or []
+        wlines_html = ""
+        if wlines:
+            items = "".join(
+                f"<li><code>{_html_esc(ln)}</code></li>" for ln in wlines[:20]
+            )
+            wlines_html = (
+                "<h4 style='margin-top:1em;'>Warning lines (first 20)</h4>"
+                f"<ul style='font-size:0.9em;'>{items}</ul>"
+            )
+        warn_html = (
+            "<h4 style='margin-top:1em;'>CONOPT warning indicators</h4>"
+            "<table class='table table-sm' style='width:auto;'>"
+            f"<tbody>{warn_rows}</tbody></table>"
+            f"{wlines_html}"
+        )
+
+    return (
+        "<section><details open>"
+        "<summary><strong>🔧 CONOPT Technical Trace (appendix)</strong></summary>"
+        "<p style='margin-top:0.5em;font-size:0.9em;color:#666;'><em>"
+        "Technical diagnostics from the CONOPT iteration log. The main "
+        "solver section above remains the headline view; these fields are "
+        "for solver-level debugging.</em></p>"
+        "<table class='table' style='width:auto;'>"
+        f"<tbody>{''.join(rows_html)}</tbody></table>"
+        f"{phase_html}{warn_html}"
+        "</details></section>"
+    )
+
+
+def render_conopt_trace_markdown(bundle: DiagnosticsBundle) -> List[str]:
+    """CONOPT technical trace appendix (Markdown)."""
+    out: List[str] = ["## CONOPT Technical Trace (appendix)", ""]
+    s = bundle.solver
+    if not s.available:
+        out.append("_Solver section unavailable; CONOPT trace omitted._")
+        out.append("")
+        return out
+    d = s.data
+    family = d.get("solver_family") or classify_solver_family(d.get("solver_name"))
+    if family != SOLVER_FAMILY_CONOPT:
+        out.append(
+            f"_Not applicable: solver is `{d.get('solver_name')}` (family=`{family}`). "
+            "CONOPT iteration-trace fields are CONOPT/GAMS-specific._"
+        )
+        out.append("")
+        return out
+    trace = d.get("conopt_trace") or {}
+    if not trace:
+        out.append(
+            "_Trace not available in supplied solver artifacts. Pass "
+            "`--solver-log` and `--listing-file` from a GAMSPy run that "
+            "saved CONOPT iteration output._"
+        )
+        out.append("")
+        return out
+
+    rows = [
+        ["iteration_rows_parsed", trace.get("iteration_rows_parsed")],
+        ["final_iteration", trace.get("final_iteration")],
+        ["final_objective", trace.get("final_objective")],
+        ["final_rgmax (CONOPT reduced gradient)", trace.get("final_rgmax")],
+        ["final_ninf", trace.get("final_ninf")],
+        ["final_nsb", trace.get("final_nsb")],
+        ["final_step", trace.get("final_step")],
+        ["step_min", trace.get("step_min")],
+        ["step_median", trace.get("step_median")],
+        ["ok_T_count", trace.get("ok_T_count")],
+        ["ok_F_count", trace.get("ok_F_count")],
+        ["ok_F_share", trace.get("ok_F_share")],
+        ["mx_T_count", trace.get("mx_T_count")],
+        ["mx_T_share", trace.get("mx_T_share")],
+        ["in_itr_max", trace.get("in_itr_max")],
+        ["in_itr_mean", trace.get("in_itr_mean")],
+    ]
+    out.append(_md_table(["field", "value"], rows))
+    out.append("")
+
+    pc = trace.get("phase_counts") or {}
+    if pc:
+        out.append("**Phase counts:**")
+        out.append("")
+        out.append(_md_table(["phase", "iterations"],
+                             [[k, v] for k, v in sorted(pc.items())]))
+        out.append("")
+
+    w = trace.get("warnings") or {}
+    if w:
+        scalar_rows = [[k, v] for k, v in w.items() if k != "warning_lines"]
+        if scalar_rows:
+            out.append("**CONOPT warning indicators:**")
+            out.append("")
+            out.append(_md_table(["field", "value"], scalar_rows))
+            out.append("")
+        wlines = w.get("warning_lines") or []
+        if wlines:
+            out.append("**Warning lines (first 20):**")
+            out.append("")
+            for ln in wlines[:20]:
+                out.append(f"- `{ln}`")
+            out.append("")
+    return out
 
 
 def render_probability_fit_html(bundle: DiagnosticsBundle) -> str:

@@ -425,13 +425,14 @@ STEP 2 — Validate each input frame BEFORE running EUROMOD:
 - If any fails: HALT (HE2/HE-DEC/HE-DRAWSMETA), write report.
 
 STEP 3 — Male pass:
-python "...\scripts\enhanced\enh_RURO_euromod.py" `
-  --singles-draws "...\Data\pilot\nc_2016_couples\em_inputs\fr_pilot_2016_couples_male_partner_draws.parquet" `
+python "U:\Desktop\Nizam_Hisham\MNL\scripts\enhanced\enh_RURO_euromod.py" `
+  --singles-draws "U:\Desktop\Nizam_Hisham\MNL\Data\pilot\nc_2016_couples\em_inputs\fr_pilot_2016_couples_male_partner_draws.parquet" `
   --microdata-template "U:\EUROMOD-STORAGE\Data\raw\FR_2016.txt" `
   --euromod-root "U:\EUROMOD-STORAGE\EUROMOD_RELEASES_J1.0+\EUROMOD_RELEASES_J1.0+" `
   --euromod-system FR_2015 --euromod-dataset FR_2016 `
-  --scenario-dir "...\Data\pilot\nc_2016_couples\em_outputs\male_pass"
-Redirect stdout/stderr to .../male_pass/run.log. Save timing JSON.
+  --scenario-dir "U:\Desktop\Nizam_Hisham\MNL\Data\pilot\nc_2016_couples\em_outputs\male_pass"
+Redirect stdout/stderr to `Data/pilot/nc_2016_couples/em_outputs/male_pass/run.log`.
+Save timing JSON.
 
 STEP 4 — Female pass: identical with _male->_female and male_pass->female_pass.
 
@@ -458,7 +459,7 @@ Save the report as: `Results/JMP_NC_pilot_stage5_euromod_build_report_v1.md`
 
 ---
 
-## Required final statements
+**Required final statements:**
 
 - **This amendment authorizes Stage 5 (EUROMOD) only**, under Strategy B, for
   the FR_2016 couples-only NC pilot. It changes execution scope, not the spec.

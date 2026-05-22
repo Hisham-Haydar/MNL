@@ -1,0 +1,135 @@
+{
+  "schema_version": "nc_pilot_mincer_v1",
+  "produced_by": "scripts/pilot/fit_pilot_mincer.py",
+  "produced_at_utc": "2026-05-22T16:03:36.193452+00:00",
+  "authorization": "docs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md (Stage 1)",
+  "stage": 1,
+  "calibrated_not_free": true,
+  "accepted_wage_caveat": "Coefficients are fit on accepted (selected-on-employment) wages, i.e. observed draw=0 working wages with loc4 in {1,2,3,4} and wage>0. This is a documented approximation to the wage-offer distribution; offer-vs-accepted selection across loc4 is not corrected (per spec contract section 14).",
+  "fitting_set": {
+    "years": [
+      1,
+      2,
+      3
+    ],
+    "year_labels": {
+      "1": 2015,
+      "2": 2016,
+      "3": 2017
+    },
+    "year_set_label": "pooled_2015_2017_with_year_controls",
+    "year_controls": true,
+    "population": "singles + couples (head + partner)",
+    "selection": "draw==0, loc4 in {1,2,3,4}, wage>0",
+    "n_total": 18886,
+    "n_singles": 4611,
+    "n_couples_male": 7134,
+    "n_couples_female": 7141,
+    "cell_counts_loc4_dgn_year": {
+      "loc4=1|dgn=0|year_tag=1": 606,
+      "loc4=1|dgn=0|year_tag=2": 587,
+      "loc4=1|dgn=0|year_tag=3": 562,
+      "loc4=1|dgn=1|year_tag=1": 1177,
+      "loc4=1|dgn=1|year_tag=2": 1192,
+      "loc4=1|dgn=1|year_tag=3": 1095,
+      "loc4=2|dgn=0|year_tag=1": 656,
+      "loc4=2|dgn=0|year_tag=2": 685,
+      "loc4=2|dgn=0|year_tag=3": 609,
+      "loc4=2|dgn=1|year_tag=1": 252,
+      "loc4=2|dgn=1|year_tag=2": 268,
+      "loc4=2|dgn=1|year_tag=3": 235,
+      "loc4=3|dgn=0|year_tag=1": 489,
+      "loc4=3|dgn=0|year_tag=2": 491,
+      "loc4=3|dgn=0|year_tag=3": 431,
+      "loc4=3|dgn=1|year_tag=1": 134,
+      "loc4=3|dgn=1|year_tag=2": 134,
+      "loc4=3|dgn=1|year_tag=3": 121,
+      "loc4=4|dgn=0|year_tag=1": 1556,
+      "loc4=4|dgn=0|year_tag=2": 1573,
+      "loc4=4|dgn=0|year_tag=3": 1459,
+      "loc4=4|dgn=1|year_tag=1": 1552,
+      "loc4=4|dgn=1|year_tag=2": 1587,
+      "loc4=4|dgn=1|year_tag=3": 1435
+    },
+    "thin_cells_lt_50": {},
+    "thin_cell_warning": false
+  },
+  "reference": {
+    "loc4_reference": 1,
+    "year_tag_reference": 2
+  },
+  "wage_model_W1": {
+    "specification": "log_w = beta_w0 + beta_w_educL*educL + beta_w_educH*educH + beta_w_pexp*pexp_years + beta_w_pexp2*pexp_years2 + delta_occ2*1[loc4=2] + delta_occ3*1[loc4=3] + delta_occ4*1[loc4=4] + year_2015_indicator + year_2017_indicator (if pooled)",
+    "coef": {
+      "intercept": 2.2543504153383114,
+      "educL": -0.0293861519368851,
+      "educH": 0.16073352777951916,
+      "pexp_years": 0.017552221412091448,
+      "pexp_years2": -0.00019691062799954626,
+      "delta_occ2": -0.07970080810771316,
+      "delta_occ3": 0.025093195731062043,
+      "delta_occ4": 0.24145593748446914,
+      "year_2015_indicator": -0.0027457303228193247,
+      "year_2017_indicator": 0.026646408899468097
+    },
+    "se": {
+      "intercept": 0.011693127949814372,
+      "educL": 0.00882459810576757,
+      "educH": 0.007220093963872478,
+      "pexp_years": 0.0009850909290828047,
+      "pexp_years2": 2.2172086437080204e-05,
+      "delta_occ2": 0.009053870133970004,
+      "delta_occ3": 0.010613820899284443,
+      "delta_occ4": 0.007998598601948917,
+      "year_2015_indicator": 0.0066456870955537905,
+      "year_2017_indicator": 0.0067733583666552835
+    },
+    "sigma": 0.3770872353395109,
+    "sigma_note": "common scalar; not occupation-specific (spec contract section 12)",
+    "r2": 0.23201836410238708,
+    "n": 18886,
+    "k": 10,
+    "calibrated_delta_occ": {
+      "delta_occ2": -0.07970080810771316,
+      "delta_occ3": 0.025093195731062043,
+      "delta_occ4": 0.24145593748446914
+    }
+  },
+  "wage_model_two_group": {
+    "specification": "log_w = beta_w0 + baseline Mincer + delta_NonInt*1[loc4=4] + year_2015_indicator + year_2017_indicator (if pooled)",
+    "coef": {
+      "intercept": 2.229827041481662,
+      "educL": -0.024136957822121444,
+      "educH": 0.16509148484911074,
+      "pexp_years": 0.017796146825187757,
+      "pexp_years2": -0.00019743277110188806,
+      "delta_NonInt": 0.25769313671532096,
+      "year_2015_indicator": -0.002026402713372607,
+      "year_2017_indicator": 0.027059235622307765
+    },
+    "se": {
+      "intercept": 0.011044886031557307,
+      "educL": 0.008754438789030502,
+      "educH": 0.007124041509382283,
+      "pexp_years": 0.0009874606069375815,
+      "pexp_years2": 2.2232866736122835e-05,
+      "delta_NonInt": 0.006704817125166046,
+      "year_2015_indicator": 0.006663697158712879,
+      "year_2017_indicator": 0.00679189226276205
+    },
+    "sigma": 0.378129984375809,
+    "r2": 0.22768331237659545,
+    "n": 18886,
+    "k": 8,
+    "calibrated_delta_NonInt": 0.25769313671532096
+  },
+  "use_in_pilot_draw": {
+    "selected_model_for_pilot_baseline": "W1",
+    "two_group_role": "documented comparison; pilot writes draws under W1 baseline; two-group artifacts produced as parallel variant in Stage 2 record",
+    "delta_status": "calibrated and fixed at draw time; not free structural parameters"
+  },
+  "promotion_debt": [
+    "year tags hard-coded as {1:2015, 2:2016, 3:2017} per project convention",
+    "loc4 categories hard-coded as {1,2,3,4}"
+  ]
+}

@@ -52,6 +52,15 @@ try:
         render_gradient_section_markdown,
         render_inference_section_markdown,
         render_decision_summary_markdown,
+        # Phase 2: per-block parameter table, identification, solver,
+        # probability-fit renderers shared between HTML and Markdown.
+        render_param_table_html,
+        render_identification_html,
+        render_solver_html,
+        render_probability_fit_html,
+        render_param_table_markdown,
+        render_identification_markdown,
+        render_probability_fit_markdown,
         PROFILE_CHOICES,
         DEFAULT_PROFILE,
     )
@@ -3834,15 +3843,41 @@ def generate_html_report_styled(
     .math-block.numerical { background: #fef5e7; border-left: 3px solid #f39c12; }
     @media (max-width: 768px) { .two-col, .four-col, .contour-grid { grid-template-columns: 1fr; } }
     """    # Build fit stats section
-    # Bundle-driven split sections (A/B/C/D). Falls back to empty string if
-    # diagnostics_bundle was not supplied or the bundle module is unavailable.
+    # Bundle-driven split sections (A/B/C/D) + Phase-2 sections (solver,
+    # identification, probability-fit, parameter table). All fall back to
+    # empty string if diagnostics_bundle was not supplied or the bundle
+    # module is unavailable.
     fit_stats_split_html = ""
+    solver_bundle_html = ""
+    identification_bundle_html = ""
+    probability_fit_bundle_html = ""
+    param_table_bundle_html = ""
     if diagnostics_bundle is not None and HAS_DIAGNOSTICS_BUNDLE:
         try:
             fit_stats_split_html = render_fit_stats_split_html(diagnostics_bundle)
         except Exception as e:
             LOGGER.warning(f"Could not render split fit-stats sections: {e}")
             fit_stats_split_html = ""
+        try:
+            solver_bundle_html = render_solver_html(diagnostics_bundle)
+        except Exception as e:
+            LOGGER.warning(f"Could not render bundle solver section: {e}")
+            solver_bundle_html = ""
+        try:
+            identification_bundle_html = render_identification_html(diagnostics_bundle)
+        except Exception as e:
+            LOGGER.warning(f"Could not render bundle identification section: {e}")
+            identification_bundle_html = ""
+        try:
+            probability_fit_bundle_html = render_probability_fit_html(diagnostics_bundle)
+        except Exception as e:
+            LOGGER.warning(f"Could not render bundle probability-fit section: {e}")
+            probability_fit_bundle_html = ""
+        try:
+            param_table_bundle_html = render_param_table_html(diagnostics_bundle)
+        except Exception as e:
+            LOGGER.warning(f"Could not render bundle parameter table: {e}")
+            param_table_bundle_html = ""
 
     fit_stats_rows = ""
     for k, v in fit_stats.items():
@@ -4558,6 +4593,8 @@ def generate_html_report_styled(
 
     {time_section}
 
+    {solver_bundle_html}
+
     {fit_stats_split_html}
 
     <section>
@@ -4570,6 +4607,8 @@ def generate_html_report_styled(
           {bounds_explanation}
         </details>
     </section>
+
+    {identification_bundle_html}
 
     {identification_html}
     {identification_file_html}
@@ -4623,7 +4662,9 @@ def generate_html_report_styled(
         {muc_analysis_html}
         
         {prob_diag_html}
-        
+
+        {probability_fit_bundle_html}
+
         {bound_diag_html}
     </section>
 
@@ -4634,9 +4675,12 @@ def generate_html_report_styled(
 
     {group_params_section}
 
+    {param_table_bundle_html}
+
     <section>
-        <h2>📋 Parameter Estimates by Category</h2>
-        <p><em>Significance: *** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05</em></p>
+        <h2>📋 Parameter Estimates by Category (legacy view)</h2>
+        <p><em>Significance: *** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05. The
+        bundle-driven block view above is the canonical Phase-2 source.</em></p>
         {color_legend}
         {param_table_rows}
     </section>
@@ -7076,6 +7120,10 @@ def generate_llm_markdown_summary(
 
     # Bundle-driven reorganized fit-stats sections (A/B/C/D). Falls back
     # to a placeholder note if the bundle is unavailable.
+    _bundle_param_table_md_block = ""
+    _bundle_solver_md_block = ""
+    _bundle_identification_md_block = ""
+    _bundle_probability_md_block = ""
     if diagnostics_bundle is not None and HAS_DIAGNOSTICS_BUNDLE:
         try:
             _bundle_fit_lines = render_fit_stats_split_markdown(diagnostics_bundle)
@@ -7083,6 +7131,31 @@ def generate_llm_markdown_summary(
         except Exception as _e:
             LOGGER.warning(f"Could not render bundle Markdown fit sections: {_e}")
             _bundle_fit_split_md_block = ""
+        # Phase-2 bundle renderers (same data as HTML).
+        try:
+            _bundle_param_table_md_block = "\n".join(
+                render_param_table_markdown(diagnostics_bundle)
+            )
+        except Exception as _e:
+            LOGGER.warning(f"Could not render bundle param-table Markdown: {_e}")
+        try:
+            _bundle_solver_md_block = "\n".join(
+                render_solver_section_markdown(diagnostics_bundle)
+            )
+        except Exception as _e:
+            LOGGER.warning(f"Could not render bundle solver Markdown: {_e}")
+        try:
+            _bundle_identification_md_block = "\n".join(
+                render_identification_markdown(diagnostics_bundle)
+            )
+        except Exception as _e:
+            LOGGER.warning(f"Could not render bundle identification Markdown: {_e}")
+        try:
+            _bundle_probability_md_block = "\n".join(
+                render_probability_fit_markdown(diagnostics_bundle)
+            )
+        except Exception as _e:
+            LOGGER.warning(f"Could not render bundle probability Markdown: {_e}")
     else:
         _bundle_fit_split_md_block = (
             "## Fit Statistics (reorganized)\n\n"
@@ -7286,7 +7359,11 @@ def generate_llm_markdown_summary(
             ["group", "success", "message", "iterations", "n_function_evaluations", "gradient_norm", "log_likelihood", "walltime_seconds"],
             group_rows,
         ),
+        _bundle_solver_md_block,
         _bundle_fit_split_md_block,
+        _bundle_param_table_md_block,
+        _bundle_identification_md_block,
+        _bundle_probability_md_block,
         "## Fit Statistics (legacy combined table — kept for backward compatibility)",
         "",
         _md_table(["metric", "value"], fit_rows),
@@ -7443,6 +7520,10 @@ def run_styled_post_estimation(
     llm_summary_dir: Optional[Path] = Path("reports"),
     report_title: Optional[str] = None,
     report_profile: str = DEFAULT_PROFILE,
+    cluster_se_path: Optional[Path] = None,
+    solver_log_path: Optional[Path] = None,
+    listing_file_path: Optional[Path] = None,
+    gradient_diag_inputs: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Main entry point for styled post-estimation.
@@ -7827,11 +7908,49 @@ def run_styled_post_estimation(
                 break
 
     # Build the diagnostics bundle BEFORE rendering HTML so the HTML can
-    # render the four reorganized fit-statistics sections (A/B/C/D) from
-    # the shared bundle. Solver-log / cluster-SE / gradient artifacts are
-    # supplied later by run_extended_diagnostics, which rebuilds the
-    # bundle with those inputs and rewrites the JSON.
+    # render the four reorganized fit-statistics sections (A/B/C/D) and the
+    # Phase-2 bundle-driven sections (parameter table by block, identification,
+    # solver, probability-fit) from the shared bundle. Solver-log / cluster-SE
+    # / gradient artifacts are supplied later by run_extended_diagnostics,
+    # which rebuilds the bundle with those inputs and rewrites the JSON.
     diagnostics_bundle = None
+    # Build YAML-driven block map (specification-agnostic; falls back to
+    # name heuristics inside the bundle when this map is empty).
+    _spec_blocks_for_bundle = (run_metadata or {}).get("spec_blocks") or {}
+    if not _spec_blocks_for_bundle:
+        _spec_path_for_bundle = (run_metadata or {}).get("spec_config_path")
+        try:
+            _spec_blocks_for_bundle = _load_yaml_spec_blocks(_spec_path_for_bundle) or {}
+        except Exception:
+            _spec_blocks_for_bundle = {}
+    try:
+        _block_map_for_bundle = _coef_to_block_map(_spec_blocks_for_bundle) if _spec_blocks_for_bundle else {}
+    except Exception:
+        _block_map_for_bundle = {}
+
+    # Pre-load extended inputs (cluster SE / solver log / listing) so the
+    # styled HTML render can use the enriched bundle directly. These same
+    # inputs are also consumed by run_extended_diagnostics for its
+    # extended_diagnostics.md / .json artifacts.
+    _pre_cluster_se_data: Optional[Dict[str, Any]] = None
+    if cluster_se_path is not None:
+        try:
+            _pre_cluster_se_data = _load_cluster_se_json(cluster_se_path)
+            LOGGER.info(f"   pre-loaded cluster SE JSON for HTML bundle: {cluster_se_path}")
+        except Exception as _e:
+            LOGGER.warning(f"   Could not pre-load cluster SE JSON: {_e}")
+    _pre_solver_diag: Optional[Dict[str, Any]] = None
+    if (solver_log_path is not None) or (listing_file_path is not None):
+        try:
+            _pre_solver_diag = _extract_solver_convergence_diagnostics(
+                data,
+                solver_log_path=solver_log_path,
+                listing_file_path=listing_file_path,
+            )
+            LOGGER.info("   pre-built solver convergence diagnostics for HTML bundle")
+        except Exception as _e:
+            LOGGER.warning(f"   Could not pre-build solver diagnostics: {_e}")
+
     if HAS_DIAGNOSTICS_BUNDLE:
         try:
             diagnostics_bundle = build_diagnostics_bundle(
@@ -7843,11 +7962,12 @@ def run_styled_post_estimation(
                 mu_results=mu_results,
                 prob_diagnostics=prob_diagnostics,
                 hessian_diagnostics=hessian_diagnostics,
-                cluster_se_data=None,
-                solver_diag=None,
-                gradient_diag=None,
+                cluster_se_data=_pre_cluster_se_data,
+                solver_diag=_pre_solver_diag,
+                gradient_diag=gradient_diag_inputs,
                 repro_meta=None,
                 run_metadata=run_metadata,
+                block_map=_block_map_for_bundle,
             )
         except Exception as e:
             LOGGER.warning(f"Diagnostics bundle build failed (pre-HTML): {e}", exc_info=True)
@@ -8066,6 +8186,25 @@ def _parse_listing_file(listing_path: Path) -> Dict[str, Any]:
                 except ValueError:
                     pass
 
+    # CONOPT iteration-log RGmax (terminal value from tabular iteration log).
+    # The CONOPT iteration log uses a fixed-column tabular format that the
+    # explicit "RGmax = value" / "Reduced gradient norm = value" patterns
+    # above do not capture. Fall back to the bundle helper for that format.
+    if "rgmax" not in out and HAS_DIAGNOSTICS_BUNDLE:
+        try:
+            from diagnostics_bundle import (
+                parse_conopt_rgmax_from_text,
+                parse_conopt_termination_text,
+            )
+            rgmax_val = parse_conopt_rgmax_from_text(text)
+            if rgmax_val is not None:
+                out["rgmax"] = rgmax_val
+            term = parse_conopt_termination_text(text)
+            if term and "termination_text" not in out:
+                out["termination_text"] = term
+        except Exception as _e:
+            LOGGER.debug(f"CONOPT iteration-log parse failed in listing parser: {_e}")
+
     # CONOPT tolerances
     for line in lines:
         m = re.search(r"\bRTOL\b\s*[=:]\s*([\d.eE+\-]+)", line, re.IGNORECASE)
@@ -8146,6 +8285,23 @@ def _parse_solver_log_file(log_path: Path) -> Dict[str, Any]:
     meaningful = [l.strip() for l in lines if l.strip() and not l.startswith("#")]
     if meaningful:
         out["log_last_lines"] = meaningful[-3:]
+
+    # CONOPT iteration-log RGmax (terminal reduced-gradient norm).
+    # Uses the diagnostics_bundle helper to handle the tabular CONOPT format.
+    if HAS_DIAGNOSTICS_BUNDLE:
+        try:
+            from diagnostics_bundle import (
+                parse_conopt_rgmax_from_text,
+                parse_conopt_termination_text,
+            )
+            rgmax_val = parse_conopt_rgmax_from_text(text)
+            if rgmax_val is not None and "rgmax" not in out:
+                out["rgmax"] = rgmax_val
+            term = parse_conopt_termination_text(text)
+            if term and "termination_text" not in out:
+                out["termination_text"] = term
+        except Exception as _e:
+            LOGGER.debug(f"CONOPT iteration-log parse failed: {_e}")
 
     return out
 
@@ -9145,6 +9301,15 @@ def run_extended_diagnostics(
                     elif isinstance(raw_bounds, list):
                         mp.bounds = raw_bounds
                     break
+            # Block map for parameter classification: derived from the YAML
+            # spec if available. Falls back to bundle-side heuristics.
+            _ext_block_map = {}
+            try:
+                _ext_blocks = _load_yaml_spec_blocks(spec_config) if spec_config else {}
+                if _ext_blocks:
+                    _ext_block_map = _coef_to_block_map(_ext_blocks) or {}
+            except Exception:
+                _ext_block_map = {}
             bundle = build_diagnostics_bundle(
                 profile=report_profile,
                 results_data=results_data,
@@ -9163,6 +9328,7 @@ def run_extended_diagnostics(
                 solver_diag=solver_diag,
                 gradient_diag=grad_diag,
                 repro_meta=repro_meta,
+                block_map=_ext_block_map,
             )
             enriched_bundle_paths = write_bundle_artifacts(bundle, output_dir, prefix=prefix)
             for label, p in enriched_bundle_paths.items():
@@ -9481,6 +9647,10 @@ def main():
             llm_summary_dir=None if args.no_llm_summary else args.llm_summary_dir,
             report_title=args.report_title,
             report_profile=args.report_profile,
+            # Phase 2: pre-load extended inputs so styled HTML uses enriched bundle
+            cluster_se_path=args.cluster_se_json,
+            solver_log_path=args.solver_log,
+            listing_file_path=args.listing_file,
             # bootstrap=args.bootstrap,  # Future: pass to function when implemented
         )
     except Exception as e:

@@ -258,29 +258,63 @@ Estimation was **not** rerun. The solver was **not** invoked.
 
 ## 17. Remaining limitations
 
-The Phase-1 implementation is intentionally additive: the four
-reorganized sections (A/B/C/D) are rendered **before** the legacy
-combined dump in both HTML and Markdown, and the legacy view is kept
-inside a collapsible appendix. The full migration of every existing
-HTML section to consume only the bundle is **explicitly** deferred to a
-Phase-2 PR. Remaining items:
+### Phase-2 status (2026-05-22 update)
 
-* migrate the per-block parameter table, identification panel, and
-  probability/worst-fit-household tables in HTML to read straight from
-  the bundle;
-* render the solver-diagnostics and gradient-diagnostics sections in
-  the *styled HTML* report (currently only the bundle JSON and the
-  extended-diagnostics Markdown receive these — the styled HTML still
-  shows the legacy convergence panel);
-* compute a Python-side score sign check when per-choice-set scores
-  are available;
-* welfare diagnostics: the bundle has a slot in `SECTION_PROFILES`
-  but no input plumbing yet — will be added when a welfare artifact
-  contract is defined;
-* metric thresholds in the registry are not yet surfaced as inline
-  HTML warnings (decision/standard profiles only print them in the
-  Markdown limitations list).
+Phase 2 has migrated four further sections from legacy inline code to
+the shared `DiagnosticsBundle`:
 
-Until Phase-2 lands, the HTML inference table and per-block parameter
-table remain rendered by the legacy inline code paths; numbers there
-match the bundle, but the *rendering* is still legacy.
+* **Parameter table by block** — `render_param_table_html` and
+  `render_param_table_markdown` render one sub-table per block
+  (`preference`, `employment_hours_opportunity`,
+  `market_opportunity`, `wage_opportunity`, `occupation_opportunity`,
+  `other`). Each row carries `block`, `estimate`, `se_hessian`,
+  `t_hessian`, `se_robust`, `t_robust`, `p_robust`, `fixed`,
+  `at_lower_bound`, `at_upper_bound`, `primary_se`. The block label is
+  derived from the YAML spec via `_coef_to_block_map` when available,
+  with substring fallbacks for legacy specs (no France / P3a / SA2
+  hard-coding).
+* **Identification & Hessian** — `render_identification_html` and
+  `render_identification_markdown` consume the enriched
+  `bundle.hessian` section (condition number, eigenvalue extremes,
+  `n_negative_eigenvalues`, `poorly_identified_params`,
+  `top_correlations`).
+* **Solver & convergence diagnostics** — `render_solver_html` (and
+  the existing `render_solver_section_markdown`) branch on
+  `solver_family`. For CONOPT/GAMS they show RGmax, model status,
+  termination text, equations / variables / nonzeros. For
+  non-CONOPT solvers (BFGS / L-BFGS-B / IPOPT / KNITRO / trust-constr)
+  they show per-group success / message / iterations / nfev /
+  gradient_norm and emit a clear *"CONOPT-specific fields are not
+  applicable"* note instead of silently omitting them.
+* **Probability & fit summary** — `render_probability_fit_html` and
+  `render_probability_fit_markdown` render `prob_sum_errors`,
+  `p_chosen_dist` and the top-10 worst-fit households.
+
+CONOPT RGmax is now parsed from the CONOPT iteration-log tabular
+format (`Iter Phase ... RGmax NSB ...`) via
+`parse_conopt_rgmax_from_text`, in addition to the explicit
+`RGmax = value` and `Reduced gradient norm = value` patterns. The
+last numeric RGmax value across all iteration blocks is taken as the
+terminal value. The CONOPT termination sentence
+(e.g. *"Optimal solution. Reduced gradient less than tolerance."*)
+is captured as `termination_text`.
+
+### What still remains
+
+* The legacy "Parameter Estimates by Category" HTML section, the
+  legacy `generate_identification_diagnostics_html` panel, and the
+  legacy `prob_diag_html` block are **kept alongside** the new
+  bundle-driven sections (each renamed *(legacy view)*). Removing
+  them entirely is a Phase-3 cleanup once consumers have migrated
+  to the bundle JSON.
+* Score sign check (per-choice-set) is not yet computed in the
+  bundle.
+* Welfare diagnostics: the bundle has a slot in `SECTION_PROFILES`
+  but still no input plumbing — will be added when a welfare
+  artifact contract is defined.
+* Metric thresholds in the registry are not yet surfaced as inline
+  HTML warnings (the bundle's `warnings` list already surfaces them
+  in the Markdown decision summary).
+
+See [`docs/RURO_post_estimation_dynamic_reporting_phase2_report_v1.md`](RURO_post_estimation_dynamic_reporting_phase2_report_v1.md)
+for the Phase-2 validation report.

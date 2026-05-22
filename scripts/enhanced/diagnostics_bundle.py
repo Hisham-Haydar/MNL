@@ -36,6 +36,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import re
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -45,6 +46,128 @@ import pandas as pd
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+# ==============================================================================
+# Solver family classification (specification-agnostic)
+# ==============================================================================
+
+SOLVER_FAMILY_CONOPT: str = "conopt"
+SOLVER_FAMILY_IPOPT: str = "ipopt"
+SOLVER_FAMILY_KNITRO: str = "knitro"
+SOLVER_FAMILY_BFGS: str = "bfgs"
+SOLVER_FAMILY_TRUST_CONSTR: str = "trust-constr"
+SOLVER_FAMILY_OTHER: str = "other"
+SOLVER_FAMILY_UNKNOWN: str = "unknown"
+
+# Fields that only make sense for CONOPT/GAMS runs.
+_CONOPT_ONLY_FIELDS: Tuple[str, ...] = (
+    "rgmax", "model_status", "equations", "variables",
+    "nonzeros", "max_infeasibility", "generation_time_s",
+    "solve_time_s",
+)
+
+
+def classify_solver_family(name: Any) -> str:
+    """Best-effort solver-family classification from a solver name string.
+
+    Recognizes: CONOPT/GAMS family, IPOPT, KNITRO, BFGS/L-BFGS-B/SciPy,
+    trust-constr; falls back to 'other' / 'unknown'.
+    """
+    if name is None:
+        return SOLVER_FAMILY_UNKNOWN
+    s = str(name).strip().lower()
+    if not s:
+        return SOLVER_FAMILY_UNKNOWN
+    if "conopt" in s or "gams" in s:
+        return SOLVER_FAMILY_CONOPT
+    if "ipopt" in s:
+        return SOLVER_FAMILY_IPOPT
+    if "knitro" in s:
+        return SOLVER_FAMILY_KNITRO
+    if "trust" in s and "constr" in s:
+        return SOLVER_FAMILY_TRUST_CONSTR
+    if "bfgs" in s or "l-bfgs" in s or "scipy" in s:
+        return SOLVER_FAMILY_BFGS
+    return SOLVER_FAMILY_OTHER
+
+
+# ==============================================================================
+# CONOPT iteration-log parser
+# ==============================================================================
+
+# Matches CONOPT iteration headers in the solver log / listing:
+#   "Iter Phase   Ninf   Infeasibility   RGmax      NSB   Step  InItr MX OK"
+#   "Iter Phase   Ninf     Objective     RGmax      NSB   Step  InItr MX OK"
+_CONOPT_ITER_HEADER_RE = re.compile(
+    r"^\s*Iter\s+Phase\s+Ninf\s+(?P<col3>\S+(?:\s+\S+)?)\s+RGmax\b",
+    re.IGNORECASE,
+)
+
+
+def parse_conopt_rgmax_from_text(text: str) -> Optional[float]:
+    """Extract the *terminal* CONOPT RGmax value from a solver log / listing text.
+
+    CONOPT prints an iteration table whose 5th column is RGmax (scientific
+    notation, e.g. ``5.4E-08``). This function scans the text for CONOPT
+    iteration headers and returns the LAST RGmax value seen.
+
+    Returns ``None`` if the text contains no CONOPT iteration table, or if
+    every row in such a table fails to parse.
+
+    Robust to:
+      * "Infeasibility" vs "Objective" header column;
+      * multiple blocks (it returns the LAST RGmax value across all blocks);
+      * mid-row truncations (e.g. ``14   4   -1.9E+04 5.4E-08`` with no NSB column).
+    """
+    if not isinstance(text, str) or "Iter Phase" not in text:
+        return None
+    rgmax: Optional[float] = None
+    in_block = False
+    # Number-row pattern: starts with an integer iter index, has 4+ tokens.
+    # We capture the 5th numeric token (RGmax) which may appear in scientific notation.
+    row_re = re.compile(
+        r"^\s*(\d+)\s+\d+\s+(?:\d+\s+)?(?P<col3>[\-+]?[\d.]+E?[\-+]?\d*)\s+(?P<rgmax>[\-+]?\d+(?:\.\d+)?(?:[eE][\-+]?\d+)?)\b"
+    )
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        if _CONOPT_ITER_HEADER_RE.match(line):
+            in_block = True
+            continue
+        if not in_block:
+            continue
+        stripped = line.strip()
+        if not stripped:
+            continue
+        # Stop the block when we hit a non-iteration line that begins with non-digit
+        if not stripped[:1].isdigit():
+            in_block = False
+            continue
+        m = row_re.match(line)
+        if m:
+            try:
+                rgmax = float(m.group("rgmax"))
+            except (TypeError, ValueError):
+                pass
+    return rgmax
+
+
+def parse_conopt_termination_text(text: str) -> Optional[str]:
+    """Return the CONOPT termination sentence if present, else None."""
+    if not isinstance(text, str):
+        return None
+    for keyword in (
+        "Optimal solution. Reduced gradient less than tolerance",
+        "Locally optimal solution",
+        "Feasible solution. Value of objective",
+        "Infeasible solution",
+        "Iteration limit",
+        "Time limit",
+    ):
+        m = re.search(r"\*\*\s*(" + re.escape(keyword) + r"[^\n]*)", text, re.IGNORECASE)
+        if m:
+            return m.group(1).strip()
+    return None
 
 
 # ==============================================================================
@@ -320,6 +443,45 @@ def _safe_int(x: Any) -> Optional[int]:
     return int(f) if f is not None else None
 
 
+def _block_for_param(name: str, block_map: Optional[Dict[str, str]]) -> str:
+    """Specification-agnostic parameter -> block classifier.
+
+    Strategy:
+    1) Exact match in ``block_map``;
+    2) Strip group-suffix tokens (_sm/_sf/_m/_f/_cm/_cf) then exact match;
+    3) Substring heuristics on the parameter name.
+    """
+    if not name:
+        return "other"
+    lookup = block_map or {}
+    if name in lookup:
+        return lookup[name]
+    # Strip common group suffixes
+    base = name
+    for suf in ("_sm", "_sf", "_cm", "_cf", "_m", "_f"):
+        if base.endswith(suf):
+            stripped = base[: -len(suf)]
+            if stripped in lookup:
+                return lookup[stripped]
+            base = stripped
+            break
+    n = name.lower()
+    if "beta_offer_" in n:
+        return "market_opportunity"
+    if "beta_occ_" in n:
+        return "occupation_opportunity"
+    if any(t in n for t in ("beta_w", "sigma", "beta_pexp")):
+        return "wage_opportunity"
+    if any(t in n for t in ("beta_work", "beta_pt", "beta_ft", "beta_gsur",
+                            "beta_e_", "beta_e ", "beta_h_")):
+        return "employment_hours_opportunity"
+    if n in ("beta_e",):
+        return "employment_hours_opportunity"
+    if any(t in n for t in ("beta_l", "beta_c", "theta_l", "theta_c", "beta_interact")):
+        return "preference"
+    return "other"
+
+
 def build_diagnostics_bundle(
     *,
     profile: str,
@@ -335,6 +497,7 @@ def build_diagnostics_bundle(
     gradient_diag: Optional[Dict[str, Any]] = None,
     repro_meta: Optional[Dict[str, Any]] = None,
     run_metadata: Optional[Dict[str, Any]] = None,
+    block_map: Optional[Dict[str, str]] = None,
 ) -> DiagnosticsBundle:
     """Assemble a DiagnosticsBundle from already-computed pieces.
 
@@ -553,9 +716,48 @@ def build_diagnostics_bundle(
             if k in listing and k not in solver_data:
                 solver_data[k] = listing[k]
     if isinstance(solver_log, dict):
-        for k in ("termination_message",):
+        for k in ("termination_message", "log_objective"):
             if k in solver_log and k not in solver_data:
                 solver_data[k] = solver_log[k]
+
+    # Solver-family classification + CONOPT applicability notes.
+    family = classify_solver_family(solver_data.get("solver_name"))
+    # Override: if a CONOPT/GAMS listing or solver-log was parsed (i.e. the
+    # caller actually supplied --listing-file / --solver-log from a GAMSPy
+    # run), force family to CONOPT regardless of opt_method label. The
+    # opt_method metadata field can be misleading because some GAMSPy
+    # estimators record a fallback name like "L-BFGS-B" while still using
+    # CONOPT under the hood.
+    _listing_present = isinstance(listing, dict) and listing and not listing.get("_note")
+    _log_present = isinstance(solver_log, dict) and solver_log and not solver_log.get("_note")
+    if (_listing_present or _log_present) and family in (
+        SOLVER_FAMILY_BFGS, SOLVER_FAMILY_UNKNOWN, SOLVER_FAMILY_OTHER,
+    ):
+        # Heuristic CONOPT signals in the parsed dicts
+        if any(k in (listing or {}) for k in ("rgmax", "model_status", "equations", "variables")) \
+                or any(k in (solver_log or {}) for k in ("rgmax", "termination_text")):
+            family = SOLVER_FAMILY_CONOPT
+    # Also honor metadata.solver_artifacts as a strong CONOPT signal
+    sa = (metadata.get("solver_artifacts") or {}) if isinstance(metadata, dict) else {}
+    if isinstance(sa, dict) and (sa.get("saved") or sa.get("solver_log") or sa.get("listing_file")):
+        if family in (SOLVER_FAMILY_BFGS, SOLVER_FAMILY_UNKNOWN, SOLVER_FAMILY_OTHER):
+            family = SOLVER_FAMILY_CONOPT
+    solver_data["solver_family"] = family
+    is_conopt = family == SOLVER_FAMILY_CONOPT
+    # When the solver is not CONOPT/GAMS, mark CONOPT-only fields as
+    # not-applicable so renderers can display the right message instead of
+    # silently omitting them.
+    not_applicable_fields: List[str] = []
+    if not is_conopt:
+        for k in _CONOPT_ONLY_FIELDS:
+            if k not in solver_data:
+                not_applicable_fields.append(k)
+    if not_applicable_fields:
+        solver_data["not_applicable_fields"] = not_applicable_fields
+        solver_data["not_applicable_note"] = (
+            f"Solver is '{solver_data.get('solver_name')}' "
+            f"(family={family}); CONOPT/GAMS-specific fields are not applicable."
+        )
 
     solver_section_available = (
         solver_data.get("solver_name") is not None
@@ -571,18 +773,22 @@ def build_diagnostics_bundle(
         data=solver_data,
     )
 
-    # --- Hessian section
+    # --- Hessian section (enriched: scalars + eigenvalues + correlations + identification)
     hess_data: Dict[str, Any] = {}
+    _hess_keys = (
+        "condition_number", "n_negative_eigenvalues",
+        "min_eigenvalue", "max_eigenvalue",
+        "eigenvalues", "top_correlations",
+        "poorly_identified_params", "eigenvector_diagnostics",
+    )
     if hessian_diagnostics and isinstance(hessian_diagnostics, dict):
-        for k in ("condition_number", "n_negative_eigenvalues",
-                  "min_eigenvalue", "max_eigenvalue"):
+        for k in _hess_keys:
             if k in hessian_diagnostics:
                 hess_data[k] = hessian_diagnostics[k]
-    if not hess_data and isinstance(results_data.get("hessian_diagnostics"), dict):
-        rhd = results_data["hessian_diagnostics"]
-        for k in ("condition_number", "n_negative_eigenvalues",
-                  "min_eigenvalue", "max_eigenvalue"):
-            if k in rhd:
+    rhd = results_data.get("hessian_diagnostics")
+    if isinstance(rhd, dict):
+        for k in _hess_keys:
+            if k not in hess_data and k in rhd:
                 hess_data[k] = rhd[k]
     bundle.hessian = Section(
         available=bool(hess_data),
@@ -658,6 +864,7 @@ def build_diagnostics_bundle(
         primary_se = "robust" if se_rob is not None else ("hessian" if se_h is not None else "none")
         inf_rows.append({
             "parameter": name,
+            "block": _block_for_param(name, block_map),
             "estimate": est,
             "se_hessian": _safe_num(se_h),
             "t_hessian": _safe_num(t_h),
@@ -1250,6 +1457,491 @@ def _json_default(o: Any) -> Any:
         return str(o)
     return str(o)
 
+
+# ==============================================================================
+# Phase-2 HTML renderers (parameter table, identification, solver, prob/fit)
+# ==============================================================================
+
+def _html_esc(x: Any) -> str:
+    if x is None:
+        return "—"
+    s = str(x)
+    return (s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+
+
+def _fmt_cell_html(v: Any, precision: int = 4) -> str:
+    if v is None:
+        return "—"
+    if isinstance(v, bool):
+        return "✓" if v else ""
+    if isinstance(v, (int, np.integer)):
+        return str(int(v))
+    f = _safe_num(v)
+    if f is None:
+        return _html_esc(v)
+    if precision == 0:
+        return f"{f:.0f}"
+    if abs(f) >= 1e6 or (abs(f) > 0 and abs(f) < 1e-3):
+        return f"{f:.{max(2, precision)}e}"
+    return f"{f:.{precision}f}"
+
+
+def render_param_table_html(bundle: DiagnosticsBundle) -> str:
+    """Bundle-driven per-block parameter table (HTML).
+
+    One <section> with a sub-table per block, plus a primary-SE legend at top.
+    Robust SE is primary when ``primary_se_for_run == 'robust'``; the Hessian
+    SE is then labelled diagnostic/classical.
+    """
+    s = bundle.inference
+    if not s.available:
+        return (
+            "<section><h2>📋 Parameter Estimates (by block)</h2>"
+            f"<p><em>Not available: {_html_esc(s.unavailable_reason)}</em></p>"
+            "</section>"
+        )
+    rows = s.data.get("rows") or []
+    if not rows:
+        return ""
+    primary = s.data.get("primary_se_for_run", "hessian")
+    note = s.data.get("note", "")
+
+    # Group by block
+    by_block: Dict[str, List[Dict[str, Any]]] = {}
+    for r in rows:
+        by_block.setdefault(r.get("block") or "other", []).append(r)
+    block_order = [
+        "preference",
+        "employment_hours_opportunity",
+        "market_opportunity",
+        "wage_opportunity",
+        "occupation_opportunity",
+        "other",
+    ]
+    ordered_keys = [b for b in block_order if b in by_block] + [
+        b for b in by_block.keys() if b not in block_order
+    ]
+
+    headers = ["parameter", "estimate", "se_hessian", "t_hessian",
+               "se_robust", "t_robust", "p_robust",
+               "fixed", "at_lower", "at_upper", "primary_se"]
+    primary_se_label = (
+        "<strong>Primary SE: cluster-robust</strong> (Hessian SE shown as diagnostic/classical)"
+        if primary == "robust" else
+        "<strong>Primary SE: Hessian (classical)</strong> "
+        "<em>(supply --cluster-se-json for cluster-robust SE)</em>"
+    )
+
+    table_chunks: List[str] = []
+    for blk in ordered_keys:
+        rows_block = by_block[blk]
+        body = ""
+        for r in rows_block:
+            cells = [
+                _html_esc(r.get("parameter")),
+                _fmt_cell_html(r.get("estimate"), 6),
+                _fmt_cell_html(r.get("se_hessian"), 6),
+                _fmt_cell_html(r.get("t_hessian"), 3),
+                _fmt_cell_html(r.get("se_robust"), 6),
+                _fmt_cell_html(r.get("t_robust"), 3),
+                _fmt_cell_html(r.get("p_robust"), 4),
+                "✓" if r.get("fixed") else "",
+                "⬇" if r.get("at_lower_bound") else "",
+                "⬆" if r.get("at_upper_bound") else "",
+                _html_esc(r.get("primary_se")),
+            ]
+            row_class = ""
+            if r.get("at_lower_bound") or r.get("at_upper_bound"):
+                row_class = ' class="warning-row"'
+            body += f"<tr{row_class}>" + "".join(f"<td>{c}</td>" for c in cells) + "</tr>"
+        thead = "<tr>" + "".join(f"<th>{h}</th>" for h in headers) + "</tr>"
+        table_chunks.append(
+            f"<h3>Block: {_html_esc(blk)} ({len(rows_block)} params)</h3>"
+            f'<table class="table table-sm"><thead>{thead}</thead><tbody>{body}</tbody></table>'
+        )
+
+    return (
+        "<section>"
+        "<h2>📋 Parameter Estimates (by block — from DiagnosticsBundle)</h2>"
+        f"<p>{primary_se_label}</p>"
+        + (f"<p style='font-size:0.9em;color:#555;'><em>{_html_esc(note)}</em></p>" if note else "")
+        + "".join(table_chunks)
+        + "</section>"
+    )
+
+
+def render_identification_html(bundle: DiagnosticsBundle) -> str:
+    """Bundle-driven identification / Hessian section (HTML)."""
+    s = bundle.hessian
+    if not s.available:
+        return (
+            "<section><h2>🔍 Identification &amp; Hessian Diagnostics</h2>"
+            f"<p><em>Not available: {_html_esc(s.unavailable_reason)}</em></p>"
+            "</section>"
+        )
+    d = s.data
+    cond = d.get("condition_number")
+    cond_str = _fmt_cell_html(cond, 2) if cond is not None else "—"
+    cond_warn = ""
+    try:
+        if isinstance(cond, (int, float)) and cond > 1e10:
+            cond_warn = " ⚠ very large — weak identification likely"
+    except Exception:
+        cond_warn = ""
+    n_neg = d.get("n_negative_eigenvalues")
+    neg_warn = " ⚠ should be 0 at a local optimum" if n_neg and int(n_neg) > 0 else ""
+    min_eig = _fmt_cell_html(d.get("min_eigenvalue"), 4)
+    max_eig = _fmt_cell_html(d.get("max_eigenvalue"), 4)
+
+    rows_html = (
+        f"<tr><th>Condition number κ</th><td>{cond_str}{cond_warn}</td></tr>"
+        f"<tr><th>Min eigenvalue</th><td>{min_eig}</td></tr>"
+        f"<tr><th>Max eigenvalue</th><td>{max_eig}</td></tr>"
+        f"<tr><th>Negative eigenvalues</th><td>{_fmt_cell_html(n_neg, 0)}{neg_warn}</td></tr>"
+    )
+
+    extras: List[str] = []
+
+    poorly = d.get("poorly_identified_params") or []
+    if poorly:
+        items = "".join(f"<li><code>{_html_esc(p)}</code></li>" for p in poorly[:30])
+        extras.append(
+            f"<h4>Poorly-identified parameters ({len(poorly)})</h4>"
+            f"<ul style='columns:2;'>{items}</ul>"
+            + ("<p><em>… first 30 shown.</em></p>" if len(poorly) > 30 else "")
+        )
+
+    corrs = d.get("top_correlations") or []
+    if corrs:
+        body = ""
+        for c in corrs[:15]:
+            i = c.get("param_i") or c.get("i") or c.get("param1") or "?"
+            j = c.get("param_j") or c.get("j") or c.get("param2") or "?"
+            r = c.get("corr") or c.get("correlation") or c.get("r")
+            body += (
+                f"<tr><td>{_html_esc(i)}</td><td>{_html_esc(j)}</td>"
+                f"<td>{_fmt_cell_html(r, 4)}</td></tr>"
+            )
+        extras.append(
+            "<h4>Top parameter correlations</h4>"
+            '<table class="table table-sm">'
+            "<thead><tr><th>param_i</th><th>param_j</th><th>corr</th></tr></thead>"
+            f"<tbody>{body}</tbody></table>"
+        )
+
+    return (
+        "<section>"
+        "<h2>🔍 Identification &amp; Hessian Diagnostics (from DiagnosticsBundle)</h2>"
+        f'<table class="table" style="width:auto;">{rows_html}</table>'
+        + "".join(extras)
+        + "</section>"
+    )
+
+
+def render_solver_html(bundle: DiagnosticsBundle) -> str:
+    """Bundle-driven solver / convergence section (HTML).
+
+    Branches on solver_family. For CONOPT/GAMS, shows RGmax, model status,
+    listing-file counters, max infeasibility, termination text. For non-CONOPT
+    solvers, shows per-group success/message/iterations/grad_norm and marks
+    CONOPT-only fields not applicable.
+    """
+    s = bundle.solver
+    if not s.available:
+        return (
+            "<section><h2>⚙️ Solver &amp; Convergence Diagnostics</h2>"
+            f"<p><em>Not available: {_html_esc(s.unavailable_reason)}</em></p>"
+            "</section>"
+        )
+    d = s.data
+    family = d.get("solver_family") or classify_solver_family(d.get("solver_name"))
+    is_conopt = family == SOLVER_FAMILY_CONOPT
+
+    core_rows = (
+        f"<tr><th>Solver</th><td>{_html_esc(d.get('solver_name'))} "
+        f"<span style='font-size:0.85em;color:#666;'>(family: {family})</span></td></tr>"
+        f"<tr><th>Objective (log-likelihood)</th><td>{_fmt_cell_html(d.get('objective_ll'), 4)}</td></tr>"
+        f"<tr><th>Wall time (s)</th><td>{_fmt_cell_html(d.get('wall_time_seconds'), 2)}</td></tr>"
+    )
+
+    conopt_rows = ""
+    if is_conopt:
+        conopt_rows = (
+            f"<tr><th>Solver status</th><td>{_html_esc(d.get('solver_status'))}</td></tr>"
+            f"<tr><th>Model status</th><td>{_html_esc(d.get('model_status'))}</td></tr>"
+            f"<tr><th>RGmax (terminal reduced gradient)</th><td>{_fmt_cell_html(d.get('rgmax'), 6)}</td></tr>"
+            f"<tr><th>Termination text</th><td>{_html_esc(d.get('termination_text') or d.get('termination_message'))}</td></tr>"
+            f"<tr><th>Max infeasibility</th><td>{_fmt_cell_html(d.get('max_infeasibility'), 6)}</td></tr>"
+            f"<tr><th>Equations / Variables / Nonzeros</th>"
+            f"<td>{_fmt_cell_html(d.get('equations'), 0)} / "
+            f"{_fmt_cell_html(d.get('variables'), 0)} / "
+            f"{_fmt_cell_html(d.get('nonzeros'), 0)}</td></tr>"
+            f"<tr><th>Solve time (s, from listing)</th><td>{_fmt_cell_html(d.get('solve_time_s'), 2)}</td></tr>"
+        )
+    else:
+        # Non-CONOPT: render per-group convergence and CONOPT-not-applicable note
+        per = d.get("per_group") or []
+        rows_pg = ""
+        for g in per:
+            rows_pg += (
+                f"<tr>"
+                f"<td>{_html_esc(g.get('group'))}</td>"
+                f"<td>{_html_esc(g.get('success'))}</td>"
+                f"<td>{_html_esc(g.get('message'))}</td>"
+                f"<td>{_fmt_cell_html(g.get('n_iterations'), 0)}</td>"
+                f"<td>{_fmt_cell_html(g.get('n_function_evaluations'), 0)}</td>"
+                f"<td>{_fmt_cell_html(g.get('gradient_norm_results_json'), 6)}</td>"
+                f"<td>{_fmt_cell_html(g.get('walltime_seconds'), 2)}</td>"
+                f"</tr>"
+            )
+        if rows_pg:
+            conopt_rows += (
+                "<tr><td colspan='2'><strong>Per-group convergence:</strong></td></tr>"
+                "</tbody></table>"
+                "<table class='table table-sm'>"
+                "<thead><tr><th>group</th><th>success</th><th>message</th>"
+                "<th>iters</th><th>nfev</th><th>grad_norm</th><th>wall(s)</th></tr></thead>"
+                f"<tbody>{rows_pg}</tbody></table>"
+                "<table class='table' style='width:auto;'><tbody>"
+            )
+        na_note = d.get("not_applicable_note")
+        if na_note:
+            conopt_rows += (
+                f"<tr><td colspan='2'><em>{_html_esc(na_note)} "
+                f"Fields not applicable: {_html_esc(', '.join(d.get('not_applicable_fields', [])))}.</em></td></tr>"
+            )
+
+    rgmax_explainer = ""
+    if is_conopt and d.get("rgmax") is None:
+        rgmax_explainer = (
+            "<p style='font-size:0.9em;color:#666;'><em>"
+            "RGmax numeric value not present in supplied solver artifacts. "
+            "CONOPT may report termination as text only "
+            "(e.g. \"Optimal solution. Reduced gradient less than tolerance.\").</em></p>"
+        )
+
+    return (
+        "<section>"
+        "<h2>⚙️ Solver &amp; Convergence Diagnostics (from DiagnosticsBundle)</h2>"
+        f'<table class="table" style="width:auto;"><tbody>{core_rows}{conopt_rows}</tbody></table>'
+        f"{rgmax_explainer}"
+        "</section>"
+    )
+
+
+def render_probability_fit_html(bundle: DiagnosticsBundle) -> str:
+    """Bundle-driven probability / fit summary (HTML)."""
+    s = bundle.probability_fit
+    if not s.available:
+        return (
+            "<section><h2>📊 Probability &amp; Fit Diagnostics</h2>"
+            f"<p><em>Not available: {_html_esc(s.unavailable_reason)}</em></p>"
+            "</section>"
+        )
+    d = s.data
+    parts: List[str] = []
+    ps = d.get("prob_sum_errors") or {}
+    if ps:
+        rows = "".join(
+            f"<tr><th>{_html_esc(k)}</th><td>{_fmt_cell_html(v, 6)}</td></tr>"
+            for k, v in ps.items()
+        )
+        parts.append(
+            "<h3>Probability-sum sanity check</h3>"
+            f'<table class="table table-sm" style="width:auto;">{rows}</table>'
+        )
+    pcd = d.get("p_chosen_dist") or {}
+    if pcd:
+        rows = "".join(
+            f"<tr><th>{_html_esc(k)}</th><td>{_fmt_cell_html(v, 6)}</td></tr>"
+            for k, v in pcd.items()
+        )
+        parts.append(
+            "<h3>P(chosen) distribution</h3>"
+            f'<table class="table table-sm" style="width:auto;">{rows}</table>'
+        )
+    worst = d.get("worst_fit_households_top10") or []
+    if worst:
+        body = ""
+        for i, hh in enumerate(worst, 1):
+            body += (
+                f"<tr><td>{i}</td>"
+                f"<td>{_html_esc(hh.get('idhh', '—'))}</td>"
+                f"<td>{_html_esc(hh.get('group', '—'))}</td>"
+                f"<td>{_fmt_cell_html(hh.get('p_chosen'), 6)}</td>"
+                f"<td>{_fmt_cell_html(hh.get('ll_i'), 4)}</td>"
+                f"</tr>"
+            )
+        parts.append(
+            "<h3>Worst-fit households (top 10)</h3>"
+            '<table class="table table-sm">'
+            "<thead><tr><th>#</th><th>idhh</th><th>group</th>"
+            "<th>p_chosen</th><th>ll_i</th></tr></thead>"
+            f"<tbody>{body}</tbody></table>"
+        )
+    if not parts:
+        return ""
+    return (
+        "<section>"
+        "<h2>📊 Probability &amp; Fit Diagnostics (from DiagnosticsBundle)</h2>"
+        + "".join(parts)
+        + "</section>"
+    )
+
+
+# ==============================================================================
+# Phase-2 Markdown renderers (parameter table, identification, prob/fit)
+# (Solver Markdown renderer already exists; updated to use solver_family.)
+# ==============================================================================
+
+def render_param_table_markdown(bundle: DiagnosticsBundle, max_rows_per_block: int = 200) -> List[str]:
+    """Per-block parameter table in Markdown."""
+    out: List[str] = ["## Parameter Estimates (by block — from DiagnosticsBundle)", ""]
+    s = bundle.inference
+    if not s.available:
+        out.append(f"_Not available: {s.unavailable_reason}_")
+        out.append("")
+        return out
+    rows = s.data.get("rows") or []
+    if not rows:
+        return out
+    primary = s.data.get("primary_se_for_run", "hessian")
+    if primary == "robust":
+        out.append("_**Primary SE: cluster-robust.** Hessian SE shown as diagnostic/classical._")
+    else:
+        out.append("_**Primary SE: Hessian (classical).** Supply `--cluster-se-json` for cluster-robust SE._")
+    out.append("")
+
+    by_block: Dict[str, List[Dict[str, Any]]] = {}
+    for r in rows:
+        by_block.setdefault(r.get("block") or "other", []).append(r)
+    block_order = [
+        "preference", "employment_hours_opportunity", "market_opportunity",
+        "wage_opportunity", "occupation_opportunity", "other",
+    ]
+    ordered = [b for b in block_order if b in by_block] + [
+        b for b in by_block if b not in block_order
+    ]
+    headers = ["parameter", "estimate", "se_hessian", "t_hessian",
+               "se_robust", "t_robust", "p_robust",
+               "fixed", "at_lower", "at_upper", "primary_se"]
+
+    for blk in ordered:
+        block_rows = by_block[blk]
+        out.append(f"### Block: `{blk}` ({len(block_rows)} params)")
+        out.append("")
+        table_rows = []
+        for r in block_rows[:max_rows_per_block]:
+            table_rows.append([
+                r.get("parameter"),
+                r.get("estimate"),
+                r.get("se_hessian"),
+                r.get("t_hessian"),
+                r.get("se_robust"),
+                r.get("t_robust"),
+                r.get("p_robust"),
+                r.get("fixed"),
+                r.get("at_lower_bound"),
+                r.get("at_upper_bound"),
+                r.get("primary_se"),
+            ])
+        out.append(_md_table(headers, table_rows))
+        if len(block_rows) > max_rows_per_block:
+            out.append(f"_Showing first {max_rows_per_block} of {len(block_rows)} parameters._")
+        out.append("")
+    return out
+
+
+def render_identification_markdown(bundle: DiagnosticsBundle) -> List[str]:
+    """Identification / Hessian diagnostics in Markdown."""
+    out: List[str] = ["## Identification & Hessian Diagnostics (from DiagnosticsBundle)", ""]
+    s = bundle.hessian
+    if not s.available:
+        out.append(f"_Not available: {s.unavailable_reason}_")
+        out.append("")
+        return out
+    d = s.data
+    cond = d.get("condition_number")
+    cond_warn = ""
+    try:
+        if isinstance(cond, (int, float)) and cond > 1e10:
+            cond_warn = " ⚠ very large — weak identification likely"
+    except Exception:
+        cond_warn = ""
+    n_neg = d.get("n_negative_eigenvalues")
+    neg_warn = " ⚠ should be 0 at a local optimum" if n_neg and int(n_neg) > 0 else ""
+    out.append(_md_table(["field", "value"], [
+        ["condition_number", f"{_fmt_num(cond, 2)}{cond_warn}"],
+        ["min_eigenvalue", d.get("min_eigenvalue")],
+        ["max_eigenvalue", d.get("max_eigenvalue")],
+        ["n_negative_eigenvalues", f"{n_neg}{neg_warn}"],
+    ]))
+    out.append("")
+
+    poorly = d.get("poorly_identified_params") or []
+    if poorly:
+        out.append(f"**Poorly-identified parameters ({len(poorly)}):**")
+        out.append("")
+        for p in poorly[:30]:
+            out.append(f"- `{p}`")
+        if len(poorly) > 30:
+            out.append(f"- _… first 30 of {len(poorly)} shown._")
+        out.append("")
+
+    corrs = d.get("top_correlations") or []
+    if corrs:
+        rows = []
+        for c in corrs[:15]:
+            i = c.get("param_i") or c.get("i") or c.get("param1") or "?"
+            j = c.get("param_j") or c.get("j") or c.get("param2") or "?"
+            r = c.get("corr") or c.get("correlation") or c.get("r")
+            rows.append([i, j, r])
+        out.append("**Top parameter correlations:**")
+        out.append("")
+        out.append(_md_table(["param_i", "param_j", "corr"], rows))
+        out.append("")
+    return out
+
+
+def render_probability_fit_markdown(bundle: DiagnosticsBundle) -> List[str]:
+    """Probability / fit summary in Markdown."""
+    out: List[str] = ["## Probability & Fit Diagnostics (from DiagnosticsBundle)", ""]
+    s = bundle.probability_fit
+    if not s.available:
+        out.append(f"_Not available: {s.unavailable_reason}_")
+        out.append("")
+        return out
+    d = s.data
+    ps = d.get("prob_sum_errors") or {}
+    if ps:
+        out.append("**Probability-sum sanity check:**")
+        out.append("")
+        out.append(_md_table(["field", "value"],
+                             [[k, v] for k, v in ps.items()]))
+        out.append("")
+    pcd = d.get("p_chosen_dist") or {}
+    if pcd:
+        out.append("**P(chosen) distribution:**")
+        out.append("")
+        out.append(_md_table(["field", "value"],
+                             [[k, v] for k, v in pcd.items()]))
+        out.append("")
+    worst = d.get("worst_fit_households_top10") or []
+    if worst:
+        rows = []
+        for i, hh in enumerate(worst, 1):
+            rows.append([i, hh.get("idhh"), hh.get("group"),
+                         hh.get("p_chosen"), hh.get("ll_i")])
+        out.append("**Worst-fit households (top 10):**")
+        out.append("")
+        out.append(_md_table(["#", "idhh", "group", "p_chosen", "ll_i"], rows))
+        out.append("")
+    return out
+
+
+# ==============================================================================
+# Artifact writers
+# ==============================================================================
 
 def write_bundle_artifacts(
     bundle: DiagnosticsBundle,

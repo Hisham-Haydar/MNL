@@ -1,0 +1,822 @@
+# A 
+
+Yes, your colleague’s point is substantively important. I would treat it as a **serious next-specification-cycle issue**, not as a distraction.
+
+But I would not interrupt the currently authorized saved-artifact diagnostics. The clean sequencing is:
+
+```text
+1. Finish the current S4/S5/S6/S8 saved-artifact diagnostics.
+2. In parallel or immediately after, run a read-only wage-offer structure diagnostic.
+3. Use that diagnostic to decide whether the next re-estimation should modify the wage-opportunity block.
+```
+
+Your colleague’s point is stronger than the “one wage equation versus two sex-specific wage equations” issue. The sex split is a standard wage-offer issue. The occupation-conditioning issue is more central to your JMP because occupation is explicitly part of the opportunity set. If wages are drawn independently of occupation, while occupation is a discrete job characteristic in the model, the model may be offering unrealistic combinations such as high-wage routine-manual jobs or low-wage non-routine cognitive jobs at the wrong density. That can contaminate the wage-opportunity component and the occupation-opportunity component simultaneously.
+
+## My view
+
+Your current pooled model should be treated as the **current estimation cycle**, not the final design. Given your flexibility, the correct next research move is not to rush to welfare. It is to use the pooled estimation experience to refine the opportunity mechanism.
+
+I would define a new diagnostic track:
+
+```text
+Wage-offer structure diagnostic:
+Should O_W be unconditional, sex-conditional, occupation-conditional, or sex × occupation conditional?
+```
+
+This is central, not secondary, because your paper’s claim is about decomposing welfare inequality into preferences versus opportunities. The wage-offer density is part of the opportunity mechanism. If it is misspecified, the decomposition may attribute to preferences what is actually unequal wage access within occupations.
+
+## What I would not do
+
+Do not silently alter the current pooled P3a specification before finishing the open diagnostics. Also do not jump immediately to a fully conditional wage model:
+
+```text
+O_W(w | h, occ, sex)
+```
+
+That is likely too much at once. It mixes occupation, hours, and sex in one move and may create another identification problem.
+
+The disciplined first extension is:
+
+```text
+O_W(w | occupation, sex)
+```
+
+or even more parsimoniously:
+
+```text
+O_W(w | occupation) with sex retained elsewhere if already present
+```
+
+The diagnostic should tell you which one is warranted.
+
+## Recommended specification hierarchy
+
+I would organize the next wage-opportunity cycle like this:
+
+```text
+Current model:
+W0: O_W(w | X) with current Mincer structure.
+
+First serious alternative:
+W1: O_W(w | X, occ) through occupation wage intercepts.
+
+If strongly supported:
+W2: O_W(w | X, occ, sex) or sex-specific occupation premia.
+
+Avoid for now:
+W3: O_W(w | X, occ, hours, sex), unless diagnostics show strong hour-wage dependence that survives occupation and sex.
+```
+
+My preferred next candidate, if diagnostics support it, is **W1: occupation-specific wage intercepts**, not fully occupation-specific slopes. That adds structure where it matters while keeping the model estimable.
+
+Conceptually:
+
+```text
+log w_i = X_i β + δ_occ + ε_i
+```
+
+or, if sex remains explicit:
+
+```text
+log w_i = X_i β_s + δ_occ,s + ε_i
+```
+
+where `s` denotes sex. This lets the wage-offer density shift by occupation without exploding the parameter count.
+
+## Why occupation is different from hours
+
+Your colleague is right that the independence assumption is less defensible for occupation than for labor time.
+
+Weekly labor time is quasi-continuous and often comes from a contract menu: part-time, full-time, overtime. Treating wage and hours as separable in the proposal density is restrictive, but it can be defended as a first-order approximation, especially if hours are coarse bins.
+
+Occupation is not like that. Occupation is a discrete productivity/task class. Wage distributions differ strongly across occupation categories by construction. If your `loc4` categories are routine/manual, routine/cognitive, non-routine/manual, non-routine/cognitive, then wage levels and dispersion are almost certainly different across them. In that case, an unconditional wage offer density forces the same wage support onto very different job types.
+
+That is exactly the kind of opportunity misspecification your JMP should avoid.
+
+## Where this fits in the roadmap
+
+This is **central later**, but not the immediate gate.
+
+Immediate gate remains:
+
+```text
+S4/S5/S6/S8 saved-artifact diagnostics for the corrected pooled P3a model.
+```
+
+Parallel or next diagnostic:
+
+```text
+Wage-offer structure diagnostic.
+```
+
+Not yet authorized:
+
+```text
+new wage-conditioned estimation,
+welfare computation,
+SA2,
+baseline replacement.
+```
+
+## Prompt 1 — Wage-offer structure diagnostic
+
+Use **Claude Code Sonnet** locally.
+
+This is read-only. It should not estimate the structural model.
+
+```text
+Work locally in my RURO/MNL codebase.
+
+This is a read-only wage-offer structure diagnostic for the JMP RURO model.
+
+Do not run structural estimation.
+Do not modify data.
+Do not modify YAML specs.
+Do not compute welfare.
+Do not issue SA2.
+Do not promote any pooled model over M1-clean.
+
+Read:
+- scripts/enhanced/specifications/estimation_spec_ruro_occ_P3a_pooled.yaml
+- Results/JMP_pooled_P3a_corrected_region_estimation_report_v1.md
+- docs/JMP_pooled_P3a_corrected_region_post_estimation_review_v1.md
+- Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__singles.parquet
+- Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__couples.parquet
+- Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__mnlmeta.json
+
+Task:
+Diagnose whether the wage-offer density should remain unconditional with respect to occupation, or whether the next specification cycle should condition wage opportunities on occupation.
+
+Create:
+
+Results/JMP_wage_offer_structure_diagnostic_v1.md
+
+Use exactly these headings:
+
+1. Diagnostic verdict
+2. Files inspected
+3. Current wage-opportunity specification
+4. Current wage parameters and whether they are sex-specific
+5. Current sigma structure
+6. Occupation variable used in the model
+7. Descriptive wage distributions by occupation
+8. Descriptive wage distributions by sex
+9. Descriptive wage distributions by occupation × sex
+10. Descriptive wage distributions by year
+11. Descriptive wage distributions by hours bin, if available
+12. Baseline Mincer regression
+13. Mincer regression with occupation intercepts
+14. Mincer regression with sex interactions
+15. Mincer regression with occupation × sex interactions
+16. Residual standard deviations by occupation and sex
+17. Model-comparison statistics
+18. Test of common wage equation by sex
+19. Test of occupation-conditioned wage equation
+20. Evidence on wage-hours dependence
+21. Implications for the wage-opportunity layer
+22. Recommended next wage specification
+23. What not to change yet
+24. Exact next design-memo task
+
+Required checks:
+- Identify the exact current wage block in the YAML and parser output.
+- Report whether the current model has one common sigma or group-specific sigmas.
+- Report whether current wage coefficients are common, sex-specific, or partially pooled.
+- Use only observed working alternatives / chosen worker observations where wage is observed.
+- Report log-wage mean, standard deviation, p10, p25, p50, p75, p90 by loc4 and sex.
+- Estimate descriptive OLS/Mincer regressions only as diagnostics:
+  A. baseline current covariates;
+  B. baseline + loc4 dummies;
+  C. baseline + sex interactions;
+  D. baseline + loc4 × sex interactions.
+- Report AIC/BIC or comparable fit criteria where feasible.
+- Report F-tests / LR-style comparisons where feasible, but clearly label them descriptive if not structural.
+- Do not treat these descriptive regressions as the structural model.
+- Decide whether the next structural specification should be:
+  W0 keep current wage block;
+  W1 add occupation wage intercepts;
+  W2 add occupation × sex wage intercepts;
+  W3 condition wage on hours as well;
+  or W4 investigate a different wage-offer approach.
+- Be strict and parsimonious.
+```
+
+Save as:
+
+```text
+Results/JMP_wage_offer_structure_diagnostic_v1.md
+```
+
+## Prompt 2 — Design memo after diagnostic
+
+Use **ChatGPT Thinking** or **Claude Project chat** after the diagnostic exists.
+
+```text
+This is for my JMP RURO pooled P3a estimation pipeline.
+
+I have completed a read-only wage-offer structure diagnostic.
+
+Please write a wage-opportunity respecification design memo:
+
+docs/JMP_wage_opportunity_respecification_design_memo_v1.md
+
+Use exactly these headings:
+
+1. Purpose
+2. Why wage-offer structure matters for the JMP
+3. Current wage-opportunity specification
+4. Diagnostic evidence
+5. Whether occupation conditioning is needed
+6. Whether sex-specific wage equations are needed
+7. Whether hours conditioning is needed
+8. Recommended next wage specification
+9. Exact changes to the structural model
+10. Expected parameter-count change
+11. Identification risks
+12. Expected effect on opportunity decomposition
+13. Comparison to current pooled P3a model
+14. Gate-A requirements
+15. Estimation protocol
+16. Post-estimation diagnostics
+17. What remains blocked
+18. Exact Claude Code Gate-A prompt
+
+Required decisions:
+- Do not authorize estimation in this memo.
+- Do not authorize welfare computation.
+- Keep M1-clean 2016 active until a later accepted pooled model exists.
+- Prefer the simplest wage-conditioning structure that addresses the diagnostic evidence.
+- Treat occupation conditioning as central if wage distributions differ substantially across loc4.
+- Treat full wage-on-hours conditioning as a later extension unless the evidence is very strong.
+```
+
+Save as:
+
+```text
+docs/JMP_wage_opportunity_respecification_design_memo_v1.md
+```
+
+## What I recommend now
+
+Do not pause the current post-estimation diagnostics. Continue the already-defined S4/S5/S6/S8 diagnostic gate.
+
+But in parallel, run:
+
+```text
+Results/JMP_wage_offer_structure_diagnostic_v1.md
+```
+
+This diagnostic is useful even if the current pooled model eventually passes. If the wage-occupation evidence is strong, your next specification cycle should probably be a wage-opportunity refinement before welfare computation.
+
+## Bottom line
+
+Your colleague’s point is valid and important. I would not treat it as a small robustness issue. It directly concerns the opportunity mechanism.
+
+Current recommendation:
+
+```text
+Finish current saved-artifact diagnostics.
+Run read-only wage-offer structure diagnostic in parallel.
+Do not compute welfare yet.
+Do not modify the current pooled specification silently.
+Prepare a new wage-opportunity specification only after the diagnostic.
+```
+
+
+
+# B
+Yes, proceed, but split the work into **two tracks**.
+
+The current corrected pooled P3a track should finish its saved-artifact diagnostics. Do not interrupt it. But the couples-draw issue is important enough that it should become the **main next-specification-cycle design problem**, alongside occupation-conditional wages.
+
+The key point is that the couples issue is not just “we need more draws.” Your note correctly states that the current couples construction is a **diagonal** of the male × female opportunity space: his draw (i) is paired only with her draw (i), excluding the off-diagonal combinations and imposing an artificial dependence between partners.  That makes the diagonal-to-product move a **specification fix**, while the 900 vs 1,600 vs 10,000 decision is a separate simulation-accuracy question. 
+
+Because couples are a majority of the pooled household-years, this is not a minor robustness point. The note records roughly 7,438 couples out of 12,445 pooled household-years, so a misrepresented couples feasible set is first-order for your opportunity-vs-preference decomposition. 
+
+## My decision
+
+Do **not** rebuild the couples data immediately. First, do three things in order:
+
+```text
+1. Finish the current S4/S5/S6/S8 saved-artifact diagnostics.
+2. Run a read-only audit confirming the current couples draw construction.
+3. Write a consolidated next-cycle opportunity-respecification memo covering:
+   a. couples diagonal → product,
+   b. occupation-conditional wage densities,
+   c. sex-specific versus pooled wage equations.
+```
+
+This keeps the current estimation track clean while preparing the next, better specification. It also prevents you from starting a huge data rebuild before confirming the exact construction code and computational implications.
+
+## Why not rebuild immediately?
+
+The product correction is upstream of almost everything. The note says this change is fixed at data preparation, before EUROMOD and before the GSUR merge. Moving from diagonal to product means rebuilding couples data, rerunning EUROMOD on new joint alternatives, re-merging GSURv2, re-stacking P3a, and then re-estimating. 
+
+That is a large data-build cycle. It is worth doing, but it should be authorized as a new cycle, not inserted midstream into the current SA2-readiness process.
+
+## Track A — Finish current corrected pooled P3a diagnostics
+
+Current gate remains:
+
+```text
+Results/JMP_pooled_P3a_post_estimation_diagnostics_report_v1.md
+```
+
+Tool:
+
+```text
+Claude Code Sonnet
+```
+
+Purpose:
+
+```text
+Compute S4, S5, S6, and S8 from saved artifacts only.
+```
+
+Do not add the couples-product issue to that report except as a **known next-cycle limitation**. The current report should answer: given the current 100-diagonal couples construction, is the corrected pooled model internally valid enough to evaluate?
+
+## Track B — Read-only couples draw-construction audit
+
+This is the immediate next task for the couples-draw issue. It should confirm the factual statement: are couples currently constructed as index-paired diagonals?
+
+Use **Claude Code Sonnet**.
+
+```text
+Work locally in my RURO/MNL codebase.
+
+This is a read-only couples draw-construction audit.
+
+Do not modify data.
+Do not rebuild draws.
+Do not run EUROMOD.
+Do not run estimation.
+Do not compute welfare.
+Do not issue SA2.
+Do not promote any output to canonical status.
+
+Read:
+- docs/JMP_couples_opportunity_draw_design_note_v1.md
+- scripts/enhanced/enh_RURO_prep_mnl_basic.py
+- scripts/enhanced/enh_RURO_euromod.py
+- any scripts that create couples RURO draws
+- any scripts that combine male and female couple draws
+- Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__couples.parquet
+- Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__mnlmeta.json
+- representative single-year couples MNL inputs for 2015, 2016, and 2017 if available
+
+Task:
+Confirm how the current couples choice set is constructed.
+
+Create:
+
+Results/JMP_couples_draw_construction_audit_v1.md
+
+Use exactly these headings:
+
+1. Audit verdict
+2. Files inspected
+3. Current couples draw count
+4. Current singles draw count
+5. Whether couples draws are index-paired diagonal
+6. Evidence from code
+7. Evidence from data
+8. Male draw identifiers
+9. Female draw identifiers
+10. Whether off-diagonal combinations exist
+11. Whether current construction represents a product space
+12. Whether partner opportunity draws are treated as conditionally independent
+13. Implications for current pooled P3a estimates
+14. Implications for next data-build cycle
+15. Required product-sample design choices
+16. What was not executed
+17. Recommended next task
+
+Required checks:
+- Confirm whether each couple has exactly 100 joint alternatives.
+- Confirm whether male and female alternatives are paired by the same draw index.
+- Check whether combinations such as male draw i with female draw j, i != j, ever appear.
+- Identify the exact code path where male and female draws are combined.
+- Determine whether the marginal male and female draws can be reused for a product construction.
+- State whether the current structure is:
+  A. index-paired diagonal,
+  B. product grid,
+  C. random product subsample,
+  D. unclear.
+- If A, state that the product correction is a specification fix for the next data-build cycle.
+- Do not recommend rebuilding immediately inside this audit.
+```
+
+Save as:
+
+```text
+Results/JMP_couples_draw_construction_audit_v1.md
+```
+
+## Track C — Consolidated next-cycle respecification memo
+
+After the audit confirms the construction, write one consolidated memo. Do not keep these as scattered notes.
+
+Use **ChatGPT Thinking** or **Claude Project chat**.
+
+Attach:
+
+```text
+docs/JMP_couples_opportunity_draw_design_note_v1.md
+Results/JMP_couples_draw_construction_audit_v1.md
+Results/JMP_wage_offer_structure_diagnostic_v1.md   # if available
+docs/JMP_pooled_P3a_corrected_region_post_estimation_review_v1.md
+Results/JMP_pooled_P3a_post_estimation_diagnostics_report_v1.md  # if available
+```
+
+Prompt:
+
+```text
+This is for my JMP RURO next-specification cycle.
+
+I have three related opportunity-model design issues:
+
+1. Couples opportunity draws:
+   the current couples construction appears to be an index-paired diagonal of male and female draws, while the economically correct joint feasible set is a product or product sample.
+
+2. Wage-offer structure:
+   occupation-conditional wage distributions may be needed because occupation is a discrete job class and wages likely differ strongly by loc4.
+
+3. Wage equation pooling:
+   sex-specific versus pooled wage equations should be tested rather than assumed.
+
+Please write:
+
+docs/JMP_next_cycle_opportunity_respecification_plan_v1.md
+
+Use exactly these headings:
+
+1. Purpose
+2. Current empirical baseline status
+3. Why this is a next-cycle design memo, not an immediate modification
+4. Issue 1: couples diagonal versus product opportunity set
+5. Issue 2: occupation-conditional wage distribution
+6. Issue 3: sex-specific versus pooled wage equations
+7. Joint computational budget
+8. Recommended next-cycle baseline specification
+9. Alternative specifications to test
+10. Couples product-size options
+11. Wage-density options
+12. Suggested draw method: pseudo-random versus Halton/Sobol
+13. Required data rebuild steps
+14. Required EUROMOD reruns
+15. Required GSURv2 merge steps
+16. Required pooled stacking steps
+17. Required estimation protocol
+18. Simulation-consistency checks
+19. What can be tested read-only now
+20. What requires a data rebuild
+21. What remains blocked
+22. Recommended immediate next task
+
+Required decisions:
+- Treat diagonal-to-product as a specification fix, not merely a draw-count refinement.
+- Treat 900 and 1,600 as candidate manageable product sizes.
+- Treat 10,000 as conceptually ideal but likely infeasible.
+- Recommend a small pilot before full P3a rebuild.
+- Keep current corrected pooled P3a track separate.
+- Do not authorize welfare computation.
+- Do not authorize a full rebuild in this memo.
+```
+
+Save as:
+
+```text
+docs/JMP_next_cycle_opportunity_respecification_plan_v1.md
+```
+
+## What I would do after that
+
+If the current corrected pooled model fails SA2 or remains weak, then the next serious empirical cycle should be:
+
+```text
+Pilot product-couples data build, not full P3a immediately.
+```
+
+I would start with **2016 only**, couples only, and probably **30 × 30 = 900** alternatives. The cost table in your note says 900 alternatives gives about 2.32 million couples rows for the 2016 single-year sample, while 1,600 gives 4.12 million; both are much more manageable than 25.77 million for the full 100 × 100 product. 
+
+The pilot objective would be:
+
+```text
+Can the product construction run through EUROMOD, GSURv2 merge, MNL construction, and precompute without breaking memory/time?
+```
+
+Only then decide whether to build P3a product data.
+
+## Practical recommendation
+
+For now:
+
+```text
+Immediate: finish S4/S5/S6/S8 diagnostics.
+Parallel: run read-only couples draw-construction audit.
+Then: write the consolidated next-cycle respecification plan.
+```
+
+Do not compute welfare yet. Do not authorize a full product-data rebuild yet. But yes, put this issue high on the roadmap: it is probably more important than minor parameter tweaks because it concerns the definition of the couples feasible set itself.
+
+
+# C
+
+Yes: use a **combined Road C**.
+
+Road A alone is too narrow: it only tells you whether the current corrected pooled P3a model can be evaluated. Road B alone is too disruptive: it would start a large data rebuild before you finish extracting what the current model can tell you.
+
+The correct route is:
+
+```text
+Road C = finish current corrected pooled diagnostics + prepare one consolidated next-cycle data-prep redesign.
+```
+
+This is the disciplined interpretation because both issues you mention are upstream data-preparation issues:
+
+```text
+1. Couples diagonal → product-sample joint opportunity set.
+2. Unconditional wage draw → occupation-conditional wage draw.
+```
+
+They should not be implemented separately. They should be designed together, because both alter the generated alternative set before EUROMOD, before GSURv2 merge, before MNL construction, and before estimation.
+
+Some older uploads in this chat have expired; this does not affect the recommended next local steps. Re-upload older files only if you want me to inspect them directly here again.
+
+## My decision
+
+Proceed as follows:
+
+```text
+Immediate current-track task:
+Finish S4/S5/S6/S8 saved-artifact diagnostics for the corrected pooled P3a model.
+
+Immediate next-cycle task:
+Run a combined read-only opportunity data-prep audit covering:
+1. couples diagonal-vs-product construction,
+2. wage-by-occupation structure,
+3. sex-specific vs pooled wage equation,
+4. computational implications for a future rebuild.
+
+Do not rebuild data yet.
+Do not rerun EUROMOD yet.
+Do not estimate a new model yet.
+Do not compute welfare.
+```
+
+So the answer is not Road A or Road B. It is **Road C: current model diagnostics continue, while the next-cycle redesign is audited and planned.**
+
+## Why combine the couples-product and wage-occupation issues?
+
+Because the future rebuild should define a job draw as a coherent package:
+
+```text
+partner job = hours × occupation × wage × GSUR/opportunity variables × disposable income
+```
+
+If you fix couples by moving from diagonal pairing to a product sample, but keep wages drawn independently of occupation, then the joint feasible set becomes larger but may still contain incoherent job packages.
+
+If you condition wages on occupation but keep couples as the diagonal (i=i), then each partner’s marginal job package improves, but the joint couple feasible set remains wrong.
+
+The natural next-cycle target is therefore:
+
+```text
+couples product-sample choice sets
++
+occupation-conditional wage offer structure
+```
+
+with the size chosen under one computational budget.
+
+## Recommended next-cycle hierarchy
+
+Do not jump immediately to the richest model. Use this hierarchy:
+
+```text
+Baseline current cycle:
+P3a corrected pooled model, 100 diagonal couple alternatives, current wage block.
+
+Next-cycle pilot:
+2016 couples only, product-sample alternatives, occupation-conditioned wage intercepts.
+
+If pilot is feasible:
+Extend to P3a 2015–2017.
+
+If still feasible:
+Test 900 versus 1,600 product alternatives and W1 versus W2 wage structures.
+```
+
+I would start with:
+
+```text
+Couples product size: 30 × 30 = 900 alternatives
+Wage structure: occupation wage intercepts, not full occupation-specific slopes
+```
+
+That is the most reasonable first correction: it fixes the joint feasible set and fixes the strongest wage-occupation inconsistency without exploding the parameter count.
+
+## Immediate prompt: combined read-only audit
+
+Use **Claude Code Sonnet locally**.
+
+Save output as:
+
+```text
+Results/JMP_next_cycle_opportunity_data_prep_audit_v1.md
+```
+
+Prompt:
+
+```text
+Work locally in my RURO/MNL codebase.
+
+This is a combined read-only audit for the next JMP opportunity-model data-prep cycle.
+
+Do not modify data.
+Do not rebuild draws.
+Do not run EUROMOD.
+Do not run estimation.
+Do not compute welfare.
+Do not issue SA2.
+Do not promote any model.
+Do not replace M1-clean 2016 as active baseline.
+
+Read:
+- docs/JMP_couples_opportunity_draw_design_note_v1.md
+- docs/JMP_conditional_wage_on_occupation_decision_note_v1.md
+- Results/JMP_pooled_P3a_corrected_region_estimation_report_v1.md
+- Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__singles.parquet
+- Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__couples.parquet
+- Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__mnlmeta.json
+
+Inspect code paths:
+- scripts/enhanced/enh_RURO_prep_mnl_basic.py
+- scripts/enhanced/enh_RURO_euromod.py
+- scripts/maintenance/prepare_pooled_estimation_ready.py
+- any draw-generation scripts
+- any scripts that combine male and female couple draws
+- any wage-draw / wage-opportunity code
+- estimation spec parser and pooled YAML where needed
+
+Task:
+Produce a read-only audit of the next-cycle opportunity data-prep redesign.
+
+Create:
+
+Results/JMP_next_cycle_opportunity_data_prep_audit_v1.md
+
+Use exactly these headings:
+
+1. Audit verdict
+2. Files inspected
+3. Current couples draw construction
+4. Evidence for diagonal pairing
+5. Whether off-diagonal couple combinations exist
+6. Current couples alternative count
+7. Product-sample alternatives required for couples
+8. Current wage-opportunity specification
+9. Whether loc4 enters utility, opportunity, or both
+10. Descriptive wage distributions by loc4
+11. Descriptive wage distributions by loc4 × sex
+12. Residual wage dispersion by loc4 and sex
+13. Evidence for occupation-conditioned wages
+14. Evidence for sex-specific wage equations
+15. Evidence on wage-hours dependence
+16. Joint computational budget
+17. Candidate next-cycle specifications
+18. Recommended pilot design
+19. Required data-prep changes
+20. Required EUROMOD reruns
+21. Required GSURv2 merge changes
+22. Required pooled stacking changes
+23. What can be done read-only now
+24. What requires a data rebuild
+25. What was not executed
+26. Recommended next task
+
+Required checks:
+
+A. Couples draw construction
+- Confirm whether current couples alternatives are index-paired diagonal draws.
+- Confirm whether each couple has 100 joint alternatives.
+- Confirm whether male draw i is paired with female draw i.
+- Check whether male draw i with female draw j, i != j, appears anywhere.
+- Identify the exact code path that combines male and female draws.
+- State whether the current structure is:
+  A. diagonal/index-paired,
+  B. product grid,
+  C. random product subsample,
+  D. unclear.
+
+B. Wage-occupation structure
+- Identify the current wage block in the YAML/code.
+- Report whether wage coefficients are common, sex-specific, or partially pooled.
+- Report whether sigma is common or group-specific.
+- Identify the model occupation variable, especially loc4.
+- Report log-wage mean, sd, p10, p25, p50, p75, p90 by loc4.
+- Report the same by loc4 × sex.
+- Estimate descriptive Mincer regressions:
+  1. current baseline covariates;
+  2. baseline + loc4 intercepts;
+  3. baseline + sex interactions;
+  4. baseline + loc4 × sex interactions.
+- Report model comparison statistics where feasible.
+- Report whether occupation intercepts materially improve wage fit.
+- Report whether sex-specific wage equations are supported.
+
+C. Combined design implication
+- Decide whether the next-cycle pilot should combine:
+  1. couples product-sample alternatives;
+  2. occupation-conditional wage draws;
+  3. sex-specific or pooled wage equations.
+- Recommend a first pilot size:
+  30 × 30 = 900
+  or
+  40 × 40 = 1,600.
+- State whether Halton/Sobol draws should be considered.
+- Do not authorize the rebuild.
+```
+
+## After that audit
+
+Then write one consolidated design memo, not separate mini-memos.
+
+Use **ChatGPT Thinking** or **Claude Project chat**.
+
+Save as:
+
+```text
+docs/JMP_next_cycle_opportunity_respecification_plan_v1.md
+```
+
+Prompt:
+
+```text
+This is for my JMP RURO next-specification cycle.
+
+I have completed a combined read-only audit of the next-cycle opportunity data-prep redesign.
+
+Please write:
+
+docs/JMP_next_cycle_opportunity_respecification_plan_v1.md
+
+Use exactly these headings:
+
+1. Purpose
+2. Current empirical status
+3. Why this is a next-cycle redesign
+4. Couples diagonal-to-product correction
+5. Occupation-conditional wage correction
+6. Sex-specific versus pooled wage equation
+7. Recommended combined next-cycle specification
+8. Candidate alternatives to test
+9. Product-sample size decision
+10. Wage-density decision
+11. Random, Halton, or Sobol draw design
+12. Required data-prep changes
+13. Required EUROMOD reruns
+14. Required GSURv2 merge and MNL rebuild
+15. Required pooled stacking
+16. Required estimation protocol
+17. Simulation-consistency checks
+18. Computational-cost plan
+19. What can be piloted first
+20. What remains blocked
+21. Exact next Claude Code pilot prompt
+
+Required decisions:
+- Treat couples diagonal-to-product as a specification fix.
+- Treat occupation-conditioned wages as the first wage-opportunity correction if diagnostics support it.
+- Prefer a pilot before full P3a rebuild.
+- Recommend 2016 couples-only pilot first unless the audit finds this infeasible.
+- Do not authorize full P3a rebuild.
+- Do not authorize welfare computation.
+- Do not replace M1-clean 2016 as active baseline.
+```
+
+## What to do with the current corrected pooled model
+
+Continue the current diagnostics. It remains useful.
+
+Even if you later move to a product-sample / occupation-conditioned wage specification, the current corrected pooled P3a model is your reference point:
+
+```text
+Current P3a = first feasible pooled baseline.
+Next-cycle model = improved opportunity specification.
+```
+
+That is better than abandoning the current cycle midway. You need the current model to know what the new design improves.
+
+## Bottom line
+
+Use **Road C**:
+
+```text
+Finish current corrected pooled P3a diagnostics.
+Run combined read-only audit for couples-product + wage-occupation.
+Then write one next-cycle opportunity respecification plan.
+Only after that, consider a 2016 couples-only pilot rebuild.
+```
+
+This keeps the project rigorous and prevents another uncontrolled explosion of branches.

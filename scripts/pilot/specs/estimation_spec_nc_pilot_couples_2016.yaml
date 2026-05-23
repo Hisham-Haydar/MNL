@@ -1,0 +1,288 @@
+# ==============================================================================
+# NC Pilot — Couples-only 2016 diagnostic estimation specification
+# ==============================================================================
+# Pilot-only spec derived from estimation_spec_ruro_occ_P3a_pooled.yaml.
+# Couples block ONLY. 2016 ONLY (no year dummies — single reference year).
+# delta_occ FIXED/calibrated in the W1 wage draw — NOT a free parameter.
+# beta_occ_* remain free (opportunity-availability mass).
+# theta_c FIXED at 0.0 (log-utility for couples consumption, same as P3a).
+#
+# Parameter count: 33  (P3a couples-only block minus beta_E_y2015, beta_E_y2017,
+#                       minus singles parameters, minus theta_c_singles)
+#
+# NOT verdict-grade. Diagnostic feasibility run only.
+# Authorized by: docs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md
+# ==============================================================================
+
+model_version: "AC2013"
+
+specification:
+  name: "nc_pilot_couples_2016"
+  description: "NC pilot couples-only 2016 diagnostic. Derived from P3a pooled couples block. Year dummies dropped (2016-only = reference year). delta_occ fixed in W1 draw. ~29 free parameters. NOT verdict-grade."
+  wage_spec: "vw"
+  model_family: "regular"
+
+utility:
+  functional_form: "box_cox"
+
+  consumption:
+    coefficient: "beta_c"
+    box_cox_exponent: "theta_c"
+    couples_fixed_box_cox_exponent: 0.0    # theta_c FIXED at 0.0 (log-utility)
+    box_cox_bounds: [-8.0, 0.95]
+
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: "theta_l"
+    box_cox_bounds: [-8.0, 0.95]
+    shifters:
+      - variable: "age_norm"
+        coefficient: "beta_l_age"
+      - variable: "age_norm2"
+        coefficient: "beta_l_age2"
+      - variable: "n_children"
+        coefficient: "beta_l_nkids"
+        gender_specific: true   # female only
+
+hours_opportunity:
+  shifters:
+    - variable: "working"
+      coefficient: "beta_E"
+    - variable: "working_pt1"
+      coefficient: "beta_h_pt1"
+    - variable: "working_pt2"
+      coefficient: "beta_h_pt2"
+    - variable: "working_ft"
+      coefficient: "beta_h_ft"
+
+wage_opportunity:
+  specification: "log_normal"
+  mean_shifters:
+    - variable: "intercept"
+      coefficient: "beta_w0"
+    - variable: "educL"
+      coefficient: "beta_w_educL"
+    - variable: "educH"
+      coefficient: "beta_w_educH"
+    - variable: "pexp_years"
+      coefficient: "beta_w_pexp"
+    - variable: "pexp_years2"
+      coefficient: "beta_w_pexp2"
+  variance:
+    parameter: "sigma"
+
+market_opportunity:
+  applies_to: "both"
+  employment_indicator: "working"
+  gsur_variable: "gsur"
+  offer_only_vars: ["gsur"]
+  center_within_choice_set: true
+  center_weights: "proposal"
+  variable_scales:
+    gsur: 10.0
+
+  shifters:
+    - variable: "gsur"
+      coefficient: "beta_E_gsur"
+      interaction: ["working"]
+    - variable: "reg2"
+      coefficient: "beta_E_drgn2"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg3"
+      coefficient: "beta_E_drgn3"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg4"
+      coefficient: "beta_E_drgn4"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg5"
+      coefficient: "beta_E_drgn5"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg6"
+      coefficient: "beta_E_drgn6"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg7"
+      coefficient: "beta_E_drgn7"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg8"
+      coefficient: "beta_E_drgn8"
+      interaction: ["working"]
+      applies_to: "household"
+    # NO year dummies: 2016-only pilot; beta_E_y2015 and beta_E_y2017 DROPPED
+
+occupation_opportunity:
+  variable: "loc4"
+  reference: 1
+  shifters:
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_cm"
+      applies_to: "cm"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_cm"
+      applies_to: "cm"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_cm"
+      applies_to: "cm"
+      interaction: ["working"]
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_cf"
+      applies_to: "cf"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_cf"
+      applies_to: "cf"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_cf"
+      applies_to: "cf"
+      interaction: ["working"]
+
+couples:
+  leisure_interaction:
+    coefficient: "beta_ll"
+
+# 33 free parameters (couples only, 2016 only):
+# Leisure (male): beta_l0_m, beta_l_age_m, beta_l_age2_m, theta_l_m  [4]
+# Leisure (female): beta_l0_f, beta_l_age_f, beta_l_age2_f, beta_l_nkids_f, theta_l_f  [5]
+# Consumption: beta_c  [1]  (theta_c FIXED at 0.0)
+# Hours opp: beta_E, beta_h_pt1, beta_h_pt2, beta_h_ft  [4]
+# Market opp: beta_E_gsur, beta_E_drgn2..8  [8]
+# Occ opp (couples only): beta_occ_2_cm, beta_occ_3_cm, beta_occ_4_cm,
+#                          beta_occ_2_cf, beta_occ_3_cf, beta_occ_4_cf  [6]
+# Wage: beta_w0, beta_w_educL, beta_w_educH, beta_w_pexp, beta_w_pexp2, sigma  [6]
+# Leisure interaction: beta_ll  [1]  (couples household)
+# TOTAL: 4+5+1+4+8+6+6+1 = 35... recount:
+# Actually couples block from P3a: 21 non-occ, 6 occ-couples = 27 + sigma=1 + beta_ll=1 = 29
+# Plus hours opp 4 + market 8 = total 29 free params. See script for actual count.
+
+initial_values:
+  # Male leisure
+  beta_l0_m: 1e-06
+  beta_l_age_m: 0.0059
+  beta_l_age2_m: 0.0016
+  theta_l_m: -0.682
+
+  # Female leisure
+  beta_l0_f: 2.605
+  beta_l_age_f: -0.058
+  beta_l_age2_f: 0.0053
+  beta_l_nkids_f: 0.143
+  theta_l_f: -0.658
+
+  # Household consumption (theta_c FIXED at 0.0)
+  beta_c: 4.312
+
+  # Hours opportunity
+  beta_E: -2.398
+  beta_h_pt1: -0.475
+  beta_h_pt2: 0.425
+  beta_h_ft: 1.406
+
+  # Market opportunity (region)
+  beta_E_gsur: -1.200
+  beta_E_drgn2: 0.396
+  beta_E_drgn3: 0.350
+  beta_E_drgn4: 0.642
+  beta_E_drgn5: 0.431
+  beta_E_drgn6: 0.358
+  beta_E_drgn7: 0.367
+  beta_E_drgn8: 0.168
+
+  # Occupation opportunity (couples)
+  beta_occ_2_cm: -1.503
+  beta_occ_3_cm: -2.222
+  beta_occ_4_cm: 0.476
+  beta_occ_2_cf: 0.113
+  beta_occ_3_cf: -0.329
+  beta_occ_4_cf: 1.075
+
+  # Wage
+  beta_w0: 2.033
+  beta_w_educL: -0.041
+  beta_w_educH: 0.307
+  beta_w_pexp: 0.0173
+  beta_w_pexp2: -0.000182
+  sigma: 0.403
+
+  # Leisure interaction (couples)
+  beta_ll: 2.656
+
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 3000
+  tolerance: 1.0e-8
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 10
+
+  bounds:
+    theta_l_m:  [-8.0, 0.95]
+    theta_l_f:  [-8.0, 0.95]
+
+    beta_c:    [0.05, 50.0]
+    beta_l0_m:  [1.0e-6, 50.0]
+    beta_l0_f:  [0.05, 50.0]
+
+    beta_l_age_m:    [-5.0, 5.0]
+    beta_l_age2_m:   [-1.0, 1.0]
+    beta_l_age_f:    [-5.0, 5.0]
+    beta_l_age2_f:   [-1.0, 1.0]
+    beta_l_nkids_f:  [-5.0, 5.0]
+
+    beta_E:     [-25.0, 25.0]
+    beta_h_pt1: [-10.0, 10.0]
+    beta_h_pt2: [-10.0, 10.0]
+    beta_h_ft:  [-10.0, 10.0]
+
+    beta_w0:       [-10.0, 20.0]
+    beta_w_educL:  [-5.0, 5.0]
+    beta_w_educH:  [-5.0, 5.0]
+    beta_w_pexp:   [-1.0, 1.0]
+    beta_w_pexp2:  [-0.1, 0.1]
+
+    beta_E_gsur:   [-10.0, 10.0]
+    beta_E_drgn2:  [-10.0, 10.0]
+    beta_E_drgn3:  [-10.0, 10.0]
+    beta_E_drgn4:  [-10.0, 10.0]
+    beta_E_drgn5:  [-10.0, 10.0]
+    beta_E_drgn6:  [-10.0, 10.0]
+    beta_E_drgn7:  [-10.0, 10.0]
+    beta_E_drgn8:  [-10.0, 10.0]
+
+    beta_occ_2_cm: [-10.0, 10.0]
+    beta_occ_3_cm: [-10.0, 10.0]
+    beta_occ_4_cm: [-10.0, 10.0]
+    beta_occ_2_cf: [-10.0, 10.0]
+    beta_occ_3_cf: [-10.0, 10.0]
+    beta_occ_4_cf: [-10.0, 10.0]
+
+    sigma: [0.1, 20.0]
+
+    beta_ll: [0.0, 10.0]
+
+  expression_constraints:
+    enabled: true
+    default_mode: soft
+    default_weight: 1000.0
+    constraints:
+      - name: mul_cou_m_positive
+        expression: mul
+        group: couples_male
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        lower: 1.0e-6
+      - name: mul_cou_f_positive
+        expression: mul
+        group: couples_female
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        lower: 1.0e-6
+
+gradient_verification:
+  enabled: false

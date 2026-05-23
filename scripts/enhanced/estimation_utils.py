@@ -56,6 +56,33 @@ NORMALIZATION_ERROR_THRESHOLD = 1e-4
 # Helper Functions for Data Preparation
 # ==============================================================================
 
+def _resolve_draw_column(df: "pd.DataFrame") -> "pd.Series":
+    """Resolve the draw-identifier column for group/choice-set construction.
+
+    Prefer the legacy scalar ``draw`` when present so production data behaves
+    unchanged.  Fall back to ``draw_joint`` for the NC pilot parquet which
+    carries no scalar ``draw`` by design (HC-DRAW).  Fail loudly when neither
+    is available — no silent default, no synthesised index.
+
+    Authorized by:
+      docs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md
+      Option B (code fallback); the resolved series is used ONLY for group
+      identification and is never written back, renamed to 'draw', or used for
+      ID / draw arithmetic.
+    """
+    if "draw" in df.columns:
+        return df["draw"]
+    elif "draw_joint" in df.columns:
+        return df["draw_joint"]
+    else:
+        raise ValueError(
+            "Draw-column resolution failed: neither 'draw' nor 'draw_joint' "
+            "is present in the dataframe.  Production data must have 'draw'; "
+            "NC pilot data must have 'draw_joint'.  Cannot construct "
+            "choice-set groups without one of these columns."
+        )
+
+
 def to_safe_numeric(
     series: pd.Series,
     fill_value: float = 0.0,
@@ -223,7 +250,20 @@ def _validate_mnl_dataset(
         optional_cols = ["wage", "gsur", "u_rate", "loc4", "age_norm", "n_children", "educL", "educM", "educH"]
     else:  # couples
         # NOTE: Consumption can be either household-level OR person-level (consumption_male/consumption_female)
-        base_required_cols = ["idhh", "draw", "leisure_male", "leisure_female",
+        # Draw-column resolution: accept 'draw' (legacy production) OR 'draw_joint'
+        # (NC pilot parquet — no scalar 'draw' by HC-DRAW design).  Fail loud if
+        # neither is present; the resolved name is added to the required-cols list.
+        if "draw" in df.columns:
+            _draw_col_name = "draw"
+        elif "draw_joint" in df.columns:
+            _draw_col_name = "draw_joint"
+        else:
+            errors.append(
+                "Missing draw identifier: neither 'draw' nor 'draw_joint' column found. "
+                "Production data requires 'draw'; NC pilot data requires 'draw_joint'."
+            )
+            _draw_col_name = "draw"  # placeholder so list construction below doesn't crash
+        base_required_cols = ["idhh", _draw_col_name, "leisure_male", "leisure_female",
                               "hours_male", "hours_female", "prior"]
 
         # Check if we have person-level consumption (CORRECT for couples)
@@ -348,14 +388,16 @@ def _validate_mnl_dataset(
         if not df["idhh"].is_monotonic_increasing:
             errors.append("Data is not sorted by idhh (required for group boundaries)")
 
-    # 6. Check draw range
-    if "draw" in df.columns:
-        draw_min, draw_max = df["draw"].min(), df["draw"].max()
+    # 6. Check draw range (legacy 'draw' or pilot 'draw_joint')
+    _draw_range_col = "draw" if "draw" in df.columns else ("draw_joint" if "draw_joint" in df.columns else None)
+    if _draw_range_col is not None:
+        draw_min, draw_max = df[_draw_range_col].min(), df[_draw_range_col].max()
         n_draws = metadata.get("n_draws")
         if n_draws is not None:
             if draw_min != 0 or draw_max != n_draws - 1:
                 warnings_list.append(
-                    f"Draw range [{draw_min}, {draw_max}] doesn't match expected [0, {n_draws-1}]"
+                    f"Draw range [{draw_min}, {draw_max}] (column '{_draw_range_col}') "
+                    f"doesn't match expected [0, {n_draws-1}]"
                 )    # Report results
     if warnings_list:
         logger.warning(f"  Validation warnings for {dataset_type}:")

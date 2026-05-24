@@ -2096,6 +2096,13 @@ def parse_args() -> argparse.Namespace:
         help="Disable column filtering (write all columns instead of ~100 essential). "
              "By default, only essential columns are written to reduce file size by ~85-90%%."
     )
+    ap.add_argument(
+        "--explore-dump-dir",
+        default=None,
+        help="If set, write the UNFILTERED singles/couples frames (post-EUROMOD, "
+             "post-GSUR, pre-column-filter) as predrop_full__{singles,couples}.parquet "
+             "for data exploration. Does NOT affect the estimation outputs.",
+    )
 
     # Metadata
     ap.add_argument(
@@ -2387,6 +2394,18 @@ def main() -> None:
             raise
 
     logging.info("All MNL dataset sanity checks passed ✓\n")
+
+    # ---- Pre-drop exploration dump (post-EUROMOD, post-GSUR, pre-filter) ----
+    if args.explore_dump_dir:
+        _dd = Path(args.explore_dump_dir).resolve()
+        _dd.mkdir(parents=True, exist_ok=True)
+        singles_mnl.to_parquet(_dd / "predrop_full__singles.parquet", index=False)
+        logging.info("Pre-drop dump: singles %d cols -> %s",
+                     len(singles_mnl.columns), _dd)
+        if couples_mnl is not None and not couples_mnl.empty:
+            couples_mnl.to_parquet(_dd / "predrop_full__couples.parquet", index=False)
+            logging.info("Pre-drop dump: couples %d cols -> %s",
+                         len(couples_mnl.columns), _dd)
 
     # -------------------------------------------------------------------------
     # 7. Write outputs

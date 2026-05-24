@@ -1,0 +1,154 @@
+GAMS 51.4.0  91cb996b Nov 10, 2025          WEX-WEI x86 64bit/MS Windows - 05/24/26 13:41:38 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+1513  Model ruro_couples_mnl_vectorized / ruro_couples_mnl_vectorized_objective /;
+1514  solve ruro_couples_mnl_vectorized using NLP MAX ruro_couples_mnl_vectorized_objective_variable
+1515   
+
+
+COMPILATION TIME     =        0.000 SECONDS  1,621 MB  51.4.0 91cb996b WEX-WEI
+GAMS 51.4.0  91cb996b Nov 10, 2025          WEX-WEI x86 64bit/MS Windows - 05/24/26 13:41:38 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Range Statistics    SOLVE ruro_couples_mnl_vectorized Using NLP From \\users\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\gamspy_estimation_vectorized.py line 1473
+
+
+RANGE STATISTICS (ABSOLUTE NON-ZERO FINITE VALUES)
+
+RHS       [min, max] : [ 3.526E+04, 3.526E+04]
+Bound     [min, max] : [ 1.000E-06, 5.000E+01] - Zero values observed as well
+Matrix    [min, max] : [ 1.000E+00, 3.139E+06]
+
+GAMS 51.4.0  91cb996b Nov 10, 2025          WEX-WEI x86 64bit/MS Windows - 05/24/26 13:41:38 Page 3
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE ruro_couples_mnl_vectorized Using NLP From \\users\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\gamspy_estimation_vectorized.py line 1473
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           1     SINGLE EQUATIONS            1
+BLOCKS OF VARIABLES          36     SINGLE VARIABLES           36
+NON ZERO ELEMENTS            36     NON LINEAR N-Z             35
+CODE LENGTH         368,685,287     CONSTANT POOL       9,055,657
+
+
+GENERATION TIME      =    12271.844 SECONDS  1,792 MB  51.4.0 91cb996b WEX-WEI
+GAMS 51.4.0  91cb996b Nov 10, 2025          WEX-WEI x86 64bit/MS Windows - 05/24/26 13:41:38 Page 4
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE ruro_couples_mnl_vectorized Using NLP From \\users\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\gamspy_estimation_vectorized.py line 1473
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   ruro_couples_mnl_vectorized   OBJECTIVE  ruro_couples_mnl_vectorized_objective_variable
+     TYPE    NLP                           DIRECTION  MAXIMIZE
+     SOLVER  CONOPT4                       FROM LINE  1517
+
+**** SOLVER STATUS     1 Normal Completion
+**** MODEL STATUS      2 Locally Optimal
+**** OBJECTIVE VALUE           -16527.1422
+
+ RESOURCE USAGE, LIMIT       1091.516 10000000000.000
+ ITERATION COUNT, LIMIT        24    2147483647
+ EVALUATION ERRORS              0             0
+
+Reading parameter(s) from "C:\Users\hisham\AppData\Local\Temp\24\tmp07t916l4\conopt4.opt"
+>>  iterlim 500
+>>  reslim 1800
+Finished reading from "C:\Users\hisham\AppData\Local\Temp\24\tmp07t916l4\conopt4.opt"
+
+ 
+ 
+    C O N O P T   version 4.38.2
+    Copyright (C) GAMS Software GmbH
+                  GAMS Development Corporation
+ 
+    Will use up to 4 threads.
+ 
+ 
+    The user model has 1 constraints and 36 variables
+    with 36 Jacobian elements, 35 of which are nonlinear.
+    The Hessian of the Lagrangian has 35 elements on the diagonal,
+    574 elements below the diagonal, and 35 nonlinear variables.
+ 
+    The post-triangular part of the model has 1 constraints and variables.
+ 
+    Preprocessed model has no constraints and 35 variables.
+ 
+ ** Optimal solution. Reduced gradient less than tolerance.
+ 
+ 
+ CONOPT time Total                         1082.401 seconds
+   of which: Function evaluations            56.687 =  5.2%
+             1st Derivative evaluations      99.181 =  9.2%
+             2nd Derivative evaluations      59.251 =  5.5%
+             Directional 2nd Deriv(Hess)    826.461 = 76.4%
+             Interval derivative evals       38.910 =  3.6%
+ 
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU ruro_coup~    -35262.1015    -35262.1015    -35262.1015        -1.0000      
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR beta_l0_m    1.0000000E-6         0.0122        50.0000         EPS         
+---- VAR beta_l_ag~        -5.0000        -0.0057         5.0000         EPS         
+---- VAR beta_l_ag~        -1.0000         0.0015         1.0000         EPS         
+---- VAR theta_l_m         -8.0000        -0.7752         0.9500         EPS         
+---- VAR beta_l0_f          0.0500         1.8273        50.0000         EPS         
+---- VAR beta_l_ag~        -5.0000        -0.0229         5.0000         EPS         
+---- VAR beta_l_ag~        -1.0000         0.0006         1.0000         EPS         
+---- VAR beta_l_nk~        -5.0000         0.2391         5.0000         EPS         
+---- VAR theta_l_f         -8.0000        -0.7315         0.9500         EPS         
+---- VAR beta_c             0.0500         2.1820        50.0000         EPS         
+---- VAR beta_E           -25.0000         9.6072        25.0000         EPS         
+---- VAR beta_h_pt1       -10.0000        -0.8735        10.0000         EPS         
+---- VAR beta_h_pt2       -10.0000         0.5954        10.0000         EPS         
+---- VAR beta_h_ft        -10.0000         1.7131        10.0000         EPS         
+---- VAR beta_E_gs~       -10.0000        -5.3468        10.0000         EPS         
+---- VAR beta_E_dr~       -10.0000         0.7185        10.0000         EPS         
+---- VAR beta_E_dr~       -10.0000         2.0847        10.0000         EPS         
+---- VAR beta_E_dr~       -10.0000         1.5367        10.0000         EPS         
+---- VAR beta_E_dr~       -10.0000         0.2867        10.0000         EPS         
+---- VAR beta_E_dr~       -10.0000         0.8494        10.0000         EPS         
+---- VAR beta_E_dr~       -10.0000         0.5945        10.0000         EPS         
+---- VAR beta_E_dr~       -10.0000         1.4012        10.0000         EPS         
+---- VAR beta_occ_~       -10.0000        -1.6173        10.0000         EPS         
+---- VAR beta_occ_~       -10.0000        -2.3462        10.0000         EPS         
+---- VAR beta_occ_~       -10.0000         0.0437        10.0000         EPS         
+---- VAR beta_occ_~       -10.0000         1.0988        10.0000         EPS         
+---- VAR beta_occ_~       -10.0000         1.1090        10.0000         EPS         
+---- VAR beta_occ_~       -10.0000         0.4439        10.0000         EPS         
+---- VAR beta_w0          -10.0000         4.5356        20.0000         EPS         
+---- VAR beta_w_ed~        -5.0000        -1.8553         5.0000         EPS         
+---- VAR beta_w_ed~        -5.0000         2.2037         5.0000         EPS         
+---- VAR beta_w_pe~        -1.0000        -0.0072         1.0000         EPS         
+---- VAR beta_w_pe~        -0.1000         0.0006         0.1000   -5.131596E-9      
+---- VAR sigma              0.1000         1.7974        20.0000         EPS         
+---- VAR beta_ll             .             2.1817        10.0000         EPS         
+---- VAR ruro_coup~        -INF       -16527.1422        +INF             .          
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+GAMS 51.4.0  91cb996b Nov 10, 2025          WEX-WEI x86 64bit/MS Windows - 05/24/26 13:41:38 Page 5
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+EXECUTION TIME       =    13375.547 SECONDS  1,792 MB  51.4.0 91cb996b WEX-WEI
+
+
+USER: Hisham Haydar(AU)                              G251121+0003Ac-GEN
+      0232507946@uni.lu                                       GPA109236
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      C:\Users\hisham\AppData\Local\Temp\24\tmp07t916l4\_gioBnPQ0TNyHJHBsdSQfNw.gms
+Output     \\users\users\hisham\Desktop\Nizam_Hisham\MNL\Results\pilot\nc_2016_couples\diagnostic_rerun_v1\start_2_yaml_defaults\solver.lst

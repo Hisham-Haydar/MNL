@@ -465,7 +465,7 @@ Both sidecars carry:
 
 ### Welfare
 
-Both `docs/JMP_welfare_measurement_decisions_memo_v2.md` and `docs/JMP_welfare_scaffolding_design_memo_v2.md` are complete. Welfare decisions and scaffolding code-architecture design are done. Welfare **implementation** and **computation** remain unauthorized — neither memo constitutes execution authorization.
+Both `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md` and `docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md` are complete. Welfare decisions and scaffolding code-architecture design are done. Welfare **implementation** and **computation** remain unauthorized — neither memo constitutes execution authorization.
 
 ### Remaining blockers before pooled estimation
 

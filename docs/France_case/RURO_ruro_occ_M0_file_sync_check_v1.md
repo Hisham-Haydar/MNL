@@ -9,10 +9,10 @@ instructions is present at the expected path.
 
 | Expected path | Status | Notes |
 |---|---|---|
-| `docs/RURO_model_spec_contract_v4_ruro_occ.md` | **EXISTS** | Correct location. |
-| `docs/RURO_occ_pipeline_audit_v1.md` | **EXISTS** | Correct location. |
-| `docs/RURO_ruro_occ_baseline_spec_v1.md` | **EXISTS** | Correct location (see §2). |
-| `docs/RURO_ruro_occ_baseline_implementation_report_v1.md` | **EXISTS** | Correct location. |
+| `docs/specifications/RURO_model_spec_contract_v4_ruro_occ.md` | **EXISTS** | Correct location. |
+| `docs/specifications/RURO_occ_pipeline_audit_v1.md` | **EXISTS** | Correct location. |
+| `docs/France_case/RURO_ruro_occ_baseline_spec_v1.md` | **EXISTS** | Correct location (see §2). |
+| `docs/France_case/RURO_ruro_occ_baseline_implementation_report_v1.md` | **EXISTS** | Correct location. |
 | `scripts/enhanced/estimation_spec_ruro_occ_M0.yaml` | **EXISTS** | Correct location. |
 
 ## 2. Path mismatch — `RURO_ruro_occ_baseline_spec_v1.md`
@@ -27,14 +27,14 @@ Prototype/RURO_ruro_occ_baseline_spec_v1.md
 The file does **not** exist under `Prototype/`. It lives at:
 
 ```
-docs/RURO_ruro_occ_baseline_spec_v1.md
+docs/France_case/RURO_ruro_occ_baseline_spec_v1.md
 ```
 
 ### Required fix
 
 Update the reference path in:
 
-1. `docs/RURO_ruro_occ_baseline_implementation_report_v1.md` — header
+1. `docs/France_case/RURO_ruro_occ_baseline_implementation_report_v1.md` — header
    "Inputs read" list, line 3.
 2. `scripts/enhanced/estimation_spec_ruro_occ_M0.yaml` — comment block,
    line 8 (`Prototype/RURO_ruro_occ_baseline_spec_v1.md`).

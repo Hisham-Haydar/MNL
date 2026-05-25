@@ -3,7 +3,7 @@
 Date: 2026-05-17
 Lookup file: `Data/external/FR_gsur_ruro_v2_stageA.parquet`
 Script: `scripts/enhanced/enh_prepare_FR_gsur_v2.py`
-Reference spec: `docs/RURO_GSUR_rebuild_specification_v2_1.md`
+Reference spec: `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md`
 
 ---
 
@@ -339,4 +339,4 @@ versioned GSURv2 MNL parquet paths.
 | Eurostat `lfst_r_lfsd2pop` (population in private households, D2 operational) | `Data/external/lfst_r_lfsd2pop_FR_2016.tsv` | 2026-05-17; URL: `https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/lfst_r_lfsd2pop?format=SDMX-CSV&startPeriod=2016&endPeriod=2016` |
 | Eurostat `lfst_r_lfp2acedu` (labour force, D1 diagnostic) | `Data/external/lfst_r_lfp2acedu_FR_2016.tsv` | 2026-05-17; URL: `https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/lfst_r_lfp2acedu?format=SDMX-CSV&startPeriod=2016&endPeriod=2016` |
 | INSEE BDM série 001688526 (ILO unemployment rate, Metropolitan France, SA) | `Data/external/insee_001688526_2016.csv` | 2026-05-17; URL: `https://api.insee.fr/series/BDM/V1/data/SERIES_BDM/001688526` |
-| EUROMOD FR 2016 DRD (`DRD_FR_2016_a3_export.txt`) | `docs/euromod_reference/DRD_FR_2016_a3_export.txt` | In-repository |
+| EUROMOD FR 2016 DRD (`DRD_FR_2016_a3_export.txt`) | `docs/France_case/euromod_reference/DRD_FR_2016_a3_export.txt` | In-repository |

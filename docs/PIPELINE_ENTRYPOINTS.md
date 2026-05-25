@@ -2,16 +2,16 @@
 
 This file defines the active paths for future work. If another script can do a similar job but is not listed here, treat it as legacy, diagnostic, or experimental until it is promoted here.
 
-For a topic-by-topic memory map of GMM, GSUR, job-choice, commands, and current result baselines, see `docs/RURO_PROJECT_MEMORY_MAP.md`.
+For a topic-by-topic memory map of GMM, GSUR, job-choice, commands, and current result baselines, see `docs/package/RURO_PROJECT_MEMORY_MAP.md`.
 
 Focused method notes:
 
-- `docs/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md`
-- `docs/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md`
-- `docs/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md`
-- `docs/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
-- `docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
-- `docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
+- `docs/methods/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md`
+- `docs/package/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md`
+- `docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md`
+- `docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
+- `docs/methods/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
+- `docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
 
 ## Active Continuous RURO Pipeline
 

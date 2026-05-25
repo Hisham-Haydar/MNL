@@ -1,6 +1,6 @@
 # JMP Multi-Year CPI/HICP Source Decision
 
-**Document:** docs/JMP_multi_year_CPI_HICP_source_decision_v1.md
+**Document:** docs/France_case/JMP_multi_year_CPI_HICP_source_decision_v1.md
 **Date:** 2026-05-19
 **Execution-readiness context:** docs/JMP_multi_year_stage_M1_execution_readiness_report_v1.md
 **Plan reference:** docs/JMP_multi_year_stage_M1_implementation_plan_v2.md §7

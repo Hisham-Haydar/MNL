@@ -17,9 +17,9 @@ Reference documents:
 - `docs/JMP_GSURv2_multi_year_extension_design_memo_v1.md` (the
   governing design memo defining conditions A1–A6 and changes
   C1–C7)
-- `docs/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
+- `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
   year alignment rule and the GSURv2 final-build requirement)
-- `docs/RURO_GSUR_rebuild_specification_v2_1.md` (the canonical
+- `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md` (the canonical
   GSURv2 construction methodology — referenced for validation
   checks)
 - `docs/RURO_GSUR_v2_stageA_implementation_report_v1.md` (the

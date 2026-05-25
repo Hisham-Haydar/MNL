@@ -7,8 +7,8 @@ Deletion status: no files were deleted.
 ## Added
 
 - `docs/PIPELINE_ENTRYPOINTS.md`
-- `docs/RURO_ACTIVE_RESULTS_REGISTRY.md`
-- `docs/RURO_PROJECT_HYGIENE_CLEANUP_LOG_2026-05-11.md`
+- `docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md`
+- `docs/France_case/RURO_PROJECT_HYGIENE_CLEANUP_LOG_2026-05-11.md`
 - `outputs/KEEP_RESULTS.md`
 - `scripts/archive/README.md`
 - `scripts/diagnostics/README.md`
@@ -23,7 +23,7 @@ Deletion status: no files were deleted.
 - `scripts/enhanced/README.md`
 - `scripts/enhanced/run_diagnostics.ps1`
 - `scripts/enhanced/enh_RURO_prep.py`
-- `docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md`
+- `docs/package/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md`
 
 The previous root `README.md` was preserved as:
 

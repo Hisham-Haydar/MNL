@@ -18,7 +18,7 @@ Reference documents:
   of M1-clean)
 - `docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the prior baseline
   documenting the singles consumption identification limitation)
-- `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`
+- `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`
   (the pooled-estimation roadmap and the SA2 verdict architecture)
 - `Prompts/JMP_ability_vs_opportunity_framework_v1.md` (the
   ability/opportunity partition driving the welfare cuts)

@@ -30,7 +30,7 @@ Reference documents:
 - `Prompts/JMP_ability_vs_opportunity_framework_v1.md` (the
   conceptual framework; its regional design is superseded by this
   memo)
-- `docs/RURO_GSUR_rebuild_specification_v2_1.md` §16 (the frozen
+- `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md` §16 (the frozen
   blocks that M1-clean preserves)
 - `scripts/enhanced/specifications/estimation_spec_ruro_occ_M0c_b2_GSURv2.yaml`
   (the working YAML; the M1-clean YAML is derived from this file)

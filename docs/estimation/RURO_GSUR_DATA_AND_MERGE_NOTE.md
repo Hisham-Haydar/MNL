@@ -443,5 +443,5 @@ Read in this order:
 2. `scripts/enhanced/enh_RURO_prep_mnl_basic.py`
 3. `scripts/enhanced/estimation_spec_parser.py`
 4. `scripts/enhanced/estimation_spec_job_M2c.yaml`
-5. `docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
-6. `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
+5. `docs/methods/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
+6. `docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`

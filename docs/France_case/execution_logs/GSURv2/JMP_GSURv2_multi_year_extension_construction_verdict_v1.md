@@ -19,7 +19,7 @@ Primary evidence:
 Governing documents:
 - `docs/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md`
   (the Option B construction authorization)
-- `docs/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
+- `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
   year alignment rule and the GSURv2 final-build requirement)
 - `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md`
   (the provisional P3a construction the GSURv2 lookups will

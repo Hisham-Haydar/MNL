@@ -150,7 +150,7 @@ Hours rounded to nearest integer. Non-employment (h = 0) excluded. Contract foca
 
 ## Section 2 — Variable Decode
 
-All value counts below are from **chosen rows** (n = 1,676 singles). All variables are present in the singles pre-drop dump. Source: EUROMOD DRD FR_2016 (`docs/euromod_reference/DRD_FR_2016_a3_export.txt`).
+All value counts below are from **chosen rows** (n = 1,676 singles). All variables are present in the singles pre-drop dump. Source: EUROMOD DRD FR_2016 (`docs/France_case/euromod_reference/DRD_FR_2016_a3_export.txt`).
 
 ---
 

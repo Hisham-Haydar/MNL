@@ -3,7 +3,7 @@
 **Document:** JMP_multi_year_feasibility_audit_addendum_v2.md  
 **Extends:** Results/JMP_multi_year_feasibility_audit_addendum_v1.md  
 **Date:** 2026-05-19  
-**Reference memo:** docs/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md  
+**Reference memo:** docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md  
 
 ---
 

@@ -25,8 +25,8 @@ Reference documents:
   `docs/JMP_pooled_P3a_estimation_execution_authorization_correction_v1.md`
   (the standing estimation authorization unblocked by this clearance)
 - `docs/RURO_occ_P3a_pooled_GA17_clearance_addendum_v1.md`,
-  `docs/RURO_cluster_robust_SE_implementation_report_v1.md`,
-  `docs/RURO_cluster_robust_SE_implementation_correction_v1.md`,
+  `docs/estimation/RURO_cluster_robust_SE_implementation_report_v1.md`,
+  `docs/estimation/RURO_cluster_robust_SE_implementation_correction_v1.md`,
   `Results/RURO_cluster_robust_SE_static_validation_v1.md` (the
   cluster-robust SE infrastructure and its smoke-test validation)
 - `Results/JMP_pooled_P3a_v7_interface_check_placeholder_theta.json`

@@ -11,11 +11,11 @@ infrastructure that the Gate-A parse report identified as the
 blocker between Gate-A and the pooled-estimation authorization memo.
 
 Primary evidence:
-- `docs/RURO_cluster_robust_SE_design_audit_v1.md` (the design audit
+- `docs/estimation/RURO_cluster_robust_SE_design_audit_v1.md` (the design audit
   specifying the sandwich estimator and the T1–T6 validation tests)
-- `docs/RURO_cluster_robust_SE_implementation_report_v1.md` (the
+- `docs/estimation/RURO_cluster_robust_SE_implementation_report_v1.md` (the
   implementation report)
-- `docs/RURO_cluster_robust_SE_implementation_correction_v1.md` (the
+- `docs/estimation/RURO_cluster_robust_SE_implementation_correction_v1.md` (the
   implementation correction applying the GA17-wording, C2-check, and
   cluster-key-strictness fixes)
 - `Results/RURO_cluster_robust_SE_static_validation_v1.md` (the

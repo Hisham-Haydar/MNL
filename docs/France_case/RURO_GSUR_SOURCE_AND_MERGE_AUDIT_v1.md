@@ -8,7 +8,7 @@ This audit records what the France GSUR data contain before the MNL merge,
 how the current enhanced RURO pipeline merges them, and what actually lands
 in the final France 2016 continuous-branch MNL parquets.
 
-It complements `docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md`:
+It complements `docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md`:
 
 - the existing note documents the intended GSUR pipeline;
 - this audit documents the current files and the realized 2016 merge.

@@ -5,7 +5,7 @@
 **Author:** Pipeline execution via Claude Code  
 **Authorization:** `docs/JMP_single_year_replication_2015_2017_authorization_v1.md`  
 **Command plan:** `docs/JMP_single_year_replication_2015_2017_command_plan_v2.md` + `_addendum_v1.md`  
-**GSUR decision:** `docs/JMP_GSUR_year_alignment_decision_v1.md` (Decision 2)  
+**GSUR decision:** `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` (Decision 2)  
 **Output stem:** `fr_2017_RURO_mnl_v1gsurY2016`
 
 ---
@@ -375,7 +375,7 @@ the single-year pipeline.
 **CPI/HICP deflation** is applied at Stage M1 (m1_stack_years.py / harmonisation
 step), using `Data/external/cpi_hicp_fr_harmonisation.csv`. The φ_t value for
 2017 = **0.9886** (EUROMOD HICP, Option B, provisional). Source:
-`docs/JMP_multi_year_CPI_HICP_source_decision_v1.md`.
+`docs/France_case/JMP_multi_year_CPI_HICP_source_decision_v1.md`.
 
 This parquet is CPI/HICP-ready: it is nominal, consistently constructed with 2015
 and 2016 parquets, and will be deflated at the pooled stage. No correction needed here.

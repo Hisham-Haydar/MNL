@@ -49,13 +49,13 @@ confirmed present before any archiving proceeded.
 | 6 | `docs/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md` | YES |
 | 7 | `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` | YES |
 | 8 | `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3.md` | YES |
-| 9 | `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md` | YES |
-| 10 | `docs/RURO_GSUR_rebuild_specification_v2_1.md` | YES |
+| 9 | `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md` | YES |
+| 10 | `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md` | YES |
 | 11 | `docs/RURO_GSUR_external_acquisition_decision_v2.md` | YES |
-| 12 | `docs/JMP_GSUR_year_alignment_decision_v1.md` | YES |
+| 12 | `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` | YES |
 | 13 | `docs/RURO_occ_M1_naive_robustness_verdict_v1.md` | YES |
-| 14 | `docs/JMP_welfare_measurement_decisions_memo_v2.md` | YES |
-| 15 | `docs/JMP_welfare_scaffolding_design_memo_v2.md` | YES |
+| 14 | `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md` | YES |
+| 15 | `docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md` | YES |
 | 16 | `Results/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md` | YES |
 
 All 16 confirmed present. Archiving proceeds.

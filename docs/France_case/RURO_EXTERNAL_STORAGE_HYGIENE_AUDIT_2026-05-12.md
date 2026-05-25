@@ -348,7 +348,7 @@ incomplete/diagnostic run folders: about 53
 Current active registry:
 
 ```text
-docs/RURO_ACTIVE_RESULTS_REGISTRY.md
+docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md
 ```
 
 Important registered runs:
@@ -536,17 +536,17 @@ Minimum rule:
 Never delete a file that appears in:
 - an active command file;
 - an active result metadata file;
-- docs/RURO_ACTIVE_RESULTS_REGISTRY.md;
-- docs/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md.
+- docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md;
+- docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md.
 ```
 
 ## Practical Rule For Future Work
 
 When returning to the project:
 
-1. Read `docs/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md`.
+1. Read `docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md`.
 2. Use `Z:\Hisham\EUROMOD-STORAGE` for active external data.
 3. Use repository `outputs/` for estimation and post-estimation reports.
-4. Use `docs/RURO_ACTIVE_RESULTS_REGISTRY.md` to decide which result runs matter.
+4. Use `docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md` to decide which result runs matter.
 5. Treat `RURO1`, `old_Data_results`, `old rep`, old `reports`, and `Z:\Hisham\EUROMOD-STORAGE_1` as historical archive material.
 6. Do not mix `U:` and `Z:` artifacts within one pipeline run unless you know they are the same file version.

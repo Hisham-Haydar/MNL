@@ -31,7 +31,7 @@ Maximum deviation across 2015–2017 window: 0.0031 (0.31%) between 2015 and 201
 
 - The HICP CSV **may be used** to run Stage M1 harmonisation. There is no methodological barrier to doing so.
 - If the INSEE IPC (all-items, metropolitan France, annual average) is later retrieved and any φ_t differs from the HICP value by more than 0.5 percentage points, the CSV must be rewritten and all harmonised parquets must be rebuilt from the stacked raw parquets.
-- Given the small magnitude of φ_t (maximum 3.2% deviation over 2015–2018), the probability of a material difference is low. The JMP paper must include the disclosure note in `docs/JMP_multi_year_CPI_HICP_source_decision_v1.md §1`.
+- Given the small magnitude of φ_t (maximum 3.2% deviation over 2015–2018), the probability of a material difference is low. The JMP paper must include the disclosure note in `docs/France_case/JMP_multi_year_CPI_HICP_source_decision_v1.md §1`.
 - The HICP decision does **not** require re-authorisation before Stage M1 execution. It is already authorised by this package.
 
 ### Condition to make it final

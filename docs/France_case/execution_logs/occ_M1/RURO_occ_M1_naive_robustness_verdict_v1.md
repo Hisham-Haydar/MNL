@@ -27,7 +27,7 @@ Reference documents:
 - `docs/RURO_occ_M1_clean_design_memo_v2.md` §23 (the M1-naive
   specification design as a robustness exposure, not a candidate
   primary baseline)
-- `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`
+- `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`
   (the multi-year strategy, used here for sequencing implications
   only)
 - `Results/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md`

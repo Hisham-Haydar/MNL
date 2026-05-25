@@ -59,7 +59,7 @@ classified KEEP or HISTORICAL_KEEP and were not moved:
 | `Results/JMP_multi_year_stage_M1_static_validation_report_v3.md` | HISTORICAL_KEEP: canonical surviving document in the v1→v2→v3 chain; only dedicated generalization validation record |
 | `Results/JMP_multi_year_stage_M1_execution_readiness_v1.md` | HISTORICAL_KEEP: dry-run point-in-time record; no v2 successor with same scope |
 | `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3.md` | HISTORICAL_KEEP: v3 and v3.1 together form the complete revision trail |
-| `docs/RURO_FR2016_CONTINUOUS_DATA_BUILD_AUDIT_v1.md` | HISTORICAL_KEEP: comprehensive 2016 data build audit; referenced by M1-clean audit |
+| `docs/France_case/RURO_FR2016_CONTINUOUS_DATA_BUILD_AUDIT_v1.md` | HISTORICAL_KEEP: comprehensive 2016 data build audit; referenced by M1-clean audit |
 | `Results/JMP_multi_year_EUROMD_output_readiness_v1.md` | HISTORICAL_KEEP: pre-Stage-M1 EUROMOD readiness state; not superseded by a v2 |
 | `Results/JMP_multi_year_external_assets_inventory_v1.md` | HISTORICAL_KEEP: pre-remediation external assets gap state; not superseded by a v2 |
 | `Results/JMP_multi_year_single_year_MNL_readiness_v1.md` | HISTORICAL_KEEP: pre-rebuild MNL readiness state; not superseded by a v2 |
@@ -104,13 +104,13 @@ and after the archive moves. None were touched.
 | 5 | `docs/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md` | PRESENT |
 | 6 | `docs/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md` | PRESENT |
 | 7 | `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` | PRESENT |
-| 8 | `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md` | PRESENT |
-| 9 | `docs/RURO_GSUR_rebuild_specification_v2_1.md` | PRESENT |
+| 8 | `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md` | PRESENT |
+| 9 | `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md` | PRESENT |
 | 10 | `docs/RURO_GSUR_external_acquisition_decision_v2.md` | PRESENT |
-| 11 | `docs/JMP_GSUR_year_alignment_decision_v1.md` | PRESENT |
+| 11 | `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` | PRESENT |
 | 12 | `docs/RURO_occ_M1_naive_robustness_verdict_v1.md` | PRESENT |
-| 13 | `docs/JMP_welfare_measurement_decisions_memo_v2.md` | PRESENT |
-| 14 | `docs/JMP_welfare_scaffolding_design_memo_v2.md` | PRESENT |
+| 13 | `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md` | PRESENT |
+| 14 | `docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md` | PRESENT |
 | 15 | `docs/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md` | PRESENT |
 | 16 | `docs/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md` | PRESENT |
 | 17 | `docs/JMP_GSURv2_multi_year_extension_construction_report_v1.md` | PRESENT |
@@ -186,7 +186,7 @@ No new files, no deletions, no modifications — only renames.
 ## 9. Final status
 
 Only the 10 clear candidates identified in
-`docs/JMP_docs_results_cleanup_second_pass_plan_v1.md` §8 were archived.
+`docs/jmp_methodology/JMP_docs_results_cleanup_second_pass_plan_v1.md` §8 were archived.
 No user-decision files were archived. No files were deleted. No data
 parquets, sidecars, configs, or scripts were modified. No pipeline,
 stacking, estimation, or welfare task was run.

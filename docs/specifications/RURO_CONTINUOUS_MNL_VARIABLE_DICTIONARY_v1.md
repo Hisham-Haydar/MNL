@@ -17,8 +17,8 @@ For exact EUROMOD input labels, derivations, min/max values, and weighted
 summary statistics, use:
 
 ```text
-docs/euromod_reference/euromod_fr_2015_2017_input_variables.csv
-docs/euromod_reference/euromod_fr_2015_2017_input_output_reference.md
+docs/France_case/euromod_reference/euromod_fr_2015_2017_input_variables.csv
+docs/France_case/euromod_reference/euromod_fr_2015_2017_input_output_reference.md
 ```
 
 ---
@@ -231,7 +231,7 @@ occupation-opportunity MNL artifacts:
 Use this rule when adding or checking variables:
 
 - **EUROMOD input/output variable:** document exact source label and derivation
-  in `docs/euromod_reference/`.
+  in `docs/France_case/euromod_reference/`.
 - **RURO pipeline variable:** document construction and coding here and in the
   relevant RURO spec/pipeline report.
 - **Model parameter:** document in the YAML specification and in the model

@@ -643,8 +643,8 @@ welfare. Do NOT issue SA2. Do NOT promote any model over M1-clean 2016.
 Read:
 - docs/JMP_next_cycle_opportunity_respecification_plan_v1.md
 - Results/JMP_opportunity_block_readonly_diagnostic_v1.md
-- docs/JMP_couples_opportunity_draw_design_note_v1.md
-- docs/JMP_conditional_wage_on_occupation_decision_note_v1.md
+- docs/jmp_methodology/JMP_couples_opportunity_draw_design_note_v1.md
+- docs/jmp_methodology/JMP_conditional_wage_on_occupation_decision_note_v1.md
 - scripts/enhanced/enh_RURO_draws.py
 - scripts/enhanced/enh_RURO_prep_mnl_basic.py
 - scripts/maintenance/prepare_pooled_estimation_ready.py

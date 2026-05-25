@@ -287,7 +287,7 @@ optimization.
 
 ```text
 Work locally in my RURO/MNL codebase. ESTIMATOR LL-EQUIVALENCE PROTOTYPE,
-FR_2016 couples pilot. Authorized by docs/JMP_estimator_architecture_decision_v1.md.
+FR_2016 couples pilot. Authorized by docs/jmp_methodology/JMP_estimator_architecture_decision_v1.md.
 GOAL: re-implement the couples RURO log-likelihood as a vectorized function and
 confirm it reproduces the CONOPT oracle LL at the oracle theta. NO optimization.
 
@@ -299,7 +299,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
 - Do NOT run a denser product / pooled / P3a anything.
 
 Read (read-only):
-- docs/JMP_estimator_architecture_decision_v1.md
+- docs/jmp_methodology/JMP_estimator_architecture_decision_v1.md
 - scripts/enhanced/gamspy_estimation_vectorized.py (the AUTHORITATIVE LL: term
   structure, market-centering, -log(prior), EPS=1e-12, loc4 reference coding)
 - scripts/enhanced/estimation_utils.py (precompute array semantics)

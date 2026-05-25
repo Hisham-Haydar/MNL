@@ -124,7 +124,7 @@ This directory contains the complete enhanced RURO (Random Utility Random Opport
   - Common commands
   - Quick troubleshooting
 
-- **[../../docs/RURO_ACTIVE_RESULTS_REGISTRY.md](../../docs/RURO_ACTIVE_RESULTS_REGISTRY.md)** - Current baseline output runs
+- **[../../docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md](../../docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md)** - Current baseline output runs
   - How to interpret results
   - Diagnostics explanation
   - Elasticity calculations
@@ -253,7 +253,7 @@ $MAX_ITER = 5000          # Optimizer max iterations
 
 1. **Start here**: [../../README.md](../../README.md) - Project quick start
 2. **Active commands**: [../../docs/PIPELINE_ENTRYPOINTS.md](../../docs/PIPELINE_ENTRYPOINTS.md) - Canonical entrypoints
-3. **After estimation**: [../../docs/RURO_ACTIVE_RESULTS_REGISTRY.md](../../docs/RURO_ACTIVE_RESULTS_REGISTRY.md) - Baseline result registry
+3. **After estimation**: [../../docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md](../../docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md) - Baseline result registry
 4. **This file**: [README.md](README.md) - Directory overview
 
 ## 🆘 Troubleshooting
@@ -264,7 +264,7 @@ $MAX_ITER = 5000          # Optimizer max iterations
 2. **EUROMOD exit code 1**: Usually false alarm, check if output file exists
 3. **Estimation not converging**: Use warm start (automatic in pipeline script)
 
-For cleanup and current project structure, see [../../docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md](../../docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md).
+For cleanup and current project structure, see [../../docs/package/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md](../../docs/package/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md).
 
 ## 🔬 Model Specification
 

@@ -54,18 +54,18 @@ package API: early scaffold, not yet the main production interface
 Important orientation documents:
 
 - [docs/PIPELINE_ENTRYPOINTS.md](docs/PIPELINE_ENTRYPOINTS.md): active commands and canonical scripts.
-- [docs/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md](docs/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md): self-contained A-to-Z methods, data, pipeline, estimation, and validation guide.
-- [docs/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md](docs/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md): country/year portability target and archive-first cleanup policy.
-- [docs/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/RURO_ACTIVE_RESULTS_REGISTRY.md): current baseline result folders.
-- [docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md](docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md): current ability to separate preferences and opportunities.
-- [docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md](docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md): parameter-by-parameter explanation of preference estimation.
-- [docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md): comparison with the R reference work and sector-opportunity extension plan.
-- [docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md](docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md): GMM latent job-type method in the job-choice branch.
-- [docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md](docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md): GSUR preparation, merge keys, and opportunity interpretation.
-- [docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md](docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md): cleanup policy and project hygiene decisions.
-- [docs/RURO_PROJECT_MEMORY_MAP.md](docs/RURO_PROJECT_MEMORY_MAP.md): quick map of what was built and where it is documented.
-- [docs/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md](docs/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md): practical return guide for data roots, commands, results, and cleanup.
-- [docs/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md](docs/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md): audit of `U:\EUROMOD-STORAGE`, `Z:\Hisham\EUROMOD-STORAGE`, and storage cleanup candidates.
+- [docs/methods/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md](docs/methods/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md): self-contained A-to-Z methods, data, pipeline, estimation, and validation guide.
+- [docs/package/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md](docs/package/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md): country/year portability target and archive-first cleanup policy.
+- [docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md): current baseline result folders.
+- [docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md](docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md): current ability to separate preferences and opportunities.
+- [docs/methods/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md](docs/methods/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md): parameter-by-parameter explanation of preference estimation.
+- [docs/methods/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/methods/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md): comparison with the R reference work and sector-opportunity extension plan.
+- [docs/methods/RURO_JOB_MODEL_GMM_METHOD_NOTE.md](docs/methods/RURO_JOB_MODEL_GMM_METHOD_NOTE.md): GMM latent job-type method in the job-choice branch.
+- [docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md](docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md): GSUR preparation, merge keys, and opportunity interpretation.
+- [docs/package/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md](docs/package/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md): cleanup policy and project hygiene decisions.
+- [docs/package/RURO_PROJECT_MEMORY_MAP.md](docs/package/RURO_PROJECT_MEMORY_MAP.md): quick map of what was built and where it is documented.
+- [docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md](docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md): practical return guide for data roots, commands, results, and cleanup.
+- [docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md](docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md): audit of `U:\EUROMOD-STORAGE`, `Z:\Hisham\EUROMOD-STORAGE`, and storage cleanup candidates.
 - [docs/ROADMAP.md](docs/ROADMAP.md): optional future work.
 
 Active code references:
@@ -217,7 +217,7 @@ Common preference shifters include:
 - education;
 - sex-specific or partner-specific variables where the specification includes them.
 
-The detailed parameter-by-parameter explanation is in [docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md](docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md).
+The detailed parameter-by-parameter explanation is in [docs/methods/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md](docs/methods/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md).
 
 ### Opportunities
 
@@ -252,7 +252,7 @@ prior     = proposal density or probability on the original positive scale
 log_prior = log(prior)
 ```
 
-The job-choice branch follows this convention in current baseline files. Some continuous fallback code paths should still be tightened before treating the pipeline as fully robust; see [docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md](docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md).
+The job-choice branch follows this convention in current baseline files. Some continuous fallback code paths should still be tightened before treating the pipeline as fully robust; see [docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md](docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md).
 
 ## Data Flow
 
@@ -316,7 +316,7 @@ Outputs normally include:
 
 ## Current Baseline Results
 
-Do not infer the current baseline from the newest timestamped folder. Use [docs/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/RURO_ACTIVE_RESULTS_REGISTRY.md).
+Do not infer the current baseline from the newest timestamped folder. Use [docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md).
 
 Current key baselines:
 
@@ -436,7 +436,7 @@ python scripts\enhanced\enh_RURO_estimate_FR.py `
 python scripts\enhanced\RURO_post_estimation_styled.py --help
 ```
 
-Use the run recorded in [docs/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/RURO_ACTIVE_RESULTS_REGISTRY.md) as the `--results-json` source unless you are deliberately reporting a new run.
+Use the run recorded in [docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md) as the `--results-json` source unless you are deliberately reporting a new run.
 
 ## R Reference Work
 
@@ -454,7 +454,7 @@ The main comparison is:
 - The current job-choice branch adds a discrete job object and market-opportunity terms.
 - The planned sector extension should factor opportunities into labor-time, sector, and wage components more explicitly.
 
-See [docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md).
+See [docs/methods/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/methods/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md).
 
 ## Diagnostics and Testing
 
@@ -497,7 +497,7 @@ After the 2026-05-11 cleanup:
 - historical root docs are in `docs/archive/`;
 - generated output runs should be promoted through the active results registry before being used in reports.
 
-Do not run `scripts/runners/legacy/cleanup_final.ps1` without reading [docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md](docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md). It is intentionally broad and predates the current hygiene structure.
+Do not run `scripts/runners/legacy/cleanup_final.ps1` without reading [docs/package/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md](docs/package/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md). It is intentionally broad and predates the current hygiene structure.
 
 ## Known Limitations
 

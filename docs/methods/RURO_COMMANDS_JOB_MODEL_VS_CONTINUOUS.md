@@ -11,8 +11,8 @@ The two pipelines share some later scripts, but they differ in how alternatives 
 
 Related method notes:
 
-- `docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
-- `docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
+- `docs/methods/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
+- `docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
 
 ## Quick Rule
 

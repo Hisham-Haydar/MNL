@@ -19,9 +19,9 @@ Reference documents:
 - `docs/RURO_occ_P3a_pooled_GA17_clearance_addendum_v1.md` (GA17
   smoke-test callability CONFIRMED; Gate-A updated to PASS for pre-
   estimation authorization purposes)
-- `docs/RURO_cluster_robust_SE_design_audit_v1.md`,
-  `docs/RURO_cluster_robust_SE_implementation_report_v1.md`,
-  `docs/RURO_cluster_robust_SE_implementation_correction_v1.md`,
+- `docs/estimation/RURO_cluster_robust_SE_design_audit_v1.md`,
+  `docs/estimation/RURO_cluster_robust_SE_implementation_report_v1.md`,
+  `docs/estimation/RURO_cluster_robust_SE_implementation_correction_v1.md`,
   `Results/RURO_cluster_robust_SE_static_validation_v1.md` (the
   cluster-robust SE infrastructure and its validation)
 - `docs/JMP_pooled_P3a_estimation_design_memo_v1.md`, its correction,

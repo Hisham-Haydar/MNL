@@ -21,7 +21,7 @@ Reference documents:
   of M1-clean)
 - `docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the prior baseline
   documenting the singles consumption identification limitation)
-- `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`
+- `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`
   (the pooled-estimation roadmap and SA2 verdict architecture)
 - `Prompts/JMP_ability_vs_opportunity_framework_v1.md` (the
   ability/opportunity partition and the framework memo's C1–C9 code
@@ -1620,7 +1620,7 @@ strategy memo §13 Step 4 and the M1-naive robustness verdict §17.
 Tool: Claude Code Sonnet.
 
 Inputs to the feasibility audit prompt:
-- `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`
+- `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`
   (the multi-year strategy; the audit operationalises §4
   feasibility conditions F1–F6 and §6 identifier encoding
   elements I3 and I6).

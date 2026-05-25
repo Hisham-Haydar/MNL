@@ -1,7 +1,7 @@
 """
 Fixed-theta likelihood-equivalence prototype.
 
-Authorization: docs/JMP_estimator_architecture_decision_v1.md §11-§12, §17.
+Authorization: docs/jmp_methodology/JMP_estimator_architecture_decision_v1.md §11-§12, §17.
 
 GOAL: re-implement the couples RURO log-likelihood as a vectorized NumPy function,
 then JAX if available, and confirm both reproduce the CONOPT oracle LL at the
@@ -591,7 +591,7 @@ def compute_gradient_check(pc, theta_dict: dict) -> dict:
 def main():
     print("=" * 72)
     print("LL-EQUIVALENCE PROTOTYPE — FR_2016 couples pilot")
-    print("Authorization: docs/JMP_estimator_architecture_decision_v1.md")
+    print("Authorization: docs/jmp_methodology/JMP_estimator_architecture_decision_v1.md")
     print("NO optimization. Fixed-theta evaluation only.")
     print("=" * 72)
 
@@ -836,7 +836,7 @@ def write_report(results: dict, theta_dict: dict):
     A("| File | Purpose |")
     A("|---|---|")
     A("| `docs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md` | Authorization |")
-    A("| `docs/JMP_estimator_architecture_decision_v1.md` | Architecture decision |")
+    A("| `docs/jmp_methodology/JMP_estimator_architecture_decision_v1.md` | Architecture decision |")
     A("| `Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md` | Prior report (not overwritten) |")
     A("| `scripts/pilot/_run_ll_equivalence_prototype.py` | Prototype script (edited) |")
     A("| `scripts/pilot/_bisect_ll.py` | Bisection script (read-only) |")

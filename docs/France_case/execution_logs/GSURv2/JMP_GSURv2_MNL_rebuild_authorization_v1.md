@@ -23,7 +23,7 @@ Reference documents:
   (the validation report corroborating the construction PASS)
 - `docs/JMP_GSURv2_multi_year_extension_construction_report_v1.md`
   (the construction report with the lookup provenance)
-- `docs/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
+- `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
   year alignment rule)
 
 Interpreter of record: `.venv\Scripts\python.exe`

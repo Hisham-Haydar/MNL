@@ -278,8 +278,8 @@ Based on RUM archive scripts and solver characteristics:
 - Mateo (Academic Coordinator)
 
 **RURO Pipeline Issues**:
-- Check `docs/GAMSPy_Integration_Roadmap.md`
-- Review `docs/GAMSPy_vs_SciPy_Architecture_Comparison.md`
+- Check `docs/estimation/GAMSPy_Integration_Roadmap.md`
+- Review `docs/estimation/GAMSPy_vs_SciPy_Architecture_Comparison.md`
 
 ---
 

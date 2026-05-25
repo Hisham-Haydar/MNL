@@ -52,7 +52,7 @@ bundle-driven views).
     to "(legacy view)" so the bundle-driven block view is the
     canonical Phase-2 source.
 
-* `docs/RURO_post_estimation_dynamic_reporting_design_v1.md` —
+* `docs/reporting/RURO_post_estimation_dynamic_reporting_design_v1.md` —
   Phase-2 update appended under §17 with a pointer to this report.
 
 ## 3. Bundle sections migrated

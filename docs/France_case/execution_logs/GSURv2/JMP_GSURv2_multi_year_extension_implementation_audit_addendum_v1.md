@@ -35,7 +35,7 @@ modified.
 **Specification and decision documents:**
 - `docs/JMP_GSURv2_multi_year_extension_design_memo_v1.md` — governing design spec
 - `docs/JMP_GSURv2_multi_year_extension_implementation_audit_v1.md` — prior audit
-- `docs/JMP_GSUR_year_alignment_decision_v1.md` — alignment rule and final-build requirements
+- `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` — alignment rule and final-build requirements
 
 **Construction script:**
 - `scripts/enhanced/enh_prepare_FR_gsur_v2.py` (782 lines) — full read; hardcoded

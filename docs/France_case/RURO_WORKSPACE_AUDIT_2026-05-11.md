@@ -148,8 +148,8 @@ assert np.max(np.abs(np.log(df["prior"]) - df["log_prior"])) < 1e-8
 
 This audit generated three documents:
 
-- `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
+- `docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
 - `docs/RURO_R_REFERENCE_COMPARISON_AND_ACTION_PLAN.md`
-- `docs/RURO_WORKSPACE_AUDIT_2026-05-11.md`
+- `docs/France_case/RURO_WORKSPACE_AUDIT_2026-05-11.md`
 
 The first file is the main answer to whether the French data currently identify preferences and opportunities separately. The second file explains the comparison with the R reference's simulation. This file records the workspace and data evidence used to reach the conclusion.

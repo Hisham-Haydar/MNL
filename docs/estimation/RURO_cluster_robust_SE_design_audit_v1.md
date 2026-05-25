@@ -500,7 +500,7 @@ Do not run pooled estimation.
 Do not modify the pooled parquet.
 
 Read before making changes:
-  - docs/RURO_cluster_robust_SE_design_audit_v1.md  (this audit)
+  - docs/estimation/RURO_cluster_robust_SE_design_audit_v1.md  (this audit)
   - scripts/enhanced/estimation_engine.py            (full file)
   - scripts/enhanced/estimation_utils.py             (full file)
   - scripts/enhanced/compute_standard_errors.py      (full file)

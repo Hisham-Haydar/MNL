@@ -23,7 +23,7 @@ Four external assets required for P3a are absent. One (CPI/HICP CSV) was resolve
 | --- | --- | --- | --- |
 | `Data/external/cpi_hicp_fr_harmonisation.csv` | `m1_harmonise_cpi.py` (all configs) | `Data/external/cpi_hicp_fr_harmonisation.csv` | **PRESENT** (created 2026-05-19; Option B adopted) |
 
-Decision memo: `docs/JMP_multi_year_CPI_HICP_source_decision_v1.md`.
+Decision memo: `docs/France_case/JMP_multi_year_CPI_HICP_source_decision_v1.md`.
 
 ---
 

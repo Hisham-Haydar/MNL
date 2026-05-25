@@ -78,7 +78,7 @@ So:
   `working_{male,female}` indicator the spec expects.
 
 Both files were produced before *any* of the ruro_occ MNL prep changes
-described in `docs/RURO_ruro_occ_baseline_implementation_report_v1.md`.
+described in `docs/France_case/RURO_ruro_occ_baseline_implementation_report_v1.md`.
 
 ---
 
@@ -166,7 +166,7 @@ identification problem.
 
 **Order matters.** Do not start the rebuild before the keep-set fix above
 is in place. With that committed, execute the rebuild plan as written in
-`docs/RURO_ruro_occ_M0_rebuild_command_plan_v1.md`:
+`docs/France_case/RURO_ruro_occ_M0_rebuild_command_plan_v1.md`:
 
 1. **Step 0** — confirm `loc4` exists in `singles_RURO_ready.parquet` and
    `couples_RURO_ready.parquet`. This is the only "free" pre-check; if

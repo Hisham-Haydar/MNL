@@ -778,7 +778,7 @@ substantial spec rethink is needed — escalate to supervisor.
 | Patched-reporter fit check | `Results/_M0a_clean_post_est_fit_check.json` |
 | Post-patch LLM summary | `reports/fr_2016_ruro_occ_gamspy_M0a_clean_llm_summary_20260514_102334.md` |
 | Pre-patch LLM summary (provenance) | `reports/fr_2016_ruro_occ_gamspy_M0a_clean_llm_summary_20260513_193536.md` |
-| MNL variable dictionary | `docs/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md` |
+| MNL variable dictionary | `docs/specifications/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md` |
 | Active YAML | `scripts/enhanced/estimation_spec_ruro_occ_M0a_clean.yaml` |
 | Canonical estimation | `outputs/estimates/fr/spec/ruro_occ/gamspy/estimation_spec_ruro_occ_M0a_clean/run_2026-05-13_19-24-38/estimation_results.json` |
 

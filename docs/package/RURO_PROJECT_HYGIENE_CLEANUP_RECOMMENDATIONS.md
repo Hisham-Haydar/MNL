@@ -3,7 +3,7 @@
 Generated on: 2026-05-11  
 Basis: `RURO_MNL_project_files_structure.md`, selected README files, `.gitignore`, and git status.  
 Scope: project hygiene and clarity, not primarily disk-size reduction.  
-Cleanup status: the first reversible hygiene pass was applied on 2026-05-11; see `docs/RURO_PROJECT_HYGIENE_CLEANUP_LOG_2026-05-11.md`.
+Cleanup status: the first reversible hygiene pass was applied on 2026-05-11; see `docs/France_case/RURO_PROJECT_HYGIENE_CLEANUP_LOG_2026-05-11.md`.
 
 ## Executive Recommendation
 

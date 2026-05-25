@@ -316,7 +316,7 @@ is captured as `termination_text`.
   HTML warnings (the bundle's `warnings` list already surfaces them
   in the Markdown decision summary).
 
-See [`docs/RURO_post_estimation_dynamic_reporting_phase2_report_v1.md`](RURO_post_estimation_dynamic_reporting_phase2_report_v1.md)
+See [`docs/reporting/RURO_post_estimation_dynamic_reporting_phase2_report_v1.md`](RURO_post_estimation_dynamic_reporting_phase2_report_v1.md)
 for the Phase-2 validation report.
 
 ### Phase 2.1 update (technical CONOPT trace)
@@ -351,5 +351,5 @@ gradient. It is *not* the Python likelihood-gradient (score at θ),
 which lives in a separate bundle section (`gradient_score`) and is
 gated by `--gradient-diagnostics`.
 
-See [`docs/RURO_post_estimation_dynamic_reporting_phase2_1_report_v1.md`](RURO_post_estimation_dynamic_reporting_phase2_1_report_v1.md)
+See [`docs/reporting/RURO_post_estimation_dynamic_reporting_phase2_1_report_v1.md`](RURO_post_estimation_dynamic_reporting_phase2_1_report_v1.md)
 for the Phase-2.1 validation report.

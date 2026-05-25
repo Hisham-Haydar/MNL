@@ -5,8 +5,8 @@
 # OCCUPATION-opportunity layer using EUROMOD `loc` collapsed to `loc4`.
 #
 # Reference docs:
-#   docs/RURO_occ_pipeline_audit_v1.md
-#   docs/RURO_NAMING_AND_PACKAGE_SCOPE_v1.md
+#   docs/specifications/RURO_occ_pipeline_audit_v1.md
+#   docs/package/RURO_NAMING_AND_PACKAGE_SCOPE_v1.md
 #   Historical development docs are listed in the implementation report.
 #
 # Choice index (per individual; partner-additive for couples):

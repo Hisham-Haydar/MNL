@@ -33,16 +33,16 @@ The main weaknesses are documentation and one live data-side issue:
 
 - the documentation is fragmented across several files rather than collected
   in one current canonical build note;
-- `docs/FR2016_RURO_pipeline_report.md` is a legacy narrative and no longer
+- `docs/France_case/FR2016_RURO_pipeline_report.md` is a legacy narrative and no longer
   matches the current enhanced pipeline;
-- `docs/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md` still says the estimator
+- `docs/specifications/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md` still says the estimator
   uses normalized `consumption`/`leisure`, while the active estimator uses the
   raw `consumption` and `leisure` columns;
 - the current GSUR merge is mechanically exact but not yet semantically safe,
   because the live `drgn1` coding and the GSUR lookup region coding are not yet
   aligned. This is already documented in
-  `docs/RURO_GSUR_SOURCE_AND_MERGE_AUDIT_v1.md` and
-  `docs/RURO_GSUR_rebuild_specification_v2_1.md`.
+  `docs/France_case/RURO_GSUR_SOURCE_AND_MERGE_AUDIT_v1.md` and
+  `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md`.
 
 ## 3. Canonical Active Pipeline
 
@@ -361,18 +361,18 @@ and decider interpretation.
 
 ### 11.1 Still useful and broadly current
 
-- `docs/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md`
+- `docs/methods/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md`
 - `docs/PIPELINE_ENTRYPOINTS.md`
-- `docs/RURO_GSUR_SOURCE_AND_MERGE_AUDIT_v1.md`
-- `docs/RURO_GSUR_rebuild_specification_v2_1.md`
-- `docs/euromod_reference/euromod_fr_2015_2017_input_output_reference.md`
+- `docs/France_case/RURO_GSUR_SOURCE_AND_MERGE_AUDIT_v1.md`
+- `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md`
+- `docs/France_case/euromod_reference/euromod_fr_2015_2017_input_output_reference.md`
 
 ### 11.2 Useful but currently stale or incomplete
 
 | document | issue |
 | --- | --- |
-| `docs/FR2016_RURO_pipeline_report.md` | legacy script names and a single combined MNL artifact; not safe as the current execution guide |
-| `docs/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md` | states that utility uses normalized `consumption`/`leisure`; active estimator uses raw columns |
+| `docs/France_case/FR2016_RURO_pipeline_report.md` | legacy script names and a single combined MNL artifact; not safe as the current execution guide |
+| `docs/specifications/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md` | states that utility uses normalized `consumption`/`leisure`; active estimator uses raw columns |
 | older GSUR note documents | superseded by the GSUR source/merge audit and v2.1 rebuild specification |
 
 ### 11.3 Missing canonical artifact
@@ -392,9 +392,9 @@ That is the main documentation gap this audit closes.
 
 1. Treat this memo as the current canonical **data-build audit** for the active
    France 2016 continuous branch.
-2. Update `docs/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md` so it no longer
+2. Update `docs/specifications/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md` so it no longer
    claims the estimator uses normalized utility inputs.
-3. Mark `docs/FR2016_RURO_pipeline_report.md` clearly as historical/legacy or
+3. Mark `docs/France_case/FR2016_RURO_pipeline_report.md` clearly as historical/legacy or
    replace it with a current enhanced-pipeline narrative.
 4. Preserve filter-step CSV outputs next time stage 1 is rerun; current code can
    write them, but the active artifacts do not preserve the realized per-filter

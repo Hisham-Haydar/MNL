@@ -34,7 +34,7 @@ compatibility holds; non-CONOPT runs render the appendix as
   * `generate_llm_markdown_summary` renders the trace appendix right
     after the main solver Markdown block.
 
-* `docs/RURO_post_estimation_dynamic_reporting_design_v1.md` —
+* `docs/reporting/RURO_post_estimation_dynamic_reporting_design_v1.md` —
   Phase 2.1 note appended.
 
 ## 3. CONOPT trace fields added

@@ -37,7 +37,7 @@ document does not authorise construction.
 
 ## 2. Survey-year to opportunity-year alignment
 
-The alignment rule (from `docs/JMP_GSUR_year_alignment_decision_v1.md` and design memo
+The alignment rule (from `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` and design memo
 §3) maps EUROMOD system year to GSUR opportunity year:
 
 | Survey-data year | EUROMOD system year | GSUR opportunity year |

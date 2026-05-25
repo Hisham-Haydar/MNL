@@ -2,7 +2,7 @@
 
 *France RURO multi-year extension | v1 | 2026-05-24*
 
-**Authorization:** `docs/JMP_estimator_architecture_decision_v1.md` §11–§12, §17
+**Authorization:** `docs/jmp_methodology/JMP_estimator_architecture_decision_v1.md` §11–§12, §17
 **Script:** `scripts/pilot/_run_ll_equivalence_prototype.py`
 **Bisection script:** `scripts/pilot/_bisect_ll.py`
 **Generated:** 2026-05-24

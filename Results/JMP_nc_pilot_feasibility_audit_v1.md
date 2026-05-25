@@ -41,8 +41,8 @@ The corrected pooled P3a track continues independently on its frozen 100-diagona
 |---|---|---|
 | `docs/JMP_next_cycle_opportunity_respecification_plan_v1.md` | Full read | Plan / NC-baseline / pilot scope |
 | `Results/JMP_opportunity_block_readonly_diagnostic_v1.md` | Full read | Prior diagnostic evidence |
-| `docs/JMP_couples_opportunity_draw_design_note_v1.md` | Full read | Diagonal-to-product design |
-| `docs/JMP_conditional_wage_on_occupation_decision_note_v1.md` | Full read | Wage-conditioning decision rule |
+| `docs/jmp_methodology/JMP_couples_opportunity_draw_design_note_v1.md` | Full read | Diagonal-to-product design |
+| `docs/jmp_methodology/JMP_conditional_wage_on_occupation_decision_note_v1.md` | Full read | Wage-conditioning decision rule |
 | `scripts/enhanced/enh_RURO_draws.py` | Targeted Grep + ranged Read (lines 100–120, 543–580, 700–730, 900–940, 1023–1065, 1115–1234) | Wage / occupation / draw RNG |
 | `scripts/enhanced/enh_RURO_prep_mnl_basic.py` | Targeted Read (lines 880–1080) | Couples reshape (`_reshape_couples_to_wide()`) |
 | `scripts/maintenance/prepare_pooled_estimation_ready.py` | Ranged Read (lines 1–80) + targeted Grep | Split-stem prep |

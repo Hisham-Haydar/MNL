@@ -22,8 +22,8 @@ Reference documents:
   (the estimation authorization being unblocked — unchanged in scope)
 - `docs/RURO_occ_P3a_pooled_GA17_clearance_addendum_v1.md` (GA17
   smoke-test callability CONFIRMED; T3 full-count / T4 / T5 deferred)
-- `docs/RURO_cluster_robust_SE_implementation_report_v1.md`,
-  `docs/RURO_cluster_robust_SE_implementation_correction_v1.md`,
+- `docs/estimation/RURO_cluster_robust_SE_implementation_report_v1.md`,
+  `docs/estimation/RURO_cluster_robust_SE_implementation_correction_v1.md`,
   `Results/RURO_cluster_robust_SE_static_validation_v1.md` (the
   cluster-robust SE infrastructure and its smoke-test validation)
 - `scripts/enhanced/run_cluster_robust_se.py` (the post-estimation

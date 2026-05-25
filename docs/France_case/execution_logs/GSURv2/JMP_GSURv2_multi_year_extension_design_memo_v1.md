@@ -14,9 +14,9 @@ Reference documents:
 - `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md`
   (the construction verdict naming the GSURv2 extension as the next
   empirical gate)
-- `docs/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
+- `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
   year alignment rule and the GSURv2 final-construction requirement)
-- `docs/RURO_GSUR_rebuild_specification_v2_1.md` (the canonical
+- `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md` (the canonical
   GSURv2 construction methodology — crosswalk, denominator,
   benchmark, validation)
 - `docs/RURO_GSUR_v2_stageA_implementation_report_v1.md` (the
@@ -1011,9 +1011,9 @@ and its provenance documentation
 crosswalk (`Data/external/fr_drgn1_to_nuts2_crosswalk.csv`); the
 construction script
 (`scripts/enhanced/enh_prepare_FR_gsur_v2.py`); the rebuild
-specification (`docs/RURO_GSUR_rebuild_specification_v2_1.md`); the
+specification (`docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md`); the
 year-alignment decision
-(`docs/JMP_GSUR_year_alignment_decision_v1.md`); and this design
+(`docs/France_case/JMP_GSUR_year_alignment_decision_v1.md`); and this design
 memo.
 
 Prompt to use:

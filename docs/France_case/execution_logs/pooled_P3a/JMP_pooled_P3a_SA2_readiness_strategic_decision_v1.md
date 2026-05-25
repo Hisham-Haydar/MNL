@@ -22,8 +22,8 @@ Reference documents:
   corrected estimation)
 - `docs/RURO_occ_M1_clean_verdict_v1.md` (the SA1-STANDS baseline and the
   region joint-Wald benchmark)
-- `docs/JMP_welfare_measurement_decisions_memo_v2.md` and
-  `docs/JMP_welfare_scaffolding_design_memo_v2.md` (active welfare design
+- `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md` and
+  `docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md` (active welfare design
   memos, keyed to the operational M1-clean baseline)
 
 Interpreter of record: `.venv\Scripts\python.exe`.
@@ -423,8 +423,8 @@ canonical promotion.
 project chat) — the separate gate that authorizes building and running the
 welfare scaffolding and the opportunity/ability/preference decomposition
 on the M1-clean SA1-STANDS estimates, per
-`docs/JMP_welfare_measurement_decisions_memo_v2.md` and
-`docs/JMP_welfare_scaffolding_design_memo_v2.md`. Save it as
+`docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md` and
+`docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md`. Save it as
 `docs/JMP_M1_clean_welfare_implementation_authorization_v1.md`. This is the
 main JMP path forward.
 

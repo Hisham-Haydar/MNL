@@ -3,7 +3,7 @@
 Date: 2026-05-17
 
 Reference documents:
-- `docs/RURO_GSUR_rebuild_specification_v2_1.md`
+- `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md`
 - `docs/RURO_GSUR_v2_1_open_decisions_resolution_v1.md`
 - `docs/RURO_GSUR_external_acquisition_verification_claude_v1.md`
 
@@ -16,7 +16,7 @@ Reference documents:
 | `fr_2016.parquet` | `Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/` | Read, 10,873 rows |
 | `fr_2016_RURO_mnl__singles.parquet` | same | Read, 167,600 rows / 1,676 hh |
 | `fr_2016_RURO_mnl__couples.parquet` | same | Read, 257,700 rows / 2,577 hh |
-| `DRD_FR_2016_a3_export.txt` | `docs/euromod_reference/` | Read |
+| `DRD_FR_2016_a3_export.txt` | `docs/France_case/euromod_reference/` | Read |
 | `FR_gsur.xlsx` | `Data/external/` | Read — 120 data sheets + Summary + Structure |
 | `FR_gsur_full.csv` | `Data/external/` | Read — 90,720 rows |
 | `FR_gsur_ruro.csv` | `Data/external/` | Read — 2,160 rows |

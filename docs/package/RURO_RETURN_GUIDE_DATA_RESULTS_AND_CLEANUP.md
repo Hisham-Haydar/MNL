@@ -9,10 +9,10 @@ Purpose: this is the practical guide to use when returning to the project after 
 Read these first:
 
 1. `README.md`
-2. `docs/RURO_PROJECT_MEMORY_MAP.md`
-3. `docs/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
-4. `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
-5. `docs/RURO_ACTIVE_RESULTS_REGISTRY.md`
+2. `docs/package/RURO_PROJECT_MEMORY_MAP.md`
+3. `docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
+4. `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
+5. `docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md`
 
 ## Current Canonical Roots
 
@@ -76,8 +76,8 @@ Use this branch when you want the most developed current preference/opportunity 
 
 Read:
 
-- `docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
-- `docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
+- `docs/methods/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
+- `docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
 - `scripts/Job_model/Commands_job.txt`
 
 Canonical data base:
@@ -163,8 +163,8 @@ Use this branch when comparing with the R reference's original continuous hours/
 
 Read:
 
-- `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
-- `docs/RURO_ENHANCED_PIPELINE_COMMANDS.md`
+- `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
+- `docs/estimation/RURO_ENHANCED_PIPELINE_COMMANDS.md`
 - `scripts/enhanced/README.md`
 
 Canonical data base:
@@ -198,7 +198,7 @@ estimation_spec_v*.yaml
 Use:
 
 ```text
-docs/RURO_ACTIVE_RESULTS_REGISTRY.md
+docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md
 ```
 
 Then inspect:
@@ -265,7 +265,7 @@ Do not delete first. Classify first.
 Use:
 
 ```text
-docs/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md
+docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md
 ```
 
 ## Active Keep List
@@ -428,7 +428,7 @@ python .\scripts\enhanced\RURO_post_estimation_styled.py `
 
 5. Promote or archive the run:
 
-- update `docs/RURO_ACTIVE_RESULTS_REGISTRY.md` if it becomes an active baseline;
+- update `docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md` if it becomes an active baseline;
 - otherwise leave it as historical run output;
 - do not delete it until a cleanup pass has recorded it.
 
@@ -460,9 +460,9 @@ Before deleting, create a manifest. The point is reproducibility, not only disk 
 
 Use this order:
 
-1. `docs/RURO_PROJECT_MEMORY_MAP.md`
-2. `docs/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md`
-3. `docs/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
-4. `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
+1. `docs/package/RURO_PROJECT_MEMORY_MAP.md`
+2. `docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md`
+3. `docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
+4. `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
 5. `scripts/Job_model/Commands_job.txt`
-6. `docs/RURO_ACTIVE_RESULTS_REGISTRY.md`
+6. `docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md`

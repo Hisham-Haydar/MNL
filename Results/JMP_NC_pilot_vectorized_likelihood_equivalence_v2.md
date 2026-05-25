@@ -36,7 +36,7 @@ Fixed-theta LL cleanup and validation per `docs/JMP_NC_pilot_vectorized_likeliho
 | File | Purpose |
 |---|---|
 | `docs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md` | Authorization |
-| `docs/JMP_estimator_architecture_decision_v1.md` | Architecture decision |
+| `docs/jmp_methodology/JMP_estimator_architecture_decision_v1.md` | Architecture decision |
 | `Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md` | Prior report (not overwritten) |
 | `scripts/pilot/_run_ll_equivalence_prototype.py` | Prototype script (edited) |
 | `scripts/pilot/_bisect_ll.py` | Bisection script (read-only) |

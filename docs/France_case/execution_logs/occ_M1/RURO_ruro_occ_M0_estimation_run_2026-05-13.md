@@ -193,7 +193,7 @@ U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/ruro_occ/gamspy/
 The report fix is documented in:
 
 ```text
-docs/RURO_ruro_occ_post_estimation_report_fix_v1.md
+docs/France_case/RURO_ruro_occ_post_estimation_report_fix_v1.md
 ```
 
 Known remaining reporting issue: the new spec-driven opportunity sections are

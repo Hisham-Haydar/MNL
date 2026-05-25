@@ -5,7 +5,7 @@
 **Date:** 2026-05-19
 **Revision:** Targeted corrections to UID naming (`stacked_hh_uid`/`stacked_person_uid`), clustering column name (`cluster_id`), and implementation prompt stacking rule. No substantive changes to sequencing, authorisations, or configurations.
 **Audit basis:** Results/JMP_multi_year_feasibility_audit_v1.md, Results/JMP_multi_year_feasibility_audit_addendum_v1.md, Results/JMP_multi_year_feasibility_audit_addendum_v2.md
-**Strategy reference:** docs/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md
+**Strategy reference:** docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md
 
 ---
 
@@ -559,7 +559,7 @@ Stage M1 completion unlocks pooled-data availability but does not unblock the fo
 | --- | --- |
 | **Pooled estimation (P3a)** | Requires pooled parquet (unblocked by M1) AND cluster-robust SE wrapper (not yet written) AND estimation spec for pooled model (not yet written). Blocked on both. |
 | **Pooled estimation (P3b)** | Additionally blocked on ISF check and v3.1 memo revision. |
-| **Welfare computation** | Blocked on welfare scaffolding design decision (see `docs/JMP_welfare_scaffolding_design_memo_v2.md`). Stage M1 makes no welfare progress. |
+| **Welfare computation** | Blocked on welfare scaffolding design decision (see `docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md`). Stage M1 makes no welfare progress. |
 | **Welfare scaffolding implementation** | Not authorised in Stage M1. |
 | **Canonical MNL model promotion** | Not authorised in Stage M1. The M1-clean single-year (2016) result remains the canonical baseline. |
 | **GSUR Stage B (age-specific weights)** | Not authorised in Stage M1. Stage B is deferred to a later data-engineering stage. |
@@ -616,4 +616,4 @@ Both IDs are `int64`. B = 10^11 is sufficient: max `idperson` across all years i
 
 **Validation:** After writing the pooled file, run `m1_validate.py` and confirm all V1–V9 checks pass (Section 17). Write results to `Results/M1_*` manifests.
 
-**Naming convention:** All output files and script names use `ruro_occ` (not `ruro_occ`). See `docs/RURO_NAMING_AND_PACKAGE_SCOPE_v1.md`.
+**Naming convention:** All output files and script names use `ruro_occ` (not `ruro_occ`). See `docs/package/RURO_NAMING_AND_PACKAGE_SCOPE_v1.md`.

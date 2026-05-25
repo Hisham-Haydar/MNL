@@ -2,7 +2,7 @@
 
 **Document:** JMP_multi_year_feasibility_audit_v1.md  
 **Date:** 2026-05-19  
-**Reference memo:** docs/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md  
+**Reference memo:** docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md  
 **Scope:** Feasibility of implementing the 2015–2017 pooled-estimation pipeline as specified in the v3.1 memo. No estimation, no data modification, no parquet rebuilds were performed.
 
 ---

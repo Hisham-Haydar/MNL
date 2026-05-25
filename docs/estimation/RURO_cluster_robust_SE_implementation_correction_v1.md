@@ -20,7 +20,7 @@ The regenerated static validation report is at
 |------|-----------------|
 | `scripts/enhanced/estimation_utils.py` | Cluster-key strictness in both `precompute_data_singles` and `precompute_data_couples` |
 | `scripts/enhanced/run_cluster_robust_se.py` | C2 CLI-help check; GA17 wording; next-gate wording |
-| `docs/RURO_cluster_robust_SE_implementation_report_v1.md` | GA17 wording and next-gate wording in sections 1 and 17 |
+| `docs/estimation/RURO_cluster_robust_SE_implementation_report_v1.md` | GA17 wording and next-gate wording in sections 1 and 17 |
 | `Results/RURO_cluster_robust_SE_static_validation_v1.md` | Regenerated output — inspected after re-run |
 | `Results/smoke_test_stdout.txt` | Untracked stdout capture — archived |
 
@@ -95,7 +95,7 @@ qualification overstated the scope of the clearance.
 
 Applied in:
 - `run_cluster_robust_se.py`: `results["final_statements"]["next_gate"]`
-- `docs/RURO_cluster_robust_SE_implementation_report_v1.md`: section 1 and section 17
+- `docs/estimation/RURO_cluster_robust_SE_implementation_report_v1.md`: section 1 and section 17
 
 **Rationale:** SA2 is not the immediate next gate. The correct sequencing
 is: smoke-test clearance → GA17 clearance addendum → if cleared,
@@ -142,7 +142,7 @@ loudly documented as invalid for the P3a / GA17 context.
 |------|---------------|
 | `scripts/enhanced/estimation_utils.py` | `precompute_data_couples`: replaced terse fallback warning with explicit multi-line warning; added four-line comment block matching `precompute_data_singles` |
 | `scripts/enhanced/run_cluster_robust_se.py` | Added C2 CLI-help check between C1 and C3; corrected GA17 label to "smoke-test callability: CONFIRMED"; added T4/T5 note; corrected next-gate wording; added C2 row to `_write_md_report` |
-| `docs/RURO_cluster_robust_SE_implementation_report_v1.md` | Corrected GA17 label in sections 1 and 17; corrected next-gate wording in section 17; updated check count from 16 to 17 |
+| `docs/estimation/RURO_cluster_robust_SE_implementation_report_v1.md` | Corrected GA17 label in sections 1 and 17; corrected next-gate wording in section 17; updated check count from 16 to 17 |
 | `Results/RURO_cluster_robust_SE_static_validation_v1.md` | Regenerated: C2 added (PASS); GA17 label corrected; T4/T5 note added; next-gate corrected |
 | `Results/diagnostics/smoke_test_stdout_20260521.txt` | Archived from `Results/smoke_test_stdout.txt` (untracked output) |
 

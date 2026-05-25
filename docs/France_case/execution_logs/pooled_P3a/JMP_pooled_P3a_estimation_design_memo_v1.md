@@ -828,7 +828,7 @@ chain:
 execution requires a separate authorization memo.
 
 **Welfare computation.** Welfare scaffolding design is complete per
-`docs/JMP_welfare_scaffolding_design_memo_v2.md`. Welfare computation
+`docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md`. Welfare computation
 requires an accepted SA2 verdict on a pooled specification and a
 separate welfare-computation authorization.
 

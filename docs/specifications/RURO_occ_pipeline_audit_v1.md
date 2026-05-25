@@ -2,16 +2,16 @@
 
 Date: 2026-05-12
 Scope: enhanced continuous-draws branch (`scripts/enhanced/`) and the job-choice branch (`scripts/Job_model/`, `scripts/enhanced/enh_RURO_prep_mnl_basic.py`) on the France 2016 RURO pipeline.
-Inputs: `docs/RURO_model_spec_contract_v3_ruro_occ.md`, `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`, `docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md`, `docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`.
+Inputs: `docs/RURO_model_spec_contract_v3_ruro_occ.md`, `docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`, `docs/methods/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md`, `docs/methods/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`.
 Method: read-only inspection of source files and a column-schema read of the four production MNL parquet files on `Z:`. No code modified, no estimation run.
 
 ## 1. Files inspected
 
 Documentation:
 - [docs/RURO_model_spec_contract_v3_ruro_occ.md](docs/RURO_model_spec_contract_v3_ruro_occ.md)
-- [docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md](docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md)
-- [docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md](docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md)
-- [docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md)
+- [docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md](docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md)
+- [docs/methods/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md](docs/methods/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md)
+- [docs/methods/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md](docs/methods/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md)
 
 Code:
 - [scripts/enhanced/enh_RURO_prep.py](scripts/enhanced/enh_RURO_prep.py) (sections around lines 404–430, 556–636)

@@ -310,7 +310,7 @@ stacking re-run authorization (§12 N2) explicitly states that no welfare
 work is authorised. Welfare computation requires its own authorization,
 an accepted empirical baseline from a completed and verdicted pooled
 estimation, and the welfare scaffolding design (which is complete per
-`docs/JMP_welfare_scaffolding_design_memo_v2.md` but does not constitute
+`docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md` but does not constitute
 execution authorization).
 
 This verdict does not authorize welfare implementation, welfare

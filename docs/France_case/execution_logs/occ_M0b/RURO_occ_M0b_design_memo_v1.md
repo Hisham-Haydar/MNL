@@ -13,7 +13,7 @@ Inputs to this memo:
 - `docs/RURO_occ_M0a_clean_verdict_v1.md`
 - `reports/fr_2016_ruro_occ_gamspy_M0a_clean_llm_summary_20260514_102334.md`
 - `docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md`
-- `docs/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md`
+- `docs/specifications/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md`
 - `scripts/enhanced/estimation_spec_ruro_occ_M0a_clean.yaml`
 - `RURO_METHODS_AND_PIPELINE_MANUAL_v1.md`
 
@@ -136,7 +136,7 @@ subtraction, no change to the proposal-component aliases
 (c) **MNL parquet files are not regenerated.** Same data, same
 draws, same EUROMOD-computed disposable income for every
 alternative. The variable dictionary
-(`docs/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md`) remains
+(`docs/specifications/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md`) remains
 authoritative.
 
 (d) **Occupation does not enter utility.** The contract §20

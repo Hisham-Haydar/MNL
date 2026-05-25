@@ -6,9 +6,9 @@ This document lists the commands found in the active enhanced pipeline scripts a
 
 For a cleaner split between the job-model commands and the continuous enhanced RURO commands, see:
 
-- `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
-- `docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
-- `docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
+- `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
+- `docs/methods/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
+- `docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
 
 Sources inspected:
 

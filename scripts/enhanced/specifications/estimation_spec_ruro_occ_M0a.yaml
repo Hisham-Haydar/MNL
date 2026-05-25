@@ -31,7 +31,7 @@
 # Reference docs:
 #   Results/RURO_occ_M0_verdict_v1.md
 #   Results/RURO_occ_M0a_simplification_plan_v1.md
-#   docs/RURO_NAMING_AND_PACKAGE_SCOPE_v1.md
+#   docs/package/RURO_NAMING_AND_PACKAGE_SCOPE_v1.md
 #
 # Parameter count: 47 effective (48 reported; one pair pinned by equality).
 # ==============================================================================

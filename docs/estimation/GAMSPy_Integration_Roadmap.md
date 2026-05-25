@@ -566,7 +566,7 @@ python scripts/enhanced/enh_RURO_estimate_FR.py \
 3. Follow installation instructions
 4. Verify: `python -c "import gamspy; print(gamspy.__version__)"`
 
-See `docs/GAMSPy_Integration_Roadmap.md` for details.
+See `docs/estimation/GAMSPy_Integration_Roadmap.md` for details.
 ```
 
 ---

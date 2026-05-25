@@ -40,9 +40,9 @@ Current documentation and command provenance:
 - `scripts/Job_model/README_job_model.md`
 - `scripts/Job_model/ACCEPTANCE_TESTS.md`
 - `scripts/Job_model/Commands_job.txt`
-- `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
-- `docs/RURO_ENHANCED_PIPELINE_COMMANDS.md`
-- `docs/RURO_PROJECT_MEMORY_MAP.md`
+- `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
+- `docs/estimation/RURO_ENHANCED_PIPELINE_COMMANDS.md`
+- `docs/package/RURO_PROJECT_MEMORY_MAP.md`
 
 Stale note:
 
@@ -468,6 +468,6 @@ Read in this order:
 1. `scripts/Job_model/Commands_job.txt`
 2. `scripts/Job_model/README_job_model.md`
 3. `scripts/Job_model/ACCEPTANCE_TESTS.md`
-4. `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
-5. `docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
-6. `docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`
+4. `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
+5. `docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
+6. `docs/methods/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`

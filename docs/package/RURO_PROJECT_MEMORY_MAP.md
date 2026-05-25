@@ -25,24 +25,24 @@ The biggest documentation risk is not absence. It is fragmentation. Some details
 | Need | Read this |
 | --- | --- |
 | Overall project/package orientation | `README.md` |
-| Self-contained A-to-Z methods and pipeline guide | `docs/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md` |
-| Country/year portability and cleanup policy | `docs/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md` |
+| Self-contained A-to-Z methods and pipeline guide | `docs/methods/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md` |
+| Country/year portability and cleanup policy | `docs/package/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md` |
 | Index of non-`docs/` files mirrored into `docs/` | `docs/MIRRORED_DOCUMENTS_INDEX.md` |
 | Active command entrypoints | `docs/PIPELINE_ENTRYPOINTS.md` |
-| Practical return guide | `docs/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md` |
-| External storage audit and cleanup plan | `docs/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md` |
-| Job model vs continuous RURO command split | `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md` |
-| Full command inventory | `docs/RURO_ENHANCED_PIPELINE_COMMANDS.md` |
-| Current result baselines | `docs/RURO_ACTIVE_RESULTS_REGISTRY.md` |
-| Current identification status | `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md` |
-| Detailed preference estimation explanation | `docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md` |
-| R reference comparison and sector plan | `docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md` |
+| Practical return guide | `docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md` |
+| External storage audit and cleanup plan | `docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md` |
+| Job model vs continuous RURO command split | `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md` |
+| Full command inventory | `docs/estimation/RURO_ENHANCED_PIPELINE_COMMANDS.md` |
+| Current result baselines | `docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md` |
+| Current identification status | `docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md` |
+| Detailed preference estimation explanation | `docs/methods/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md` |
+| R reference comparison and sector plan | `docs/methods/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md` |
 | Job model details | `scripts/Job_model/README_job_model.md` |
 | Job model validation / GMM tests | `scripts/Job_model/ACCEPTANCE_TESTS.md` |
-| GMM job-model method note | `docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md` |
-| GSUR preparation and merge note | `docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md` |
+| GMM job-model method note | `docs/methods/RURO_JOB_MODEL_GMM_METHOD_NOTE.md` |
+| GSUR preparation and merge note | `docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md` |
 | Exact GMM job command chain used | `scripts/Job_model/Commands_job.txt` |
-| Cleanup decisions | `docs/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md` |
+| Cleanup decisions | `docs/package/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md` |
 
 ## What Was Built
 
@@ -64,9 +64,9 @@ Main scripts:
 Main docs:
 
 - `scripts/enhanced/README.md`
-- `docs/RURO_ENHANCED_PIPELINE_COMMANDS.md`
-- `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
-- `docs/FR2016_RURO_pipeline_report.md`
+- `docs/estimation/RURO_ENHANCED_PIPELINE_COMMANDS.md`
+- `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
+- `docs/France_case/FR2016_RURO_pipeline_report.md`
 
 Key file markers:
 
@@ -90,10 +90,10 @@ Main docs:
 
 - `scripts/Job_model/README_job_model.md`
 - `scripts/Job_model/ACCEPTANCE_TESTS.md`
-- `docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
+- `docs/methods/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
 - `scripts/Job_model/Commands_job.txt`
-- `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
-- `docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`
+- `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
+- `docs/methods/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`
 
 Key file markers:
 
@@ -139,7 +139,7 @@ Main docs:
 - `scripts/Job_model/README_job_model.md`
 - `scripts/Job_model/ACCEPTANCE_TESTS.md`
 - `scripts/Job_model/Commands_job.txt`
-- `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
+- `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
 
 Important command chain:
 
@@ -189,12 +189,12 @@ Where GSUR enters:
 
 Main docs:
 
-- `docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
+- `docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
 - `scripts/enhanced/README.md`
-- `docs/FR2016_RURO_pipeline_report.md`
+- `docs/France_case/FR2016_RURO_pipeline_report.md`
 - `scripts/Job_model/README_job_model.md`
-- `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
-- `docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`
+- `docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
+- `docs/methods/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`
 
 Important implementation note:
 
@@ -207,7 +207,7 @@ Status: documented in detail.
 Main doc:
 
 ```text
-docs/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md
+docs/methods/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md
 ```
 
 Core idea:
@@ -226,9 +226,9 @@ Status: documented.
 
 Main docs:
 
-- `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
+- `docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
 - `docs/RURO_R_REFERENCE_COMPARISON_AND_ACTION_PLAN.md`
-- `docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`
+- `docs/methods/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`
 
 Current safe claim:
 
@@ -245,7 +245,7 @@ Status: planned, not implemented as a clean sector layer.
 Main doc:
 
 ```text
-docs/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md
+docs/methods/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md
 ```
 
 Current state:
@@ -262,7 +262,7 @@ Status: documented.
 Main doc:
 
 ```text
-docs/RURO_ACTIVE_RESULTS_REGISTRY.md
+docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md
 ```
 
 Important runs:
@@ -280,7 +280,7 @@ outputs/estimates/fr/spec/v3/gamspy/run_2026-02-05_14-11-43/
 There is now a standalone GMM method note:
 
 ```text
-docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md
+docs/methods/RURO_JOB_MODEL_GMM_METHOD_NOTE.md
 ```
 
 The older details still also live across:
@@ -288,14 +288,14 @@ The older details still also live across:
 - `scripts/Job_model/README_job_model.md`
 - `scripts/Job_model/ACCEPTANCE_TESTS.md`
 - `scripts/Job_model/Commands_job.txt`
-- `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
+- `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
 
 ### 2. GSUR method note now exists
 
 There is now a standalone GSUR note:
 
 ```text
-docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md
+docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md
 ```
 
 It explains:
@@ -313,9 +313,9 @@ Archived docs are useful, but they may describe earlier project states. For curr
 
 - `README.md`
 - `docs/PIPELINE_ENTRYPOINTS.md`
-- `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
-- `docs/RURO_ACTIVE_RESULTS_REGISTRY.md`
-- `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
+- `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
+- `docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md`
+- `docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
 
 ## Things To Ignore Or Treat Carefully
 
@@ -324,19 +324,19 @@ Archived docs are useful, but they may describe earlier project states. For curr
 | `scripts/Job_model/New Text Document.txt` | Stale note saying GMM was not implemented; current code has `gmm_occ`. |
 | `docs/archive/**` | Historical; useful for provenance but not always current. |
 | `scripts/runners/legacy/**` | Old root runners; not current entrypoints. |
-| many old `outputs/` folders | Do not infer current baseline from timestamp alone. Use `docs/RURO_ACTIVE_RESULTS_REGISTRY.md`. |
+| many old `outputs/` folders | Do not infer current baseline from timestamp alone. Use `docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md`. |
 
 ## If You Forget Everything Again
 
 Read in this order:
 
 1. `README.md`
-2. `docs/RURO_PROJECT_MEMORY_MAP.md`
-3. `docs/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md`
-4. `docs/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
-5. `docs/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
-6. `docs/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
-7. `docs/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
+2. `docs/package/RURO_PROJECT_MEMORY_MAP.md`
+3. `docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md`
+4. `docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
+5. `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
+6. `docs/methods/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
+7. `docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
 8. `scripts/Job_model/Commands_job.txt`
-9. `docs/RURO_ACTIVE_RESULTS_REGISTRY.md`
-10. `docs/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
+9. `docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md`
+10. `docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`

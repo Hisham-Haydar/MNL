@@ -3,7 +3,7 @@ Stage A GSUR lookup builder for RURO MNL France — parameterised by opportunity
 
 Authorization: docs/RURO_GSUR_StageA_authorization_v1.md (2026-05-17)
                docs/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md
-Specification: docs/RURO_GSUR_rebuild_specification_v2_1.md
+Specification: docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md
 Decisions:     docs/RURO_GSUR_v2_1_open_decisions_resolution_v1.md
 
 Inputs (year-parameterised):

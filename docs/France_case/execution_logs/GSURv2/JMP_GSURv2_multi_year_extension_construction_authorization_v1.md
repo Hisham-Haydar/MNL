@@ -22,7 +22,7 @@ Reference documents:
   `docs/JMP_GSURv2_y2016_provenance_lock_plan_correction_v1.md`)
 - `docs/JMP_GSURv2_multi_year_extension_design_memo_v1.md` (the
   governing design memo)
-- `docs/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
+- `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
   year alignment rule and the GSURv2 final-build requirement)
 - `Results/JMP_GSURv2_external_file_remediation_report_v1.md` (the
   external-file retrieval confirmation)

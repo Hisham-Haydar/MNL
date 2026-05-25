@@ -19,7 +19,7 @@ parameters, or the estimation results.
 | File | Change |
 | --- | --- |
 | `scripts/enhanced/RURO_post_estimation_styled.py` | Added spec-driven equation renderers and a YAML-driven parameter classifier; rewired the model-specific HTML assembly to use them; kept legacy renderers as a fallback. |
-| `docs/RURO_ruro_occ_post_estimation_report_fix_v1.md` | This note. |
+| `docs/France_case/RURO_ruro_occ_post_estimation_report_fix_v1.md` | This note. |
 
 No other scripts touched. No estimation re-run.
 

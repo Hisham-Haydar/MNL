@@ -16,7 +16,7 @@ Inputs to this memo:
 - `reports/fr_2016_ruro_occ_gamspy_M0c_b2_llm_summary_20260515_103129.md`
 - `docs/RURO_occ_M0a_clean_verdict_v1.md`
 - `docs/JMP_ability_vs_opportunity_framework_v1.md`
-- `docs/RURO_GSUR_SOURCE_AND_MERGE_AUDIT_v1.md`
+- `docs/France_case/RURO_GSUR_SOURCE_AND_MERGE_AUDIT_v1.md`
 - `scripts/enhanced/estimation_spec_ruro_occ_M0c_b2.yaml`
 
 This memo supersedes any earlier interim assessments of M0c_b2 and is
@@ -281,7 +281,7 @@ plus welfare scaffolding, both of which depend on the GSUR rebuild
 
 ## 6. The remaining data issue: GSUR region crosswalk
 
-A separate audit (`docs/RURO_GSUR_SOURCE_AND_MERGE_AUDIT_v1.md`) has
+A separate audit (`docs/France_case/RURO_GSUR_SOURCE_AND_MERGE_AUDIT_v1.md`) has
 identified that the GSUR (group-specific unemployment rate) variable in
 the current MNL parquets is mechanically merged correctly but
 semantically misaligned with the EUROMOD region codes `drgn1`. Detail:

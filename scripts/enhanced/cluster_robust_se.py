@@ -21,7 +21,7 @@ GA15 note:
   The score extractor (compute_scores_joint in estimation_engine.py) handles
   both paths independently through their respective PrecomputedData structs.
 
-Design audit reference: docs/RURO_cluster_robust_SE_design_audit_v1.md
+Design audit reference: docs/estimation/RURO_cluster_robust_SE_design_audit_v1.md
 
 Author: Enhanced RURO Pipeline
 Created: 2026-05-21

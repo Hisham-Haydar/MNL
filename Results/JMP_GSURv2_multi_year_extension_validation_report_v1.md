@@ -41,7 +41,7 @@ with the expected structure, schema, and sidecar provenance.
 | 2015 | FR_2016 | 10.025 | `FR_gsur_ruro_v2_stageA_y2015.parquet` |
 | 2014 | FR_2015 | 9.9 | `FR_gsur_ruro_v2_stageA_y2014.parquet` |
 
-Year–survey alignment per `docs/JMP_GSUR_year_alignment_decision_v1.md`:
+Year–survey alignment per `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md`:
 EUROMOD system year lags survey year by one year (FR_2016 uses
 opportunity year 2015, etc.).
 

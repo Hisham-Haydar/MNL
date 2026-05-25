@@ -49,8 +49,8 @@ single data-preparation cycle, not piecemeal.
 
 This diagnostic is explicitly authorized as read-only by:
 
-- `docs/JMP_conditional_wage_on_occupation_decision_note_v1.md` §4
-- `docs/JMP_couples_opportunity_draw_design_note_v1.md` §7
+- `docs/jmp_methodology/JMP_conditional_wage_on_occupation_decision_note_v1.md` §4
+- `docs/jmp_methodology/JMP_couples_opportunity_draw_design_note_v1.md` §7
 - `Prompts/replies_GPT` (sections A, B, C), which specifies Road C:
   finish current corrected pooled diagnostics, then run a combined
   read-only audit
@@ -70,8 +70,8 @@ Actions **not authorized** by this document:
 
 | File | Purpose |
 |---|---|
-| `docs/JMP_conditional_wage_on_occupation_decision_note_v1.md` | Wage-conditioning decision rule and diagnostic protocol |
-| `docs/JMP_couples_opportunity_draw_design_note_v1.md` | Couples diagonal-vs-product correction |
+| `docs/jmp_methodology/JMP_conditional_wage_on_occupation_decision_note_v1.md` | Wage-conditioning decision rule and diagnostic protocol |
+| `docs/jmp_methodology/JMP_couples_opportunity_draw_design_note_v1.md` | Couples diagonal-vs-product correction |
 | `Prompts/replies_GPT` | GPT advisory (sections A, B, C); Road C sequencing |
 | `scripts/enhanced/specifications/estimation_spec_ruro_occ_P3a_pooled.yaml` | Active P3a spec: wage and occupation blocks |
 | `Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__singles.parquet` | 500,700 rows, 148 cols; pooled singles estimation-ready data |
@@ -342,7 +342,7 @@ misrepresents the within-occupation spread.
 
 ## 13. Wage-conditioning decision rule
 
-Per `docs/JMP_conditional_wage_on_occupation_decision_note_v1.md` §2:
+Per `docs/jmp_methodology/JMP_conditional_wage_on_occupation_decision_note_v1.md` §2:
 
 **Trigger condition met:** η² > 0.10–0.15 AND IQR overlap substantially
 non-overlapping for key pairs.

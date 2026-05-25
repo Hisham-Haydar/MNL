@@ -5,7 +5,7 @@
 **Author:** Pipeline execution via Claude Code  
 **Scope:** FR_2015, FR_2016, FR_2017 MNL inputs — GSUR alignment audit and Stage M1 authorization gate  
 **Depends on:**
-- `docs/JMP_GSUR_year_alignment_decision_v1.md` (alignment rule)
+- `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` (alignment rule)
 - `Results/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md` (FR_2015 rebuild)
 - `Results/JMP_single_year_FR2017_replication_report_v1.md` (FR_2017 replication)
 - `Results/JMP_single_year_2016_local_mirror_report_v1.md` (FR_2016 mirror)
@@ -26,7 +26,7 @@ Three subsidiary questions must be answered first:
 
 ## 2. GSUR alignment rule (adopted)
 
-Per `docs/JMP_GSUR_year_alignment_decision_v1.md` Decision 2:
+Per `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` Decision 2:
 
 > **GSUR key = EUROMOD system year (opportunity year), NOT survey data year.**
 

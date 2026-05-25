@@ -1,3 +1,5 @@
+> Merged into `docs/France_case/consolidated/RURO_GSUR_rebuild_consolidated_v1.md` on 2026-05-25. See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-25.md`.
+
 # RURO GSUR O7 Crosswalk Sign-off v1
 
 Date: 2026-05-17

@@ -1635,7 +1635,7 @@ Inputs to the feasibility audit prompt:
   FR_2015, FR_2016, and FR_2017 cross-sections.
 
 Output deliverable of the feasibility audit:
-- `Results/JMP_multi_year_feasibility_audit_v1.md`, recording the
+- `Results/P3a/multi_year_stage_M1/JMP_multi_year_feasibility_audit_v1.md`, recording the
   status of each F1–F6 condition, the maximum identifier
   magnitudes required by the §6 I3 numerical encoding (operational
   default base $B = 10^{11}$), the canonical clustering key
@@ -1693,7 +1693,7 @@ Inputs to the (later) implementation prompt:
   pooled-spec YAML under Path B) plus
   `estimation_spec_ruro_occ_M1_naive.yaml` for the R2 robustness
   exposure.
-- `Results/JMP_multi_year_feasibility_audit_v1.md` (the audit
+- `Results/P3a/multi_year_stage_M1/JMP_multi_year_feasibility_audit_v1.md` (the audit
   output), which records the regime under which the scaffolding
   will operate.
 

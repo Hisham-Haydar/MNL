@@ -194,7 +194,7 @@ parity check, benchmark validation, output schema) is unchanged.
 ## 12. Tests run (static validation only)
 
 All validation performed without invoking the script with
-`--opportunity-year`. See `Results/JMP_GSURv2_script_remediation_static_validation_v1.md`
+`--opportunity-year`. See `Results/P3a/gsurv2/JMP_GSURv2_script_remediation_static_validation_v1.md`
 for the full seven-check report.
 
 | Check | Result |

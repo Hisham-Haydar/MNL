@@ -50,10 +50,10 @@ any singles modification, any in-place edit to production
 |---|---|
 | `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md` | Full read |
 | `docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md` | Full read |
-| `Results/JMP_NC_pilot_build_report_v1.md` | Full read (prior halt report) |
-| `Results/JMP_nc_pilot_feasibility_audit_v1.md` | Full read (prior session) |
+| `Results/NC_pilot/JMP_NC_pilot_build_report_v1.md` | Full read (prior halt report) |
+| `Results/NC_pilot/JMP_nc_pilot_feasibility_audit_v1.md` | Full read (prior session) |
 | `docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md` | Full read (prior session) |
-| `Results/JMP_opportunity_block_readonly_diagnostic_v1.md` | Full read (prior session) |
+| `Results/_shared/JMP_opportunity_block_readonly_diagnostic_v1.md` | Full read (prior session) |
 | `scripts/enhanced/enh_RURO_draws.py` | Targeted Grep + ranged Read (lines 100–120, 1119–1234) |
 | `scripts/enhanced/enh_RURO_prep_mnl_basic.py` | Targeted Read (lines 880–1080) |
 | `scripts/maintenance/prepare_pooled_estimation_ready.py` | Ranged Read (lines 1–80) |
@@ -76,7 +76,7 @@ All new files are under pilot-only paths:
 | `scripts/pilot/config/pilot_mincer_coefficients_v1.json` | Pilot Mincer coefficients (W1 + two-group, tagged with fitting set and cell counts) |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product.parquet` | Pilot couples product scaffold (2,319,300 rows; W1 wages on non-chosen alts; EUROMOD-dependent income columns dropped) |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__mnlmeta.json` | Pilot metadata sidecar (n_draws=900; EUROMOD/GSUR/precompute/estimation = not_run) |
-| `Results/JMP_NC_pilot_stage1_4_build_report_v1.md` | This report |
+| `Results/NC_pilot/JMP_NC_pilot_stage1_4_build_report_v1.md` | This report |
 
 `scripts/pilot/__pycache__/` was created as a side effect of running the
 pilot driver; it is a transient Python cache and is not part of the
@@ -117,7 +117,7 @@ Every write performed by this session lives under one of:
 - `scripts/pilot/`
 - `scripts/pilot/config/`
 - `Data/pilot/nc_2016_couples/`
-- `Results/JMP_NC_pilot_stage1_4_build_report_v1.md` (this report)
+- `Results/NC_pilot/JMP_NC_pilot_stage1_4_build_report_v1.md` (this report)
 
 No write to `scripts/enhanced/`, `scripts/maintenance/`,
 `scripts/enhanced/specifications/`, or `Data/processed/` was performed.

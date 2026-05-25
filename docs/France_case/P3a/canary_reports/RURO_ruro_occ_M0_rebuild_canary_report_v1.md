@@ -193,4 +193,4 @@ identification precondition is documented for the final spec.
 | --- | --- |
 | `Results/_canary_ruro_occ_M0.py` | Reusable canary — re-run after the rebuild to confirm all 9 checks PASS |
 | `Results/_canary_ruro_occ_M0_results.json` | Machine-readable check results for this run |
-| `Results/RURO_ruro_occ_M0_rebuild_canary_report_v1.md` | This report |
+| `Results/P3a/single_year_baseline/M0/RURO_ruro_occ_M0_rebuild_canary_report_v1.md` | This report |

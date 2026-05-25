@@ -1,12 +1,12 @@
 # JMP Single-Year FR_2016 — GSUR Opportunity-Year Aligned Rebuild Report v1
 
-**Document:** Results/JMP_single_year_FR2016_gsurY2015_rebuild_report_v1.md  
+**Document:** Results/P3a/multi_year_stage_M1/JMP_single_year_FR2016_gsurY2015_rebuild_report_v1.md  
 **Date:** 2026-05-20  
 **Author:** Pipeline execution via Claude Code  
 **Authorization:** `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` (Decision 2) + user authorization 2026-05-20  
 **Output stem:** `fr_2016_RURO_mnl_v1gsurY2015`  
 **GSUR decision memo:** `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md`  
-**Readiness verdict:** `Results/JMP_single_year_consolidated_readiness_verdict_v1.md`
+**Readiness verdict:** `Results/P3a/multi_year_stage_M1/JMP_single_year_consolidated_readiness_verdict_v1.md`
 
 ---
 
@@ -33,7 +33,7 @@ The prior operative FR_2016 MNL-input file (`fr_2016_RURO_mnl_GSURv2__`) used GS
 - Correct cell rate for year=2015: 0.121 (13.7% lower for this cell)
 - The misalignment was not a label error — it affected which cell rates were merged onto which deciders
 
-Per `Results/JMP_single_year_consolidated_readiness_verdict_v1.md` §5, proceeding to Stage M1 live stacking with this misalignment would contaminate GSUR-weighted opportunity terms without post-hoc correction. Option A (rebuild) was the recommended and authorized path.
+Per `Results/P3a/multi_year_stage_M1/JMP_single_year_consolidated_readiness_verdict_v1.md` §5, proceeding to Stage M1 live stacking with this misalignment would contaminate GSUR-weighted opportunity terms without post-hoc correction. Option A (rebuild) was the recommended and authorized path.
 
 ---
 
@@ -41,10 +41,10 @@ Per `Results/JMP_single_year_consolidated_readiness_verdict_v1.md` §5, proceedi
 
 | Document | Purpose |
 | -------- | ------- |
-| `Results/JMP_single_year_consolidated_readiness_verdict_v1.md` | Misalignment diagnosis, Option A authorization |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_consolidated_readiness_verdict_v1.md` | Misalignment diagnosis, Option A authorization |
 | `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` | Alignment rule, Decision 2 |
 | `docs/France_case/_shared/data_audits/RURO_prep_mnl_gsur_year_support_report_v1.md` | `--gsur-year` flag implementation details |
-| `Results/JMP_single_year_2016_local_mirror_report_v1.md` | Prior FR_2016 mirror state, file provenance |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_2016_local_mirror_report_v1.md` | Prior FR_2016 mirror state, file provenance |
 | `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` | M1-clean operative file identity; confirmed `GSURv2__` is M1-clean baseline |
 | `docs/JMP_single_year_replication_2015_2017_authorization_v1.md` | Draw parameters (binding); no-overwrite rules |
 | `docs/JMP_single_year_replication_2015_2017_command_plan_addendum_v1.md` | GSUR alignment rule; Option A specification |
@@ -315,7 +315,7 @@ The `fr_2016_RURO_mnl_v1gsurY2015__` files use GSUR rates from v1 year=2015 as r
 | 2016 | FR_2015 | 2015 | `fr_2016_RURO_mnl_v1gsurY2015__` | **2015** | **✓** |
 | 2017 | FR_2016 | 2016 | `fr_2017_RURO_mnl_v1gsurY2016__` | 2016 | ✓ |
 
-All three years are now GSUR-opportunity-year-aligned. The misalignment identified in `Results/JMP_single_year_consolidated_readiness_verdict_v1.md` §3 is resolved.
+All three years are now GSUR-opportunity-year-aligned. The misalignment identified in `Results/P3a/multi_year_stage_M1/JMP_single_year_consolidated_readiness_verdict_v1.md` §3 is resolved.
 
 Cell-level verification of year=2015 (8 cells where year=2015 and year=2014 differ):
 
@@ -401,7 +401,7 @@ All three years resolve to GSUR-opportunity-year-aligned files. No previous misa
 
 **Update the Stage M1 execution-readiness document to AUTHORIZED.**
 
-All three pre-conditions identified in `Results/JMP_single_year_consolidated_readiness_verdict_v1.md` §9 are now complete:
+All three pre-conditions identified in `Results/P3a/multi_year_stage_M1/JMP_single_year_consolidated_readiness_verdict_v1.md` §9 are now complete:
 
 | Step | Status |
 | ---- | ------ |

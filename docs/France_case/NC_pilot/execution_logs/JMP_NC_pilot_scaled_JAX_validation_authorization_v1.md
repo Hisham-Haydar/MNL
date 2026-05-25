@@ -194,7 +194,7 @@ intercept is made here.
 - A scaled-validation script (e.g.
   `scripts/pilot/_run_scaled_jax_validation.py`) — new; reusing the v2 kernel
   (documented import; no logic change); subprocess isolation.
-- `Results/JMP_NC_pilot_scaled_JAX_validation_report_v1.md`.
+- `Results/NC_pilot/JMP_NC_pilot_scaled_JAX_validation_report_v1.md`.
 - The **exact 35-element scale vector** written into the report.
 - Per-start (native scale): initial LL, final LL, termination type
   (tolerance vs cap), nit, gradient norm (start + final), θ_final, per-parameter
@@ -250,7 +250,7 @@ Any fired halt → stop, write the report up to the halt, await direction.
 
 ## 17. Required validation report
 
-`Results/JMP_NC_pilot_scaled_JAX_validation_report_v1.md`, covering: scope and
+`Results/NC_pilot/JMP_NC_pilot_scaled_JAX_validation_report_v1.md`, covering: scope and
 authorization provenance (scaled validation, not production, not verdict-grade);
 float64 confirmation; the **exact 35-element scale vector** and the
 `max(|θ_CONOPT|,1e-3)` rule (noting the two floored entries); the three scaled
@@ -331,7 +331,7 @@ DO NOT interpret economically.
 
 STEP 5 — Write NEW outputs (do not overwrite prior reports/oracle/pkl):
 - scripts/pilot/_run_scaled_jax_validation.py
-- Results/JMP_NC_pilot_scaled_JAX_validation_report_v1.md (authorization s.17:
+- Results/NC_pilot/JMP_NC_pilot_scaled_JAX_validation_report_v1.md (authorization s.17:
   exact scale vector; 3 starts; agreement vs 0.1 AND 0.01; bound-hit table;
   runtime; halt status).
 
@@ -348,7 +348,7 @@ scaling-up; M1-clean active; P3a unaffected).
 ```
 
 Save the report as:
-`Results/JMP_NC_pilot_scaled_JAX_validation_report_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_scaled_JAX_validation_report_v1.md`
 
 ---
 

@@ -42,7 +42,7 @@ status in this report). All are present; archiving proceeded.
 | 13 | `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_naive_robustness_verdict_v1.md` | PRESENT |
 | 14 | `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md` | PRESENT |
 | 15 | `docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md` | PRESENT |
-| 16 | `Results/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md` | PRESENT |
+| 16 | `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md` | PRESENT |
 
 ---
 

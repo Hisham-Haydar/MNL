@@ -24,7 +24,7 @@ everything that is *upstream* of EUROMOD so the expensive EUROMOD step (and
 the design choices around it) can be reviewed before it is launched.
 
 The slice resolves, by pre-deciding them here, the four open runtime choices
-the build report (`Results/JMP_NC_pilot_build_report_v1.md` §15) flagged as
+the build report (`Results/NC_pilot/JMP_NC_pilot_build_report_v1.md` §15) flagged as
 needed-to-resume for Stages 1–4 (Mincer set, draw method, output paths,
 staged execution). The fifth (EUROMOD runner status) is deferred — it is
 precisely what this slice stops short of.
@@ -209,7 +209,7 @@ proposal-density / log-prior path.**
    record).
 3. Pilot 900-alternative couples parquet (2016) at the pilot data path.
 4. Pilot `__mnlmeta.json` (couples `n_draws=900`).
-5. **Build report:** `Results/JMP_NC_pilot_stage1_4_build_report_v1.md` (§12),
+5. **Build report:** `Results/NC_pilot/JMP_NC_pilot_stage1_4_build_report_v1.md` (§12),
    including the row-count and chosen-row verifications, draw-method record,
    accepted-wage caveat, promotion-debt list, and the downstream `draw_joint`
    re-pointing surface *identified* (not yet changed — that is a later slice).
@@ -254,7 +254,7 @@ direction. Do not work around.
 
 ## 12. Required report
 
-`Results/JMP_NC_pilot_stage1_4_build_report_v1.md`, covering: scope and
+`Results/NC_pilot/JMP_NC_pilot_stage1_4_build_report_v1.md`, covering: scope and
 authorization provenance (this amendment); Stage 1 (Mincer coefficients,
 fitting set, accepted-wage caveat, thin-cell flag if 2016-only fallback used);
 Stage 2 (wage-draw path, proposal-density lockstep confirmation, draw method +
@@ -297,7 +297,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
 Read first (confirm, don't assume):
 - docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md
 - docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md
-- Results/JMP_nc_pilot_feasibility_audit_v1.md
+- Results/NC_pilot/JMP_nc_pilot_feasibility_audit_v1.md
 - scripts/enhanced/enh_RURO_draws.py
 - scripts/enhanced/enh_RURO_prep_mnl_basic.py
 - scripts/enhanced/specifications/estimation_spec_ruro_occ_P3a_pooled.yaml
@@ -355,13 +355,13 @@ change those sites in this slice.
 Halt conditions: HP1, HP2, HP3, HP9, HP-STAGE (see amendment section 11).
 If any fires, STOP, write the report to that point, await direction.
 
-Write ONE report: Results/JMP_NC_pilot_stage1_4_build_report_v1.md, with the
+Write ONE report: Results/NC_pilot/JMP_NC_pilot_stage1_4_build_report_v1.md, with the
 contents required by amendment section 12. End with required final statements
 (EUROMOD not run; M1-clean active; P3a unaffected; no welfare/SA2/promotion;
 Stages 1-4 only).
 ```
 
-Save the report as: `Results/JMP_NC_pilot_stage1_4_build_report_v1.md`
+Save the report as: `Results/NC_pilot/JMP_NC_pilot_stage1_4_build_report_v1.md`
 
 ---
 

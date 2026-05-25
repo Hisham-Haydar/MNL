@@ -13,10 +13,10 @@ converge to identical log-likelihood at LL = −6487.5522 and to a
 bit-identical parameter vector)
 
 Primary evidence:
-- `Results/RURO_occ_M1_clean_estimation_report_v1.md`
-- `Results/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md`
-- `Results/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`
-- `Results/RURO_occ_M1_clean_gate_A_parse_report_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_estimation_report_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_gate_A_parse_report_v1.md`
 - `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_YAML_implementation_report_v1.md`
 - `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_post_estimation_M1_diagnostics_implementation_report_v1.md`
 
@@ -172,7 +172,7 @@ description; the `market_opportunity.shifters` list (removing
 `initial_values` and `optimization.bounds`. All other blocks of the
 YAML are byte-identical to the source.
 
-The Gate-A parse report (`Results/RURO_occ_M1_clean_gate_A_parse_report_v1.md`)
+The Gate-A parse report (`Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_gate_A_parse_report_v1.md`)
 confirms 18 of 18 static checks passing, including parameter count
 (53, parser-verified), correct removal of `beta_E_educH`, presence
 of all seven `beta_E_drgn{k}` parameters, `applies_to: "household"`
@@ -194,7 +194,7 @@ modified during implementation; the data contract of
 `fr_2016_RURO_mnl_GSURv2__{singles,couples}.parquet` is unchanged
 from the GSURv2 rebuild.
 
-The estimation report (`Results/RURO_occ_M1_clean_estimation_report_v1.md`)
+The estimation report (`Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_estimation_report_v1.md`)
 confirms that three independent starts (warm from M0c_b2_GSURv2,
 spec defaults, perturbed with seed 42) converged to the identical
 log-likelihood LL = −6487.5522 and to a bit-identical parameter
@@ -1045,21 +1045,21 @@ Inputs to the M1-naive implementation prompt:
 - `scripts/enhanced/specifications/estimation_spec_ruro_occ_M0c_b2_GSURv2.yaml`
   (the YAML containing the canonical `beta_E_educH` entry to be
   copied)
-- `Results/RURO_occ_M1_clean_estimation_report_v1.md` (the
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_estimation_report_v1.md` (the
   parameter values to be used as the warm-start vector)
 
 Output deliverables of the M1-naive implementation prompt:
 
 - `scripts/enhanced/specifications/estimation_spec_ruro_occ_M1_naive.yaml`
   (the M1-naive YAML, 54 parameters)
-- `Results/RURO_occ_M1_naive_gate_A_parse_report_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_naive_gate_A_parse_report_v1.md`
   (parameter-count verification and frozen-block preservation
   checks)
-- `Results/RURO_occ_M1_naive_estimation_report_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_naive_estimation_report_v1.md`
   (multistart estimation results)
-- `Results/RURO_occ_M1_naive_post_estimation_diagnostics_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_naive_post_estimation_diagnostics_v1.md`
   (standard fit diagnostics)
-- `Results/RURO_occ_M1_naive_supplementary_diagnostics_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_naive_supplementary_diagnostics_v1.md`
   (M1-specific Wald test, region VCV sub-block, and GSUR-region
   Hessian sub-block diagnostics, following the same protocol as
   M1-clean)

@@ -15,7 +15,7 @@ pooled P3a post-estimation track is unaffected and proceeds independently
 ## 1. Purpose
 
 To consolidate two opportunity-mechanism corrections — confirmed by the
-read-only opportunity-block diagnostic (`Results/JMP_opportunity_block_readonly_diagnostic_v1.md`)
+read-only opportunity-block diagnostic (`Results/_shared/JMP_opportunity_block_readonly_diagnostic_v1.md`)
 — into a single next-cycle respecification plan, because both corrections
 are upstream of the same data-preparation pipeline and must be built
 together:
@@ -85,7 +85,7 @@ belongs to this next cycle.
 
 ## 4. Evidence from the read-only diagnostic
 
-From `Results/JMP_opportunity_block_readonly_diagnostic_v1.md`:
+From `Results/_shared/JMP_opportunity_block_readonly_diagnostic_v1.md`:
 
 **Wage-occupation separation (Part A).** Occupation-conditional accepted
 log-wage distributions are materially separated. One-way ANOVA of log wage
@@ -642,7 +642,7 @@ welfare. Do NOT issue SA2. Do NOT promote any model over M1-clean 2016.
 
 Read:
 - docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md
-- Results/JMP_opportunity_block_readonly_diagnostic_v1.md
+- Results/_shared/JMP_opportunity_block_readonly_diagnostic_v1.md
 - docs/jmp_methodology/JMP_couples_opportunity_draw_design_note_v1.md
 - docs/jmp_methodology/JMP_conditional_wage_on_occupation_decision_note_v1.md
 - scripts/enhanced/enh_RURO_draws.py
@@ -653,7 +653,7 @@ Read:
 - Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__singles.parquet
 - Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__mnlmeta.json
 
-Create: Results/JMP_nc_pilot_feasibility_audit_v1.md
+Create: Results/NC_pilot/JMP_nc_pilot_feasibility_audit_v1.md
 
 Use exactly these headings:
 1. Audit verdict (feasible / blockers)
@@ -702,7 +702,7 @@ Required checks:
 - Be strict, parsimonious, and report blockers honestly.
 ```
 
-Save as: `Results/JMP_nc_pilot_feasibility_audit_v1.md`
+Save as: `Results/NC_pilot/JMP_nc_pilot_feasibility_audit_v1.md`
 
 After that audit: write the pilot **spec contract + data-build
 authorization** (`RURO_model_spec_contract_v3_NC.md`) — the first document

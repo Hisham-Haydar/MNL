@@ -14,7 +14,7 @@ The formal scaled-JAX validation passed.
 
 Evidence:
 
-- Report: `Results/JMP_NC_pilot_scaled_JAX_validation_report_v1.md`
+- Report: `Results/NC_pilot/JMP_NC_pilot_scaled_JAX_validation_report_v1.md`
 - Accepted optimizer protocol: JAX float64, validated v2 likelihood kernel, S2c scaling, L-BFGS-B in scaled coordinates, native-scale reporting.
 - Scaling rule: `scale[i] = max(abs(theta_CONOPT[i]), 1e-3)`.
 - Model, data, native bounds, and `theta_c = 0` are unchanged.
@@ -254,7 +254,7 @@ Proceed to a narrow `beta_l0_m` diagnostic slice. The leading provisional treatm
 
 The next authorized task is a diagnostic report:
 
-`Results/JMP_NC_pilot_beta_l0_m_diagnostic_report_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_beta_l0_m_diagnostic_report_v1.md`
 
 Authorized diagnostics:
 
@@ -288,7 +288,7 @@ M1-clean 2016 remains the active baseline. Corrected pooled P3a remains unaffect
 
 The follow-up report must be:
 
-`Results/JMP_NC_pilot_beta_l0_m_diagnostic_report_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_beta_l0_m_diagnostic_report_v1.md`
 
 It must state:
 

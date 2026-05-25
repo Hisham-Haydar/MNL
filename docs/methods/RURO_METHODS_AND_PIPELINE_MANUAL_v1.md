@@ -718,7 +718,7 @@ Results/_canary_ruro_occ_M0.py
 Canary report:
 
 ```text
-Results/RURO_ruro_occ_M0_rebuild_canary_report_v1.md
+Results/P3a/single_year_baseline/M0/RURO_ruro_occ_M0_rebuild_canary_report_v1.md
 ```
 
 Current pre-rebuild result:
@@ -755,7 +755,7 @@ development; the model object is the RURO occupation-opportunity M0 baseline.
 - `docs/France_case/P3a/design/RURO_ruro_occ_baseline_spec_v1.md`
 - `docs/France_case/P3a/design/RURO_ruro_occ_baseline_implementation_report_v1.md`
 - `docs/France_case/P3a/design/RURO_ruro_occ_M0_rebuild_command_plan_v1.md`
-- `Results/RURO_ruro_occ_M0_rebuild_canary_report_v1.md`
+- `Results/P3a/single_year_baseline/M0/RURO_ruro_occ_M0_rebuild_canary_report_v1.md`
 
 Key data precondition:
 

@@ -109,7 +109,7 @@ None of these timestamps postdate the start of this session. No MNL files modifi
 scripts/enhanced/specifications/estimation_spec_ruro_occ_M1_clean.yaml
 docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_YAML_implementation_report_v1.md
 docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_implementation_audit_v1.md
-Results/RURO_occ_M1_clean_gate_A_parse_report_v1.md
+Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_gate_A_parse_report_v1.md
 ```
 
 Files unmodified: both GSURv2 parquets, `estimation_spec_parser.py`,

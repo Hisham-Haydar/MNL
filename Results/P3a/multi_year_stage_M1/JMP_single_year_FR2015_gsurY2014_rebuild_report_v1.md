@@ -1,6 +1,6 @@
 # JMP Single-Year FR_2015 — GSUR Opportunity-Year-Aligned Rebuild Report v1
 
-**Document:** Results/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md  
+**Document:** Results/P3a/multi_year_stage_M1/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md  
 **Date:** 2026-05-20  
 **Author:** Pipeline execution via Claude Code  
 **Authorization:** `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` (Decision 1)  

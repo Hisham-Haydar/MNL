@@ -209,7 +209,7 @@ The benchmark's `beta_l0_m` → 1e-6 bound-hit is a **required diagnostic item**
 
 - A validation script (e.g. `scripts/pilot/_run_jax_validation_estimation.py`) —
   new; reusing the v2 kernel (documented).
-- `Results/JMP_NC_pilot_JAX_validation_estimation_report_v1.md`.
+- `Results/NC_pilot/JMP_NC_pilot_JAX_validation_estimation_report_v1.md`.
 - Per-start: initial LL, final LL, gradient norm (start + final), projected-
   gradient/bound-aware diagnostic, θ_final, per-parameter Δ from start and from
   `theta_CONOPT`, bound hits, iteration count, optimizer message, per-start +
@@ -331,7 +331,7 @@ STEP 4 — Agreement + oracle comparison:
 
 STEP 5 — Write NEW outputs (do not overwrite prior reports/oracle/pkl):
 - scripts/pilot/_run_jax_validation_estimation.py
-- Results/JMP_NC_pilot_JAX_validation_estimation_report_v1.md (per contract
+- Results/NC_pilot/JMP_NC_pilot_JAX_validation_estimation_report_v1.md (per contract
   s.16-17: 3-start table, agreement verdict, CONOPT comparison, bound-hit
   table w/ beta_l0_m projected-gradient, runtime/throughput).
 
@@ -348,7 +348,7 @@ unaffected).
 ```
 
 Save the report as:
-`Results/JMP_NC_pilot_JAX_validation_estimation_report_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_JAX_validation_estimation_report_v1.md`
 
 ---
 

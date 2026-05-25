@@ -5,12 +5,12 @@ Specification: `ruro_occ_M1_clean` (53 parameters)
 Comparison baseline: `ruro_occ_M0c_b2_GSURv2` (47 parameters)
 
 Primary sources:
-- `Results/RURO_occ_M1_clean_standard_post_estimation_diagnostics_v1.md`
-- `Results/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_standard_post_estimation_diagnostics_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`
 
 Comparison sources:
-- `Results/RURO_occ_M0c_b2_GSURv2_estimation_report_v1.md`
-- `Results/RURO_occ_M0c_b2_GSURv2_post_estimation_diagnostics_v1.md`
+- `Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_estimation_report_v1.md`
+- `Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_post_estimation_diagnostics_v1.md`
 - `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md`
 
 ---
@@ -57,7 +57,7 @@ post-estimation run; no sidecar-related errors in any run).
 
 **Supplementary diagnostics run**: `scripts/diagnostics/RURO_post_estimation_M1_diagnostics.py`
 at eps = 1e-5 on the same parameter vector. Full 53×53 Hessian recomputed via
-central-difference finite differences. Outputs: `Results/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`,
+central-difference finite differences. Outputs: `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`,
 `Results/RURO_occ_M1_clean_vcv_region_block_20260518_125924.csv`,
 `Results/RURO_occ_M1_clean_hessian_region_block_20260518_125924.csv`.
 
@@ -689,11 +689,11 @@ verdict and the M1-clean design memo. They are satisfied:
 
 ---
 
-*Sources: `Results/RURO_occ_M1_clean_standard_post_estimation_diagnostics_v1.md`,
-`Results/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`,
+*Sources: `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_standard_post_estimation_diagnostics_v1.md`,
+`Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`,
 `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_post_estimation_M1_diagnostics_implementation_report_v1.md`,
-`Results/RURO_occ_M1_clean_estimation_report_v1.md`,
+`Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_estimation_report_v1.md`,
 `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md`,
-`Results/RURO_occ_M0c_b2_GSURv2_estimation_report_v1.md`,
-`Results/RURO_occ_M0c_b2_GSURv2_post_estimation_diagnostics_v1.md`,
+`Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_estimation_report_v1.md`,
+`Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_post_estimation_diagnostics_v1.md`,
 `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md`*

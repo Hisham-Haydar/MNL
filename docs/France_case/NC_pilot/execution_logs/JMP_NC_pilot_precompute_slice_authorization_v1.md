@@ -273,7 +273,7 @@ or guess a normalization scale).
 
 ## 17. Required precompute report
 
-`Results/JMP_NC_pilot_precompute_report_v1.md`, covering: scope and
+`Results/NC_pilot/JMP_NC_pilot_precompute_report_v1.md`, covering: scope and
 authorization provenance; the §7 inspection-gate result (hard-required columns
 confirmed present; normalization metadata source; which guarded fallbacks fired
 — GSUR zeros, region fallback — and the opportunity-index implication);
@@ -359,14 +359,14 @@ Halt conditions: HP-LOGIC, HP-COL, HP-SYNTH, HP-NORM, HP-DRAW, HP-MUT,
 HP-STAGE (authorization s.14). On any fire: STOP, write report to that point,
 await direction.
 
-Write ONE report: Results/JMP_NC_pilot_precompute_report_v1.md per
+Write ONE report: Results/NC_pilot/JMP_NC_pilot_precompute_report_v1.md per
 authorization s.17, INCLUDING measured wall time + peak memory and the
 pooled-cycle projection. End with required final statements (no logic change;
 no synthetic columns; no GSUR/estimation/welfare/SA2/promotion; M1-clean
 active; P3a unaffected; precompute slice only).
 ```
 
-Save the report as: `Results/JMP_NC_pilot_precompute_report_v1.md`
+Save the report as: `Results/NC_pilot/JMP_NC_pilot_precompute_report_v1.md`
 
 ---
 

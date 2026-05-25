@@ -379,7 +379,7 @@ must not be merged anywhere.)
 
 ## 21. Required Stage 5 v2 build report
 
-`Results/JMP_NC_pilot_stage5_strategy_v2_build_report_v1.md`, covering: scope
+`Results/NC_pilot/JMP_NC_pilot_stage5_strategy_v2_build_report_v1.md`, covering: scope
 and authorization provenance (this v2 amendment); the v1 HE7 halt recap and
 the C′ rationale; adapter changes (per-block both-deciders construction, the
 `is_decider=1` on both partners, the five `ils_*` dropped, the (m, f)
@@ -431,7 +431,7 @@ If it fails, HALT and report.
 Read first:
 - docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage5_strategy_amendment_v2.md
 - docs/archive/2026-05-26_round2_chain_compression/strategy_v1_superseded/JMP_NC_pilot_stage5_euromod_amendment_v1.md
-- Results/JMP_NC_pilot_stage5_euromod_build_report_v1.md (the HE7 halt)
+- Results/NC_pilot/JMP_NC_pilot_stage5_euromod_build_report_v1.md (the HE7 halt)
 - scripts/enhanced/enh_RURO_euromod.py (read-only; note the yem identity at
   lines ~738-778 recomputes earnings for DECIDERS only)
 - scripts/pilot/export_pilot_euromod_inputs.py (the v1 adapter to modify)
@@ -492,14 +492,14 @@ write the report to that point, await direction.
 Optional (permitted): a tiny throwaway B' diagonal run to confirm
 both-deciders clears HE7 before block f=0. Throwaway only; merge nowhere.
 
-Write ONE report: Results/JMP_NC_pilot_stage5_strategy_v2_build_report_v1.md
+Write ONE report: Results/NC_pilot/JMP_NC_pilot_stage5_strategy_v2_build_report_v1.md
 per amendment section 21. End with required final statements (merge NOT run;
 M1-clean active; P3a unaffected; no GSUR/precompute/estimation/welfare/SA2/
 promotion; Stage 5 v2 only).
 ```
 
 Save the report as:
-`Results/JMP_NC_pilot_stage5_strategy_v2_build_report_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_stage5_strategy_v2_build_report_v1.md`
 
 ---
 

@@ -2,7 +2,7 @@
 
 Date: 2026-05-21
 
-Addendum to: `Results/RURO_occ_P3a_pooled_gate_A_parse_report_v1.md`
+Addendum to: `Results/P3a/pooled_P3a/RURO_occ_P3a_pooled_gate_A_parse_report_v1.md`
 (the Gate-A parse report that returned PASS WITH BLOCKER, GA1–GA16
 PASS, GA17 PENDING).
 
@@ -18,7 +18,7 @@ Primary evidence:
 - `docs/estimation/RURO_cluster_robust_SE_implementation_correction_v1.md` (the
   implementation correction applying the GA17-wording, C2-check, and
   cluster-key-strictness fixes)
-- `Results/RURO_cluster_robust_SE_static_validation_v1.md` (the
+- `Results/_shared/RURO_cluster_robust_SE_static_validation_v1.md` (the
   regenerated static/smoke validation report, C1–C17)
 
 Governing documents:

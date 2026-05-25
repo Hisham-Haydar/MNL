@@ -1,6 +1,6 @@
 # JMP Multi-Year Stage M1 P3a Full Execution Report
 
-**Document:** `Results/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md`
+**Document:** `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md`
 **Date:** 2026-05-20
 **Config:** p3a (FR 2015+2016+2017)
 **Provisioning label:** `provisional_v1_fallback_opportunity_year_aligned`

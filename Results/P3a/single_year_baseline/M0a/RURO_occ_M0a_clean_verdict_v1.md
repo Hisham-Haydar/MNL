@@ -773,7 +773,7 @@ substantial spec rethink is needed — escalate to supervisor.
 |---|---|
 | Verdict (this memo) | `docs/RURO_occ_M0a_clean_verdict_v1.md` |
 | Reporting patch | `docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md` |
-| Structural V diagnostic | `Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md` |
+| Structural V diagnostic | `Results/P3a/single_year_baseline/M0a/RURO_ruro_occ_M0a_clean_participation_diag_v1.md` |
 | Structural V diagnostic data | `Results/_participation_diag_ruro_occ_M0a_clean.json` |
 | Patched-reporter fit check | `Results/_M0a_clean_post_est_fit_check.json` |
 | Post-patch LLM summary | `reports/fr_2016_ruro_occ_gamspy_M0a_clean_llm_summary_20260514_102334.md` |

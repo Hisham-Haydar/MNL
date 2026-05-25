@@ -231,7 +231,7 @@ Any fired halt → stop, write the report up to the halt, await direction.
 
 ## 17. Required benchmark report
 
-`Results/JMP_NC_pilot_JAX_optimizer_benchmark_report_v1.md`, covering: scope and
+`Results/NC_pilot/JMP_NC_pilot_JAX_optimizer_benchmark_report_v1.md`, covering: scope and
 authorization provenance (limited benchmark, not production, not verdict-grade);
 **float64 confirmation** (jax_enable_x64 set; or HJ-X64 halt); the start
 (`theta_CONOPT` only, single start); optimizer (L-BFGS-B + JAX value-and-grad,
@@ -273,7 +273,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
 Read (read-only except the new script + new report):
 - docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_JAX_optimizer_benchmark_authorization_v1.md
 - scripts/pilot/_run_ll_equivalence_prototype.py (reuse the validated LL formula; create x64 arrays only after jax_enable_x64 is set; import/refactor documented)
-- Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v2.md (the v2 LL target)
+- Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_equivalence_v2.md (the v2 LL target)
 - Data/pilot/nc_2016_couples/precomputed/fr_pilot_nc_2016_couples_precomputed_loc.pkl
 - Results/pilot/nc_2016_couples/diagnostic_rerun_v1/start_1_warm_P3a/estimation_result.json (theta_CONOPT)
 - estimation_spec_nc_pilot_couples_2016.yaml (optimization.bounds; theta_c fixed 0.0)
@@ -300,7 +300,7 @@ STEP 3 — Acceptance (authorization s.12):
 
 STEP 4 — Write NEW outputs only:
 - scripts/pilot/_run_jax_optimizer_benchmark.py
-- Results/JMP_NC_pilot_JAX_optimizer_benchmark_report_v1.md (authorization s.17)
+- Results/NC_pilot/JMP_NC_pilot_JAX_optimizer_benchmark_report_v1.md (authorization s.17)
 - Do NOT overwrite equivalence v1/v2 or cleanup-validation reports.
 
 THEN STOP. No Hessian, SE, welfare, SA2, promotion.
@@ -315,7 +315,7 @@ interpretation of any LL change; M1-clean active; P3a unaffected).
 ```
 
 Save the report as:
-`Results/JMP_NC_pilot_JAX_optimizer_benchmark_report_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_JAX_optimizer_benchmark_report_v1.md`
 
 ---
 

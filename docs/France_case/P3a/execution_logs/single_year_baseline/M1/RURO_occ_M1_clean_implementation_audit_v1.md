@@ -394,7 +394,7 @@ These diagnostics require a separate implementation step. Two acceptable options
 - **Option A (recommended)**: Implement as a supplementary M1 diagnostic script,
   e.g. `scripts/enhanced/RURO_post_estimation_M1_diagnostics.py`, called after the
   standard post-estimation run and writing to
-  `Results/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md` per §21 of the memo.
+  `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md` per §21 of the memo.
 - **Option B**: Extend `RURO_post_estimation_styled.py` with a region-group
   diagnostic block triggered by the presence of `beta_E_drgn*` in the parameter list.
 

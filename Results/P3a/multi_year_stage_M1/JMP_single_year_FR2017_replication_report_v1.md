@@ -1,6 +1,6 @@
 # JMP Single-Year FR_2017 — Replication Report v1
 
-**Document:** Results/JMP_single_year_FR2017_replication_report_v1.md  
+**Document:** Results/P3a/multi_year_stage_M1/JMP_single_year_FR2017_replication_report_v1.md  
 **Date:** 2026-05-20  
 **Author:** Pipeline execution via Claude Code  
 **Authorization:** `docs/JMP_single_year_replication_2015_2017_authorization_v1.md`  
@@ -576,7 +576,7 @@ rates are available for all three opportunity years (2014, 2015/2016).
 | `Data/processed/fr/fr_2017_RURO_mnl_v1gsurY2016__mnlmeta.json` | 61,646 bytes | SIZE_MATCH |
 
 **Report created:**
-- `Results/JMP_single_year_FR2017_replication_report_v1.md` (this document)
+- `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2017_replication_report_v1.md` (this document)
 
 ---
 

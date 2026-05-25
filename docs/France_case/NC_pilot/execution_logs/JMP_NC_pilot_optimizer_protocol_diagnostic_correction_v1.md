@@ -3,7 +3,7 @@
 *France RURO multi-year extension | v1 | 2026-05-25*
 
 **Document category: interpretive correction, narrow.** Corrects the summary
-wording of `Results/JMP_NC_pilot_optimizer_protocol_diagnostic_report_v1.md` so
+wording of `Results/NC_pilot/JMP_NC_pilot_optimizer_protocol_diagnostic_report_v1.md` so
 it can serve as an operating document. The diagnostic's auto-generated headline
 ("multimodality evidenced") is **contradicted by its own Stage-2 results** and is
 replaced here by the correct reading: the binding problem is **optimizer

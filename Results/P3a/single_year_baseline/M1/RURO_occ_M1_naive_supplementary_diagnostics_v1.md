@@ -10,7 +10,7 @@ Script: `scripts/diagnostics/RURO_post_estimation_M1_naive_diagnostics.py`
 Implementation report: `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_post_estimation_M1_naive_diagnostics_implementation_report_v1.md`
 
 Comparison reference throughout: `ruro_occ_M1_clean`
-(M1-clean supplementary diagnostics: `Results/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`)
+(M1-clean supplementary diagnostics: `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`)
 
 ---
 

@@ -422,7 +422,7 @@ These are authorized in separate future slices.
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__post_em.parquet` | 2,319,300 rows × 151 cols; 149 base + `ils_dispy_male` + `ils_dispy_female` |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__post_em__mergemeta.json` | Merge metadata sidecar per amendment §12 |
 | `scripts/pilot/merge_pilot_em_outputs.py` | Merge script; pilot-only; read-only inputs; halts on any HM condition |
-| `Results/JMP_NC_pilot_post_em_merge_report_v1.md` | This report |
+| `Results/NC_pilot/JMP_NC_pilot_post_em_merge_report_v1.md` | This report |
 
 ---
 

@@ -15,9 +15,9 @@ Reference documents:
 - `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_MNL_rebuild_verdict_v1.md` (the post-rebuild
   verdict authorising this stacking re-run as the next gate, with
   correction `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md`)
-- `Results/JMP_GSURv2_MNL_rebuild_report_v2.md` (the rebuild
+- `Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_report_v2.md` (the rebuild
   report)
-- `Results/JMP_GSURv2_MNL_rebuild_correction_report_v1.md` (the
+- `Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_correction_report_v1.md` (the
   authorized-stem correction report)
 - `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md`
   (the provisional v1-fallback P3a construction verdict, whose
@@ -641,7 +641,7 @@ recurrence of the provisional build's couples-only defect.
 ## 14. Required execution report
 
 The re-run produces an execution report
-(`Results/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_v1.md`
+(`Results/P3a/multi_year_stage_M1/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_v1.md`
 or equivalent) recording the re-run outcome and the V1–V9 results.
 The report is the deliverable that confirms the re-run outcome and
 informs the next gating decision.
@@ -770,7 +770,7 @@ Prompt to use:
 >    the exact-input-resolution record, and the V1–V9 results.
 >
 > Save the execution report as
-> `Results/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_v1.md`,
+> `Results/P3a/multi_year_stage_M1/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_v1.md`,
 > recording the input resolution and SHA verification, the
 > provisional-output archival, the stacking results, the V1–V9
 > validation results, the CPI harmonisation, the cluster-key
@@ -780,7 +780,7 @@ Prompt to use:
 > welfare.
 
 Output to save: the execution report at
-`Results/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_v1.md`,
+`Results/P3a/multi_year_stage_M1/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_v1.md`,
 together with the two GSURv2 pooled output products and their
 sidecars.
 

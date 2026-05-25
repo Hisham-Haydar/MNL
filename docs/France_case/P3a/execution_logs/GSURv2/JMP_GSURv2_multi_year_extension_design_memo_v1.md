@@ -22,7 +22,7 @@ Reference documents:
 - `docs/RURO_GSUR_v2_stageA_implementation_report_v1.md` (the
   existing 2016 GSURv2 build, against which the extension is
   parameterised)
-- `Results/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md`
+- `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md`
   (the P3a provisional construction the extension will eventually
   replace at the opportunity-side input)
 - `Results/JMP_multi_year_stage_M1_P3a_full_execution_addendum_v1.md`

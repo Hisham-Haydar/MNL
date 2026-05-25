@@ -135,7 +135,7 @@ check.
 - Any change to the LL formula or its conventions (the formula stands as
   validated).
 - Modifying pilot data, production data, or the CONOPT oracle results.
-- Overwriting `Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md`.
+- Overwriting `Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md`.
 - Full JAX optimization, denser product, pooled/singles, or P3a rebuild.
 
 ---
@@ -144,9 +144,9 @@ check.
 
 - Updated `scripts/pilot/_run_ll_equivalence_prototype.py` (RESULT_S2 fix +
   finite-gradient check).
-- `Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v2.md` (re-issued
+- `Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_equivalence_v2.md` (re-issued
   report, requested structure, qualified PASS; v1 **not** overwritten).
-- `Results/JMP_NC_pilot_vectorized_likelihood_cleanup_validation_v1.md` (records
+- `Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_cleanup_validation_v1.md` (records
   the path fix, the gradient check method actually used — JAX full-vector or
   NumPy spot checks — and the finiteness result).
 
@@ -168,7 +168,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
   modeling/formula change.
 - NO optimization or optimum search. Gradient is checked for FINITENESS ONLY;
   no parameter is updated.
-- Do NOT overwrite Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md.
+- Do NOT overwrite Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md.
 - Do NOT modify pilot data, production data, or the oracle results.
 
 Read (read-only):
@@ -199,12 +199,12 @@ STEP 3 — Finite-gradient check at theta_CONOPT:
 - Gradient is FINITENESS-ONLY; do NOT step / optimize.
 
 STEP 4 — Write outputs (do NOT overwrite v1):
-- Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v2.md  (re-issued
+- Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_equivalence_v2.md  (re-issued
   report; qualified PASS for FORMULA equivalence, explicitly NOT exact identity;
   state the 0.075 gap is acceptable as formula equivalence but not bit-identity;
   corrected start-2 sourcing; bisection root-cause = 4th-order Taylor BC;
   convention inventory; finite-gradient result).
-- Results/JMP_NC_pilot_vectorized_likelihood_cleanup_validation_v1.md  (records
+- Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_cleanup_validation_v1.md  (records
   the RESULT_S2 fix, the gradient method used (JAX full-vector or NumPy spot),
   and finiteness outcome).
 - Update scripts/pilot/_run_ll_equivalence_prototype.py (path fix + gradient).
@@ -218,8 +218,8 @@ P3a unaffected; cleanup/validation only.
 ```
 
 Save the reports as:
-`Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v2.md` and
-`Results/JMP_NC_pilot_vectorized_likelihood_cleanup_validation_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_equivalence_v2.md` and
+`Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_cleanup_validation_v1.md`
 
 ---
 

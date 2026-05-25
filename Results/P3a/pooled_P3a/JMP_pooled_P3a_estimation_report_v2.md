@@ -3,7 +3,7 @@
 *France FR_2015 / FR_2016 / FR_2017 | Three-start pooled RURO estimation*
 *Executed: 2026-05-21 | Orchestrator started: 20260521T143815Z, finished: 20260521T161114Z*
 
-**Supersedes:** `Results/JMP_pooled_P3a_estimation_report_v1.md`
+**Supersedes:** `Results/P3a/pooled_P3a/JMP_pooled_P3a_estimation_report_v1.md`
 
 **Corrections in this revision:**
 - Headings reorganised to match D1–D15 diagnostic structure of authorization §13
@@ -24,7 +24,7 @@ Execution authorised under:
 - `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_pooled_P3a_estimation_execution_authorization_correction_v1.md` (correction addendum)
 - `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_estimation_execution_repair_clearance_v1.md` (repair clearance — superseded the `fr_p3a_gsurv2_harmonised.parquet` data input path with the split-stem base; see Section 3)
 
-Preflight v2 (`Results/JMP_pooled_P3a_estimation_preflight_report_v2.md`): all 15 checks PASS.
+Preflight v2 (`Results/P3a/pooled_P3a/JMP_pooled_P3a_estimation_preflight_report_v2.md`): all 15 checks PASS.
 
 Hard constraints active throughout: no welfare, no SA2, no canonical promotion, no M1-clean displacement, halt on H1–H6.
 

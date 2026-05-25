@@ -219,7 +219,7 @@ not work around.
 
 ## 15. Required report
 
-`Results/JMP_NC_pilot_precompute_readiness_report_v1.md`, covering: scope and
+`Results/NC_pilot/JMP_NC_pilot_precompute_readiness_report_v1.md`, covering: scope and
 authorization provenance; the `is_chosen` alias (dtype, copy-not-move,
 equivalence to `draw_joint==0`); the grouping key and chosen-first sort rule;
 the output (path, 2,319,300 rows, +`is_chosen`); the §11 validations (row
@@ -297,14 +297,14 @@ Halt conditions: HC1, HC-DRAW, HC-CHOSEN, HC-GROUP, HC-PRESERVE, HC-STAGE
 (amendment s.12). On any fire: STOP, write the report to that point, await
 direction.
 
-Write ONE report: Results/JMP_NC_pilot_precompute_readiness_report_v1.md per
+Write ONE report: Results/NC_pilot/JMP_NC_pilot_precompute_readiness_report_v1.md per
 amendment s.15. End with required final statements (no GSUR/precompute/
 estimation/welfare/SA2/promotion; no scalar draw; M1-clean active; P3a
 unaffected; precompute-readiness slice only).
 ```
 
 Save the report as:
-`Results/JMP_NC_pilot_precompute_readiness_report_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_precompute_readiness_report_v1.md`
 
 ---
 

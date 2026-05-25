@@ -12,10 +12,10 @@ Inputs to this memo:
 - `docs/RURO_occ_M0a_clean_verdict_v1.md`
 - `docs/France_case/P3a/execution_logs/single_year_baseline/M0b/RURO_occ_M0b_design_memo_v1.md`
 - `docs/France_case/P3a/execution_logs/single_year_baseline/M0b/RURO_occ_M0b_implementation_report_v1.md`
-- `Results/RURO_occ_M0b2_estimation_report_v1.md`
-- `Results/RURO_occ_M0b2_multistart_report_v1.md`
+- `Results/P3a/single_year_baseline/M0b/RURO_occ_M0b2_estimation_report_v1.md`
+- `Results/P3a/single_year_baseline/M0b/RURO_occ_M0b2_multistart_report_v1.md`
 - `Results/_M0b2_multistart_summary.json`
-- `Results/RURO_occ_M0b1_wage_pathology_diagnostic_v1.md`
+- `Results/P3a/single_year_baseline/M0b/RURO_occ_M0b1_wage_pathology_diagnostic_v1.md`
 - `reports/fr_2016_ruro_occ_gamspy_M0b2_llm_summary_20260514_125410.md`
 - `scripts/enhanced/estimation_spec_ruro_occ_M0b2.yaml`
 

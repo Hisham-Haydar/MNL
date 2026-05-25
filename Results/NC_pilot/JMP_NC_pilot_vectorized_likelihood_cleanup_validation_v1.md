@@ -139,11 +139,11 @@ The JAX autodiff path is numerically well-behaved at theta_CONOPT.
 | File | Change |
 |---|---|
 | `scripts/pilot/_run_ll_equivalence_prototype.py` | RESULT_S2 path fix + gradient check function + v2 write_report |
-| `Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v2.md` | Created |
-| `Results/JMP_NC_pilot_vectorized_likelihood_cleanup_validation_v1.md` | Created (this file) |
+| `Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_equivalence_v2.md` | Created |
+| `Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_cleanup_validation_v1.md` | Created (this file) |
 
 **Files NOT modified:**
-- `Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md` (not overwritten)
+- `Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md` (not overwritten)
 - `Data/pilot/nc_2016_couples/precomputed/fr_pilot_nc_2016_couples_precomputed_loc.pkl`
 - Oracle result JSONs (read-only)
 - Any production or pilot data

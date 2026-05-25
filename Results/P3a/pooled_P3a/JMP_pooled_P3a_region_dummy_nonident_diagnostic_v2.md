@@ -4,7 +4,7 @@
 **Specification**: `scripts/enhanced/specifications/estimation_spec_ruro_occ_P3a_pooled.yaml`  
 **Date**: 2026-05-21  
 **Status**: Post-repair read-only diagnostic. No estimation run.  
-**Prior diagnostic**: `Results/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v1.md`  
+**Prior diagnostic**: `Results/P3a/pooled_P3a/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v1.md`  
 **Repair authorization**: `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_region_dummy_repair_authorization_v1.md`  
 **Repair report**: `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_region_dummy_repair_report_v1.md`
 

@@ -263,7 +263,7 @@ in the FR_2016 template carry a yem-imprecision ≥ 1e-6 between
 | `Data/pilot/nc_2016_couples/em_outputs/male_pass/combined_draws_em.parquet` | **Absent** — runner exited before write |
 | `Data/pilot/nc_2016_couples/em_outputs/male_pass/combined_draws_em__euromodmeta.json` | **Absent** |
 | `Data/pilot/nc_2016_couples/em_outputs/female_pass/*` | **Absent** — pass not launched |
-| `Results/JMP_NC_pilot_stage5_euromod_build_report_v1.md` | **Present** (this report) |
+| `Results/NC_pilot/JMP_NC_pilot_stage5_euromod_build_report_v1.md` | **Present** (this report) |
 
 Production parquets, the corrected pooled P3a estimation artifacts,
 the M1-clean baseline, the pilot wide product parquet, the singles

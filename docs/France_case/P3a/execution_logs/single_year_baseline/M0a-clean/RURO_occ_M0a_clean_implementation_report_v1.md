@@ -3,7 +3,7 @@
 Date: 2026-05-13
 
 Implements the `ruro_occ_M0a_clean` specification described in section 8(e)
-of `Results/RURO_occ_M0a_simplification_plan_v1.md`: replace the
+of `Results/P3a/single_year_baseline/M0a/RURO_occ_M0a_simplification_plan_v1.md`: replace the
 equality-constraint pool used in `ruro_occ_M0a` (`theta_c_sm − theta_c_sf =
 0` as a hard `param_diff`) with a true renamed shared parameter
 `theta_c_singles`. The likelihood landscape is identical, but the

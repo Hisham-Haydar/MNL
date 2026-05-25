@@ -13,8 +13,8 @@ Output files under review (in `Data/processed/fr/`):
 - `fr_2017_RURO_mnl_GSURv2_y2016__{singles,couples}.parquet` + `__mnlmeta.json`
 
 Primary evidence:
-- `Results/JMP_GSURv2_MNL_rebuild_report_v2.md` (the rebuild report)
-- `Results/JMP_GSURv2_MNL_rebuild_correction_report_v1.md` (the
+- `Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_report_v2.md` (the rebuild report)
+- `Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_correction_report_v1.md` (the
   stem-and-heading correction report)
 
 Governing documents:

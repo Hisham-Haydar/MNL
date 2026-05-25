@@ -18,8 +18,8 @@ too aggressively, after which the model is frozen for identification
 purposes regardless of outcome.
 
 Read:
-- Results/RURO_occ_M0c_b_estimation_report_v1.md
-- Results/RURO_occ_M0c_b_gate_A_parse_report_v1.md
+- Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b_estimation_report_v1.md
+- Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b_gate_A_parse_report_v1.md
 - docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b_implementation_report_v1.md
 - docs/RURO_occ_M0c_design_memo_v1.md
 - scripts/enhanced/estimation_spec_ruro_occ_M0c_b.yaml
@@ -109,7 +109,7 @@ Run a parse-check script equivalent to the M0c_b Gate-A test. Confirm:
 
 If any check fails, stop and report. Do not proceed to estimation.
 
-Save: `Results/RURO_occ_M0c_b2_gate_A_parse_report_v1.md` (brief, one
+Save: `Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_gate_A_parse_report_v1.md` (brief, one
 page).
 
 STEP 3 — Multi-start estimation (3 starts).
@@ -191,7 +191,7 @@ also met.)
 
 STEP 6 — Write the report.
 
-Save: `Results/RURO_occ_M0c_b2_estimation_report_v1.md`. Use the same
+Save: `Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_estimation_report_v1.md`. Use the same
 structure as `RURO_occ_M0c_b_estimation_report_v1.md` plus a new
 section §13 "Branch classification". Specific fields required:
 
@@ -255,14 +255,14 @@ in the M0c_b2 YAML is byte-identical to M0c_b.
 
 Deliverables:
 1. scripts/enhanced/estimation_spec_ruro_occ_M0c_b2.yaml
-2. Results/RURO_occ_M0c_b2_gate_A_parse_report_v1.md
+2. Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_gate_A_parse_report_v1.md
 3. Results/_M0c_b2_multistart_runner.py
 4. Results/_M0c_b2_multistart_inits/{S1,S2,S3}_init.json
 5. Results/_M0c_b2_multistart_summary.json
 6. outputs/estimates/.../estimation_spec_ruro_occ_M0c_b2/run_<timestamp>/
    (three subfolders, one per start; selected run identified)
 7. reports/fr_2016_ruro_occ_gamspy_M0c_b2_llm_summary_<timestamp>.md
-8. Results/RURO_occ_M0c_b2_estimation_report_v1.md
+8. Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_estimation_report_v1.md
 
 Stop after deliverable 8 is written.
 ```

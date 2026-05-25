@@ -8,7 +8,7 @@ executed 2026-05-21 under
 by `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_stage_M1_P3a_GSURv2_stacking_authorization_correction_v1.md`).
 
 Primary evidence:
-- `Results/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_v1.md`
+- `Results/P3a/multi_year_stage_M1/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_v1.md`
 - `config/multi_year/fr_p3a_gsurv2_stage_m1.yaml`
 - `scripts/multi_year/m1_validate.py` (V9 patch)
 - `Data/processed/fr/pooled/fr_p3a_gsurv2_harmonised.parquet` (146 cols,
@@ -117,7 +117,7 @@ authorization conformance; it is a title-line formatting issue only.
 **Yes. Documentation-only. No data or validation impact.**
 
 The execution report
-`Results/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_v1.md`
+`Results/P3a/multi_year_stage_M1/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_v1.md`
 carries the subtitle line "France 2014–2015–2016" in the header. The
 correct description of the survey years covered is FR_2015, FR_2016, and
 FR_2017; the opportunity years are y2014, y2015, and y2016. The "2014"

@@ -13,7 +13,7 @@ Output files under review (all in `Data/external/`):
 - `FR_gsur_ruro_v2_stageA_y2014.parquet` + `__sidecar.json`
 
 Primary evidence:
-- `Results/JMP_GSURv2_multi_year_extension_validation_report_v1.md`
+- `Results/P3a/gsurv2/JMP_GSURv2_multi_year_extension_validation_report_v1.md`
 - `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_report_v1.md`
 
 Governing documents:
@@ -382,7 +382,7 @@ for every opportunity year (construction report §3): `L1_unique_keys`,
 `L5_national_benchmark`, `L7_weighting_source`, `L8_approximation_flags`,
 `missing_values`, and `IDF_parity`. The overall script verdict was
 PASS for all three years. The separate validation report
-(`Results/JMP_GSURv2_multi_year_extension_validation_report_v1.md`)
+(`Results/P3a/gsurv2/JMP_GSURv2_multi_year_extension_validation_report_v1.md`)
 corroborates the construction report's validation summary.
 
 Table 2 summarises the per-year validation status against the

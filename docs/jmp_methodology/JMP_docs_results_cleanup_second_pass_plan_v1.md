@@ -87,9 +87,9 @@ memo) and for the complete active authorization chain. All must remain in place.
 | 17 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_report_v1.md` | Active construction report |
 | 18 | `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` | Active M1-clean verdict (active JMP baseline) |
 | 19 | `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` | Active M0c_b2 GSURv2 verdict |
-| 20 | `Results/JMP_GSURv2_MNL_rebuild_report_v2.md` | Active rebuild report |
-| 21 | `Results/JMP_GSURv2_MNL_rebuild_correction_report_v1.md` | Active correction report |
-| 22 | `Results/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md` | Active full execution report |
+| 20 | `Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_report_v2.md` | Active rebuild report |
+| 21 | `Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_correction_report_v1.md` | Active correction report |
+| 22 | `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md` | Active full execution report |
 
 ---
 
@@ -107,7 +107,7 @@ memo's residual value is historical provenance only.
 | `JMP_GSURv2_multi_year_extension_remediation_authorization_final_wording_fix_v1.md` | CORRECTION_INCORPORATED | Fixes F1–F3 applied directly to `remediation_authorization_v1.md`; this is the second-layer fix document; the parent is live |
 | `JMP_GSURv2_y2016_provenance_lock_plan_correction_v1.md` | CORRECTION_INCORPORATED | Fixes F1–F2 applied directly to `y2016_provenance_lock_plan_v1.md`; the parent is live |
 | `JMP_GSURv2_multi_year_extension_construction_authorization_correction_v1.md` | CORRECTION_INCORPORATED | Corrections applied directly to `construction_authorization_v1.md`; the parent is live |
-| `JMP_GSURv2_script_remediation_documentation_fix_v1.md` | CORRECTION_INCORPORATED | Fixes F1–F2 applied directly to `script_remediation_report_v1.md` and `Results/JMP_GSURv2_script_remediation_static_validation_v1.md`; the parent is live |
+| `JMP_GSURv2_script_remediation_documentation_fix_v1.md` | CORRECTION_INCORPORATED | Fixes F1–F2 applied directly to `script_remediation_report_v1.md` and `Results/P3a/gsurv2/JMP_GSURv2_script_remediation_static_validation_v1.md`; the parent is live |
 | `JMP_multi_year_sample_construction_descriptives_correction_report_v1.md` | CORRECTION_INCORPORATED | Corrections C1–C4 applied directly to `sample_construction_descriptives_report_v1.md`; the parent is live |
 | `JMP_multi_year_stage_M1_execution_readiness_report_v1.md` | CLEAR_SUPERSEDED | Explicitly superseded by v2 (v2 header states "Supersedes: v1"); v1 verdict was NOT AUTHORIZED; v2 is READY |
 | `JMP_single_year_replication_2015_2017_command_plan_v1.md` | CLEAR_SUPERSEDED | Superseded by v2 (CLI flag corrections); v2 header states it supersedes v1 |
@@ -134,8 +134,8 @@ consideration that makes a user decision preferable.
 | `docs/RURO_GSUR_external_acquisition_completion_v1.md` | CLEAR_SUPERSEDED | PARTIAL ACQUISITION SUCCESS verdict; O2 gap was resolved separately by `RURO_GSUR_O2_denominator_resolution_v1.md`; the full acquisition status is synthesised in `RURO_GSUR_StageA_authorization_v1.md`. Standalone provenance value only |
 | `docs/RURO_GSUR_O2_denominator_resolution_v1.md` | CORRECTION_INCORPORATED | O2 resolution findings incorporated into `RURO_GSUR_v2_1_open_decisions_resolution_v1.md` as an amendment; that memo is the binding record |
 | `docs/RURO_GSUR_external_acquisition_verification_claude_v1.md` | HISTORICAL_KEEP | Adversarial verification of O1/O2/O9 source paths; findings informed the open-decisions resolution but contain independent factual corrections. Useful if the O1 crosswalk is ever re-audited |
-| `Results/JMP_multi_year_stage_M1_static_validation_report_v3.md` | HISTORICAL_KEEP | Final version of the static validation chain (v1→v2→v3). v1 and v2 were archived in first pass. v3 is the surviving document in the chain and records the generalization validation. However, the relevant validation status is now captured in the full execution report |
-| `Results/JMP_multi_year_stage_M1_execution_readiness_v1.md` | HISTORICAL_KEEP | Dry-run output report (NOT FOUND for all years). Superseded operationally by the full execution, but records a point-in-time readiness assessment cited by the v1 readiness report |
+| `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_static_validation_report_v3.md` | HISTORICAL_KEEP | Final version of the static validation chain (v1→v2→v3). v1 and v2 were archived in first pass. v3 is the surviving document in the chain and records the generalization validation. However, the relevant validation status is now captured in the full execution report |
+| `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_execution_readiness_v1.md` | HISTORICAL_KEEP | Dry-run output report (NOT FOUND for all years). Superseded operationally by the full execution, but records a point-in-time readiness assessment cited by the v1 readiness report |
 
 ---
 
@@ -176,32 +176,32 @@ These files look like they might be candidates but are KEEP for substantive reas
 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` | Active: lock plan required by construction authorization; now corrected in-place |
 | `docs/RURO_GSUR_external_acquisition_report_v1.md` | HISTORICAL_KEEP: initial acquisition analysis; long, detailed, contains O1/O2/O9 reasoning not reproduced elsewhere |
 | `docs/France_case/_shared/data_audits/RURO_FR2016_CONTINUOUS_DATA_BUILD_AUDIT_v1.md` | HISTORICAL_KEEP: comprehensive audit of the 2016 data build pipeline; referenced by M1-clean audit |
-| `Results/JMP_multi_year_feasibility_audit_v1.md` | Active: feasibility assessment for P3a/P3b/P4; cited by addendum v2 |
-| `Results/JMP_multi_year_feasibility_audit_addendum_v2.md` | Active: P3b/P4 branches and 2018 assessment |
-| `Results/JMP_single_year_FR2015_replication_report_v1.md` | Active: FR_2015 replication execution record |
-| `Results/JMP_single_year_FR2015_replication_addendum_v1.md` | Active: correction addendum now executed; documents sidecar updates |
-| `Results/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md` | Active: FR_2015 GSUR-aligned rebuild execution record |
-| `Results/JMP_single_year_FR2016_gsurY2015_rebuild_report_v1.md` | Active: FR_2016 GSUR-aligned rebuild execution record |
-| `Results/JMP_single_year_FR2017_replication_report_v1.md` | Active: FR_2017 replication execution record |
-| `Results/JMP_single_year_2016_local_mirror_report_v1.md` | Active: FR_2016 local mirror record |
-| `Results/JMP_single_year_consolidated_readiness_verdict_v1.md` | Active: consolidated Stage M1 input readiness verdict |
-| `Results/RURO_GSUR_v2_stageA_lookup_validation_report_v1.md` | Active: Stage A lookup validation; cited by M0c_b2 GSURv2 verdict |
-| `Results/RURO_GSUR_v2_stageA_MNL_rebuild_report_v1.md` | Active: Stage A MNL rebuild record; cited by M0c_b2 GSURv2 verdict |
-| `Results/JMP_GSURv2_external_file_remediation_report_v1.md` | Active: external file retrieval record; cited by construction authorization |
-| `Results/JMP_GSURv2_script_remediation_static_validation_v1.md` | Active: static validation record; cited by remediation authorization chain |
-| `Results/JMP_GSURv2_multi_year_extension_validation_report_v1.md` | Active: construction validation record; cited by construction verdict |
-| `Results/RURO_occ_M0c_b2_GSURv2_estimation_input_check_v1.md` | Active: pre-estimation input check for M0c_b2_GSURv2 |
-| `Results/RURO_occ_M0c_b2_GSURv2_estimation_report_v1.md` | Active: M0c_b2_GSURv2 estimation record |
-| `Results/RURO_occ_M0c_b2_GSURv2_post_estimation_diagnostics_v1.md` | Active: M0c_b2_GSURv2 diagnostics; cited by M1-clean diagnostics |
-| `Results/RURO_occ_M1_clean_gate_A_parse_report_v1.md` | Active: M1-clean Gate A parse |
-| `Results/RURO_occ_M1_clean_estimation_report_v1.md` | Active: M1-clean estimation record |
-| `Results/RURO_occ_M1_clean_standard_post_estimation_diagnostics_v1.md` | Active: M1-clean standard diagnostics |
-| `Results/RURO_occ_M1_clean_supplementary_diagnostics_v1.md` | Active: M1-clean supplementary diagnostics |
-| `Results/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md` | Active: M1-clean composite diagnostics; cited by M1-clean verdict |
-| `Results/RURO_occ_M1_naive_gate_A_parse_report_v1.md` | Active: M1-naive Gate A parse |
-| `Results/RURO_occ_M1_naive_estimation_report_v1.md` | Active: M1-naive estimation record |
-| `Results/RURO_occ_M1_naive_post_estimation_diagnostics_v1.md` | Active: M1-naive diagnostics |
-| `Results/RURO_occ_M1_naive_supplementary_diagnostics_v1.md` | Active: M1-naive supplementary diagnostics |
+| `Results/P3a/multi_year_stage_M1/JMP_multi_year_feasibility_audit_v1.md` | Active: feasibility assessment for P3a/P3b/P4; cited by addendum v2 |
+| `Results/P3a/multi_year_stage_M1/JMP_multi_year_feasibility_audit_addendum_v2.md` | Active: P3b/P4 branches and 2018 assessment |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2015_replication_report_v1.md` | Active: FR_2015 replication execution record |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2015_replication_addendum_v1.md` | Active: correction addendum now executed; documents sidecar updates |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md` | Active: FR_2015 GSUR-aligned rebuild execution record |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2016_gsurY2015_rebuild_report_v1.md` | Active: FR_2016 GSUR-aligned rebuild execution record |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2017_replication_report_v1.md` | Active: FR_2017 replication execution record |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_2016_local_mirror_report_v1.md` | Active: FR_2016 local mirror record |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_consolidated_readiness_verdict_v1.md` | Active: consolidated Stage M1 input readiness verdict |
+| `Results/P3a/gsurv2/RURO_GSUR_v2_stageA_lookup_validation_report_v1.md` | Active: Stage A lookup validation; cited by M0c_b2 GSURv2 verdict |
+| `Results/P3a/gsurv2/RURO_GSUR_v2_stageA_MNL_rebuild_report_v1.md` | Active: Stage A MNL rebuild record; cited by M0c_b2 GSURv2 verdict |
+| `Results/P3a/gsurv2/JMP_GSURv2_external_file_remediation_report_v1.md` | Active: external file retrieval record; cited by construction authorization |
+| `Results/P3a/gsurv2/JMP_GSURv2_script_remediation_static_validation_v1.md` | Active: static validation record; cited by remediation authorization chain |
+| `Results/P3a/gsurv2/JMP_GSURv2_multi_year_extension_validation_report_v1.md` | Active: construction validation record; cited by construction verdict |
+| `Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_estimation_input_check_v1.md` | Active: pre-estimation input check for M0c_b2_GSURv2 |
+| `Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_estimation_report_v1.md` | Active: M0c_b2_GSURv2 estimation record |
+| `Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_post_estimation_diagnostics_v1.md` | Active: M0c_b2_GSURv2 diagnostics; cited by M1-clean diagnostics |
+| `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_gate_A_parse_report_v1.md` | Active: M1-clean Gate A parse |
+| `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_estimation_report_v1.md` | Active: M1-clean estimation record |
+| `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_standard_post_estimation_diagnostics_v1.md` | Active: M1-clean standard diagnostics |
+| `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_supplementary_diagnostics_v1.md` | Active: M1-clean supplementary diagnostics |
+| `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md` | Active: M1-clean composite diagnostics; cited by M1-clean verdict |
+| `Results/P3a/single_year_baseline/M1/RURO_occ_M1_naive_gate_A_parse_report_v1.md` | Active: M1-naive Gate A parse |
+| `Results/P3a/single_year_baseline/M1/RURO_occ_M1_naive_estimation_report_v1.md` | Active: M1-naive estimation record |
+| `Results/P3a/single_year_baseline/M1/RURO_occ_M1_naive_post_estimation_diagnostics_v1.md` | Active: M1-naive diagnostics |
+| `Results/P3a/single_year_baseline/M1/RURO_occ_M1_naive_supplementary_diagnostics_v1.md` | Active: M1-naive supplementary diagnostics |
 
 ---
 

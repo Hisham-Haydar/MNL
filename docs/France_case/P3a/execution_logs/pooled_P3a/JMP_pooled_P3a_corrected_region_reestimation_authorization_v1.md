@@ -15,18 +15,18 @@ review / SA2-readiness verdict — not the SA2 verdict itself.
 Reference documents:
 - `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_region_dummy_repair_report_v1.md` (the completed
   region repair — R1/R2 applied, V1–V9 PASS, defective split archived)
-- `Results/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v2.md` (the
+- `Results/P3a/pooled_P3a/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v2.md` (the
   post-repair diagnostic — cause-B defect resolved; region dummies
   wired, full-rank, gradient-relevant)
 - `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_post_estimation_review_v1.md` (the prior strict
   review that withheld SA2 on region non-identification)
-- `Results/JMP_pooled_P3a_estimation_report_v2.md` (the previous,
+- `Results/P3a/pooled_P3a/JMP_pooled_P3a_estimation_report_v2.md` (the previous,
   pre-repair pooled estimation — now pre-repair evidence only)
 - `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_estimation_execution_authorization_v1.md` and
   `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_pooled_P3a_estimation_execution_authorization_correction_v1.md`
   (the standing estimation authorization and its sequencing/artifact
   corrections, carried forward unchanged in substance)
-- `Results/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v1.md` (the
+- `Results/P3a/pooled_P3a/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v1.md` (the
   diagnostic that traced the original defect)
 
 Interpreter of record: `.venv\Scripts\python.exe`.
@@ -156,7 +156,7 @@ not-authorized scope.
 
 ## 5. Why the previous pooled estimation report is now pre-repair evidence only
 
-`Results/JMP_pooled_P3a_estimation_report_v2.md` remains a valid record
+`Results/P3a/pooled_P3a/JMP_pooled_P3a_estimation_report_v2.md` remains a valid record
 of *what was estimated on the defective data*, but it is **pre-repair
 evidence only** and must not be used as final evidence on the region
 block or as the basis for any SA2 region adjudication.
@@ -520,7 +520,7 @@ before proceeding.
 ## 17. Required estimation report
 
 The re-estimation must be recorded in a report saved as
-`Results/JMP_pooled_P3a_corrected_region_estimation_report_v1.md`. The
+`Results/P3a/pooled_P3a/JMP_pooled_P3a_corrected_region_estimation_report_v1.md`. The
 report must include:
 
 - the execution verdict (all three starts converged / a halt, with the
@@ -643,7 +643,7 @@ Prompt to use:
 > M1-clean/spec/prohibited-input action attempted.
 >
 > Save the report as
-> `Results/JMP_pooled_P3a_corrected_region_estimation_report_v1.md`,
+> `Results/P3a/pooled_P3a/JMP_pooled_P3a_corrected_region_estimation_report_v1.md`,
 > including: the per-start convergence and objective values; the per-start
 > CONOPT/GAMS diagnostics (distinctly labelled) with log/listing paths;
 > the full cluster-robust SE artifact set per start (converged theta;
@@ -657,7 +657,7 @@ Prompt to use:
 > to versioned/documented paths.
 
 Output to save: the estimation report at
-`Results/JMP_pooled_P3a_corrected_region_estimation_report_v1.md`, plus
+`Results/P3a/pooled_P3a/JMP_pooled_P3a_corrected_region_estimation_report_v1.md`, plus
 the per-start results JSONs, cluster-robust SE JSONs, robust VCV `.npy`
 files, `solver.log` files, and `.lst` listings, and an orchestrator
 summary.

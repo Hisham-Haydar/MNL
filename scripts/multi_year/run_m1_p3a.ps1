@@ -234,7 +234,7 @@ if (Require-Step 7) {
     Write-Host "Running: $cmd"
     Invoke-Expression $cmd
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Step 7 BLOCKED — identity validation failed. See Results/M1_identity_validation_summary.md"
+        Write-Error "Step 7 BLOCKED — identity validation failed. See Results/P3a/multi_year_stage_M1/M1_identity_validation_summary.md"
         exit 1
     }
     Write-Host "Step 7 complete." -ForegroundColor Green

@@ -45,7 +45,7 @@ See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-25.md`.
 
 | Original | Mirror |
 | --- | --- |
-| `Results/RURO_ruro_occ_M0_rebuild_canary_report_v1.md` | `docs/France_case/P3a/canary_reports/RURO_ruro_occ_M0_rebuild_canary_report_v1.md` |
+| `Results/P3a/single_year_baseline/M0/RURO_ruro_occ_M0_rebuild_canary_report_v1.md` | `docs/France_case/P3a/canary_reports/RURO_ruro_occ_M0_rebuild_canary_report_v1.md` |
 
 ## Job-Choice Documentation Mirrors
 

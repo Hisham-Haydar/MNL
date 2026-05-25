@@ -102,7 +102,7 @@ Stacked-ID manifest written: `Results/M1_stacked_id_manifest_20260520_223633.csv
 | 2015→2017 | 0 | N/A | No |
 | 2016→2017 | 2,743 | 0.0000 | No |
 
-Identity validation summary written: `Results/M1_identity_validation_summary.md`.
+Identity validation summary written: `Results/P3a/multi_year_stage_M1/M1_identity_validation_summary.md`.
 
 ---
 
@@ -318,7 +318,7 @@ Both sidecars written and confirmed to carry:
 | File | Description |
 |------|-------------|
 | `Results/M1_stacked_id_manifest_20260520_223633.csv` | Per-year stacked-ID breakdown from Step 1 |
-| `Results/M1_identity_validation_summary.md` | Cross-year identity validation report from Step 2 |
+| `Results/P3a/multi_year_stage_M1/M1_identity_validation_summary.md` | Cross-year identity validation report from Step 2 |
 | `Results/M1_cpi_harmonisation_check_20260520_223658.csv` | CPI deflation check manifest from Step 3 |
 | `Results/M1_cluster_key_check_20260520_223716.csv` | Cluster-key annotation manifest from Step 4 |
 | `Results/M1_stacked_id_manifest_20260520_223909.csv` | Per-year ID breakdown from Step 5 (validation run) |

@@ -1,6 +1,6 @@
 # JMP Multi-Year — Stage M1 Dry-Run Execution Readiness
 
-**Document:** Results/JMP_multi_year_stage_M1_execution_readiness_v1.md
+**Document:** Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_execution_readiness_v1.md
 **Date:** 2026-05-19
 **Execution-readiness context:** docs/JMP_multi_year_stage_M1_execution_readiness_report_v1.md
 
@@ -121,4 +121,4 @@ Get-ChildItem "Data\processed\fr\pooled\" → (empty)
 The 2016 MNL parquet (`fr_2016_RURO_mnl_job_gmm__singles.parquet`) exists at:
 `Z:\hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_mnl_job_gmm__singles.parquet`
 
-The M1 config searches `Data/processed/fr/` (repo-local), not Z:. This is the root cause of the 2016 NOT FOUND result. The 2016 parquet must be copied to `Data/processed/fr/` before m1_stack_years.py can find it. See `Results/JMP_multi_year_single_year_MNL_readiness_v1.md §5 Step C` for the exact copy command.
+The M1 config searches `Data/processed/fr/` (repo-local), not Z:. This is the root cause of the 2016 NOT FOUND result. The 2016 parquet must be copied to `Data/processed/fr/` before m1_stack_years.py can find it. See `Results/P3a/multi_year_stage_M1/JMP_multi_year_single_year_MNL_readiness_v1.md §5 Step C` for the exact copy command.

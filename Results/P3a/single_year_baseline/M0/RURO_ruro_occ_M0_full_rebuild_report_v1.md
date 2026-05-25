@@ -34,7 +34,7 @@ with occupation drawn from the pooled empirical distribution.
 
 The user's instruction was conditional: *"If the canary passed, run the full
 France 2016 rebuild."* Per
-`Results/RURO_ruro_occ_M0_rebuild_canary_report_v1.md` the canary headline
+`Results/P3a/single_year_baseline/M0/RURO_ruro_occ_M0_rebuild_canary_report_v1.md` the canary headline
 is **7 of 9 checks FAIL** on the current pre-rebuild parquet files. Those
 failures are exactly the *expected* pre-rebuild state — they confirm the
 rebuild is needed — but they do not constitute "the canary passed". The
@@ -611,4 +611,4 @@ Estimation is **not** run per instruction.
 | Step 3 log | `Results/_step3_mnl_prep.log` |
 | Canary script | `Results/_canary_ruro_occ_M0.py` |
 | Canary JSON | `Results/_canary_ruro_occ_M0_results.json` |
-| This report | `Results/RURO_ruro_occ_M0_full_rebuild_report_v1.md` |
+| This report | `Results/P3a/single_year_baseline/M0/RURO_ruro_occ_M0_full_rebuild_report_v1.md` |

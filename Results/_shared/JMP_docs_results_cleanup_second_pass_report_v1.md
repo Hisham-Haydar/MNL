@@ -151,11 +151,11 @@ references, not archived:
 | `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3.md` | v3 and v3.1 form a complete revision trail; both cited in downstream documents |
 | `docs/France_case/_shared/data_audits/RURO_FR2016_CONTINUOUS_DATA_BUILD_AUDIT_v1.md` | Comprehensive 2016 data build audit; referenced by M1-clean implementation audit |
 | `docs/RURO_GSUR_external_acquisition_report_v1.md` | Pending user decision (§7); treated as KEEP until decision |
-| `Results/JMP_multi_year_stage_M1_static_validation_report_v3.md` | Canonical surviving document in v1→v2→v3 chain; only dedicated generalization validation record |
-| `Results/JMP_multi_year_EUROMOD_output_readiness_v1.md` | Pre-Stage-M1 EUROMOD readiness; documents FR_2015/FR_2017 absence state |
-| `Results/JMP_multi_year_external_assets_inventory_v1.md` | Pre-remediation external assets gap state; not superseded by a v2 |
-| `Results/JMP_multi_year_single_year_MNL_readiness_v1.md` | Pre-rebuild MNL readiness (NOT READY); documents pre-rebuild state |
-| `Results/JMP_multi_year_stage_M1_execution_readiness_v1.md` | Dry-run NOT FOUND point-in-time record |
+| `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_static_validation_report_v3.md` | Canonical surviving document in v1→v2→v3 chain; only dedicated generalization validation record |
+| `Results/P3a/multi_year_stage_M1/JMP_multi_year_EUROMOD_output_readiness_v1.md` | Pre-Stage-M1 EUROMOD readiness; documents FR_2015/FR_2017 absence state |
+| `Results/P3a/multi_year_stage_M1/JMP_multi_year_external_assets_inventory_v1.md` | Pre-remediation external assets gap state; not superseded by a v2 |
+| `Results/P3a/multi_year_stage_M1/JMP_multi_year_single_year_MNL_readiness_v1.md` | Pre-rebuild MNL readiness (NOT READY); documents pre-rebuild state |
+| `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_execution_readiness_v1.md` | Dry-run NOT FOUND point-in-time record |
 
 ---
 

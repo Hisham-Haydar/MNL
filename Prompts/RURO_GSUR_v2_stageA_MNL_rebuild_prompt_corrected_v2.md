@@ -33,7 +33,7 @@ Read (in this order):
 - docs/RURO_GSUR_v2_stageA_implementation_report_v1.md (especially the
   corrected §8 merge procedure — note that §8 explicitly supersedes the
   earlier incorrect description in the same section)
-- Results/RURO_GSUR_v2_stageA_lookup_validation_report_v1.md
+- Results/P3a/gsurv2/RURO_GSUR_v2_stageA_lookup_validation_report_v1.md
 - docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md §8 (output schema),
   §9 (Stage A), §12 (F6 versioned paths, F6-promote canonical
   promotion — NOT authorized in this task), §14 (M1–M10 validation
@@ -61,7 +61,7 @@ Inputs to use:
 Outputs to write:
 - Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl_GSURv2__singles.parquet
 - Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl_GSURv2__couples.parquet
-- Results/RURO_GSUR_v2_stageA_MNL_rebuild_report_v1.md
+- Results/P3a/gsurv2/RURO_GSUR_v2_stageA_MNL_rebuild_report_v1.md
 
 ---
 
@@ -418,7 +418,7 @@ the report.
 Deliverable:
 
 Save the rebuild validation report to:
-Results/RURO_GSUR_v2_stageA_MNL_rebuild_report_v1.md
+Results/P3a/gsurv2/RURO_GSUR_v2_stageA_MNL_rebuild_report_v1.md
 
 The report must contain:
 1. Commands run (the actual Python commands or script reference)

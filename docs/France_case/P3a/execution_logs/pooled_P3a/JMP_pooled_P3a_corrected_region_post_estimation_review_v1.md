@@ -1,7 +1,7 @@
 # JMP Pooled P3a — Corrected-Region Post-Estimation Review v1
 
 *France FR_2015 / FR_2016 / FR_2017 | Strict post-estimation review / SA2-readiness verdict of the corrected-region run*
-*Date: 2026-05-22 | Estimation report: Results/JMP_pooled_P3a_corrected_region_estimation_report_v1.md*
+*Date: 2026-05-22 | Estimation report: Results/P3a/pooled_P3a/JMP_pooled_P3a_corrected_region_estimation_report_v1.md*
 
 Specification class: post-estimation review / SA2-readiness verdict. This
 memo adjudicates whether the **corrected-region** pooled P3a estimation
@@ -10,16 +10,16 @@ the corrected re-estimation. It is not the SA2 verdict and does not issue
 one. M1-clean 2016 remains the active JMP baseline.
 
 Reference documents:
-- `Results/JMP_pooled_P3a_corrected_region_estimation_report_v1.md` (the
+- `Results/P3a/pooled_P3a/JMP_pooled_P3a_corrected_region_estimation_report_v1.md` (the
   corrected estimation report under review)
 - `docs/France_case/P3a/execution_logs/pooled_P3a/JMP_pooled_P3a_corrected_region_reestimation_authorization_v1.md`
   (the authorization the run executed)
 - `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_region_dummy_repair_report_v1.md` and
-  `Results/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v2.md` (the
+  `Results/P3a/pooled_P3a/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v2.md` (the
   repair and its post-repair diagnostic)
 - `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_post_estimation_review_v1.md` (the prior review of
   the pre-repair run; the S1–S11 criteria are carried forward unchanged)
-- `Results/JMP_pooled_P3a_estimation_report_v2.md` (pre-repair evidence
+- `Results/P3a/pooled_P3a/JMP_pooled_P3a_estimation_report_v2.md` (pre-repair evidence
   only)
 - Three corrected SE JSONs (`corrected_start1/2/3_cluster_robust_se.json`),
   the orchestrator summary, and the Start 3 perturbed-init JSON
@@ -620,7 +620,7 @@ M1-clean held active. Save it as
 `docs/France_case/P3a/execution_logs/pooled_P3a/JMP_pooled_P3a_post_estimation_diagnostics_authorization_v1.md`.
 
 Then run that authorization in **Claude Code**, producing
-`Results/JMP_pooled_P3a_post_estimation_diagnostics_report_v1.md` (the
+`Results/P3a/pooled_P3a/JMP_pooled_P3a_post_estimation_diagnostics_report_v1.md` (the
 S4/S5/S6/S8 adjudications). Return it here for an updated SA2-readiness
 verdict. If S4/S5/S6/S8 clear, authorize the S10/S11 simulation as a
 separate step; only if all of S1–S11 then clearly pass is the SA2 verdict

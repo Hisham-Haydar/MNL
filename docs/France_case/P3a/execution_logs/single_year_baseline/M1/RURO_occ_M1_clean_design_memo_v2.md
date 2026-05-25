@@ -25,8 +25,8 @@ or canonical parquet promotion.
 Reference documents:
 - `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the accepted working
   baseline)
-- `Results/RURO_occ_M0c_b2_GSURv2_estimation_report_v1.md`
-- `Results/RURO_occ_M0c_b2_GSURv2_post_estimation_diagnostics_v1.md`
+- `Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_estimation_report_v1.md`
+- `Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_post_estimation_diagnostics_v1.md`
 - `Prompts/JMP_ability_vs_opportunity_framework_v1.md` (the
   conceptual framework; its regional design is superseded by this
   memo)
@@ -946,7 +946,7 @@ risk discussed in §17.
 The post-estimation script is run against the M1-clean estimation
 results with the same `--mnl-base` setting used at estimation time.
 A new post-estimation report
-`Results/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md` is
+`Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md` is
 produced parallel to the M0c_b2_GSURv2 post-estimation report.
 
 ---
@@ -1198,8 +1198,8 @@ additions to the standard diagnostics.
 
 A *reporting step* producing the M1-clean estimation report and
 post-estimation diagnostics in
-`Results/RURO_occ_M1_clean_estimation_report_v1.md` and
-`Results/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md`.
+`Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_estimation_report_v1.md` and
+`Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md`.
 
 The implementation prompt does not authorise the M1-clean verdict;
 the verdict is written separately in this chat after the

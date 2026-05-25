@@ -486,7 +486,7 @@ that:
 
 1. Confirms all remediation preconditions are met (referencing the
    script remediation report `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_script_remediation_report_v1.md`
-   and validation report `Results/JMP_GSURv2_script_remediation_static_validation_v1.md`)
+   and validation report `Results/P3a/gsurv2/JMP_GSURv2_script_remediation_static_validation_v1.md`)
    and that the re-audit returned READY or READY WITH MINOR FIXES.
 2. Explicitly authorizes running:
    ```

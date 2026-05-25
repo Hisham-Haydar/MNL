@@ -10,10 +10,10 @@
 - User authorization 2026-05-20 (FR_2016 rebuild and Stage M1 authorization update)
 
 **Supporting reports:**
-- `Results/JMP_single_year_consolidated_readiness_verdict_v1.md`
-- `Results/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md`
-- `Results/JMP_single_year_FR2016_gsurY2015_rebuild_report_v1.md`
-- `Results/JMP_single_year_FR2017_replication_report_v1.md`
+- `Results/P3a/multi_year_stage_M1/JMP_single_year_consolidated_readiness_verdict_v1.md`
+- `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md`
+- `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2016_gsurY2015_rebuild_report_v1.md`
+- `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2017_replication_report_v1.md`
 
 ---
 
@@ -57,13 +57,13 @@ Changes since v1, in order:
 | Document | Sections used |
 | -------- | ------------- |
 | `docs/JMP_multi_year_stage_M1_execution_readiness_report_v1.md` | §1 NOT AUTHORIZED verdict; §14 missing inputs; §18 next-task sequence |
-| `Results/JMP_single_year_consolidated_readiness_verdict_v1.md` | §3 GSUR alignment table; §9 required steps |
-| `Results/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md` | §§8–11 cell verification, row counts, sidecar |
-| `Results/JMP_single_year_FR2016_gsurY2015_rebuild_report_v1.md` | §§7–11,18–19 cell verification, row counts, sidecar, dry-run |
-| `Results/JMP_single_year_FR2017_replication_report_v1.md` | §§8–12 cell verification, row counts, sidecar (as corrected 2026-05-20) |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_consolidated_readiness_verdict_v1.md` | §3 GSUR alignment table; §9 required steps |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md` | §§8–11 cell verification, row counts, sidecar |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2016_gsurY2015_rebuild_report_v1.md` | §§7–11,18–19 cell verification, row counts, sidecar, dry-run |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2017_replication_report_v1.md` | §§8–12 cell verification, row counts, sidecar (as corrected 2026-05-20) |
 | `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` | Decision 3 (provisional dry-run under v1 fallback) |
 | `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_plan_v2.md` | §5 configurations; §17 validation checks; §21 what remains blocked |
-| `Results/JMP_multi_year_stage_M1_static_validation_report_v3.md` | All checks PASS (2026-05-19) |
+| `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_static_validation_report_v3.md` | All checks PASS (2026-05-19) |
 | `config/multi_year/fr_p3a_stage_m1.yaml` | Input patterns, year list, UID scheme, blocked_configs gates |
 
 ---
@@ -102,7 +102,7 @@ The M1-clean single-year operative file `fr_2016_RURO_mnl_GSURv2__` is **not** p
 | Sidecar `gsur_alignment_status` | `aligned` |
 | Local mirror size (singles) | 21,467,197 bytes |
 | Local mirror size (couples) | 42,977,905 bytes |
-| Report | `Results/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md` |
+| Report | `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md` |
 | Readiness | **PASS** |
 
 ---
@@ -128,7 +128,7 @@ The M1-clean single-year operative file `fr_2016_RURO_mnl_GSURv2__` is **not** p
 | Sidecar `gsur_alignment_status` | `aligned` |
 | Local mirror size (singles) | 21,500,531 bytes |
 | Local mirror size (couples) | 43,108,696 bytes |
-| Report | `Results/JMP_single_year_FR2016_gsurY2015_rebuild_report_v1.md` |
+| Report | `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2016_gsurY2015_rebuild_report_v1.md` |
 | Readiness | **PASS** |
 
 Note: The M1-clean verdict (`docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md`, LL=−6487.5522) was estimated on `fr_2016_RURO_mnl_GSURv2__` and remains valid for that data. The `v1gsurY2015` file used here differs in GSUR rates; it is for the provisional multi-year pooled route only.
@@ -157,7 +157,7 @@ Note: The M1-clean verdict (`docs/France_case/P3a/execution_logs/single_year_bas
 | Local mirror size (couples) | 38,961,983 bytes |
 | tpr non-zero (WA) | 0 / 2,364 (0.000%) |
 | twl non-zero (WA) | 6 / 2,364 (0.254%) — below 1% threshold |
-| Report | `Results/JMP_single_year_FR2017_replication_report_v1.md` |
+| Report | `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2017_replication_report_v1.md` |
 | Readiness | **PASS** |
 
 ---
@@ -278,7 +278,7 @@ The following limitations apply to all outputs produced under this authorization
 | ---------- | ------ |
 | **v1 GSUR fallback** | All three years use `FR_gsur_ruro.parquet` (v1), not GSURv2. v1 rates are broad-age-band aggregates. GSURv2 Stage A rates exist only for 2016. The provisional label is required until GSURv2 is extended to 2015 and 2017, or until a separate verdict explicitly accepts the v1 fallback as final. |
 | **No GSURv2 for 2015 and 2017** | Requires Eurostat denominators (`lfst_r_lfsd2pop`, `lfst_r_lfp2acedu` for 2015/2017) and INSEE BDM 001688526 annual averages. These are not acquired. |
-| **tpr/twl asymmetry** | 2015 carries `tpr` (property tax, 0.344% WA incidence); 2016 and 2017 carry `twl` (ISF wealth tax, ~0.29% WA incidence). All three are below the 1% escalation threshold; see `Results/JMP_multi_year_stage_M1_readiness_addendum_v2.md`. P3b (2015+2016+2018) remains hard-blocked pending `Results/M1_ISF_tpr_comparability_check_2018.md`. |
+| **tpr/twl asymmetry** | 2015 carries `tpr` (property tax, 0.344% WA incidence); 2016 and 2017 carry `twl` (ISF wealth tax, ~0.29% WA incidence). All three are below the 1% escalation threshold; see `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_readiness_addendum_v2.md`. P3b (2015+2016+2018) remains hard-blocked pending `Results/M1_ISF_tpr_comparability_check_2018.md`. |
 | **M1-clean single-year baseline** | The M1-clean single-year structural estimates (LL=−6487.5522, 53 parameters) used `fr_2016_RURO_mnl_GSURv2__` as operative data. The v1gsurY2015 FR_2016 file used in Stage M1 has different GSUR rates; any pooled estimation result will not be directly comparable to M1-clean on this dimension. |
 | **HICP proxy deflator** | The CPI φ_t values are from EUROMOD HICPCONFIG.xml (Eurostat/AMECO), not INSEE domestic CPI. Maximum deviation < 3.2% over 2015–2018. Disclosed in `docs/France_case/_shared/governance/JMP_multi_year_CPI_HICP_source_decision_v1.md`. |
 | **No cluster-robust SE wrapper** | The pooled estimation SE wrapper for T1 cluster-robust standard errors (clustering on `idorighh`) is not yet implemented. Stage M1 constructs the `cluster_id` column; the estimation-level usage requires a separate implementation step. |
@@ -293,7 +293,7 @@ Under this authorization, the following Stage M1 steps may be executed once the 
 | Step | Script | Action |
 | ---- | ------ | ------ |
 | 1 | `m1_stack_years.py --config p3a` | Stack the three per-year parquets; assign `year_tag`, `stacked_hh_uid`, `stacked_person_uid`; preserve raw IDs; write `Data/processed/fr/pooled/fr_p3a_stacked_raw.parquet`; create or verify a matching label sidecar |
-| 2 | `m1_identity_validation.py --config p3a` | Run §13 person-identity diagnostics on stacked-raw file; write `Results/M1_identity_validation_summary.md` |
+| 2 | `m1_identity_validation.py --config p3a` | Run §13 person-identity diagnostics on stacked-raw file; write `Results/P3a/multi_year_stage_M1/M1_identity_validation_summary.md` |
 | 3 | `m1_harmonise_cpi.py --config p3a` | Read `cpi_hicp_fr_harmonisation.csv`; add `*_real` deflated columns per year; write `Data/processed/fr/pooled/fr_p3a_harmonised.parquet`; create or verify a matching label sidecar |
 | 4 | `m1_add_cluster_key.py --config p3a` | Add `cluster_id = idorighh`; may be embedded in step 3 |
 | 5 | `m1_validate.py --config p3a` | Run V1–V9 validation checks; write `Results/M1_*` manifests |

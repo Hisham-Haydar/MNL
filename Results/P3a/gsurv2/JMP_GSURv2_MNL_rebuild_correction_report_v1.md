@@ -122,7 +122,7 @@ used these headings (§1–§29):
 26. What was not done — 27. Overall rebuild verdict —
 28. git note — 29. Readiness of next gate
 
-Rebuild report v2 (`Results/JMP_GSURv2_MNL_rebuild_report_v2.md`)
+Rebuild report v2 (`Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_report_v2.md`)
 uses the 29 required headings:
 
 1. Rebuild verdict — 2. Authorization scope — 3. Files inspected —

@@ -1,7 +1,7 @@
 # Claude sonnet prompts and replies : 
 ## Prompt 1 
 using scripts/enhanced/RURO_post_estimation_styled.py
-Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md
+Results/P3a/single_year_baseline/M0a/RURO_ruro_occ_M0a_clean_participation_diag_v1.md
 Results/_participation_diag_ruro_occ_M0a_clean.json
 Results/fr_2016_ruro_occ_gamspy_M0a_clean_llm_summary_20260513_193536.md
 
@@ -136,7 +136,7 @@ Inspect and evaluate without editing:
 
 Prompt
 using scripts/enhanced/RURO_post_estimation_styled.py
-Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md
+Results/P3a/single_year_baseline/M0a/RURO_ruro_occ_M0a_clean_participation_diag_v1.md
 Results/_participation_diag_ruro_occ_M0a_clean.json
 Results/fr_2016_ruro_occ_gamspy_M0a_clean_llm_summary_20260513_193536.md
 
@@ -331,7 +331,7 @@ Prompt 1
 
 using scripts/enhanced/RURO_post_estimation_styled.py 
 
-Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md 
+Results/P3a/single_year_baseline/M0a/RURO_ruro_occ_M0a_clean_participation_diag_v1.md 
 
 Results/_participation_diag_ruro_occ_M0a_clean.json 
 
@@ -590,7 +590,7 @@ Active model:
 
 Files involved:
 - `scripts/enhanced/RURO_post_estimation_styled.py`
-- `Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md`
+- `Results/P3a/single_year_baseline/M0a/RURO_ruro_occ_M0a_clean_participation_diag_v1.md`
 - `Results/_participation_diag_ruro_occ_M0a_clean.json`
 - `Results/_participation_diag_ruro_occ_M0a_clean.py`
 - `docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md`
@@ -1660,7 +1660,7 @@ attached :
     from theta directly, not from the Hessian).
     
     GOAL: produce a single Markdown report at
-    Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md that decomposes
+    Results/P3a/single_year_baseline/M0a/RURO_ruro_occ_M0a_clean_participation_diag_v1.md that decomposes
     the work/non-work choice-index imbalance per group and identifies the
     dominant culprit term.
     
@@ -1841,7 +1841,7 @@ attached :
     code path that computes pred_participation.
     
     STEP F — WRITE THE REPORT:
-    Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md
+    Results/P3a/single_year_baseline/M0a/RURO_ruro_occ_M0a_clean_participation_diag_v1.md
     
     Structure:
     
@@ -1891,7 +1891,7 @@ attached :
     ## Files produced
     Results/_participation_diag_ruro_occ_M0a_clean.py    (script)
     Results/_participation_diag_ruro_occ_M0a_clean.json  (numbers)
-    Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md (this report)
+    Results/P3a/single_year_baseline/M0a/RURO_ruro_occ_M0a_clean_participation_diag_v1.md (this report)
     
     TECHNICAL REQUIREMENTS:
     - Use pandas + numpy only. No estimator, no GAMSPy, no EUROMOD.
@@ -2163,7 +2163,7 @@ Outputs
 File	Purpose
 Results/_participation_diag_ruro_occ_M0a_clean.py	Reusable diagnostic (6 s wall, read-only)
 Results/_participation_diag_ruro_occ_M0a_clean.json	Machine-readable results
-Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md	Report (140 lines)
+Results/P3a/single_year_baseline/M0a/RURO_ruro_occ_M0a_clean_participation_diag_v1.md	Report (140 lines)
 Paste-back package
 Verdict line
 ROOT CAUSE: post-estimation reporting code at scripts/enhanced/RURO_post_estimation_styled.py:4652. Spec-side and engine code are correct. Recommended fix: use group-suffixed parameter lookups (e.g. params['beta_c_sm'] for singles_male) inside compute_fit_diagnostics instead of params.get('beta_c', 1.0), and pass suffix='_sm'/'_sf' to compute_beta_l_full, then include the opportunity layer (log_opp or component recomputation) in V.
@@ -2333,7 +2333,7 @@ Active model:
   `outputs/estimates/fr/spec/ruro_occ/gamspy/estimation_spec_ruro_occ_M0a_clean/run_2026-05-13_19-24-38/estimation_results.json`
 Files involved:
 - `scripts/enhanced/RURO_post_estimation_styled.py`
-- `Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md`
+- `Results/P3a/single_year_baseline/M0a/RURO_ruro_occ_M0a_clean_participation_diag_v1.md`
 - `Results/_participation_diag_ruro_occ_M0a_clean.json`
 - `Results/_participation_diag_ruro_occ_M0a_clean.py`
 - `docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md`

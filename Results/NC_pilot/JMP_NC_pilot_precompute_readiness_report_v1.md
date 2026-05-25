@@ -44,10 +44,10 @@ require separate authorizing documents.
 | File | Purpose |
 |---|---|
 | `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_readiness_amendment_v1.md` | Authorizing document; read first |
-| `Results/JMP_NC_pilot_post_em_merge_report_v1.md` | Post-EM merge status confirmation |
+| `Results/NC_pilot/JMP_NC_pilot_post_em_merge_report_v1.md` | Post-EM merge status confirmation |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__post_em.parquet` | Input base (read-only) |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__post_em__mergemeta.json` | Merge metadata (income stats, validation record) |
-| `Results/JMP_NC_pilot_draw_joint_repointing_audit_v1.md` | Context for position-0 invariant and downstream assumptions |
+| `Results/NC_pilot/JMP_NC_pilot_draw_joint_repointing_audit_v1.md` | Context for position-0 invariant and downstream assumptions |
 
 ---
 
@@ -58,7 +58,7 @@ require separate authorizing documents.
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet` | 2,319,300 rows × 152 cols; chosen-first sorted; `is_chosen` added |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready__readymeta.json` | Metadata sidecar per amendment §10 |
 | `scripts/pilot/build_precompute_ready.py` | Transformation script; pilot-only; read-only input |
-| `Results/JMP_NC_pilot_precompute_readiness_report_v1.md` | This report |
+| `Results/NC_pilot/JMP_NC_pilot_precompute_readiness_report_v1.md` | This report |
 
 ---
 

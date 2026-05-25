@@ -99,5 +99,5 @@ is outside the repo and has **not** been renamed. It can be `Rename-Item`'d
 to `.../ruro_occ/scenarios/` whenever shared-storage hygiene is convenient;
 the references in the two affected docs
 (`docs/France_case/P3a/design/RURO_ruro_occ_M0_rebuild_command_plan_v1.md` and
-`Results/RURO_ruro_occ_M0_full_rebuild_report_v1.md`) deliberately preserve
+`Results/P3a/single_year_baseline/M0/RURO_ruro_occ_M0_full_rebuild_report_v1.md`) deliberately preserve
 the original Z: path until that storage-side rename happens.

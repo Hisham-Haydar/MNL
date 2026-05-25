@@ -201,7 +201,7 @@ regional block. They do **not** by themselves constitute the M1-clean model
 verdict. The full verdict still requires:
 
 1. Standard fit assessment from
-   `Results/RURO_occ_M1_clean_standard_post_estimation_diagnostics_v1.md`
+   `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_standard_post_estimation_diagnostics_v1.md`
    (completed).
 2. These M1-specific supplementary diagnostics (completed in this step).
 3. A final comparative decision: keep M1-clean as the production specification,

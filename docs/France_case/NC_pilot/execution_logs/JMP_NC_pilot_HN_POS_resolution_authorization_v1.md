@@ -290,7 +290,7 @@ work around.
 
 ## 17. Required report
 
-`Results/JMP_NC_pilot_HN_POS_resolution_report_v1.md`, covering: scope and
+`Results/NC_pilot/JMP_NC_pilot_HN_POS_resolution_report_v1.md`, covering: scope and
 authorization provenance; the HN-POS recap (123 rows, 6 households, real EUROMOD
 negatives); the EPS source confirmation (1e-12, line 998 use); the floor formula
 and `EPS × c_scale_pilot` in EUR/month; the floored-row result (count 123, the 6
@@ -333,7 +333,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
 
 Read (read-only):
 - docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md
-- Results/JMP_NC_pilot_normalization_rebuild_report_v1.md (HN-POS detail)
+- Results/NC_pilot/JMP_NC_pilot_normalization_rebuild_report_v1.md (HN-POS detail)
 - scripts/enhanced/estimation_utils.py (confirm EPS = 1e-12 @ line 49; use @ line 998)
 - Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet
 - Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__mnlmeta.json (leisure scales to PRESERVE)
@@ -378,7 +378,7 @@ Halt conditions: HF-EPS, HF-FLOOR, HF-POS, HF-IDENT, HF-INCOME, HF-LEIS,
 HF-STRUCT, HF-MUT, HF-DROP, HF-STAGE (authorization s.14). On any fire: STOP,
 write report to that point, await direction.
 
-Write ONE report: Results/JMP_NC_pilot_HN_POS_resolution_report_v1.md per
+Write ONE report: Results/NC_pilot/JMP_NC_pilot_HN_POS_resolution_report_v1.md per
 authorization s.17. End with required final statements (floored not dropped;
 EPS from source; income/leisure preserved; no EUROMOD re-run/precompute/GSUR/
 estimation/welfare/SA2/promotion; M1-clean active; P3a unaffected; HN-POS
@@ -386,7 +386,7 @@ resolution slice only).
 ```
 
 Save the report as:
-`Results/JMP_NC_pilot_HN_POS_resolution_report_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_HN_POS_resolution_report_v1.md`
 
 ---
 

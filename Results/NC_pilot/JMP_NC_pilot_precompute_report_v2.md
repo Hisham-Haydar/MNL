@@ -42,8 +42,8 @@ M1-clean displacement (HP-STAGE).
 | File | Purpose |
 |---|---|
 | `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_slice_authorization_v1.md` | Authorizing document |
-| `Results/JMP_NC_pilot_HN_POS_resolution_report_v1.md` | HN-POS resolution confirmation (123 rows, 6 households floored) |
-| `Results/JMP_NC_pilot_precompute_report_v1.md` | Prior HP-NORM halt detail |
+| `Results/NC_pilot/JMP_NC_pilot_HN_POS_resolution_report_v1.md` | HN-POS resolution confirmation (123 rows, 6 households floored) |
+| `Results/NC_pilot/JMP_NC_pilot_precompute_report_v1.md` | Prior HP-NORM halt detail |
 | `scripts/enhanced/estimation_utils.py` | `precompute_data_couples` (line 944); `_resolve_draw_column` (line 59); `EPS = 1e-12` (line 49) |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_norm_ready.parquet` | Input (read-only); 2,319,300 × 154 |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_norm_ready__normmeta.json` | Normalization metadata |
@@ -57,7 +57,7 @@ M1-clean displacement (HP-STAGE).
 | `scripts/pilot/_run_precompute.py` | Pre-run checks + precompute execution + post-run validation |
 | `Data/pilot/nc_2016_couples/precomputed/fr_pilot_nc_2016_couples_precomputed.pkl` | `PrecomputedDataCouples` artifact (pickle protocol 5, 858.2 MB) |
 | `Data/pilot/nc_2016_couples/precomputed/precompute_run_summary.json` | Machine-readable run summary |
-| `Results/JMP_NC_pilot_precompute_report_v2.md` | This report |
+| `Results/NC_pilot/JMP_NC_pilot_precompute_report_v2.md` | This report |
 
 ---
 

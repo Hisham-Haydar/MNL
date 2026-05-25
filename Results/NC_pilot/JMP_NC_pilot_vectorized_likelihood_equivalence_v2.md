@@ -37,7 +37,7 @@ Fixed-theta LL cleanup and validation per `docs/France_case/NC_pilot/execution_l
 |---|---|
 | `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md` | Authorization |
 | `docs/jmp_methodology/JMP_estimator_architecture_decision_v1.md` | Architecture decision |
-| `Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md` | Prior report (not overwritten) |
+| `Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md` | Prior report (not overwritten) |
 | `scripts/pilot/_run_ll_equivalence_prototype.py` | Prototype script (edited) |
 | `scripts/pilot/_bisect_ll.py` | Bisection script (read-only) |
 | `Data/pilot/nc_2016_couples/precomputed/fr_pilot_nc_2016_couples_precomputed_loc.pkl` | Precomputed object (read-only) |
@@ -51,8 +51,8 @@ Fixed-theta LL cleanup and validation per `docs/France_case/NC_pilot/execution_l
 | File | Change |
 |---|---|
 | `scripts/pilot/_run_ll_equivalence_prototype.py` | RESULT_S2 path fix + finite-gradient check + v2 report writer |
-| `Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v2.md` | Created (this file) |
-| `Results/JMP_NC_pilot_vectorized_likelihood_cleanup_validation_v1.md` | Created |
+| `Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_equivalence_v2.md` | Created (this file) |
+| `Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_cleanup_validation_v1.md` | Created |
 
 Files NOT modified: v1 report, pkl, oracle JSONs, pilot data, production files.
 

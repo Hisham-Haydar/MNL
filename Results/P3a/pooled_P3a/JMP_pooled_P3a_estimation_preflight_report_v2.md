@@ -2,7 +2,7 @@
 
 *France FR_2015 / FR_2016 / FR_2017 | v2 | 2026-05-21*
 
-**Prior preflight:** `Results/JMP_pooled_P3a_estimation_preflight_report_v1.md`
+**Prior preflight:** `Results/P3a/pooled_P3a/JMP_pooled_P3a_estimation_preflight_report_v1.md`
 — verdict: HALT — DO NOT RUN SOLVER (three blockers: PF6/PF7, PF8, PF9)
 
 **This preflight:** post-repair re-run against the repaired state per

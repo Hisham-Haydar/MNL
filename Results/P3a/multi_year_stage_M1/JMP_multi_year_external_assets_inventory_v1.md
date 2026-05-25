@@ -1,6 +1,6 @@
 # JMP Multi-Year — External Assets Inventory
 
-**Document:** Results/JMP_multi_year_external_assets_inventory_v1.md
+**Document:** Results/P3a/multi_year_stage_M1/JMP_multi_year_external_assets_inventory_v1.md
 **Date:** 2026-05-19
 **Execution-readiness context:** docs/JMP_multi_year_stage_M1_execution_readiness_report_v1.md
 **Plan reference:** docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_plan_v2.md §3, §15

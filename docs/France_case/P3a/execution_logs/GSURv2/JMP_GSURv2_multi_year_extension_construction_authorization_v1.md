@@ -24,11 +24,11 @@ Reference documents:
   governing design memo)
 - `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
   year alignment rule and the GSURv2 final-build requirement)
-- `Results/JMP_GSURv2_external_file_remediation_report_v1.md` (the
+- `Results/P3a/gsurv2/JMP_GSURv2_external_file_remediation_report_v1.md` (the
   external-file retrieval confirmation)
 - `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_script_remediation_report_v1.md` (the C1–C7
   parameterisation confirmation)
-- `Results/JMP_GSURv2_script_remediation_static_validation_v1.md`
+- `Results/P3a/gsurv2/JMP_GSURv2_script_remediation_static_validation_v1.md`
   (the static V4a/V4b/V4c validation)
 
 Interpreter: all commands use the project virtual environment

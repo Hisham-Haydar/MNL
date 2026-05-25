@@ -51,7 +51,7 @@ not a precondition for EUROMOD itself.
 ## 2. Authorization scope
 
 This audit is read-only. Authorized by §26 of the build report
-(`Results/JMP_NC_pilot_stage1_4_build_report_v1.md`) which names the
+(`Results/NC_pilot/JMP_NC_pilot_stage1_4_build_report_v1.md`) which names the
 re-pointing audit as the immediate next task. Outside scope: any code
 or data modification, EUROMOD execution, GSUR re-merge, precompute,
 estimation, welfare, SA2, canonical promotion, M1-clean displacement.
@@ -62,7 +62,7 @@ estimation, welfare, SA2, canonical promotion, M1-clean displacement.
 
 | File | Method |
 |---|---|
-| `Results/JMP_NC_pilot_stage1_4_build_report_v1.md` | Full read (prior turn) |
+| `Results/NC_pilot/JMP_NC_pilot_stage1_4_build_report_v1.md` | Full read (prior turn) |
 | `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md` | Full read (prior turn) |
 | `docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md` | Full read (prior turn) |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product.parquet` | Schema + bounded column reads (`idhh`, `draw_male`, `draw_female`, `draw_joint`, `is_chosen_*`, `year_tag`) |

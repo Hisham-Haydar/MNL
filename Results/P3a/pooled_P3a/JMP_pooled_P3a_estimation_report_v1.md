@@ -14,7 +14,7 @@ Execution authorised under:
 - `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_estimation_execution_repair_clearance_v1.md`
 
 The repaired split-stem data state was confirmed execution-ready in
-`Results/JMP_pooled_P3a_estimation_preflight_report_v2.md` (all 15 preflight checks PASS).
+`Results/P3a/pooled_P3a/JMP_pooled_P3a_estimation_preflight_report_v2.md` (all 15 preflight checks PASS).
 The V7 interface check (`Results/JMP_pooled_P3a_v7_interface_check_placeholder_theta.json`)
 confirmed PE1–PE7 callability prior to running the solver.
 

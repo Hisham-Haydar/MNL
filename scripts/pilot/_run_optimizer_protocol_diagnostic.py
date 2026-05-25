@@ -616,7 +616,7 @@ PYTHON   = str(REPO / ".venv/Scripts/python.exe")
 THIS     = str(Path(__file__).resolve())
 TMP_DIR  = REPO / "scripts/pilot/_tmp_optdiag"
 TMP_DIR.mkdir(exist_ok=True)
-REPORT   = REPO / "Results/JMP_NC_pilot_optimizer_protocol_diagnostic_report_v1.md"
+REPORT   = REPO / "Results/NC_pilot/JMP_NC_pilot_optimizer_protocol_diagnostic_report_v1.md"
 ORACLE_LL = -16527.14218317334
 
 STAGE1_JOBS = ["S1_A", "S1_C1", "S1_C2", "S1_C3"]

@@ -147,7 +147,7 @@ All smoke tests run directly without `PYTHONPATH`:
 | `--stage-config config/multi_year/fr_p3a_stage_m1.yaml --dry-run` | identical to `--config p3a` | Identical | **PASS** |
 | `--help` (all 5 scripts) | exit 0 | exit 0 (all 5) | **PASS** |
 
-Full static validation: `Results/JMP_multi_year_stage_M1_static_validation_report_v3.md`
+Full static validation: `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_static_validation_report_v3.md`
 
 ---
 
@@ -159,7 +159,7 @@ Full static validation: `Results/JMP_multi_year_stage_M1_static_validation_repor
 - `config/multi_year/fr_p3b_stage_m1.yaml`
 - `config/multi_year/fr_p4_stage_m1.yaml`
 - `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_generalization_fix_report_v1.md` (this file)
-- `Results/JMP_multi_year_stage_M1_static_validation_report_v3.md`
+- `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_static_validation_report_v3.md`
 
 ### Modified files
 

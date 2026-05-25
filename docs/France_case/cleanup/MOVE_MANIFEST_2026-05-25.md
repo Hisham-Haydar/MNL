@@ -168,7 +168,7 @@ The v2.1 governing spec (RURO_GSUR_rebuild_specification_v2_1.md) is kept standa
 | Data/documentation/FR_2015_index.jsonl | docs/euromod_reference/ | docs/France_case/euromod_reference/ |
 | Data/documentation/DRD_FR_2016_a3_export.txt | docs/euromod_reference/ | docs/France_case/euromod_reference/ |
 | Data/documentation/DRD_FR_2016_index.jsonl | docs/euromod_reference/ | docs/France_case/euromod_reference/ |
-| Results/RURO_ruro_occ_M0_rebuild_canary_report_v1.md | docs/canary_reports/ | docs/France_case/canary_reports/ |
+| Results/P3a/single_year_baseline/M0/RURO_ruro_occ_M0_rebuild_canary_report_v1.md | docs/canary_reports/ | docs/France_case/canary_reports/ |
 | scripts/Job_model/README_job_model.md | docs/job_choice/ | docs/France_case/job_choice/ |
 | scripts/Job_model/ACCEPTANCE_TESTS.md | docs/job_choice/ | docs/France_case/job_choice/ |
 | scripts/Job_model/Commands_job.txt | docs/job_choice/ | docs/France_case/job_choice/ |

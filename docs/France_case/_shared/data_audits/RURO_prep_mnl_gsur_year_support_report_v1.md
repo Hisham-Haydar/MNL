@@ -27,7 +27,7 @@ without altering any other behavior. Verify that `FR_gsur_ruro.parquet` contains
 | `Data/external/FR_gsur_ruro.parquet` | Shape, `year` column unique values, row count for year=2014 |
 | `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` | Decisions 14 |
 | `docs/JMP_single_year_replication_2015_2017_command_plan_addendum_v1.md` |  45 (required changes, preflight) |
-| `Results/JMP_single_year_FR2015_replication_addendum_v1.md` | 5 (GSUR alignment rule), 10 (metadata corrections already applied) |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2015_replication_addendum_v1.md` | 5 (GSUR alignment rule), 10 (metadata corrections already applied) |
 
 ---
 

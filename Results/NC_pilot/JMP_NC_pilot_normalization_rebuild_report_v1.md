@@ -41,7 +41,7 @@ displacement (HN-STAGE).
 | File | Purpose |
 |---|---|
 | `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md` | Authorizing document; read first |
-| `Results/JMP_NC_pilot_precompute_report_v1.md` | HP-NORM halt context |
+| `Results/NC_pilot/JMP_NC_pilot_precompute_report_v1.md` | HP-NORM halt context |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet` | Input; read-only; 2,319,300 × 152 |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready__readymeta.json` | Sidecar metadata |
 | `Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__mnlmeta.json` | Leisure scales to preserve |
@@ -53,7 +53,7 @@ displacement (HN-STAGE).
 | File | Description |
 |---|---|
 | `scripts/pilot/_rebuild_c_norm.py` | Rebuild script (halted at HN-POS before any write) |
-| `Results/JMP_NC_pilot_normalization_rebuild_report_v1.md` | This report |
+| `Results/NC_pilot/JMP_NC_pilot_normalization_rebuild_report_v1.md` | This report |
 
 ---
 

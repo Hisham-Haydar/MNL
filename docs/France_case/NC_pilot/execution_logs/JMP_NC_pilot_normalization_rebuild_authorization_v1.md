@@ -238,7 +238,7 @@ work around (especially: do not mask non-positive consumption).
 
 ## 15. Required normalization-rebuild report
 
-`Results/JMP_NC_pilot_normalization_rebuild_report_v1.md`, covering: scope and
+`Results/NC_pilot/JMP_NC_pilot_normalization_rebuild_report_v1.md`, covering: scope and
 authorization provenance; the HP-NORM root cause recap (stale diagonal `c_norm`
 vs C′ joint income); the consumption object and `c_scale_pilot` (value + exact
 rule); the rebuilt `c_norm` and `c_pilot` distributions; the positivity-gate
@@ -277,7 +277,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
 
 Read (read-only):
 - docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md
-- Results/JMP_NC_pilot_precompute_report_v1.md (the HP-NORM halt)
+- Results/NC_pilot/JMP_NC_pilot_precompute_report_v1.md (the HP-NORM halt)
 - Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet
 - Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready__readymeta.json
 - Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__mnlmeta.json (leisure scales to PRESERVE)
@@ -321,14 +321,14 @@ Halt conditions: HN-POS, HN-IDENT, HN-SCALE, HN-LEIS, HN-STRUCT, HN-MUT,
 HN-STAGE (authorization s.12). On any fire: STOP, write report to that point,
 await direction. Do NOT mask non-positive consumption.
 
-Write ONE report: Results/JMP_NC_pilot_normalization_rebuild_report_v1.md per
+Write ONE report: Results/NC_pilot/JMP_NC_pilot_normalization_rebuild_report_v1.md per
 authorization s.15. End with required final statements (leisure not rebuilt;
 no precompute/GSUR/estimation/welfare/SA2/promotion; M1-clean active; P3a
 unaffected; normalization rebuild slice only).
 ```
 
 Save the report as:
-`Results/JMP_NC_pilot_normalization_rebuild_report_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_normalization_rebuild_report_v1.md`
 
 ---
 

@@ -7,7 +7,7 @@ specification and authorizes the *scope and conditions* of a future
 2016-couples-only pilot build. It does **not** execute the build. It does
 not run EUROMOD, estimation, welfare, or SA2. It resolves the five blockers
 named by the read-only feasibility audit
-(`Results/JMP_nc_pilot_feasibility_audit_v1.md` §20) so that the build can
+(`Results/NC_pilot/JMP_nc_pilot_feasibility_audit_v1.md` §20) so that the build can
 be authorized as a separate, gated step. M1-clean 2016 remains the active
 JMP baseline throughout. The corrected pooled P3a track is unaffected.
 
@@ -17,7 +17,7 @@ JMP baseline throughout. The corrected pooled P3a track is unaffected.
 
 To convert the next-cycle design plan
 (`docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md`) and the
-read-only feasibility audit (`Results/JMP_nc_pilot_feasibility_audit_v1.md`)
+read-only feasibility audit (`Results/NC_pilot/JMP_nc_pilot_feasibility_audit_v1.md`)
 into a fixed, buildable pilot specification, by resolving the five
 spec-contract decisions the audit identified as hard blockers:
 
@@ -536,7 +536,7 @@ amendment. Do not silently fix and continue.
 ## 27. Required pilot build report
 
 The build produces **one** report:
-`Results/JMP_NC_pilot_build_report_v1.md`, with headings covering: scope and
+`Results/NC_pilot/JMP_NC_pilot_build_report_v1.md`, with headings covering: scope and
 authorization provenance; data-prep changes made (with the exact files and
 line ranges changed, and the downstream `draw_joint` re-pointing sites);
 pre-draw Mincer fit (coefficients, fitting set, accepted-wage caveat);
@@ -578,7 +578,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
 
 Read first (do not assume; confirm from these):
 - docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md
-- Results/JMP_nc_pilot_feasibility_audit_v1.md
+- Results/NC_pilot/JMP_nc_pilot_feasibility_audit_v1.md
 - docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md
 - scripts/enhanced/enh_RURO_draws.py
 - scripts/enhanced/enh_RURO_prep_mnl_basic.py
@@ -632,13 +632,13 @@ Halt conditions: see spec contract section 26 (HP1-HP9). If any fires,
 STOP, write the report up to that point, and await amendment. Do not work
 around a halt.
 
-Write ONE report: Results/JMP_NC_pilot_build_report_v1.md, with the
+Write ONE report: Results/NC_pilot/JMP_NC_pilot_build_report_v1.md, with the
 headings and contents required by spec contract section 27. End with the
 required final statements (M1-clean active; P3a unaffected; no welfare;
 no SA2; no promotion; pilot scope only).
 ```
 
-Save the build report as: `Results/JMP_NC_pilot_build_report_v1.md`
+Save the build report as: `Results/NC_pilot/JMP_NC_pilot_build_report_v1.md`
 
 ---
 

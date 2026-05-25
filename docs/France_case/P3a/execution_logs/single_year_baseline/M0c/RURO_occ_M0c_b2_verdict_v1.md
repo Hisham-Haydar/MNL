@@ -10,8 +10,8 @@ issues (GSUR region-code crosswalk, age-specific GSUR) are flagged and
 referenced to a separate rebuild design memo.
 
 Inputs to this memo:
-- `Results/RURO_occ_M0c_b2_estimation_report_v1.md`
-- `Results/RURO_occ_M0c_b2_gate_A_parse_report_v1.md`
+- `Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_estimation_report_v1.md`
+- `Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b2_gate_A_parse_report_v1.md`
 - `Results/_M0c_b2_multistart_summary.json`
 - `reports/fr_2016_ruro_occ_gamspy_M0c_b2_llm_summary_20260515_103129.md`
 - `docs/RURO_occ_M0a_clean_verdict_v1.md`

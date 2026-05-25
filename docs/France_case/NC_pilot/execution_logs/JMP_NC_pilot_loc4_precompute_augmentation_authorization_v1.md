@@ -237,7 +237,7 @@ a substitute for the pkl rebuild).
 
 ## 15. Required augmentation report
 
-`Results/JMP_NC_pilot_loc4_precompute_augmentation_report_v1.md`, covering: scope
+`Results/NC_pilot/JMP_NC_pilot_loc4_precompute_augmentation_report_v1.md`, covering: scope
 and corrected-error provenance (`include_loc_vars` False→True; `delta_occ`
 calibrated vs `beta_occ` free distinction); the halt recap (4.8 h, dead
 `beta_occ_*`); the §7 precondition result (`loc4_male`/`loc4_female` present +
@@ -312,14 +312,14 @@ Halt conditions: HL-COL, HL-DEGEN, HL-VARY, HL-INJECT, HL-LOGIC, HL-NORM,
 HL-MUT, HL-STAGE (authorization s.12). On any fire: STOP, write report to that
 point, await direction.
 
-Write ONE report: Results/JMP_NC_pilot_loc4_precompute_augmentation_report_v1.md
+Write ONE report: Results/NC_pilot/JMP_NC_pilot_loc4_precompute_augmentation_report_v1.md
 per authorization s.15. End with required final statements (no estimation/EUROMOD/
 GSUR/rebuild/welfare/SA2/promotion; delta_occ still calibrated; M1-clean active;
 P3a unaffected; augmentation slice only).
 ```
 
 Save the report as:
-`Results/JMP_NC_pilot_loc4_precompute_augmentation_report_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_loc4_precompute_augmentation_report_v1.md`
 
 ---
 

@@ -6,8 +6,8 @@
 **Status**: Three-start re-estimation complete; all starts converged.  
 **Authorization**: `docs/France_case/P3a/execution_logs/pooled_P3a/JMP_pooled_P3a_corrected_region_reestimation_authorization_v1.md`  
 **Repair reference**: `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_region_dummy_repair_report_v1.md`  
-**Post-repair diagnostic**: `Results/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v2.md`  
-**Pre-repair report**: `Results/JMP_pooled_P3a_estimation_report_v2.md` (pre-repair evidence only)
+**Post-repair diagnostic**: `Results/P3a/pooled_P3a/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v2.md`  
+**Pre-repair report**: `Results/P3a/pooled_P3a/JMP_pooled_P3a_estimation_report_v2.md` (pre-repair evidence only)
 
 ---
 
@@ -37,7 +37,7 @@ This re-estimation is authorized by:
 | `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_estimation_execution_authorization_v1.md` | Standing estimation authorization (carried forward) |
 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_pooled_P3a_estimation_execution_authorization_correction_v1.md` | Sequencing and artifact corrections (carried forward) |
 | `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_region_dummy_repair_report_v1.md` | Region repair evidence (R1/R2 applied, V1–V9 PASS) |
-| `Results/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v2.md` | Post-repair diagnostic confirming identifiability |
+| `Results/P3a/pooled_P3a/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v2.md` | Post-repair diagnostic confirming identifiability |
 
 ---
 
@@ -605,7 +605,7 @@ This report records the region-block evidence as required (§28–§31). It does
 
 ## 33. Identified-Block Comparison to Pre-Repair Report v2 — GSUR and Leisure Block
 
-The pre-repair estimation report v2 (`Results/JMP_pooled_P3a_estimation_report_v2.md`) is **pre-repair evidence only** for the region block. Its findings on identified parameters are cited here as a comparison, not as definitive values; any material change must be flagged.
+The pre-repair estimation report v2 (`Results/P3a/pooled_P3a/JMP_pooled_P3a_estimation_report_v2.md`) is **pre-repair evidence only** for the region block. Its findings on identified parameters are cited here as a comparison, not as definitive values; any material change must be flagged.
 
 **GSUR loading:**
 - Pre-repair (report v2): approximately −1.198 (at t ≈ −6.70 per the authorization context)

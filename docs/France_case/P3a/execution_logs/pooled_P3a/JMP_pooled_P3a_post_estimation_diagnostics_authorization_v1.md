@@ -14,7 +14,7 @@ fit) are a later, separate gate.
 Reference documents:
 - `docs/France_case/P3a/execution_logs/pooled_P3a/JMP_pooled_P3a_corrected_region_post_estimation_review_v1.md`
   (the review that left S4/S5/S6/S8 open and is NOT SA2-ready)
-- `Results/JMP_pooled_P3a_corrected_region_estimation_report_v1.md` (the
+- `Results/P3a/pooled_P3a/JMP_pooled_P3a_corrected_region_estimation_report_v1.md` (the
   corrected estimation report)
 - `Results/JMP_pooled_P3a_corrected_orchestrator_summary.json` and the
   three corrected SE JSONs (`corrected_start1/2/3_cluster_robust_se.json`)
@@ -402,7 +402,7 @@ outputs produced up to the halt and requires diagnosis before proceeding.
 ## 12. Required diagnostics report
 
 The diagnostics must be recorded in a report saved as
-`Results/JMP_pooled_P3a_post_estimation_diagnostics_report_v1.md`. The
+`Results/P3a/pooled_P3a/JMP_pooled_P3a_post_estimation_diagnostics_report_v1.md`. The
 report must include:
 
 - a one-line adjudication per criterion (S4, S5, S6, S8): PASS / FAIL /
@@ -529,7 +529,7 @@ Prompt to use:
 > solver/re-estimation/welfare/SA2/canonical/M1-clean/spec/S10-S11 action.
 >
 > Save the report as
-> `Results/JMP_pooled_P3a_post_estimation_diagnostics_report_v1.md`,
+> `Results/P3a/pooled_P3a/JMP_pooled_P3a_post_estimation_diagnostics_report_v1.md`,
 > recording the per-criterion adjudication (S4/S5/S6/S8) with deciding
 > numbers; the S4 Wald (all three VCVs) with conditioning; the S5
 > eigenvalues with the Hessian source stated and the no-optimisation
@@ -540,7 +540,7 @@ Prompt to use:
 > versioned/documented paths.
 
 Output to save: the diagnostics report at
-`Results/JMP_pooled_P3a_post_estimation_diagnostics_report_v1.md`, plus
+`Results/P3a/pooled_P3a/JMP_pooled_P3a_post_estimation_diagnostics_report_v1.md`, plus
 any small computed artifacts (the Wald statistics, the eigenvalue lists,
 the Δ table, the LL-profile values) at documented paths.
 

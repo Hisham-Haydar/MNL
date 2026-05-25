@@ -222,7 +222,7 @@ alias).
 
 ## 12. Required patch report
 
-`Results/JMP_NC_pilot_draw_joint_precompute_compatibility_report_v1.md`,
+`Results/NC_pilot/JMP_NC_pilot_draw_joint_precompute_compatibility_report_v1.md`,
 covering: scope and authorization provenance; the exact `estimation_utils.py`
 site(s) changed (file, function, line range, the `_resolve_draw_column`
 helper); the three-branch rule as implemented; the regression result
@@ -263,8 +263,8 @@ HARD CONSTRAINTS (halt and report if any would be violated):
 
 Read (read-only except the single patch site):
 - docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md
-- Results/JMP_NC_pilot_precompute_readiness_report_v1.md
-- Results/JMP_NC_pilot_draw_joint_repointing_audit_v1.md (the draw-column site)
+- Results/NC_pilot/JMP_NC_pilot_precompute_readiness_report_v1.md
+- Results/NC_pilot/JMP_NC_pilot_draw_joint_repointing_audit_v1.md (the draw-column site)
 - scripts/.../estimation_utils.py (the couples group-builder)
 - Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet (schema)
 
@@ -305,14 +305,14 @@ On any fire: STOP, write the report to that point, await direction. Do NOT
 resolve a failure by adding a data-side alias.
 
 Write ONE report:
-Results/JMP_NC_pilot_draw_joint_precompute_compatibility_report_v1.md
+Results/NC_pilot/JMP_NC_pilot_draw_joint_precompute_compatibility_report_v1.md
 per authorization s.12. End with required final statements (no data alias;
 legacy unchanged; no GSUR/full-precompute/estimation/welfare/SA2/promotion;
 M1-clean active; P3a unaffected; compatibility-patch slice only).
 ```
 
 Save the report as:
-`Results/JMP_NC_pilot_draw_joint_precompute_compatibility_report_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_draw_joint_precompute_compatibility_report_v1.md`
 
 ---
 

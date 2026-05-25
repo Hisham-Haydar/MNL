@@ -338,7 +338,7 @@ All groups pass MUC > 0 and MUC diminishing (theta_c ≤ 0 ensures this for the 
 
 **The ~137 EUR/h predicted wage pathology of M0a-clean and M0b1 is fully resolved in M0b2.** Predicted wages are now within 0.6 EUR/h (3%) of observed means.
 
-### Root cause (from M0b1 diagnostic, `Results/RURO_occ_M0b1_wage_pathology_diagnostic_v1.md`)
+### Root cause (from M0b1 diagnostic, `Results/P3a/single_year_baseline/M0b/RURO_occ_M0b1_wage_pathology_diagnostic_v1.md`)
 
 The pathology was driven by `theta_c > 0` (near-linear BC consumption utility). With `theta_c ≈ +0.27`, the utility gap between a 15 EUR/h / 35 h alternative and a 165 EUR/h / 60 h alternative was ~30 nats — overwhelming the wage opportunity penalty. M0b2's `theta_c = 0` (log-utility) limits the consumption utility growth rate to `beta_c / C`, so large consumption differences generate proportionally smaller utility differences. The opportunity block's negative O_W penalty can now offset the utility advantage of high-wage draws.
 

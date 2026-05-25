@@ -43,7 +43,7 @@ normalization constants (HP-NORM).
 | File | Purpose |
 |---|---|
 | `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_slice_authorization_v1.md` | Authorizing document; read first |
-| `Results/JMP_NC_pilot_draw_joint_precompute_compatibility_report_v1.md` | Prior patch report confirming compatibility patch PASSED |
+| `Results/NC_pilot/JMP_NC_pilot_draw_joint_precompute_compatibility_report_v1.md` | Prior patch report confirming compatibility patch PASSED |
 | `scripts/enhanced/estimation_utils.py` | Read `precompute_data_couples` (line 944) and `_resolve_draw_column` (line ~59) |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet` | Schema + bounded read (read-only); 2,319,300 × 152 |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready__readymeta.json` | Sidecar metadata; confirmed no normalization block |
@@ -56,7 +56,7 @@ normalization constants (HP-NORM).
 | File | Description |
 |---|---|
 | `scripts/pilot/_precompute_gate.py` | Inspection + normalization gate script; halted at HP-NORM |
-| `Results/JMP_NC_pilot_precompute_report_v1.md` | This report |
+| `Results/NC_pilot/JMP_NC_pilot_precompute_report_v1.md` | This report |
 
 ---
 

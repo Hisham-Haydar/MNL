@@ -33,7 +33,7 @@ sandwich combiner — can be written and unit-tested independently.
 | `scripts/enhanced/enh_RURO_estimate_FR.py` | 1–294 | Main estimation script, in-script SE function |
 | `scripts/enhanced/gamspy_estimation_vectorized.py` | 1–250 | GAMSPy solver wrapper |
 | `scripts/enhanced/specifications/estimation_spec_ruro_occ_P3a_pooled.yaml` | All | Target pooled YAML (55 params) |
-| `Results/RURO_occ_P3a_pooled_gate_A_parse_report_v1.md` | All | Gate-A record |
+| `Results/P3a/pooled_P3a/RURO_occ_P3a_pooled_gate_A_parse_report_v1.md` | All | Gate-A record |
 
 ---
 

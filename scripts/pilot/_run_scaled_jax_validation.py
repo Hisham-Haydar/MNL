@@ -472,7 +472,7 @@ PYTHON  = str(REPO / ".venv/Scripts/python.exe")
 THIS    = str(Path(__file__).resolve())
 TMP_DIR = REPO / "scripts/pilot/_tmp_scaled_val"
 TMP_DIR.mkdir(exist_ok=True)
-REPORT  = REPO / "Results/JMP_NC_pilot_scaled_JAX_validation_report_v1.md"
+REPORT  = REPO / "Results/NC_pilot/JMP_NC_pilot_scaled_JAX_validation_report_v1.md"
 
 ORACLE_LL      = -16527.14218317334
 AGREE_THRESH_LOOSE  = 0.1

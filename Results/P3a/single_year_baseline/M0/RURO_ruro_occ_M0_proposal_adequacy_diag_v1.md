@@ -166,4 +166,4 @@ R_BC_C at M0 thetas: singles_male=0.133, singles_female=1.338, couples_household
 | --- | --- |
 | `Results/_proposal_adequacy_diag_ruro_occ_M0.py` | reusable script |
 | `Results/_proposal_adequacy_diag_ruro_occ_M0.json` | machine-readable results |
-| `Results/RURO_ruro_occ_M0_proposal_adequacy_diag_v1.md` | this report |
+| `Results/P3a/single_year_baseline/M0/RURO_ruro_occ_M0_proposal_adequacy_diag_v1.md` | this report |

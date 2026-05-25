@@ -4,7 +4,7 @@
 **Supersedes:** docs/JMP_multi_year_stage_M1_implementation_plan_v1.md
 **Date:** 2026-05-19
 **Revision:** Targeted corrections to UID naming (`stacked_hh_uid`/`stacked_person_uid`), clustering column name (`cluster_id`), and implementation prompt stacking rule. No substantive changes to sequencing, authorisations, or configurations.
-**Audit basis:** Results/JMP_multi_year_feasibility_audit_v1.md, Results/JMP_multi_year_feasibility_audit_addendum_v1.md, Results/JMP_multi_year_feasibility_audit_addendum_v2.md
+**Audit basis:** Results/P3a/multi_year_stage_M1/JMP_multi_year_feasibility_audit_v1.md, Results/JMP_multi_year_feasibility_audit_addendum_v1.md, Results/P3a/multi_year_stage_M1/JMP_multi_year_feasibility_audit_addendum_v2.md
 **Strategy reference:** docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md
 
 ---
@@ -96,7 +96,7 @@ Stage M1 produces the following files. All paths are under the project root `U:\
 | `Results/M1_stacked_id_manifest_<UTC>.csv` | Row-count audit: per-year individual and household counts, `stacked_hh_uid` and `stacked_person_uid` range, duplicate-UID check |
 | `Results/M1_raw_id_preservation_check_<UTC>.csv` | Confirms `idorighh` and `idorigperson` present and non-null in pooled file |
 | `Results/M1_cluster_key_check_<UTC>.csv` | Confirms `cluster_id` column populates correctly; cross-tabulation of repeat vs unique households by year-pair |
-| `Results/M1_identity_validation_summary.md` | One-line per year-pair: pass/fail on suspicious-record threshold (≤ 0.20%) |
+| `Results/P3a/multi_year_stage_M1/M1_identity_validation_summary.md` | One-line per year-pair: pass/fail on suspicious-record threshold (≤ 0.20%) |
 | `Results/M1_cpi_harmonisation_check_<UTC>.csv` | Distribution summary of `*_real` variables before and after deflation; confirms φ_t applied per year |
 
 ---
@@ -311,7 +311,7 @@ The identity-validation diagnostics from addendum v2 define the acceptance thres
 
 **Repeat-person identification:** A person is classified as repeat if their `idorigperson` appears in both years of a pair. The validation script iterates over all year-pairs present in the pooled file, not just those with expected overlap.
 
-**Output:** `Results/M1_identity_validation_summary.md` — one row per year-pair, with pass/fail status on each criterion and the suspicious-record count and percentage.
+**Output:** `Results/P3a/multi_year_stage_M1/M1_identity_validation_summary.md` — one row per year-pair, with pass/fail status on each criterion and the suspicious-record count and percentage.
 
 ---
 
@@ -478,7 +478,7 @@ The following scripts must be created or modified for Stage M1. All new scripts 
 | `scripts/multi_year/m1_harmonise_cpi.py` | Reads `cpi_hicp_fr_harmonisation.csv`, deflates monetary columns by year, writes `fr_p{config}_harmonised.parquet`. CLI: `--config`, `--cpi-source {hicp,insee}`. |
 | `scripts/multi_year/m1_add_cluster_key.py` | Adds `cluster_id = idorighh` column. Can be merged into `m1_harmonise_cpi.py` if preferred; listed separately for testability. |
 | `scripts/multi_year/m1_validate.py` | Runs V1–V9 checks on a harmonised pooled file; writes `Results/M1_*` manifests and summary. CLI: `--config`, `--file`. |
-| `scripts/multi_year/m1_identity_validation.py` | For a pooled stacked-raw file, runs the Section 13 diagnostics for all year-pairs; writes `Results/M1_identity_validation_summary.md`. |
+| `scripts/multi_year/m1_identity_validation.py` | For a pooled stacked-raw file, runs the Section 13 diagnostics for all year-pairs; writes `Results/P3a/multi_year_stage_M1/M1_identity_validation_summary.md`. |
 | `scripts/multi_year/m1_isf_check_2018.py` | Runs the Section 16 ISF check using the FR_2018 EUROMOD output; writes `Results/M1_ISF_tpr_comparability_check_2018.md`. Run only when FR_2018 EUROMOD output is present. |
 | `Data/external/cpi_hicp_fr_harmonisation.csv` | Not a script; the φ_t table written after the Section 7 decision. Created manually or by a small helper; treated as a project input, not a generated output. |
 
@@ -518,7 +518,7 @@ The following files must exist and pass validation for Stage M1 to be complete f
 | `Results/M1_stacked_id_manifest_<UTC>.csv` | `m1_validate.py` |
 | `Results/M1_raw_id_preservation_check_<UTC>.csv` | `m1_validate.py` |
 | `Results/M1_cluster_key_check_<UTC>.csv` | `m1_validate.py` |
-| `Results/M1_identity_validation_summary.md` | `m1_identity_validation.py` |
+| `Results/P3a/multi_year_stage_M1/M1_identity_validation_summary.md` | `m1_identity_validation.py` |
 | `Results/M1_cpi_harmonisation_check_<UTC>.csv` | `m1_validate.py` |
 
 For P3b (contingent on ISF check):

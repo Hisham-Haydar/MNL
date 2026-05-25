@@ -330,7 +330,7 @@ STEP 3 — Localize any discrepancy:
 
 THEN STOP. Do NOT optimize. Do NOT proceed to JAX optimization.
 
-Write ONE report: Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md
+Write ONE report: Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md
 with: LL at theta_CONOPT from NumPy and JAX/PyTorch; |Δ| vs -16527.1422 for each;
 backend agreement; any localized convention discrepancy; wall time per LL eval
 per backend (the throughput signal). End with: equivalence PASS/FAIL; no
@@ -339,7 +339,7 @@ LL-equivalence prototype only.
 ```
 
 Save the report as:
-`Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md`
 
 ---
 

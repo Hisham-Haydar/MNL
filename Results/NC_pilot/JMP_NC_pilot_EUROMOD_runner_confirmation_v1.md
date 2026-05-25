@@ -70,7 +70,7 @@ NOT ready**.
 ## 2. Authorization scope
 
 This audit is read-only. Authorized by §19 of
-`Results/JMP_NC_pilot_draw_joint_repointing_audit_v1.md` and §23 of
+`Results/NC_pilot/JMP_NC_pilot_draw_joint_repointing_audit_v1.md` and §23 of
 the Stage 1–4 build report. Outside scope: any EUROMOD run, any code
 or data modification, any GSUR merge, any precompute, any estimation,
 any welfare, any SA2, any promotion, any M1-clean displacement.
@@ -81,8 +81,8 @@ any welfare, any SA2, any promotion, any M1-clean displacement.
 
 | File | Method |
 |---|---|
-| `Results/JMP_NC_pilot_stage1_4_build_report_v1.md` | Full read (prior turn) |
-| `Results/JMP_NC_pilot_draw_joint_repointing_audit_v1.md` | Full read (prior turn) |
+| `Results/NC_pilot/JMP_NC_pilot_stage1_4_build_report_v1.md` | Full read (prior turn) |
+| `Results/NC_pilot/JMP_NC_pilot_draw_joint_repointing_audit_v1.md` | Full read (prior turn) |
 | `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md` | Full read |
 | `docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md` | Full read |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product.parquet` | Schema + bounded column reads (149 cols; 2,319,300 rows) |

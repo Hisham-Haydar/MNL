@@ -35,7 +35,7 @@ All 10 files moved via `git mv` to
 | `JMP_GSURv2_multi_year_extension_remediation_authorization_final_wording_fix_v1.md` | CORRECTION_INCORPORATED | `JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md` |
 | `JMP_GSURv2_y2016_provenance_lock_plan_correction_v1.md` | CORRECTION_INCORPORATED | `JMP_GSURv2_y2016_provenance_lock_plan_v1.md` |
 | `JMP_GSURv2_multi_year_extension_construction_authorization_correction_v1.md` | CORRECTION_INCORPORATED | `JMP_GSURv2_multi_year_extension_construction_authorization_v1.md` |
-| `JMP_GSURv2_script_remediation_documentation_fix_v1.md` | CORRECTION_INCORPORATED | `JMP_GSURv2_script_remediation_report_v1.md` + `Results/JMP_GSURv2_script_remediation_static_validation_v1.md` |
+| `JMP_GSURv2_script_remediation_documentation_fix_v1.md` | CORRECTION_INCORPORATED | `JMP_GSURv2_script_remediation_report_v1.md` + `Results/P3a/gsurv2/JMP_GSURv2_script_remediation_static_validation_v1.md` |
 | `JMP_multi_year_sample_construction_descriptives_correction_report_v1.md` | CORRECTION_INCORPORATED | `JMP_multi_year_sample_construction_descriptives_report_v1.md` |
 | `JMP_multi_year_stage_M1_execution_readiness_report_v1.md` | CLEAR_SUPERSEDED | `JMP_multi_year_stage_M1_execution_readiness_report_v2.md` |
 | `JMP_single_year_replication_2015_2017_command_plan_v1.md` | CLEAR_SUPERSEDED | `JMP_single_year_replication_2015_2017_command_plan_v2.md` |
@@ -56,13 +56,13 @@ classified KEEP or HISTORICAL_KEEP and were not moved:
 
 | File | Reason not archived |
 |------|---------------------|
-| `Results/JMP_multi_year_stage_M1_static_validation_report_v3.md` | HISTORICAL_KEEP: canonical surviving document in the v1→v2→v3 chain; only dedicated generalization validation record |
-| `Results/JMP_multi_year_stage_M1_execution_readiness_v1.md` | HISTORICAL_KEEP: dry-run point-in-time record; no v2 successor with same scope |
+| `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_static_validation_report_v3.md` | HISTORICAL_KEEP: canonical surviving document in the v1→v2→v3 chain; only dedicated generalization validation record |
+| `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_execution_readiness_v1.md` | HISTORICAL_KEEP: dry-run point-in-time record; no v2 successor with same scope |
 | `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3.md` | HISTORICAL_KEEP: v3 and v3.1 together form the complete revision trail |
 | `docs/France_case/_shared/data_audits/RURO_FR2016_CONTINUOUS_DATA_BUILD_AUDIT_v1.md` | HISTORICAL_KEEP: comprehensive 2016 data build audit; referenced by M1-clean audit |
 | `Results/JMP_multi_year_EUROMD_output_readiness_v1.md` | HISTORICAL_KEEP: pre-Stage-M1 EUROMOD readiness state; not superseded by a v2 |
-| `Results/JMP_multi_year_external_assets_inventory_v1.md` | HISTORICAL_KEEP: pre-remediation external assets gap state; not superseded by a v2 |
-| `Results/JMP_multi_year_single_year_MNL_readiness_v1.md` | HISTORICAL_KEEP: pre-rebuild MNL readiness state; not superseded by a v2 |
+| `Results/P3a/multi_year_stage_M1/JMP_multi_year_external_assets_inventory_v1.md` | HISTORICAL_KEEP: pre-remediation external assets gap state; not superseded by a v2 |
+| `Results/P3a/multi_year_stage_M1/JMP_multi_year_single_year_MNL_readiness_v1.md` | HISTORICAL_KEEP: pre-rebuild MNL readiness state; not superseded by a v2 |
 
 The following conditional candidates were also left in place, awaiting
 user decisions or requiring further confirmation before archiving:
@@ -116,9 +116,9 @@ and after the archive moves. None were touched.
 | 17 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_report_v1.md` | PRESENT |
 | 18 | `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` | PRESENT |
 | 19 | `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` | PRESENT |
-| 20 | `Results/JMP_GSURv2_MNL_rebuild_report_v2.md` | PRESENT |
-| 21 | `Results/JMP_GSURv2_MNL_rebuild_correction_report_v1.md` | PRESENT |
-| 22 | `Results/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md` | PRESENT |
+| 20 | `Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_report_v2.md` | PRESENT |
+| 21 | `Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_correction_report_v1.md` | PRESENT |
+| 22 | `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md` | PRESENT |
 
 ---
 
@@ -142,7 +142,7 @@ the same directories.
 
 ```
 R  Results/JMP_multi_year_stage_M1_P3a_full_execution_addendum_v1.md -> Results/archive/.../JMP_multi_year_stage_M1_P3a_full_execution_addendum_v1.md
-R  Results/M1_identity_validation_summary.md -> Results/archive/.../M1_identity_validation_summary.md
+R  Results/P3a/multi_year_stage_M1/M1_identity_validation_summary.md -> Results/archive/.../M1_identity_validation_summary.md
 R  docs/JMP_GSURv2_multi_year_extension_construction_authorization_correction_v1.md -> docs/archive/...
 R  docs/JMP_GSURv2_multi_year_extension_remediation_authorization_correction_v1.md -> docs/archive/...
 R  docs/JMP_GSURv2_multi_year_extension_remediation_authorization_final_wording_fix_v1.md -> docs/archive/...

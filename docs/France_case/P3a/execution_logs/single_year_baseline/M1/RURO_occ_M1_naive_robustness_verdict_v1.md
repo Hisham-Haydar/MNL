@@ -13,10 +13,10 @@ three independent starts converge to LL = −6485.5287 and to a
 bit-identical parameter vector)
 
 Primary evidence:
-- `Results/RURO_occ_M1_naive_estimation_report_v1.md`
-- `Results/RURO_occ_M1_naive_post_estimation_diagnostics_v1.md`
-- `Results/RURO_occ_M1_naive_supplementary_diagnostics_v1.md`
-- `Results/RURO_occ_M1_naive_gate_A_parse_report_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_naive_estimation_report_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_naive_post_estimation_diagnostics_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_naive_supplementary_diagnostics_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_naive_gate_A_parse_report_v1.md`
 - `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_naive_YAML_implementation_report_v1.md`
 
 Reference documents:
@@ -30,7 +30,7 @@ Reference documents:
 - `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`
   (the multi-year strategy, used here for sequencing implications
   only)
-- `Results/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md`
+- `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md`
   (the M1-clean diagnostic comparison reference)
 - `Prompts/JMP_ability_vs_opportunity_framework_v1.md` (the welfare
   framework whose ability/opportunity partition M1-naive
@@ -1210,7 +1210,7 @@ in v3.1 §6 Element I3) and confirms the canonical clustering key
 (`idhh_raw` or `idorighh_raw`) per §6 Element I6.
 
 The audit produces a feasibility report
-(`Results/JMP_multi_year_feasibility_audit_v1.md` or equivalent)
+(`Results/P3a/multi_year_stage_M1/JMP_multi_year_feasibility_audit_v1.md` or equivalent)
 that records the status of each condition and authorises the
 subsequent pipeline implementation steps. The audit is
 methodologically independent of the welfare-measurement decisions

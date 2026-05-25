@@ -13,12 +13,12 @@ remains gated behind a separate M1-clean welfare implementation
 authorization.
 
 Reference documents:
-- `Results/JMP_pooled_P3a_post_estimation_diagnostics_report_v1.md` and
+- `Results/P3a/pooled_P3a/JMP_pooled_P3a_post_estimation_diagnostics_report_v1.md` and
   the four diagnostic JSONs (`...S4_wald.json`, `...S5_S8_hessian_diag.json`,
   `...S6_preference_comparison.json`, `...S6_theta_c_singles_LL_profile.json`)
 - `docs/France_case/P3a/execution_logs/pooled_P3a/JMP_pooled_P3a_corrected_region_post_estimation_review_v1.md` (the
   prior review that opened S4/S5/S6/S8)
-- `Results/JMP_pooled_P3a_corrected_region_estimation_report_v1.md` (the
+- `Results/P3a/pooled_P3a/JMP_pooled_P3a_corrected_region_estimation_report_v1.md` (the
   corrected estimation)
 - `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` (the SA1-STANDS baseline and the
   region joint-Wald benchmark)

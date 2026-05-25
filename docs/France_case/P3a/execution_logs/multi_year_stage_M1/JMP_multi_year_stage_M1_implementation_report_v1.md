@@ -108,7 +108,7 @@ CLI: `--config`, `--file`, `--skip Vn [Vn ...]`, `--verbose`.
 For each year-pair present in the stacked-raw file, identifies repeat persons
 by `idorigperson`, applies the §13 thresholds (sex stability ≥99.90%, age
 progression within ±1 ≥99.50%, suspicious ≤0.20% warn / >1.00% block, hh
-continuity ≥97.00%), and writes `Results/M1_identity_validation_summary.md`.
+continuity ≥97.00%), and writes `Results/P3a/multi_year_stage_M1/M1_identity_validation_summary.md`.
 Exits 1 if any pair exceeds the block threshold.
 
 CLI: `--config` or `--file`, `--verbose`.

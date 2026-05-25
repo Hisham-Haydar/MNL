@@ -14,8 +14,8 @@ ruro_occ_M0c_b2_GSURv2/run_2026-05-17_23-55-09/`
 Primary evidence:
 - `RURO_occ_M0c_b2_GSURv2_estimation_report_v1.md`
 - `RURO_occ_M0c_b2_GSURv2_post_estimation_diagnostics_v1.md`
-- `Results/RURO_GSUR_v2_stageA_MNL_rebuild_report_v1.md`
-- `Results/RURO_GSUR_v2_stageA_lookup_validation_report_v1.md`
+- `Results/P3a/gsurv2/RURO_GSUR_v2_stageA_MNL_rebuild_report_v1.md`
+- `Results/P3a/gsurv2/RURO_GSUR_v2_stageA_lookup_validation_report_v1.md`
 
 Comparison baseline:
 - `RURO_occ_M0c_b2_verdict_v1.md` (the frozen pre-GSURv2 baseline)

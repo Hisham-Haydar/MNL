@@ -276,7 +276,7 @@ parquet as the active GSUR variable.**
 The GSURv2 opportunity-year-aligned rates are embedded in the parquet:
 `gsur` for singles, `gsur_female` and `gsur_male` for couples. These
 are the output of the GSURv2 MNL-parquet rebuild verified by V1–V12 in
-`Results/JMP_GSURv2_MNL_rebuild_report_v2.md`.
+`Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_report_v2.md`.
 
 The `gsur` / `gsur_female` / `gsur_male` columns in the pooled parquet
 carry year-specific opportunity-year-aligned rates: for a FR_2015 row,
@@ -643,7 +643,7 @@ authorization memo should note this.
 
 Gate-A validation must pass before the pooled estimation is authorised
 for execution. The Gate-A protocol follows the same structure as the
-M1-clean Gate-A (`Results/RURO_occ_M1_clean_gate_A_parse_report_v1.md`)
+M1-clean Gate-A (`Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_gate_A_parse_report_v1.md`)
 extended to the pooled specification.
 
 **Required Gate-A checks:**
@@ -668,15 +668,15 @@ extended to the pooled specification.
 | GA16 | `cluster_id` column present; `cluster_id == idorighh` for all rows (re-confirm on execution input) |
 | GA17 | Cluster-robust SE implementation confirmed callable on the pooled parquet with 9,657 clusters |
 
-Gate-A must produce a parse report (`Results/RURO_occ_P3a_pooled_gate_A_parse_report_v1.md`) recording all 17 checks. All checks must PASS before the pooled-estimation authorization memo is issued.
+Gate-A must produce a parse report (`Results/P3a/pooled_P3a/RURO_occ_P3a_pooled_gate_A_parse_report_v1.md`) recording all 17 checks. All checks must PASS before the pooled-estimation authorization memo is issued.
 
 ---
 
 ## 20. Post-estimation diagnostics
 
 The pooled SA2 post-estimation diagnostics mirror the M1-clean
-post-estimation protocol (`Results/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md`
-and `Results/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`),
+post-estimation protocol (`Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md`
+and `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`),
 extended for the pooled setting.
 
 **Required post-estimation diagnostics:**
@@ -924,7 +924,7 @@ the pooled-estimation authorization memo is drafted.
 >    `cluster_id` parameter or cluster-robust SE method; record the
 >    finding even if the method is not yet implemented.
 >
-> 4. Create `Results/RURO_occ_P3a_pooled_gate_A_parse_report_v1.md`
+> 4. Create `Results/P3a/pooled_P3a/RURO_occ_P3a_pooled_gate_A_parse_report_v1.md`
 >    with exactly these headings:
 >    1. Gate-A verdict
 >    2. YAML derivation record

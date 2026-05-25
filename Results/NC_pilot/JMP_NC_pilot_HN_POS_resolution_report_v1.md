@@ -44,7 +44,7 @@ displacement (HF-STAGE).
 | File | Purpose |
 |---|---|
 | `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md` | Authorizing document; read first |
-| `Results/JMP_NC_pilot_normalization_rebuild_report_v1.md` | HN-POS halt detail (123 rows, 6 households) |
+| `Results/NC_pilot/JMP_NC_pilot_normalization_rebuild_report_v1.md` | HN-POS halt detail (123 rows, 6 households) |
 | `scripts/enhanced/estimation_utils.py` | EPS source confirmed at line 49; use site at line 998 |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet` | Input; read-only; 2,319,300 × 152 |
 | `Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready__mnlmeta.json` | Leisure scales to preserve |
@@ -58,7 +58,7 @@ displacement (HF-STAGE).
 | `scripts/pilot/_resolve_hnpos.py` | Resolution + rebuild script |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_norm_ready.parquet` | Output parquet: 2,319,300 × 154 (c_norm rebuilt + flag + diagnostic c_pilot) |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_norm_ready__normmeta.json` | Normmeta sidecar |
-| `Results/JMP_NC_pilot_HN_POS_resolution_report_v1.md` | This report |
+| `Results/NC_pilot/JMP_NC_pilot_HN_POS_resolution_report_v1.md` | This report |
 
 ---
 

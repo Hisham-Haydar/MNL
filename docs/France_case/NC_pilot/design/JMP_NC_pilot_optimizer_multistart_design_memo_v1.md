@@ -335,7 +335,7 @@ STAGE 2 — Cold-start recovery test (Start B = defaults), try in order:
 STAGE 3 — beta_l0_m verdict ONLY at a CONVERGED point (tolerance stop): corner
 vs transient. If nothing converged, report "deferred — no tolerance-based stop".
 
-Report (NEW): Results/JMP_NC_pilot_optimizer_protocol_diagnostic_report_v1.md
+Report (NEW): Results/NC_pilot/JMP_NC_pilot_optimizer_protocol_diagnostic_report_v1.md
 - Stage-1 basin verdict (agree / disagree-after-adequate-budget);
 - Stage-2 cold-start verdict (which of a/b/c reached the basin, or none);
 - termination types (tolerance vs cap) for every run — this is the key signal;
@@ -350,7 +350,7 @@ economically; M1-clean active; P3a unaffected.
 ```
 
 Save the report as:
-`Results/JMP_NC_pilot_optimizer_protocol_diagnostic_report_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_optimizer_protocol_diagnostic_report_v1.md`
 
 ---
 

@@ -7,7 +7,7 @@ Status: **IMPLEMENTATION COMPLETE — not yet estimated**
 
 ## 1. Motivation and design rationale
 
-The M0b2 multi-start experiment ([Results/RURO_occ_M0b2_multistart_report_v1.md](../Results/RURO_occ_M0b2_multistart_report_v1.md)) established three findings that directly motivate M0c_b:
+The M0b2 multi-start experiment ([Results/P3a/single_year_baseline/M0b/RURO_occ_M0b2_multistart_report_v1.md](../Results/P3a/single_year_baseline/M0b/RURO_occ_M0b2_multistart_report_v1.md)) established three findings that directly motivate M0c_b:
 
 1. **`theta_c` = 0.0 is the unique attractor.** Every successful start from three diverse initial points (theta_c spanning −2.0 to −1.0) converged to theta_c = 0.0 at the upper bound. The boundary is not a local trap or an initialisation artefact.
 2. **`beta_ll` = 2.0 is a genuinely binding upper bound.** Every successful start moved beta_ll from 0.0–1.648 toward 2.0. The data strongly prefer large positive leisure-leisure interaction; the current bound prevents identification of the true magnitude.
@@ -144,7 +144,7 @@ This prevents the fallback from returning `0.5` (the generic default) for couple
 | `scripts/enhanced/estimation_engine.py` | **Modified** | Couples utility and gradient functions use fixed theta constant; theta_c gradient term suppressed |
 | `scripts/enhanced/RURO_post_estimation_styled.py` | **Modified** | Couples theta_c fallback uses fixed constant |
 | `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b_implementation_report_v1.md` | **Created** | This document |
-| `Results/RURO_occ_M0c_b_gate_A_parse_report_v1.md` | **Created** | Gate-A parse verification |
+| `Results/P3a/single_year_baseline/M0c/RURO_occ_M0c_b_gate_A_parse_report_v1.md` | **Created** | Gate-A parse verification |
 
 ---
 

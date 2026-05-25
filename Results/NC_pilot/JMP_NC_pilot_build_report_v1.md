@@ -40,7 +40,7 @@ conditions of §26.
 
 **Inputs read for this session (no modification):**
 - `docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md` (full read).
-- `Results/JMP_nc_pilot_feasibility_audit_v1.md` (full read, in prior
+- `Results/NC_pilot/JMP_nc_pilot_feasibility_audit_v1.md` (full read, in prior
   session).
 - `docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md` (full
   read, in prior session).
@@ -269,7 +269,7 @@ populated when the build is executed.
 - Working tree, before this report write: clean (per the resumed-session
   status check).
 - Working tree, after this report write: one new file
-  (`Results/JMP_NC_pilot_build_report_v1.md`).
+  (`Results/NC_pilot/JMP_NC_pilot_build_report_v1.md`).
 - Branch: `main` (per environment context).
 - No commit was created by this session.
 - No production script, YAML, or data artefact was modified.

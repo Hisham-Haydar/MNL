@@ -213,7 +213,7 @@ The S2 failure (GAMS overflow) occurred before the solver could evaluate the obj
 
 **Selected run: `run_2026-05-14_12-46-04` (original reference run).**
 
-All successful starts reproduce the identical solution; the reference run is canonical. The reference post-estimation report ([Results/RURO_occ_M0b2_estimation_report_v1.md](RURO_occ_M0b2_estimation_report_v1.md)) remains valid.
+All successful starts reproduce the identical solution; the reference run is canonical. The reference post-estimation report ([Results/P3a/single_year_baseline/M0b/RURO_occ_M0b2_estimation_report_v1.md](RURO_occ_M0b2_estimation_report_v1.md)) remains valid.
 
 No re-selection required.
 

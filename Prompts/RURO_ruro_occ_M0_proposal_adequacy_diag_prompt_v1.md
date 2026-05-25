@@ -35,7 +35,7 @@ REFERENCE SPEC (read-only, do not modify):
 - scripts/enhanced/estimation_spec_ruro_occ_M0.yaml
 
 GOAL: produce a single short Markdown report at
-Results/RURO_ruro_occ_M0_proposal_adequacy_diag_v1.md that answers two
+Results/P3a/single_year_baseline/M0/RURO_ruro_occ_M0_proposal_adequacy_diag_v1.md that answers two
 diagnostic questions, with one quantitative verdict at the end.
 
 GROUP DEFINITIONS (use these throughout):
@@ -164,7 +164,7 @@ D2c. PRIOR DENSITY ON NON-WORK ALTERNATIVES:
 OUTPUT FORMAT
 ------------------------------------------------------------------
 
-Write the report to Results/RURO_ruro_occ_M0_proposal_adequacy_diag_v1.md
+Write the report to Results/P3a/single_year_baseline/M0/RURO_ruro_occ_M0_proposal_adequacy_diag_v1.md
 in the following structure (use Markdown tables; do NOT include plots):
 
 # RURO ruro_occ_M0 — Proposal-Adequacy Diagnostic v1
@@ -248,7 +248,7 @@ auditable.
 | file | purpose |
 | Results/_proposal_adequacy_diag_ruro_occ_M0.py | reusable script |
 | Results/_proposal_adequacy_diag_ruro_occ_M0.json | machine-readable results |
-| Results/RURO_ruro_occ_M0_proposal_adequacy_diag_v1.md | this report |
+| Results/P3a/single_year_baseline/M0/RURO_ruro_occ_M0_proposal_adequacy_diag_v1.md | this report |
 
 ------------------------------------------------------------------
 TECHNICAL REQUIREMENTS

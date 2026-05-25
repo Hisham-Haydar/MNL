@@ -6,7 +6,7 @@ Stage M1 — repeated-person and repeated-household identity diagnostics.
 
 Reads a stacked-raw pooled parquet (output of m1_stack_years.py) and runs
 identity-validation checks on all year-pairs that share observations.
-Produces Results/M1_identity_validation_summary.md.
+Produces Results/P3a/multi_year_stage_M1/M1_identity_validation_summary.md.
 
 All country/year/config-specific values are read from a stage-config YAML.
 Pass --stage-config config/multi_year/fr_p3a_stage_m1.yaml or use the
@@ -448,7 +448,7 @@ def _parse_args() -> argparse.Namespace:
         description=(
             "Stage M1 identity validation. Validates repeated persons and "
             "households across years using raw person and household IDs. "
-            "Writes Results/M1_identity_validation_summary.md.\n\n"
+            "Writes Results/P3a/multi_year_stage_M1/M1_identity_validation_summary.md.\n\n"
             "All thresholds and expected counts come from the stage-config YAML.\n"
             "Use --stage-config for an explicit path, or --config for a shortcut."
         ),

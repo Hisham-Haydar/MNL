@@ -38,7 +38,7 @@ The rebuild was executed under:
   (corrected by
   `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md`)
 - Validation report:
-  `Results/JMP_GSURv2_multi_year_extension_validation_report_v1.md`
+  `Results/P3a/gsurv2/JMP_GSURv2_multi_year_extension_validation_report_v1.md`
 
 Interpreter of record: `.venv\Scripts\python.exe`
 (`U:\Desktop\Nizam_Hisham\MNL\.venv\Scripts\python.exe`).
@@ -59,7 +59,7 @@ The following files were inspected before and during the rebuild.
 - `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md`
 - `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_O7_crosswalk_signoff_v1.md`
 - `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md`
-- `Results/JMP_GSURv2_multi_year_extension_validation_report_v1.md`
+- `Results/P3a/gsurv2/JMP_GSURv2_multi_year_extension_validation_report_v1.md`
 
 *Input MNL parquets (6):*
 - `fr_2015_RURO_mnl_v1gsurY2014__singles.parquet`
@@ -105,7 +105,7 @@ Each output stem has two component parquets (`__singles.parquet`,
 `__couples.parquet`) and one sidecar (`__mnlmeta.json`). The
 authorized-stem files are byte-identical to the `v2gsurY` files
 produced at rebuild execution time; the correction is stem naming
-only (see §21 and `Results/JMP_GSURv2_MNL_rebuild_correction_report_v1.md`).
+only (see §21 and `Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_correction_report_v1.md`).
 
 ---
 
@@ -430,8 +430,8 @@ git tracking per `.gitignore` line 21.
 - `fr_2017_RURO_mnl_GSURv2_y2016__mnlmeta.json`
 
 *Git-tracked reports (in `Results/`):*
-- `Results/JMP_GSURv2_MNL_rebuild_report_v2.md` (this file)
-- `Results/JMP_GSURv2_MNL_rebuild_correction_report_v1.md`
+- `Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_report_v2.md` (this file)
+- `Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_correction_report_v1.md`
 
 *Original v2gsurY files (preserved, not deleted):*
 - `fr_2015_RURO_mnl_v2gsurY2014__singles.parquet`
@@ -550,9 +550,9 @@ The exact next task is: issue a strict post-rebuild verdict on
 the GSURv2 MNL-parquet rebuild.
 
 The post-rebuild verdict must inspect this report
-(`Results/JMP_GSURv2_MNL_rebuild_report_v2.md`) and the
+(`Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_report_v2.md`) and the
 correction report
-(`Results/JMP_GSURv2_MNL_rebuild_correction_report_v1.md`),
+(`Results/P3a/gsurv2/JMP_GSURv2_MNL_rebuild_correction_report_v1.md`),
 confirm that the rebuild passed all V1–V12 checks, confirm that
 the authorized-stem output files exist with the recorded SHA-256
 hashes, and issue a verdict (PASS or FAIL with diagnosis).

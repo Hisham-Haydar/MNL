@@ -318,7 +318,7 @@ discrepancies are documented and resolved before the multi-year
 pipeline runs.
 
 The audit produces a feasibility report
-(`Results/JMP_multi_year_feasibility_audit_v1.md` or equivalent)
+(`Results/P3a/multi_year_stage_M1/JMP_multi_year_feasibility_audit_v1.md` or equivalent)
 that records the status of each condition and, if any condition
 fails, identifies the operational response. If all six conditions
 pass, the audit authorises the subsequent pipeline implementation

@@ -260,7 +260,7 @@ couples MUL calculation accordingly.
     "U:\Desktop\Nizam_Hisham\MNL\Results\RURO_occ_M0b_gate_A_parse_report_v1.py"
 ```
 
-See `Results/RURO_occ_M0b_gate_A_parse_report_v1.md` for full output.
+See `Results/P3a/single_year_baseline/M0b/RURO_occ_M0b_gate_A_parse_report_v1.md` for full output.
 
 ### M0b1 estimation (when ready)
 

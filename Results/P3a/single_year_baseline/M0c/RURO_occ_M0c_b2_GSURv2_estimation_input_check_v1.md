@@ -2,7 +2,7 @@
 
 Date: 2026-05-17
 Prepared by: Claude Code
-Authorisation basis: `Results/RURO_GSUR_v2_stageA_MNL_rebuild_report_v1.md` (all M1–M10 PASS)
+Authorisation basis: `Results/P3a/gsurv2/RURO_GSUR_v2_stageA_MNL_rebuild_report_v1.md` (all M1–M10 PASS)
 
 ---
 

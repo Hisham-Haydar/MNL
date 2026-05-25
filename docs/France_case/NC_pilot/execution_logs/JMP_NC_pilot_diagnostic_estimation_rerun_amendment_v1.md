@@ -201,7 +201,7 @@ cheap and already supported.
 
 ## 12. Required rerun report
 
-`Results/JMP_NC_pilot_diagnostic_estimation_rerun_report_v1.md`, covering: scope
+`Results/NC_pilot/JMP_NC_pilot_diagnostic_estimation_rerun_report_v1.md`, covering: scope
 and provenance (amendment to the base authorization; **explicit statement that
 the earlier scipy/L-BFGS-B run is invalid and non-interpretable and is not
 used**); confirmation the `_loc.pkl` was used (not the prior pkl) and that
@@ -308,14 +308,14 @@ THEN STOP. No welfare, no SA2, no promotion.
 Halt conditions: HR-STALE, HR-LOC4, HR-SCIPY, HR-CAP, HR-ISO, HR-OBJ, HR-WARM
 (amendment s.5-8). On any fire: STOP, write report to that point, await direction.
 
-Write ONE report: Results/JMP_NC_pilot_diagnostic_estimation_rerun_report_v1.md
+Write ONE report: Results/NC_pilot/JMP_NC_pilot_diagnostic_estimation_rerun_report_v1.md
 per amendment s.12, stating the earlier scipy run is invalid/not used, the exact
 CONOPT options + caps, and the parallel/sequential + timing record. End with
 required final statements.
 ```
 
 Save the report as:
-`Results/JMP_NC_pilot_diagnostic_estimation_rerun_report_v1.md`
+`Results/NC_pilot/JMP_NC_pilot_diagnostic_estimation_rerun_report_v1.md`
 
 ---
 

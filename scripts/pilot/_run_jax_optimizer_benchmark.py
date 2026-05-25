@@ -909,7 +909,7 @@ def write_report(results, halt_code, halt_msg, opt_result, iter_log):
     A("The previous equivalence validation (v2) recorded JAX float32 LL = −16,527.0664062500 "
       "(|Δ| vs oracle = 7.58e-02; |Δ| vs NumPy = 5.63e-04). This confirmed the same formula "
       "under float32. The float32 gradient check (norm = 6.1028) was also recorded in "
-      "`Results/JMP_NC_pilot_vectorized_likelihood_cleanup_validation_v1.md`. "
+      "`Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_cleanup_validation_v1.md`. "
       "No float32 optimization was run or authorized.")
     A("")
     A("---")

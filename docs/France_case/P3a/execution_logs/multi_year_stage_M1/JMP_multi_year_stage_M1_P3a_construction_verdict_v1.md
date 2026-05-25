@@ -15,7 +15,7 @@ Output files under review:
 - `Data/processed/fr/pooled/fr_p3a_harmonised__stage_m1_meta.json`
 
 Primary evidence:
-- `Results/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md`
+- `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md`
 - `Results/JMP_multi_year_stage_M1_P3a_full_execution_addendum_v1.md`
 
 Governing documents:

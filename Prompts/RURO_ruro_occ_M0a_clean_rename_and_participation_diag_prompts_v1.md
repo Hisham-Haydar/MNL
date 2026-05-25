@@ -37,7 +37,7 @@ Work locally in my RURO/MNL codebase.
 
 Read:
 
-- `Results/RURO_occ_M0a_simplification_plan_v1.md`
+- `Results/P3a/single_year_baseline/M0a/RURO_occ_M0a_simplification_plan_v1.md`
 - `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/RURO_occ_M0a_implementation_report_v1.md`
 - `scripts/enhanced/estimation_spec_ruro_occ_M0a.yaml`
 - `scripts/enhanced/estimation_spec_ruro_occ_M0.yaml`
@@ -294,7 +294,7 @@ Create:
 
 - `Results/_participation_diag_ruro_occ_M0a_clean.py`
 - `Results/_participation_diag_ruro_occ_M0a_clean.json`
-- `Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md`
+- `Results/P3a/single_year_baseline/M0a/RURO_ruro_occ_M0a_clean_participation_diag_v1.md`
 
 The diagnostic script must be reusable, deterministic, read-only on inputs,
 and runnable in under five minutes.
@@ -471,7 +471,7 @@ If these expectations fail, identify the responsible code path.
 Write:
 
 ```text
-Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md
+Results/P3a/single_year_baseline/M0a/RURO_ruro_occ_M0a_clean_participation_diag_v1.md
 ```
 
 Keep it short, but include:

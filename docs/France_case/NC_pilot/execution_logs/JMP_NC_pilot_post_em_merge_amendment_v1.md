@@ -284,7 +284,7 @@ mapping failure).
 
 ## 17. Required merge report
 
-`Results/JMP_NC_pilot_post_em_merge_report_v1.md`, covering: scope and
+`Results/NC_pilot/JMP_NC_pilot_post_em_merge_report_v1.md`, covering: scope and
 authorization provenance; the partner-ID mapping (confirmed product male/female
 columns; `idperson_true`/`idhh_true` chosen over encoded IDs; one-to-one
 validation result); the decider filter (254,340 → adult deciders/block);
@@ -370,13 +370,13 @@ THEN STOP. Do not begin GSUR / is_chosen / sort / precompute.
 Halt conditions: HM1-HM9, HM-STAGE (amendment s.14). On any fire: STOP, write
 the report to that point, await direction. Do NOT fall back to encoded IDs.
 
-Write ONE report: Results/JMP_NC_pilot_post_em_merge_report_v1.md per
+Write ONE report: Results/NC_pilot/JMP_NC_pilot_post_em_merge_report_v1.md per
 amendment s.17. End with required final statements (no is_chosen/sort/GSUR/
 precompute/estimation/welfare/SA2/promotion; M1-clean active; P3a unaffected;
 merge slice only).
 ```
 
-Save the report as: `Results/JMP_NC_pilot_post_em_merge_report_v1.md`
+Save the report as: `Results/NC_pilot/JMP_NC_pilot_post_em_merge_report_v1.md`
 
 ---
 

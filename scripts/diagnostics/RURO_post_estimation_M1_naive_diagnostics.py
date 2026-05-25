@@ -272,7 +272,7 @@ def write_report(
         f"Negative eigenvalues in full Hessian: {n_neg_full}",
         "",
         "Comparison reference throughout: `ruro_occ_M1_clean`",
-        "(M1-clean supplementary diagnostics: `Results/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`)",
+        "(M1-clean supplementary diagnostics: `Results/P3a/single_year_baseline/M1/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`)",
         "",
         "---",
         "",

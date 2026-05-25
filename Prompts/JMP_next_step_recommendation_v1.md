@@ -338,7 +338,7 @@ The recommendation is summarised in Table 1.
 | Track | Task | Tool platform | Walltime | Output |
 |---|---|---|---|---|
 | Chat | Welfare-measurement decisions memo | Claude Project chat | 1–2 focused sessions | `docs/JMP_welfare_measurement_decisions_memo_v1.md` |
-| Code | Multi-year feasibility audit | Claude Code Sonnet | 1 focused session | `Results/JMP_multi_year_feasibility_audit_v1.md` |
+| Code | Multi-year feasibility audit | Claude Code Sonnet | 1 focused session | `Results/P3a/multi_year_stage_M1/JMP_multi_year_feasibility_audit_v1.md` |
 | Deferred | Further single-year specification adjustment | (n/a) | (n/a) | Deferred until welfare baseline is in place |
 
 The chat task and the code task proceed in parallel. Neither

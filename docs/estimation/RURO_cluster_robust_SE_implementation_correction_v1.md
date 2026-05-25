@@ -10,7 +10,7 @@
 
 All 17 smoke-test checks pass (C1–C17) after applying the corrections.
 The regenerated static validation report is at
-`Results/RURO_cluster_robust_SE_static_validation_v1.md`.
+`Results/_shared/RURO_cluster_robust_SE_static_validation_v1.md`.
 
 ---
 
@@ -21,7 +21,7 @@ The regenerated static validation report is at
 | `scripts/enhanced/estimation_utils.py` | Cluster-key strictness in both `precompute_data_singles` and `precompute_data_couples` |
 | `scripts/enhanced/run_cluster_robust_se.py` | C2 CLI-help check; GA17 wording; next-gate wording |
 | `docs/estimation/RURO_cluster_robust_SE_implementation_report_v1.md` | GA17 wording and next-gate wording in sections 1 and 17 |
-| `Results/RURO_cluster_robust_SE_static_validation_v1.md` | Regenerated output — inspected after re-run |
+| `Results/_shared/RURO_cluster_robust_SE_static_validation_v1.md` | Regenerated output — inspected after re-run |
 | `Results/smoke_test_stdout.txt` | Untracked stdout capture — archived |
 
 ---
@@ -143,7 +143,7 @@ loudly documented as invalid for the P3a / GA17 context.
 | `scripts/enhanced/estimation_utils.py` | `precompute_data_couples`: replaced terse fallback warning with explicit multi-line warning; added four-line comment block matching `precompute_data_singles` |
 | `scripts/enhanced/run_cluster_robust_se.py` | Added C2 CLI-help check between C1 and C3; corrected GA17 label to "smoke-test callability: CONFIRMED"; added T4/T5 note; corrected next-gate wording; added C2 row to `_write_md_report` |
 | `docs/estimation/RURO_cluster_robust_SE_implementation_report_v1.md` | Corrected GA17 label in sections 1 and 17; corrected next-gate wording in section 17; updated check count from 16 to 17 |
-| `Results/RURO_cluster_robust_SE_static_validation_v1.md` | Regenerated: C2 added (PASS); GA17 label corrected; T4/T5 note added; next-gate corrected |
+| `Results/_shared/RURO_cluster_robust_SE_static_validation_v1.md` | Regenerated: C2 added (PASS); GA17 label corrected; T4/T5 note added; next-gate corrected |
 | `Results/diagnostics/smoke_test_stdout_20260521.txt` | Archived from `Results/smoke_test_stdout.txt` (untracked output) |
 
 No YAML specifications, parquets, or estimation results were modified.

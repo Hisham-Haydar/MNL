@@ -213,7 +213,7 @@ not over rows (1,244,500). This is guaranteed by the structure of
 python scripts/enhanced/run_cluster_robust_se.py \
     --spec  scripts/enhanced/specifications/estimation_spec_ruro_occ_P3a_pooled.yaml \
     --parquet  Data/processed/fr/pooled/fr_p3a_gsurv2_harmonised.parquet \
-    --output  Results/RURO_cluster_robust_SE_static_validation_v1.md \
+    --output  Results/_shared/RURO_cluster_robust_SE_static_validation_v1.md \
     --mode  smoke-test
 ```
 

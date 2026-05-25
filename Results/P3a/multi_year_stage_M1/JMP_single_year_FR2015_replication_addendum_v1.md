@@ -1,8 +1,8 @@
 # JMP Single-Year FR_2015 Replication — Correction Addendum v1
 
-**Document:** Results/JMP_single_year_FR2015_replication_addendum_v1.md  
+**Document:** Results/P3a/multi_year_stage_M1/JMP_single_year_FR2015_replication_addendum_v1.md  
 **Date:** 2026-05-20  
-**Amends:** Results/JMP_single_year_FR2015_replication_report_v1.md  
+**Amends:** Results/P3a/multi_year_stage_M1/JMP_single_year_FR2015_replication_report_v1.md  
 **Author:** Hisham Haydar
 
 ---
@@ -10,7 +10,7 @@
 ## 1. Purpose
 
 This addendum corrects three statements in the FR_2015 replication report
-(`Results/JMP_single_year_FR2015_replication_report_v1.md`), formalizes the
+(`Results/P3a/multi_year_stage_M1/JMP_single_year_FR2015_replication_report_v1.md`), formalizes the
 GSUR opportunity-year alignment rule, and clarifies the tpr incidence figure.
 It also documents new metadata fields added to the 2015 sidecar and specifies
 the pre-conditions that must hold before the FR_2017 replication is executed.
@@ -24,8 +24,8 @@ updated (§10 below).
 
 | File | Relevant sections read |
 |------|----------------------|
-| `Results/JMP_single_year_FR2015_replication_report_v1.md` | §§ 17–19, 23 |
-| `Results/JMP_single_year_2016_local_mirror_report_v1.md` | §§ 3–5, 9 |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2015_replication_report_v1.md` | §§ 17–19, 23 |
+| `Results/P3a/multi_year_stage_M1/JMP_single_year_2016_local_mirror_report_v1.md` | §§ 3–5, 9 |
 | `docs/JMP_single_year_replication_2015_2017_authorization_v1.md` | §§ 7, 9, 10 |
 | `docs/JMP_single_year_replication_2015_2017_command_plan_v2.md` | §§ 3, 13, 19 |
 | `docs/France_case/_shared/governance/JMP_multi_year_CPI_HICP_source_decision_v1.md` | φ_t table |
@@ -59,7 +59,7 @@ source; it is the file cited in the 2015 mnlmeta `inputs.gsur_file`.
 > the parquet's actual rates do not match any year in the v1 table — indicating
 > the rates were drawn from `FR_gsur_ruro_v2_stageA.parquet`. This
 > filename/source-provenance mismatch is documented in
-> `Results/JMP_single_year_2016_local_mirror_report_v1.md` §5 and §9 and must
+> `Results/P3a/multi_year_stage_M1/JMP_single_year_2016_local_mirror_report_v1.md` §5 and §9 and must
 > be resolved before any pooled estimation claims about GSUR consistency."
 
 ### Correction 2 — §19 and §23 overstated M1 readiness
@@ -103,7 +103,7 @@ See §5 and §6 for the formal rule and implications.
 
 ## 4. FR_2016 GSUR provenance correction
 
-The FR_2016 mirror report (`Results/JMP_single_year_2016_local_mirror_report_v1.md`)
+The FR_2016 mirror report (`Results/P3a/multi_year_stage_M1/JMP_single_year_2016_local_mirror_report_v1.md`)
 correctly documents the provenance mismatch in §5 (note 4) and §9 (GSUR source).
 The FR_2015 replication report incorrectly implied FR_2016 is "GSURv2-final" by
 using the label "2016 GSURv2-final outputs" in §18. That label is inaccurate.
@@ -280,7 +280,7 @@ cols). No contradiction exists; the difference reflects the expected population
 narrowing from the raw file to the RURO-eligible sample. Both figures are below
 the 1% escalation threshold.
 
-**For the validation annotation in `Results/M1_identity_validation_summary.md`:**
+**For the validation annotation in `Results/P3a/multi_year_stage_M1/M1_identity_validation_summary.md`:**
 Record both figures. The relevant threshold check (< 1% of RURO sample) was
 performed on the RURO-ready singles file (5 rows, 0.287%) — PASS. The addendum v2
 figure (53 rows, 0.344% of raw WA) provides the upper bound for the full year-wave.
@@ -351,7 +351,7 @@ No MNL parquet data is modified. Only the JSON sidecar is updated.
 
 **FR_2016 readiness:** The 2016 parquet has its own open issues (provenance
 mismatch, opportunity-year alignment unknown). These are documented in
-`Results/JMP_single_year_2016_local_mirror_report_v1.md` and this addendum §4
+`Results/P3a/multi_year_stage_M1/JMP_single_year_2016_local_mirror_report_v1.md` and this addendum §4
 and §7. No change to the 2016 PASS verdict for M1-clean operative purposes.
 
 ---

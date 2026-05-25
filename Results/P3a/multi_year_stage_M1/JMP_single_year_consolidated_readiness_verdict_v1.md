@@ -1,14 +1,14 @@
 # JMP Single-Year Consolidated Readiness Verdict v1
 
-**Document:** Results/JMP_single_year_consolidated_readiness_verdict_v1.md  
+**Document:** Results/P3a/multi_year_stage_M1/JMP_single_year_consolidated_readiness_verdict_v1.md  
 **Date:** 2026-05-20  
 **Author:** Pipeline execution via Claude Code  
 **Scope:** FR_2015, FR_2016, FR_2017 MNL inputs — GSUR alignment audit and Stage M1 authorization gate  
 **Depends on:**
 - `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` (alignment rule)
-- `Results/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md` (FR_2015 rebuild)
-- `Results/JMP_single_year_FR2017_replication_report_v1.md` (FR_2017 replication)
-- `Results/JMP_single_year_2016_local_mirror_report_v1.md` (FR_2016 mirror)
+- `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md` (FR_2015 rebuild)
+- `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2017_replication_report_v1.md` (FR_2017 replication)
+- `Results/P3a/multi_year_stage_M1/JMP_single_year_2016_local_mirror_report_v1.md` (FR_2016 mirror)
 
 ---
 
@@ -54,7 +54,7 @@ Mapping:
 - Built with `--gsur-year 2014 --year 2015` via patched `enh_RURO_prep_mnl_basic.py`  
 - Singles mean gsur: 0.094059  
 - Sidecar: `gsur_version=v1_fallback_opportunity_year_aligned`, `gsur_alignment_status=aligned`  
-- Report: `Results/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md`
+- Report: `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md`
 
 ### FR_2016 detail
 
@@ -78,7 +78,7 @@ Mapping:
 - Built with `--gsur-year 2016 --year 2017`  
 - Singles mean gsur: 0.084 (observed in run output)  
 - Sidecar: `gsur_version=v1_fallback_opportunity_year_aligned`, `gsur_opportunity_year: 2016`, `gsur_alignment_status: aligned`  
-- Report: `Results/JMP_single_year_FR2017_replication_report_v1.md`
+- Report: `Results/P3a/multi_year_stage_M1/JMP_single_year_FR2017_replication_report_v1.md`
 
 ---
 
@@ -186,7 +186,7 @@ The dry-run returning READY does not constitute Stage M1 authorization. The dry-
 | 4 | Copy rebuilt files to `Data/processed/fr/` (with `fr_2016_RURO_mnl_v1gsurY2015__` stem) | **PENDING** |
 | 5 | Remove or shadow misaligned `fr_2016_RURO_mnl_GSURv2__` local copies from `Data/processed/fr/` | **PENDING** |
 | 6 | Re-run Stage M1 P3a dry-run; confirm 2016 resolves to `v1gsurY2015` file | **PENDING** |
-| 7 | Write FR_2016 rebuild report (`Results/JMP_single_year_FR2016_gsurY2015_rebuild_report_v1.md`) | **PENDING** |
+| 7 | Write FR_2016 rebuild report (`Results/P3a/multi_year_stage_M1/JMP_single_year_FR2016_gsurY2015_rebuild_report_v1.md`) | **PENDING** |
 | 8 | Update `docs/JMP_multi_year_stage_M1_execution_readiness_report_v1.md` verdict to AUTHORIZED | **PENDING** |
 
 All of steps 1–6 are mechanically straightforward (no EUROMOD run needed). Estimated time: under 30 minutes.

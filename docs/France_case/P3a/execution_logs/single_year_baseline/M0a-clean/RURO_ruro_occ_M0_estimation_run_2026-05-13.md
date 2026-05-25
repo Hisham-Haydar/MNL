@@ -25,7 +25,7 @@ Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl__couples.parqu
 The rebuild and validation are documented in:
 
 ```text
-Results/RURO_ruro_occ_M0_full_rebuild_report_v1.md
+Results/P3a/single_year_baseline/M0/RURO_ruro_occ_M0_full_rebuild_report_v1.md
 Results/_canary_ruro_occ_M0_results.json
 ```
 

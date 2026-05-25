@@ -294,7 +294,7 @@ Top-5 absolute gradient components at final θ:
 
 ## 14. Float32 smoke check (diagnostic only)
 
-The previous equivalence validation (v2) recorded JAX float32 LL = −16,527.0664062500 (|Δ| vs oracle = 7.58e-02; |Δ| vs NumPy = 5.63e-04). This confirmed the same formula under float32. The float32 gradient check (norm = 6.1028) was also recorded in `Results/JMP_NC_pilot_vectorized_likelihood_cleanup_validation_v1.md`. No float32 optimization was run or authorized.
+The previous equivalence validation (v2) recorded JAX float32 LL = −16,527.0664062500 (|Δ| vs oracle = 7.58e-02; |Δ| vs NumPy = 5.63e-04). This confirmed the same formula under float32. The float32 gradient check (norm = 6.1028) was also recorded in `Results/NC_pilot/JMP_NC_pilot_vectorized_likelihood_cleanup_validation_v1.md`. No float32 optimization was run or authorized.
 
 ---
 

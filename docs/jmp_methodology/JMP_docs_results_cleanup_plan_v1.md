@@ -56,7 +56,7 @@ confirmed present before any archiving proceeded.
 | 13 | `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_naive_robustness_verdict_v1.md` | YES |
 | 14 | `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md` | YES |
 | 15 | `docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md` | YES |
-| 16 | `Results/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md` | YES |
+| 16 | `Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md` | YES |
 
 All 16 confirmed present. Archiving proceeds.
 
@@ -180,4 +180,4 @@ as corrected by `docs/archive/2026-05-26_round2_chain_compression/doc_only_corre
 
 **COMPLETE** — all operations in §6 executed 2026-05-20. Manifest recorded in
 `Results/JMP_docs_results_cleanup_manifest_v1.csv`. Report in
-`Results/JMP_docs_results_cleanup_report_v1.md`.
+`Results/_shared/JMP_docs_results_cleanup_report_v1.md`.

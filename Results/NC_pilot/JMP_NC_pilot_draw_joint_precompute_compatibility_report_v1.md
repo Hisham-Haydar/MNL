@@ -40,9 +40,9 @@ script, any modification to the P3a YAML or production data.
 | File | Purpose |
 |---|---|
 | `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md` | Authorizing document; read first |
-| `Results/JMP_NC_pilot_precompute_readiness_report_v1.md` | Precompute-readiness status; confirmed scalar-`draw` gap |
+| `Results/NC_pilot/JMP_NC_pilot_precompute_readiness_report_v1.md` | Precompute-readiness status; confirmed scalar-`draw` gap |
 | `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_readiness_amendment_v1.md` | HC-DRAW constraints |
-| `Results/JMP_NC_pilot_draw_joint_repointing_audit_v1.md` | Identified the draw-column site in `estimation_utils.py` |
+| `Results/NC_pilot/JMP_NC_pilot_draw_joint_repointing_audit_v1.md` | Identified the draw-column site in `estimation_utils.py` |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet` | Schema + bounded read (read-only) |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready__readymeta.json` | Confirmed 152 cols, no scalar draw |
 | `scripts/enhanced/estimation_utils.py` | Patched (draw-resolution site only) |
@@ -64,7 +64,7 @@ script, any modification to the P3a YAML or production data.
 | File | Description |
 |---|---|
 | `scripts/pilot/_validate_draw_patch.py` | Validation script (7 checks: import, unit tests, regression, bounded read, fail-loud, smoke test, data-mutation) |
-| `Results/JMP_NC_pilot_draw_joint_precompute_compatibility_report_v1.md` | This report |
+| `Results/NC_pilot/JMP_NC_pilot_draw_joint_precompute_compatibility_report_v1.md` | This report |
 
 ---
 

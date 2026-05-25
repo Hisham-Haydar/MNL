@@ -275,9 +275,9 @@ the extended opportunity block. They do **not** by themselves constitute the
 M1-naive robustness verdict. The full verdict requires:
 
 1. Estimation evidence from
-   `Results/RURO_occ_M1_naive_estimation_report_v1.md` (completed).
+   `Results/P3a/single_year_baseline/M1/RURO_occ_M1_naive_estimation_report_v1.md` (completed).
 2. Standard fit assessment from
-   `Results/RURO_occ_M1_naive_post_estimation_diagnostics_v1.md` (completed).
+   `Results/P3a/single_year_baseline/M1/RURO_occ_M1_naive_post_estimation_diagnostics_v1.md` (completed).
 3. These M1-naive supplementary diagnostics (completed in this step).
 4. A final comparative decision: whether M1-naive or M1-clean should be
    the production specification, or whether the β_E_educH parameter should

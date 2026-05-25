@@ -1,6 +1,6 @@
 # JMP Multi-Year Stage M1 — Readiness Addendum v2
 
-**Document:** Results/JMP_multi_year_stage_M1_readiness_addendum_v2.md
+**Document:** Results/P3a/multi_year_stage_M1/JMP_multi_year_stage_M1_readiness_addendum_v2.md
 **Date:** 2026-05-19
 **Supersedes:** Results/JMP_multi_year_stage_M1_readiness_addendum_v1.md
 **Addendum to:** docs/JMP_multi_year_stage_M1_execution_readiness_report_v1.md
@@ -96,7 +96,7 @@ This is consistent with the French ISF/property-tax history: ISF was reformed an
 
 ### Required validation annotation
 
-When P3a parquets are built, the M1 validation report (`Results/M1_identity_validation_summary.md` or a companion section) must include:
+When P3a parquets are built, the M1 validation report (`Results/P3a/multi_year_stage_M1/M1_identity_validation_summary.md` or a companion section) must include:
 
 | Year | `tpr` non-zero rows (RURO sample) | `twl` non-zero rows (RURO sample) | Note |
 | --- | --- | --- | --- |

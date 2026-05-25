@@ -89,7 +89,7 @@ Create:
 
 - Results/_wage_pathology_diag_ruro_occ_M0b1.json
 
-- Results/RURO_occ_M0b1_wage_pathology_diagnostic_v1.md
+- Results/P3a/single_year_baseline/M0b/RURO_occ_M0b1_wage_pathology_diagnostic_v1.md
 
 Requirements:
 
@@ -310,8 +310,8 @@ Use this completed M0b2 post-estimation output folder:
 U:/Desktop/Nizam_Hisham/MNL/outputs/post_estimation/fr/spec/ruro_occ/gamspy/estimation_spec_ruro_occ_M0b2/run_2026-05-14_12-53-49/
 
 Read:
-- Results/RURO_occ_M0b1_wage_pathology_diagnostic_v1.md
-- Results/RURO_occ_M0b_smoke_test_report_v1.md
+- Results/P3a/single_year_baseline/M0b/RURO_occ_M0b1_wage_pathology_diagnostic_v1.md
+- Results/P3a/single_year_baseline/M0b/RURO_occ_M0b_smoke_test_report_v1.md
 - scripts/enhanced/estimation_spec_ruro_occ_M0b2.yaml
 - the latest M0b2 low-token summary in reports/
 - the latest M0b1 low-token summary in reports/
@@ -324,7 +324,7 @@ Create a consolidated M0b2 estimation and post-estimation report.
 
 Create:
 
-Results/RURO_occ_M0b2_estimation_report_v1.md
+Results/P3a/single_year_baseline/M0b/RURO_occ_M0b2_estimation_report_v1.md
 
 Report:
 
@@ -433,7 +433,7 @@ Important:
 
 
 
-Results/RURO_occ_M0b2_estimation_report_v1.md written — 16 sections, ~150 lines of tables and analysis.
+Results/P3a/single_year_baseline/M0b/RURO_occ_M0b2_estimation_report_v1.md written — 16 sections, ~150 lines of tables and analysis.
 
 Key findings captured:
 
@@ -446,7 +446,7 @@ Recommended next: multi-start M0b2 (3 starts), then M0c-b (fix theta_c = 0, wide
 
 ## Prompt 3 
 
-@Results/RURO_occ_M0b2_estimation_report_v1.md  
+@Results/P3a/single_year_baseline/M0b/RURO_occ_M0b2_estimation_report_v1.md  
 @scripts/enhanced/estimation_spec_ruro_occ_M0b2.yaml  
 @outputs/estimates/fr/spec/ruro_occ/gamspy/estimation_spec_ruro_occ_M0b2/run_2026-05-14_12-46-04/
 
@@ -455,7 +455,7 @@ Work locally in my RURO/MNL codebase.
 The active diagnostic model is `ruro_occ_M0b2`.
 
 Read:
-- Results/RURO_occ_M0b2_estimation_report_v1.md
+- Results/P3a/single_year_baseline/M0b/RURO_occ_M0b2_estimation_report_v1.md
 - scripts/enhanced/estimation_spec_ruro_occ_M0b2.yaml
 - the selected M0b2 run folder:
   outputs/estimates/fr/spec/ruro_occ/gamspy/estimation_spec_ruro_occ_M0b2/run_2026-05-14_12-46-04/
@@ -489,7 +489,7 @@ Rules:
 
 Create:
 
-Results/RURO_occ_M0b2_multistart_report_v1.md
+Results/P3a/single_year_baseline/M0b/RURO_occ_M0b2_multistart_report_v1.md
 
 Report:
 1. commands run;
@@ -510,7 +510,7 @@ Report:
 
 # Response 3 
 
-Results/RURO_occ_M0b2_multistart_report_v1.md written. Here is the complete picture:
+Results/P3a/single_year_baseline/M0b/RURO_occ_M0b2_multistart_report_v1.md written. Here is the complete picture:
 
 Multi-start results (4 starts, 3 successful):
 

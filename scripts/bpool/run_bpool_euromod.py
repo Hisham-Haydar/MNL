@@ -324,6 +324,86 @@ def _print_canary(results: dict, year: int, mode: str) -> bool:
 # Core pricer
 # ---------------------------------------------------------------------------
 
+def _run_euromod_chunked(
+    long_df: pd.DataFrame,
+    long_stamped: pd.DataFrame,
+    year: int,
+    mode: str,
+    runner,
+    system_code: str,
+    dataset_name: str,
+    n_chunks: int = 6,
+) -> tuple[pd.DataFrame, list, list]:
+    """
+    Run EUROMOD on a long file in draw-range chunks to avoid memory issues on
+    large couples files (~7M rows).  For singles (draw col = 'draw', ~240K rows)
+    chunking is not needed but works transparently.
+
+    Splits on draw_joint (couples) or draw (singles) into n_chunks equal-width
+    draw-index bands, runs EUROMOD independently on each band, and concatenates
+    EUROMOD output columns back onto long_df in original row order.
+
+    Returns:
+      em_out_cols_present  -- EUROMOD columns found in first chunk's output
+      missing_em_cols      -- EUROMOD columns requested but absent
+      sim_parts            -- list of per-chunk sim DataFrames (for diagnostics)
+    """
+    draw_col = "draw" if mode == "singles" else "draw_joint"
+    raw_cols = _RAW_SCHEMA[year]
+
+    draw_vals = pd.to_numeric(long_df[draw_col], errors="coerce").fillna(0).astype(int)
+    d_min, d_max = int(draw_vals.min()), int(draw_vals.max())
+    # Build chunk boundaries over the draw index range
+    edges = np.linspace(d_min, d_max + 1, n_chunks + 1).astype(int)
+    edges[-1] = d_max + 1  # ensure last edge captures d_max
+
+    em_out_cols_present: list = []
+    missing_em_cols: list = []
+    # Allocate result arrays (NaN until filled)
+    result_arrays: dict[str, np.ndarray] = {}
+
+    for ci in range(n_chunks):
+        lo, hi = int(edges[ci]), int(edges[ci + 1])
+        chunk_mask = (draw_vals >= lo) & (draw_vals < hi)
+        n_chunk = int(chunk_mask.sum())
+        if n_chunk == 0:
+            continue
+        print(f"  Chunk {ci+1}/{n_chunks}: draw_joint in [{lo},{hi}) -> {n_chunk:,} rows")
+
+        chunk_stamped = long_stamped[chunk_mask].copy().reset_index(drop=True)
+        em_input = chunk_stamped[[c for c in raw_cols if c in chunk_stamped.columns]].copy()
+        for c in em_input.columns:
+            em_input[c] = pd.to_numeric(em_input[c], errors="coerce").fillna(0.0)
+
+        sim_chunk = runner.run_on_dataframe(
+            em_input,
+            country="FR",
+            system_code=system_code,
+            dataset_name=dataset_name,
+        )
+        if len(sim_chunk) != n_chunk:
+            raise RuntimeError(
+                f"HARD STOP: EUROMOD chunk {ci+1} returned {len(sim_chunk)} rows, "
+                f"expected {n_chunk} for draw_joint in [{lo},{hi})."
+            )
+
+        # Discover output columns on first chunk
+        if ci == 0:
+            em_out_cols_present = [c for c in _EM_OUTPUT_COLS if c in sim_chunk.columns]
+            missing_em_cols = [c for c in _EM_OUTPUT_COLS if c not in sim_chunk.columns]
+            for c in em_out_cols_present:
+                result_arrays[c] = np.full(len(long_df), np.nan)
+
+        # Write chunk results into the full arrays at original positions
+        orig_idx = np.where(chunk_mask.values)[0]
+        for c in em_out_cols_present:
+            result_arrays[c][orig_idx] = sim_chunk[c].values
+
+        print(f"    chunk {ci+1} done: ils_dispy mean={sim_chunk['ils_dispy'].mean():.1f}" if 'ils_dispy' in sim_chunk.columns else f"    chunk {ci+1} done")
+
+    return result_arrays, em_out_cols_present, missing_em_cols
+
+
 def _price_one_file(
     long_path: Path,
     year: int,
@@ -333,6 +413,7 @@ def _price_one_file(
     dataset_name: str,
     roster: pd.DataFrame,
     canary_only: bool = False,
+    n_chunks: int = 6,
 ) -> tuple[pd.DataFrame, dict]:
     """
     Price one precompute long file through EUROMOD.
@@ -341,8 +422,8 @@ def _price_one_file(
       1. Load long file.
       2. Stamp draw-specific idhh/idperson (EUROMOD needs unique HH IDs per alternative).
       3. Filter to raw EUROMOD input columns only (no bpool extras).
-      4. Run EUROMOD -> sim_df with ils_dispy + components.
-      5. Restore true IDs; merge sim output back onto original long file.
+      4. Run EUROMOD in draw-range chunks (avoids memory pressure on 7M-row couples files).
+      5. Restore true IDs; assign sim output back onto original long file.
       6. Apply CPI deflation.
       7. Run canary checks.
     """
@@ -358,51 +439,33 @@ def _price_one_file(
     id_multiplier = 1_000 if mode == "singles" else 10_000
     long_stamped = _stamp_draw_ids(long_df, draw_col, id_multiplier)
 
-    # --- 3. Build EUROMOD input: raw schema columns only ---
-    raw_cols = _RAW_SCHEMA[year]
-    # Use stamped idhh/idperson (the ones EUROMOD will use)
-    em_input = long_stamped[[c for c in raw_cols if c in long_stamped.columns]].copy()
-    print(f"  EUROMOD input: {em_input.shape[0]} rows × {em_input.shape[1]} cols")
+    # --- 3+4. Run EUROMOD in chunks ---
+    # Singles files are ~240K rows — use n_chunks=1 (single call, same path).
+    # Couples files are ~7M rows — use n_chunks=6 to keep each call ~1.1M rows.
+    effective_chunks = 1 if mode == "singles" else n_chunks
+    print(f"  Running EUROMOD {system_code} / {dataset_name} in {effective_chunks} chunk(s) ...")
 
-    # Ensure all numeric
-    for c in em_input.columns:
-        em_input[c] = pd.to_numeric(em_input[c], errors="coerce").fillna(0.0)
-
-    # --- 4. Run EUROMOD ---
-    print(f"  Running EUROMOD {system_code} / {dataset_name} ...")
-    sim_df = runner.run_on_dataframe(
-        em_input,
-        country="FR",
-        system_code=system_code,
-        dataset_name=dataset_name,
+    result_arrays, em_out_cols_present, missing_em_cols = _run_euromod_chunked(
+        long_df, long_stamped, year, mode, runner, system_code, dataset_name,
+        n_chunks=effective_chunks,
     )
-    print(f"  EUROMOD output: {sim_df.shape}")
 
-    # --- 5. Merge ils_dispy + components back onto original long file ---
-    # EUROMOD preserves row order (same n_rows, same sequence).
-    # Verify row count matches before direct assignment.
-    if len(sim_df) != len(long_stamped):
-        raise RuntimeError(
-            f"HARD STOP: EUROMOD output {len(sim_df)} rows ≠ input {len(long_stamped)} rows "
-            f"for {mode} {year}. Cannot merge back."
-        )
-
-    # Restore true IDs on sim output
-    sim_df = sim_df.reset_index(drop=True)
-    long_out = long_df.reset_index(drop=True).copy()
-
-    # Carry idhh_true / idperson_true for canary C3
-    long_out["idhh_true"]     = long_df["idhh"].values
-    long_out["idperson_true"] = long_df["idperson"].values
-
-    # Assign EUROMOD output columns
-    em_out_cols_present = [c for c in _EM_OUTPUT_COLS if c in sim_df.columns]
-    missing_em_cols = [c for c in _EM_OUTPUT_COLS if c not in sim_df.columns]
     if missing_em_cols:
         print(f"  WARNING: EUROMOD did not produce: {missing_em_cols}")
 
+    # --- 5. Build output DataFrame ---
+    long_out = long_df.reset_index(drop=True).copy()
+    long_out["idhh_true"]     = long_df["idhh"].values
+    long_out["idperson_true"] = long_df["idperson"].values
+
     for c in em_out_cols_present:
-        long_out[c] = sim_df[c].values
+        long_out[c] = result_arrays[c]
+
+    n_null = long_out[em_out_cols_present[0]].isna().sum() if em_out_cols_present else 0
+    if n_null > 0:
+        raise RuntimeError(f"HARD STOP: {n_null} NaN in {em_out_cols_present[0]} after chunked EUROMOD merge.")
+
+    print(f"  EUROMOD output assembled: {long_out.shape[0]:,} rows, {len(em_out_cols_present)} cols")
 
     # --- 6. CPI deflation ---
     phi = _CPI[year]
@@ -419,6 +482,7 @@ def _price_one_file(
         "system": system_code,
         "dataset": dataset_name,
         "n_rows": len(long_out),
+        "n_chunks": effective_chunks,
         "em_output_cols": em_out_cols_present,
         "missing_em_cols": missing_em_cols,
         "cpi_phi": phi,
@@ -436,9 +500,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Price bpool long files through EUROMOD")
     parser.add_argument("--canary-only", action="store_true",
                         help="Run canary year (2017 singles) only, then stop")
+    parser.add_argument("--skip-canary", action="store_true",
+                        help="Skip 2017 singles (already priced); start from 2017 couples")
     parser.add_argument("--year", type=int, choices=[2015, 2016, 2017], default=None)
     parser.add_argument("--singles-only", action="store_true")
     parser.add_argument("--couples-only", action="store_true")
+    parser.add_argument("--n-chunks", type=int, default=6,
+                        help="Number of draw-range chunks for couples EUROMOD calls (default 6)")
     args = parser.parse_args()
 
     years = [args.year] if args.year else [2017, 2016, 2015]
@@ -447,6 +515,7 @@ def main() -> None:
 
     run_singles = not args.couples_only
     run_couples = not args.singles_only and not args.canary_only
+    n_chunks = args.n_chunks
 
     # -----------------------------------------------------------------------
     # Pairing table report
@@ -491,36 +560,42 @@ def main() -> None:
         em_sys_code, ds_name, _ = _SYSTEM_PAIRING[yr]
         roster = rosters[yr]
 
-        # --- CANARY: 2017 singles first ---
+        # --- CANARY: 2017 singles first (skip if already written) ---
         if yr == 2017 and run_singles:
             long_path = _BPOOL_DIR / f"fr_p3a_bpool_precompute__2017__singles__long.parquet"
             out_path  = _BPOOL_DIR / f"fr_p3a_bpool_priced__2017__singles.parquet"
-            print(f"\n{'='*60}")
-            print(f"CANARY: SINGLES {yr}  ({long_path.name})")
-            print(f"{'='*60}")
 
-            try:
-                priced, meta = _price_one_file(
-                    long_path, yr, "singles", runner, em_sys_code, ds_name, roster
-                )
-                priced.to_parquet(out_path, index=False)
-                print(f"  Written: {out_path}  shape={priced.shape}")
-                summary["files"][f"{yr}_singles"] = meta
-                all_pass &= meta["canary_pass"]
+            if args.skip_canary and out_path.exists():
+                print(f"\nSkipping 2017 singles (already written: {out_path.name})")
+                summary["files"][f"{yr}_singles"] = {"skipped": True, "path": str(out_path)}
+            else:
+                print(f"\n{'='*60}")
+                print(f"CANARY: SINGLES {yr}  ({long_path.name})")
+                print(f"{'='*60}")
 
-                if not meta["canary_pass"]:
-                    print(f"\nHARD STOP: Canary failed for singles {yr}. Fix before running remaining files.")
+                try:
+                    priced, meta = _price_one_file(
+                        long_path, yr, "singles", runner, em_sys_code, ds_name, roster,
+                        n_chunks=1,
+                    )
+                    priced.to_parquet(out_path, index=False)
+                    print(f"  Written: {out_path}  shape={priced.shape}")
+                    summary["files"][f"{yr}_singles"] = meta
+                    all_pass &= meta["canary_pass"]
+
+                    if not meta["canary_pass"]:
+                        print(f"\nHARD STOP: Canary failed for singles {yr}. Fix before running remaining files.")
+                        _write_summary(summary, all_pass)
+                        _sys.exit(1)
+                    else:
+                        print(f"\nCanary PASSED - proceeding to remaining files.")
+
+                except Exception as e:
+                    print(f"\nHARD STOP: {e}")
+                    summary["files"][f"{yr}_singles"] = {"error": str(e)}
+                    all_pass = False
                     _write_summary(summary, all_pass)
                     _sys.exit(1)
-                else:
-                    print(f"\nCanary PASSED - proceeding to remaining files.")
-
-            except Exception as e:
-                print(f"\nHARD STOP: {e}")
-                summary["files"][f"{yr}_singles"] = {"error": str(e)}
-                all_pass = False
-                _write_summary(summary, all_pass)
-                _sys.exit(1)
 
             if args.canary_only:
                 _write_summary(summary, all_pass)
@@ -535,7 +610,8 @@ def main() -> None:
             print(f"{'='*60}")
             try:
                 priced, meta = _price_one_file(
-                    long_path, yr, "singles", runner, em_sys_code, ds_name, roster
+                    long_path, yr, "singles", runner, em_sys_code, ds_name, roster,
+                    n_chunks=1,
                 )
                 priced.to_parquet(out_path, index=False)
                 print(f"  Written: {out_path}  shape={priced.shape}")
@@ -561,7 +637,8 @@ def main() -> None:
             print(f"{'='*60}")
             try:
                 priced, meta = _price_one_file(
-                    long_path, yr, "couples", runner, em_sys_code, ds_name, roster
+                    long_path, yr, "couples", runner, em_sys_code, ds_name, roster,
+                    n_chunks=n_chunks,
                 )
                 priced.to_parquet(out_path, index=False)
                 print(f"  Written: {out_path}  shape={priced.shape}")

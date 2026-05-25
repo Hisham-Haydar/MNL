@@ -9,7 +9,7 @@ Focused method notes:
 - `docs/methods/RURO_METHODS_AND_PIPELINE_MANUAL_v1.md`
 - `docs/package/RURO_PACKAGE_PORTABILITY_AND_CLEANUP_POLICY_v1.md`
 - `docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md`
-- `docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
+- `docs/archive/2026-05-26_round2_chain_compression/workspace_audits_superseded/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
 - `docs/methods/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
 - `docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
 

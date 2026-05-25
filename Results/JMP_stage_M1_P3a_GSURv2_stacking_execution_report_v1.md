@@ -24,7 +24,7 @@
 ## 2. Authorization reference
 
 - Authorization: `docs/JMP_stage_M1_P3a_GSURv2_stacking_authorization_v1.md`
-- Formatting correction: `docs/JMP_stage_M1_P3a_GSURv2_stacking_authorization_correction_v1.md`
+- Formatting correction: `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_stage_M1_P3a_GSURv2_stacking_authorization_correction_v1.md`
 - Authorization date: 2026-05-21
 - Authorization scope: Stage M1 P3a GSURv2 pooled stacking re-run only — no pooled estimation, no welfare computation, no P3b, no P4
 

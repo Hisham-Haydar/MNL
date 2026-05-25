@@ -28,11 +28,11 @@ status in this report). All are present; archiving proceeded.
 | # | File | Status |
 |---|------|--------|
 | 1 | `docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md` | PRESENT |
-| 2 | `docs/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md` | PRESENT |
+| 2 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md` | PRESENT |
 | 3 | `docs/JMP_GSURv2_MNL_rebuild_authorization_v1.md` | PRESENT |
-| 4 | `docs/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md` | PRESENT |
+| 4 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md` | PRESENT |
 | 5 | `docs/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md` | PRESENT |
-| 6 | `docs/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md` | PRESENT |
+| 6 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md` | PRESENT |
 | 7 | `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` | PRESENT |
 | 8 | `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3.md` | PRESENT |
 | 9 | `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md` | PRESENT |

@@ -8,7 +8,7 @@ builds precomputed objects, and reaches the score-extraction path.
 T3/T4/T5 inference require the actual converged pooled theta and run during
 the authorised estimation — NOT in this repair.
 
-Authorization: docs/JMP_pooled_P3a_estimation_execution_repair_authorization_v1.md §11 V7
+Authorization: docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_estimation_execution_repair_authorization_v1.md §11 V7
 """
 import sys
 import json

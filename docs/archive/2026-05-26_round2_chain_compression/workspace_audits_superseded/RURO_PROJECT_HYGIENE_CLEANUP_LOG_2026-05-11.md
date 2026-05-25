@@ -1,3 +1,7 @@
+> Archived on 2026-05-26 — pre-cleanup hygiene log from 2026-05-11, superseded by the Round-1 manifest which is now the canonical hygiene record for the 2026-05-25 docs/ reorganization.
+> Canonical hygiene record (kept active): `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-25.md`.
+> See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-26_round2.md`.
+
 # RURO Project Hygiene Cleanup Log
 
 Date: 2026-05-11  

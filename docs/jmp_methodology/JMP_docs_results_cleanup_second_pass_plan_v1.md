@@ -69,11 +69,11 @@ memo) and for the complete active authorization chain. All must remain in place.
 | # | File | Role |
 |---|------|------|
 | 1 | `docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md` | Active post-rebuild verdict |
-| 2 | `docs/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md` | Verdict correction record |
+| 2 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md` | Verdict correction record |
 | 3 | `docs/JMP_GSURv2_MNL_rebuild_authorization_v1.md` | Active rebuild authorization |
-| 4 | `docs/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md` | Authorization correction record |
+| 4 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md` | Authorization correction record |
 | 5 | `docs/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md` | Active GSURv2 construction verdict |
-| 6 | `docs/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md` | Verdict correction record |
+| 6 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md` | Verdict correction record |
 | 7 | `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` | Active P3a construction verdict |
 | 8 | `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md` | Canonical strategy memo |
 | 9 | `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md` | Canonical GSUR specification |
@@ -83,7 +83,7 @@ memo) and for the complete active authorization chain. All must remain in place.
 | 13 | `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md` | Canonical welfare decisions |
 | 14 | `docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md` | Canonical welfare scaffolding design |
 | 15 | `docs/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md` | Active construction authorization |
-| 16 | `docs/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md` | Active remediation authorization |
+| 16 | `docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md` | Active remediation authorization |
 | 17 | `docs/JMP_GSURv2_multi_year_extension_construction_report_v1.md` | Active construction report |
 | 18 | `docs/RURO_occ_M1_clean_verdict_v1.md` | Active M1-clean verdict (active JMP baseline) |
 | 19 | `docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` | Active M0c_b2 GSURv2 verdict |
@@ -128,7 +128,7 @@ consideration that makes a user decision preferable.
 
 | File | Category | Reason for conditional status |
 |------|----------|-------------------------------|
-| `docs/JMP_GSURv2_multi_year_extension_implementation_audit_addendum_v1.md` | ADDENDUM_INCORPORATED | Addendum specified remediation prerequisites (C1–C7 + external files). These prerequisites are now fully satisfied and documented in the remediation authorization chain. However, the addendum is cited in the remediation authorization v1 header as a reference document; some users may want it traceable |
+| `docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_implementation_audit_addendum_v1.md` | ADDENDUM_INCORPORATED | Addendum specified remediation prerequisites (C1–C7 + external files). These prerequisites are now fully satisfied and documented in the remediation authorization chain. However, the addendum is cited in the remediation authorization v1 header as a reference document; some users may want it traceable |
 | `docs/JMP_single_year_replication_2015_2017_command_plan_addendum_v1.md` | ADDENDUM_INCORPORATED | GSUR keying correction now incorporated into executed rebuild reports. However, it is still referenced as a companion in those reports; and command plan v2 + this addendum together represent the full authoritative command |
 | `docs/RURO_GSUR_O7_crosswalk_signoff_request_v1.md` | CORRECTION_INCORPORATED | The request was satisfied by `RURO_GSUR_O7_crosswalk_signoff_v1.md`. The request memo itself carries no decision content; it is pure process overhead. However, the active single-year O7 sign-off itself (`RURO_GSUR_O7_crosswalk_signoff_v1.md`) is uncertain — see §7 |
 | `docs/RURO_GSUR_external_acquisition_completion_v1.md` | CLEAR_SUPERSEDED | PARTIAL ACQUISITION SUCCESS verdict; O2 gap was resolved separately by `RURO_GSUR_O2_denominator_resolution_v1.md`; the full acquisition status is synthesised in `RURO_GSUR_StageA_authorization_v1.md`. Standalone provenance value only |
@@ -148,7 +148,7 @@ These files look like they might be candidates but are KEEP for substantive reas
 | `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3.md` | v3 and v3.1 are both referenced in downstream documents. v3.1 corrects two internal inconsistencies but does not supersede v3 as a historical record; together they form the complete revision trail from v2 |
 | `docs/JMP_GSURv2_multi_year_extension_readiness_reaudit_v1.md` | Active: this is the READY FOR CONSTRUCTION verdict that enabled the construction authorization. Required in the authorization chain |
 | `docs/JMP_GSURv2_multi_year_extension_design_memo_v1.md` | Active governing design memo for the multi-year extension; cited in every downstream authorization |
-| `docs/JMP_GSURv2_multi_year_extension_implementation_audit_v1.md` | Active: NOT READY verdict that established the remediation requirement; cited in remediation authorization |
+| `docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_implementation_audit_v1.md` | Active: NOT READY verdict that established the remediation requirement; cited in remediation authorization |
 | `docs/RURO_GSUR_O7_crosswalk_signoff_v1.md` | UNCERTAIN — see §7 |
 | `docs/JMP_GSURv2_O7_crosswalk_signoff_v1.md` | Active: multi-year O7 sign-off approving the three y2014/y2015/y2016 lookups and the `(drgn1, educ3, sex)` merge key. Required for the MNL rebuild authorization chain |
 | `docs/RURO_GSUR_StageA_authorization_v1.md` | Active: reconciles the contradiction between completion memo and open-decisions resolution; is the authoritative authorization source for Stage A. Required by construction authorization chain |

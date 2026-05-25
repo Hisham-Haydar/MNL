@@ -246,5 +246,5 @@ re-run authorization memo, which is the active next gate.
 
 Writing the Stage M1 P3a GSURv2 stacking re-run authorization memo, as
 stated in `docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md` (corrected by
-`docs/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md`). The second-pass
+`docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md`). The second-pass
 cleanup does not change this status.

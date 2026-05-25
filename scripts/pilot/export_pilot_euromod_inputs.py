@@ -2,7 +2,7 @@
 """
 NC pilot — Stage 5 adapter: export per-partner long-format EUROMOD inputs.
 
-Authorized by: docs/JMP_NC_pilot_stage5_euromod_amendment_v1.md (Stages 1-2
+Authorized by: docs/archive/2026-05-26_round2_chain_compression/strategy_v1_superseded/JMP_NC_pilot_stage5_euromod_amendment_v1.md (Stages 1-2
 of the Stage-5 §20 task). Pilot-only. Production runner not modified.
 
 Strategy B: project the pilot wide product parquet (and the production
@@ -273,7 +273,7 @@ def _write_drawsmeta(path: Path, side: str, n_rows: int) -> None:
         "schema_version": "nc_pilot_em_input_v1",
         "produced_by": "scripts/pilot/export_pilot_euromod_inputs.py",
         "produced_at_utc": datetime.now(timezone.utc).isoformat(),
-        "authorization": "docs/JMP_NC_pilot_stage5_euromod_amendment_v1.md",
+        "authorization": "docs/archive/2026-05-26_round2_chain_compression/strategy_v1_superseded/JMP_NC_pilot_stage5_euromod_amendment_v1.md",
         "partner_side": side,
         "household_type": "couples",
         "n_draws": N_DRAWS,

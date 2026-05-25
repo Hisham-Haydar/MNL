@@ -5,7 +5,7 @@
 **Date**: 2026-05-21–22  
 **Status**: Three-start re-estimation complete; all starts converged.  
 **Authorization**: `docs/JMP_pooled_P3a_corrected_region_reestimation_authorization_v1.md`  
-**Repair reference**: `docs/JMP_pooled_P3a_region_dummy_repair_report_v1.md`  
+**Repair reference**: `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_region_dummy_repair_report_v1.md`  
 **Post-repair diagnostic**: `Results/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v2.md`  
 **Pre-repair report**: `Results/JMP_pooled_P3a_estimation_report_v2.md` (pre-repair evidence only)
 
@@ -34,9 +34,9 @@ This re-estimation is authorized by:
 | Document | Role |
 |----------|------|
 | `docs/JMP_pooled_P3a_corrected_region_reestimation_authorization_v1.md` | Primary authorization for this run |
-| `docs/JMP_pooled_P3a_estimation_execution_authorization_v1.md` | Standing estimation authorization (carried forward) |
-| `docs/JMP_pooled_P3a_estimation_execution_authorization_correction_v1.md` | Sequencing and artifact corrections (carried forward) |
-| `docs/JMP_pooled_P3a_region_dummy_repair_report_v1.md` | Region repair evidence (R1/R2 applied, V1–V9 PASS) |
+| `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_estimation_execution_authorization_v1.md` | Standing estimation authorization (carried forward) |
+| `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_pooled_P3a_estimation_execution_authorization_correction_v1.md` | Sequencing and artifact corrections (carried forward) |
+| `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_region_dummy_repair_report_v1.md` | Region repair evidence (R1/R2 applied, V1–V9 PASS) |
 | `Results/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v2.md` | Post-repair diagnostic confirming identifiability |
 
 ---

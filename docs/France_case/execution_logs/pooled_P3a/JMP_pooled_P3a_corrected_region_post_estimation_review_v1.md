@@ -14,10 +14,10 @@ Reference documents:
   corrected estimation report under review)
 - `docs/JMP_pooled_P3a_corrected_region_reestimation_authorization_v1.md`
   (the authorization the run executed)
-- `docs/JMP_pooled_P3a_region_dummy_repair_report_v1.md` and
+- `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_region_dummy_repair_report_v1.md` and
   `Results/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v2.md` (the
   repair and its post-repair diagnostic)
-- `docs/JMP_pooled_P3a_post_estimation_review_v1.md` (the prior review of
+- `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_post_estimation_review_v1.md` (the prior review of
   the pre-repair run; the S1–S11 criteria are carried forward unchanged)
 - `Results/JMP_pooled_P3a_estimation_report_v2.md` (pre-repair evidence
   only)

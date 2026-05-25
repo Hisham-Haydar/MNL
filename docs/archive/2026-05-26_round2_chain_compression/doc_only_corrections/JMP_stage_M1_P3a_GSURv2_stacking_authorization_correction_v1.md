@@ -1,3 +1,7 @@
+> Archived on 2026-05-26 as a documentation-only formatting correction whose substance is reabsorbed.
+> Base file (kept active): `docs/France_case/execution_logs/stage_M1/JMP_stage_M1_P3a_GSURv2_stacking_authorization_v1.md`.
+> See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-26_round2.md`.
+
 # JMP Stage M1 P3a GSURv2 Stacking Authorization — Correction v1
 
 *France 2014–2015–2016 | v1 | 2026-05-21*

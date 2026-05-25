@@ -38,7 +38,7 @@ Work locally in my RURO/MNL codebase.
 Read:
 
 - `Results/RURO_occ_M0a_simplification_plan_v1.md`
-- `docs/RURO_occ_M0a_implementation_report_v1.md`
+- `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/RURO_occ_M0a_implementation_report_v1.md`
 - `scripts/enhanced/estimation_spec_ruro_occ_M0a.yaml`
 - `scripts/enhanced/estimation_spec_ruro_occ_M0.yaml`
 - `scripts/enhanced/estimation_spec_parser.py`

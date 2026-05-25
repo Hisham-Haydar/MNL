@@ -30,13 +30,13 @@ The rebuild was executed under:
 
 - Authorization memo:
   `docs/JMP_GSURv2_MNL_rebuild_authorization_v1.md` (corrected
-  by `docs/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md`)
+  by `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md`)
 - O7 crosswalk sign-off:
   `docs/JMP_GSURv2_O7_crosswalk_signoff_v1.md`
 - Construction verdict:
   `docs/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md`
   (corrected by
-  `docs/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md`)
+  `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md`)
 - Validation report:
   `Results/JMP_GSURv2_multi_year_extension_validation_report_v1.md`
 
@@ -56,7 +56,7 @@ The following files were inspected before and during the rebuild.
 
 *Authorization and reference documents:*
 - `docs/JMP_GSURv2_MNL_rebuild_authorization_v1.md`
-- `docs/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md`
+- `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md`
 - `docs/JMP_GSURv2_O7_crosswalk_signoff_v1.md`
 - `docs/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md`
 - `Results/JMP_GSURv2_multi_year_extension_validation_report_v1.md`

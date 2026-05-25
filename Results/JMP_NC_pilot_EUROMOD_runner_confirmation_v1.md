@@ -615,7 +615,7 @@ the next-slice document must call out.
 
 **Conditional yes.** Stage 5 authorization is READY contingent on
 producing a narrow next-slice amendment (suggested name:
-`docs/JMP_NC_pilot_stage5_euromod_amendment_v1.md`) that pins down:
+`docs/archive/2026-05-26_round2_chain_compression/strategy_v1_superseded/JMP_NC_pilot_stage5_euromod_amendment_v1.md`) that pins down:
 
 1. The pilot adapter design (per §8) — including explicit
    `is_decider=1` flag on every adapter output row.
@@ -670,7 +670,7 @@ the Stage 5 surface and warrants its own focused review.
 
 ## 20. Immediate next task
 
-**Author** `docs/JMP_NC_pilot_stage5_euromod_amendment_v1.md` — a
+**Author** `docs/archive/2026-05-26_round2_chain_compression/strategy_v1_superseded/JMP_NC_pilot_stage5_euromod_amendment_v1.md` — a
 narrow next-slice authorization document covering the §18 items 1–7.
 Following the cadence established by the Stage 1–4 amendment, that
 document:

@@ -11,7 +11,7 @@
 # (expected_row_counts, overlap counts, identity thresholds all keyed on p3a).
 #
 # Authorization: docs/JMP_stage_M1_P3a_GSURv2_stacking_authorization_v1.md
-# Correction:    docs/JMP_stage_M1_P3a_GSURv2_stacking_authorization_correction_v1.md
+# Correction:    docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_stage_M1_P3a_GSURv2_stacking_authorization_correction_v1.md
 #
 # Usage:
 #   python scripts/multi_year/<script>.py \

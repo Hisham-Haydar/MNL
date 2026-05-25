@@ -1,3 +1,7 @@
+> Archived on 2026-05-26 — explicitly superseded by `stage5_strategy_amendment_v2` (Strategy C′: blockwise joint-product EUROMOD with both partners as deciders), which replaces Strategy B (per-partner with off-axis non-decider) after the HE7 yem-identity assertion halt.
+> Replacement (kept active): `docs/France_case/execution_logs/NC_pilot/JMP_NC_pilot_stage5_strategy_amendment_v2.md`.
+> See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-26_round2.md`.
+
 # JMP NC Pilot — Stage 5 EUROMOD Scope Amendment v1
 
 *France RURO multi-year extension | v1 | 2026-05-22*

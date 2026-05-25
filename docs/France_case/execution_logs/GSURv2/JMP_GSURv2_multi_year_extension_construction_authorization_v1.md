@@ -15,7 +15,7 @@ canonical promotion.
 Reference documents:
 - `docs/JMP_GSURv2_multi_year_extension_readiness_reaudit_v1.md`
   (the re-audit returning READY FOR GSURv2 CONSTRUCTION)
-- `docs/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md`
+- `docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md`
   (the remediation authorization, now satisfied)
 - `docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` (the y2016
   provenance-lock procedure, with correction

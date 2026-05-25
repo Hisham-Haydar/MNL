@@ -2,7 +2,7 @@
 
 *France 2014–2015–2016 | v1 | 2026-05-20*
 
-Authorization reference: `docs/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md` §14 V4
+Authorization reference: `docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md` §14 V4
 
 ---
 

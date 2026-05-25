@@ -13,17 +13,17 @@ re-estimation, the immediate next gate is a fresh strict post-estimation
 review / SA2-readiness verdict — not the SA2 verdict itself.
 
 Reference documents:
-- `docs/JMP_pooled_P3a_region_dummy_repair_report_v1.md` (the completed
+- `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_region_dummy_repair_report_v1.md` (the completed
   region repair — R1/R2 applied, V1–V9 PASS, defective split archived)
 - `Results/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v2.md` (the
   post-repair diagnostic — cause-B defect resolved; region dummies
   wired, full-rank, gradient-relevant)
-- `docs/JMP_pooled_P3a_post_estimation_review_v1.md` (the prior strict
+- `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_post_estimation_review_v1.md` (the prior strict
   review that withheld SA2 on region non-identification)
 - `Results/JMP_pooled_P3a_estimation_report_v2.md` (the previous,
   pre-repair pooled estimation — now pre-repair evidence only)
-- `docs/JMP_pooled_P3a_estimation_execution_authorization_v1.md` and
-  `docs/JMP_pooled_P3a_estimation_execution_authorization_correction_v1.md`
+- `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_estimation_execution_authorization_v1.md` and
+  `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_pooled_P3a_estimation_execution_authorization_correction_v1.md`
   (the standing estimation authorization and its sequencing/artifact
   corrections, carried forward unchanged in substance)
 - `Results/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v1.md` (the

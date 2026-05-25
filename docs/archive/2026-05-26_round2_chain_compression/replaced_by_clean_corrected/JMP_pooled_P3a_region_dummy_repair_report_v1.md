@@ -1,3 +1,7 @@
+> Archived on 2026-05-26 — report of the region-dummy repair; absorbed into the corrected-region chain.
+> Live chain (kept active): `docs/France_case/execution_logs/pooled_P3a/JMP_pooled_P3a_corrected_region_reestimation_authorization_v1.md`.
+> See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-26_round2.md`.
+
 # JMP Pooled P3a — Region-Dummy Repair Report v1
 
 *France FR_2015 / FR_2016 / FR_2017 | v1 | 2026-05-21*

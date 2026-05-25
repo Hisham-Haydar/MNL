@@ -3,7 +3,7 @@
 *France RURO multi-year extension | v2 | 2026-05-22*
 
 **Document category: strategy amendment to
-`docs/JMP_NC_pilot_stage5_euromod_amendment_v1.md`.** Amendment v1 halted
+`docs/archive/2026-05-26_round2_chain_compression/strategy_v1_superseded/JMP_NC_pilot_stage5_euromod_amendment_v1.md`.** Amendment v1 halted
 cleanly at HE7 (the runner's `yem = yem00 + yemxp` identity assertion) during
 the male pass, before EUROMOD `system.run`. This v2 replaces the failed
 ingestion strategy (Strategy B, per-partner with the off-axis partner as a
@@ -430,7 +430,7 @@ If it fails, HALT and report.
 
 Read first:
 - docs/JMP_NC_pilot_stage5_strategy_amendment_v2.md
-- docs/JMP_NC_pilot_stage5_euromod_amendment_v1.md
+- docs/archive/2026-05-26_round2_chain_compression/strategy_v1_superseded/JMP_NC_pilot_stage5_euromod_amendment_v1.md
 - Results/JMP_NC_pilot_stage5_euromod_build_report_v1.md (the HE7 halt)
 - scripts/enhanced/enh_RURO_euromod.py (read-only; note the yem identity at
   lines ~738-778 recomputes earnings for DECIDERS only)

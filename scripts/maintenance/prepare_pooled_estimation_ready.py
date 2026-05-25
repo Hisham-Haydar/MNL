@@ -19,7 +19,7 @@ Repairs resolved
 
 Authorization
 -------------
-  docs/JMP_pooled_P3a_estimation_execution_repair_authorization_v1.md
+  docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_estimation_execution_repair_authorization_v1.md
 
 NOT authorized by this script
 ------------------------------
@@ -238,7 +238,7 @@ def build_mnlmeta(df_singles: pd.DataFrame, df_couples: pd.DataFrame) -> dict:
     meta = {
         "source": "fr_p3a_gsurv2_estimation_ready (split from fr_p3a_gsurv2_harmonised.parquet)",
         "produced_by": "scripts/maintenance/prepare_pooled_estimation_ready.py",
-        "authorization": "docs/JMP_pooled_P3a_estimation_execution_repair_authorization_v1.md",
+        "authorization": "docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_estimation_execution_repair_authorization_v1.md",
         "n_draws": 100,
         "normalization": {
             "singles": {
@@ -273,7 +273,7 @@ def build_mnlmeta(df_singles: pd.DataFrame, df_couples: pd.DataFrame) -> dict:
         },
         "region_dummy_repair": {
             "repair": "R1",
-            "authorization": "docs/JMP_pooled_P3a_region_dummy_repair_authorization_v1.md",
+            "authorization": "docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_region_dummy_repair_authorization_v1.md",
             "description": (
                 "reg_nuts1_2..8 derived from drgn1 for couples split when original columns were all-NaN. "
                 "Diagnostic v1 classified cause as B/DEGENERATE_OR_MISWIRED_COLUMNS."

@@ -31,7 +31,7 @@ Governing evidence chain:
 - `docs/RURO_occ_M1_clean_verdict_v1.md` — M1-clean is the active
   JMP structural specification; pooled specification must be grounded
   in M1-clean parameter structure.
-- `docs/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_correction_v1.md`
+- `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_correction_v1.md`
   and `docs/JMP_stage_M1_V9_validation_patch_note_v1.md` — minor
   documentation and validation-spec items resolved; no impact on
   construction input validity.

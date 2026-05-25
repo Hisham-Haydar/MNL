@@ -6,7 +6,7 @@
 — verdict: HALT — DO NOT RUN SOLVER (three blockers: PF6/PF7, PF8, PF9)
 
 **This preflight:** post-repair re-run against the repaired state per
-`docs/JMP_pooled_P3a_estimation_execution_repair_authorization_v1.md`.
+`docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_estimation_execution_repair_authorization_v1.md`.
 
 ---
 
@@ -16,7 +16,7 @@
 
 All three v1 blockers are resolved. All preflight checks pass. The pooled
 estimation may be run under the existing execution authorization
-(`docs/JMP_pooled_P3a_estimation_execution_authorization_v1.md` and its correction),
+(`docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_estimation_execution_authorization_v1.md` and its correction),
 against the estimation-ready split-stem base
 `Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready`.
 

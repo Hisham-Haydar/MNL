@@ -125,10 +125,42 @@ Listed in the cross-reference fixes section below.
 
 ## G. Cross-reference fixes applied (Phase D)
 
-To be filled in Phase D commit (next).
+A path-mapping script scanned `.md`, `.py`, `.yaml`, `.yml` files across the repo (skipping `.git`, `.venv`, `_gams_work`, `docs/archive/2026-05-25_docs_supersession/**`, `Results/archive/**`, output sidecar YAMLs) and rewrote any path reference to one of the 24 archived files. **44 files patched, ~80 string substitutions** including both pre-Round-1 path forms (`docs/<name>.md`) and post-Round-1 forms (`docs/France_case/execution_logs/<bucket>/<name>.md`).
 
-| File edited | Old path string | New path string | Commit SHA |
-|---|---|---|---|
+The supersession notes added to each archived file in phases B1–B5 also land in this commit — git's rename-detection treated those B-phase commits as pure renames and silently dropped the prepended notes (the diff threshold was tripped by the 4-line prepend on long files); the notes were preserved in the working tree and are restored to HEAD in this Phase D commit.
+
+| Patched location | Refs rewritten | Notes |
+|---|---:|---|
+| Repo root `README.md` | 2 | external-storage hygiene audit |
+| `docs/PIPELINE_ENTRYPOINTS.md` | 1 | external-storage hygiene audit |
+| `docs/mirrored/root/README.md` | 2 | external-storage hygiene audit |
+| `docs/package/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md` | 1 | hygiene cleanup log |
+| `docs/package/RURO_PROJECT_MEMORY_MAP.md` | 2 | external-storage hygiene audit |
+| `docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md` | 3 | external-storage hygiene audit |
+| `docs/jmp_methodology/JMP_docs_results_cleanup_plan_v1.md` | 4 | three GSURv2 corrections |
+| `docs/jmp_methodology/JMP_docs_results_cleanup_second_pass_plan_v1.md` | 6 | corrections + audit triplet |
+| `docs/France_case/execution_logs/GSURv2/*_v1.md` (5 active siblings) | 5 | inter-active-doc refs |
+| `docs/France_case/execution_logs/stage_M1/*_v1.md` (2 active files) | 5 | inter-active-doc refs |
+| `docs/France_case/execution_logs/pooled_P3a/*_v1.md` (2 active files) | 5 | corrected-region chain refs to archived predecessors |
+| `docs/France_case/execution_logs/NC_pilot/JMP_NC_pilot_stage5_strategy_amendment_v2.md` | 2 | refs to its archived v1 predecessor |
+| `Results/*.md` (10 files) | ~25 | preflight, run, build, cleanup reports |
+| `scripts/maintenance/*.py` (3 files) | 5 | docstring path references |
+| `scripts/enhanced/enh_prepare_FR_gsur_v2.py` | 1 | remediation auth |
+| `scripts/enhanced/specifications/*.yaml` (2 files) | 2 | spec comment refs |
+| `scripts/pilot/export_pilot_euromod_inputs.py` | 2 | stage5 amendment v1 |
+| `config/multi_year/fr_p3a_gsurv2_stage_m1.yaml` | 1 | stacking authorization correction |
+| `Prompts/RURO_ruro_occ_M0a_clean_*.md` | 1 | M0a implementation report |
+| `docs/archive/2026-05-26_round2_chain_compression/**` (24 files) | ~30 | inter-archive refs rewritten + supersession notes restored |
+
+**Inert references intentionally not patched:**
+
+- `docs/archive/2026-05-25_docs_supersession/**` — pre-existing Round-1 archive, sealed.
+- `Results/archive/2026-05-20_post_gsurv2_mnl_rebuild/**` — sealed historical material from a prior cleanup event.
+- `outputs/estimates/**/*specification_used.yaml` — frozen run metadata that records the spec text used at that run's time.
+- `Results/JMP_docs_results_cleanup_*manifest_v1.csv` — Round-1 cleanup CSVs that list files that existed at Round-1 time; historical fact.
+- `RURO_MNL_project_files_structure.md` (root) — auto-generated directory snapshot from 2026-05-12; historical fact.
+
+Commit: (Phase D, this commit).
 
 ## H. Deferred follow-ups
 

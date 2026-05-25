@@ -1,9 +1,9 @@
 """
 Pooled P3a three-start estimation orchestrator.
 
-Authorisation: docs/JMP_pooled_P3a_estimation_execution_authorization_v1.md
-               docs/JMP_pooled_P3a_estimation_execution_authorization_correction_v1.md
-               docs/JMP_pooled_P3a_estimation_execution_repair_clearance_v1.md
+Authorisation: docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_estimation_execution_authorization_v1.md
+               docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_pooled_P3a_estimation_execution_authorization_correction_v1.md
+               docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_estimation_execution_repair_clearance_v1.md
 
 Runs three starts sequentially, then post-estimation cluster-robust SE
 after each converged start.  Writes per-start results to a common output

@@ -65,7 +65,7 @@ Important orientation documents:
 - [docs/package/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md](docs/package/RURO_PROJECT_HYGIENE_CLEANUP_RECOMMENDATIONS.md): cleanup policy and project hygiene decisions.
 - [docs/package/RURO_PROJECT_MEMORY_MAP.md](docs/package/RURO_PROJECT_MEMORY_MAP.md): quick map of what was built and where it is documented.
 - [docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md](docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md): practical return guide for data roots, commands, results, and cleanup.
-- [docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md](docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md): audit of `U:\EUROMOD-STORAGE`, `Z:\Hisham\EUROMOD-STORAGE`, and storage cleanup candidates.
+- [docs/archive/2026-05-26_round2_chain_compression/workspace_audits_superseded/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md](docs/archive/2026-05-26_round2_chain_compression/workspace_audits_superseded/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md): audit of `U:\EUROMOD-STORAGE`, `Z:\Hisham\EUROMOD-STORAGE`, and storage cleanup candidates.
 - [docs/ROADMAP.md](docs/ROADMAP.md): optional future work.
 
 Active code references:

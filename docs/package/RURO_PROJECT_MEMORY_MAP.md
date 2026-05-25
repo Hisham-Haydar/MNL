@@ -30,7 +30,7 @@ The biggest documentation risk is not absence. It is fragmentation. Some details
 | Index of non-`docs/` files mirrored into `docs/` | `docs/MIRRORED_DOCUMENTS_INDEX.md` |
 | Active command entrypoints | `docs/PIPELINE_ENTRYPOINTS.md` |
 | Practical return guide | `docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md` |
-| External storage audit and cleanup plan | `docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md` |
+| External storage audit and cleanup plan | `docs/archive/2026-05-26_round2_chain_compression/workspace_audits_superseded/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md` |
 | Job model vs continuous RURO command split | `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md` |
 | Full command inventory | `docs/estimation/RURO_ENHANCED_PIPELINE_COMMANDS.md` |
 | Current result baselines | `docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md` |
@@ -333,7 +333,7 @@ Read in this order:
 1. `README.md`
 2. `docs/package/RURO_PROJECT_MEMORY_MAP.md`
 3. `docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md`
-4. `docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
+4. `docs/archive/2026-05-26_round2_chain_compression/workspace_audits_superseded/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
 5. `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
 6. `docs/methods/RURO_JOB_MODEL_GMM_METHOD_NOTE.md`
 7. `docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md`

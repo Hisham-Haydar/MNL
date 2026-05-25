@@ -1,3 +1,7 @@
+> Archived on 2026-05-26 — supplements the original audit which is itself superseded by the readiness re-audit.
+> Replacement (kept active): `docs/France_case/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_readiness_reaudit_v1.md`.
+> See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-26_round2.md`.
+
 # JMP GSURv2 Multi-Year Extension — Implementation Audit Addendum v1
 
 **Document:** `docs/JMP_GSURv2_multi_year_extension_implementation_audit_addendum_v1.md`

@@ -349,7 +349,7 @@ Conditions for C1–C7 implementation to proceed:
 The next remediation task is C1–C7 script parameterisation plus the config
 update and the y2016 provenance lock plan, per §§8, 11 A1–A5, and 15
 (steps 3–6) of
-`docs/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md`.
+`docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md`.
 
 Specifically, the next Claude Code task should execute:
 

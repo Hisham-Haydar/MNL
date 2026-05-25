@@ -1,3 +1,8 @@
+> Archived on 2026-05-26 — reabsorbed into the design memo correction note.
+> Base file (kept active): `docs/France_case/execution_logs/pooled_P3a/JMP_pooled_P3a_estimation_design_memo_v1.md`.
+> Companion correction (also archived alongside): `..._estimation_design_memo_correction_v1.md`.
+> See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-26_round2.md`.
+
 # JMP Pooled P3a Estimation Design Memo — Review Addendum v1
 
 Date: 2026-05-21

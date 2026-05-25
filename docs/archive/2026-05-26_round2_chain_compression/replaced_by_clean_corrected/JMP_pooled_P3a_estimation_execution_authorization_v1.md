@@ -1,3 +1,7 @@
+> Archived on 2026-05-26 — superseded by the corrected-region re-estimation authorization after region-dummy non-identification was diagnosed and repaired.
+> Replacement (kept active): `docs/France_case/execution_logs/pooled_P3a/JMP_pooled_P3a_corrected_region_reestimation_authorization_v1.md`.
+> See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-26_round2.md`.
+
 # JMP Pooled P3a Estimation — Execution Authorization v1
 
 Date: 2026-05-21

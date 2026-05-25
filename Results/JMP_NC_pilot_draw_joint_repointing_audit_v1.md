@@ -556,7 +556,7 @@ run bounded read-only parquet checks; both were deleted after use.
 (2016 couples only, 2,319,300 alternatives).** Specifically:
 
 1. Author a separate authorization document — call it
-   `docs/JMP_NC_pilot_stage5_euromod_amendment_v1.md` — that:
+   `docs/archive/2026-05-26_round2_chain_compression/strategy_v1_superseded/JMP_NC_pilot_stage5_euromod_amendment_v1.md` — that:
    - confirms EUROMOD runner location, invocation, output schema, and
      wall-time expectation;
    - specifies the per-partner long-format export from the pilot

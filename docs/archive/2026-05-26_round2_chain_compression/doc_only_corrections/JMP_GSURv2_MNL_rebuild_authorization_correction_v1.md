@@ -1,3 +1,7 @@
+> Archived on 2026-05-26 as a documentation-only correction whose substance is reabsorbed.
+> Base file (kept active): `docs/France_case/execution_logs/GSURv2/JMP_GSURv2_MNL_rebuild_authorization_v1.md`.
+> See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-26_round2.md`.
+
 # JMP GSURv2 MNL-Parquet Rebuild Authorization — Correction v1
 
 *France 2014–2015–2016 | v1 | 2026-05-20*

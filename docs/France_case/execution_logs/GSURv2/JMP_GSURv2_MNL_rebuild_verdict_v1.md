@@ -20,7 +20,7 @@ Primary evidence:
 Governing documents:
 - `docs/JMP_GSURv2_MNL_rebuild_authorization_v1.md` (the rebuild
   authorization, corrected by
-  `docs/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md`)
+  `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md`)
 - `docs/JMP_GSURv2_O7_crosswalk_signoff_v1.md` (the O7 sign-off)
 - `docs/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md`
   (the GSURv2 lookup construction PASS)

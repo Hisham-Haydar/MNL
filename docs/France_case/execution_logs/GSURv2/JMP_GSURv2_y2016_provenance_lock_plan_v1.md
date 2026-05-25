@@ -3,7 +3,7 @@ w# JMP GSURv2 y2016 Provenance Lock Plan v1
 *France 2016 | v1 | 2026-05-20*
 
 Governing authorization:
-`docs/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md` §9
+`docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md` §9
 (as corrected by
 `docs/JMP_GSURv2_multi_year_extension_remediation_authorization_correction_v1.md`)
 

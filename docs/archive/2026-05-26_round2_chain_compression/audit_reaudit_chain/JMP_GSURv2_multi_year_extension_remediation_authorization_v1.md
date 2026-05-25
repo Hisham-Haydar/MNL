@@ -1,3 +1,7 @@
+> Archived on 2026-05-26 — remediation completed; readiness re-audit returned READY, so this authorization is historical.
+> Replacement (kept active): `docs/France_case/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_readiness_reaudit_v1.md` (the READY verdict that closes the chain).
+> See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-26_round2.md`.
+
 # JMP GSURv2 Multi-Year Extension — Remediation Authorization v1
 
 Date: 2026-05-20

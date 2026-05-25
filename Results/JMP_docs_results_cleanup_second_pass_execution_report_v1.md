@@ -69,7 +69,7 @@ user decisions or requiring further confirmation before archiving:
 
 | File | Reason deferred |
 |------|-----------------|
-| `docs/JMP_GSURv2_multi_year_extension_implementation_audit_addendum_v1.md` | Conditional: cited in remediation authorization header; decision deferred |
+| `docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_implementation_audit_addendum_v1.md` | Conditional: cited in remediation authorization header; decision deferred |
 | `docs/JMP_single_year_replication_2015_2017_command_plan_addendum_v1.md` | Conditional: companion to command plan v2; decision deferred |
 | `docs/RURO_GSUR_O7_crosswalk_signoff_request_v1.md` | Conditional: process record; decision deferred |
 | `docs/RURO_GSUR_external_acquisition_completion_v1.md` | Conditional: superseded by Stage A authorization; decision deferred |
@@ -98,11 +98,11 @@ and after the archive moves. None were touched.
 | # | File | Status |
 |---|------|--------|
 | 1 | `docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md` | PRESENT |
-| 2 | `docs/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md` | PRESENT |
+| 2 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md` | PRESENT |
 | 3 | `docs/JMP_GSURv2_MNL_rebuild_authorization_v1.md` | PRESENT |
-| 4 | `docs/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md` | PRESENT |
+| 4 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md` | PRESENT |
 | 5 | `docs/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md` | PRESENT |
-| 6 | `docs/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md` | PRESENT |
+| 6 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md` | PRESENT |
 | 7 | `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` | PRESENT |
 | 8 | `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md` | PRESENT |
 | 9 | `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md` | PRESENT |
@@ -112,7 +112,7 @@ and after the archive moves. None were touched.
 | 13 | `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md` | PRESENT |
 | 14 | `docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md` | PRESENT |
 | 15 | `docs/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md` | PRESENT |
-| 16 | `docs/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md` | PRESENT |
+| 16 | `docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md` | PRESENT |
 | 17 | `docs/JMP_GSURv2_multi_year_extension_construction_report_v1.md` | PRESENT |
 | 18 | `docs/RURO_occ_M1_clean_verdict_v1.md` | PRESENT |
 | 19 | `docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` | PRESENT |
@@ -196,7 +196,7 @@ stacking, estimation, or welfare task was run.
 The immediate next authorized task is to write the Stage M1 P3a GSURv2
 stacking re-run authorization memo, as stated in
 `docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md` (corrected by
-`docs/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md`). This cleanup
+`docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md`). This cleanup
 execution does not change that status.
 
 **Pooled estimation is NOT authorized.** Separately gated.

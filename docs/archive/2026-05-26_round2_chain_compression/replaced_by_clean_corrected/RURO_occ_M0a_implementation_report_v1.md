@@ -1,3 +1,7 @@
+> Archived on 2026-05-26 — superseded by the M0a-clean rebuild (true renamed shared parameter `theta_c_singles` replaces the M0a equality-constraint pool).
+> Replacement (kept active): `docs/France_case/execution_logs/occ_M0a/RURO_occ_M0a_clean_implementation_report_v1.md`.
+> See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-26_round2.md`.
+
 # RURO occupation-opportunity M0a — Implementation Report v1
 
 Date: 2026-05-13

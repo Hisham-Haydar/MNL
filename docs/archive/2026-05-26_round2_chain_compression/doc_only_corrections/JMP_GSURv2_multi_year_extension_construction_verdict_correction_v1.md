@@ -1,3 +1,7 @@
+> Archived on 2026-05-26 as a documentation-only correction whose substance is reabsorbed.
+> Base files (kept active): `docs/France_case/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md` and `..._construction_report_v1.md`.
+> See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-26_round2.md`.
+
 # JMP GSURv2 Multi-Year Extension — Construction Verdict Correction v1
 
 *France 2014–2015–2016 | v1 | 2026-05-20*

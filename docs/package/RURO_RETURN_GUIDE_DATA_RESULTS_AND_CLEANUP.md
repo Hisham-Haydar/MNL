@@ -10,7 +10,7 @@ Read these first:
 
 1. `README.md`
 2. `docs/package/RURO_PROJECT_MEMORY_MAP.md`
-3. `docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
+3. `docs/archive/2026-05-26_round2_chain_compression/workspace_audits_superseded/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
 4. `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
 5. `docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md`
 
@@ -265,7 +265,7 @@ Do not delete first. Classify first.
 Use:
 
 ```text
-docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md
+docs/archive/2026-05-26_round2_chain_compression/workspace_audits_superseded/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md
 ```
 
 ## Active Keep List
@@ -462,7 +462,7 @@ Use this order:
 
 1. `docs/package/RURO_PROJECT_MEMORY_MAP.md`
 2. `docs/package/RURO_RETURN_GUIDE_DATA_RESULTS_AND_CLEANUP.md`
-3. `docs/France_case/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
+3. `docs/archive/2026-05-26_round2_chain_compression/workspace_audits_superseded/RURO_EXTERNAL_STORAGE_HYGIENE_AUDIT_2026-05-12.md`
 4. `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
 5. `scripts/Job_model/Commands_job.txt`
 6. `docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md`

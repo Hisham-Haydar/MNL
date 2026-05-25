@@ -1,3 +1,8 @@
+> Archived on 2026-05-26 as a documentation-only correction whose substance is reabsorbed.
+> Base file (also archived alongside as part of pre-repair pooled chain): `docs/France_case/execution_logs/pooled_P3a/JMP_pooled_P3a_estimation_execution_authorization_v1.md`.
+> Live execution authorization (kept active): `docs/France_case/execution_logs/pooled_P3a/JMP_pooled_P3a_corrected_region_reestimation_authorization_v1.md`.
+> See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-26_round2.md`.
+
 # JMP Pooled P3a Estimation Execution Authorization — Correction v1
 
 *France FR_2015 / FR_2016 / FR_2017 | v1 | 2026-05-21*

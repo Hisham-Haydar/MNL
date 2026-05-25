@@ -5,7 +5,7 @@
 Execution under review: Stage M1 P3a GSURv2 pooled stacking re-run,
 executed 2026-05-21 under
 `docs/JMP_stage_M1_P3a_GSURv2_stacking_authorization_v1.md` (corrected
-by `docs/JMP_stage_M1_P3a_GSURv2_stacking_authorization_correction_v1.md`).
+by `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_stage_M1_P3a_GSURv2_stacking_authorization_correction_v1.md`).
 
 Primary evidence:
 - `Results/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_v1.md`
@@ -51,7 +51,7 @@ Two minor caveats are documented:
 "France 2014–2015–2016" while the actual survey years are FR_2015,
 FR_2016, and FR_2017 (opportunity years y2014, y2015, y2016). This is a
 documentation-only issue; no data, parquet, or sidecar is affected. See
-§3 and `docs/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_correction_v1.md`.
+§3 and `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_correction_v1.md`.
 
 **(C2) V9 validation-script patch.** The V9 check required a narrow
 exemption for four known upstream sampling-control columns
@@ -134,7 +134,7 @@ config, and the validation manifests all correctly record the survey
 and opportunity years.
 
 The issue is recorded in
-`docs/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_correction_v1.md`.
+`docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_correction_v1.md`.
 No re-run, no data modification, and no re-validation is required as a
 result of this caveat.
 
@@ -343,7 +343,7 @@ is drafted.
 
 **C1 — Report-heading correction (documentation only):**
 The execution report subtitle "France 2014–2015–2016" should be noted in
-`docs/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_correction_v1.md`
+`docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_correction_v1.md`
 (already created). No re-run required; the report body is correct.
 
 **C2 — V9 patch note (validation-spec record):**

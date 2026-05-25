@@ -18,7 +18,7 @@ Reference documents:
 - `docs/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md`
   (the construction verdict classifying the lookup construction
   PASS, with correction
-  `docs/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md`)
+  `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md`)
 - `Results/JMP_GSURv2_multi_year_extension_validation_report_v1.md`
   (the validation report corroborating the construction PASS)
 - `docs/JMP_GSURv2_multi_year_extension_construction_report_v1.md`

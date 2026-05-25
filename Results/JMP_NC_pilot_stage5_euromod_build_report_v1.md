@@ -4,7 +4,7 @@
 
 Document class: pilot build report. Records execution of NC pilot
 Stage 5 (EUROMOD) under
-`docs/JMP_NC_pilot_stage5_euromod_amendment_v1.md`. **HE7 fired on the
+`docs/archive/2026-05-26_round2_chain_compression/strategy_v1_superseded/JMP_NC_pilot_stage5_euromod_amendment_v1.md`. **HE7 fired on the
 male pass; build halted; female pass not started.** Per amendment §16:
 "Halt and report; do not work around." No EUROMOD output was
 written for the female pass. No GSUR merge; no post-EUROMOD merge to
@@ -57,7 +57,7 @@ work-around, not an HE7 bypass. The fix surface is named in §13.
 ## 2. Authorization scope
 
 Stage 5 (EUROMOD) only, per
-`docs/JMP_NC_pilot_stage5_euromod_amendment_v1.md`. Strategy B
+`docs/archive/2026-05-26_round2_chain_compression/strategy_v1_superseded/JMP_NC_pilot_stage5_euromod_amendment_v1.md`. Strategy B
 (per-partner long-format export). Pilot-only paths. Hard stop before
 the post-EUROMOD merge. None of the not-authorized actions
 (GSUR / precompute / estimation / welfare / SA2 / promotion /
@@ -448,6 +448,6 @@ The post-EUROMOD merge slice (separate document) remains the gate
 ---
 
 *Status: NC pilot Stage 5 build report v1, produced 2026-05-22.
-Authorization: `docs/JMP_NC_pilot_stage5_euromod_amendment_v1.md`.
+Authorization: `docs/archive/2026-05-26_round2_chain_compression/strategy_v1_superseded/JMP_NC_pilot_stage5_euromod_amendment_v1.md`.
 HALTED at HE7 on the male pass. M1-clean 2016 active. Frozen pooled
 P3a spec and post-estimation track unaffected.*

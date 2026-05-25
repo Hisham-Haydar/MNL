@@ -5,7 +5,7 @@
 Interpreter used for all static checks: `.venv\Scripts\python.exe`
 (`U:\Desktop\Nizam_Hisham\MNL\.venv\Scripts\python.exe`)
 
-Reference: `docs/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md`
+Reference: `docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md`
 §14 (validation checks V1–V7)
 
 ---
@@ -29,7 +29,7 @@ authorized by this re-audit.
 ## 2. What changed since the failed audit
 
 The original implementation audit
-(`docs/JMP_GSURv2_multi_year_extension_implementation_audit_v1.md`)
+(`docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_implementation_audit_v1.md`)
 returned **NOT READY — CODE CHANGES REQUIRED** with eight failing or
 flagged conditions. All eight have been resolved by the remediation work
 committed between 2026-05-20 and 2026-05-20.

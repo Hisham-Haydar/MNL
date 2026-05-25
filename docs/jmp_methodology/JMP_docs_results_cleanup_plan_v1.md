@@ -42,11 +42,11 @@ confirmed present before any archiving proceeded.
 | # | File | Confirmed present |
 |---|------|-------------------|
 | 1 | `docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md` | YES |
-| 2 | `docs/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md` | YES |
+| 2 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md` | YES |
 | 3 | `docs/JMP_GSURv2_MNL_rebuild_authorization_v1.md` | YES |
-| 4 | `docs/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md` | YES |
+| 4 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md` | YES |
 | 5 | `docs/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md` | YES |
-| 6 | `docs/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md` | YES |
+| 6 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md` | YES |
 | 7 | `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` | YES |
 | 8 | `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3.md` | YES |
 | 9 | `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md` | YES |
@@ -172,7 +172,7 @@ After archiving:
 
 The Stage M1 P3a GSURv2 stacking re-run authorization memo remains the
 immediate next authorized task (per `docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md`
-as corrected by `docs/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md`).
+as corrected by `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md`).
 
 ---
 

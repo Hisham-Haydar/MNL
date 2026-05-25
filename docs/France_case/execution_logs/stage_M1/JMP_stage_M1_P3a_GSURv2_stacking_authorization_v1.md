@@ -14,7 +14,7 @@ computation, P3b, P4, or canonical promotion.
 Reference documents:
 - `docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md` (the post-rebuild
   verdict authorising this stacking re-run as the next gate, with
-  correction `docs/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md`)
+  correction `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md`)
 - `Results/JMP_GSURv2_MNL_rebuild_report_v2.md` (the rebuild
   report)
 - `Results/JMP_GSURv2_MNL_rebuild_correction_report_v1.md` (the

@@ -1,3 +1,7 @@
+> Archived on 2026-05-26 — external-storage hygiene audit from 2026-05-12, superseded by the Round-1 manifest documenting the 2026-05-25 docs/ reorganization.
+> Canonical record (kept active): `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-25.md`.
+> See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-26_round2.md`.
+
 # RURO External Storage Hygiene Audit
 
 Date: 2026-05-12

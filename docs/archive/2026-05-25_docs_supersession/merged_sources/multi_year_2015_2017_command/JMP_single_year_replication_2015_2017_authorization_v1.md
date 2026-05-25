@@ -1,3 +1,5 @@
+> Merged into `docs/France_case/consolidated/JMP_multi_year_2015_2017_consolidated_v1.md` on 2026-05-25. See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-25.md`.
+
 # JMP Single-Year Replication — FR_2015 and FR_2017 — Execution Authorization
 
 **Document:** docs/JMP_single_year_replication_2015_2017_authorization_v1.md

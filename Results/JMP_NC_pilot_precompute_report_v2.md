@@ -21,8 +21,8 @@ all-rows mean) was used, not the old production `c_scale = 7,597 EUR/month`.
 
 **Authorizing documents:**
 
-- `docs/JMP_NC_pilot_precompute_slice_authorization_v1.md` (precompute slice)
-- `docs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md` (HN-POS resolution,
+- `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_slice_authorization_v1.md` (precompute slice)
+- `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md` (HN-POS resolution,
   prior slice — cleared before this run)
 
 **Authorized in this run:** 13 pre-run inspection checks; `precompute_data_couples`
@@ -41,7 +41,7 @@ M1-clean displacement (HP-STAGE).
 
 | File | Purpose |
 |---|---|
-| `docs/JMP_NC_pilot_precompute_slice_authorization_v1.md` | Authorizing document |
+| `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_slice_authorization_v1.md` | Authorizing document |
 | `Results/JMP_NC_pilot_HN_POS_resolution_report_v1.md` | HN-POS resolution confirmation (123 rows, 6 households floored) |
 | `Results/JMP_NC_pilot_precompute_report_v1.md` | Prior HP-NORM halt detail |
 | `scripts/enhanced/estimation_utils.py` | `precompute_data_couples` (line 944); `_resolve_draw_column` (line 59); `EPS = 1e-12` (line 49) |
@@ -156,7 +156,7 @@ _resolve_draw_column(df) → "draw_joint"
 
 `draw_joint` is present; scalar `draw` is absent. The resolver returns
 `df["draw_joint"]` (Option B fallback, patched in
-`docs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md`).
+`docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md`).
 No scalar `draw` was added to the data (HP-DRAW clear).
 
 Internally, `precompute_data_couples` uses `idhh` + `year_tag` for group
@@ -468,7 +468,7 @@ A **diagnostic-estimation authorization** — a narrowly scoped amendment that:
   income in specific product-draw cells) enter the precomputed artifact with
   `consumption = EPS = 1e-12` → `log_c ≈ −27.63`. This is the explicit,
   flagged computational-domain convention authorized by
-  `docs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md`. It is not a
+  `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md`. It is not a
   final welfare-domain decision.
 
 ---

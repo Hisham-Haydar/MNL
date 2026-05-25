@@ -575,7 +575,7 @@ Use the following prompt to resume Stage M1 implementation in a future session. 
 
 **Working directory:** `U:\Desktop\Nizam_Hisham\MNL`
 
-**Primary reference:** `docs/JMP_multi_year_stage_M1_implementation_plan_v2.md`
+**Primary reference:** `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_plan_v2.md`
 
 **Task:** Implement the Stage M1 scripts listed in Section 18 of the implementation plan. The target configuration is P3a (2015+2016+2017). Start with `scripts/multi_year/m1_stack_years.py`.
 

@@ -1,6 +1,6 @@
 """
 HN-POS resolution + c_norm rebuild for the NC pilot precompute-ready parquet.
-Authorized by: docs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md
+Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md
 
 Floor formula: c_norm = max(c_pilot_raw / c_scale_pilot, EPS)
 EPS = 1e-12  sourced from estimation_utils.py line 49.
@@ -31,7 +31,7 @@ t0 = time.time()
 
 print("=" * 70)
 print("HN-POS RESOLUTION + c_norm REBUILD — NC PILOT")
-print("Authorized by: docs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md")
+print("Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md")
 print("=" * 70)
 
 # ── STEP 1: Confirm EPS from source ─────────────────────────────────────────
@@ -248,7 +248,7 @@ for hh_id, info in hh_breakdown.items():
 print(f"\nSTEP 8: Write normmeta sidecar")
 normmeta = {
     "schema_version": "nc_pilot_precompute_norm_ready_v1",
-    "authorization": "docs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md",
+    "authorization": "docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md",
     "produced_by": "scripts/pilot/_resolve_hnpos.py",
     "produced_at_utc": pd.Timestamp.utcnow().isoformat(),
     "input": {

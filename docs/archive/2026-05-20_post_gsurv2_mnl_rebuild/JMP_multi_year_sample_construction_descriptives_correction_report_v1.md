@@ -6,7 +6,7 @@
 
 ## 1. Correction verdict
 
-Four corrections applied to `docs/JMP_multi_year_sample_construction_descriptives_report_v1.md`. No data were rebuilt, no tables regenerated, no figures changed. All corrections are textual; the underlying numbers remain unchanged.
+Four corrections applied to `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_sample_construction_descriptives_report_v1.md`. No data were rebuilt, no tables regenerated, no figures changed. All corrections are textual; the underlying numbers remain unchanged.
 
 | # | Issue | Location | Action |
 |---|-------|----------|--------|
@@ -21,7 +21,7 @@ Four corrections applied to `docs/JMP_multi_year_sample_construction_descriptive
 
 | File | Purpose |
 |------|---------|
-| `docs/JMP_multi_year_sample_construction_descriptives_report_v1.md` | Report subject to correction |
+| `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_sample_construction_descriptives_report_v1.md` | Report subject to correction |
 | `scripts/enhanced/enh_france_data_prep.py` | Authoritative source for all cleaning rules; used to verify C2, C3, C4 |
 | `Results/JMP_multi_year_cleaning_attrition_table_v1.csv` | Confirmed step labels and magnitudes; verified no numerical correction needed |
 | `Results/JMP_multi_year_descriptive_stats_v1.csv` | Confirmed descriptive-statistics values; no correction needed |
@@ -132,7 +132,7 @@ The recoding descriptions (capping, reclassification as inactive) were retained 
 
 | File | Change type | Summary |
 |------|-------------|---------|
-| `docs/JMP_multi_year_sample_construction_descriptives_report_v1.md` | Text correction | Heading demoted; §§3, 4, 6, 12, 18 education wording corrected; §3 couples LES step corrected; §6 wage/hours drop rationale corrected |
+| `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_sample_construction_descriptives_report_v1.md` | Text correction | Heading demoted; §§3, 4, 6, 12, 18 education wording corrected; §3 couples LES step corrected; §6 wage/hours drop rationale corrected |
 | `docs/JMP_multi_year_sample_construction_descriptives_correction_report_v1.md` | New file | This report |
 
 No other files were modified.
@@ -153,7 +153,7 @@ No other files were modified.
 
 ## 10. Final status
 
-The corrected report `docs/JMP_multi_year_sample_construction_descriptives_report_v1.md` now:
+The corrected report `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_sample_construction_descriptives_report_v1.md` now:
 
 - Has exactly **22 `##`-level headings** (§§1–22); the version/date line is plain italic text.
 - Correctly describes the education-filter step as an **enrolment-status exclusion** (`dec == 0`, not currently in education) throughout §§3, 4, 6, 12, and 18. No passage refers to missing or invalid education data.

@@ -48,8 +48,8 @@
 # Expected parameter count: 53 (47 - 1 + 7).
 #
 # Reference docs:
-#   docs/RURO_occ_M1_clean_design_memo_v2.md
-#   docs/RURO_occ_M1_clean_implementation_audit_v1.md
+#   docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md
+#   docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_implementation_audit_v1.md
 #   scripts/enhanced/specifications/estimation_spec_ruro_occ_M0c_b2_GSURv2.yaml
 # ==============================================================================
 

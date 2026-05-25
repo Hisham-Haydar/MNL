@@ -12,7 +12,7 @@ one. M1-clean 2016 remains the active JMP baseline.
 Reference documents:
 - `Results/JMP_pooled_P3a_corrected_region_estimation_report_v1.md` (the
   corrected estimation report under review)
-- `docs/JMP_pooled_P3a_corrected_region_reestimation_authorization_v1.md`
+- `docs/France_case/P3a/execution_logs/pooled_P3a/JMP_pooled_P3a_corrected_region_reestimation_authorization_v1.md`
   (the authorization the run executed)
 - `docs/archive/2026-05-26_round2_chain_compression/replaced_by_clean_corrected/JMP_pooled_P3a_region_dummy_repair_report_v1.md` and
   `Results/JMP_pooled_P3a_region_dummy_nonident_diagnostic_v2.md` (the
@@ -617,7 +617,7 @@ project chat) that authorizes the four no-re-estimation computations above
 diagnosis, S8 enumeration) against the saved corrected-run artifacts, with
 no solver invocation, no welfare, no SA2, no canonical promotion, and
 M1-clean held active. Save it as
-`docs/JMP_pooled_P3a_post_estimation_diagnostics_authorization_v1.md`.
+`docs/France_case/P3a/execution_logs/pooled_P3a/JMP_pooled_P3a_post_estimation_diagnostics_authorization_v1.md`.
 
 Then run that authorization in **Claude Code**, producing
 `Results/JMP_pooled_P3a_post_estimation_diagnostics_report_v1.md` (the

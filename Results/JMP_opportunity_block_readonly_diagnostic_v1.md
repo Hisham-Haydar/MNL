@@ -536,7 +536,7 @@ design notes. The plan should specify jointly:
 4. Pilot scope: 2016 couples only, 900-alternative product, W1 wages.
 
 The recommended file for the plan:
-`docs/JMP_next_cycle_opportunity_respecification_plan_v1.md`
+`docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md`
 
 ---
 

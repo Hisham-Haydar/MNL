@@ -10,13 +10,13 @@ scaffolding implementation, canonical MNL promotion, or any
 modification of the structural specification.
 
 Reference documents:
-- `docs/RURO_occ_M1_clean_verdict_v1.md` (the current preferred
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` (the current preferred
   structural baseline, classified SA1-STANDS)
-- `docs/RURO_occ_M1_naive_robustness_verdict_v1.md` (the M1-naive
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_naive_robustness_verdict_v1.md` (the M1-naive
   robustness exposure)
-- `docs/RURO_occ_M1_clean_design_memo_v2.md` (the structural design
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md` (the structural design
   of M1-clean)
-- `docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the prior baseline
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the prior baseline
   documenting the singles consumption identification limitation)
 - `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`
   (the pooled-estimation roadmap and the SA2 verdict architecture)
@@ -1316,7 +1316,7 @@ primary structural baseline; the welfare-decomposition computation,
 gated on the welfare scaffolding verdict.
 
 **Status of M1-clean as preferred structural baseline**: unchanged.
-M1-clean is SA1-STANDS per `docs/RURO_occ_M1_clean_verdict_v1.md`
+M1-clean is SA1-STANDS per `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md`
 and remains the JMP's preferred specification subject only to the
 prospective SA2 verdict pathway.
 

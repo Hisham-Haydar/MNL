@@ -2,7 +2,7 @@
 
 *France RURO multi-year extension | v1 | 2026-05-22*
 
-**Document category: scope amendment to `docs/JMP_NC_pilot_spec_contract_v1.md`.**
+**Document category: scope amendment to `docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md`.**
 This amendment narrows the authorized build to **Stages 1–4 only** (pre-draw
 Mincer fit → pilot wage draw → 30×30 product → pilot couples parquet +
 metadata), stopping **before EUROMOD**. It changes the *execution scope*, not
@@ -274,8 +274,8 @@ Use **Claude Code (Sonnet)**, local. Pilot paths only; stop after Stage 4.
 
 ```text
 Work locally in my RURO/MNL codebase. PILOT BUILD — STAGES 1–4 ONLY,
-2016 couples only. Authorized by docs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md
-(narrows docs/JMP_NC_pilot_spec_contract_v1.md to Stages 1–4; HARD STOP
+2016 couples only. Authorized by docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md
+(narrows docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md to Stages 1–4; HARD STOP
 before EUROMOD).
 
 HARD CONSTRAINTS (halt and report if any would be violated):
@@ -295,8 +295,8 @@ HARD CONSTRAINTS (halt and report if any would be violated):
 - Singles are NOT touched.
 
 Read first (confirm, don't assume):
-- docs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md
-- docs/JMP_NC_pilot_spec_contract_v1.md
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md
+- docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md
 - Results/JMP_nc_pilot_feasibility_audit_v1.md
 - scripts/enhanced/enh_RURO_draws.py
 - scripts/enhanced/enh_RURO_prep_mnl_basic.py

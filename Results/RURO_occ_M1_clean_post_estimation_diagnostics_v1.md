@@ -11,7 +11,7 @@ Primary sources:
 Comparison sources:
 - `Results/RURO_occ_M0c_b2_GSURv2_estimation_report_v1.md`
 - `Results/RURO_occ_M0c_b2_GSURv2_post_estimation_diagnostics_v1.md`
-- `docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md`
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md`
 
 ---
 
@@ -638,7 +638,7 @@ be resolved at the verdict stage:
    normative welfare-partition requirement is a theoretical judgement, not a
    statistical one. The verdict must weigh AIC improvement against BIC penalty
    in the context of the design memo's rationale (§4 of
-   `docs/RURO_occ_M1_clean_design_memo_v2.md`).
+   `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md`).
 
 2. **Singles-male hours regression**: the +9.6% worsening in L1 for singles
    male is a real cost of the region dummy structure. The verdict must decide
@@ -691,9 +691,9 @@ verdict and the M1-clean design memo. They are satisfied:
 
 *Sources: `Results/RURO_occ_M1_clean_standard_post_estimation_diagnostics_v1.md`,
 `Results/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`,
-`docs/RURO_post_estimation_M1_diagnostics_implementation_report_v1.md`,
+`docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_post_estimation_M1_diagnostics_implementation_report_v1.md`,
 `Results/RURO_occ_M1_clean_estimation_report_v1.md`,
-`docs/RURO_occ_M1_clean_design_memo_v2.md`,
+`docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md`,
 `Results/RURO_occ_M0c_b2_GSURv2_estimation_report_v1.md`,
 `Results/RURO_occ_M0c_b2_GSURv2_post_estimation_diagnostics_v1.md`,
-`docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md`*
+`docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md`*

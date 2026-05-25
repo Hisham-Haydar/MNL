@@ -1,7 +1,7 @@
 """
 NC Pilot diagnostic estimation RERUN — FR_2016 couples only.
 
-Authorization: docs/JMP_NC_pilot_diagnostic_estimation_rerun_amendment_v1.md
+Authorization: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_rerun_amendment_v1.md
 
 NOT verdict-grade. The earlier scipy/L-BFGS-B run is INVALID and non-interpretable
 and is NOT used. This script supersedes it.
@@ -148,7 +148,7 @@ def main():
     logger.info("=" * 78)
     logger.info("NC PILOT DIAGNOSTIC ESTIMATION RERUN — FR_2016 couples only")
     logger.info(
-        "Authorization: docs/JMP_NC_pilot_diagnostic_estimation_rerun_amendment_v1.md"
+        "Authorization: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_rerun_amendment_v1.md"
     )
     logger.info("NOT verdict-grade. Earlier scipy run INVALID and NOT used.")
     logger.info("=" * 78)
@@ -391,7 +391,7 @@ def main():
     # -----------------------------------------------------------------------
     logger.info("STEP 8: Saving summary ...")
     summary = {
-        "authorization": "docs/JMP_NC_pilot_diagnostic_estimation_rerun_amendment_v1.md",
+        "authorization": "docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_rerun_amendment_v1.md",
         "timestamp": datetime.now().isoformat(),
         "pkl_used": str(PKL_PATH),
         "prior_pkl_used": False,
@@ -538,7 +538,7 @@ def write_report(summary: dict, results: list, diagnostics: dict, loc4_stats: di
     A("")
     A(f"*France RURO multi-year extension | v1 | {ts}*")
     A("")
-    A("**Authorization:** `docs/JMP_NC_pilot_diagnostic_estimation_rerun_amendment_v1.md`")
+    A("**Authorization:** `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_rerun_amendment_v1.md`")
     A("**Script:** `scripts/pilot/_run_diagnostic_estimation_rerun.py` (NEW — HR-STALE)")
     A("**Input pkl:** `Data/pilot/nc_2016_couples/precomputed/fr_pilot_nc_2016_couples_precomputed_loc.pkl`")
     A("**Solver:** GAMSPy/CONOPT")

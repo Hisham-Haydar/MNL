@@ -3,7 +3,7 @@
 **Document:** Results/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md  
 **Date:** 2026-05-20  
 **Author:** Pipeline execution via Claude Code  
-**Authorization:** `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` (Decision 1)  
+**Authorization:** `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` (Decision 1)  
 **Script:** `scripts/enhanced/enh_RURO_prep_mnl_basic.py`  
 **Output stem:** `fr_2015_RURO_mnl_v1gsurY2014`
 
@@ -14,7 +14,7 @@
 This report documents the rebuild of the FR_2015 MNL-input parquets using the
 correct GSUR opportunity year (2014), replacing the previously misaligned parquets
 that had keyed GSUR rates to the survey data year (2015). The rebuild is authorized
-by `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` Decision 1 and required by the
+by `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` Decision 1 and required by the
 opportunity-year alignment rule formalized in
 `docs/JMP_single_year_replication_2015_2017_command_plan_addendum_v1.md` §2.
 
@@ -53,14 +53,14 @@ All inputs reused from the original FR_2015 replication without modification.
 | GSUR lookup | `Data/external/FR_gsur_ruro.parquet` | Present (2,160 rows, years 2007–2024) |
 
 GSUR year 2014 confirmed present: 120 rows covering all `(drgn1, dgn, educ3)` key
-combinations. See `docs/France_case/RURO_prep_mnl_gsur_year_support_report_v1.md` §6.
+combinations. See `docs/France_case/_shared/data_audits/RURO_prep_mnl_gsur_year_support_report_v1.md` §6.
 
 ---
 
 ## 4. Script version and patch
 
 `enh_RURO_prep_mnl_basic.py` was patched with `--gsur-year` support prior to this
-rebuild, per `docs/France_case/RURO_prep_mnl_gsur_year_support_report_v1.md`. Three edits were
+rebuild, per `docs/France_case/_shared/data_audits/RURO_prep_mnl_gsur_year_support_report_v1.md`. Three edits were
 applied:
 
 1. **Argparse**: new `--gsur-year <int>` flag (default `None`).
@@ -337,7 +337,7 @@ All outputs from this rebuild carry:
 - Sidecar: `gsur_alignment_status: aligned`
 
 These outputs are **pre-GSURv2** and **not final for pooled estimation** per Decision 3
-and Decision 4 of `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md`. They may be used
+and Decision 4 of `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md`. They may be used
 for Stage M1 provisional dry-run under the `provisional_v1_fallback` label once FR_2017
 is available.
 

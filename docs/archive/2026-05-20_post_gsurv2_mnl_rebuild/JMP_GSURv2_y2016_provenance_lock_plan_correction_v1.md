@@ -7,7 +7,7 @@
 ## 1. Correction verdict
 
 Two targeted wording and sequencing corrections applied to
-`docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`.
+`docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`.
 No code was changed. No script was run. No parquet was written.
 The lock procedure itself (§8, Steps 1–9) is unchanged.
 
@@ -22,7 +22,7 @@ The lock procedure itself (§8, Steps 1–9) is unchanged.
 
 | File | Purpose |
 |------|---------|
-| `docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` | Subject to both corrections; §6 and §10 read in full |
+| `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` | Subject to both corrections; §6 and §10 read in full |
 | `docs/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md` | Confirmed that the construction authorization is a separate document deferred to after the remediation (§3, §11 A5, §12 N1, §14) |
 | `docs/JMP_GSURv2_multi_year_extension_remediation_authorization_correction_v1.md` | Confirmed the conservative y2016 approach: "all reproduction deferred to construction authorization" (C4); "lock-plan document prepared; actual y2016 reproduction deferred to construction authorization" (C6) |
 
@@ -135,8 +135,8 @@ Items 2–6 are unchanged.
 
 | File | Change type | Summary |
 |------|-------------|---------|
-| `docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` | Wording correction (F1) | §6 verdict line and "Why preferred" bullet: "preferred and authorized" → "preferred … to be authorized by the GSURv2 construction authorization"; "does not require a separate or special authorization" → "will be authorized by the GSURv2 construction authorization, which is a separate document not yet produced" |
-| `docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` | Sequencing correction (F2) | §10: opening sentence changed from "construction authorization memo is the next task" to "GSURv2 readiness re-audit is the next task"; re-audit conditionality paragraph added; item 1 updated to require re-audit verdict of READY or READY WITH MINOR FIXES |
+| `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` | Wording correction (F1) | §6 verdict line and "Why preferred" bullet: "preferred and authorized" → "preferred … to be authorized by the GSURv2 construction authorization"; "does not require a separate or special authorization" → "will be authorized by the GSURv2 construction authorization, which is a separate document not yet produced" |
+| `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` | Sequencing correction (F2) | §10: opening sentence changed from "construction authorization memo is the next task" to "GSURv2 readiness re-audit is the next task"; re-audit conditionality paragraph added; item 1 updated to require re-audit verdict of READY or READY WITH MINOR FIXES |
 | `docs/JMP_GSURv2_y2016_provenance_lock_plan_correction_v1.md` | New file | This report |
 
 The lock procedure (§8 Steps 1–9), the sidecar field specification
@@ -150,7 +150,7 @@ No code was changed. No data was built.
 
 ## 6. Final status
 
-After both corrections, `docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`
+After both corrections, `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`
 accurately represents the authorization state:
 
 - §6 no longer implies the construction authorization has been issued.

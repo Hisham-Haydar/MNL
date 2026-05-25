@@ -2,7 +2,7 @@
 
 *France RURO multi-year extension | v1 | 2026-05-25 02:21*
 
-**Authorization:** `docs/JMP_NC_pilot_scaled_JAX_validation_authorization_v1.md` s18  
+**Authorization:** `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_scaled_JAX_validation_authorization_v1.md` s18  
 **Script:** `scripts/pilot/_run_scaled_jax_validation.py`  
 **Generated:** 2026-05-25 02:21
 

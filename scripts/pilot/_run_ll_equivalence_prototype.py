@@ -413,7 +413,7 @@ def compute_ll_jax(pc, theta_dict: dict):
 
 # ---------------------------------------------------------------------------
 # Finite-gradient check — JAX full-vector, or NumPy finite-difference fallback
-# Authorization: docs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md §5
+# Authorization: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md §5
 # FINITENESS CHECK ONLY — no parameter is updated, no optimization is performed.
 # ---------------------------------------------------------------------------
 def compute_gradient_check(pc, theta_dict: dict) -> dict:
@@ -773,7 +773,7 @@ def write_report(results: dict, theta_dict: dict):
     A("")
     A("*France RURO multi-year extension | v2 | 2026-05-24*")
     A("")
-    A("**Authorization:** `docs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md` §8")
+    A("**Authorization:** `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md` §8")
     A("**Script:** `scripts/pilot/_run_ll_equivalence_prototype.py`")
     A(f"**Generated:** {now}")
     A("**Supersedes:** v1 (not overwritten)")
@@ -823,7 +823,7 @@ def write_report(results: dict, theta_dict: dict):
     A("## 2. Authorization scope")
     A("")
     A("Fixed-theta LL cleanup and validation per "
-      "`docs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md`. "
+      "`docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md`. "
       "Authorized: RESULT_S2 path fix, finite-gradient check, v2 report. "
       "Not authorized: optimization, CONOPT, welfare, SA2, promotion, formula change, "
       "v1 overwrite, pilot/production data modification.")
@@ -835,7 +835,7 @@ def write_report(results: dict, theta_dict: dict):
     A("")
     A("| File | Purpose |")
     A("|---|---|")
-    A("| `docs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md` | Authorization |")
+    A("| `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md` | Authorization |")
     A("| `docs/jmp_methodology/JMP_estimator_architecture_decision_v1.md` | Architecture decision |")
     A("| `Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md` | Prior report (not overwritten) |")
     A("| `scripts/pilot/_run_ll_equivalence_prototype.py` | Prototype script (edited) |")

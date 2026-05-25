@@ -162,7 +162,7 @@ The φ_t factors are small (maximum deviation < 3.2% over the 2015–2018 window
 **If Option B is chosen**, the adoption must be documented explicitly:
 
 - `Data/external/cpi_hicp_fr_harmonisation.csv` is the authoritative source.
-- `docs/JMP_multi_year_stage_M1_implementation_plan_v2.md` (this document) records the decision and rationale.
+- `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_plan_v2.md` (this document) records the decision and rationale.
 - A note must appear in the estimation results section of the JMP draft: "Nominal income variables are deflated to 2016 prices using France HICP values from EUROMOD's HICPCONFIG.xml (Eurostat/AMECO 2023 spring forecasts, base 2015=100), adopted in lieu of the INSEE domestic CPI specified in the strategy memo."
 
 **Stage M1 must not silently substitute HICP for INSEE CPI.** The φ_t values must not be hard-coded in a script without the decision being documented. If Option A is retrieved, the `cpi_hicp_fr_harmonisation.csv` is populated from that series instead.
@@ -579,7 +579,7 @@ Use the following prompt to resume Stage M1 implementation in a future session. 
 
 **Working directory:** `U:\Desktop\Nizam_Hisham\MNL`
 
-**Primary reference:** `docs/JMP_multi_year_stage_M1_implementation_plan_v2.md`
+**Primary reference:** `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_plan_v2.md`
 
 **Task:** Implement the Stage M1 scripts listed in Section 18 of the implementation plan. The target configuration is P3a (2015+2016+2017). Start with `scripts/multi_year/m1_stack_years.py`.
 

@@ -1,6 +1,6 @@
 """
 NC Pilot — First diagnostic couples-only estimation.
-Authorized by: docs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md
+Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md
 
 Wrapper that:
   1. Loads the precomputed PrecomputedDataCouples pkl (read-only from disk).
@@ -46,7 +46,7 @@ def halt(code, msg):
 
 print("=" * 70)
 print("NC PILOT — FIRST DIAGNOSTIC COUPLES ESTIMATION (GAMSPy/CONOPT)")
-print("Authorized by: docs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md")
+print("Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md")
 print("NOT VERDICT-GRADE")
 print("=" * 70)
 
@@ -235,7 +235,7 @@ for start_name, theta0 in starts:
         "peak_mem_mb":     round(peak_mem / 1e6, 1),
         "parameters":      param_dict,
         "theta":           theta_hat.tolist(),
-        "authorization":   "docs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md",
+        "authorization":   "docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md",
         "not_verdict_grade": True,
     }
     out_json = os.path.join(out_dir, "estimation_results.json")
@@ -304,7 +304,7 @@ for pname in p3a_cmp:
 # ── STEP 6: Save summary ──────────────────────────────────────────────────────
 print(f"\nSTEP 6: Save run summary")
 summary = {
-    "authorization":  "docs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md",
+    "authorization":  "docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md",
     "not_verdict_grade": True,
     "spec_path":      SPEC_PATH,
     "spec_name":      spec.name,

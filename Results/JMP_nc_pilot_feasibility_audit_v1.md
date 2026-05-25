@@ -19,7 +19,7 @@ The two code paths to be changed (couples combine in `_reshape_couples_to_wide()
 
 ## 2. Authorization scope
 
-This audit is read-only. It is authorized by §28 of `docs/JMP_next_cycle_opportunity_respecification_plan_v1.md`. Actions explicitly outside scope:
+This audit is read-only. It is authorized by §28 of `docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md`. Actions explicitly outside scope:
 
 - No existing file modification (verified: only one file written: this audit report).
 - No data modification.
@@ -39,7 +39,7 @@ The corrected pooled P3a track continues independently on its frozen 100-diagona
 
 | File | Reading method | Purpose |
 |---|---|---|
-| `docs/JMP_next_cycle_opportunity_respecification_plan_v1.md` | Full read | Plan / NC-baseline / pilot scope |
+| `docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md` | Full read | Plan / NC-baseline / pilot scope |
 | `Results/JMP_opportunity_block_readonly_diagnostic_v1.md` | Full read | Prior diagnostic evidence |
 | `docs/jmp_methodology/JMP_couples_opportunity_draw_design_note_v1.md` | Full read | Diagonal-to-product design |
 | `docs/jmp_methodology/JMP_conditional_wage_on_occupation_decision_note_v1.md` | Full read | Wage-conditioning decision rule |
@@ -481,7 +481,7 @@ Parquet reads were limited to columns `idhh`, `draw`, `year_tag` of the couples 
 
 ## 23. Immediate next task
 
-The next deliverable per §28 of the plan is the **pilot spec contract + data-build authorization** (`RURO_model_spec_contract_v3_NC.md` or similar), not code. That document must resolve §20 items 1–5 (double-counting, accepted-vs-offer wage object, joint-draw indexing convention, `prepare_pooled_estimation_ready.py` row guards, and the Mincer fitting set). This audit and the design memo (`docs/JMP_next_cycle_opportunity_respecification_plan_v1.md`) are its inputs; neither replaces it.
+The next deliverable per §28 of the plan is the **pilot spec contract + data-build authorization** (`RURO_model_spec_contract_v3_NC.md` or similar), not code. That document must resolve §20 items 1–5 (double-counting, accepted-vs-offer wage object, joint-draw indexing convention, `prepare_pooled_estimation_ready.py` row guards, and the Mincer fitting set). This audit and the design memo (`docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md`) are its inputs; neither replaces it.
 
 Independent of that next-cycle track, the corrected pooled P3a track continues on its frozen 100-diagonal, unconditional-wage spec toward its fresh strict post-estimation review / SA2-readiness verdict.
 
@@ -502,4 +502,4 @@ Independent of that next-cycle track, the corrected pooled P3a track continues o
 
 ---
 
-*Status: read-only feasibility audit v1. Produced 2026-05-22. Authorization: §28 of `docs/JMP_next_cycle_opportunity_respecification_plan_v1.md`. Output is text-only and modifies no other artefact in the repository.*
+*Status: read-only feasibility audit v1. Produced 2026-05-22. Authorization: §28 of `docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md`. Output is text-only and modifies no other artefact in the repository.*

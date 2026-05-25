@@ -20,7 +20,7 @@ purposes regardless of outcome.
 Read:
 - Results/RURO_occ_M0c_b_estimation_report_v1.md
 - Results/RURO_occ_M0c_b_gate_A_parse_report_v1.md
-- docs/RURO_occ_M0c_b_implementation_report_v1.md
+- docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b_implementation_report_v1.md
 - docs/RURO_occ_M0c_design_memo_v1.md
 - scripts/enhanced/estimation_spec_ruro_occ_M0c_b.yaml
 - scripts/enhanced/estimation_spec_parser.py

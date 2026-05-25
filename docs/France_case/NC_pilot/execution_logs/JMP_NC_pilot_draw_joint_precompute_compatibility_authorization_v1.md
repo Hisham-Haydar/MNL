@@ -245,7 +245,7 @@ mutation; validate resolution only; stop before full precompute.
 ```text
 Work locally in my RURO/MNL codebase. DRAW-RESOLUTION COMPATIBILITY PATCH,
 FR_2016 couples pilot. Authorized by
-docs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md.
+docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md.
 Option B (code fallback), NOT Option A (data alias).
 
 HARD CONSTRAINTS (halt and report if any would be violated):
@@ -262,7 +262,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
   (HD-STAGE)
 
 Read (read-only except the single patch site):
-- docs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md
 - Results/JMP_NC_pilot_precompute_readiness_report_v1.md
 - Results/JMP_NC_pilot_draw_joint_repointing_audit_v1.md (the draw-column site)
 - scripts/.../estimation_utils.py (the couples group-builder)

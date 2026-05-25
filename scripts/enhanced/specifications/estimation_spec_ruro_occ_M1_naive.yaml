@@ -22,9 +22,9 @@
 # Expected parameter count: 54 (M1-clean 53 + 1 beta_E_educH).
 #
 # Reference docs:
-#   docs/RURO_occ_M1_clean_verdict_v1.md          (M1-naive sequencing §16)
-#   docs/RURO_occ_M1_clean_design_memo_v2.md      (M1-naive specification §23)
-#   docs/RURO_occ_M1_naive_YAML_implementation_report_v1.md
+#   docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md          (M1-naive sequencing §16)
+#   docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md      (M1-naive specification §23)
+#   docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_naive_YAML_implementation_report_v1.md
 #   scripts/enhanced/specifications/estimation_spec_ruro_occ_M1_clean.yaml
 # ==============================================================================
 

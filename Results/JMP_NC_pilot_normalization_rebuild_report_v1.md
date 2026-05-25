@@ -21,7 +21,7 @@ non-positive. This is a substantive modelling finding, not a data error.
 ## 2. Authorization Scope
 
 **Authorizing document:**
-`docs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md`
+`docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md`
 
 **Authorized:** Reading the input parquet (read-only); computing `c_pilot` and
 `c_scale_pilot`; positivity gate; if gate passes — writing a new
@@ -40,7 +40,7 @@ displacement (HN-STAGE).
 
 | File | Purpose |
 |---|---|
-| `docs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md` | Authorizing document; read first |
+| `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md` | Authorizing document; read first |
 | `Results/JMP_NC_pilot_precompute_report_v1.md` | HP-NORM halt context |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet` | Input; read-only; 2,319,300 × 152 |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready__readymeta.json` | Sidecar metadata |

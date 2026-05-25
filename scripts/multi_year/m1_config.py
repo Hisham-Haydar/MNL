@@ -13,7 +13,7 @@ Shortcut map (--config <name> resolves to its own YAML):
     p3b  → config/multi_year/fr_p3b_stage_m1.yaml  (2015+2016+2018, blocked)
     p4   → config/multi_year/fr_p4_stage_m1.yaml   (2015+2017+2018, blocked)
 
-Reference: docs/JMP_multi_year_stage_M1_generalization_report_v1.md
+Reference: docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_generalization_report_v1.md
 """
 
 from __future__ import annotations

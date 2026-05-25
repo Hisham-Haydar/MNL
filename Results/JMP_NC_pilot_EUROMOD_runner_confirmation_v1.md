@@ -83,8 +83,8 @@ any welfare, any SA2, any promotion, any M1-clean displacement.
 |---|---|
 | `Results/JMP_NC_pilot_stage1_4_build_report_v1.md` | Full read (prior turn) |
 | `Results/JMP_NC_pilot_draw_joint_repointing_audit_v1.md` | Full read (prior turn) |
-| `docs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md` | Full read |
-| `docs/JMP_NC_pilot_spec_contract_v1.md` | Full read |
+| `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md` | Full read |
+| `docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md` | Full read |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product.parquet` | Schema + bounded column reads (149 cols; 2,319,300 rows) |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__mnlmeta.json` | Full read |
 | `scripts/pilot/build_pilot_couples_product.py` | Full read (Stage 3–4 driver) |

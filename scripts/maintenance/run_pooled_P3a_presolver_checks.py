@@ -1,7 +1,7 @@
 """
 Pre-solver sanity checks PS1–PS5 for the corrected pooled P3a re-estimation.
 
-Authorization: docs/JMP_pooled_P3a_corrected_region_reestimation_authorization_v1.md (§8)
+Authorization: docs/France_case/P3a/execution_logs/pooled_P3a/JMP_pooled_P3a_corrected_region_reestimation_authorization_v1.md (§8)
 
 All five checks must PASS before the solver is invoked.  Exits 0 on full PASS,
 non-zero on any FAIL — the orchestrator reads the exit code.

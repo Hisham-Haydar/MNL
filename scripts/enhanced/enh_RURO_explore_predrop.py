@@ -40,7 +40,7 @@ enh_RURO_prep_mnl_basic.py main():
         --full-singles  <dir>/predrop_full__singles.parquet \
         --full-couples  <dir>/predrop_full__couples.parquet \
         --out-dir       <dir>/explore \
-        --audit-out     docs/France_case/RURO_data_audit_v1.md
+        --audit-out     docs/France_case/_shared/data_audits/RURO_data_audit_v1.md
 
 Either --full-singles or --full-couples may be omitted.
 """

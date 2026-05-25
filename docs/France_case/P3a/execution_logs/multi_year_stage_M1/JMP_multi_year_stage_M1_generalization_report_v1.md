@@ -1,10 +1,10 @@
 # JMP Multi-Year Stage M1 — Generalization Report v1
 
-**Document:** docs/JMP_multi_year_stage_M1_generalization_report_v1.md
+**Document:** docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_generalization_report_v1.md
 **Date:** 2026-05-19
 **Static validation report:** Results/JMP_multi_year_stage_M1_static_validation_report_v2.md
-**Prior implementation report:** docs/JMP_multi_year_stage_M1_implementation_report_v1.md
-**Reference plan:** docs/JMP_multi_year_stage_M1_implementation_plan_v2.md
+**Prior implementation report:** docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_report_v1.md
+**Reference plan:** docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_plan_v2.md
 
 ---
 
@@ -299,7 +299,7 @@ where Pyright cannot narrow the `min()`/`max()` return type.
 | `scripts/multi_year/m1_identity_validation.py` | **Refactored** — `--stage-config`; no hard-coded constants |
 | `scripts/multi_year/m1_isf_check_2018.py` | **Labelled** — France-2018-specific wrapper header added |
 | `scripts/multi_year/run_m1_p3a.ps1` | **Labelled** — France-P3a-specific wrapper header added |
-| `docs/JMP_multi_year_stage_M1_generalization_report_v1.md` | **Created** — this document |
+| `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_generalization_report_v1.md` | **Created** — this document |
 | `Results/JMP_multi_year_stage_M1_static_validation_report_v2.md` | **Created** — 11 static checks |
 
 ---
@@ -325,7 +325,7 @@ where Pyright cannot narrow the `min()`/`max()` return type.
 
 ## §18 — Next task
 
-See `docs/JMP_multi_year_stage_M1_implementation_report_v1.md` §16 for the
+See `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_report_v1.md` §16 for the
 upstream preconditions (CPI source decision, EUROMOD runs, MNL parquets for
 2015/2017). Those preconditions are unchanged. Once they are met, execution
 uses:

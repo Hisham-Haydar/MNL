@@ -1,7 +1,7 @@
 """
 Optimizer-Protocol Diagnostic — FR_2016 couples pilot.
 
-Authorization: docs/JMP_NC_pilot_optimizer_multistart_design_memo_v1.md s22
+Authorization: docs/France_case/NC_pilot/design/JMP_NC_pilot_optimizer_multistart_design_memo_v1.md s22
 
 SCOPE: Staged diagnostic to determine whether the HV-AGREE disagreement from
 the three-start validation is a convergence-budget/conditioning artifact or
@@ -625,7 +625,7 @@ ALL_JOBS    = STAGE1_JOBS + STAGE2_JOBS
 
 print("=" * 70)
 print("OPTIMIZER-PROTOCOL DIAGNOSTIC ORCHESTRATOR")
-print("Authorization: docs/JMP_NC_pilot_optimizer_multistart_design_memo_v1.md")
+print("Authorization: docs/France_case/NC_pilot/design/JMP_NC_pilot_optimizer_multistart_design_memo_v1.md")
 print("=" * 70)
 print(f"Oracle LL: {ORACLE_LL}")
 print(f"Jobs: {ALL_JOBS}")
@@ -767,7 +767,7 @@ def error_section(job):
 lines = []
 lines.append("# JMP NC Pilot -- Optimizer-Protocol Diagnostic Report v1\n")
 lines.append(f"*France RURO multi-year extension | v1 | {now_str}*\n")
-lines.append("**Authorization:** `docs/JMP_NC_pilot_optimizer_multistart_design_memo_v1.md` s22  ")
+lines.append("**Authorization:** `docs/France_case/NC_pilot/design/JMP_NC_pilot_optimizer_multistart_design_memo_v1.md` s22  ")
 lines.append("**Script:** `scripts/pilot/_run_optimizer_protocol_diagnostic.py`  ")
 lines.append(f"**Generated:** {now_str}\n")
 lines.append("**SCOPE:** Staged optimizer-protocol diagnostic — NOT production, NOT verdict-grade. "

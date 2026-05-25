@@ -12,8 +12,8 @@ All country/year/config-specific values are read from a stage-config YAML.
 Pass --stage-config config/multi_year/fr_p3a_stage_m1.yaml or use the
 backward-compatible shortcut --config p3a.
 
-Reference: docs/JMP_multi_year_stage_M1_implementation_plan_v2.md §13, 18.
-           docs/JMP_multi_year_stage_M1_generalization_report_v1.md
+Reference: docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_plan_v2.md §13, 18.
+           docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_generalization_report_v1.md
 
 Thresholds (§13 — read from config):
     sex_stability    >= sex_stability_min      warn if below; do not block

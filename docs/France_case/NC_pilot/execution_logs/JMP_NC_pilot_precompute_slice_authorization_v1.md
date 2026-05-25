@@ -295,7 +295,7 @@ persist one pilot artifact; stop before estimation.
 
 ```text
 Work locally in my RURO/MNL codebase. PRECOMPUTE SLICE, FR_2016 couples pilot.
-Authorized by docs/JMP_NC_pilot_precompute_slice_authorization_v1.md.
+Authorized by docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_slice_authorization_v1.md.
 
 HARD CONSTRAINTS (halt and report if any would be violated):
 - Do NOT edit precompute_data_couples or _resolve_draw_column logic. Call
@@ -309,7 +309,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
   promotion / M1-clean displacement. (HP-STAGE)
 
 Read (read-only):
-- docs/JMP_NC_pilot_precompute_slice_authorization_v1.md
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_slice_authorization_v1.md
 - scripts/enhanced/estimation_utils.py (precompute_data_couples @ line 944;
   _resolve_draw_column @ line 59)
 - Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet (schema)

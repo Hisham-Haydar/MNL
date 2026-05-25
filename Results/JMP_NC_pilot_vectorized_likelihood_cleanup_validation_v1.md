@@ -2,7 +2,7 @@
 
 *France RURO multi-year extension | v1 | 2026-05-24*
 
-**Authorization:** `docs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md`
+**Authorization:** `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md`
 **Script:** `scripts/pilot/_run_ll_equivalence_prototype.py`
 **Generated:** 2026-05-24
 

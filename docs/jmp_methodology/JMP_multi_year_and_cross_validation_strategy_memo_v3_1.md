@@ -39,9 +39,9 @@ outputs are a methodological design that subsequent implementation
 prompts will build upon.
 
 Reference documents:
-- `docs/RURO_occ_M1_clean_verdict_v1.md` (the accepted 2016
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` (the accepted 2016
   baseline)
-- `docs/RURO_occ_M1_clean_design_memo_v2.md` (the M1-clean
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md` (the M1-clean
   structural specification)
 - `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3.md`
   (the superseded v3 memo)

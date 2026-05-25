@@ -2,7 +2,7 @@
 
 *France RURO multi-year extension | v1 | 2026-05-25 00:48*
 
-**Authorization:** `docs/JMP_NC_pilot_optimizer_multistart_design_memo_v1.md` s22  
+**Authorization:** `docs/France_case/NC_pilot/design/JMP_NC_pilot_optimizer_multistart_design_memo_v1.md` s22  
 **Script:** `scripts/pilot/_run_optimizer_protocol_diagnostic.py`  
 **Generated:** 2026-05-25 00:48
 

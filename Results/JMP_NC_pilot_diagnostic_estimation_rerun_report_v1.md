@@ -2,7 +2,7 @@
 
 *France RURO multi-year extension | v1 | 2026-05-24*
 
-**Authorization:** `docs/JMP_NC_pilot_diagnostic_estimation_rerun_amendment_v1.md`
+**Authorization:** `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_rerun_amendment_v1.md`
 **Script:** `scripts/pilot/_run_diagnostic_estimation_rerun.py` (NEW — HR-STALE)
 **Input pkl:** `Data/pilot/nc_2016_couples/precomputed/fr_pilot_nc_2016_couples_precomputed_loc.pkl`
 **Solver:** GAMSPy/CONOPT

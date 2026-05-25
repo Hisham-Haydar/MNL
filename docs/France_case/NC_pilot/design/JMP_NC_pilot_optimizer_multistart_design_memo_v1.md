@@ -292,7 +292,7 @@ float64; staged; no production, no inference, no welfare.
 ```text
 Work locally in my RURO/MNL codebase. OPTIMIZER-PROTOCOL DIAGNOSTIC, FR_2016
 couples pilot. Authorized by
-docs/JMP_NC_pilot_optimizer_multistart_design_memo_v1.md. DIAGNOSTIC ONLY — NOT
+docs/France_case/NC_pilot/design/JMP_NC_pilot_optimizer_multistart_design_memo_v1.md. DIAGNOSTIC ONLY — NOT
 production, NOT verdict-grade. Goal: determine whether the HV-AGREE disagreement
 is a convergence-budget/conditioning artifact or genuine multimodality.
 
@@ -310,7 +310,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
   report only.
 
 Read (read-only except new script + new report):
-- docs/JMP_NC_pilot_optimizer_multistart_design_memo_v1.md
+- docs/France_case/NC_pilot/design/JMP_NC_pilot_optimizer_multistart_design_memo_v1.md
 - scripts/pilot/_run_jax_validation_estimation.py and
   scripts/pilot/_run_jax_optimizer_benchmark.py (reuse float64 kernel)
 - Data/pilot/nc_2016_couples/precomputed/fr_pilot_nc_2016_couples_precomputed_loc.pkl

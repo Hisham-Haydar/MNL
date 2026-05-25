@@ -204,5 +204,5 @@ The only files created in this implementation step are:
 
 ```
 scripts/enhanced/specifications/estimation_spec_ruro_occ_M1_clean.yaml
-docs/RURO_occ_M1_clean_YAML_implementation_report_v1.md
+docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_YAML_implementation_report_v1.md
 ```

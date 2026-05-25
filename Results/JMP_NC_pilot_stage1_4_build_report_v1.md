@@ -5,7 +5,7 @@
 Document class: pilot build report. Records execution of NC pilot Stages
 1–4 (pre-draw Mincer fit → pilot W1 wage draw → 30×30 product for 2016
 couples → pilot parquet + metadata), under the scope amendment
-`docs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md`. Hard stop before
+`docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md`. Hard stop before
 EUROMOD. M1-clean 2016 remains active. Corrected pooled P3a track
 unaffected.
 
@@ -26,8 +26,8 @@ honoured before Stage 5 (EUROMOD).
 
 ## 2. Authorization scope
 
-Authorized by `docs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md`,
-which narrows `docs/JMP_NC_pilot_spec_contract_v1.md` to Stages 1–4
+Authorized by `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md`,
+which narrows `docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md` to Stages 1–4
 (pre-draw Mincer fit; pilot wage draw + proposal density;
 30×30 product over 2016 couples; pilot parquet + metadata). All
 spec-contract decisions carry forward unchanged: W1 baseline,
@@ -48,11 +48,11 @@ any singles modification, any in-place edit to production
 
 | File | Method |
 |---|---|
-| `docs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md` | Full read |
-| `docs/JMP_NC_pilot_spec_contract_v1.md` | Full read |
+| `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md` | Full read |
+| `docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md` | Full read |
 | `Results/JMP_NC_pilot_build_report_v1.md` | Full read (prior halt report) |
 | `Results/JMP_nc_pilot_feasibility_audit_v1.md` | Full read (prior session) |
-| `docs/JMP_next_cycle_opportunity_respecification_plan_v1.md` | Full read (prior session) |
+| `docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md` | Full read (prior session) |
 | `Results/JMP_opportunity_block_readonly_diagnostic_v1.md` | Full read (prior session) |
 | `scripts/enhanced/enh_RURO_draws.py` | Targeted Grep + ranged Read (lines 100–120, 1119–1234) |
 | `scripts/enhanced/enh_RURO_prep_mnl_basic.py` | Targeted Read (lines 880–1080) |
@@ -635,7 +635,7 @@ each before any further build action.
 ---
 
 *Status: NC pilot Stage 1–4 build report v1, produced 2026-05-22.
-Authorization: `docs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md`.
+Authorization: `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md`.
 Hard stop honoured before EUROMOD. M1-clean 2016 active. Frozen pooled
 P3a spec and post-estimation track unaffected. Next document(s): a
 downstream-re-pointing-audit authorization, and (separately) an

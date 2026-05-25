@@ -2,7 +2,7 @@
 """
 NC pilot — Post-EUROMOD merge slice.
 
-Authorized by: docs/JMP_NC_pilot_post_em_merge_amendment_v1.md
+Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_post_em_merge_amendment_v1.md
 
 Assembles the 30 Strategy C' EUROMOD block outputs into one wide post-EM
 product parquet carrying partner-specific disposable income (ils_dispy_male,
@@ -198,7 +198,7 @@ def process_block(
 def main() -> int:
     t_start = datetime.now(timezone.utc)
     print(f"[merge] NC pilot post-EUROMOD merge slice")
-    print(f"[merge] Authorization: docs/JMP_NC_pilot_post_em_merge_amendment_v1.md")
+    print(f"[merge] Authorization: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_post_em_merge_amendment_v1.md")
     print(f"[merge] Start: {t_start.isoformat()}")
 
     # STEP 1: Confirm product partner-ID columns
@@ -360,7 +360,7 @@ def main() -> int:
         "produced_by": "scripts/pilot/merge_pilot_em_outputs.py",
         "produced_at_utc": t_end.isoformat(),
         "wall_seconds": round(wall_sec, 1),
-        "authorization": "docs/JMP_NC_pilot_post_em_merge_amendment_v1.md",
+        "authorization": "docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_post_em_merge_amendment_v1.md",
         "merge_keys": {
             "household": "idhh == idhh_true (decoded, not encoded)",
             "male_income": "(idhh, draw_male, draw_female) via idperson_true in male_ids",

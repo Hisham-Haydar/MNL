@@ -5,7 +5,7 @@
 **Author:** Pipeline execution via Claude Code  
 **Scope:** FR_2015, FR_2016, FR_2017 MNL inputs — GSUR alignment audit and Stage M1 authorization gate  
 **Depends on:**
-- `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` (alignment rule)
+- `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` (alignment rule)
 - `Results/JMP_single_year_FR2015_gsurY2014_rebuild_report_v1.md` (FR_2015 rebuild)
 - `Results/JMP_single_year_FR2017_replication_report_v1.md` (FR_2017 replication)
 - `Results/JMP_single_year_2016_local_mirror_report_v1.md` (FR_2016 mirror)
@@ -26,7 +26,7 @@ Three subsidiary questions must be answered first:
 
 ## 2. GSUR alignment rule (adopted)
 
-Per `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` Decision 2:
+Per `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` Decision 2:
 
 > **GSUR key = EUROMOD system year (opportunity year), NOT survey data year.**
 
@@ -122,7 +122,7 @@ Output location: `Z:\hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_
 
 After building: patch sidecar with alignment fields, copy to `Data/processed/fr/`, remove or shadow the current misaligned `fr_2016_RURO_mnl_GSURv2__` local copy, re-run dry-run to confirm all three FOUND.
 
-**Consequence for M1-clean verdict file (`docs/RURO_occ_M1_clean_verdict_v1.md`):** The M1-clean verdict used `fr_2016_RURO_mnl_GSURv2__` as its operative data. A rebuild to `v1gsurY2015` changes the GSUR rates for FR_2016 deciders. This affects LL and parameter estimates for the M1-clean model. **The M1-clean verdict LL figure (−6487.5522) would no longer correspond to the pooled dataset's FR_2016 slice under Option A.** This is noted as a known consequence; the verdict remains valid for the `GSURv2__` data, but the P3a pooled estimation will be conducted on the GSUR-aligned `v1gsurY2015` data.
+**Consequence for M1-clean verdict file (`docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md`):** The M1-clean verdict used `fr_2016_RURO_mnl_GSURv2__` as its operative data. A rebuild to `v1gsurY2015` changes the GSUR rates for FR_2016 deciders. This affects LL and parameter estimates for the M1-clean model. **The M1-clean verdict LL figure (−6487.5522) would no longer correspond to the pooled dataset's FR_2016 slice under Option A.** This is noted as a known consequence; the verdict remains valid for the `GSURv2__` data, but the P3a pooled estimation will be conducted on the GSUR-aligned `v1gsurY2015` data.
 
 **Option A is the recommended path.** It produces a fully consistent three-year dataset, takes less than one hour (Stage 5 only, no EUROMOD run needed), and avoids any prohibition on empirical interpretation of misaligned results.
 

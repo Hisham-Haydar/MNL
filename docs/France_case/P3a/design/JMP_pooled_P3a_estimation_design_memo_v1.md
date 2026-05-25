@@ -23,16 +23,16 @@ the M1-clean single-year baseline.
 
 Governing evidence chain:
 
-- `docs/JMP_stage_M1_P3a_GSURv2_construction_verdict_v1.md` — the
+- `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_stage_M1_P3a_GSURv2_construction_verdict_v1.md` — the
   P3a GSURv2 pooled dataset is valid as the final non-provisional
   construction input for pooled-estimation design and Gate-A
   validation (PASS WITH MINOR DOCUMENTATION AND VALIDATION-SPEC
   CAVEATS).
-- `docs/RURO_occ_M1_clean_verdict_v1.md` — M1-clean is the active
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` — M1-clean is the active
   JMP structural specification; pooled specification must be grounded
   in M1-clean parameter structure.
 - `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_stage_M1_P3a_GSURv2_stacking_execution_report_correction_v1.md`
-  and `docs/JMP_stage_M1_V9_validation_patch_note_v1.md` — minor
+  and `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_stage_M1_V9_validation_patch_note_v1.md` — minor
   documentation and validation-spec items resolved; no impact on
   construction input validity.
 
@@ -872,7 +872,7 @@ the pooled-estimation authorization memo is drafted.
 > modify the pooled parquet. Do not modify M1-clean or M1-naive specs.
 >
 > Read:
-> - `docs/JMP_pooled_P3a_estimation_design_memo_v1.md` (this memo —
+> - `docs/France_case/P3a/design/JMP_pooled_P3a_estimation_design_memo_v1.md` (this memo —
 >   the authoritative spec for the pooled YAML)
 > - `scripts/enhanced/specifications/estimation_spec_ruro_occ_M1_clean.yaml`
 >   (the source YAML to derive from)
@@ -908,7 +908,7 @@ the pooled-estimation authorization memo is drafted.
 >    parses without error.
 >
 > 3. Run Gate-A checks GA1–GA17 as specified in
->    `docs/JMP_pooled_P3a_estimation_design_memo_v1.md` §19.
+>    `docs/France_case/P3a/design/JMP_pooled_P3a_estimation_design_memo_v1.md` §19.
 >    For GA13 (precompute smoke test): confirm that `year_tag == 1`
 >    and `year_tag == 3` resolve to non-empty subsets on the pooled
 >    parquet, and confirm that `year_2015_indicator` and

@@ -2,7 +2,7 @@
 """
 NC pilot — Stage 1: pre-draw Mincer fit.
 
-Authorized by: docs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md (Stage 1).
+Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md (Stage 1).
 Pilot scope only. Reads production parquets read-only. Writes ONE pilot
 config file under scripts/pilot/config/.
 
@@ -182,7 +182,7 @@ def main(out_file: Path, force_2016: bool = False) -> int:
         "schema_version": "nc_pilot_mincer_v1",
         "produced_by": "scripts/pilot/fit_pilot_mincer.py",
         "produced_at_utc": datetime.now(timezone.utc).isoformat(),
-        "authorization": "docs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md (Stage 1)",
+        "authorization": "docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md (Stage 1)",
         "stage": 1,
         "calibrated_not_free": True,
         "accepted_wage_caveat": (

@@ -2,8 +2,8 @@
 
 *France 2014–2015–2016 | v1 | 2026-05-20*
 
-Authorization: `docs/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md`
-Construction report: `docs/JMP_GSURv2_multi_year_extension_construction_report_v1.md`
+Authorization: `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md`
+Construction report: `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_report_v1.md`
 
 ---
 
@@ -41,7 +41,7 @@ with the expected structure, schema, and sidecar provenance.
 | 2015 | FR_2016 | 10.025 | `FR_gsur_ruro_v2_stageA_y2015.parquet` |
 | 2014 | FR_2015 | 9.9 | `FR_gsur_ruro_v2_stageA_y2014.parquet` |
 
-Year–survey alignment per `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md`:
+Year–survey alignment per `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md`:
 EUROMOD system year lags survey year by one year (FR_2016 uses
 opportunity year 2015, etc.).
 
@@ -350,4 +350,4 @@ on a final pooled specification determines otherwise.
 ---
 
 *Validation completed: 2026-05-20.*
-*Construction report: `docs/JMP_GSURv2_multi_year_extension_construction_report_v1.md`*
+*Construction report: `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_report_v1.md`*

@@ -5,7 +5,7 @@
 Document class: pilot build report. Records execution of NC pilot
 Stage 5 v2 (EUROMOD under Strategy C′ — blockwise joint-product
 EUROMOD with both partners deciders in every block) per
-`docs/JMP_NC_pilot_stage5_strategy_amendment_v2.md`. **All 30 blocks
+`docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage5_strategy_amendment_v2.md`. **All 30 blocks
 completed; no halt fired; HE7 stayed quiet on every block.** The
 post-EUROMOD merge, GSUR, precompute, estimation, welfare, SA2, and
 promotion are NOT run in this slice. M1-clean 2016 remains the active
@@ -44,7 +44,7 @@ and sorts each (idhh, year_tag) group so `draw_joint == 0` is first
 ## 2. Authorization scope
 
 Stage 5 v2 (EUROMOD) only, per
-`docs/JMP_NC_pilot_stage5_strategy_amendment_v2.md` (Strategy C′
+`docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage5_strategy_amendment_v2.md` (Strategy C′
 supersedes Strategy B of amendment v1, which halted at HE7). Pilot
 paths only. Block `f = 0` first as a checkpoint; full 30-block sweep
 authorized only after f = 0 passed all §16 validations. None of the
@@ -446,7 +446,7 @@ Coverage is complete.
 ## 18. Next gate
 
 **Post-EUROMOD merge slice.** A separate authorization document
-(suggested: `docs/JMP_NC_pilot_post_em_merge_amendment_v1.md`)
+(suggested: `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_post_em_merge_amendment_v1.md`)
 should pin:
 
 1. The merge keys: `(idperson_male, draw_male = m, block_f = f)` →
@@ -495,7 +495,7 @@ gated on the merge slice's success.
 ---
 
 *Status: NC pilot Stage 5 v2 build report v1, produced 2026-05-22.
-Authorization: `docs/JMP_NC_pilot_stage5_strategy_amendment_v2.md`.
+Authorization: `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage5_strategy_amendment_v2.md`.
 All 30 blocks PASSED; HE7 stayed quiet; M1-clean 2016 active; frozen
 pooled P3a spec and post-estimation track unaffected; merge slice
 remains gated. Next document: post-EUROMOD merge amendment per §18.*

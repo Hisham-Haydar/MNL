@@ -22,7 +22,7 @@ N/A (precompute never ran). The pooled-cycle projection is pending.
 ## 2. Authorization Scope
 
 **Authorizing document:**
-`docs/JMP_NC_pilot_precompute_slice_authorization_v1.md`
+`docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_slice_authorization_v1.md`
 
 **Authorized:** Column-inspection gate; running `precompute_data_couples` as-is
 with `include_wage_vars=True, include_loc_vars=False`; persisting the
@@ -42,7 +42,7 @@ normalization constants (HP-NORM).
 
 | File | Purpose |
 |---|---|
-| `docs/JMP_NC_pilot_precompute_slice_authorization_v1.md` | Authorizing document; read first |
+| `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_slice_authorization_v1.md` | Authorizing document; read first |
 | `Results/JMP_NC_pilot_draw_joint_precompute_compatibility_report_v1.md` | Prior patch report confirming compatibility patch PASSED |
 | `scripts/enhanced/estimation_utils.py` | Read `precompute_data_couples` (line 944) and `_resolve_draw_column` (line ~59) |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet` | Schema + bounded read (read-only); 2,319,300 × 152 |

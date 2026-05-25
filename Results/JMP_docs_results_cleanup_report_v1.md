@@ -27,19 +27,19 @@ status in this report). All are present; archiving proceeded.
 
 | # | File | Status |
 |---|------|--------|
-| 1 | `docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md` | PRESENT |
+| 1 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_MNL_rebuild_verdict_v1.md` | PRESENT |
 | 2 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md` | PRESENT |
-| 3 | `docs/JMP_GSURv2_MNL_rebuild_authorization_v1.md` | PRESENT |
+| 3 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_MNL_rebuild_authorization_v1.md` | PRESENT |
 | 4 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md` | PRESENT |
-| 5 | `docs/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md` | PRESENT |
+| 5 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md` | PRESENT |
 | 6 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md` | PRESENT |
-| 7 | `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` | PRESENT |
+| 7 | `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` | PRESENT |
 | 8 | `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3.md` | PRESENT |
 | 9 | `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md` | PRESENT |
-| 10 | `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md` | PRESENT |
+| 10 | `docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md` | PRESENT |
 | 11 | `docs/RURO_GSUR_external_acquisition_decision_v2.md` | PRESENT |
-| 12 | `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` | PRESENT |
-| 13 | `docs/RURO_occ_M1_naive_robustness_verdict_v1.md` | PRESENT |
+| 12 | `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` | PRESENT |
+| 13 | `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_naive_robustness_verdict_v1.md` | PRESENT |
 | 14 | `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md` | PRESENT |
 | 15 | `docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md` | PRESENT |
 | 16 | `Results/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md` | PRESENT |

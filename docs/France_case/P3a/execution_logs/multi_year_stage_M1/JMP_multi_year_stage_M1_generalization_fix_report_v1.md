@@ -1,9 +1,9 @@
 # JMP Multi-Year Stage M1 — Generalization Fix Report v1
 
-**Document:** docs/JMP_multi_year_stage_M1_generalization_fix_report_v1.md
+**Document:** docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_generalization_fix_report_v1.md
 **Date:** 2026-05-19
 **Fixes applied to:** Stage M1 generalization work documented in
-  docs/JMP_multi_year_stage_M1_generalization_report_v1.md
+  docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_generalization_report_v1.md
 **Prior validation:** Results/JMP_multi_year_stage_M1_static_validation_report_v2.md
 
 ---
@@ -158,7 +158,7 @@ Full static validation: `Results/JMP_multi_year_stage_M1_static_validation_repor
 - `config/multi_year/fr_p2_stage_m1.yaml`
 - `config/multi_year/fr_p3b_stage_m1.yaml`
 - `config/multi_year/fr_p4_stage_m1.yaml`
-- `docs/JMP_multi_year_stage_M1_generalization_fix_report_v1.md` (this file)
+- `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_generalization_fix_report_v1.md` (this file)
 - `Results/JMP_multi_year_stage_M1_static_validation_report_v3.md`
 
 ### Modified files

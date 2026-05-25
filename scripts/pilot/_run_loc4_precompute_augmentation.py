@@ -1,6 +1,6 @@
 """
 NC Pilot — loc4 Precompute Augmentation.
-Authorized by: docs/JMP_NC_pilot_loc4_precompute_augmentation_authorization_v1.md
+Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_loc4_precompute_augmentation_authorization_v1.md
 
 Rebuilds the pilot PrecomputedDataCouples pkl with include_loc_vars=True
 so beta_occ_* parameters are identified.
@@ -47,7 +47,7 @@ results = {}  # accumulate for summary
 
 print("=" * 70)
 print("NC PILOT — LOC4 PRECOMPUTE AUGMENTATION")
-print("Authorized by: docs/JMP_NC_pilot_loc4_precompute_augmentation_authorization_v1.md")
+print("Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_loc4_precompute_augmentation_authorization_v1.md")
 print("=" * 70)
 
 # ── Load normmeta ──────────────────────────────────────────────────────────────
@@ -372,7 +372,7 @@ print("\n  All validations PASS")
 # ── Write run summary sidecar ──────────────────────────────────────────────────
 run_summary = {
     "all_pass": True,
-    "authorization": "docs/JMP_NC_pilot_loc4_precompute_augmentation_authorization_v1.md",
+    "authorization": "docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_loc4_precompute_augmentation_authorization_v1.md",
     "n_groups": pc.n_groups,
     "n_obs": pc.n_obs,
     "wall_seconds_precompute": round(wall_pc, 2),

@@ -13,17 +13,17 @@ re-run, pooled estimation, welfare computation, canonical
 promotion, P3b, or P4.
 
 Reference documents:
-- `docs/JMP_GSURv2_O7_crosswalk_signoff_v1.md` (the O7 sign-off
+- `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_O7_crosswalk_signoff_v1.md` (the O7 sign-off
   granting the crosswalk and merge key)
-- `docs/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md`
+- `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md`
   (the construction verdict classifying the lookup construction
   PASS, with correction
   `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md`)
 - `Results/JMP_GSURv2_multi_year_extension_validation_report_v1.md`
   (the validation report corroborating the construction PASS)
-- `docs/JMP_GSURv2_multi_year_extension_construction_report_v1.md`
+- `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_report_v1.md`
   (the construction report with the lookup provenance)
-- `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
+- `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
   year alignment rule)
 
 Interpreter of record: `.venv\Scripts\python.exe`
@@ -161,7 +161,7 @@ covering the active cells. The lookups are ready for the merge.
 
 **The O7 crosswalk sign-off is GRANTED.**
 
-The O7 sign-off (`docs/JMP_GSURv2_O7_crosswalk_signoff_v1.md`)
+The O7 sign-off (`docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_O7_crosswalk_signoff_v1.md`)
 grants the user's explicit approval of the crosswalk and the merge
 key for the GSURv2 MNL-parquet rebuild. The sign-off approves:
 
@@ -579,7 +579,7 @@ female)`.
 (`fr_drgn1_to_nuts2_crosswalk.csv`) and its O7 sign-off reference.
 
 `o7_signoff_reference` — the O7 sign-off document
-(`docs/JMP_GSURv2_O7_crosswalk_signoff_v1.md`).
+(`docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_O7_crosswalk_signoff_v1.md`).
 
 `row_count`, `household_count` — the row and household counts (which
 must be unchanged from the input parquet, §15).
@@ -899,13 +899,13 @@ Files to confirm present: the three input v1-fallback MNL parquet
 stems (§6); the three GSURv2 lookups (§7) with their recorded SHA-
 256 hashes; the O7-approved crosswalk
 (`fr_drgn1_to_nuts2_crosswalk.csv`); the O7 sign-off
-(`docs/JMP_GSURv2_O7_crosswalk_signoff_v1.md`); and this rebuild
+(`docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_O7_crosswalk_signoff_v1.md`); and this rebuild
 authorization.
 
 Prompt to use:
 
 > Execute the GSURv2 MNL-parquet rebuild per
-> `docs/JMP_GSURv2_MNL_rebuild_authorization_v1.md`. Use the
+> `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_MNL_rebuild_authorization_v1.md`. Use the
 > interpreter `.venv\Scripts\python.exe`. Do NOT stack the parquets.
 > Do NOT estimate any model. Do NOT compute welfare. Do NOT promote
 > any file to a canonical path. Do NOT modify any canonical 2016
@@ -990,7 +990,7 @@ The following statements are made explicitly, as required.
 
 - **GSURv2 MNL-parquet rebuild is authorized only after O7 sign-
   off.** The O7 crosswalk sign-off is granted
-  (`docs/JMP_GSURv2_O7_crosswalk_signoff_v1.md`), satisfying the
+  (`docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_O7_crosswalk_signoff_v1.md`), satisfying the
   prerequisite for the rebuild. This memo authorises the GSURv2
   MNL-parquet rebuild for the three survey years within the bounds
   specified.

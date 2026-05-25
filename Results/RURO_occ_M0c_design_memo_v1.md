@@ -10,8 +10,8 @@ the implementation prompt will follow.
 
 Inputs to this memo:
 - `docs/RURO_occ_M0a_clean_verdict_v1.md`
-- `docs/RURO_occ_M0b_design_memo_v1.md`
-- `docs/RURO_occ_M0b_implementation_report_v1.md`
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0b/RURO_occ_M0b_design_memo_v1.md`
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0b/RURO_occ_M0b_implementation_report_v1.md`
 - `Results/RURO_occ_M0b2_estimation_report_v1.md`
 - `Results/RURO_occ_M0b2_multistart_report_v1.md`
 - `Results/_M0b2_multistart_summary.json`

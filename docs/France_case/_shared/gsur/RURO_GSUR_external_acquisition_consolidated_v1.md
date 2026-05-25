@@ -43,7 +43,7 @@ Per completion_v1 §1:
 ## 5. Files referenced but NOT in this merge
 
 - `RURO_GSUR_local_O1_evidence_audit_v1.md` — referenced as an input by decision_v2 but kept as a standalone audit doc under `docs/France_case/` (it is empirical evidence specific to the local DRD inspection, not a decision memo in the same chain).
-- `RURO_GSUR_rebuild_specification_v2_1.md` — the governing specification, kept standalone at `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md`. This consolidation does not replace it.
+- `RURO_GSUR_rebuild_specification_v2_1.md` — the governing specification, kept standalone at `docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md`. This consolidation does not replace it.
 
 ## 6. Open items
 

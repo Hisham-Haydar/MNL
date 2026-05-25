@@ -68,25 +68,25 @@ memo) and for the complete active authorization chain. All must remain in place.
 
 | # | File | Role |
 |---|------|------|
-| 1 | `docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md` | Active post-rebuild verdict |
+| 1 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_MNL_rebuild_verdict_v1.md` | Active post-rebuild verdict |
 | 2 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md` | Verdict correction record |
-| 3 | `docs/JMP_GSURv2_MNL_rebuild_authorization_v1.md` | Active rebuild authorization |
+| 3 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_MNL_rebuild_authorization_v1.md` | Active rebuild authorization |
 | 4 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md` | Authorization correction record |
-| 5 | `docs/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md` | Active GSURv2 construction verdict |
+| 5 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md` | Active GSURv2 construction verdict |
 | 6 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md` | Verdict correction record |
-| 7 | `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` | Active P3a construction verdict |
+| 7 | `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` | Active P3a construction verdict |
 | 8 | `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md` | Canonical strategy memo |
-| 9 | `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md` | Canonical GSUR specification |
+| 9 | `docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md` | Canonical GSUR specification |
 | 10 | `docs/RURO_GSUR_external_acquisition_decision_v2.md` | Canonical acquisition decision |
-| 11 | `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` | Active alignment rule |
-| 12 | `docs/RURO_occ_M1_naive_robustness_verdict_v1.md` | Active M1-naive robustness verdict |
+| 11 | `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` | Active alignment rule |
+| 12 | `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_naive_robustness_verdict_v1.md` | Active M1-naive robustness verdict |
 | 13 | `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md` | Canonical welfare decisions |
 | 14 | `docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md` | Canonical welfare scaffolding design |
-| 15 | `docs/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md` | Active construction authorization |
+| 15 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md` | Active construction authorization |
 | 16 | `docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md` | Active remediation authorization |
-| 17 | `docs/JMP_GSURv2_multi_year_extension_construction_report_v1.md` | Active construction report |
-| 18 | `docs/RURO_occ_M1_clean_verdict_v1.md` | Active M1-clean verdict (active JMP baseline) |
-| 19 | `docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` | Active M0c_b2 GSURv2 verdict |
+| 17 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_report_v1.md` | Active construction report |
+| 18 | `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` | Active M1-clean verdict (active JMP baseline) |
+| 19 | `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` | Active M0c_b2 GSURv2 verdict |
 | 20 | `Results/JMP_GSURv2_MNL_rebuild_report_v2.md` | Active rebuild report |
 | 21 | `Results/JMP_GSURv2_MNL_rebuild_correction_report_v1.md` | Active correction report |
 | 22 | `Results/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md` | Active full execution report |
@@ -146,36 +146,36 @@ These files look like they might be candidates but are KEEP for substantive reas
 | File | Reason to KEEP |
 |------|----------------|
 | `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3.md` | v3 and v3.1 are both referenced in downstream documents. v3.1 corrects two internal inconsistencies but does not supersede v3 as a historical record; together they form the complete revision trail from v2 |
-| `docs/JMP_GSURv2_multi_year_extension_readiness_reaudit_v1.md` | Active: this is the READY FOR CONSTRUCTION verdict that enabled the construction authorization. Required in the authorization chain |
-| `docs/JMP_GSURv2_multi_year_extension_design_memo_v1.md` | Active governing design memo for the multi-year extension; cited in every downstream authorization |
+| `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_readiness_reaudit_v1.md` | Active: this is the READY FOR CONSTRUCTION verdict that enabled the construction authorization. Required in the authorization chain |
+| `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_design_memo_v1.md` | Active governing design memo for the multi-year extension; cited in every downstream authorization |
 | `docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_implementation_audit_v1.md` | Active: NOT READY verdict that established the remediation requirement; cited in remediation authorization |
 | `docs/RURO_GSUR_O7_crosswalk_signoff_v1.md` | UNCERTAIN — see §7 |
-| `docs/JMP_GSURv2_O7_crosswalk_signoff_v1.md` | Active: multi-year O7 sign-off approving the three y2014/y2015/y2016 lookups and the `(drgn1, educ3, sex)` merge key. Required for the MNL rebuild authorization chain |
+| `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_O7_crosswalk_signoff_v1.md` | Active: multi-year O7 sign-off approving the three y2014/y2015/y2016 lookups and the `(drgn1, educ3, sex)` merge key. Required for the MNL rebuild authorization chain |
 | `docs/RURO_GSUR_StageA_authorization_v1.md` | Active: reconciles the contradiction between completion memo and open-decisions resolution; is the authoritative authorization source for Stage A. Required by construction authorization chain |
 | `docs/RURO_GSUR_v2_1_open_decisions_resolution_v1.md` | Active: binding record of all O1–O10 resolutions; required by Stage A authorization |
-| `docs/France_case/RURO_GSUR_local_O1_evidence_audit_v1.md` | Active: documents local O1 evidence (actual file inspection); informs the open-decisions resolution and is not superseded |
-| `docs/JMP_multi_year_stage_M1_execution_readiness_report_v2.md` | Active: READY verdict; cited by full execution report |
-| `docs/RURO_occ_M0c_b2_verdict_v1.md` | Active: terminal verdict in the M0a→M0b1→M0b2→M0c_b→M0c_b2 ladder; cited by M0c_b2_GSURv2 verdict |
-| `docs/JMP_multi_year_stage_M1_implementation_report_v1.md` | Active: scaffolding completion record for Stage M1; cited by construction verdict |
-| `docs/JMP_multi_year_stage_M1_generalization_report_v1.md` | Active: generalization of Stage M1 scripts; cited by generalization fix report |
-| `docs/JMP_multi_year_stage_M1_generalization_fix_report_v1.md` | Active: two blocker fixes applied post-generalization; required for the static validation v3 context |
-| `docs/France_case/RURO_prep_mnl_gsur_year_support_report_v1.md` | Active: documents `--gsur-year` CLI flag patch to `enh_RURO_prep_mnl_basic.py`; required context for single-year rebuild reports |
+| `docs/France_case/_shared/gsur/RURO_GSUR_local_O1_evidence_audit_v1.md` | Active: documents local O1 evidence (actual file inspection); informs the open-decisions resolution and is not superseded |
+| `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_execution_readiness_report_v2.md` | Active: READY verdict; cited by full execution report |
+| `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_verdict_v1.md` | Active: terminal verdict in the M0a→M0b1→M0b2→M0c_b→M0c_b2 ladder; cited by M0c_b2_GSURv2 verdict |
+| `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_report_v1.md` | Active: scaffolding completion record for Stage M1; cited by construction verdict |
+| `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_generalization_report_v1.md` | Active: generalization of Stage M1 scripts; cited by generalization fix report |
+| `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_generalization_fix_report_v1.md` | Active: two blocker fixes applied post-generalization; required for the static validation v3 context |
+| `docs/France_case/_shared/data_audits/RURO_prep_mnl_gsur_year_support_report_v1.md` | Active: documents `--gsur-year` CLI flag patch to `enh_RURO_prep_mnl_basic.py`; required context for single-year rebuild reports |
 | `docs/JMP_single_year_replication_2015_2017_authorization_v1.md` | Active: authorization for the FR_2015 and FR_2017 replications; cited by readiness report v2 |
-| `docs/JMP_multi_year_stage_M1_implementation_plan_v2.md` | Active: governing plan for Stage M1; cited throughout |
-| `docs/France_case/JMP_multi_year_CPI_HICP_source_decision_v1.md` | Active: CPI source decision (Option B); required for harmonization |
-| `docs/JMP_multi_year_sample_construction_descriptives_report_v1.md` | Active: descriptives and sample-construction documentation for all three years |
+| `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_plan_v2.md` | Active: governing plan for Stage M1; cited throughout |
+| `docs/France_case/_shared/governance/JMP_multi_year_CPI_HICP_source_decision_v1.md` | Active: CPI source decision (Option B); required for harmonization |
+| `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_sample_construction_descriptives_report_v1.md` | Active: descriptives and sample-construction documentation for all three years |
 | `docs/RURO_GSUR_v2_stageA_implementation_report_v1.md` | Active: Stage A implementation record for single-year y2016; cited by construction authorization |
-| `docs/France_case/RURO_GSUR_SOURCE_AND_MERGE_AUDIT_v1.md` | Active: GSUR merge audit; cited by M0c_b2 verdict |
-| `docs/RURO_occ_M1_clean_implementation_audit_v1.md` | Active: pre-estimation audit for M1-clean; cited by M1-clean verdict |
-| `docs/RURO_occ_M1_clean_YAML_implementation_report_v1.md` | Active: M1-clean YAML implementation record |
-| `docs/RURO_occ_M1_clean_design_memo_v2.md` | Active: canonical M1-clean design memo |
-| `docs/RURO_post_estimation_M1_diagnostics_implementation_report_v1.md` | Active: implementation record for M1-clean diagnostics script |
-| `docs/RURO_post_estimation_M1_naive_diagnostics_implementation_report_v1.md` | Active: implementation record for M1-naive diagnostics script |
-| `docs/RURO_occ_M1_naive_YAML_implementation_report_v1.md` | Active: M1-naive YAML derivation record |
-| `docs/JMP_GSURv2_script_remediation_report_v1.md` | Active: remediation completion record for C1–C7; cited by construction authorization chain |
-| `docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` | Active: lock plan required by construction authorization; now corrected in-place |
+| `docs/France_case/_shared/gsur/RURO_GSUR_SOURCE_AND_MERGE_AUDIT_v1.md` | Active: GSUR merge audit; cited by M0c_b2 verdict |
+| `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_implementation_audit_v1.md` | Active: pre-estimation audit for M1-clean; cited by M1-clean verdict |
+| `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_YAML_implementation_report_v1.md` | Active: M1-clean YAML implementation record |
+| `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md` | Active: canonical M1-clean design memo |
+| `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_post_estimation_M1_diagnostics_implementation_report_v1.md` | Active: implementation record for M1-clean diagnostics script |
+| `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_post_estimation_M1_naive_diagnostics_implementation_report_v1.md` | Active: implementation record for M1-naive diagnostics script |
+| `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_naive_YAML_implementation_report_v1.md` | Active: M1-naive YAML derivation record |
+| `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_script_remediation_report_v1.md` | Active: remediation completion record for C1–C7; cited by construction authorization chain |
+| `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` | Active: lock plan required by construction authorization; now corrected in-place |
 | `docs/RURO_GSUR_external_acquisition_report_v1.md` | HISTORICAL_KEEP: initial acquisition analysis; long, detailed, contains O1/O2/O9 reasoning not reproduced elsewhere |
-| `docs/France_case/RURO_FR2016_CONTINUOUS_DATA_BUILD_AUDIT_v1.md` | HISTORICAL_KEEP: comprehensive audit of the 2016 data build pipeline; referenced by M1-clean audit |
+| `docs/France_case/_shared/data_audits/RURO_FR2016_CONTINUOUS_DATA_BUILD_AUDIT_v1.md` | HISTORICAL_KEEP: comprehensive audit of the 2016 data build pipeline; referenced by M1-clean audit |
 | `Results/JMP_multi_year_feasibility_audit_v1.md` | Active: feasibility assessment for P3a/P3b/P4; cited by addendum v2 |
 | `Results/JMP_multi_year_feasibility_audit_addendum_v2.md` | Active: P3b/P4 branches and 2018 assessment |
 | `Results/JMP_single_year_FR2015_replication_report_v1.md` | Active: FR_2015 replication execution record |

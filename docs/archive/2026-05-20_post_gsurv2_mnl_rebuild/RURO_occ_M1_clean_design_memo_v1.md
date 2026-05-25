@@ -10,13 +10,13 @@ estimation, code modification, welfare computation, or canonical
 parquet promotion.
 
 Reference documents:
-- `docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the accepted working
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the accepted working
   baseline)
 - `Results/RURO_occ_M0c_b2_GSURv2_estimation_report_v1.md`
 - `Results/RURO_occ_M0c_b2_GSURv2_post_estimation_diagnostics_v1.md`
 - `docs/JMP_ability_vs_opportunity_framework_v1.md` (the conceptual
   framework; superseded in its regional-dummy design by this memo)
-- `docs/RURO_GSUR_rebuild_specification_v2_1.md` §16 (the frozen
+- `docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md` §16 (the frozen
   blocks that M1-clean preserves)
 - `scripts/enhanced/estimation_spec_ruro_occ_M0c_b2_GSURv2.yaml`
   (the working YAML; M1-clean YAML is derived from this file)
@@ -917,7 +917,7 @@ educational reclassification but does not add region dummies.
 The selection among SA1-STANDS, SA1-REVISION, and SA1-OVERTURNED
 is made on the basis of the M1-clean estimation report and
 post-estimation diagnostics; a separate verdict memo
-`docs/RURO_occ_M1_clean_verdict_v1.md` is written to record the
+`docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` is written to record the
 verdict and its justification, following the same template as the
 M0c_b2_GSURv2 verdict memo.
 

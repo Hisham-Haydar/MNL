@@ -2,7 +2,7 @@
 
 *France RURO multi-year extension | v1 | 2026-05-24*
 
-**Authorization:** `docs/JMP_NC_pilot_JAX_optimizer_benchmark_authorization_v1.md` §18
+**Authorization:** `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_JAX_optimizer_benchmark_authorization_v1.md` §18
 **Script:** `scripts/pilot/_run_jax_optimizer_benchmark.py`
 **Generated:** 2026-05-24 22:37
 

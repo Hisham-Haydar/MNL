@@ -2,7 +2,7 @@
 Stage A MNL rebuild: merge GSURv2 Stage A broad-age lookup into versioned parquets.
 
 Authorised by: docs/RURO_GSUR_O7_crosswalk_signoff_v1.md
-Spec: docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md §8, §14
+Spec: docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md §8, §14
 Prompt: Prompts/RURO_GSUR_v2_stageA_MNL_rebuild_prompt_corrected_v2.md
 
 Writes ONLY to versioned GSURv2 paths. Canonical paths are read-only.

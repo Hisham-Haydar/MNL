@@ -12,9 +12,9 @@ sequencing that the subsequent operational prompts will build
 upon.
 
 Reference documents:
-- `docs/RURO_occ_M1_clean_verdict_v1.md` (the accepted structural
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` (the accepted structural
   baseline)
-- `docs/RURO_occ_M1_naive_robustness_verdict_v1.md` (the R2
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_naive_robustness_verdict_v1.md` (the R2
   robustness exposure on the structural side, settled)
 - `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`
   (the multi-year strategy design)

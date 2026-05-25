@@ -17,14 +17,14 @@ Primary evidence:
 - `Results/RURO_occ_M1_naive_post_estimation_diagnostics_v1.md`
 - `Results/RURO_occ_M1_naive_supplementary_diagnostics_v1.md`
 - `Results/RURO_occ_M1_naive_gate_A_parse_report_v1.md`
-- `docs/RURO_occ_M1_naive_YAML_implementation_report_v1.md`
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_naive_YAML_implementation_report_v1.md`
 
 Reference documents:
-- `docs/RURO_occ_M1_clean_verdict_v1.md` (the preferred structural
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` (the preferred structural
   baseline against which M1-naive is compared)
-- `docs/RURO_occ_M1_clean_design_memo_v2.md` §22 (the SA1
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md` §22 (the SA1
   acceptance rule that M1-clean satisfied)
-- `docs/RURO_occ_M1_clean_design_memo_v2.md` §23 (the M1-naive
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md` §23 (the M1-naive
   specification design as a robustness exposure, not a candidate
   primary baseline)
 - `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`

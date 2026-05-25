@@ -3,9 +3,9 @@
 **Document:** Results/JMP_single_year_FR2016_gsurY2015_rebuild_report_v1.md  
 **Date:** 2026-05-20  
 **Author:** Pipeline execution via Claude Code  
-**Authorization:** `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` (Decision 2) + user authorization 2026-05-20  
+**Authorization:** `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` (Decision 2) + user authorization 2026-05-20  
 **Output stem:** `fr_2016_RURO_mnl_v1gsurY2015`  
-**GSUR decision memo:** `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md`  
+**GSUR decision memo:** `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md`  
 **Readiness verdict:** `Results/JMP_single_year_consolidated_readiness_verdict_v1.md`
 
 ---
@@ -42,10 +42,10 @@ Per `Results/JMP_single_year_consolidated_readiness_verdict_v1.md` §5, proceedi
 | Document | Purpose |
 | -------- | ------- |
 | `Results/JMP_single_year_consolidated_readiness_verdict_v1.md` | Misalignment diagnosis, Option A authorization |
-| `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` | Alignment rule, Decision 2 |
-| `docs/France_case/RURO_prep_mnl_gsur_year_support_report_v1.md` | `--gsur-year` flag implementation details |
+| `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` | Alignment rule, Decision 2 |
+| `docs/France_case/_shared/data_audits/RURO_prep_mnl_gsur_year_support_report_v1.md` | `--gsur-year` flag implementation details |
 | `Results/JMP_single_year_2016_local_mirror_report_v1.md` | Prior FR_2016 mirror state, file provenance |
-| `docs/RURO_occ_M1_clean_verdict_v1.md` | M1-clean operative file identity; confirmed `GSURv2__` is M1-clean baseline |
+| `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` | M1-clean operative file identity; confirmed `GSURv2__` is M1-clean baseline |
 | `docs/JMP_single_year_replication_2015_2017_authorization_v1.md` | Draw parameters (binding); no-overwrite rules |
 | `docs/JMP_single_year_replication_2015_2017_command_plan_addendum_v1.md` | GSUR alignment rule; Option A specification |
 
@@ -248,7 +248,7 @@ Zero missing `gsur` in both files. The script log confirms: `GSUR merge (singles
 
 ## 15. Comparison to M1-clean operative FR_2016 files
 
-The M1-clean verdict (`docs/RURO_occ_M1_clean_verdict_v1.md`) remains valid and unmodified. Its operative data is `fr_2016_RURO_mnl_GSURv2__{singles,couples}.parquet`, which is preserved unchanged on Z:. The new `v1gsurY2015` files are a **separate** MNL input set for the provisional multi-year pooled route only.
+The M1-clean verdict (`docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md`) remains valid and unmodified. Its operative data is `fr_2016_RURO_mnl_GSURv2__{singles,couples}.parquet`, which is preserved unchanged on Z:. The new `v1gsurY2015` files are a **separate** MNL input set for the provisional multi-year pooled route only.
 
 | Dimension | M1-clean operative (`GSURv2__`) | Pooled-route (`v1gsurY2015`) |
 | --------- | -------------------------------- | ----------------------------- |
@@ -283,7 +283,7 @@ The M1-clean LL (−6487.5522) was estimated on the `GSURv2__` data and correspo
 | `Z:\...\fr\2016\couples_RURO_ready_RURO_draws.parquet` | **Untouched** — reused as input |
 | `Z:\...\fr\2016\stijn_occ\scenarios\combined_draws_em.parquet` | **Untouched** — reused as input |
 | `scripts/enhanced/enh_RURO_prep_mnl_basic.py` | **Untouched** — no code changes |
-| `docs/RURO_occ_M1_clean_verdict_v1.md` | **Untouched** — verdict remains valid for GSURv2__ data |
+| `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` | **Untouched** — verdict remains valid for GSURv2__ data |
 
 ---
 
@@ -414,7 +414,7 @@ All three pre-conditions identified in `Results/JMP_single_year_consolidated_rea
 | 7. This report | ✓ DONE |
 | 8. Update `docs/JMP_multi_year_stage_M1_execution_readiness_report_v1.md` | **PENDING** |
 
-The exact next task is: **Update `docs/JMP_multi_year_stage_M1_execution_readiness_report_v1.md`** to change the verdict from NOT AUTHORIZED to AUTHORIZED (provisional, v1-fallback, opportunity-year-aligned). The update should note that all three years are GSUR-opportunity-year-aligned under the v1 fallback, that Stage M1 P3a live stacking may proceed, and that outputs must carry the `provisional_v1_fallback_opportunity_year_aligned` label per `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` Decision 3.
+The exact next task is: **Update `docs/JMP_multi_year_stage_M1_execution_readiness_report_v1.md`** to change the verdict from NOT AUTHORIZED to AUTHORIZED (provisional, v1-fallback, opportunity-year-aligned). The update should note that all three years are GSUR-opportunity-year-aligned under the v1 fallback, that Stage M1 P3a live stacking may proceed, and that outputs must carry the `provisional_v1_fallback_opportunity_year_aligned` label per `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` Decision 3.
 
 ---
 

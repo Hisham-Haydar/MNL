@@ -12,7 +12,7 @@ code was changed. No script was run. No parquet was written.
 | # | File | Issue | Action |
 |---|------|-------|--------|
 | F1 | `Results/JMP_GSURv2_script_remediation_static_validation_v1.md` | Commands written as bare `python` — validated interpreter not identified | Added venv interpreter note in Validation scope; replaced `python` with `.venv\Scripts\python.exe` in all three command blocks (V3, V4a, V6) |
-| F2 | `docs/JMP_GSURv2_script_remediation_report_v1.md` | §14 audit-readiness table cited external-file remediation as a single commit `df873d0` | Corrected to: files in commit `e4dd6c2`, report in commit `df873d0` |
+| F2 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_script_remediation_report_v1.md` | §14 audit-readiness table cited external-file remediation as a single commit `df873d0` | Corrected to: files in commit `e4dd6c2`, report in commit `df873d0` |
 
 ---
 
@@ -20,7 +20,7 @@ code was changed. No script was run. No parquet was written.
 
 | File | Purpose |
 |------|---------|
-| `docs/JMP_GSURv2_script_remediation_report_v1.md` | Subject to F2; §14 table read in full |
+| `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_script_remediation_report_v1.md` | Subject to F2; §14 table read in full |
 | `Results/JMP_GSURv2_script_remediation_static_validation_v1.md` | Subject to F1; all sections read in full |
 
 No code files were read. No data files were read. No scripts were run.
@@ -64,7 +64,7 @@ The external-file remediation produced two commits, not one:
 | `df873d0` | `Results/JMP_GSURv2_external_file_remediation_report_v1.md` only |
 
 The §14 audit-readiness table in
-`docs/JMP_GSURv2_script_remediation_report_v1.md` originally read:
+`docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_script_remediation_report_v1.md` originally read:
 
 > PASS (external-file remediation, commit `df873d0`)
 
@@ -84,7 +84,7 @@ No other commit references in either file required correction.
 | File | Change type | Summary |
 |------|-------------|---------|
 | `Results/JMP_GSURv2_script_remediation_static_validation_v1.md` | Documentation fix (F1) | Venv interpreter note added to Validation scope; `python` → `.venv\Scripts\python.exe` in V3, V4a, V6 command blocks |
-| `docs/JMP_GSURv2_script_remediation_report_v1.md` | Documentation fix (F2) | §14 external-file remediation commit reference corrected to `e4dd6c2` (files) + `df873d0` (report) |
+| `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_script_remediation_report_v1.md` | Documentation fix (F2) | §14 external-file remediation commit reference corrected to `e4dd6c2` (files) + `df873d0` (report) |
 | `docs/JMP_GSURv2_script_remediation_documentation_fix_v1.md` | New file | This report |
 
 No code was changed. No data was built.

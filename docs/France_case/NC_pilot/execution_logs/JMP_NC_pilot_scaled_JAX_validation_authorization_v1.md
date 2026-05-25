@@ -275,7 +275,7 @@ verbatim; tolerance-stop required; no inference/welfare.
 ```text
 Work locally in my RURO/MNL codebase. SCALED-JAX VALIDATION (3 scaled starts),
 FR_2016 couples pilot. Authorized by
-docs/JMP_NC_pilot_scaled_JAX_validation_authorization_v1.md. NOT production,
+docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_scaled_JAX_validation_authorization_v1.md. NOT production,
 NOT verdict-grade.
 
 HARD CONSTRAINTS (halt and report if any would be violated):
@@ -304,7 +304,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
   (native) change; document any kernel import/refactor (no logic change). (HS-MUT)
 
 Read (read-only except new script + new report):
-- docs/JMP_NC_pilot_scaled_JAX_validation_authorization_v1.md
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_scaled_JAX_validation_authorization_v1.md
 - scripts/pilot/_run_optimizer_protocol_diagnostic.py (S2c scaling implementation)
   and scripts/pilot/_run_jax_validation_estimation.py (3-start harness; reuse v2 kernel)
 - Data/pilot/nc_2016_couples/precomputed/fr_pilot_nc_2016_couples_precomputed_loc.pkl

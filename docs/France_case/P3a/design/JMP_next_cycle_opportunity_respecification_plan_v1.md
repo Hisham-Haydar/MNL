@@ -641,7 +641,7 @@ Do NOT rebuild data. Do NOT modify YAML. Do NOT estimate. Do NOT compute
 welfare. Do NOT issue SA2. Do NOT promote any model over M1-clean 2016.
 
 Read:
-- docs/JMP_next_cycle_opportunity_respecification_plan_v1.md
+- docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md
 - Results/JMP_opportunity_block_readonly_diagnostic_v1.md
 - docs/jmp_methodology/JMP_couples_opportunity_draw_design_note_v1.md
 - docs/jmp_methodology/JMP_conditional_wage_on_occupation_decision_note_v1.md

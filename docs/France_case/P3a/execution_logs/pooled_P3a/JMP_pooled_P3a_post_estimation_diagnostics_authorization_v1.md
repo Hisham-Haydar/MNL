@@ -12,13 +12,13 @@ promotion, and no displacement of M1-clean 2016.** S10/S11 (simulation
 fit) are a later, separate gate.
 
 Reference documents:
-- `docs/JMP_pooled_P3a_corrected_region_post_estimation_review_v1.md`
+- `docs/France_case/P3a/execution_logs/pooled_P3a/JMP_pooled_P3a_corrected_region_post_estimation_review_v1.md`
   (the review that left S4/S5/S6/S8 open and is NOT SA2-ready)
 - `Results/JMP_pooled_P3a_corrected_region_estimation_report_v1.md` (the
   corrected estimation report)
 - `Results/JMP_pooled_P3a_corrected_orchestrator_summary.json` and the
   three corrected SE JSONs (`corrected_start1/2/3_cluster_robust_se.json`)
-- `docs/RURO_occ_M1_clean_verdict_v1.md` (the M1-clean baseline: the
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` (the M1-clean baseline: the
   verdict-selected run, the region joint Wald benchmark, and the three
   negative-variance entries)
 
@@ -312,7 +312,7 @@ present, the saved Hessian):**
 **M1-clean baseline (for S6, S8 comparison):**
 - `outputs/estimates/fr/spec/ruro_occ_M1_clean/gamspy/estimation_spec_ruro_occ_M1_clean/run_2026-05-18_11-33-46/estimation_results.json`
   (the verdict-selected M1-clean run)
-- `docs/RURO_occ_M1_clean_verdict_v1.md` (the region joint-Wald benchmark
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` (the region joint-Wald benchmark
   and the three negative-variance entries)
 
 The three corrected VCV `.npy` files are explicitly required for S4 and
@@ -468,7 +468,7 @@ Hessian must be recomputed) the P3a YAML, the corrected split stem, and
 Prompt to use:
 
 > Run the narrow post-estimation diagnostics per
-> `docs/JMP_pooled_P3a_post_estimation_diagnostics_authorization_v1.md`.
+> `docs/France_case/P3a/execution_logs/pooled_P3a/JMP_pooled_P3a_post_estimation_diagnostics_authorization_v1.md`.
 > Use `.venv\Scripts\python.exe`. Do NOT run the solver. Do NOT
 > re-estimate. Do NOT compute welfare. Do NOT issue SA2. Do NOT promote
 > any output to canonical status. Do NOT modify the pooled YAML. Do NOT

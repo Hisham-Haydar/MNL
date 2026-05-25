@@ -466,7 +466,7 @@ under the existing versioned-file convention.
 - Save as: `RURO_ruro_occ_M0a_respec_plan_v1.md`.
 
 **E. Run M0a (Claude Code, then the existing PowerShell command in
-`docs/France_case/RURO_ruro_occ_baseline_implementation_report_v1.md`).**
+`docs/France_case/P3a/design/RURO_ruro_occ_baseline_implementation_report_v1.md`).**
 
 - Tool: Claude Code to update the YAML; the existing
   `enh_RURO_estimate_FR.py` command to run it.

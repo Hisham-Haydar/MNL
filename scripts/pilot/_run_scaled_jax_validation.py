@@ -1,7 +1,7 @@
 """
 Scaled-JAX Validation — FR_2016 couples pilot (three scaled starts).
 
-Authorization: docs/JMP_NC_pilot_scaled_JAX_validation_authorization_v1.md s18
+Authorization: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_scaled_JAX_validation_authorization_v1.md s18
 
 SCOPE: Formal three-start scaled L-BFGS-B validation using the S2c scaling rule
 scale[i] = max(|theta_CONOPT[i]|, 1e-3). Optimizer works in scaled coordinates;
@@ -505,7 +505,7 @@ SCALE = np.array([
 
 print("=" * 70)
 print("SCALED-JAX VALIDATION ORCHESTRATOR (3 scaled starts)")
-print("Authorization: docs/JMP_NC_pilot_scaled_JAX_validation_authorization_v1.md")
+print("Authorization: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_scaled_JAX_validation_authorization_v1.md")
 print("=" * 70)
 
 t_total_0 = time.time()
@@ -611,7 +611,7 @@ def param_tbl():
 L = []
 L.append("# JMP NC Pilot — Scaled-JAX Validation Report v1\n")
 L.append(f"*France RURO multi-year extension | v1 | {now_str}*\n")
-L.append("**Authorization:** `docs/JMP_NC_pilot_scaled_JAX_validation_authorization_v1.md` s18  ")
+L.append("**Authorization:** `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_scaled_JAX_validation_authorization_v1.md` s18  ")
 L.append("**Script:** `scripts/pilot/_run_scaled_jax_validation.py`  ")
 L.append(f"**Generated:** {now_str}\n")
 L.append("**SCOPE:** Formal scaled-JAX three-start validation — NOT production, NOT verdict-grade. "

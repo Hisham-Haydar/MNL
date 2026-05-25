@@ -2,7 +2,7 @@
 
 *France RURO multi-year extension | v2 | 2026-05-24*
 
-**Authorization:** `docs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md` §8
+**Authorization:** `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md` §8
 **Script:** `scripts/pilot/_run_ll_equivalence_prototype.py`
 **Generated:** 2026-05-24 22:05
 **Supersedes:** v1 (not overwritten)
@@ -27,7 +27,7 @@ The vectorized NumPy/JAX implementation reproduces the GAMSPy/CONOPT formula. Th
 
 ## 2. Authorization scope
 
-Fixed-theta LL cleanup and validation per `docs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md`. Authorized: RESULT_S2 path fix, finite-gradient check, v2 report. Not authorized: optimization, CONOPT, welfare, SA2, promotion, formula change, v1 overwrite, pilot/production data modification.
+Fixed-theta LL cleanup and validation per `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md`. Authorized: RESULT_S2 path fix, finite-gradient check, v2 report. Not authorized: optimization, CONOPT, welfare, SA2, promotion, formula change, v1 overwrite, pilot/production data modification.
 
 ---
 
@@ -35,7 +35,7 @@ Fixed-theta LL cleanup and validation per `docs/JMP_NC_pilot_vectorized_likeliho
 
 | File | Purpose |
 |---|---|
-| `docs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md` | Authorization |
+| `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md` | Authorization |
 | `docs/jmp_methodology/JMP_estimator_architecture_decision_v1.md` | Architecture decision |
 | `Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v1.md` | Prior report (not overwritten) |
 | `scripts/pilot/_run_ll_equivalence_prototype.py` | Prototype script (edited) |

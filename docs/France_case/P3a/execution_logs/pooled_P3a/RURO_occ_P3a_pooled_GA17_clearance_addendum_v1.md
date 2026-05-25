@@ -24,10 +24,10 @@ Primary evidence:
 Governing documents:
 - `docs/RURO_occ_P3a_pooled_gate_A_parse_report_v1.md` (the Gate-A
   parse report under addendum)
-- `docs/JMP_pooled_P3a_estimation_design_memo_v1.md` and its
+- `docs/France_case/P3a/design/JMP_pooled_P3a_estimation_design_memo_v1.md` and its
   correction (the pooled design, including the corrected GA17 verdict
   semantics)
-- `docs/RURO_occ_M1_clean_verdict_v1.md` (the active single-year
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` (the active single-year
   baseline)
 
 Interpreter of record: `.venv\Scripts\python.exe`.

@@ -21,7 +21,7 @@ The precompute-readiness transformation completed successfully:
 
 ## 2. Authorization Scope
 
-**Authorizing document:** `docs/JMP_NC_pilot_precompute_readiness_amendment_v1.md`
+**Authorizing document:** `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_readiness_amendment_v1.md`
 
 This slice authorizes only:
 - Reading the post-EM parquet (read-only).
@@ -43,7 +43,7 @@ require separate authorizing documents.
 
 | File | Purpose |
 |---|---|
-| `docs/JMP_NC_pilot_precompute_readiness_amendment_v1.md` | Authorizing document; read first |
+| `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_readiness_amendment_v1.md` | Authorizing document; read first |
 | `Results/JMP_NC_pilot_post_em_merge_report_v1.md` | Post-EM merge status confirmation |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__post_em.parquet` | Input base (read-only) |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__post_em__mergemeta.json` | Merge metadata (income stats, validation record) |

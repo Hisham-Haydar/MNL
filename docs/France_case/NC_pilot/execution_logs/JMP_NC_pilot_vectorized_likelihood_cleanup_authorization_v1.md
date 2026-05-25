@@ -160,7 +160,7 @@ optimization; read-only on data and oracle results.
 ```text
 Work locally in my RURO/MNL codebase. VECTORIZED-LIKELIHOOD CLEANUP + GRADIENT
 VALIDATION, FR_2016 couples pilot. Authorized by
-docs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md.
+docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md.
 Fixed-theta only. NO optimization, NO new optimum, NO welfare/SA2/promotion.
 
 HARD CONSTRAINTS (halt and report if any would be violated):
@@ -172,7 +172,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
 - Do NOT modify pilot data, production data, or the oracle results.
 
 Read (read-only):
-- docs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_vectorized_likelihood_cleanup_authorization_v1.md
 - scripts/pilot/_run_ll_equivalence_prototype.py (to edit: RESULT_S2 + gradient)
 - Results/pilot/nc_2016_couples/diagnostic_rerun_v1/start_1_warm_P3a/estimation_result.json
 - Results/pilot/nc_2016_couples/diagnostic_rerun_v1/start_2_yaml_defaults/estimation_result2.json

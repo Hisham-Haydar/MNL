@@ -4,7 +4,7 @@
 **Scope:** France case (EUROMOD FR 2016 → GSUR v2 rebuild — Stage A authorization, implementation, and per-decision resolutions)
 **Authoring rule:** structural merge of six pre-existing memos. No content rewritten in this pass.
 
-> **Standalone document kept separate (not merged):** `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md` is the governing specification and remains untouched. This consolidation covers the decision/authorization/sign-off chain *around* that spec.
+> **Standalone document kept separate (not merged):** `docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md` is the governing specification and remains untouched. This consolidation covers the decision/authorization/sign-off chain *around* that spec.
 
 ---
 
@@ -44,8 +44,8 @@ For substantive content, read the archived source. Each archived file has a top-
 
 ## 4. Relationship to other consolidations
 
-- The **external acquisition chain** (decision_v2 / report / verification / completion) is consolidated separately at `docs/France_case/consolidated/RURO_GSUR_external_acquisition_consolidated_v1.md`. That chain identifies and acquires the external assets (NUTS workbook, Eurostat extracts, INSEE benchmark) that this rebuild chain consumes.
-- The **v2.1 specification** itself is the upstream governing document and is kept standalone at `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md`.
+- The **external acquisition chain** (decision_v2 / report / verification / completion) is consolidated separately at `docs/France_case/_shared/gsur/RURO_GSUR_external_acquisition_consolidated_v1.md`. That chain identifies and acquires the external assets (NUTS workbook, Eurostat extracts, INSEE benchmark) that this rebuild chain consumes.
+- The **v2.1 specification** itself is the upstream governing document and is kept standalone at `docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md`.
 
 ## 5. Open items
 

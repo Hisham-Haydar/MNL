@@ -2,7 +2,7 @@
 """
 NC pilot — Precompute-readiness transformation.
 
-Authorized by: docs/JMP_NC_pilot_precompute_readiness_amendment_v1.md
+Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_readiness_amendment_v1.md
 
 Adds is_chosen = is_chosen_joint (integer alias, copy not move) and sorts
 each (idhh, year_tag) group so the chosen row (draw_joint == 0) is first,
@@ -47,7 +47,7 @@ def halt(code: str, msg: str) -> None:
 def main() -> int:
     t_start = datetime.now(timezone.utc)
     print(f"[ready] NC pilot precompute-readiness transformation")
-    print(f"[ready] Authorization: docs/JMP_NC_pilot_precompute_readiness_amendment_v1.md")
+    print(f"[ready] Authorization: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_readiness_amendment_v1.md")
     print(f"[ready] Start: {t_start.isoformat()}")
 
     # -------------------------------------------------------------------------
@@ -282,7 +282,7 @@ def main() -> int:
         "produced_by": "scripts/pilot/build_precompute_ready.py",
         "produced_at_utc": t_end.isoformat(),
         "wall_seconds": round(wall_sec, 1),
-        "authorization": "docs/JMP_NC_pilot_precompute_readiness_amendment_v1.md",
+        "authorization": "docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_readiness_amendment_v1.md",
         "input": {
             "path": str(IN_PARQUET.relative_to(REPO)),
             "row_count": EXPECTED_ROWS,

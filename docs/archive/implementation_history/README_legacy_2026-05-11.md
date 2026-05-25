@@ -207,7 +207,7 @@ python -c "import pandas as pd; df = pd.read_parquet('U:/EUROMOD-STORAGE/Data/pr
 ### Technical References
 - **[docs/GAMSPy_Quick_Start.md](docs/GAMSPy_Quick_Start.md)** - GAMSPy estimation guide
 - **[docs/GAMSPy_vs_SciPy_Architecture_Comparison.md](docs/GAMSPy_vs_SciPy_Architecture_Comparison.md)** - Solver comparison (40K detailed analysis)
-- **[docs/FR2016_RURO_pipeline_report.md](docs/FR2016_RURO_pipeline_report.md)** - Complete pipeline documentation (42K)
+- **[docs/France_case/P3a/design/FR2016_RURO_pipeline_report.md](docs/France_case/P3a/design/FR2016_RURO_pipeline_report.md)** - Complete pipeline documentation (42K)
 - **Occupation Choice:** See `OCCUPATION_CHOICE_*.md` files for detailed design docs
 - **R Validation:** See [notes/STIJN_vs_PYTHON_SPECIFICATION.md](notes/STIJN_vs_PYTHON_SPECIFICATION.md)
 

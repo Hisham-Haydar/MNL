@@ -11,12 +11,12 @@ or execute the GSURv2 construction, the pooled estimation, or any
 welfare work.
 
 Reference documents:
-- `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md`
+- `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md`
   (the construction verdict naming the GSURv2 extension as the next
   empirical gate)
-- `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
+- `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
   year alignment rule and the GSURv2 final-construction requirement)
-- `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md` (the canonical
+- `docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md` (the canonical
   GSURv2 construction methodology — crosswalk, denominator,
   benchmark, validation)
 - `docs/RURO_GSUR_v2_stageA_implementation_report_v1.md` (the
@@ -1011,16 +1011,16 @@ and its provenance documentation
 crosswalk (`Data/external/fr_drgn1_to_nuts2_crosswalk.csv`); the
 construction script
 (`scripts/enhanced/enh_prepare_FR_gsur_v2.py`); the rebuild
-specification (`docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md`); the
+specification (`docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md`); the
 year-alignment decision
-(`docs/France_case/JMP_GSUR_year_alignment_decision_v1.md`); and this design
+(`docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md`); and this design
 memo.
 
 Prompt to use:
 
 > Audit the readiness of the GSURv2 multi-year extension to
 > opportunity years 2014 and 2015, per
-> `docs/JMP_GSURv2_multi_year_extension_design_memo_v1.md` §19.
+> `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_design_memo_v1.md` §19.
 > Do not run the GSURv2 construction. Do not write any GSURv2
 > lookup. Do not estimate any model. Do not compute welfare.
 > Produce a readiness report only.

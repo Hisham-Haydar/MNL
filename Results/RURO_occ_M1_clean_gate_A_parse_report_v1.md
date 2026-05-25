@@ -107,8 +107,8 @@ None of these timestamps postdate the start of this session. No MNL files modifi
 
 ```
 scripts/enhanced/specifications/estimation_spec_ruro_occ_M1_clean.yaml
-docs/RURO_occ_M1_clean_YAML_implementation_report_v1.md
-docs/RURO_occ_M1_clean_implementation_audit_v1.md
+docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_YAML_implementation_report_v1.md
+docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_implementation_audit_v1.md
 Results/RURO_occ_M1_clean_gate_A_parse_report_v1.md
 ```
 
@@ -126,7 +126,7 @@ preserves all frozen blocks, and the precompute smoke test confirms all 7 region
 dummies are available on both data objects at load time.
 
 The spec is ready for estimation subject to the pre-estimation constraint in
-`docs/RURO_occ_M1_clean_implementation_audit_v1.md` §20: the M1-specific
+`docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_implementation_audit_v1.md` §20: the M1-specific
 post-estimation diagnostics (joint Wald test, region covariance sub-block,
 region-conditional GSUR Hessian sub-matrix) require a supplementary diagnostic
 implementation before the post-estimation step can satisfy design memo v2 §21.

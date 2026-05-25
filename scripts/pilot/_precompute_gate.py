@@ -1,6 +1,6 @@
 """
 STEP 1: Inspection gate for precompute-readiness.
-Authorized by: docs/JMP_NC_pilot_precompute_slice_authorization_v1.md
+Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_slice_authorization_v1.md
 """
 import sys
 import json

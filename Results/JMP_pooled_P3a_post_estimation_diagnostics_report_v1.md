@@ -3,7 +3,7 @@
 *France FR_2015 / FR_2016 / FR_2017 | v1 | 2026-05-22*
 
 Document class: narrow post-estimation diagnostics report (S4, S5, S6, S8).
-Authorised by `docs/JMP_pooled_P3a_post_estimation_diagnostics_authorization_v1.md`.
+Authorised by `docs/France_case/P3a/execution_logs/pooled_P3a/JMP_pooled_P3a_post_estimation_diagnostics_authorization_v1.md`.
 Read-only / fixed-theta arithmetic on saved corrected-region artifacts. **No
 solver, no re-estimation, no welfare, no SA2 verdict, no canonical promotion,
 no S10/S11 simulation.** M1-clean 2016 remains the active JMP baseline.
@@ -25,7 +25,7 @@ no S10/S11 simulation.** M1-clean 2016 remains the active JMP baseline.
 
 ## 2. Authorization scope
 
-Per `docs/JMP_pooled_P3a_post_estimation_diagnostics_authorization_v1.md`:
+Per `docs/France_case/P3a/execution_logs/pooled_P3a/JMP_pooled_P3a_post_estimation_diagnostics_authorization_v1.md`:
 
 - Authorised: S4 (Wald), S5 (GSUR-region Hessian eigenvalues; permitted to recompute the true Hessian at the saved theta), S6 (Δ table vs M1-clean + LL profile in `theta_c_singles` at saved theta), S8 (negative-variance enumeration).
 - Not authorised: solver, re-estimation, welfare, SA2 verdict, canonical promotion, M1-clean displacement, spec modification, S10/S11 simulation, any use of pre-repair pooled artifacts.
@@ -152,7 +152,7 @@ Smallest eigenvalue: **20.44** (numerical tolerance: well above any plausible fl
 
 ## 8. S6 preference-block comparison to M1-clean
 
-**M1-clean baseline artifact used.** `outputs/estimates/fr/spec/ruro_occ_M1_clean/gamspy/estimation_spec_ruro_occ_M1_clean/run_2026-05-18_11-33-46/estimation_results.json` — the **verdict-selected** M1-clean run per `docs/RURO_occ_M1_clean_verdict_v1.md`, joint LL = −6487.5522. No substitution was made.
+**M1-clean baseline artifact used.** `outputs/estimates/fr/spec/ruro_occ_M1_clean/gamspy/estimation_spec_ruro_occ_M1_clean/run_2026-05-18_11-33-46/estimation_results.json` — the **verdict-selected** M1-clean run per `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md`, joint LL = −6487.5522. No substitution was made.
 
 **Shared parameter count.** 53 shared (M1-clean has 53 params; pooled P3a has 55). The two P3a-only parameters are `beta_E_y2015` and `beta_E_y2017` (year indicators), excluded from the comparison.
 
@@ -283,7 +283,7 @@ The singles-consumption block (`beta_c_sm`, `beta_c_sf`, `theta_c_singles`) is t
 
 ## 13. Updated SA2-readiness table
 
-Re-scoring the eleven SA2 criteria with the four diagnostics now adjudicated. S1, S2, S3, S7, S9 were already PASS per `docs/JMP_pooled_P3a_corrected_region_post_estimation_review_v1.md`; S10 and S11 remain a later gate.
+Re-scoring the eleven SA2 criteria with the four diagnostics now adjudicated. S1, S2, S3, S7, S9 were already PASS per `docs/France_case/P3a/execution_logs/pooled_P3a/JMP_pooled_P3a_corrected_region_post_estimation_review_v1.md`; S10 and S11 remain a later gate.
 
 | Criterion | Status (pre) | Status (now) | Source |
 |---|---|---|---|

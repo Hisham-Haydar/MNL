@@ -7,7 +7,7 @@
 ## 1. Purpose
 
 This document records a narrow structural and scope correction applied
-to `docs/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md`.
+to `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md`.
 Two issues were identified after the authorization was drafted: (a) the
 memo contained a 21st heading (`## Required final statements`) that
 was not listed among the 20 required section headings, and (b) the memo
@@ -174,7 +174,7 @@ pass.
 ## 7. Final verdict
 
 After this correction,
-`docs/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md`
+`docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md`
 has exactly 20 numbered section headings (§1–§20) consistent with the
 memo's own introduction. The "Required final statements" block is
 plain bold text under §20.
@@ -198,8 +198,8 @@ GSURv2 multi-year Stage A lookup construction under Option B.
 
 | File | Change type | Summary |
 |------|-------------|---------|
-| `docs/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md` | Heading correction | `## Required final statements` demoted to `**Required final statements**` plain text under §20 |
-| `docs/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md` | Scope correction (S1–S8) | Post-construction cleanup actions (retire un-tagged file, `git mv`, update canary/validation scripts, reference migration) removed from §4, §8, §10 Step 8, §11, §15 A7–A8 and closing sentence, §19 R5, §20 executor prompt; replaced with deferred language |
+| `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md` | Heading correction | `## Required final statements` demoted to `**Required final statements**` plain text under §20 |
+| `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md` | Scope correction (S1–S8) | Post-construction cleanup actions (retire un-tagged file, `git mv`, update canary/validation scripts, reference migration) removed from §4, §8, §10 Step 8, §11, §15 A7–A8 and closing sentence, §19 R5, §20 executor prompt; replaced with deferred language |
 | `docs/JMP_GSURv2_multi_year_extension_construction_authorization_correction_v1.md` | New file | This report |
 
 No code was changed. No data was built.

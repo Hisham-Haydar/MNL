@@ -18,13 +18,13 @@ Primary evidence:
   stem-and-heading correction report)
 
 Governing documents:
-- `docs/JMP_GSURv2_MNL_rebuild_authorization_v1.md` (the rebuild
+- `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_MNL_rebuild_authorization_v1.md` (the rebuild
   authorization, corrected by
   `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md`)
-- `docs/JMP_GSURv2_O7_crosswalk_signoff_v1.md` (the O7 sign-off)
-- `docs/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md`
+- `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_O7_crosswalk_signoff_v1.md` (the O7 sign-off)
+- `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md`
   (the GSURv2 lookup construction PASS)
-- `docs/RURO_occ_M1_clean_verdict_v1.md` (the active single-year
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` (the active single-year
   JMP baseline)
 
 Interpreter of record: `.venv\Scripts\python.exe`

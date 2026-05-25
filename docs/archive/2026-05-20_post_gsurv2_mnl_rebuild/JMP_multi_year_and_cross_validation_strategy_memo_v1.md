@@ -12,11 +12,11 @@ the operational design that any subsequent implementation prompt
 would build upon.
 
 Reference documents:
-- `docs/RURO_occ_M1_clean_verdict_v1.md` (the accepted structural
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` (the accepted structural
   baseline against which any multi-year extension is judged)
-- `docs/RURO_occ_M1_clean_design_memo_v2.md` (the structural design
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md` (the structural design
   document defining the preferred specification)
-- `docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the data-corrected
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the data-corrected
   baseline)
 - `Prompts/JMP_ability_vs_opportunity_framework_v1.md` (the welfare
   framework whose robustness exposures the proposals would
@@ -550,7 +550,7 @@ result for the JMP's main empirical claims.
 The R10 exposure is sequenced as follows within the JMP's
 project timeline.
 
-1. *M1-clean verdict* — completed (`docs/RURO_occ_M1_clean_verdict_v1.md`).
+1. *M1-clean verdict* — completed (`docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md`).
 
 2. *M1-naive implementation* — Claude Code Sonnet task, derived
    from the M1-clean YAML by re-adding `beta_E_educH`. Produces

@@ -297,7 +297,7 @@ Pre-drop column breakdown (couples, 1,466 total):
 4. **35-heures mass.** Among chosen working alternatives, approximately 24% of
    hours are at h=35 (the French statutory workweek). This mass falls between
    the PT2 focal bin (29.5–30.5 h) and the FT focal bin (37.5–40.5 h) and is
-   not captured by any current contract bin. See `docs/France_case/RURO_data_audit_v1_addendum.md`
+   not captured by any current contract bin. See `docs/France_case/_shared/data_audits/RURO_data_audit_v1_addendum.md`
    Section 1 for the 1-hour-resolution histograms.
 
 5. **LES composition of deciders.** Employees (les=3) dominate: 93.5% of

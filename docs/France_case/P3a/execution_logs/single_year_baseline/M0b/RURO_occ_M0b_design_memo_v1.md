@@ -12,7 +12,7 @@ implementation prompt will follow.
 Inputs to this memo:
 - `docs/RURO_occ_M0a_clean_verdict_v1.md`
 - `reports/fr_2016_ruro_occ_gamspy_M0a_clean_llm_summary_20260514_102334.md`
-- `docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md`
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md`
 - `docs/specifications/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md`
 - `scripts/enhanced/estimation_spec_ruro_occ_M0a_clean.yaml`
 - `RURO_METHODS_AND_PIPELINE_MANUAL_v1.md`
@@ -704,5 +704,5 @@ not, the MNL prep pipeline needs a small extension first.
 
 ## Suggested filename
 
-Save this memo as: `docs/RURO_occ_M0b_design_memo_v1.md`
+Save this memo as: `docs/France_case/P3a/execution_logs/single_year_baseline/M0b/RURO_occ_M0b_design_memo_v1.md`
 (category: technical memo / design).

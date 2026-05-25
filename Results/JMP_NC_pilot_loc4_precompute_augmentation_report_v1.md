@@ -2,7 +2,7 @@
 
 *France RURO multi-year extension | v1 | 2026-05-24*
 
-**Authorization:** `docs/JMP_NC_pilot_loc4_precompute_augmentation_authorization_v1.md`
+**Authorization:** `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_loc4_precompute_augmentation_authorization_v1.md`
 **Script:** `scripts/pilot/_run_loc4_precompute_augmentation.py`
 **Output pkl:** `Data/pilot/nc_2016_couples/precomputed/fr_pilot_nc_2016_couples_precomputed_loc.pkl`
 **Summary sidecar:** `Data/pilot/nc_2016_couples/precomputed/loc_precompute_run_summary.json`
@@ -16,7 +16,7 @@ This report documents the `include_loc_vars=False → True` precompute augmentat
 for the NC pilot couples-only 2016 diagnostic estimation.
 
 **Corrected authorization error:** The prior precompute slice
-(`docs/JMP_NC_pilot_precompute_slice_authorization_v1.md`) built the
+(`docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_slice_authorization_v1.md`) built the
 `PrecomputedDataCouples` object with `include_loc_vars=False` while the diagnostic
 estimation spec (`estimation_spec_nc_pilot_couples_2016.yaml`) included six free
 occupation-opportunity parameters (`beta_occ_2_cm`, `beta_occ_3_cm`, `beta_occ_4_cm`,

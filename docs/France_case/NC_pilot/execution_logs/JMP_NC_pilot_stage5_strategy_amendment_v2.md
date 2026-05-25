@@ -404,7 +404,7 @@ per the checkpoint rule.
 ```text
 Work locally in my RURO/MNL codebase. PILOT BUILD — STAGE 5 v2 (EUROMOD),
 Strategy C' (blockwise joint-product), FR_2016 couples only. Authorized by
-docs/JMP_NC_pilot_stage5_strategy_amendment_v2.md. This SUPERSEDES Strategy B
+docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage5_strategy_amendment_v2.md. This SUPERSEDES Strategy B
 in amendment v1 (which halted at HE7).
 
 HARD CONSTRAINTS (halt and report if any would be violated):
@@ -429,7 +429,7 @@ Pre-launch (HE-EM-PKG): python -c "import euromod" (PYTHONNET_RUNTIME=coreclr).
 If it fails, HALT and report.
 
 Read first:
-- docs/JMP_NC_pilot_stage5_strategy_amendment_v2.md
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage5_strategy_amendment_v2.md
 - docs/archive/2026-05-26_round2_chain_compression/strategy_v1_superseded/JMP_NC_pilot_stage5_euromod_amendment_v1.md
 - Results/JMP_NC_pilot_stage5_euromod_build_report_v1.md (the HE7 halt)
 - scripts/enhanced/enh_RURO_euromod.py (read-only; note the yem identity at

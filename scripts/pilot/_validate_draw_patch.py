@@ -1,5 +1,5 @@
 """Validation script for the draw-column resolution patch in estimation_utils.py.
-Authorized by: docs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md
+Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md
 """
 import sys, logging
 logging.basicConfig(level=logging.WARNING)

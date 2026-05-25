@@ -259,7 +259,7 @@ before estimation.
 ```text
 Work locally in my RURO/MNL codebase. LOC4 PRECOMPUTE AUGMENTATION, FR_2016
 couples pilot. Authorized by
-docs/JMP_NC_pilot_loc4_precompute_augmentation_authorization_v1.md. Rebuild the
+docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_loc4_precompute_augmentation_authorization_v1.md. Rebuild the
 precomputed pkl with include_loc_vars=True so beta_occ_* are identified.
 
 HARD CONSTRAINTS (halt and report if any would be violated):
@@ -271,7 +271,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
 - Do NOT run estimation/EUROMOD/GSUR/rebuild/welfare/SA2/promotion. (HL-STAGE)
 
 Read (read-only except the new pkl write):
-- docs/JMP_NC_pilot_loc4_precompute_augmentation_authorization_v1.md
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_loc4_precompute_augmentation_authorization_v1.md
 - scripts/enhanced/estimation_utils.py (precompute_data_couples; loc4 build @ 1076-1089)
 - Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_norm_ready.parquet
 - Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_norm_ready__normmeta.json

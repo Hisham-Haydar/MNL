@@ -66,7 +66,7 @@ Main docs:
 - `scripts/enhanced/README.md`
 - `docs/estimation/RURO_ENHANCED_PIPELINE_COMMANDS.md`
 - `docs/methods/RURO_COMMANDS_JOB_MODEL_VS_CONTINUOUS.md`
-- `docs/France_case/FR2016_RURO_pipeline_report.md`
+- `docs/France_case/P3a/design/FR2016_RURO_pipeline_report.md`
 
 Key file markers:
 
@@ -191,7 +191,7 @@ Main docs:
 
 - `docs/estimation/RURO_GSUR_DATA_AND_MERGE_NOTE.md`
 - `scripts/enhanced/README.md`
-- `docs/France_case/FR2016_RURO_pipeline_report.md`
+- `docs/France_case/P3a/design/FR2016_RURO_pipeline_report.md`
 - `scripts/Job_model/README_job_model.md`
 - `docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
 - `docs/methods/RURO_R_REFERENCE_COMPARISON_SECTOR_OPPORTUNITY_PLAN.md`

@@ -1,6 +1,6 @@
 """
 Normalization-rebuild script for the NC pilot precompute-ready parquet.
-Authorized by: docs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md
+Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md
 
 Rebuilds c_norm = (ils_dispy_male + ils_dispy_female) / c_scale_pilot
 where c_scale_pilot = mean(c_pilot) over all rows.
@@ -33,7 +33,7 @@ t0 = time.time()
 
 print("=" * 70)
 print("NORMALIZATION REBUILD SLICE — NC PILOT")
-print("Authorized by: docs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md")
+print("Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md")
 print("=" * 70)
 
 # ── Leisure scales from production mnlmeta (preserved, NOT recomputed) ───────
@@ -170,7 +170,7 @@ if meta_out.num_rows != EXPECTED_ROWS:
 print(f"\nSTEP 7: Write normmeta sidecar")
 normmeta = {
     "schema_version": "nc_pilot_precompute_norm_ready_v1",
-    "authorization": "docs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md",
+    "authorization": "docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md",
     "produced_by": "scripts/pilot/_rebuild_c_norm.py",
     "produced_at_utc": pd.Timestamp.utcnow().isoformat(),
     "input": {

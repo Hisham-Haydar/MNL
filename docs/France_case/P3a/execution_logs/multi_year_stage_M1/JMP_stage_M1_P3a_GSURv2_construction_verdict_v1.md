@@ -4,7 +4,7 @@
 
 Execution under review: Stage M1 P3a GSURv2 pooled stacking re-run,
 executed 2026-05-21 under
-`docs/JMP_stage_M1_P3a_GSURv2_stacking_authorization_v1.md` (corrected
+`docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_stage_M1_P3a_GSURv2_stacking_authorization_v1.md` (corrected
 by `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_stage_M1_P3a_GSURv2_stacking_authorization_correction_v1.md`).
 
 Primary evidence:
@@ -15,11 +15,11 @@ Primary evidence:
   1,244,500 rows, 185.5 MB)
 
 Reference documents:
-- `docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md` (the post-rebuild verdict
+- `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_MNL_rebuild_verdict_v1.md` (the post-rebuild verdict
   that authorised this re-run as the next gate)
-- `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` (the
+- `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` (the
   provisional v1-fallback construction verdict)
-- `docs/RURO_occ_M1_clean_verdict_v1.md` (the active single-year JMP
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` (the active single-year JMP
   baseline)
 
 Scope of verdict: post-execution quality assessment of the GSURv2 P3a
@@ -58,7 +58,7 @@ exemption for four known upstream sampling-control columns
 (`ruro_decider`, `ruro_group`, `ruro_sample`, `year_for_ruro`) present
 in the GSURv2 parquets but absent from the v1-fallback parquets. The
 exemption is a validation-spec update, not an ad hoc runtime fix. See §5
-and `docs/JMP_stage_M1_V9_validation_patch_note_v1.md`.
+and `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_stage_M1_V9_validation_patch_note_v1.md`.
 
 Neither caveat affects the data, the V1–V9 validation outcomes, the
 authorization status, or the baseline status.
@@ -73,7 +73,7 @@ construction input for pooled-estimation design and Gate-A validation.**
 **Yes. All material authorization requirements were satisfied.**
 
 The execution followed
-`docs/JMP_stage_M1_P3a_GSURv2_stacking_authorization_v1.md` in every
+`docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_stage_M1_P3a_GSURv2_stacking_authorization_v1.md` in every
 material respect:
 
 - **Exact-input-resolution (§5 I1–I3):** A dedicated config
@@ -231,7 +231,7 @@ runtime fix, because:
    exempt set — still trigger V9 failure without user override.
 
 The full adjudication of this patch is recorded in
-`docs/JMP_stage_M1_V9_validation_patch_note_v1.md`.
+`docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_stage_M1_V9_validation_patch_note_v1.md`.
 
 ---
 
@@ -323,7 +323,7 @@ computation, or welfare-related estimation.
 **Yes. M1-clean 2016 remains the active JMP baseline.**
 
 `ruro_occ_M1_clean` (53 free parameters; LL = −6487.5522; verdict
-`docs/RURO_occ_M1_clean_verdict_v1.md`) is the accepted JMP structural
+`docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md`) is the accepted JMP structural
 specification. Producing the GSURv2 pooled dataset does not promote the
 pooled route over the single-year baseline. Only a future SA2 verdict on
 an estimated, verified, and accepted final pooled specification could
@@ -347,7 +347,7 @@ The execution report subtitle "France 2014–2015–2016" should be noted in
 (already created). No re-run required; the report body is correct.
 
 **C2 — V9 patch note (validation-spec record):**
-`docs/JMP_stage_M1_V9_validation_patch_note_v1.md` (already created)
+`docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_stage_M1_V9_validation_patch_note_v1.md` (already created)
 records the V9 exemption as a validation-spec update. The updated
 `scripts/multi_year/m1_validate.py` is committed.
 

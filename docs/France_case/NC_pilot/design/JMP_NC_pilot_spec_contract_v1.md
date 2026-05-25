@@ -16,7 +16,7 @@ JMP baseline throughout. The corrected pooled P3a track is unaffected.
 ## 1. Purpose
 
 To convert the next-cycle design plan
-(`docs/JMP_next_cycle_opportunity_respecification_plan_v1.md`) and the
+(`docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md`) and the
 read-only feasibility audit (`Results/JMP_nc_pilot_feasibility_audit_v1.md`)
 into a fixed, buildable pilot specification, by resolving the five
 spec-contract decisions the audit identified as hard blockers:
@@ -559,7 +559,7 @@ must not touch production guards or the frozen P3a spec.
 
 ```text
 Work locally in my RURO/MNL codebase. PILOT BUILD — 2016 couples only,
-authorized by docs/JMP_NC_pilot_spec_contract_v1.md (pilot scope only).
+authorized by docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md (pilot scope only).
 
 HARD CONSTRAINTS (halt and report if any would be violated):
 - Do NOT edit the production prepare_pooled_estimation_ready.py guards in
@@ -577,9 +577,9 @@ HARD CONSTRAINTS (halt and report if any would be violated):
   stays 55.
 
 Read first (do not assume; confirm from these):
-- docs/JMP_NC_pilot_spec_contract_v1.md
+- docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md
 - Results/JMP_nc_pilot_feasibility_audit_v1.md
-- docs/JMP_next_cycle_opportunity_respecification_plan_v1.md
+- docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md
 - scripts/enhanced/enh_RURO_draws.py
 - scripts/enhanced/enh_RURO_prep_mnl_basic.py
 - scripts/maintenance/prepare_pooled_estimation_ready.py

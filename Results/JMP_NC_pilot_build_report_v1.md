@@ -3,7 +3,7 @@
 *France RURO multi-year extension | v1 | 2026-05-22*
 
 Document class: pilot build report. This report records that the build
-authorized by `docs/JMP_NC_pilot_spec_contract_v1.md` was **halted before
+authorized by `docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md` was **halted before
 any build action** at the pre-execution check, on the user's direction.
 **No file in the repository has been modified by this session except this
 report.** No Mincer fit was performed. No draws were generated. No
@@ -18,7 +18,7 @@ wage spec.
 
 ## 1. Scope and authorization provenance
 
-**Authorizing document:** `docs/JMP_NC_pilot_spec_contract_v1.md`
+**Authorizing document:** `docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md`
 (JMP NC Pilot — Spec Contract v1, dated 2026-05-22). The contract
 authorizes the 2016-couples-only pilot scope of §4, gated by the halt
 conditions of §26.
@@ -39,10 +39,10 @@ conditions of §26.
   at 55.
 
 **Inputs read for this session (no modification):**
-- `docs/JMP_NC_pilot_spec_contract_v1.md` (full read).
+- `docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md` (full read).
 - `Results/JMP_nc_pilot_feasibility_audit_v1.md` (full read, in prior
   session).
-- `docs/JMP_next_cycle_opportunity_respecification_plan_v1.md` (full
+- `docs/France_case/P3a/design/JMP_next_cycle_opportunity_respecification_plan_v1.md` (full
   read, in prior session).
 - `scripts/enhanced/enh_RURO_draws.py` (targeted Grep + ranged Read in
   prior session).

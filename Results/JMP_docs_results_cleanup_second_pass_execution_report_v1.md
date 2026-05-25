@@ -45,7 +45,7 @@ All 10 files moved via `git mv` to
 | File | Category | Incorporated into |
 |------|----------|-------------------|
 | `M1_identity_validation_summary.md` | ADDENDUM_INCORPORATED | `JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md` §13 |
-| `JMP_multi_year_stage_M1_P3a_full_execution_addendum_v1.md` | ADDENDUM_INCORPORATED | `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` |
+| `JMP_multi_year_stage_M1_P3a_full_execution_addendum_v1.md` | ADDENDUM_INCORPORATED | `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` |
 
 ---
 
@@ -59,7 +59,7 @@ classified KEEP or HISTORICAL_KEEP and were not moved:
 | `Results/JMP_multi_year_stage_M1_static_validation_report_v3.md` | HISTORICAL_KEEP: canonical surviving document in the v1→v2→v3 chain; only dedicated generalization validation record |
 | `Results/JMP_multi_year_stage_M1_execution_readiness_v1.md` | HISTORICAL_KEEP: dry-run point-in-time record; no v2 successor with same scope |
 | `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3.md` | HISTORICAL_KEEP: v3 and v3.1 together form the complete revision trail |
-| `docs/France_case/RURO_FR2016_CONTINUOUS_DATA_BUILD_AUDIT_v1.md` | HISTORICAL_KEEP: comprehensive 2016 data build audit; referenced by M1-clean audit |
+| `docs/France_case/_shared/data_audits/RURO_FR2016_CONTINUOUS_DATA_BUILD_AUDIT_v1.md` | HISTORICAL_KEEP: comprehensive 2016 data build audit; referenced by M1-clean audit |
 | `Results/JMP_multi_year_EUROMD_output_readiness_v1.md` | HISTORICAL_KEEP: pre-Stage-M1 EUROMOD readiness state; not superseded by a v2 |
 | `Results/JMP_multi_year_external_assets_inventory_v1.md` | HISTORICAL_KEEP: pre-remediation external assets gap state; not superseded by a v2 |
 | `Results/JMP_multi_year_single_year_MNL_readiness_v1.md` | HISTORICAL_KEEP: pre-rebuild MNL readiness state; not superseded by a v2 |
@@ -97,25 +97,25 @@ and after the archive moves. None were touched.
 
 | # | File | Status |
 |---|------|--------|
-| 1 | `docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md` | PRESENT |
+| 1 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_MNL_rebuild_verdict_v1.md` | PRESENT |
 | 2 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md` | PRESENT |
-| 3 | `docs/JMP_GSURv2_MNL_rebuild_authorization_v1.md` | PRESENT |
+| 3 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_MNL_rebuild_authorization_v1.md` | PRESENT |
 | 4 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_authorization_correction_v1.md` | PRESENT |
-| 5 | `docs/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md` | PRESENT |
+| 5 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_verdict_v1.md` | PRESENT |
 | 6 | `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_multi_year_extension_construction_verdict_correction_v1.md` | PRESENT |
-| 7 | `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` | PRESENT |
+| 7 | `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md` | PRESENT |
 | 8 | `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md` | PRESENT |
-| 9 | `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md` | PRESENT |
+| 9 | `docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md` | PRESENT |
 | 10 | `docs/RURO_GSUR_external_acquisition_decision_v2.md` | PRESENT |
-| 11 | `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` | PRESENT |
-| 12 | `docs/RURO_occ_M1_naive_robustness_verdict_v1.md` | PRESENT |
+| 11 | `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` | PRESENT |
+| 12 | `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_naive_robustness_verdict_v1.md` | PRESENT |
 | 13 | `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md` | PRESENT |
 | 14 | `docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md` | PRESENT |
-| 15 | `docs/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md` | PRESENT |
+| 15 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md` | PRESENT |
 | 16 | `docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md` | PRESENT |
-| 17 | `docs/JMP_GSURv2_multi_year_extension_construction_report_v1.md` | PRESENT |
-| 18 | `docs/RURO_occ_M1_clean_verdict_v1.md` | PRESENT |
-| 19 | `docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` | PRESENT |
+| 17 | `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_report_v1.md` | PRESENT |
+| 18 | `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` | PRESENT |
+| 19 | `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` | PRESENT |
 | 20 | `Results/JMP_GSURv2_MNL_rebuild_report_v2.md` | PRESENT |
 | 21 | `Results/JMP_GSURv2_MNL_rebuild_correction_report_v1.md` | PRESENT |
 | 22 | `Results/JMP_multi_year_stage_M1_P3a_full_execution_report_v1.md` | PRESENT |
@@ -195,7 +195,7 @@ stacking, estimation, or welfare task was run.
 
 The immediate next authorized task is to write the Stage M1 P3a GSURv2
 stacking re-run authorization memo, as stated in
-`docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md` (corrected by
+`docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_MNL_rebuild_verdict_v1.md` (corrected by
 `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md`). This cleanup
 execution does not change that status.
 

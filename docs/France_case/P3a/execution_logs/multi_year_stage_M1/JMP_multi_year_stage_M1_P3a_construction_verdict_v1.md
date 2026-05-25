@@ -19,15 +19,15 @@ Primary evidence:
 - `Results/JMP_multi_year_stage_M1_P3a_full_execution_addendum_v1.md`
 
 Governing documents:
-- `docs/JMP_multi_year_stage_M1_execution_readiness_report_v2.md`
+- `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_execution_readiness_report_v2.md`
   (the pre-execution authorization and readiness baseline)
-- `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
+- `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
   year alignment rule and the v1-fallback provisional regime)
 - `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md` (welfare
   design, complete; not an execution authorization)
 - `docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md` (welfare
   scaffolding design, complete; not an execution authorization)
-- `docs/RURO_occ_M1_clean_verdict_v1.md` (the active single-year
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` (the active single-year
   JMP baseline)
 - `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`
   (the controlling multi-year strategy, referenced for sequencing)

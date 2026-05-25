@@ -44,7 +44,7 @@ Required fixes:
 After patching, run only a fast post-estimation check, not re-estimation.
 
 Create:
-docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
+docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
 
 The report should include:
 1. files changed
@@ -57,7 +57,7 @@ The report should include:
 
 Do not modify the economic model.
 save the output
-docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
+docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
 
 ## Result  1 : 
 Patch complete. Summary:
@@ -75,7 +75,7 @@ sm	0.9295	1.0000	0.9990
 sf	0.9396	1.0000	0.9981
 cou_m	0.9717	1.0000	0.9980
 cou_f	0.9651	1.0000	0.9951
-Couples no longer report 1.0000 either (same root cause). Patch report at docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md — section 7 notes the residual gap between the patched reporter (~0.1% nonwork for singles) and the structural diagnostic (~7%), likely due to centering not being replayed in _compute_log_h.
+Couples no longer report 1.0000 either (same root cause). Patch report at docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md — section 7 notes the residual gap between the patched reporter (~0.1% nonwork for singles) and the structural diagnostic (~7%), likely due to centering not being replayed in _compute_log_h.
 
 ## Prompt 2 
 
@@ -99,13 +99,13 @@ Required:
 2. Include market opportunity, occupation opportunity, and any centering used by the estimator.
 3. Do not rely only on _compute_log_h + _compute_log_w when log_opp is absent.
 4. Keep this post-estimation only; do not touch estimator, YAML, MNL parquets, draw scripts, or EUROMOD.
-5. Clean encoding artifacts in docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md.
+5. Clean encoding artifacts in docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md.
 
 Then rerun the fast validation:
 Results/_M0a_clean_post_est_fit_check.py
 
 Update:
-docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
+docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
 
 Report before/after predicted participation and verify singles fit is close to the structural diagnostic.
 
@@ -126,7 +126,7 @@ sm	0.9295	1.0000	0.9990	0.9129	0.912
 sf	0.9396	1.0000	0.9981	0.9540	0.950
 cou_m	0.9717	1.0000	0.9980	1.0000	~1.0
 cou_f	0.9651	1.0000	0.9951	1.0000	~1.0
-Singles match the structural diagnostic. Couples ~1.0 is the structural verdict (V_work − V_nonwork ≈ +83 to +88 nats per household), not a reporting bug. Encoding artifacts in the report cleaned to ASCII; updated report at docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md.
+Singles match the structural diagnostic. Couples ~1.0 is the structural verdict (V_work − V_nonwork ≈ +83 to +88 nats per household), not a reporting bug. Encoding artifacts in the report cleaned to ASCII; updated report at docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md.
 
 
 # Codex Prompts and replies 
@@ -179,7 +179,7 @@ Required fixes:
 After patching, run only a fast post-estimation check, not re-estimation.
 
 Create:
-docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
+docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
 
 The report should include:
 1. files changed
@@ -192,7 +192,7 @@ The report should include:
 
 Do not modify the economic model.
 save the output
-docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
+docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
 
 
 Response : 
@@ -212,7 +212,7 @@ sm	0.9295	1.0000	0.9990
 sf	0.9396	1.0000	0.9981
 cou_m	0.9717	1.0000	0.9980
 cou_f	0.9651	1.0000	0.9951
-Couples no longer report 1.0000 either (same root cause). Patch report at docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md — section 7 notes the residual gap between the patched reporter (~0.1% nonwork for singles) and the structural diagnostic (~7%), likely due to centering not being replayed in _compute_log_h.
+Couples no longer report 1.0000 either (same root cause). Patch report at docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md — section 7 notes the residual gap between the patched reporter (~0.1% nonwork for singles) and the structural diagnostic (~7%), likely due to centering not being replayed in _compute_log_h.
 
 ## response 1 : 
 I inspected without editing.
@@ -297,13 +297,13 @@ Required:
 2. Include market opportunity, occupation opportunity, and any centering used by the estimator.
 3. Do not rely only on _compute_log_h + _compute_log_w when log_opp is absent.
 4. Keep this post-estimation only; do not touch estimator, YAML, MNL parquets, draw scripts, or EUROMOD.
-5. Clean encoding artifacts in docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md.
+5. Clean encoding artifacts in docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md.
 
 Then rerun the fast validation:
 Results/_M0a_clean_post_est_fit_check.py
 
 Update:
-docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
+docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
 
 Report before/after predicted participation and verify singles fit is close to the structural diagnostic.
 ```
@@ -417,7 +417,7 @@ After patching, run only a fast post-estimation check, not re-estimation.
 
 Create: 
 
-docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md 
+docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md 
 
  
 
@@ -443,7 +443,7 @@ Do not modify the economic model.
 
 save the output 
 
-docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
+docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
 
 
 
@@ -483,7 +483,7 @@ cou_m	0.9717	1.0000	0.9980
 
 cou_f	0.9651	1.0000	0.9951 
 
-Couples no longer report 1.0000 either (same root cause). Patch report at docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md — section 7 notes the residual gap between the patched reporter (~0.1% nonwork for singles) and the structural diagnostic (~7%), likely due to centering not being replayed in _compute_log_h.
+Couples no longer report 1.0000 either (same root cause). Patch report at docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md — section 7 notes the residual gap between the patched reporter (~0.1% nonwork for singles) and the structural diagnostic (~7%), likely due to centering not being replayed in _compute_log_h.
 
 
 
@@ -519,7 +519,7 @@ Required:
 
 4. Keep this post-estimation only; do not touch estimator, YAML, MNL parquets, draw scripts, or EUROMOD.
 
-5. Clean encoding artifacts in docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md.
+5. Clean encoding artifacts in docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md.
 
 Then rerun the fast validation:
 
@@ -527,7 +527,7 @@ Results/_M0a_clean_post_est_fit_check.py
 
 Update:
 
-docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
+docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md
 
 Report before/after predicted participation and verify singles fit is close to the structural diagnostic.
 
@@ -559,7 +559,7 @@ cou_m	0.9717	1.0000	0.9980	1.0000	~1.0
 
 cou_f	0.9651	1.0000	0.9951	1.0000	~1.0
 
-Singles match the structural diagnostic. Couples ~1.0 is the structural verdict (V_work − V_nonwork ≈ +83 to +88 nats per household), not a reporting bug. Encoding artifacts in the report cleaned to ASCII; updated report at docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md.
+Singles match the structural diagnostic. Couples ~1.0 is the structural verdict (V_work − V_nonwork ≈ +83 to +88 nats per household), not a reporting bug. Encoding artifacts in the report cleaned to ASCII; updated report at docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md.
 ]
 
 ## Response 3 :
@@ -593,7 +593,7 @@ Files involved:
 - `Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md`
 - `Results/_participation_diag_ruro_occ_M0a_clean.json`
 - `Results/_participation_diag_ruro_occ_M0a_clean.py`
-- `docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md`
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md`
 - `reports/fr_2016_ruro_occ_gamspy_M0a_clean_llm_summary_20260513_193536.md`
 
 History:
@@ -691,7 +691,7 @@ sm	0.9295	1.0000	0.9990	0.9129	0.912
 sf	0.9396	1.0000	0.9981	0.9540	0.950
 cou_m	0.9717	1.0000	0.9980	1.0000	~1.0
 cou_f	0.9651	1.0000	0.9951	1.0000	~1.0
-Singles match the structural diagnostic. Couples ~1.0 is the structural verdict (V_work − V_nonwork ≈ +83 to +88 nats per household), not a reporting bug. Encoding artifacts in the report cleaned to ASCII; updated report at docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md.
+Singles match the structural diagnostic. Couples ~1.0 is the structural verdict (V_work − V_nonwork ≈ +83 to +88 nats per household), not a reporting bug. Encoding artifacts in the report cleaned to ASCII; updated report at docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md.
 
 ## Response 4 
 Yes. Given that patch-v1 now matches the structural diagnostic, **rerun post-estimation only**. Do **not** rerun estimation.
@@ -2336,7 +2336,7 @@ Files involved:
 - `Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md`
 - `Results/_participation_diag_ruro_occ_M0a_clean.json`
 - `Results/_participation_diag_ruro_occ_M0a_clean.py`
-- `docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md`
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md`
 - `reports/fr_2016_ruro_occ_gamspy_M0a_clean_llm_summary_20260513_193536.md`
 History:
 1. Initial post-estimation reported predicted participation = 1.0000 for all groups.

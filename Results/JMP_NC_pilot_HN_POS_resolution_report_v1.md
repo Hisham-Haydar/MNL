@@ -21,7 +21,7 @@ The HP-NORM halt is now cleared for re-entry to the precompute slice. Wall time:
 ## 2. Authorization Scope
 
 **Authorizing document:**
-`docs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md`
+`docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md`
 
 **Authorized:** EPS confirmation from source; computing `c_pilot_raw`,
 `c_scale_pilot`, `c_norm_raw`, normalized-EPS-floored `c_norm`, and the
@@ -43,7 +43,7 @@ displacement (HF-STAGE).
 
 | File | Purpose |
 |---|---|
-| `docs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md` | Authorizing document; read first |
+| `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md` | Authorizing document; read first |
 | `Results/JMP_NC_pilot_normalization_rebuild_report_v1.md` | HN-POS halt detail (123 rows, 6 households) |
 | `scripts/enhanced/estimation_utils.py` | EPS source confirmed at line 49; use site at line 998 |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet` | Input; read-only; 2,319,300 × 152 |
@@ -292,7 +292,7 @@ re-entry to the precompute slice.
 
 ## 16. Immediate Next Step
 
-Re-enter the precompute slice (`docs/JMP_NC_pilot_precompute_slice_authorization_v1.md`)
+Re-enter the precompute slice (`docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_slice_authorization_v1.md`)
 pointing at the new parquet and normmeta:
 
 - **Input parquet:** `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_norm_ready.parquet`

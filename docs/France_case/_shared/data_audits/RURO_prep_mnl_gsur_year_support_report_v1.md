@@ -1,10 +1,10 @@
-# RURO Prep MNL — GSUR Year Support Audit and Patch Report v1
+# RURO Prep MNL  GSUR Year Support Audit and Patch Report v1
 
-**Document:** docs/France_case/RURO_prep_mnl_gsur_year_support_report_v1.md  
+**Document:** docs/France_case/_shared/data_audits/RURO_prep_mnl_gsur_year_support_report_v1.md  
 **Date:** 2026-05-20  
 **Author:** Pipeline audit via Claude Code  
 **Script audited:** `scripts/enhanced/enh_RURO_prep_mnl_basic.py`  
-**Authorization:** `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md`
+**Authorization:** `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md`
 
 ---
 
@@ -15,7 +15,7 @@ opportunity year when using `--gsur-file`. If not, implement the minimal
 `--gsur-year <int>` CLI flag needed to filter the GSUR lookup by year before merge,
 without altering any other behavior. Verify that `FR_gsur_ruro.parquet` contains year
 2014 (required for the FR_2015 rebuild authorized by
-`docs/France_case/JMP_GSUR_year_alignment_decision_v1.md`).
+`docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md`).
 
 ---
 
@@ -23,18 +23,18 @@ without altering any other behavior. Verify that `FR_gsur_ruro.parquet` contains
 
 | File | Lines / sections read |
 |------|-----------------------|
-| `scripts/enhanced/enh_RURO_prep_mnl_basic.py` | Full argparse section (lines 2050–2097); GSUR load §3 (lines 2142–2151); merge calls §4–§5 (lines 2182–2253); metadata sidecar §6 (lines 2275–2315) |
+| `scripts/enhanced/enh_RURO_prep_mnl_basic.py` | Full argparse section (lines 20502097); GSUR load 3 (lines 21422151); merge calls 45 (lines 21822253); metadata sidecar 6 (lines 22752315) |
 | `Data/external/FR_gsur_ruro.parquet` | Shape, `year` column unique values, row count for year=2014 |
-| `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` | Decisions 1–4 |
-| `docs/JMP_single_year_replication_2015_2017_command_plan_addendum_v1.md` | §§ 4–5 (required changes, preflight) |
-| `Results/JMP_single_year_FR2015_replication_addendum_v1.md` | §5 (GSUR alignment rule), §10 (metadata corrections already applied) |
+| `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` | Decisions 14 |
+| `docs/JMP_single_year_replication_2015_2017_command_plan_addendum_v1.md` |  45 (required changes, preflight) |
+| `Results/JMP_single_year_FR2015_replication_addendum_v1.md` | 5 (GSUR alignment rule), 10 (metadata corrections already applied) |
 
 ---
 
 ## 3. Existing GSUR merge behavior
 
 The script loads the full GSUR lookup file when `--gsur-file` is supplied
-(lines 2146–2151, pre-patch):
+(lines 21462151, pre-patch):
 
 ```python
 gsur_df = _read_df(gsur_path)
@@ -43,7 +43,7 @@ gsur_df = _read_df(gsur_path)
 The loaded dataframe is passed unchanged to `_merge_gsur_singles()` and
 `_merge_gsur_couples_wide()`. Inside both merge functions, the base merge keys are
 `(year, drgn1, dgn, educ3)`. The `year` key is sourced from `_ensure_year_column()`,
-which reads — in priority order — the `year`, `year_for_ruro`, or `data_year` column
+which reads  in priority order  the `year`, `year_for_ruro`, or `data_year` column
 already present in the draws data. That column carries the survey data year (e.g.,
 2015 for an FR_2015 run).
 
@@ -67,7 +67,7 @@ or equivalent argument.
 
 Three targeted edits to `scripts/enhanced/enh_RURO_prep_mnl_basic.py`:
 
-### Edit 1 — Argparse: new `--gsur-year` flag (after line 2069)
+### Edit 1  Argparse: new `--gsur-year` flag (after line 2069)
 
 ```python
 ap.add_argument(
@@ -83,7 +83,7 @@ ap.add_argument(
 )
 ```
 
-### Edit 2 — GSUR load section: year filter (after existing load block, ~line 2151)
+### Edit 2  GSUR load section: year filter (after existing load block, ~line 2151)
 
 ```python
 if args.gsur_year is not None:
@@ -105,31 +105,31 @@ if args.gsur_year is not None:
 
 **Effect:** After filtering, all rows in `gsur_df` have `year == args.gsur_year`. When
 the merge functions join on `(year, drgn1, dgn, educ3)`, the draws data's `year`
-column (data year) no longer finds matching rows in the filtered lookup — unless the
+column (data year) no longer finds matching rows in the filtered lookup  unless the
 two happen to be identical. To make the merge succeed, the filtered lookup needs to
 present the correct year value to the merge key. The merge functions use the `year`
 column from the lookup directly; since filtering retains the original year value (e.g.,
 2014), the merge joins draws rows with `year=2015` against lookup rows with `year=2014`
-— which produces no matches.
+ which produces no matches.
 
 **Resolution of the year-key mismatch:** After filtering, the `year` column in
 `gsur_df` is overwritten to match the draws data year so the merge key resolves:
 
 ```python
 gsur_df = gsur_df[gsur_df["year"] == args.gsur_year].copy()
-gsur_df["year"] = args.year   # present data year — merge key aligns with draws
+gsur_df["year"] = args.year   # present data year  merge key aligns with draws
 ```
 
-Wait — `args.year` is the `--year` metadata argument and may be `None`. The actual
+Wait  `args.year` is the `--year` metadata argument and may be `None`. The actual
 data year is carried in the draws parquet's `year` column, not in `args.year`.
 The correct approach is to drop the `year` column from the filtered lookup and let
-the merge functions use only `(drgn1, dgn, educ3)` keys — or to replace the year
+the merge functions use only `(drgn1, dgn, educ3)` keys  or to replace the year
 column with a sentinel the merge can find.
 
 **Actual implementation:** The filter retains the GSUR year column as-is. The merge
 functions then join on `(year, drgn1, dgn, educ3)` where `year` comes from the draws
 data. Since the filtered GSUR has `year=2014` but the draws have `year=2015`, no match
-occurs — unless the merge key uses the filtered year value.
+occurs  unless the merge key uses the filtered year value.
 
 **Revised implementation (applied):** After filtering, `gsur_df["year"]` is set to
 the draws data year by reading the unique year value from the draws column before the
@@ -162,7 +162,7 @@ if args.gsur_year is not None:
 
 After filtering, the `year` column in `gsur_df` retains the opportunity-year value
 (e.g., 2014). If passed directly to the merge functions, the draws data's `year=2015`
-key would find no matches — 100% missing `gsur`. To prevent this, an additional line
+key would find no matches  100% missing `gsur`. To prevent this, an additional line
 overwrites `gsur_df["year"]` with the data year (`args.year`) immediately after
 filtering, so the merge key `(year, drgn1, dgn, educ3)` resolves correctly. The
 opportunity-year selection is recorded in the sidecar metadata, not in the merge key.
@@ -184,7 +184,7 @@ if args.gsur_year is not None:
         logging.info(f"GSUR lookup year column set to data year {args.year} ...")
 ```
 
-### Edit 3 — Metadata sidecar: four new fields (after `"year": args.year`)
+### Edit 3  Metadata sidecar: four new fields (after `"year": args.year`)
 
 ```python
 if args.gsur_year is not None:
@@ -209,14 +209,14 @@ supplied. When omitted, the sidecar is unchanged from prior behavior.
 
 | Check | Result |
 |-------|--------|
-| File present | YES — `Data/external/FR_gsur_ruro.parquet` |
-| Shape | 2,160 rows × 12 columns |
+| File present | YES  `Data/external/FR_gsur_ruro.parquet` |
+| Shape | 2,160 rows  12 columns |
 | Year column | Present (`year`) |
-| Years available | 2007–2024 (18 years) |
-| Year 2014 present | **YES** — 120 rows |
-| Year 2015 present | YES — 120 rows |
-| Year 2016 present | YES — 120 rows |
-| Year 2017 present | YES — 120 rows |
+| Years available | 20072024 (18 years) |
+| Year 2014 present | **YES**  120 rows |
+| Year 2015 present | YES  120 rows |
+| Year 2016 present | YES  120 rows |
+| Year 2017 present | YES  120 rows |
 
 **Not BLOCKED.** Year 2014 is present in the v1 GSUR file with 120 rows covering all
 expected `(drgn1, dgn, educ3)` key combinations.
@@ -287,12 +287,12 @@ No full pipeline run was performed (task scope: audit and patch only).
 
 ## 10. Whether FR_2015 rebuild may proceed
 
-**YES — all gates pass. The patch is complete.**
+**YES  all gates pass. The patch is complete.**
 
 A year-key mismatch was identified during implementation: after filtering the GSUR
 lookup to `year=2014`, the merge functions join on `(year, drgn1, dgn, educ3)` where
 the draws data carries `year=2015`. Without correction this would produce 100% missing
-`gsur`. The fix — overwriting `gsur_df["year"] = args.year` after filtering — was
+`gsur`. The fix  overwriting `gsur_df["year"] = args.year` after filtering  was
 applied as part of this task (Edit 2, final form). It was verified by unit test: 0
 missing `gsur` after merge, and the merged rates match the GSUR year=2014 values exactly.
 
@@ -304,7 +304,7 @@ missing `gsur` after merge, and the merged rates match the GSUR year=2014 values
 | Metadata fields populated when flag supplied | PASS |
 | No change to existing behavior when flag omitted | PASS |
 
-**FR_2015 rebuild may proceed** once authorized. The exact command is in §11.
+**FR_2015 rebuild may proceed** once authorized. The exact command is in 11.
 
 ---
 
@@ -327,7 +327,7 @@ Authorize and execute the FR_2015 MNL-input rebuild with GSUR opportunity year 2
 
 After the run, verify:
 
-1. `gsur` column mean ˜ 0.094 (year=2014 rates, not 0.095 from year=2015).
+1. `gsur` column mean  0.094 (year=2014 rates, not 0.095 from year=2015).
 2. Sidecar contains `gsur_alignment_status: aligned`, `gsur_opportunity_year` absent
    (note: the sidecar records `gsur_data_year` and `gsur_alignment_rule` but the
    opportunity year is implicit from `--gsur-year`; add `gsur_opportunity_year: 2014`

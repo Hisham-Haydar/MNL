@@ -13,13 +13,13 @@ will perform welfare computation.
 Reference documents:
 - `docs/JMP_welfare_measurement_decisions_memo_v1.md` (the locked
   welfare-measurement decisions)
-- `docs/RURO_occ_M1_clean_verdict_v1.md` (the current preferred
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` (the current preferred
   structural baseline, SA1-STANDS)
-- `docs/RURO_occ_M1_naive_robustness_verdict_v1.md` (the M1-naive
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_naive_robustness_verdict_v1.md` (the M1-naive
   robustness exposure)
-- `docs/RURO_occ_M1_clean_design_memo_v2.md` (the structural design
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md` (the structural design
   of M1-clean)
-- `docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the prior baseline
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the prior baseline
   documenting the singles consumption identification limitation)
 - `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`
   (the pooled-estimation roadmap and SA2 verdict architecture)
@@ -121,7 +121,7 @@ estimation report.
 ## 3. Current structural baseline
 
 The current preferred structural baseline is `ruro_occ_M1_clean`,
-classified SA1-STANDS per `docs/RURO_occ_M1_clean_verdict_v1.md`.
+classified SA1-STANDS per `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md`.
 The baseline parameter vector is the converged point of three
 independent starts at log-likelihood $-6487.5522$, with the
 GSURv2 MNL parquets as the operative data source.
@@ -140,7 +140,7 @@ The M1-naive baseline (`ruro_occ_M1_naive`) is a robustness
 exposure, not a candidate primary specification. M1-naive differs
 from M1-clean by retaining $\beta_{E\,\text{educH}}$ in the
 market-opportunity block (54 free parameters; LL = $-6485.5287$).
-The M1-naive verdict (`docs/RURO_occ_M1_naive_robustness_verdict_v1.md`)
+The M1-naive verdict (`docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_naive_robustness_verdict_v1.md`)
 concludes that the borderline statistical evidence for retaining
 $\beta_{E\,\text{educH}}$ is insufficient to overturn the M1-clean
 welfare-partition design. The scaffolding's *primary run* operates
@@ -242,7 +242,7 @@ extraction is read-only; the scaffolding does not modify the YAML.
 the data-source MNL parquet paths, the EUROMOD system version
 (currently `FR_2016_a3` under M1-clean; `FR_2015_a2`, `FR_2016_a3`,
 `FR_2017_a2` under any pooled baseline), and the run-acceptance
-verdict path (currently `docs/RURO_occ_M1_clean_verdict_v1.md`
+verdict path (currently `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md`
 under M1-clean). The metadata enables the scaffolding to record
 which baseline produced any given welfare output.
 
@@ -1058,7 +1058,7 @@ baseline:
   estimation_spec_yaml_path:
     "scripts/enhanced/specifications/estimation_spec_ruro_occ_M1_clean.yaml"
   acceptance_verdict_path:
-    "docs/RURO_occ_M1_clean_verdict_v1.md"
+    "docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md"
   euromod_system_version:
     - "FR_2016_a3"
 ```
@@ -1095,7 +1095,7 @@ baseline:
   estimation_spec_yaml_path:
     "scripts/enhanced/specifications/estimation_spec_ruro_occ_M1_naive.yaml"
   acceptance_verdict_path:
-    "docs/RURO_occ_M1_naive_robustness_verdict_v1.md"
+    "docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_naive_robustness_verdict_v1.md"
   euromod_system_version:
     - "FR_2016_a3"
 ```
@@ -1602,7 +1602,7 @@ Inputs to the implementation prompt:
 - This memo (the design specification).
 - `docs/JMP_welfare_measurement_decisions_memo_v1.md` (the locked
   welfare-measurement decisions).
-- `docs/RURO_occ_M1_clean_verdict_v1.md` (the baseline-acceptance
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` (the baseline-acceptance
   verdict, including the singles consumption identification
   limitation documentation).
 - `Prompts/JMP_ability_vs_opportunity_framework_v1.md` (the

@@ -3,7 +3,7 @@
 NC pilot — Stage 5 v2 adapter: blockwise joint-product EUROMOD inputs
 (Strategy C').
 
-Authorized by: docs/JMP_NC_pilot_stage5_strategy_amendment_v2.md.
+Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage5_strategy_amendment_v2.md.
 Supersedes Strategy B (v1 adapter export_pilot_euromod_inputs.py) which
 halted at HE7. Pilot-only. Production runner not modified.
 
@@ -294,7 +294,7 @@ def _write_drawsmeta(path: Path, block_f: int, n_rows: int, n_decider: int) -> N
         "schema_version": "nc_pilot_em_input_v2_blockwise",
         "produced_by": "scripts/pilot/export_pilot_euromod_inputs_v2.py",
         "produced_at_utc": datetime.now(timezone.utc).isoformat(),
-        "authorization": "docs/JMP_NC_pilot_stage5_strategy_amendment_v2.md",
+        "authorization": "docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage5_strategy_amendment_v2.md",
         "strategy": "C_prime_blockwise_joint_product",
         "block_f": int(block_f),
         "household_type": "couples",

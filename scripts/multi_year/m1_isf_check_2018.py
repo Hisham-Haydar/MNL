@@ -37,7 +37,7 @@ IMPORTANT — gate condition:
 
     P3b remains blocked until this memo concludes "proceed with P3b".
 
-Reference: docs/JMP_multi_year_stage_M1_implementation_plan_v2.md §16, 19.
+Reference: docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_plan_v2.md §16, 19.
 
 Usage
 -----

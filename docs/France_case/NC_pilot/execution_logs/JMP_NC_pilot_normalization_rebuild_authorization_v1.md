@@ -260,7 +260,7 @@ parquet + sidecar; positivity-gated; stop before precompute.
 ```text
 Work locally in my RURO/MNL codebase. NORMALIZATION REBUILD SLICE, FR_2016
 couples pilot. Authorized by
-docs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md.
+docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md.
 
 HARD CONSTRAINTS (halt and report if any would be violated):
 - Input READ-ONLY: do NOT overwrite the precompute-ready parquet or any
@@ -276,7 +276,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
   M1-clean. (HN-STAGE)
 
 Read (read-only):
-- docs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_normalization_rebuild_authorization_v1.md
 - Results/JMP_NC_pilot_precompute_report_v1.md (the HP-NORM halt)
 - Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet
 - Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready__readymeta.json

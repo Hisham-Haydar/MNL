@@ -18,7 +18,7 @@ summary statistics, use:
 
 ```text
 docs/France_case/euromod_reference/euromod_fr_2015_2017_input_variables.csv
-docs/France_case/euromod_reference/euromod_fr_2015_2017_input_output_reference.md
+docs/France_case/_shared/euromod_reference/euromod_fr_2015_2017_input_output_reference.md
 ```
 
 ---

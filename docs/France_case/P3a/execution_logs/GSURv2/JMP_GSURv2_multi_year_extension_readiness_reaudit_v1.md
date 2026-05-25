@@ -277,7 +277,7 @@ authorization only.
 
 The y2016 lock plan document is present, complete, and verified:
 
-- **File:** `docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`
+- **File:** `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`
   (23,882 bytes; corrected by `docs/JMP_GSURv2_y2016_provenance_lock_plan_correction_v1.md`)
 - **All 14 required sidecar fields specified:** PASS (verified by source
   inspection — all 14 field names present in lock plan §4)
@@ -456,7 +456,7 @@ The exact next task is the **GSURv2 construction authorization memo**.
 It must be a standalone document (e.g.
 `docs/JMP_GSURv2_construction_authorization_v1.md`) that:
 
-1. Cites this re-audit (`docs/JMP_GSURv2_multi_year_extension_readiness_reaudit_v1.md`)
+1. Cites this re-audit (`docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_readiness_reaudit_v1.md`)
    as the basis for the READY verdict and confirms all preconditions are met.
 
 2. Explicitly authorizes running the parameterised script for all three

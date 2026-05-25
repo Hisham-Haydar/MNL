@@ -17,13 +17,13 @@ Primary evidence:
 - `Results/RURO_occ_M1_clean_post_estimation_diagnostics_v1.md`
 - `Results/RURO_occ_M1_clean_supplementary_diagnostics_v1.md`
 - `Results/RURO_occ_M1_clean_gate_A_parse_report_v1.md`
-- `docs/RURO_occ_M1_clean_YAML_implementation_report_v1.md`
-- `docs/RURO_post_estimation_M1_diagnostics_implementation_report_v1.md`
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_YAML_implementation_report_v1.md`
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_post_estimation_M1_diagnostics_implementation_report_v1.md`
 
 Reference documents:
-- `docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the prior working
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the prior working
   baseline)
-- `docs/RURO_occ_M1_clean_design_memo_v2.md` §22 (the SA1
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md` §22 (the SA1
   acceptance rule applied here)
 - `Prompts/JMP_ability_vs_opportunity_framework_v1.md` (the
   ability/opportunity partition implemented by M1-clean)
@@ -42,7 +42,7 @@ sensitivity exercise is sequenced separately per §16 below.
 accepted as the JMP's preferred structural specification.**
 
 The classification rests on the application of the proposed §22
-acceptance rule of `docs/RURO_occ_M1_clean_design_memo_v2.md`. Every
+acceptance rule of `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md`. Every
 hard SA1-STANDS criterion is met at the design-memo threshold. Four
 qualifications are documented but none constitutes a hard failure
 under §22:
@@ -1035,9 +1035,9 @@ Inputs to the M1-naive implementation prompt:
 
 - This verdict memo (the M1-clean baseline against which M1-naive
   is compared)
-- `docs/RURO_occ_M1_clean_design_memo_v2.md` §23 (the M1-naive
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md` §23 (the M1-naive
   specification)
-- `docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the prior baseline,
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the prior baseline,
   which together with this verdict bounds the expected M1-naive
   parameter values)
 - `scripts/enhanced/specifications/estimation_spec_ruro_occ_M1_clean.yaml`

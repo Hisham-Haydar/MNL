@@ -396,7 +396,7 @@ For couples, the working filter is per partner: 231,647 rows with
 ## Commands queued (not yet executed)
 
 These are the exact commands from
-`docs/France_case/RURO_ruro_occ_M0_rebuild_command_plan_v1.md` that will fire on
+`docs/France_case/P3a/design/RURO_ruro_occ_M0_rebuild_command_plan_v1.md` that will fire on
 authorisation.
 
 ### Notation

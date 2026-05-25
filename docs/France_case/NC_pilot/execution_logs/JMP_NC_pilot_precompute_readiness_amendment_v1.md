@@ -239,7 +239,7 @@ output file + sidecar; stop after validation.
 ```text
 Work locally in my RURO/MNL codebase. PRECOMPUTE-READINESS SLICE, FR_2016
 couples pilot. Authorized by
-docs/JMP_NC_pilot_precompute_readiness_amendment_v1.md.
+docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_readiness_amendment_v1.md.
 
 HARD CONSTRAINTS (halt and report if any would be violated):
 - Input READ-ONLY: do NOT overwrite the post-EM parquet or any prior
@@ -254,7 +254,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
   M1-clean. (HC-STAGE)
 
 Read (read-only):
-- docs/JMP_NC_pilot_precompute_readiness_amendment_v1.md
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_readiness_amendment_v1.md
 - Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__post_em.parquet
 - Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__post_em__mergemeta.json
 

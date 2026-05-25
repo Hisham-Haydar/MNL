@@ -2,7 +2,7 @@
 
 *France 2014–2015–2016 | v1 | 2026-05-20*
 
-Authorization: `docs/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md`
+Authorization: `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md`
 
 ---
 
@@ -487,4 +487,4 @@ M1-clean 2016 remains the active JMP baseline.
 ---
 
 *Construction completed: 2026-05-20.*
-*Authorization reference: `docs/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md`*
+*Authorization reference: `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md`*

@@ -176,7 +176,7 @@ the four named upstream columns.
 ## 8. Impact on construction verdict
 
 The V9 patch is one of the two minor caveats recorded in the construction
-verdict `docs/JMP_stage_M1_P3a_GSURv2_construction_verdict_v1.md` (C2).
+verdict `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_stage_M1_P3a_GSURv2_construction_verdict_v1.md` (C2).
 
 The patch does not affect:
 

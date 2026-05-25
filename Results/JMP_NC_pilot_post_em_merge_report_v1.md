@@ -7,7 +7,7 @@
 ## 1. Scope and Authorization Provenance
 
 This report documents the post-EUROMOD merge slice for the NC pilot, executed
-2026-05-23. Authorization: **`docs/JMP_NC_pilot_post_em_merge_amendment_v1.md`**
+2026-05-23. Authorization: **`docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_post_em_merge_amendment_v1.md`**
 (merge-slice authorization, narrow). The slice assembles the 30 Strategy C'
 EUROMOD block outputs into one wide post-EM pilot product parquet carrying
 partner-specific disposable income (`ils_dispy_male`, `ils_dispy_female`) for

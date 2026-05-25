@@ -27,8 +27,8 @@
 #   Everything else byte-identical to P3a pooled.
 #
 # Reference docs:
-#   docs/France_case/RURO_spec_redesign_decisions_v2.md §D1
-#   docs/RURO_Bpool_draws_verification_v1.md
+#   docs/France_case/_shared/governance/RURO_spec_redesign_decisions_v2.md §D1
+#   docs/France_case/P3a/execution_logs/Bpool/RURO_Bpool_draws_verification_v1.md
 #   scripts/enhanced/specifications/estimation_spec_ruro_occ_P3a_pooled.yaml
 # ==============================================================================
 

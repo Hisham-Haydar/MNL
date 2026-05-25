@@ -6,7 +6,7 @@ Scope: consolidated verdict on `ruro_occ_M0a_clean` (France 2016,
 joint singles+couples, estimation run `2026-05-13_19-24-38`,
 joint LL = −6,521.43, 47 parameters), after the post-estimation
 reporting patch v2 (no estimator change) documented in
-`docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md`. Evidence
+`docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md`. Evidence
 package: structural participation diagnostic, post-patch fit-check
 JSON, post-patch low-token summary (`reports/...20260514_102334.md`),
 and the RURO continuous-MNL variable dictionary.
@@ -700,7 +700,7 @@ is the more conservative move and leaves the option for (b2) at
 M0c if needed.
 
 Save the M0b design decision as
-`docs/RURO_occ_M0b_design_memo_v1.md` before any code change.
+`docs/France_case/P3a/execution_logs/single_year_baseline/M0b/RURO_occ_M0b_design_memo_v1.md` before any code change.
 
 **Step 2 — Implement M0b YAML, parser change, engine change (Claude
 Code).**
@@ -716,7 +716,7 @@ Three small changes across:
   `β_ll · BC(L_m) · BC(L_f)` term to couples V.
 
 Save the patch report as
-`docs/RURO_occ_M0b_implementation_report_v1.md`.
+`docs/France_case/P3a/execution_logs/single_year_baseline/M0b/RURO_occ_M0b_implementation_report_v1.md`.
 
 **Step 3 — Smoke test (Claude Code).**
 
@@ -772,7 +772,7 @@ substantial spec rethink is needed — escalate to supervisor.
 | Purpose | File |
 |---|---|
 | Verdict (this memo) | `docs/RURO_occ_M0a_clean_verdict_v1.md` |
-| Reporting patch | `docs/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md` |
+| Reporting patch | `docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_post_estimation_patch_report_v1.md` |
 | Structural V diagnostic | `Results/RURO_ruro_occ_M0a_clean_participation_diag_v1.md` |
 | Structural V diagnostic data | `Results/_participation_diag_ruro_occ_M0a_clean.json` |
 | Patched-reporter fit check | `Results/_M0a_clean_post_est_fit_check.json` |

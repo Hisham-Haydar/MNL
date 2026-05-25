@@ -14,7 +14,7 @@ The design goal is country/year portability, but the production code is not yet
 fully country/year-agnostic.
 
 **Variable lookup:** use
-`docs/France_case/euromod_reference/euromod_fr_2015_2017_input_output_reference.md` for
+`docs/France_case/_shared/euromod_reference/euromod_fr_2015_2017_input_output_reference.md` for
 EUROMOD input/output variables and
 `docs/specifications/RURO_CONTINUOUS_MNL_VARIABLE_DICTIONARY_v1.md` for RURO-derived MNL
 variables such as `working`, `loc4`, proposal aliases, and group conventions
@@ -752,9 +752,9 @@ Main docs. Some filenames still carry the older project label used during
 development; the model object is the RURO occupation-opportunity M0 baseline.
 
 - `docs/specifications/RURO_model_spec_contract_v4_ruro_occ.md`
-- `docs/France_case/RURO_ruro_occ_baseline_spec_v1.md`
-- `docs/France_case/RURO_ruro_occ_baseline_implementation_report_v1.md`
-- `docs/France_case/RURO_ruro_occ_M0_rebuild_command_plan_v1.md`
+- `docs/France_case/P3a/design/RURO_ruro_occ_baseline_spec_v1.md`
+- `docs/France_case/P3a/design/RURO_ruro_occ_baseline_implementation_report_v1.md`
+- `docs/France_case/P3a/design/RURO_ruro_occ_M0_rebuild_command_plan_v1.md`
 - `Results/RURO_ruro_occ_M0_rebuild_canary_report_v1.md`
 
 Key data precondition:
@@ -850,7 +850,7 @@ Read in this order:
 5. `docs/methods/RURO_PREFERENCE_ESTIMATION_CAPABILITIES.md`
 6. `docs/methods/RURO_CURRENT_STATE_AND_IDENTIFICATION.md`
 7. `docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md`
-8. For RURO occupation M0 only: `docs/France_case/RURO_ruro_occ_M0_rebuild_command_plan_v1.md`
+8. For RURO occupation M0 only: `docs/France_case/P3a/design/RURO_ruro_occ_M0_rebuild_command_plan_v1.md`
 
 After these files, a researcher should know what the project does, which branch
 to run, what files are produced, how the estimator works, and what cannot yet

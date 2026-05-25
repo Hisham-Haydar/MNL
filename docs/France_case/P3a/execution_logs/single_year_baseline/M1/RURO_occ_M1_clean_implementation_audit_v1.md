@@ -2,7 +2,7 @@
 
 Date: 2026-05-18  
 Auditor: Claude (read-only audit — no code or data files modified)  
-Reference design memo: `docs/RURO_occ_M1_clean_design_memo_v2.md`  
+Reference design memo: `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md`  
 Data stem inspected: `Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl_GSURv2`
 
 ---
@@ -17,7 +17,7 @@ Sources read during the audit:
 
 | Source | Method |
 |--------|--------|
-| `docs/RURO_occ_M1_clean_design_memo_v2.md` | Full read |
+| `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md` | Full read |
 | `scripts/enhanced/specifications/estimation_spec_ruro_occ_M0c_b2_GSURv2.yaml` | Full read (317 lines) |
 | `scripts/enhanced/estimation_spec_parser.py` | Full read |
 | `scripts/enhanced/enh_RURO_estimate_FR.py` §5a–5b | Full read |

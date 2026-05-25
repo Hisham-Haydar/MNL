@@ -24,7 +24,7 @@ All four validation gates A–D pass (see §6 below). No estimation was run.
 | `scripts/enhanced/gamspy_estimation_vectorized.py` | **MODIFIED**. Two sites (singles utility, couples-household utility) route through the same helper for symmetry. |
 | `scripts/enhanced/gamspy_estimation.py` | **MODIFIED**. Five sites (singles utility + couples utility + per-group gradient sites) route through the same helper. The literal `'theta_c'` string is replaced by the helper-resolved base name. |
 | `Results/_M0a_clean_spec_check.py` | **NEW**. Re-runnable validation harness; gates A–D. |
-| `docs/RURO_occ_M0a_clean_implementation_report_v1.md` | **NEW**. This report. |
+| `docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_implementation_report_v1.md` | **NEW**. This report. |
 
 No other files were touched. MNL data, draw scripts, EUROMOD scripts,
 post-estimation script, and the job-choice branch are all unchanged.

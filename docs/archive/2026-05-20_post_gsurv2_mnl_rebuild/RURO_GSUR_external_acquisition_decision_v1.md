@@ -773,7 +773,7 @@ implementation; no GSUR rebuild code may be run.
 
 Read:
 - docs/RURO_GSUR_external_acquisition_decision_v1.md (this memo)
-- docs/RURO_GSUR_rebuild_specification_v2_1.md (the spec)
+- docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md (the spec)
 - docs/RURO_GSUR_v2_1_open_decisions_resolution_v1.md (resolved
   decisions; do not duplicate)
 

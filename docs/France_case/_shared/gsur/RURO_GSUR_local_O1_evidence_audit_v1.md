@@ -3,7 +3,7 @@
 Date: 2026-05-17
 
 Reference documents:
-- `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md`
+- `docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md`
 - `docs/RURO_GSUR_v2_1_open_decisions_resolution_v1.md`
 - `docs/RURO_GSUR_external_acquisition_verification_claude_v1.md`
 

@@ -281,7 +281,7 @@ diagnostics; no inference/welfare.
 ```text
 Work locally in my RURO/MNL codebase. JAX VALIDATION ESTIMATION (3 starts),
 FR_2016 couples pilot. Authorized by
-docs/JMP_NC_pilot_vectorized_estimator_design_contract_v1.md. NOT production,
+docs/France_case/NC_pilot/design/JMP_NC_pilot_vectorized_estimator_design_contract_v1.md. NOT production,
 NOT verdict-grade.
 
 HARD CONSTRAINTS (halt and report if any would be violated):
@@ -303,7 +303,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
   import/refactor (no logic change). (HV-MUT)
 
 Read (read-only except the new script + new report):
-- docs/JMP_NC_pilot_vectorized_estimator_design_contract_v1.md
+- docs/France_case/NC_pilot/design/JMP_NC_pilot_vectorized_estimator_design_contract_v1.md
 - scripts/pilot/_run_jax_optimizer_benchmark.py and
   scripts/pilot/_run_ll_equivalence_prototype.py (reuse the float64 JAX kernel)
 - Data/pilot/nc_2016_couples/precomputed/fr_pilot_nc_2016_couples_precomputed_loc.pkl

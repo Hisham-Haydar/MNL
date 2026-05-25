@@ -211,7 +211,7 @@ respecified, or the parameterization revised.
 
 ## 12. Next gate
 
-**`docs/JMP_NC_pilot_beta_l0_m_specification_review_v1.md`.** The next document is
+**`docs/France_case/NC_pilot/design/JMP_NC_pilot_beta_l0_m_specification_review_v1.md`.** The next document is
 a specification/bounds review of the `beta_l0_m` active lower-bound corner, which
 must determine — before any inference or economic interpretation — whether the
 corner reflects (i) a benign parameterization artifact for which the bound or the
@@ -240,7 +240,7 @@ the welfare and decomposition stages that constitute the paper's contribution.
 - **`beta_l0_m` is an active lower-bound corner** at all three tolerance-converged
   points and **requires a specification/bounds review before inference or
   economic interpretation.**
-- **The next gate is `docs/JMP_NC_pilot_beta_l0_m_specification_review_v1.md`.**
+- **The next gate is `docs/France_case/NC_pilot/design/JMP_NC_pilot_beta_l0_m_specification_review_v1.md`.**
 - M1-clean 2016 active; corrected pooled P3a unaffected; prior reports, oracle
   JSONs, and the precomputed object unmodified.
 
@@ -252,4 +252,4 @@ both thresholds; three tolerance stops). HV-AGREE resolved as conditioning, not
 multimodality. beta_l0_m a stable active lower-bound corner, uninterpreted;
 inference blocked pending its review. Estimator-protocol acceptance, not an
 economic result; NC pilot not promoted; welfare/SA2 unauthorized; M1-clean 2016
-active. Next: docs/JMP_NC_pilot_beta_l0_m_specification_review_v1.md.*
+active. Next: docs/France_case/NC_pilot/design/JMP_NC_pilot_beta_l0_m_specification_review_v1.md.*

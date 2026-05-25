@@ -305,7 +305,7 @@ sidecar; stop after validation.
 
 ```text
 Work locally in my RURO/MNL codebase. POST-EUROMOD MERGE SLICE, FR_2016
-couples pilot. Authorized by docs/JMP_NC_pilot_post_em_merge_amendment_v1.md.
+couples pilot. Authorized by docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_post_em_merge_amendment_v1.md.
 
 HARD CONSTRAINTS (halt and report if any would be violated):
 - Inputs READ-ONLY: do NOT overwrite the Stage-4 product parquet or any of the
@@ -319,7 +319,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
   as non-primary in the sidecar.
 
 Read (read-only):
-- docs/JMP_NC_pilot_post_em_merge_amendment_v1.md
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_post_em_merge_amendment_v1.md
 - Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product.parquet (base; schema + keys)
 - Data/pilot/nc_2016_couples/em_outputs/block_f00..f29/combined_draws_em.parquet
 - scripts/enhanced/enh_RURO_euromod.py (read-only; confirm idhh_true/idperson_true

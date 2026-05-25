@@ -29,7 +29,7 @@ Read (in this order):
   corrected §8 merge procedure — note that §8 explicitly supersedes the
   earlier incorrect description in the same section)
 - Results/RURO_GSUR_v2_stageA_lookup_validation_report_v1.md
-- docs/RURO_GSUR_rebuild_specification_v2_1.md §8 (output schema),
+- docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md §8 (output schema),
   §9 (Stage A), §12 (F6 versioned paths, F6-promote canonical
   promotion - NOT authorized in this task), §14 (M1–M10 validation
   checks), §16 (what must not be changed)

@@ -373,7 +373,7 @@ path templates (`y{YEAR}` pattern), C7 block presence — no script
 invocation with `--opportunity-year`.
 
 **Step 6 — Prepare lock-plan document**:
-`docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` with sidecar field
+`docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` with sidecar field
 specification and lock procedure per §9 of the authorization.
 
 **BENCHMARK_PCT values to hard-code as C5 defaults or read from CSV:**

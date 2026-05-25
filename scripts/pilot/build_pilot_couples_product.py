@@ -3,7 +3,7 @@
 NC pilot — Stages 3 + 4 driver: build 30x30 product alternatives for 2016
 couples; write pilot parquet + metadata.
 
-Authorized by: docs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md (Stages 3-4).
+Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md (Stages 3-4).
 
 Hard scope:
   - 2016 couples ONLY (year_tag == 2), product 30x30 = 900 alts/couple
@@ -358,7 +358,7 @@ def main() -> int:
         "schema_version": "nc_pilot_couples_product_v1",
         "produced_by": "scripts/pilot/build_pilot_couples_product.py",
         "produced_at_utc": datetime.now(timezone.utc).isoformat(),
-        "authorization": "docs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md (Stages 3-4)",
+        "authorization": "docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md (Stages 3-4)",
         "year": 2016,
         "year_tag": YEAR_TAG_2016,
         "country": "FR",

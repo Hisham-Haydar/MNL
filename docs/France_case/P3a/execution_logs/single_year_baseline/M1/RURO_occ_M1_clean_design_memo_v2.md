@@ -23,14 +23,14 @@ not authorise estimation, code modification, welfare computation,
 or canonical parquet promotion.
 
 Reference documents:
-- `docs/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the accepted working
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_GSURv2_verdict_v1.md` (the accepted working
   baseline)
 - `Results/RURO_occ_M0c_b2_GSURv2_estimation_report_v1.md`
 - `Results/RURO_occ_M0c_b2_GSURv2_post_estimation_diagnostics_v1.md`
 - `Prompts/JMP_ability_vs_opportunity_framework_v1.md` (the
   conceptual framework; its regional design is superseded by this
   memo)
-- `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md` §16 (the frozen
+- `docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md` §16 (the frozen
   blocks that M1-clean preserves)
 - `scripts/enhanced/specifications/estimation_spec_ruro_occ_M0c_b2_GSURv2.yaml`
   (the working YAML; the M1-clean YAML is derived from this file)
@@ -1007,7 +1007,7 @@ educational reclassification but does not add region dummies.
 The selection among SA1-STANDS, SA1-REVISION, and SA1-OVERTURNED
 is made on the basis of the M1-clean estimation report and
 post-estimation diagnostics; a separate verdict memo
-`docs/RURO_occ_M1_clean_verdict_v1.md` is written to record the
+`docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` is written to record the
 verdict and its justification, following the same template as the
 M0c_b2_GSURv2 verdict memo.
 
@@ -1223,6 +1223,6 @@ is superseded by v2 in full and may be archived or retained for
 provenance at the project owner's discretion. The substantive
 content of v1 is preserved in v2 with the five revisions described
 in the revision history at the top of this memo. v2 should be
-added to version control (`git add docs/RURO_occ_M1_clean_design_memo_v2.md`)
+added to version control (`git add docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_design_memo_v2.md`)
 before any implementation work proceeds, so that the design contract
 binding the next coding task is checked in.

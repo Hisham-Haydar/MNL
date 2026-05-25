@@ -314,7 +314,7 @@ source; one new parquet + sidecar; stop before precompute.
 ```text
 Work locally in my RURO/MNL codebase. HN-POS RESOLUTION + c_norm REBUILD,
 FR_2016 couples pilot. Authorized by
-docs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md. Resolution = explicit
+docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md. Resolution = explicit
 normalized-EPS floor (NOT drop, NOT EUROMOD re-run).
 
 HARD CONSTRAINTS (halt and report if any would be violated):
@@ -332,7 +332,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
   M1-clean. (HF-STAGE)
 
 Read (read-only):
-- docs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_HN_POS_resolution_authorization_v1.md
 - Results/JMP_NC_pilot_normalization_rebuild_report_v1.md (HN-POS detail)
 - scripts/enhanced/estimation_utils.py (confirm EPS = 1e-12 @ line 49; use @ line 998)
 - Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet

@@ -588,7 +588,7 @@ Prompt to use:
 
 > Execute the corrected-region three-start re-estimation of
 > `ruro_occ_P3a_pooled` per
-> `docs/JMP_pooled_P3a_corrected_region_reestimation_authorization_v1.md`.
+> `docs/France_case/P3a/execution_logs/pooled_P3a/JMP_pooled_P3a_corrected_region_reestimation_authorization_v1.md`.
 > Use the interpreter `.venv\Scripts\python.exe`. Do NOT compute welfare.
 > Do NOT issue an SA2 verdict. Do NOT promote any output to canonical
 > status. Do NOT modify the pooled YAML or drop any region shifter. Do

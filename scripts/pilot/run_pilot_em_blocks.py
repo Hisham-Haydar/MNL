@@ -2,7 +2,7 @@
 """
 NC pilot — Stage 5 v2 driver: run EUROMOD for blocks f=lo..hi sequentially.
 
-Authorized by docs/JMP_NC_pilot_stage5_strategy_amendment_v2.md §22 STEP 5
+Authorized by docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage5_strategy_amendment_v2.md §22 STEP 5
 ("Blocks f=1..29 (only after checkpoint)").
 
 This driver:

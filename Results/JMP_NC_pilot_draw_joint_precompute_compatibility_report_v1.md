@@ -21,7 +21,7 @@ file was modified.
 ## 2. Authorization Scope
 
 **Authorizing document:**
-`docs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md`
+`docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md`
 
 **Option B (code fallback) — not Option A (data alias).** No scalar `draw` was
 added to the pilot parquet or any data file. A single, surgical change was made
@@ -39,9 +39,9 @@ script, any modification to the P3a YAML or production data.
 
 | File | Purpose |
 |---|---|
-| `docs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md` | Authorizing document; read first |
+| `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md` | Authorizing document; read first |
 | `Results/JMP_NC_pilot_precompute_readiness_report_v1.md` | Precompute-readiness status; confirmed scalar-`draw` gap |
-| `docs/JMP_NC_pilot_precompute_readiness_amendment_v1.md` | HC-DRAW constraints |
+| `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_readiness_amendment_v1.md` | HC-DRAW constraints |
 | `Results/JMP_NC_pilot_draw_joint_repointing_audit_v1.md` | Identified the draw-column site in `estimation_utils.py` |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready.parquet` | Schema + bounded read (read-only) |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_ready__readymeta.json` | Confirmed 152 cols, no scalar draw |
@@ -106,7 +106,7 @@ def _resolve_draw_column(df: "pd.DataFrame") -> "pd.Series":
     is available — no silent default, no synthesised index.
 
     Authorized by:
-      docs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md
+      docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md
       Option B (code fallback); the resolved series is used ONLY for group
       identification and is never written back, renamed to 'draw', or used for
       ID / draw arithmetic.

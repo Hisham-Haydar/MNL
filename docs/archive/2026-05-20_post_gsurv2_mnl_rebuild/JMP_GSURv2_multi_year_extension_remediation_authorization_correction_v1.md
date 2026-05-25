@@ -23,7 +23,7 @@ authorizations are unchanged.
 | C5 | §11 A2 | "References updated; un-tagged y2016 file retired when the year-tagged y2016 lookup is produced" | Replaced with "deferred to construction authorization" |
 | C6 | §11 A5 | "Parameterised script run with `--opportunity-year 2016`…generating the year-tagged y2016 lookup and its sidecar" | Replaced with "lock-plan document prepared; actual y2016 reproduction deferred to construction authorization" |
 | C7 | §12 N1 | "y2016 reproduction (A5) is the one bounded exception" | Replaced with "no GSURv2 lookup construction or reproduction is authorized for y2014, y2015, or y2016 during this remediation" |
-| C8 | §13 O5 | "Year-tagged y2016 lookup and its sidecar" as required output | Replaced with "y2016 provenance and sidecar lock-plan document (`docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`)" |
+| C8 | §13 O5 | "Year-tagged y2016 lookup and its sidecar" as required output | Replaced with "y2016 provenance and sidecar lock-plan document (`docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`)" |
 | C9 | §14 V4 | "Run the parameterised script with `--opportunity-year 2016`…value-identity match" as validation | Replaced with static/no-write validation: imports, `--help`, path computation, C7 block presence |
 | C10 | §14 V5 | "Confirm y2016 sidecar is written, parses, records K1 fields" | Replaced with "confirm lock-plan document is present and contains required fields" |
 | C11 | §14 closing | "V4 reproduces the existing y2016 lookup under value-identity control" | Replaced with "No lookup parquet written; value-identity regression deferred to construction authorization" |
@@ -145,7 +145,7 @@ the construction authorization to follow. The planning work is done
 in the remediation; the execution is deferred.
 
 **Retained in §11 A5:** A5 now authorises preparation of the lock-
-plan document (`docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`)
+plan document (`docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`)
 containing the §9 specification.
 
 **Retained in §13 O5:** O5 now lists the lock-plan document as a
@@ -211,7 +211,7 @@ authorised.
   selection and output-tagging layers, year-invariant logic
   preserved unchanged.
 - **y2016 lock plan prepared (A5):** Lock-plan document
-  (`docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`) prepared
+  (`docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_y2016_provenance_lock_plan_v1.md`) prepared
   with sidecar field specification and lock procedure.
 - **O7 sign-off request prepared (A6):** Crosswalk, merge key,
   drgn1 compositions, and merge procedure assembled for user
@@ -281,7 +281,7 @@ in §15 of `docs/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md
    computation, C7 block presence — no script run, no parquet
    written (V4).
 6. Prepare lock-plan document
-   `docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` with sidecar
+   `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` with sidecar
    field specification and lock procedure (A5, V5).
 7. Assemble O7 crosswalk sign-off request for user decision (A6).
 8. Run post-remediation validation checks V1–V7 and save the

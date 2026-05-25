@@ -70,7 +70,7 @@ The clean parameter vector must contain `theta_c_singles` and must not contain
 Create:
 
 - `scripts/enhanced/estimation_spec_ruro_occ_M0a_clean.yaml`
-- `docs/RURO_occ_M0a_clean_implementation_report_v1.md`
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_implementation_report_v1.md`
 - `Results/_M0a_clean_spec_check.py`
 
 ## Required Implementation
@@ -197,7 +197,7 @@ Gate D - syntax:
 Write:
 
 ```text
-docs/RURO_occ_M0a_clean_implementation_report_v1.md
+docs/France_case/P3a/execution_logs/single_year_baseline/M0a-clean/RURO_occ_M0a_clean_implementation_report_v1.md
 ```
 
 Include:

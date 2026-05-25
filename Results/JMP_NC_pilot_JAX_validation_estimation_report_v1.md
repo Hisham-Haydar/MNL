@@ -2,7 +2,7 @@
 
 *France RURO multi-year extension | v1 | 2026-05-24*
 
-**Authorization:** `docs/JMP_NC_pilot_vectorized_estimator_design_contract_v1.md` s21
+**Authorization:** `docs/France_case/NC_pilot/design/JMP_NC_pilot_vectorized_estimator_design_contract_v1.md` s21
 **Script:** `scripts/pilot/_run_jax_validation_estimation.py`
 **Generated:** 2026-05-24 23:27
 

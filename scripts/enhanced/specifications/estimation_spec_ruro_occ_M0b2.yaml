@@ -24,9 +24,9 @@
 # not force a specific value.
 #
 # Reference docs:
-#   docs/RURO_occ_M0b_design_memo_v1.md  (sections 6, 10)
-#   docs/RURO_occ_M0b_implementation_audit_v1.md
-#   docs/RURO_occ_M0b_implementation_report_v1.md
+#   docs/France_case/P3a/execution_logs/single_year_baseline/M0b/RURO_occ_M0b_design_memo_v1.md  (sections 6, 10)
+#   docs/France_case/P3a/execution_logs/single_year_baseline/M0b/RURO_occ_M0b_implementation_audit_v1.md
+#   docs/France_case/P3a/execution_logs/single_year_baseline/M0b/RURO_occ_M0b_implementation_report_v1.md
 # ==============================================================================
 
 specification:

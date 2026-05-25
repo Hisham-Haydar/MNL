@@ -2,7 +2,7 @@
 
 *France RURO multi-year extension | v1 | 2026-05-24*
 
-**Document category: amendment to `docs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md`.**
+**Document category: amendment to `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md`.**
 Re-authorizes the first NC pilot couples-only 2016 diagnostic estimation on the
 **loc4-complete** pkl, via **GAMSPy/CONOPT** (not scipy), under preflight and
 capped-iteration/wall-time gates. The earlier scipy/L-BFGS-B run is **invalid and
@@ -229,7 +229,7 @@ gated; pilot-only outputs; stop after diagnostics.
 ```text
 Work locally in my RURO/MNL codebase. NC PILOT DIAGNOSTIC ESTIMATION RERUN,
 FR_2016 couples only. Authorized by
-docs/JMP_NC_pilot_diagnostic_estimation_rerun_amendment_v1.md. NOT verdict-grade.
+docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_rerun_amendment_v1.md. NOT verdict-grade.
 The earlier scipy/L-BFGS-B run is INVALID and non-interpretable — do not use it.
 
 HARD CONSTRAINTS (halt and report if any would be violated):
@@ -261,8 +261,8 @@ HARD CONSTRAINTS (halt and report if any would be violated):
   rebuild.
 
 Read (read-only):
-- docs/JMP_NC_pilot_diagnostic_estimation_rerun_amendment_v1.md
-- docs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md (base spec)
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_rerun_amendment_v1.md
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md (base spec)
 - Data/pilot/nc_2016_couples/precomputed/fr_pilot_nc_2016_couples_precomputed_loc.pkl
 - scripts/enhanced/gamspy_estimation_vectorized.py (estimate_couples_vectorized_gamspy)
 - the pilot couples spec (estimation_spec_nc_pilot_couples_2016.yaml)

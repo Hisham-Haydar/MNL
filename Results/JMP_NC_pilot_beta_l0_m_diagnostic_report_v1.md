@@ -2,7 +2,7 @@
 
 *France RURO multi-year extension | v1 | 2026-05-25 09:54*
 
-**Authorization:** `docs/JMP_NC_pilot_beta_l0_m_specification_review_v1.md` s17  
+**Authorization:** `docs/France_case/NC_pilot/design/JMP_NC_pilot_beta_l0_m_specification_review_v1.md` s17  
 **Script:** `scripts/pilot/_run_beta_l0_m_diagnostic.py`  
 **Generated:** 2026-05-25 09:54
 
@@ -582,7 +582,7 @@ Fix at floor ΔLL = +1.083350e-06. Near-zero — consistent with a flat ridge: b
 - **The NC pilot was not promoted.**
 - **M1-clean 2016 remains the active baseline.** Corrected pooled P3a unaffected.
 - **Negative beta_l0_m (REOPT_NEG):** diagnostic probe only, explicitly bounded and labelled. Not a specification change.
-- **Authorization:** `docs/JMP_NC_pilot_beta_l0_m_specification_review_v1.md` s17.
+- **Authorization:** `docs/France_case/NC_pilot/design/JMP_NC_pilot_beta_l0_m_specification_review_v1.md` s17.
 
 ---
 

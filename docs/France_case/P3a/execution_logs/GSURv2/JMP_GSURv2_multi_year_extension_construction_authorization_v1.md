@@ -13,20 +13,20 @@ rebuild, pooled stacking, pooled estimation, welfare work, or
 canonical promotion.
 
 Reference documents:
-- `docs/JMP_GSURv2_multi_year_extension_readiness_reaudit_v1.md`
+- `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_readiness_reaudit_v1.md`
   (the re-audit returning READY FOR GSURv2 CONSTRUCTION)
 - `docs/archive/2026-05-26_round2_chain_compression/audit_reaudit_chain/JMP_GSURv2_multi_year_extension_remediation_authorization_v1.md`
   (the remediation authorization, now satisfied)
-- `docs/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` (the y2016
+- `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_y2016_provenance_lock_plan_v1.md` (the y2016
   provenance-lock procedure, with correction
   `docs/JMP_GSURv2_y2016_provenance_lock_plan_correction_v1.md`)
-- `docs/JMP_GSURv2_multi_year_extension_design_memo_v1.md` (the
+- `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_design_memo_v1.md` (the
   governing design memo)
-- `docs/France_case/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
+- `docs/France_case/_shared/governance/JMP_GSUR_year_alignment_decision_v1.md` (the opportunity-
   year alignment rule and the GSURv2 final-build requirement)
 - `Results/JMP_GSURv2_external_file_remediation_report_v1.md` (the
   external-file retrieval confirmation)
-- `docs/JMP_GSURv2_script_remediation_report_v1.md` (the C1–C7
+- `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_script_remediation_report_v1.md` (the C1–C7
   parameterisation confirmation)
 - `Results/JMP_GSURv2_script_remediation_static_validation_v1.md`
   (the static V4a/V4b/V4c validation)
@@ -980,7 +980,7 @@ tagged y2016 lookup
 Prompt to use:
 
 > Execute the GSURv2 Stage A lookup construction under Option B per
-> `docs/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md`.
+> `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_multi_year_extension_construction_authorization_v1.md`.
 > Use the interpreter `.venv\Scripts\python.exe`. Do NOT rebuild any
 > MNL parquet. Do NOT re-run the pooled stacking. Do NOT estimate
 > any model. Do NOT compute welfare. Do NOT promote any file to a

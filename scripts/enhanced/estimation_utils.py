@@ -65,7 +65,7 @@ def _resolve_draw_column(df: "pd.DataFrame") -> "pd.Series":
     is available — no silent default, no synthesised index.
 
     Authorized by:
-      docs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md
+      docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_draw_joint_precompute_compatibility_authorization_v1.md
       Option B (code fallback); the resolved series is used ONLY for group
       identification and is never written back, renamed to 'draw', or used for
       ID / draw arithmetic.

@@ -4,7 +4,7 @@
 **Date:** 2026-05-19
 **Prepared by:** Stage M1 execution-readiness audit session (2026-05-19)
 **Task documents:**
-- CPI decision: `docs/JMP_multi_year_CPI_HICP_source_decision_v1.md`
+- CPI decision: `docs/France_case/_shared/governance/JMP_multi_year_CPI_HICP_source_decision_v1.md`
 - External assets: `Results/JMP_multi_year_external_assets_inventory_v1.md`
 - EUROMOD readiness: `Results/JMP_multi_year_EUROMOD_output_readiness_v1.md`
 - MNL readiness: `Results/JMP_multi_year_single_year_MNL_readiness_v1.md`
@@ -35,7 +35,7 @@ Three required P3a inputs are absent. Until they are produced, `m1_stack_years.p
 | `Data/processed/fr/` (local) | Contents: `pooled/` subdirectory only; no parquets |
 | `Z:\hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_mnl_job_gmm__singles.parquet` | Column check: all required ID and monetary columns present; 335,200 rows × 974 cols |
 | `config/multi_year/fr_p3a_stage_m1.yaml` | Full read: input_parquet_dir resolves to repo-local path |
-| `docs/JMP_multi_year_stage_M1_implementation_plan_v2.md §7` | HICP φ_t values read for Option B |
+| `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_plan_v2.md §7` | HICP φ_t values read for Option B |
 | Dry-run: `m1_stack_years.py --config p3a/p2/p3b/p4 --dry-run` | All four configs executed; results documented |
 
 ---
@@ -57,7 +57,7 @@ The CPI template (`cpi_hicp_fr_harmonisation_TEMPLATE.csv`) had all φ_t = 0.0 (
 | 2017 | 101.47 | 0.9886 |
 | 2018 | 103.60 | 0.9682 |
 
-Decision rationale and disclosure language: `docs/JMP_multi_year_CPI_HICP_source_decision_v1.md`.
+Decision rationale and disclosure language: `docs/France_case/_shared/governance/JMP_multi_year_CPI_HICP_source_decision_v1.md`.
 
 This decision unblocks `m1_harmonise_cpi.py` from a CPI-file perspective. `m1_harmonise_cpi.py` remains blocked pending MNL parquet availability.
 

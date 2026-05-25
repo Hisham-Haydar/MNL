@@ -46,9 +46,9 @@ The following were read in constructing this plan:
 | `Results/JMP_multi_year_external_assets_inventory_v1.md` | Eurostat/INSEE asset status |
 | `Results/JMP_multi_year_EUROMOD_output_readiness_v1.md` | EUROMOD run status per year |
 | `Results/JMP_multi_year_single_year_MNL_readiness_v1.md` | Local-path parquet status |
-| `docs/JMP_multi_year_CPI_HICP_source_decision_v1.md` | φ_t values adopted |
-| `docs/JMP_multi_year_stage_M1_implementation_plan_v2.md` | Condition table and input manifest |
-| `docs/RURO_occ_M1_clean_verdict_v1.md` | M1-clean specification; GSURv2 file names |
+| `docs/France_case/_shared/governance/JMP_multi_year_CPI_HICP_source_decision_v1.md` | φ_t values adopted |
+| `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_plan_v2.md` | Condition table and input manifest |
+| `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` | M1-clean specification; GSURv2 file names |
 | `scripts/enhanced/enh_RURO_draws.py` | Draws argparse and defaults |
 | `scripts/enhanced/enh_RURO_euromod.py` | EUROMOD argparse and metadata structure |
 | `scripts/enhanced/enh_RURO_prep_mnl_basic.py` | MNL-prep argparse |
@@ -543,7 +543,7 @@ the single-year pipeline described here. This plan does not run harmonisation.
 | 2017 | 0.9886 |
 
 Source: `Data/external/cpi_hicp_fr_harmonisation.csv`.
-Decision memo: `docs/JMP_multi_year_CPI_HICP_source_decision_v1.md`.
+Decision memo: `docs/France_case/_shared/governance/JMP_multi_year_CPI_HICP_source_decision_v1.md`.
 Addendum v2 §Issue 1: these values are execution-ready but provisional. If INSEE IPC is
 later retrieved and any φ_t differs by ≥ 0.5 pp, the CSV must be rewritten and all
 harmonised parquets rebuilt.

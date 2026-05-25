@@ -1,7 +1,7 @@
 """
 JAX validation estimation -- FR_2016 couples pilot (three starts).
 
-Authorization: docs/JMP_NC_pilot_vectorized_estimator_design_contract_v1.md s19.
+Authorization: docs/France_case/NC_pilot/design/JMP_NC_pilot_vectorized_estimator_design_contract_v1.md s19.
 
 SCOPE: Exactly three capped float64 L-BFGS-B starts (A=theta_CONOPT,
 B=pilot defaults, C=perturbed) to validate whether the JAX path reproduces
@@ -468,7 +468,7 @@ PARAM_NAMES = [
 
 print("=" * 70)
 print("JAX VALIDATION ESTIMATION ORCHESTRATOR (3 starts)")
-print("Authorization: docs/JMP_NC_pilot_vectorized_estimator_design_contract_v1.md")
+print("Authorization: docs/France_case/NC_pilot/design/JMP_NC_pilot_vectorized_estimator_design_contract_v1.md")
 print("=" * 70)
 
 with open(RESULT_S1) as fh:
@@ -554,7 +554,7 @@ def write_report():
     A("")
     A("*France RURO multi-year extension | v1 | 2026-05-24*")
     A("")
-    A("**Authorization:** `docs/JMP_NC_pilot_vectorized_estimator_design_contract_v1.md` s21")
+    A("**Authorization:** `docs/France_case/NC_pilot/design/JMP_NC_pilot_vectorized_estimator_design_contract_v1.md` s21")
     A("**Script:** `scripts/pilot/_run_jax_validation_estimation.py`")
     A(f"**Generated:** {now}")
     A("")

@@ -3,7 +3,7 @@
 Date: 2026-05-17
 Lookup file: `Data/external/FR_gsur_ruro_v2_stageA.parquet`
 Script: `scripts/enhanced/enh_prepare_FR_gsur_v2.py`
-Reference spec: `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md`
+Reference spec: `docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md`
 
 ---
 

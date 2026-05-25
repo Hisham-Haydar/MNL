@@ -1,7 +1,7 @@
 """
 Limited JAX optimizer benchmark — FR_2016 couples pilot.
 
-Authorization: docs/JMP_NC_pilot_JAX_optimizer_benchmark_authorization_v1.md §18
+Authorization: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_JAX_optimizer_benchmark_authorization_v1.md §18
 
 SCOPE: Single L-BFGS-B run from theta_CONOPT, JAX float64 value-and-gradient,
        spec bounds, maxiter=15. FINITENESS / STABILITY PROBE ONLY.
@@ -268,7 +268,7 @@ def build_jax_ll_fn(pc):
 def main():
     print("=" * 72)
     print("JAX OPTIMIZER BENCHMARK — FR_2016 couples pilot")
-    print("Authorization: docs/JMP_NC_pilot_JAX_optimizer_benchmark_authorization_v1.md")
+    print("Authorization: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_JAX_optimizer_benchmark_authorization_v1.md")
     print("NOT production optimization. NOT verdict-grade. Stability probe only.")
     print("=" * 72)
 
@@ -578,7 +578,7 @@ def write_report(results, halt_code, halt_msg, opt_result, iter_log):
     A("")
     A("*France RURO multi-year extension | v1 | 2026-05-24*")
     A("")
-    A("**Authorization:** `docs/JMP_NC_pilot_JAX_optimizer_benchmark_authorization_v1.md` §18")
+    A("**Authorization:** `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_JAX_optimizer_benchmark_authorization_v1.md` §18")
     A("**Script:** `scripts/pilot/_run_jax_optimizer_benchmark.py`")
     A(f"**Generated:** {now}")
     A("")

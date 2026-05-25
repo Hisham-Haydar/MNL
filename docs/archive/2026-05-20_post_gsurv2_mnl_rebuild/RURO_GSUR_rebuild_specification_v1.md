@@ -16,8 +16,8 @@ It is parallel in structure to the M0b and M0c design memos and is the
 reference document for the implementation prompt that follows.
 
 Inputs to this memo:
-- `docs/RURO_GSUR_SOURCE_AND_MERGE_AUDIT_v1.md`
-- `docs/RURO_occ_M0c_b2_verdict_v1.md`
+- `docs/France_case/_shared/gsur/RURO_GSUR_SOURCE_AND_MERGE_AUDIT_v1.md`
+- `docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b2_verdict_v1.md`
 - `docs/JMP_ability_vs_opportunity_framework_v1.md`
 - `scripts/enhanced/enh_prepare_FR_gsur.py`
 - `scripts/enhanced/enh_RURO_prep_mnl_basic.py`

@@ -1,7 +1,7 @@
 """
 NC pilot — Stage 2 module: pilot-only W1 wage draw + matching proposal density.
 
-Authorized by: docs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md (Stage 2).
+Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md (Stage 2).
 
 This module replaces the production unconditional Uniform[w_min, w_max] wage
 draw (production reference: scripts/enhanced/enh_RURO_draws.py lines ~1196-1204)

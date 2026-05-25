@@ -275,7 +275,7 @@ outputs; stop after diagnostics.
 ```text
 Work locally in my RURO/MNL codebase. FIRST NC PILOT DIAGNOSTIC ESTIMATION,
 FR_2016 couples only. Authorized by
-docs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md. NOT verdict-grade.
+docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md. NOT verdict-grade.
 
 HARD CONSTRAINTS (halt and report if any would be violated):
 - Preflight FIRST. If the log-likelihood is not finite at the starting values,
@@ -293,7 +293,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
   supported; else defer.
 
 Read (read-only):
-- docs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md
 - Data/pilot/nc_2016_couples/precomputed/fr_pilot_nc_2016_couples_precomputed.pkl
 - Data/pilot/nc_2016_couples/precomputed/precompute_run_summary.json
 - Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__precompute_norm_ready__normmeta.json

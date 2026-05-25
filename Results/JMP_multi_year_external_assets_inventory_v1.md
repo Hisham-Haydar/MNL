@@ -3,7 +3,7 @@
 **Document:** Results/JMP_multi_year_external_assets_inventory_v1.md
 **Date:** 2026-05-19
 **Execution-readiness context:** docs/JMP_multi_year_stage_M1_execution_readiness_report_v1.md
-**Plan reference:** docs/JMP_multi_year_stage_M1_implementation_plan_v2.md §3, §15
+**Plan reference:** docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_plan_v2.md §3, §15
 
 All paths inspected relative to repo root `\\crc\users\hisham\Desktop\Nizam_Hisham\MNL` (local) and `Z:\hisham\EUROMOD-STORAGE` (shared storage). Inspection performed 2026-05-19 without network access to Eurostat API or INSEE BDM.
 
@@ -23,7 +23,7 @@ Four external assets required for P3a are absent. One (CPI/HICP CSV) was resolve
 | --- | --- | --- | --- |
 | `Data/external/cpi_hicp_fr_harmonisation.csv` | `m1_harmonise_cpi.py` (all configs) | `Data/external/cpi_hicp_fr_harmonisation.csv` | **PRESENT** (created 2026-05-19; Option B adopted) |
 
-Decision memo: `docs/France_case/JMP_multi_year_CPI_HICP_source_decision_v1.md`.
+Decision memo: `docs/France_case/_shared/governance/JMP_multi_year_CPI_HICP_source_decision_v1.md`.
 
 ---
 

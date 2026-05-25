@@ -173,5 +173,5 @@ The implementation is complete. Gate-A confirms:
 - Parameter count is 47.
 
 Estimation may proceed once the user authorises it. See
-[docs/RURO_occ_M0c_b_implementation_report_v1.md](../docs/RURO_occ_M0c_b_implementation_report_v1.md)
+[docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b_implementation_report_v1.md](../docs/France_case/P3a/execution_logs/single_year_baseline/M0c/RURO_occ_M0c_b_implementation_report_v1.md)
 for the estimation command and Gate-B criteria.

@@ -12,14 +12,14 @@ re-run only; it does not authorise pooled estimation, welfare
 computation, P3b, P4, or canonical promotion.
 
 Reference documents:
-- `docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md` (the post-rebuild
+- `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_MNL_rebuild_verdict_v1.md` (the post-rebuild
   verdict authorising this stacking re-run as the next gate, with
   correction `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md`)
 - `Results/JMP_GSURv2_MNL_rebuild_report_v2.md` (the rebuild
   report)
 - `Results/JMP_GSURv2_MNL_rebuild_correction_report_v1.md` (the
   authorized-stem correction report)
-- `docs/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md`
+- `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_P3a_construction_verdict_v1.md`
   (the provisional v1-fallback P3a construction verdict, whose
   pipeline and validation battery this re-run reproduces)
 - `config/multi_year/fr_p3a_stage_m1.yaml` (the existing Stage M1
@@ -714,7 +714,7 @@ archived/preserved); and this stacking authorization.
 Prompt to use:
 
 > Execute the Stage M1 P3a GSURv2 pooled stacking re-run per
-> `docs/JMP_stage_M1_P3a_GSURv2_stacking_authorization_v1.md`. Use
+> `docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_stage_M1_P3a_GSURv2_stacking_authorization_v1.md`. Use
 > the interpreter `.venv\Scripts\python.exe`. Do NOT estimate any
 > model. Do NOT compute welfare. Do NOT promote any output to a
 > canonical path. Do NOT execute P3b or P4. Do NOT modify any

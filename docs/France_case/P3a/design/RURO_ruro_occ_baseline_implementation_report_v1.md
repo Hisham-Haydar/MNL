@@ -7,7 +7,7 @@ occupation opportunity (`M0_ruro_occ`), using `loc4` occupation opportunity
 and no occupation effects in utility, hours opportunity, or wage opportunity.
 
 Inputs read:
-- `docs/France_case/RURO_ruro_occ_baseline_spec_v1.md`
+- `docs/France_case/P3a/design/RURO_ruro_occ_baseline_spec_v1.md`
 - `docs/specifications/RURO_occ_pipeline_audit_v1.md`
 - `docs/specifications/RURO_model_spec_contract_v4_ruro_occ.md`
 
@@ -23,7 +23,7 @@ Inputs read:
 | `scripts/enhanced/estimation_utils.py` | Aligns PT1 hours band to `[18.5, 21.5]`. |
 | `scripts/enhanced/enh_RURO_prep_mnl_basic.py` | Aligns PT1 band, fixes fallback prior storage (`prior` density, `log_prior = log(prior)`), creates proposal-component aliases (`log_q_E/H/W/Occ`), computes prior from per-layer components when available, and drops M0-forbidden job/industry proposal artifacts from the final keep set. |
 | `scripts/enhanced/reduce_mnl_columns.py` | Keeps proposal-component aliases and drops `lindi`/`industry`/`nace` for M0 reductions. |
-| `docs/France_case/RURO_ruro_occ_baseline_implementation_report_v1.md` | This report. |
+| `docs/France_case/P3a/design/RURO_ruro_occ_baseline_implementation_report_v1.md` | This report. |
 
 The job-choice branch under `scripts/Job_model/` was not modified.
 

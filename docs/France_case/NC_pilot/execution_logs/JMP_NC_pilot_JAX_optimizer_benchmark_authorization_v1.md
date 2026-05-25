@@ -254,7 +254,7 @@ maxiter 10–20; no inference; no welfare.
 ```text
 Work locally in my RURO/MNL codebase. LIMITED JAX OPTIMIZER BENCHMARK, FR_2016
 couples pilot. Authorized by
-docs/JMP_NC_pilot_JAX_optimizer_benchmark_authorization_v1.md. NOT production
+docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_JAX_optimizer_benchmark_authorization_v1.md. NOT production
 optimization, NOT verdict-grade.
 
 HARD CONSTRAINTS (halt and report if any would be violated):
@@ -271,7 +271,7 @@ HARD CONSTRAINTS (halt and report if any would be violated):
   production/pilot data. Document any import-refactor of the equivalence script. (HJ-MUT)
 
 Read (read-only except the new script + new report):
-- docs/JMP_NC_pilot_JAX_optimizer_benchmark_authorization_v1.md
+- docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_JAX_optimizer_benchmark_authorization_v1.md
 - scripts/pilot/_run_ll_equivalence_prototype.py (reuse the validated LL formula; create x64 arrays only after jax_enable_x64 is set; import/refactor documented)
 - Results/JMP_NC_pilot_vectorized_likelihood_equivalence_v2.md (the v2 LL target)
 - Data/pilot/nc_2016_couples/precomputed/fr_pilot_nc_2016_couples_precomputed_loc.pkl

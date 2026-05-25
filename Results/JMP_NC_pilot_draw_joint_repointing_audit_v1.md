@@ -63,8 +63,8 @@ estimation, welfare, SA2, canonical promotion, M1-clean displacement.
 | File | Method |
 |---|---|
 | `Results/JMP_NC_pilot_stage1_4_build_report_v1.md` | Full read (prior turn) |
-| `docs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md` | Full read (prior turn) |
-| `docs/JMP_NC_pilot_spec_contract_v1.md` | Full read (prior turn) |
+| `docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_stage1_4_scope_amendment_v1.md` | Full read (prior turn) |
+| `docs/France_case/NC_pilot/design/JMP_NC_pilot_spec_contract_v1.md` | Full read (prior turn) |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product.parquet` | Schema + bounded column reads (`idhh`, `draw_male`, `draw_female`, `draw_joint`, `is_chosen_*`, `year_tag`) |
 | `Data/pilot/nc_2016_couples/fr_pilot_nc_2016_couples_product__mnlmeta.json` | Full read |
 | `scripts/pilot/build_pilot_couples_product.py` | Full read |

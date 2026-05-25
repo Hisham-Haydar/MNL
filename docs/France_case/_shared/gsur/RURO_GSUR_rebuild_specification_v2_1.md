@@ -1022,7 +1022,7 @@ remain provisional pending Stage A re-estimation.
 
 ## 19. Suggested filename
 
-Save this memo as: `docs/France_case/RURO_GSUR_rebuild_specification_v2_1.md`
+Save this memo as: `docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md`
 (category: data-design memo / rebuild specification, supersedes v2,
 which supersedes v1).
 

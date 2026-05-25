@@ -28,8 +28,8 @@ updated (§10 below).
 | `Results/JMP_single_year_2016_local_mirror_report_v1.md` | §§ 3–5, 9 |
 | `docs/JMP_single_year_replication_2015_2017_authorization_v1.md` | §§ 7, 9, 10 |
 | `docs/JMP_single_year_replication_2015_2017_command_plan_v2.md` | §§ 3, 13, 19 |
-| `docs/France_case/JMP_multi_year_CPI_HICP_source_decision_v1.md` | φ_t table |
-| `docs/RURO_occ_M1_clean_verdict_v1.md` | §§ 1–2 |
+| `docs/France_case/_shared/governance/JMP_multi_year_CPI_HICP_source_decision_v1.md` | φ_t table |
+| `docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` | §§ 1–2 |
 | `Data/external/FR_gsur_ruro.parquet` | Year column; keying structure |
 | `Data/processed/fr/fr_2015_RURO_mnl__mnlmeta.json` | Full fields |
 | `Data/processed/fr/fr_2016_RURO_mnl_GSURv2__mnlmeta.json` | inputs.gsur_file field |

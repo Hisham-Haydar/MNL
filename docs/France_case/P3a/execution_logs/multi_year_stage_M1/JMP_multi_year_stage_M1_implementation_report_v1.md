@@ -2,7 +2,7 @@
 
 **Document:** JMP_multi_year_stage_M1_implementation_report_v1.md
 **Date:** 2026-05-19
-**Reference plan:** docs/JMP_multi_year_stage_M1_implementation_plan_v2.md
+**Reference plan:** docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_plan_v2.md
 **Status:** Scaffolding complete — execution blocked on upstream preconditions
 
 ---

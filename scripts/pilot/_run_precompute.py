@@ -1,6 +1,6 @@
 """
 NC pilot couples precompute slice — retry after HN-POS resolution.
-Authorized by: docs/JMP_NC_pilot_precompute_slice_authorization_v1.md
+Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_slice_authorization_v1.md
 Input:  __precompute_norm_ready.parquet  (c_norm rebuilt, EPS-floored)
 Output: Data/pilot/nc_2016_couples/precomputed/fr_pilot_nc_2016_couples_precomputed.pkl
 """
@@ -34,7 +34,7 @@ def halt(code, msg):
 
 print("=" * 70)
 print("NC PILOT — COUPLES PRECOMPUTE SLICE (retry after HN-POS resolution)")
-print("Authorized by: docs/JMP_NC_pilot_precompute_slice_authorization_v1.md")
+print("Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_precompute_slice_authorization_v1.md")
 print("=" * 70)
 
 # ── Guard: must use norm-ready parquet, not the old one ──────────────────────

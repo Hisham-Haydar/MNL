@@ -1,7 +1,7 @@
 """
 beta_l0_m Specification Review Diagnostic — FR_2016 couples pilot.
 
-Authorization: docs/JMP_NC_pilot_beta_l0_m_specification_review_v1.md s17
+Authorization: docs/France_case/NC_pilot/design/JMP_NC_pilot_beta_l0_m_specification_review_v1.md s17
 
 SCOPE (authorized diagnostics only):
   1. Local likelihood profile over beta_l0_m near lower bound (fixed parameter sweep).
@@ -730,7 +730,7 @@ JOBS = ["PROFILE", "REOPT_FLOOR", "REOPT_CONOPT", "REOPT_NEG", "PARTICIPATION"]
 
 print("=" * 70)
 print("beta_l0_m DIAGNOSTIC ORCHESTRATOR")
-print("Authorization: docs/JMP_NC_pilot_beta_l0_m_specification_review_v1.md")
+print("Authorization: docs/France_case/NC_pilot/design/JMP_NC_pilot_beta_l0_m_specification_review_v1.md")
 print("=" * 70)
 
 t_total_0 = time.time()
@@ -801,7 +801,7 @@ profile_rows = safe(PROFILE, "profile", default=[])
 L = []
 L.append("# JMP NC Pilot — beta_l0_m Specification Review Diagnostic Report v1\n")
 L.append(f"*France RURO multi-year extension | v1 | {now_str}*\n")
-L.append("**Authorization:** `docs/JMP_NC_pilot_beta_l0_m_specification_review_v1.md` s17  ")
+L.append("**Authorization:** `docs/France_case/NC_pilot/design/JMP_NC_pilot_beta_l0_m_specification_review_v1.md` s17  ")
 L.append("**Script:** `scripts/pilot/_run_beta_l0_m_diagnostic.py`  ")
 L.append(f"**Generated:** {now_str}\n")
 L.append("**SCOPE:** beta_l0_m active-bound specification review diagnostic. "
@@ -1427,7 +1427,7 @@ L.append(
     f"- **M1-clean 2016 remains the active baseline.** Corrected pooled P3a unaffected.\n"
     f"- **Negative beta_l0_m (REOPT_NEG):** diagnostic probe only, "
     f"explicitly bounded and labelled. Not a specification change.\n"
-    f"- **Authorization:** `docs/JMP_NC_pilot_beta_l0_m_specification_review_v1.md` s17.\n"
+    f"- **Authorization:** `docs/France_case/NC_pilot/design/JMP_NC_pilot_beta_l0_m_specification_review_v1.md` s17.\n"
 )
 L.append("---\n")
 L.append(f"*Status: beta_l0_m diagnostic v1. {overall_verdict}. "

@@ -6,8 +6,8 @@
 # hard-coded in the Stage M1 reusable scripts. Passing this file via
 # --stage-config makes every reusable script country/year/config agnostic.
 #
-# Reference: docs/JMP_multi_year_stage_M1_generalization_report_v1.md
-# Plan:      docs/JMP_multi_year_stage_M1_implementation_plan_v2.md
+# Reference: docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_generalization_report_v1.md
+# Plan:      docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_year_stage_M1_implementation_plan_v2.md
 #
 # Usage (any reusable script):
 #   python scripts/multi_year/<script>.py \

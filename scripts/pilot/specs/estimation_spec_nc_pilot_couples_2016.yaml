@@ -11,7 +11,7 @@
 #                       minus singles parameters, minus theta_c_singles)
 #
 # NOT verdict-grade. Diagnostic feasibility run only.
-# Authorized by: docs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md
+# Authorized by: docs/France_case/NC_pilot/execution_logs/JMP_NC_pilot_diagnostic_estimation_authorization_v1.md
 # ==============================================================================
 
 model_version: "AC2013"

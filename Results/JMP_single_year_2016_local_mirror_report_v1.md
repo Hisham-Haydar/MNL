@@ -79,7 +79,7 @@ The `GSURv2__` version was selected. The `job_gmm__` version was not selected.
 
 ## 5. Why this version matches M1-clean
 
-`docs/RURO_occ_M1_clean_verdict_v1.md` §2 explicitly names `fr_2016_RURO_mnl_GSURv2__{singles,couples}.parquet` as the **operative data** for the M1-clean specification (LL=−6487.5522, 53 parameters, SA1-STANDS verdict):
+`docs/France_case/P3a/execution_logs/single_year_baseline/M1/RURO_occ_M1_clean_verdict_v1.md` §2 explicitly names `fr_2016_RURO_mnl_GSURv2__{singles,couples}.parquet` as the **operative data** for the M1-clean specification (LL=−6487.5522, 53 parameters, SA1-STANDS verdict):
 
 > "Operative data: `fr_2016_RURO_mnl_GSURv2__singles.parquet` and `fr_2016_RURO_mnl_GSURv2__couples.parquet`"
 

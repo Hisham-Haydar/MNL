@@ -149,7 +149,7 @@ references, not archived:
 | File | Reason to keep in place |
 |------|-------------------------|
 | `docs/JMP_multi_year_and_cross_validation_strategy_memo_v3.md` | v3 and v3.1 form a complete revision trail; both cited in downstream documents |
-| `docs/France_case/RURO_FR2016_CONTINUOUS_DATA_BUILD_AUDIT_v1.md` | Comprehensive 2016 data build audit; referenced by M1-clean implementation audit |
+| `docs/France_case/_shared/data_audits/RURO_FR2016_CONTINUOUS_DATA_BUILD_AUDIT_v1.md` | Comprehensive 2016 data build audit; referenced by M1-clean implementation audit |
 | `docs/RURO_GSUR_external_acquisition_report_v1.md` | Pending user decision (§7); treated as KEEP until decision |
 | `Results/JMP_multi_year_stage_M1_static_validation_report_v3.md` | Canonical surviving document in v1→v2→v3 chain; only dedicated generalization validation record |
 | `Results/JMP_multi_year_EUROMOD_output_readiness_v1.md` | Pre-Stage-M1 EUROMOD readiness; documents FR_2015/FR_2017 absence state |
@@ -245,6 +245,6 @@ re-run authorization memo, which is the active next gate.
 **The active next gate remains unchanged:**
 
 Writing the Stage M1 P3a GSURv2 stacking re-run authorization memo, as
-stated in `docs/JMP_GSURv2_MNL_rebuild_verdict_v1.md` (corrected by
+stated in `docs/France_case/P3a/execution_logs/GSURv2/JMP_GSURv2_MNL_rebuild_verdict_v1.md` (corrected by
 `docs/archive/2026-05-26_round2_chain_compression/doc_only_corrections/JMP_GSURv2_MNL_rebuild_verdict_correction_v1.md`). The second-pass
 cleanup does not change this status.

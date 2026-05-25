@@ -1,0 +1,249 @@
+{
+  "job": "PROFILE",
+  "accepted_ll": -16526.99259532133,
+  "accepted_beta_l0_m": 1e-06,
+  "profile": [
+    {
+      "beta_l0_m": -0.1,
+      "ll": -16526.791170157965,
+      "delta_ll_from_accepted": 0.20142516336636618,
+      "grad_beta_l0_m": 2.090274928082438,
+      "grad_beta_ll": 7.331553360989611,
+      "grad_theta_l_m": 14.33974785260233,
+      "grad_beta_l0_f": 0.07200392021268143,
+      "is_negative_probe": true,
+      "note": "DIAGNOSTIC PROBE ONLY \u2014 not a specification change"
+    },
+    {
+      "beta_l0_m": -0.05,
+      "ll": -16526.7897529164,
+      "delta_ll_from_accepted": 0.2028424049312889,
+      "grad_beta_l0_m": -2.0238544136869008,
+      "grad_beta_ll": 3.6279206451803963,
+      "grad_theta_l_m": 7.298306667682482,
+      "grad_beta_l0_f": 0.025421661844679422,
+      "is_negative_probe": true,
+      "note": "DIAGNOSTIC PROBE ONLY \u2014 not a specification change"
+    },
+    {
+      "beta_l0_m": -0.02,
+      "ll": -16526.88712943642,
+      "delta_ll_from_accepted": 0.10546588490979047,
+      "grad_beta_l0_m": -4.464449234819236,
+      "grad_beta_ll": 1.4311365940345788,
+      "grad_theta_l_m": 2.9483399495944127,
+      "grad_beta_l0_f": -0.001596059691346019,
+      "is_negative_probe": true,
+      "note": "DIAGNOSTIC PROBE ONLY \u2014 not a specification change"
+    },
+    {
+      "beta_l0_m": -0.01,
+      "ll": -16526.935820458853,
+      "delta_ll_from_accepted": 0.056774862478050636,
+      "grad_beta_l0_m": -5.2733724777463955,
+      "grad_beta_ll": 0.7030725560409281,
+      "grad_theta_l_m": 1.4777485364796235,
+      "grad_beta_l0_f": -0.010448485330786683,
+      "is_negative_probe": true,
+      "note": "DIAGNOSTIC PROBE ONLY \u2014 not a specification change"
+    },
+    {
+      "beta_l0_m": -0.005,
+      "ll": -16526.963196562945,
+      "delta_ll_from_accepted": 0.029398758386378177,
+      "grad_beta_l0_m": -5.676973667519875,
+      "grad_beta_ll": 0.33982422322288697,
+      "grad_theta_l_m": 0.7386128887437735,
+      "grad_beta_l0_f": -0.014846087584228673,
+      "is_negative_probe": true,
+      "note": "DIAGNOSTIC PROBE ONLY \u2014 not a specification change"
+    },
+    {
+      "beta_l0_m": -0.001,
+      "ll": -16526.986549517052,
+      "delta_ll_from_accepted": 0.006045804278983269,
+      "grad_beta_l0_m": -5.9994423493062525,
+      "grad_beta_ll": 0.04960105537925452,
+      "grad_theta_l_m": 0.14546584455843004,
+      "grad_beta_l0_f": -0.018350470135190422,
+      "is_negative_probe": true,
+      "note": "DIAGNOSTIC PROBE ONLY \u2014 not a specification change"
+    },
+    {
+      "beta_l0_m": -0.0001,
+      "ll": -16526.991981643805,
+      "delta_ll_from_accepted": 0.0006136775264167227,
+      "grad_beta_l0_m": -6.071947346686136,
+      "grad_beta_ll": -0.015653201659909577,
+      "grad_theta_l_m": 0.011782836160818988,
+      "grad_beta_l0_f": -0.01913728020762928,
+      "is_negative_probe": true,
+      "note": "DIAGNOSTIC PROBE ONLY \u2014 not a specification change"
+    },
+    {
+      "beta_l0_m": 0.0,
+      "ll": -16526.99258924129,
+      "delta_ll_from_accepted": 6.08004120294936e-06,
+      "grad_beta_l0_m": -6.080002313917571,
+      "grad_beta_ll": -0.02290263307474527,
+      "grad_theta_l_m": -0.003075928357873181,
+      "grad_beta_l0_f": -0.019224665569183452,
+      "is_negative_probe": false,
+      "note": ""
+    },
+    {
+      "beta_l0_m": 1e-06,
+      "ll": -16526.99259532133,
+      "delta_ll_from_accepted": 0.0,
+      "grad_beta_l0_m": -6.080082862434825,
+      "grad_beta_ll": -0.022975126337069884,
+      "grad_theta_l_m": -0.0032245211499457582,
+      "grad_beta_l0_f": -0.01922553938431637,
+      "is_negative_probe": false,
+      "note": ""
+    },
+    {
+      "beta_l0_m": 0.001,
+      "ll": -16526.998709514053,
+      "delta_ll_from_accepted": -0.006114192721724976,
+      "grad_beta_l0_m": -6.160539409128916,
+      "grad_beta_ll": -0.09538549189849288,
+      "grad_theta_l_m": -0.15171962475386636,
+      "grad_beta_l0_f": -0.020098101514100408,
+      "is_negative_probe": false,
+      "note": ""
+    },
+    {
+      "beta_l0_m": 0.002,
+      "ll": -16527.004910312484,
+      "delta_ll_from_accepted": -0.012314991152379662,
+      "grad_beta_l0_m": -6.2410536414079605,
+      "grad_beta_ll": -0.1678475269781896,
+      "grad_theta_l_m": -0.300465204023908,
+      "grad_beta_l0_f": -0.020970778266202972,
+      "is_negative_probe": false,
+      "note": ""
+    },
+    {
+      "beta_l0_m": 0.005,
+      "ll": -16527.023995633193,
+      "delta_ll_from_accepted": -0.03140031186194392,
+      "grad_beta_l0_m": -6.482459225324664,
+      "grad_beta_ll": -0.38510874861758015,
+      "grad_theta_l_m": -0.7473128332419492,
+      "grad_beta_l0_f": -0.023584256326629083,
+      "is_negative_probe": false,
+      "note": ""
+    },
+    {
+      "beta_l0_m": 0.008,
+      "ll": -16527.043804862304,
+      "delta_ll_from_accepted": -0.0512095409721951,
+      "grad_beta_l0_m": -6.723659275680376,
+      "grad_beta_ll": -0.6021827684758034,
+      "grad_theta_l_m": -1.1950759479592534,
+      "grad_beta_l0_f": -0.026190912309276726,
+      "is_negative_probe": false,
+      "note": ""
+    },
+    {
+      "beta_l0_m": 0.01,
+      "ll": -16527.057412881997,
+      "delta_ll_from_accepted": -0.06481756066568778,
+      "grad_beta_l0_m": -6.884345210174967,
+      "grad_beta_ll": -0.7467948592142939,
+      "grad_theta_l_m": -1.4940927539132645,
+      "grad_beta_l0_f": -0.027924896866466487,
+      "is_negative_probe": false,
+      "note": ""
+    },
+    {
+      "beta_l0_m": 0.012219,
+      "ll": -16527.07288694916,
+      "delta_ll_from_accepted": -0.08029162782986532,
+      "grad_beta_l0_m": -7.062519508241825,
+      "grad_beta_ll": -0.9071447483589732,
+      "grad_theta_l_m": -1.8263270905792979,
+      "grad_beta_l0_f": -0.02984521153306252,
+      "is_negative_probe": false,
+      "note": ""
+    },
+    {
+      "beta_l0_m": 0.02,
+      "ll": -16527.130268543915,
+      "delta_ll_from_accepted": -0.13767322258354397,
+      "grad_beta_l0_m": -7.686407634137545,
+      "grad_beta_ll": -1.468610008987298,
+      "grad_theta_l_m": -2.995261402549488,
+      "grad_beta_l0_f": -0.036549475166733014,
+      "is_negative_probe": false,
+      "note": ""
+    },
+    {
+      "beta_l0_m": 0.05,
+      "ll": -16527.396800256538,
+      "delta_ll_from_accepted": -0.4042049352065078,
+      "grad_beta_l0_m": -10.078976755203454,
+      "grad_beta_ll": -3.6216518723769484,
+      "grad_theta_l_m": -7.559275210538999,
+      "grad_beta_l0_f": -0.06197224365907639,
+      "is_negative_probe": false,
+      "note": ""
+    },
+    {
+      "beta_l0_m": 0.1,
+      "ll": -16527.999547500513,
+      "delta_ll_from_accepted": -1.0069521791810985,
+      "grad_beta_l0_m": -14.021586210877535,
+      "grad_beta_ll": -7.169062918531571,
+      "grad_theta_l_m": -15.365262290603425,
+      "grad_beta_l0_f": -0.10285793179044522,
+      "is_negative_probe": false,
+      "note": ""
+    },
+    {
+      "beta_l0_m": 0.2,
+      "ll": -16529.789498904363,
+      "delta_ll_from_accepted": -2.7969035830319626,
+      "grad_beta_l0_m": -21.740942251392173,
+      "grad_beta_ll": -14.112812179569225,
+      "grad_theta_l_m": -31.706962596788344,
+      "grad_beta_l0_f": -0.17918934978996282,
+      "is_negative_probe": false,
+      "note": ""
+    },
+    {
+      "beta_l0_m": 0.5,
+      "ll": -16539.641525224604,
+      "delta_ll_from_accepted": -12.648929903272801,
+      "grad_beta_l0_m": -43.629964860915024,
+      "grad_beta_ll": -33.78813821826826,
+      "grad_theta_l_m": -86.23347884429552,
+      "grad_beta_l0_f": -0.3672181037795337,
+      "is_negative_probe": false,
+      "note": ""
+    },
+    {
+      "beta_l0_m": 1.0,
+      "ll": -16569.802565915168,
+      "delta_ll_from_accepted": -42.809970593836624,
+      "grad_beta_l0_m": -76.25829886979004,
+      "grad_beta_ll": -63.070233570187156,
+      "grad_theta_l_m": -193.41666610736445,
+      "grad_beta_l0_f": -0.5600942022802113,
+      "is_negative_probe": false,
+      "note": ""
+    },
+    {
+      "beta_l0_m": 2.0,
+      "ll": -16673.93134754039,
+      "delta_ll_from_accepted": -146.9387522190591,
+      "grad_beta_l0_m": -129.66130209502194,
+      "grad_beta_ll": -110.83527443356985,
+      "grad_theta_l_m": -456.5608115603718,
+      "grad_beta_l0_f": -0.59801913107336,
+      "is_negative_probe": false,
+      "note": ""
+    }
+  ]
+}

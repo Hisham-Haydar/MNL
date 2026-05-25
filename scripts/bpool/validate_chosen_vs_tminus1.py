@@ -107,7 +107,9 @@ def price_observed(year: int, runner: EuromodRunner) -> pd.DataFrame:
     """Run EUROMOD t-1 system on the canonical observed state, return per-person ils_dispy."""
     system_code, dataset_name = _SYSTEM_PAIRING[year]
     cf = pd.read_parquet(_FR[year])
-    print(f"  [{year}] canonical: {cf.shape}  HHs={cf['idhh'].nunique():,}")
+    # EUROMOD requires rows sorted by household (then person)
+    cf = cf.sort_values(["idhh", "idperson"], kind="mergesort").reset_index(drop=True)
+    print(f"  [{year}] canonical: {cf.shape}  HHs={cf['idhh'].nunique():,} (sorted by idhh,idperson)")
 
     raw_cols = _RAW_SCHEMA[year]
     em_input = cf[[c for c in raw_cols if c in cf.columns]].copy()

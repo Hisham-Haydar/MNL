@@ -26,17 +26,17 @@ Active surface unchanged (~147). This is a restructure, not a compression.
 
 | Phase | Commit | Description |
 |---|---|---|
-| A — scaffold | (pending) | Create new subdirs + 4 new READMEs + manifest skeleton + update France_case top-level README |
-| B1 — _shared/ moves | (pending) | EUROMOD ref + GSUR + data audits + notes + results + governance (23 mvs) |
-| B2 — job_model moves | (pending) | from `job_choice/` (3 mvs) |
-| B3 — NC_pilot moves | (pending) | 21 mvs (4 design, 17 execution_logs) |
-| B4a — P3a single_year_baseline moves | (pending) | M0a/b/c + M1 chains (~18 mvs) |
-| B4b — P3a multi_year + pooled + GSURv2 + Bpool moves | (pending) | ~30 mvs |
-| B4c — P3a design + canary + consolidated moves | (pending) | ~11 mvs |
-| C — Cross-track See-also links | (pending) | Add See-also lines in cross-track references |
-| D — patch inbound refs | (pending) | path-mapping script run |
-| E — remove emptied subdirs | (pending) | jmp/, canary_reports/, job_choice/, notes/, results/, euromod_reference/, consolidated/, execution_logs/ |
-| F — fill manifest with SHAs | (pending) | this manifest |
+| A — scaffold | `af9fd24` | Create new subdirs + 4 new READMEs + manifest skeleton + update France_case top-level README |
+| B1 — _shared/ moves | `2a66e8e` | EUROMOD ref + GSUR + data audits + notes + results + governance (23 mvs) |
+| B2 — job_model moves | `318ca4f` | from `job_choice/` (3 mvs) |
+| B3 — NC_pilot moves | `93cfb22` | 21 mvs (4 design, 17 execution_logs) |
+| B4a — P3a single_year_baseline moves | `ac17eb0` | M0a/b/c + M1 chains (17 mvs) |
+| B4b — P3a multi_year + pooled + GSURv2 + Bpool moves | `ddd0b57` | 29 mvs |
+| B4c — P3a design + canary + consolidated moves | `7af2110` | 12 mvs |
+| C — Cross-track See-also links | n/a | Already in track READMEs (written in Phase A); no Phase C commit needed |
+| D — patch inbound refs | `05c2b3b` | path-mapping script: 199 files patched across docs/, scripts/, Results/, Prompts/, config/, root README |
+| E — remove emptied subdirs | `a8f74d9` | jmp/, canary_reports/, job_choice/, notes/, results/, euromod_reference/, consolidated/, execution_logs/ |
+| F — fill manifest with SHAs | this commit | Update commit chain table + cross-ref summary + verification |
 
 ## Per-file mapping
 
@@ -143,10 +143,49 @@ After all moves, these emptied subdirs are removed:
 
 ### G. Cross-reference fixes (Phase D)
 
-Path-mapping script run — same approach as Round 2. To be filled with results after Phase D commit.
+A path-mapping script rewrote ~199 cross-references in 199 files to point at the new track-based paths. Commit: `05c2b3b`. Both pre-Round-1 forms (`docs/<stem>.md`) and post-Round-1 forms (`docs/France_case/execution_logs/<bucket>/<stem>.md`, `docs/France_case/<atom>.md`) were rewritten.
 
-| Patched location | Refs rewritten | Notes |
+| Patched location | Files | Notes |
 |---|---:|---|
+| `docs/France_case/P3a/**` | many | inter-doc citations within the P3a track |
+| `docs/France_case/NC_pilot/**` | ~18 | inter-doc citations within NC_pilot; refs to GSUR docs (now `_shared/gsur/`) and governance (now `_shared/governance/`) |
+| `docs/France_case/_shared/**` | several | refs between cross-track docs |
+| `docs/MIRRORED_DOCUMENTS_INDEX.md` | 1 | mirror index path swap |
+| `Results/**` (active reports) | ~70 | execution reports cite authorization/design docs |
+| `Prompts/**` | ~6 | prompts reference accompanying spec docs |
+| `scripts/maintenance/*.py`, `scripts/enhanced/*.py`, `scripts/pilot/*.py` | ~10 | docstrings + comment refs |
+| `scripts/enhanced/specifications/*.yaml`, `scripts/bpool/specs/*.yaml`, `config/multi_year/*.yaml` | ~10 | YAML spec metadata refs |
+| Root `README.md` | 1 | external storage hygiene audit pointer |
+
+**Skipped subtrees:** `docs/archive/2026-05-25_docs_supersession/**`, `docs/archive/2026-05-26_round2_chain_compression/**`, `Results/archive/**`, `outputs/**`, `Data/**`, `_gams_work/`, `.venv`, `.git`. **Skipped files:** the three `MOVE_MANIFEST_*.md` (historical fact), `RURO_MNL_project_files_structure.md` (frozen snapshot).
+
+### Verification
+
+```powershell
+# 1. France_case top contains only the 4 tracks + _shared + cleanup + README
+Get-ChildItem docs/France_case | Select-Object Name
+# Expected: _shared, P3a, NC_pilot, job_model, cleanup, README.md
+
+# 2. Per-track populated (.md counts)
+foreach ($t in 'P3a','NC_pilot','job_model','_shared') {
+  "$t : " + (Get-ChildItem "docs/France_case/$t" -Recurse -File -Filter '*.md' | Measure-Object).Count
+}
+
+# 3. No stale active refs to old paths
+$pattern = 'docs/France_case/(execution_logs/|euromod_reference/|canary_reports/|consolidated/|notes/|results/|job_choice/)'
+Get-ChildItem -Recurse -File -Include '*.md','*.py','*.yaml','*.yml' docs, scripts, Results, config |
+  Where-Object { $_.FullName -notmatch 'archive|MOVE_MANIFEST' } |
+  Select-String -Pattern $pattern | Select-Object -First 5
+# Expected: empty
+
+# 4. Git history preserved
+git log --follow --oneline -- docs/France_case/P3a/design/FR2016_RURO_pipeline_report.md | Select-Object -First 5
+git log --follow --oneline -- docs/France_case/_shared/gsur/RURO_GSUR_rebuild_specification_v2_1.md | Select-Object -First 5
+
+# 5. Active surface count (expected ~152 = ~147 + 4 new READMEs + 1 new manifest)
+Get-ChildItem docs -Recurse -File -Filter '*.md' |
+  Where-Object { $_.FullName -notmatch 'archive' } | Measure-Object
+```
 
 ### H. Deferred follow-ups
 

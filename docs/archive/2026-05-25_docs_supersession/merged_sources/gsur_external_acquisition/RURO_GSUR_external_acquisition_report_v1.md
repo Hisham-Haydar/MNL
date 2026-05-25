@@ -1,3 +1,5 @@
+> Merged into `docs/France_case/consolidated/RURO_GSUR_external_acquisition_consolidated_v1.md` on 2026-05-25. See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-25.md`.
+
 # RURO_GSUR_external_acquisition_report_v1
 
 ## Acquisition verdict and readiness

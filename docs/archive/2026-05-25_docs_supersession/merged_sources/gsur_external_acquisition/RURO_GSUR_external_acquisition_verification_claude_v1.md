@@ -1,3 +1,5 @@
+> Merged into `docs/France_case/consolidated/RURO_GSUR_external_acquisition_consolidated_v1.md` on 2026-05-25. See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-25.md`.
+
 # Adversarial verification of external data sources (O1, O2, O9) for the RURO GSUR build
 
 ## 1. Verification verdict

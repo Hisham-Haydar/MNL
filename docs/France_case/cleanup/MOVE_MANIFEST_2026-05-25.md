@@ -35,7 +35,7 @@
 | D2 | Consolidate GSUR rebuild chain (6 sources) | 1442878 |
 | D3 | Consolidate multi-year 2015/2017 chain (3 sources) | 048f365 |
 | E | Remove empty France_case/mirrored/ skeleton (no-op: was untracked) | — |
-| F | Rewrite mirror index, fill manifest, fix cross-refs | (this commit) |
+| F | Rewrite mirror index, fill manifest, fix cross-refs | 4e2cfa5 |
 
 ## Summary counts
 - Moved to topical package subfolders (B1a–B1g): 5 + 6 + 4 + 10 + 5 + 8 + 1 = 39 files

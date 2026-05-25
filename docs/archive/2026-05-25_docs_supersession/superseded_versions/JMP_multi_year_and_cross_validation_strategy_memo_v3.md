@@ -1,3 +1,5 @@
+> Superseded on 2026-05-25 by `docs/jmp_methodology/JMP_multi_year_and_cross_validation_strategy_memo_v3_1.md`. See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-25.md`.
+
 # JMP Multi-Year Data Strategy v3: Pooled Estimation, ID Engineering, CPI Harmonisation, and Temporal Validation — Strategy Memo v3
 
 Date: 2026-05-18

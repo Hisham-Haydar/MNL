@@ -1,3 +1,5 @@
+> Superseded on 2026-05-25 by `docs/France_case/RURO_spec_redesign_decisions_v2.md`. See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-25.md`.
+
 # RURO Spec Redesign — Decisions v1
 
 **Project:** Unequal Job Opportunities and Well-Being Inequality (JMP)

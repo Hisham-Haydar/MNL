@@ -1,3 +1,5 @@
+> Superseded on 2026-05-25 by `docs/specifications/RURO_model_spec_contract_v4_ruro_occ.md`. See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-25.md`.
+
 I have enough material. Let me construct the contract.
 
 ---

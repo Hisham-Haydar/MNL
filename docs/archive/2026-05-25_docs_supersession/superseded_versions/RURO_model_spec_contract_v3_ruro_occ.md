@@ -1,3 +1,5 @@
+> Superseded on 2026-05-25 by `docs/specifications/RURO_model_spec_contract_v4_ruro_occ.md`. See `docs/France_case/cleanup/MOVE_MANIFEST_2026-05-25.md`.
+
 I now have full clarity on the data: `loc` and `loc4` (occupation) exist in current continuous MNL files; `lindi` is the NACE industry variable. Here is the v3 contract.
 
 ---

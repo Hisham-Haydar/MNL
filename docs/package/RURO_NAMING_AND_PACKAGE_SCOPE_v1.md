@@ -18,12 +18,12 @@ docs/ACKNOWLEDGEMENTS.md
 
 | Use | Do not use |
 | --- | --- |
-| continuous RURO baseline | "Stijn-style RURO baseline" |
-| RURO occupation-opportunity M0 | "Stijn occupation M0" |
-| proposal-component aliases | "Stijn proposal aliases" |
-| proposal-density correction | "Stijn prior correction" |
-| layered proposal components | "Stijn log_q aliases" |
-| enhanced continuous RURO branch | "Stijn-style enhanced branch" |
+| continuous RURO baseline | "Literature-style RURO baseline" |
+| RURO occupation-opportunity M0 | "Literature occupation M0" |
+| proposal-component aliases | "Literature proposal aliases" |
+| proposal-density correction | "Literature prior correction" |
+| layered proposal components | "Literature log_q aliases" |
+| enhanced continuous RURO branch | "Literature-style enhanced branch" |
 | the R reference implementation | "Stijn's R implementation" |
 | the continuous RURO reference design | "Stijn's continuous model" |
 | R reference work / R reference files | "Stijn's R work" / "Stijn's R files" |

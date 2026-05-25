@@ -121,7 +121,9 @@
       "Bash(time U:/Desktop/Nizam_Hisham/MNL/.venv/Scripts/python.exe U:/Desktop/Nizam_Hisham/MNL/scripts/enhanced/enh_RURO_draws.py --singles-path Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready.parquet --couples-path Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready.parquet --n-draws 99 --wage-spec vw --occ-spec empirical --occ-strata __all__ --occ-min-cell 30 --h-min 5.0 --h-max 70.0 --w-min 2.0 --w-max 170.0 --rng-seed 17)",
       "Read(//z/hisham/EUROMOD-STORAGE/interim/ruro/fr/2016/ruro_occ/**)",
       "Read(//z/hisham/EUROMOD-STORAGE/EUROMOD_RELEASES_J1.0+/EUROMOD_RELEASES_J1.0+/**)",
-      "Read(//z/hisham/EUROMOD-STORAGE/Data/raw/**)"
+      "Read(//z/hisham/EUROMOD-STORAGE/Data/raw/**)",
+      "PowerShell($today = \\(Get-Date\\).Date; Get-ChildItem -Path \"$env:USERPROFILE\\\\.claude\" -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -ge $today } | Select-Object LastWriteTime, FullName | Sort-Object LastWriteTime -Descending | Format-Table -AutoSize -Wrap)",
+      "PowerShell($today = \\(Get-Date\\).Date; foreach \\($drive in @\\('O','Q','R','S','T','U','V'\\)\\) { Write-Output \"=== Drive ${drive}: ===\"; Get-ChildItem -Path \"${drive}:\\\\\" -Directory -Filter \".claude\" -Recurse -Force -ErrorAction SilentlyContinue -Depth 4 | Select-Object FullName })"
     ],
     "deny": [],
     "ask": [],

@@ -14,7 +14,7 @@ Usage (smoke-test / dry-run — GA17 clearance):
     python run_cluster_robust_se.py \\
         --spec scripts/enhanced/specifications/estimation_spec_ruro_occ_P3a_pooled.yaml \\
         --parquet Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/pooled/fr_p3a_gsurv2_harmonised.parquet \\
-        --output Results/RURO_cluster_robust_SE_static_validation_v1.md \\
+        --output Results/_shared/RURO_cluster_robust_SE_static_validation_v1.md \\
         --mode smoke-test
 
 Usage (post-estimation — requires --results-json):
@@ -1139,9 +1139,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="[post-estimation] Split-stem base path "
                         "(e.g. Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready). "
                         "Suffixes __singles.parquet / __couples.parquet / __mnlmeta.json are appended.")
-    p.add_argument("--output", type=Path, default=Path("Results/RURO_cluster_robust_SE_static_validation_v1.md"),
+    p.add_argument("--output", type=Path, default=Path("Results/_shared/RURO_cluster_robust_SE_static_validation_v1.md"),
                    help="Output path (.md for smoke-test; .json for post-estimation). "
-                        "Default: Results/RURO_cluster_robust_SE_static_validation_v1.md")
+                        "Default: Results/_shared/RURO_cluster_robust_SE_static_validation_v1.md")
     p.add_argument("--mode", choices=["smoke-test", "post-estimation"], default="smoke-test",
                    help="'smoke-test': GA17 clearance at initial_values (default). "
                         "'post-estimation': compute true-Hessian cluster-robust SEs using converged theta.")

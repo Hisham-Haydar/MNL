@@ -46,7 +46,7 @@ P3A_JSON = (
     / "run_2026-05-21_23-47-14/estimation_results.json"
 ).resolve()
 RESULTS_DIR = (REPO / "Results/pilot/nc_2016_couples/diagnostic_rerun_v1").resolve()
-REPORT_PATH = (REPO / "Results"
+REPORT_PATH = (REPO / "Results" / "NC_pilot"
                / "JMP_NC_pilot_diagnostic_estimation_rerun_report_v1.md").resolve()
 
 sys.path.insert(0, str(REPO / "scripts/enhanced"))

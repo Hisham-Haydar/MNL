@@ -1434,7 +1434,7 @@ L.append(f"*Status: beta_l0_m diagnostic v1. {overall_verdict}. "
          f"Total wall time: {total_wall:.1f}s. "
          f"No SE/welfare/SA2/promotion. M1-clean 2016 active.*\n")
 
-REPORT = REPO / "Results/JMP_NC_pilot_beta_l0_m_diagnostic_report_v1.md"
+REPORT = REPO / "Results/NC_pilot/JMP_NC_pilot_beta_l0_m_diagnostic_report_v1.md"
 REPORT.write_text("\n".join(L), encoding="utf-8")
 print(f"\nReport written: {REPORT}")
 print(f"Total wall time: {total_wall:.1f} s")

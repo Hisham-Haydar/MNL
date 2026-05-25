@@ -30,7 +30,7 @@ VERSIONED_COUPLES  = STORAGE / "fr_2016_RURO_mnl_GSURv2__couples.parquet"
 
 LOOKUP_PATH   = REPO_ROOT / "Data/external/FR_gsur_ruro_v2_stageA.parquet"
 SIGNOFF_PATH  = REPO_ROOT / "docs/RURO_GSUR_O7_crosswalk_signoff_v1.md"
-REPORT_PATH   = REPO_ROOT / "Results/RURO_GSUR_v2_stageA_MNL_rebuild_report_v1.md"
+REPORT_PATH   = REPO_ROOT / "Results/P3a/gsurv2/RURO_GSUR_v2_stageA_MNL_rebuild_report_v1.md"
 
 # New GSUR columns added in Stage A (singles)
 GSUR_NEW_COLS_SINGLES = {

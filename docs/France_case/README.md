@@ -1,19 +1,20 @@
 # France case — EUROMOD 2015–2017
 
-Empirical application of the RUM/RURO package to French EUROMOD data (years 2015, 2016, 2017 stacked). Raw data and EUROMOD systems live in `U:\EUROMOD-STORAGE\` and are out of repo.
+Empirical application of the RUM/RURO package to French EUROMOD data. Raw data and EUROMOD systems live in `U:\EUROMOD-STORAGE\` and are out of repo.
 
-## Layout
+## Tracks
 
-- [euromod_reference/](euromod_reference/) — FR EUROMOD input/output variable indices, 2015 reference tables, DRD exports.
-- [notes/](notes/) — France-specific notes (EUROMOD FR system, R-reference vs Python specification).
-- [canary_reports/](canary_reports/) — France canary / rebuild diagnostic reports.
-- [job_choice/](job_choice/) — France job-choice model docs (README, acceptance tests, commands).
-- [results/](results/) — France results pointers (KEEP_RESULTS marker).
-- [jmp/](jmp/) — France-specific JMP memos (decisions tied to FR data/years/EUROMOD-FR).
-- [execution_logs/](execution_logs/) — dated run/phase logs (NC_pilot, Bpool, GSURv2, occ_M0a/b/c, occ_M1, pooled_P3a, stage_M1).
-- [consolidated/](consolidated/) — merged canonical docs for chains that were previously split across decision/report/completion memos.
-- [cleanup/](cleanup/) — cleanup manifests for docs reorganization passes.
+Three estimation tracks plus a shared subtree for cross-track material.
 
-## Cleanup history
+| Track | Status | What it is |
+|---|---|---|
+| [`P3a/`](P3a/) | **Active baseline** | 3-year stacked 2015-2016-2017. Continuous-RURO with occupation opportunity; the current main estimation effort. Includes single-year M0→M1 ladder as precursor + multi-year stage M1 + GSURv2 + pooled estimation. |
+| [`NC_pilot/`](NC_pilot/) | **Active** | Couples 30×30=900 alternatives pilot. Product-of-marginals choice set for couples; both partners as deciders. Concurrent with P3a per spec redesign v2 §D-SCOPE. |
+| [`job_model/`](job_model/) | **Archived** | Discrete (occupation, hours, wage) combination approach. Replaced by P3a + NC pilot. Track folder preserved for reference. |
+| [`_shared/`](_shared/) | n/a | Cross-track material: EUROMOD reference, GSUR data product, France data audits, governance decisions, notes, results pointer. |
 
-- 2026-05-25 — initial split of general vs France material; topical package layout introduced at `docs/` root. See [cleanup/MOVE_MANIFEST_2026-05-25.md](cleanup/MOVE_MANIFEST_2026-05-25.md).
+## Cleanup machinery
+
+- [`cleanup/MOVE_MANIFEST_2026-05-25.md`](cleanup/MOVE_MANIFEST_2026-05-25.md) — Round 1: initial split of general vs France material; topical package layout at `docs/` root.
+- [`cleanup/MOVE_MANIFEST_2026-05-26_round2.md`](cleanup/MOVE_MANIFEST_2026-05-26_round2.md) — Round 2: chain compression (24 files archived).
+- [`cleanup/MOVE_MANIFEST_2026-05-27_round3.md`](cleanup/MOVE_MANIFEST_2026-05-27_round3.md) — Round 3: track-based France_case restructure (this pass).

@@ -16,8 +16,11 @@ import pyarrow.parquet as pq
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
-REPO = Path(r"U:\Desktop\Nizam_Hisham\MNL")
-PILOT = REPO / "Data" / "pilot" / "nc_2016_couples"
+REPO = Path(__file__).resolve().parents[2]
+# Data lives under the configured storage root, not the repo working tree (migrated 2026-05-26).
+sys.path.insert(0, str(REPO / "scripts"))
+from path_helpers import data_root  # noqa: E402
+PILOT = data_root() / "pilot" / "nc_2016_couples"
 PARQUET = PILOT / "fr_pilot_nc_2016_couples_product__precompute_ready.parquet"
 META_JSON = PILOT / "fr_pilot_nc_2016_couples_product__precompute_ready__readymeta.json"
 OUT_DIR = PILOT / "precomputed"
@@ -111,8 +114,8 @@ print(f"l_norm_fem:  mean={l_norm_f_mean:.6f}  min={l_norm_f_min:.6f}")
 # If consumption column is absent (it was dropped at Stage 4 for income cols),
 # derive c_scale from metadata or from the ratio on a sample.
 # Check production couples metadata for the scale used.
-PROD_META_PATH = REPO / "Data" / "processed" / "fr" / "pooled" / "fr_p3a_gsurv2_estimation_ready__mnlmeta.json"
-alt_meta_path  = REPO / "Data" / "processed" / "fr" / "pooled" / "fr_p3a_gsurv2_estimation_ready__couples__mnlmeta.json"
+PROD_META_PATH = data_root() / "processed" / "fr" / "pooled" / "fr_p3a_gsurv2_estimation_ready__mnlmeta.json"
+alt_meta_path  = data_root() / "processed" / "fr" / "pooled" / "fr_p3a_gsurv2_estimation_ready__couples__mnlmeta.json"
 
 norm_source = None
 c_scale = None

@@ -40,11 +40,14 @@ import numpy as np
 import pandas as pd
 
 REPO = Path(__file__).resolve().parents[2]
-POOLED = REPO / "Data" / "processed" / "fr" / "pooled"
+# Data lives under the configured storage root, not the repo working tree (migrated 2026-05-26).
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+from path_helpers import data_root  # noqa: E402
+POOLED = data_root() / "processed" / "fr" / "pooled"
 COUPLES_SRC = POOLED / "fr_p3a_gsurv2_estimation_ready__couples.parquet"
 SINGLES_SRC = POOLED / "fr_p3a_gsurv2_estimation_ready__singles.parquet"
 MINCER_CONFIG = REPO / "scripts" / "pilot" / "config" / "pilot_mincer_coefficients_v1.json"
-PILOT_DATA_DIR = REPO / "Data" / "pilot" / "nc_2016_couples"
+PILOT_DATA_DIR = data_root() / "pilot" / "nc_2016_couples"
 OUT_PARQUET = PILOT_DATA_DIR / "fr_pilot_nc_2016_couples_product.parquet"
 OUT_META = PILOT_DATA_DIR / "fr_pilot_nc_2016_couples_product__mnlmeta.json"
 

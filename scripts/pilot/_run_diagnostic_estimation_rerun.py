@@ -36,7 +36,7 @@ import numpy as np
 # ---------------------------------------------------------------------------
 # Paths (all resolved to absolute before ensure_local_workdir changes CWD)
 # ---------------------------------------------------------------------------
-REPO = Path(r"U:\Desktop\Nizam_Hisham\MNL").resolve()
+REPO = Path(__file__).resolve().parents[2].resolve()
 PKL_PATH = (REPO / "Data/pilot/nc_2016_couples/precomputed"
             / "fr_pilot_nc_2016_couples_precomputed_loc.pkl").resolve()
 SPEC_PATH = (REPO / "scripts/pilot/specs"

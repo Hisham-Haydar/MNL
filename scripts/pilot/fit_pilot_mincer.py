@@ -36,7 +36,10 @@ import numpy as np
 import pandas as pd
 
 REPO = Path(__file__).resolve().parents[2]
-POOLED = REPO / "Data" / "processed" / "fr" / "pooled"
+# Data lives under the configured storage root, not the repo working tree (migrated 2026-05-26).
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+from path_helpers import data_root  # noqa: E402
+POOLED = data_root() / "processed" / "fr" / "pooled"
 SINGLES = POOLED / "fr_p3a_gsurv2_estimation_ready__singles.parquet"
 COUPLES = POOLED / "fr_p3a_gsurv2_estimation_ready__couples.parquet"
 OUT_DIR = REPO / "scripts" / "pilot" / "config"

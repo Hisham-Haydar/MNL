@@ -28,14 +28,17 @@ import time
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
+# Data lives under the configured storage root, not the repo working tree (migrated 2026-05-26).
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+from path_helpers import data_root, euromod_root  # noqa: E402
 ADAPTER = REPO / "scripts" / "pilot" / "export_pilot_euromod_inputs_v2.py"
 RUNNER = REPO / "scripts" / "enhanced" / "enh_RURO_euromod.py"
 PYTHON = REPO / ".venv" / "Scripts" / "python.exe"
-PILOT = REPO / "Data" / "pilot" / "nc_2016_couples"
+PILOT = data_root() / "pilot" / "nc_2016_couples"
 EM_IN = PILOT / "em_inputs"
 EM_OUT = PILOT / "em_outputs"
-MICRO = Path(r"U:\EUROMOD-STORAGE\Data\raw\FR_2016.txt")
-EM_ROOT = Path(r"U:\EUROMOD-STORAGE\EUROMOD_RELEASES_J1.0+\EUROMOD_RELEASES_J1.0+")
+MICRO = data_root() / "raw" / "FR_2016.txt"
+EM_ROOT = euromod_root()
 
 
 def run_block(f: int) -> dict:

@@ -29,7 +29,10 @@ import pandas as pd
 import pyarrow.parquet as pq
 
 REPO = Path(__file__).resolve().parents[2]
-PILOT_DATA = REPO / "Data" / "pilot" / "nc_2016_couples"
+# Data lives under the configured storage root, not the repo working tree (migrated 2026-05-26).
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+from path_helpers import data_root  # noqa: E402
+PILOT_DATA = data_root() / "pilot" / "nc_2016_couples"
 IN_PARQUET = PILOT_DATA / "fr_pilot_nc_2016_couples_product__post_em.parquet"
 OUT_PARQUET = PILOT_DATA / "fr_pilot_nc_2016_couples_product__precompute_ready.parquet"
 OUT_META = PILOT_DATA / "fr_pilot_nc_2016_couples_product__precompute_ready__readymeta.json"

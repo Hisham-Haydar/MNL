@@ -60,7 +60,7 @@ if RUN_START is not None:
     import numpy as np
     from scipy.optimize import minimize
 
-    REPO       = Path(r"U:\Desktop\Nizam_Hisham\MNL").resolve()
+    REPO       = Path(__file__).resolve().parents[2].resolve()
     # pkl was pickled with estimation_utils in path; add scripts/enhanced before load
     _enhanced = str(REPO / "scripts" / "enhanced")
     if _enhanced not in sys.path:
@@ -436,7 +436,7 @@ import numpy as np
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-REPO        = Path(r"U:\Desktop\Nizam_Hisham\MNL").resolve()
+REPO        = Path(__file__).resolve().parents[2].resolve()
 RESULT_S1   = (REPO / "Results/pilot/nc_2016_couples/diagnostic_rerun_v1"
                / "start_1_warm_P3a/estimation_result.json").resolve()
 REPORT_PATH = (REPO / "Results"

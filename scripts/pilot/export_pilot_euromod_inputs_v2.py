@@ -42,11 +42,14 @@ import numpy as np
 import pandas as pd
 
 REPO = Path(__file__).resolve().parents[2]
-PILOT_DATA = REPO / "Data" / "pilot" / "nc_2016_couples"
+# Data lives under the configured storage root, not the repo working tree (migrated 2026-05-26).
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+from path_helpers import data_root  # noqa: E402
+PILOT_DATA = data_root() / "pilot" / "nc_2016_couples"
 PILOT_PRODUCT = PILOT_DATA / "fr_pilot_nc_2016_couples_product.parquet"
 EM_INPUTS_DIR = PILOT_DATA / "em_inputs"
 
-PROD_COUPLES_DRAWS = Path(r"U:\EUROMOD-STORAGE\Data\processed\fr\2016\couples_RURO_ready_RURO_draws.parquet")
+PROD_COUPLES_DRAWS = data_root() / "processed" / "fr" / "2016" / "couples_RURO_ready_RURO_draws.parquet"
 
 PRODUCT_SIZE = 30
 N_MALE_DRAWS = 30

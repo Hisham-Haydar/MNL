@@ -124,9 +124,71 @@ Run manually: `.\scripts\sync_backup.ps1` (add `-DryRun` to preview, `-All` for 
 
 ---
 
-## 6. Pending: U:/Z: replica deletion (NOT yet done)
+## 6. Repo working-tree data moved out of the repo (2026-05-26, later same day)
 
-Per the user's instruction, the exact deletion list is presented for sign-off before
-anything is removed. Nothing on U: or Z: has been deleted by this session. The repo's
-`Data/processed/fr/pooled` (now duplicated on C:) is also a candidate for removal.
-See the deletion list presented in the session / handoff.
+The repo `U:\Desktop\Nizam_Hisham\MNL\Data\` held gitignored data that does not
+belong in a distributable package. Moved to the storage root (C:) and backed up:
+
+| From (repo working tree) | To (canonical store on C:) | Size |
+|---|---|---|
+| `Data\processed\fr\pooled\` | `…\EUROMOD-STORAGE\Data\processed\fr\pooled\` | 1.33 GB |
+| `Data\processed\fr\*.parquet` (18 unique `GSURv2_y*` / `v2gsur*`) | `…\Data\processed\fr\{year}\` | 0.43 GB |
+| `Data\processed\fr\*.parquet` (9 `v1gsur*`) | already on C: in year dirs | — |
+| `Data\pilot\nc_2016_couples\` (NC pilot) | `…\EUROMOD-STORAGE\Data\pilot\nc_2016_couples\` | 5.03 GB |
+
+**Stays in the repo (git-tracked package reference, NOT data):**
+`Data\external\*` (8 tracked INSEE/LFS/GSUR reference files), `Data\README.md`,
+`Data\documentation\` (small EUROMOD FR variable reference: md/csv/jsonl, ~0.5 MB).
+
+### Code changes for the pilot scripts (so they read from C:, not the repo / U:)
+
+All `py_compile`-clean; no live hardcoded `U:`/`Z:` `Path()` literals remain in
+`scripts/pilot/`.
+
+- 7 core pilot scripts: `REPO/Data/pilot/...` and `REPO/Data/processed/fr/pooled`
+  → `data_root()/...` (path_helpers import added)
+- `_precompute_gate.py`: hardcoded `REPO` → `Path(__file__).resolve().parents[2]`;
+  added missing `data_root` import
+- `export_pilot_euromod_inputs.py`, `_v2.py`: hardcoded `U:\EUROMOD-STORAGE\…\2016\
+  couples_RURO_ready_RURO_draws*` → `data_root()/processed/fr/2016/...`
+- `run_pilot_em_blocks.py`: hardcoded raw `FR_2016.txt` → `data_root()/raw/...`;
+  old `EUROMOD_RELEASES_J1.0+` → `euromod_root()` (now resolves to J2.0+)
+- 8 `_run_*` diagnostics: hardcoded `Path(r"U:\Desktop\…\MNL")` →
+  `Path(__file__).resolve().parents[2]` (behaviour-preserving)
+
+---
+
+## 7. Data location map (authoritative "where is it now")
+
+Single canonical store: **`C:\Users\hisham\MNL\EUROMOD-STORAGE`** (local SSD),
+mirrored to **`\\crc\users\hisham\MNL_backup\EUROMOD-STORAGE`** (data only).
+
+| Data | Was on | Is now on (canonical) | In `\\crc` backup |
+|---|---|---|---|
+| `Data/processed/fr/{2015,2016,2017}` | Z: (+U: 2016) | C: | yes |
+| `Data/processed/fr/pooled` | repo working tree | C: | yes |
+| `Data/pilot/nc_2016_couples` | repo working tree | C: | yes |
+| `Data/raw`, `Data/FR`, `Data/DE` | U:/Z: | C: | yes |
+| `Data/interim/ruro/fr` (scenario outputs) | Z: top-level `interim/` | C: `Data/interim/` | yes |
+| `Data/inspecting` | U: | C: | yes |
+| `new_data` (bpool) | U: (full), Z: (partial) | C: | yes |
+| EUROMOD system | U:/Z: `EUROMOD_RELEASES_J1.0+` (old) | C: `Euromod_model/EUROMOD_RELEASES_J2.0+` | no (re-downloadable) |
+| Legacy experiment dirs (RURO1, etc.) | U:/Z: | — | `\\crc\…\_legacy_archive` (cold) |
+
+---
+
+## 8. Z: legacy verification (2026-05-26)
+
+Before authorising deletion, every Z: legacy dir was SHA-256 compared against the
+U:-sourced cold archive on `\\crc`. **All identical, 0 unique files:**
+RURO1 750/750, old_Data_results 914/914, old rep 185/185, gamspy 70/70,
+male_ascsON_q99 1/1, boxcox_local 0/0. Z: legacy is fully captured in the archive.
+
+---
+
+## 9. Pending: replica deletion (awaiting per-target go-ahead)
+
+Nothing on U:, Z:, or the repo working tree has been deleted yet. The exact
+deletion list (`U:\EUROMOD-STORAGE`, `Z:\hisham\EUROMOD-STORAGE`, and the gitignored
+repo `Data\processed\fr` + `Data\pilot`) is presented for sign-off in the session.
+`Data\external`, `Data\README.md`, and `Data\documentation` are kept.

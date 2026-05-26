@@ -46,7 +46,7 @@ if RUN_JOB is not None:
     import numpy as np
     from scipy.optimize import minimize
 
-    REPO      = Path(r"U:\Desktop\Nizam_Hisham\MNL").resolve()
+    REPO      = Path(__file__).resolve().parents[2].resolve()
     _enhanced = str(REPO / "scripts" / "enhanced")
     if _enhanced not in sys.path:
         sys.path.insert(0, _enhanced)
@@ -705,7 +705,7 @@ import numpy as np
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-REPO    = Path(r"U:\Desktop\Nizam_Hisham\MNL").resolve()
+REPO    = Path(__file__).resolve().parents[2].resolve()
 PYTHON  = str(REPO / ".venv/Scripts/python.exe")
 THIS    = str(Path(__file__).resolve())
 TMP_DIR = REPO / "scripts/pilot/_tmp_beta_diag"

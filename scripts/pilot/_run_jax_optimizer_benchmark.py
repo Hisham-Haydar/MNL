@@ -50,7 +50,7 @@ from scipy.optimize import minimize
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-REPO = Path(r"U:\Desktop\Nizam_Hisham\MNL").resolve()
+REPO = Path(__file__).resolve().parents[2].resolve()
 sys.path.insert(0, str(REPO / "scripts/enhanced"))
 
 PKL_PATH   = (REPO / "Data/pilot/nc_2016_couples/precomputed"

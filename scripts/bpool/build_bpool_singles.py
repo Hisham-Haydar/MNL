@@ -61,12 +61,14 @@ PI0 = 0.10
 LOG_PI0 = np.log(PI0)
 LOG_1_PI0 = np.log(1.0 - PI0)
 
-_DATA_DIR = Path("U:/Desktop/Nizam_Hisham/MNL/Data/processed/fr/pooled")
+from _bpool_paths import bpool_dir, POOLED_DATA_DIR  # noqa: E402
+
+_DATA_DIR = POOLED_DATA_DIR
 _MINCER_JSON = (
     Path(_SCRIPTS) / "pilot" / "config" / "pilot_mincer_coefficients_v1.json"
 )
 # Output goes to EUROMOD-STORAGE/new_data (large parquets off project tree)
-_OUT_DIR = Path("U:/EUROMOD-STORAGE/new_data")
+_OUT_DIR = bpool_dir()
 _SOURCE_STEM = "fr_p3a_gsurv2_estimation_ready__singles"
 _OUT_STEM = "fr_p3a_bpool_d1w1__singles"
 

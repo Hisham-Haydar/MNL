@@ -11,15 +11,17 @@ Usage:
 
 import json
 import logging
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
-import sys
 
 # Add scripts directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from RURO_post_estimation import run_post_estimation
+from path_helpers import data_root  # noqa: E402
+from RURO_post_estimation import run_post_estimation  # noqa: E402
 
 # Configure logging
 logging.basicConfig(
@@ -33,7 +35,7 @@ def main():
 
     # File paths
     results_file = Path('outputs/estimates/fr/2016/fr_2016_joint.json')
-    mnl_file = Path('U:/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016_RURO_mnl.parquet')
+    mnl_file = data_root() / "processed" / "fr" / "2016" / "fr_2016_RURO_mnl.parquet"
     out_dir = Path('outputs/post_estimation/fr/2016/joint')
 
     # Create output directory

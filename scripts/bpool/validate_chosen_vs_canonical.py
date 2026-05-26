@@ -12,12 +12,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-_BPOOL_DIR = Path("U:/EUROMOD-STORAGE/new_data")
-_FR_PARQUET = {
-    2015: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2015/fr_2015.parquet"),
-    2016: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016.parquet"),
-    2017: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2017/fr_2017.parquet"),
-}
+from _bpool_paths import bpool_dir, FR_PARQUETS  # noqa: E402
+_BPOOL_DIR  = bpool_dir()
+_FR_PARQUET = FR_PARQUETS
 FILES = [(y, m) for y in (2015, 2016, 2017) for m in ("singles", "couples")]
 
 TOL = 1.0  # euros

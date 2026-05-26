@@ -29,13 +29,10 @@ _SCRIPTS = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_SCRIPTS / "enhanced"))
 from enh_RURO_euromod import EuromodRunner  # noqa: E402
 
-_BPOOL = Path("U:/EUROMOD-STORAGE/new_data")
-_EM_ROOT = Path("U:/EUROMOD-STORAGE/EUROMOD_RELEASES_J1.0+/EUROMOD_RELEASES_J1.0+")
-_FR = {
-    2015: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2015/fr_2015.parquet"),
-    2016: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016.parquet"),
-    2017: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2017/fr_2017.parquet"),
-}
+from _bpool_paths import bpool_dir, em_root, FR_PARQUETS  # noqa: E402
+_BPOOL   = bpool_dir()
+_EM_ROOT = em_root()
+_FR      = FR_PARQUETS
 _SYSTEM_PAIRING = {
     2015: ("FR_2014", "FR_2015_a2"),
     2016: ("FR_2015", "FR_2016_a3"),

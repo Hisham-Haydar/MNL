@@ -13,12 +13,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-_BPOOL = Path("U:/EUROMOD-STORAGE/new_data")
-_FR = {
-    2015: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2015/fr_2015.parquet"),
-    2016: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016.parquet"),
-    2017: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2017/fr_2017.parquet"),
-}
+from _bpool_paths import bpool_dir, FR_PARQUETS  # noqa: E402
+_BPOOL = bpool_dir()
+_FR    = FR_PARQUETS
 VARS = ["yem", "yem00", "yemxp", "yivwg", "lhw"]
 TOL = 1e-6
 

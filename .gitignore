@@ -76,6 +76,12 @@ Microsoft/
 .idea/
 .vscode/
 
+# Machine-specific path config — never commit (contains local drive paths)
+# Users create this once via: mnl-setup
+# See docs/package/RURO_DATA_STORAGE_AND_PATH_RESOLUTION.md
+mnl_config.yaml
+.mnl/
+
 # generated package metadata
 src/*.egg-info/
 

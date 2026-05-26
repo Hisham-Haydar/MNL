@@ -77,8 +77,14 @@ LOGGER = logging.getLogger(__name__)
 
 REPO = Path(__file__).resolve().parents[2]
 RESULTS_DIR = REPO / "Results"
-POOLED_DIR = REPO / "Data" / "processed" / "fr" / "pooled"
-EXTERNAL_DIR = REPO / "Data" / "external"
+
+# Processed/pooled data live under the configured storage root, not the repo
+# (migrated 2026-05-26). Resolve dynamically via path_helpers — no hardcoded paths.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # scripts/
+from path_helpers import data_root  # noqa: E402
+
+POOLED_DIR = data_root() / "processed" / "fr" / "pooled"
+EXTERNAL_DIR = REPO / "Data" / "external"  # tracked reference CSVs stay in repo
 
 # HICP φ_2018 from HICPCONFIG.xml (base 2015=100): 100.31/103.60
 # Used to convert 2018 nominal to 2016 prices if a CPI file is unavailable.
@@ -98,7 +104,7 @@ QUANTILE_LEVELS = [0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
 
 def _find_parquet(year: int) -> Optional[Path]:
     """Search Data/processed/fr/ for the MNL parquet for a given year."""
-    processed = REPO / "Data" / "processed" / "fr"
+    processed = data_root() / "processed" / "fr"
     patterns = [
         f"*{year}*RURO*mnl*job*gmm*.parquet",
         f"*{year}*RURO*mnl*job*.parquet",

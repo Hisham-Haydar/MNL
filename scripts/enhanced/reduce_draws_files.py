@@ -395,29 +395,29 @@ Examples:
     parser.add_argument(
         "--singles-input",
         type=Path,
-        default=Path("U:/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready_RURO_draws.parquet"),
-        help="Path to singles draws file"
+        default=None,
+        help="Path to singles draws parquet (default: <data_root>/processed/fr/2016/singles_RURO_ready_RURO_draws.parquet)"
     )
-    
+
     parser.add_argument(
         "--singles-output",
         type=Path,
-        default=Path("U:/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready_RURO_draws_reduced.parquet"),
-        help="Path to save reduced singles file"
+        default=None,
+        help="Path to save reduced singles parquet (default: derived from --singles-input)"
     )
-    
+
     parser.add_argument(
         "--couples-input",
         type=Path,
-        default=Path("U:/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready_RURO_draws.parquet"),
-        help="Path to couples draws file"
+        default=None,
+        help="Path to couples draws parquet (default: <data_root>/processed/fr/2016/couples_RURO_ready_RURO_draws.parquet)"
     )
-    
+
     parser.add_argument(
         "--couples-output",
         type=Path,
-        default=Path("U:/EUROMOD-STORAGE/Data/processed/fr/2016/couples_RURO_ready_RURO_draws_reduced.parquet"),
-        help="Path to save reduced couples file"
+        default=None,
+        help="Path to save reduced couples parquet (default: derived from --couples-input)"
     )
     
     parser.add_argument(
@@ -439,7 +439,24 @@ Examples:
     )
     
     args = parser.parse_args()
-    
+
+    # Resolve dynamic defaults from path_helpers (honours ~/.mnl/config.yaml)
+    if args.singles_input is None or args.couples_input is None:
+        from path_helpers import data_root
+        _draws_dir = data_root() / "processed" / "fr" / "2016"
+        if args.singles_input is None:
+            args.singles_input = _draws_dir / "singles_RURO_ready_RURO_draws.parquet"
+        if args.couples_input is None:
+            args.couples_input = _draws_dir / "couples_RURO_ready_RURO_draws.parquet"
+    if args.singles_output is None:
+        args.singles_output = args.singles_input.with_name(
+            args.singles_input.stem.replace("_RURO_draws", "_RURO_draws_reduced") + ".parquet"
+        )
+    if args.couples_output is None:
+        args.couples_output = args.couples_input.with_name(
+            args.couples_input.stem.replace("_RURO_draws", "_RURO_draws_reduced") + ".parquet"
+        )
+
     # Validate inputs exist
     if not args.couples_only and not args.singles_input.exists():
         logger.error(f"Singles input file not found: {args.singles_input}")

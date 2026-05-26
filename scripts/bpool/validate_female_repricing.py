@@ -12,7 +12,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-_BPOOL = Path("U:/EUROMOD-STORAGE/new_data")
+from _bpool_paths import bpool_dir  # noqa: E402
+_BPOOL = bpool_dir()
 
 def analyze_year(year: int) -> None:
     print(f"\n{'='*70}")

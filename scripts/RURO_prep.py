@@ -139,10 +139,6 @@ def _resolve_processed_dir(
         candidates.append(resolve_storage_root())
     except Exception:
         pass
-    # Explicit external hints
-    candidates.append(Path(r"U:/EUROMOD-STORAGE"))
-    candidates.append(Path.home() / "EUROMOD-STORAGE")
-    # Fallback to repo-local data_root
     candidates.append(data_root().parent)
 
     chosen: Path | None = None

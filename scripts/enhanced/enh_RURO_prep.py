@@ -335,9 +335,6 @@ def _resolve_processed_dir(
         candidates.append(resolve_storage_root())
     except Exception:
         pass
-    # Explicit external hints
-    candidates.append(Path(r"U:/EUROMOD-STORAGE"))
-    candidates.append(Path.home() / "EUROMOD-STORAGE")
     # Repo-local data_root is often the correct anchor (e.g. <repo>/data)
     candidates.append(data_root())
     candidates.append(data_root().parent)

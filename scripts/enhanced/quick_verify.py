@@ -16,9 +16,11 @@ from pathlib import Path
 import pandas as pd
 import json
 
-# Paths (adjust if needed)
-DRAWS_DIR = Path("U:/EUROMOD-STORAGE/Data/processed/fr/2016")
-EUROMOD_OUTPUT = Path("U:/EUROMOD-STORAGE/interim/ruro/fr/scenarios_2016/combined_draws_em.parquet")
+from path_helpers import data_root, resolve_storage_root
+
+# Paths resolved from ~/.mnl/config.yaml or MNL_STORAGE_ROOT env var
+DRAWS_DIR = data_root() / "processed" / "fr" / "2016"
+EUROMOD_OUTPUT = data_root() / "interim" / "ruro" / "fr" / "scenarios_2016" / "combined_draws_em.parquet"
 
 print("=" * 80)
 print("RURO PIPELINE QUICK VERIFICATION")
@@ -169,7 +171,7 @@ print("\n✅ Quick verification complete!")
 
 
 
-df = pd.read_parquet(r"U:/EUROMOD-STORAGE/interim/ruro/fr/scenarios_2016/combined_draws_em.parquet")
+df = pd.read_parquet(EUROMOD_OUTPUT)
 
 # baseline household size from draw=0
 base_size = (

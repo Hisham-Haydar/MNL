@@ -61,103 +61,24 @@ import pandas as pd
 # Ensure pythonnet uses CoreCLR (align with data_prep2.py)
 os.environ.setdefault("PYTHONNET_RUNTIME", "coreclr")
 
-ENV_HINTS = ("MNL_STORAGE_ROOT", "MNL_DATA_ROOT", "MNL_ROOT")
 DEFAULT_EUROMOD_HOURS_COL = "lhw"
 DEFAULT_EUROMOD_WAGE_COL = "yivwg"
 WEEKS_PER_MONTH = 52.0 / 12.0
 
-
 # ---------------------------------------------------------------------------
-# Path helpers
+# Path helpers — delegate to path_helpers (honours ~/.mnl/config.yaml)
 # ---------------------------------------------------------------------------
 
-def _collect_candidates() -> tuple[Path, ...]:
-    script_dir = Path(__file__).resolve().parent
-    repo_root = script_dir.parent
-    seen: set[Path] = set()
-    candidates: list[Path] = []
-
-    def add(path: Path | str | None) -> None:
-        if not path:
-            return
-        candidate = Path(path).expanduser()
-        try:
-            resolved = candidate.resolve(strict=False)
-        except OSError:
-            resolved = candidate
-        if resolved in seen:
-            return
-        seen.add(resolved)
-        candidates.append(resolved)
-
-    add(repo_root)
-    add(repo_root.parent)
-    add(script_dir)
-    add(script_dir.parent)
-
-    for env in ENV_HINTS:
-        raw = os.environ.get(env)
-        if raw:
-            env_path = Path(raw).expanduser()
-            add(env_path)
-            add(env_path.parent)
-
-    add("U:/EUROMOD-STORAGE")
-    add(Path.home() / "EUROMOD-STORAGE")
-
-    return tuple(candidates)
-
-
-def _resolve_storage_root() -> Path:
-    env_candidates: list[Path] = []
-    for env in ENV_HINTS:
-        raw = os.environ.get(env)
-        if raw:
-            env_path = Path(raw).expanduser()
-            env_candidates.append(env_path)
-            env_candidates.append(env_path.parent)
-
-    explicit_candidates = [Path(r"U:/EUROMOD-STORAGE"), Path.home() / "EUROMOD-STORAGE"]
-    repo_candidates = [c for c in _collect_candidates() if c not in env_candidates + explicit_candidates]
-
-    preferred: list[Path] = []
-    for candidate in env_candidates + explicit_candidates + repo_candidates:
-        data_dir = candidate / "Data"
-        if data_dir.exists():
-            if (data_dir / "processed").exists() or (data_dir / "raw").exists():
-                return candidate
-            preferred.append(candidate)
-        if candidate.name.lower() == "data" and candidate.exists():
-            if (candidate / "processed").exists() or (candidate / "raw").exists():
-                return candidate.parent
-            preferred.append(candidate.parent)
-    if preferred:
-        return preferred[0]
-    raise FileNotFoundError("Unable to locate storage root containing 'Data'. Set MNL_DATA_ROOT or MNL_STORAGE_ROOT.")
+from path_helpers import (  # noqa: E402
+    resolve_storage_root as _resolve_storage_root,
+    euromod_root as _ph_euromod_root,
+)
 
 
 def _euromod_root(explicit: Path | None = None) -> Path:
     if explicit:
         return explicit
-    env = os.environ.get("MNL_EUROMOD_ROOT")
-    if env:
-        cand = Path(env).expanduser()
-        if cand.exists():
-            return cand
-    storage = _resolve_storage_root()
-    for rel in (
-        Path("EUROMOD_RELEASES_J1.0+") / "EUROMOD_RELEASES_J1.0+",
-        Path("EUROMOD_RELEASES_J1.0+"),
-        Path("EUROMOD_RELEASES"),
-        Path("euromod_releases"),
-    ):
-        candidate = storage / rel
-        if candidate.exists():
-            return candidate
-    for child in storage.iterdir():
-        if child.is_dir() and "euromod" in child.name.lower():
-            return child
-    raise FileNotFoundError("EUROMOD release directory not found; set MNL_EUROMOD_ROOT.")
+    return _ph_euromod_root()
 
 
 # ---------------------------------------------------------------------------
@@ -821,7 +742,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--euromod-root", type=Path, default=None, help="Path to EUROMOD release (override).")
     ap.add_argument("--euromod-system", type=str, required=True, help="EUROMOD system code, e.g., FR_2020.")
     ap.add_argument("--euromod-dataset", type=str, required=True, help="EUROMOD dataset name, e.g., FR_2021_c2.")
-    ap.add_argument("--scenario-dir", type=Path, default=None, help="Output dir for EUROMOD scenarios (default: storage/interim/ruro/<country>/scenarios).")
+    ap.add_argument("--scenario-dir", type=Path, default=None, help="Output dir for EUROMOD scenarios (default: storage/Data/interim/ruro/<country>/scenarios).")
     ap.add_argument("--euromod-hours-col", type=str, default=DEFAULT_EUROMOD_HOURS_COL, help="Column to overwrite for hours.")
     ap.add_argument("--euromod-wage-col", type=str, default=DEFAULT_EUROMOD_WAGE_COL, help="Column to overwrite for wages.")
     return ap.parse_args()
@@ -866,7 +787,7 @@ def main() -> None:
     scenario_dir = (
         args.scenario_dir.resolve()
         if args.scenario_dir
-        else (_resolve_storage_root() / "interim" / "ruro" / args.euromod_system.split("_")[0].lower() / "scenarios")
+        else (_resolve_storage_root() / "Data" / "interim" / "ruro" / args.euromod_system.split("_")[0].lower() / "scenarios")
     )
 
     # Run EUROMOD once on all draws

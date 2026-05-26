@@ -33,10 +33,11 @@ sys.path.insert(0, str(_SCRIPTS / "enhanced"))
 import sys as _sys
 from enh_RURO_euromod import EuromodRunner  # noqa: E402
 
-_BPOOL_DIR  = Path("U:/EUROMOD-STORAGE/new_data")
+from _bpool_paths import bpool_dir, em_root, raw_data_dir  # noqa: E402
+_BPOOL_DIR  = bpool_dir()
 _CHUNK_DIR  = _BPOOL_DIR / "chunks"
-_EM_ROOT    = Path("U:/EUROMOD-STORAGE/EUROMOD_RELEASES_J1.0+/EUROMOD_RELEASES_J1.0+")
-_RAW_DATA   = Path("U:/EUROMOD-STORAGE/Data/FR")
+_EM_ROOT    = em_root()
+_RAW_DATA   = raw_data_dir()
 
 _SYSTEM_PAIRING = {
     2015: ("FR_2014", "FR_2015_a2"),

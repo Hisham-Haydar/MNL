@@ -61,12 +61,9 @@ import pandas as pd
 # Paths
 # ---------------------------------------------------------------------------
 _SCRIPTS = Path(__file__).resolve().parent.parent
-_BPOOL_DIR = Path("U:/EUROMOD-STORAGE/new_data")
-_FR_PARQUET = {
-    2015: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2015/fr_2015.parquet"),
-    2016: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016.parquet"),
-    2017: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2017/fr_2017.parquet"),
-}
+from _bpool_paths import bpool_dir, FR_PARQUETS  # noqa: E402
+_BPOOL_DIR = bpool_dir()
+_FR_PARQUET = FR_PARQUETS
 _BPOOL_SINGLES = _BPOOL_DIR / "fr_p3a_bpool_d1w1__singles.parquet"
 _BPOOL_COUPLES = _BPOOL_DIR / "fr_p3a_bpool_d1w1__couples.parquet"
 

@@ -19,16 +19,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-_BPOOL_DIR = Path("U:/EUROMOD-STORAGE/new_data")
+from _bpool_paths import bpool_dir, FR_PARQUETS  # noqa: E402
+
+_BPOOL_DIR = bpool_dir()
 _CHUNK_DIR = _BPOOL_DIR / "chunks"
 _CPI = {2015: 1.0031, 2016: 1.0000, 2017: 0.9886}
 _EM_OUTPUT_COLS = ["ils_dispy", "ils_origy", "ils_ben", "ils_tax", "ils_sicdy"]
 
-_FR_PARQUET = {
-    2015: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2015/fr_2015.parquet"),
-    2016: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016.parquet"),
-    2017: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2017/fr_2017.parquet"),
-}
+_FR_PARQUET = FR_PARQUETS
 
 JOBS = [
     # (year, mode, n_chunks)

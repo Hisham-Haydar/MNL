@@ -18,10 +18,14 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 # ---------------------------------------------------------------------------
-# Paths
+# Paths — resolved from ~/.mnl/config.yaml or MNL_STORAGE_ROOT env var
 # ---------------------------------------------------------------------------
-REPO_ROOT = pathlib.Path(r"\\crc\users\hisham\Desktop\Nizam_Hisham\MNL")
-STORAGE = pathlib.Path(r"Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016")
+_script_dir = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(_script_dir))
+from path_helpers import data_root, resolve_repo_root  # noqa: E402
+
+REPO_ROOT = resolve_repo_root()
+STORAGE   = data_root() / "processed" / "fr" / "2016"
 
 CANONICAL_SINGLES  = STORAGE / "fr_2016_RURO_mnl__singles.parquet"
 CANONICAL_COUPLES  = STORAGE / "fr_2016_RURO_mnl__couples.parquet"

@@ -50,14 +50,11 @@ sys.path.insert(0, str(_SCRIPTS / "enhanced"))
 import sys as _sys  # noqa: E402  (re-alias to survive any downstream shadowing)
 from enh_RURO_euromod import EuromodRunner  # noqa: E402
 
-_BPOOL_DIR = Path("U:/EUROMOD-STORAGE/new_data")
-_EM_ROOT   = Path("U:/EUROMOD-STORAGE/EUROMOD_RELEASES_J1.0+/EUROMOD_RELEASES_J1.0+")
-_RAW_DATA  = Path("U:/EUROMOD-STORAGE/Data/FR")
-_FR_PARQUET = {
-    2015: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2015/fr_2015.parquet"),
-    2016: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/fr_2016.parquet"),
-    2017: Path("Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2017/fr_2017.parquet"),
-}
+from _bpool_paths import bpool_dir, em_root, raw_data_dir, FR_PARQUETS  # noqa: E402
+_BPOOL_DIR  = bpool_dir()
+_EM_ROOT    = em_root()
+_RAW_DATA   = raw_data_dir()
+_FR_PARQUET = FR_PARQUETS
 
 # ---------------------------------------------------------------------------
 # System / dataset pairing and CPI

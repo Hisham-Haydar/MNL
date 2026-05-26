@@ -52,7 +52,13 @@ logger = logging.getLogger(__name__)
 # Paths
 # ---------------------------------------------------------------------------
 REPO_ROOT = Path(__file__).resolve().parents[2]
-POOLED_DIR = REPO_ROOT / "Data" / "processed" / "fr" / "pooled"
+
+# Pooled data lives under the configured storage root, not the repo working tree
+# (migrated 2026-05-26). Resolve dynamically via path_helpers — no hardcoded paths.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # scripts/
+from path_helpers import data_root  # noqa: E402
+
+POOLED_DIR = data_root() / "processed" / "fr" / "pooled"
 
 UNIFIED_PARQUET = POOLED_DIR / "fr_p3a_gsurv2_harmonised.parquet"
 STAGE_META_JSON  = POOLED_DIR / "fr_p3a_gsurv2_harmonised__stage_m1_meta.json"

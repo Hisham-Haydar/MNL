@@ -157,6 +157,12 @@ def outputs_root() -> Path:
 
 
 @lru_cache(maxsize=1)
+def external_data_root() -> Path:
+    """Return the external reference data directory under storage root."""
+    return data_root() / "external"
+
+
+@lru_cache(maxsize=1)
 def backup_root() -> Path | None:
     """Return the backup root from ~/.mnl/config.yaml, or None if not configured."""
     cfg = _load_user_config()

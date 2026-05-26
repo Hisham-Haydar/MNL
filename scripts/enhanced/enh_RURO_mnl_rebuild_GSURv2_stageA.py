@@ -22,7 +22,7 @@ import pyarrow.parquet as pq
 # ---------------------------------------------------------------------------
 _script_dir = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(_script_dir))
-from path_helpers import data_root, resolve_repo_root  # noqa: E402
+from path_helpers import data_root, resolve_repo_root, external_data_root  # noqa: E402
 
 REPO_ROOT = resolve_repo_root()
 STORAGE   = data_root() / "processed" / "fr" / "2016"
@@ -32,7 +32,7 @@ CANONICAL_COUPLES  = STORAGE / "fr_2016_RURO_mnl__couples.parquet"
 VERSIONED_SINGLES  = STORAGE / "fr_2016_RURO_mnl_GSURv2__singles.parquet"
 VERSIONED_COUPLES  = STORAGE / "fr_2016_RURO_mnl_GSURv2__couples.parquet"
 
-LOOKUP_PATH   = REPO_ROOT / "Data/external/FR_gsur_ruro_v2_stageA.parquet"
+LOOKUP_PATH   = external_data_root() / "FR_gsur_ruro_v2_stageA.parquet"
 SIGNOFF_PATH  = REPO_ROOT / "docs/RURO_GSUR_O7_crosswalk_signoff_v1.md"
 REPORT_PATH   = REPO_ROOT / "Results/P3a/gsurv2/RURO_GSUR_v2_stageA_MNL_rebuild_report_v1.md"
 

@@ -34,6 +34,7 @@ hardcoded absolute path. All machine-specific locations are resolved at runtime.
 EUROMOD-STORAGE/
 ├── Data/
 │   ├── processed/fr/{2015,2016,2017}/   ← parquets (migrated from Z: and U:)
+│   ├── external/                         ← external reference data (CPI, GSUR, INSEE, etc.)
 │   ├── raw/                              ← EUROMOD microdata .txt files
 │   └── FR/                              ← FR-specific microdata + DRD files
 ├── interim/                             ← EUROMOD scenario outputs
@@ -73,6 +74,7 @@ Future users create it by running `mnl-setup` (entry point to be implemented in 
 from path_helpers import (
     resolve_storage_root,  # → C:\Users\hisham\MNL\EUROMOD-STORAGE
     data_root,             # → C:\Users\hisham\MNL\EUROMOD-STORAGE\Data
+    external_data_root,    # → data_root() / "external"  (CPI, GSUR, INSEE, etc.)
     euromod_root,          # → wherever user installed EUROMOD releases
     euromod_raw_root,      # → data_root() / "raw"
     reports_root,          # → storage_root / "reports"
@@ -105,14 +107,17 @@ parquet = Path(r"\\crc\users\hisham\...")
 
 ## 4. Files Changed
 
-### `path_helpers.py` (both copies) — rewritten
+### `path_helpers.py` (both copies) — rewritten, then extended
 
-New behaviour:
+New behaviour (initial migration):
 - Reads `~/.mnl/config.yaml` first (new)
 - Falls back to env vars, then `~/EUROMOD-STORAGE`
 - Removed all hardcoded `U:/EUROMOD-STORAGE` fallback candidates
 - Added `backup_root()` function (reads `backup_root:` from config)
 - Error message now says "run mnl-setup" with doc reference
+
+Added 2026-05-26 (external data migration):
+- Added `external_data_root()` → `data_root() / "external"`
 
 ### `scripts/enhanced/` — fixed
 
@@ -121,8 +126,10 @@ New behaviour:
 | `quick_verify.py` | `DRAWS_DIR` and `EUROMOD_OUTPUT` now use `data_root()` / `resolve_storage_root()` |
 | `reduce_draws_files.py` | Argparse defaults removed; dynamic resolution added after `parse_args()` |
 | `enh_RURO_euromod.py` | Deleted 85-line inline path-helper block; replaced with `from path_helpers import ...` |
-| `enh_RURO_mnl_rebuild_GSURv2_stageA.py` | `REPO_ROOT` and `STORAGE` now use `resolve_repo_root()` and `data_root()` |
+| `enh_RURO_mnl_rebuild_GSURv2_stageA.py` | `LOOKUP_PATH` now uses `external_data_root()`; `STORAGE` uses `data_root()` |
 | `enh_RURO_prep.py` | Removed `Path("U:/EUROMOD-STORAGE")` hardcoded fallback from `_resolve_processed_dir()` |
+| `enh_prepare_FR_gsur.py` | Argparse defaults for `--input`/`--output-dir` now resolve via `external_data_root()` |
+| `enh_prepare_FR_gsur_v2.py` | `EXT` now uses `external_data_root()` instead of `REPO / "Data" / "external"` |
 
 ### `scripts/` (root-level) — fixed
 
@@ -132,6 +139,14 @@ New behaviour:
 | `RURO_euromod.py` | Deleted 85-line inline path-helper block; replaced with `from path_helpers import ...` |
 | `RURO_prep.py` | Removed `Path("U:/EUROMOD-STORAGE")` and `~/EUROMOD-STORAGE` hardcoded fallbacks |
 | `run_post_estimation_standalone.py` | Added `from path_helpers import data_root`; fixed `mnl_file` path |
+| `prepare_FR_gsur.py` | Argparse defaults for `--input`/`--output-dir` now resolve via `external_data_root()` |
+
+### `scripts/multi_year/` — fixed
+
+| File | Change |
+|---|---|
+| `m1_config.py` | `external_data_dir`, `cpi_template_path`, `cpi_final_path` now resolve via `external_data_root()` |
+| `m1_isf_check_2018.py` | `EXTERNAL_DIR` now uses `external_data_root()` |
 
 ### `scripts/bpool/` — fixed
 

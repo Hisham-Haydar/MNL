@@ -1,6 +1,0 @@
-﻿series_id,period,freq,value_pct,obs_status,note
-001688526,2015-Q1,quarterly,10.0,A,"ILO unemployment rate, SA, Metropolitan France"
-001688526,2015-Q2,quarterly,10.2,A,"ILO unemployment rate, SA, Metropolitan France"
-001688526,2015-Q3,quarterly,10.0,A,"ILO unemployment rate, SA, Metropolitan France"
-001688526,2015-Q4,quarterly,9.9,A,"ILO unemployment rate, SA, Metropolitan France"
-001688526,2015,annual_average,10.025,computed,simple mean of Q1-Q4 2015 quarterly SA values

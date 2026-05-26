@@ -81,10 +81,10 @@ RESULTS_DIR = REPO / "Results"
 # Processed/pooled data live under the configured storage root, not the repo
 # (migrated 2026-05-26). Resolve dynamically via path_helpers — no hardcoded paths.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # scripts/
-from path_helpers import data_root  # noqa: E402
+from path_helpers import data_root, external_data_root  # noqa: E402
 
 POOLED_DIR = data_root() / "processed" / "fr" / "pooled"
-EXTERNAL_DIR = REPO / "Data" / "external"  # tracked reference CSVs stay in repo
+EXTERNAL_DIR = external_data_root()
 
 # HICP φ_2018 from HICPCONFIG.xml (base 2015=100): 100.31/103.60
 # Used to convert 2018 nominal to 2016 prices if a CPI file is unavailable.

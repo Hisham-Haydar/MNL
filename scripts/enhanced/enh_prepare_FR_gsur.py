@@ -613,14 +613,14 @@ def main():
     parser.add_argument(
         "--input", "-i",
         type=Path,
-        default=Path("Data/external/FR_gsur.xlsx"),
-        help="Path to FR_gsur.xlsx"
+        default=None,
+        help="Path to FR_gsur.xlsx (default: external_data_root()/FR_gsur.xlsx)"
     )
     parser.add_argument(
         "--output-dir", "-o",
         type=Path,
-        default=Path("Data/external"),
-        help="Output directory for processed files"
+        default=None,
+        help="Output directory for processed files (default: external_data_root())"
     )
     parser.add_argument(
         "--age-group",
@@ -635,11 +635,15 @@ def main():
         help="Explicit NUTS1 code ordering for drgn1 assignment (e.g., FR1 FRB FRC ...)"
     )
     args = parser.parse_args()
-    
-    input_path = args.input
-    output_dir = args.output_dir
+
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from path_helpers import external_data_root  # noqa: E402
+    _ext = external_data_root()
+    input_path = args.input if args.input is not None else _ext / "FR_gsur.xlsx"
+    output_dir = args.output_dir if args.output_dir is not None else _ext
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     if not input_path.exists():
         raise FileNotFoundError(f"Input file not found: {input_path}")
     

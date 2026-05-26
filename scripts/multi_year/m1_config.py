@@ -18,6 +18,7 @@ Reference: docs/France_case/P3a/execution_logs/multi_year_stage_M1/JMP_multi_yea
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -28,6 +29,8 @@ import yaml
 # ---------------------------------------------------------------------------
 
 REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # scripts/
+from path_helpers import external_data_root as _external_data_root  # noqa: E402
 
 _SHORTCUT_MAP: Dict[str, str] = {
     "p2":  "config/multi_year/fr_p2_stage_m1.yaml",
@@ -118,13 +121,20 @@ class StageConfig:
             raw["variables_excluded_from_deflation"]
         )
 
-        # Paths (relative to REPO; scripts resolve with self.repo_path)
+        # Paths — external data lives in storage (data_root()/external), not repo
+        _ext = _external_data_root()
+        def _ext_path(raw_val: str) -> Path:
+            try:
+                return _ext / Path(raw_val).relative_to("Data/external")
+            except ValueError:
+                return REPO / raw_val
+
         self.processed_root: Path = REPO / raw["processed_root"]
         self.pooled_output_dir: Path = REPO / raw["pooled_output_dir"]
         self.results_dir: Path = REPO / raw["results_dir"]
-        self.external_data_dir: Path = REPO / raw["external_data_dir"]
-        self.cpi_template_path: Path = REPO / raw["cpi_template_path"]
-        self.cpi_final_path: Path = REPO / raw["cpi_final_path"]
+        self.external_data_dir: Path = _ext
+        self.cpi_template_path: Path = _ext_path(raw["cpi_template_path"])
+        self.cpi_final_path: Path = _ext_path(raw["cpi_final_path"])
         self.input_parquet_dir: Path = REPO / raw["input_parquet_dir"]
         self.input_parquet_patterns: List[str] = list(raw["input_parquet_patterns"])
         self.input_parquet_components: List[str] = list(

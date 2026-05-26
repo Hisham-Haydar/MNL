@@ -45,8 +45,12 @@ import pandas as pd
 
 warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 
+_script_dir = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(_script_dir))
+from path_helpers import external_data_root  # noqa: E402
+
 REPO = pathlib.Path(__file__).resolve().parents[2]
-EXT  = REPO / "Data" / "external"
+EXT  = external_data_root()
 OUT     = None   # set in main() from --opportunity-year (C6)
 SIDECAR = None   # set in main() from --opportunity-year (C6)
 

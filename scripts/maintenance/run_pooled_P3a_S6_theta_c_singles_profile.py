@@ -13,7 +13,10 @@ from pathlib import Path
 
 import numpy as np
 
-REPO = Path(r"\\crc\users\hisham\Desktop\Nizam_Hisham\MNL")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # scripts/
+from path_helpers import resolve_repo_root, data_root  # noqa: E402
+
+REPO = resolve_repo_root()
 sys.path.insert(0, str(REPO / "scripts" / "enhanced"))
 
 from estimation_spec_parser import parse_specification
@@ -25,7 +28,7 @@ from run_cluster_robust_se import _collect_extra_vars
 def main():
     se_json_path = REPO / "Results" / "JMP_pooled_P3a_corrected_start1_cluster_robust_se.json"
     spec_path = REPO / "scripts" / "enhanced" / "specifications" / "estimation_spec_ruro_occ_P3a_pooled.yaml"
-    mnl_base = REPO / "Data" / "processed" / "fr" / "pooled" / "fr_p3a_gsurv2_estimation_ready"
+    mnl_base = data_root() / "processed/fr/pooled/fr_p3a_gsurv2_estimation_ready"
     out_path = REPO / "Results" / "JMP_pooled_P3a_corrected_S6_theta_c_singles_LL_profile.json"
 
     with open(se_json_path) as f:

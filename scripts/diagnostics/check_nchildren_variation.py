@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 """Quick script to check n_children variation in MNL data."""
 
+import sys
 import pandas as pd
 import numpy as np
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # scripts/
+from path_helpers import outputs_root  # noqa: E402
+
 # Paths to the data files from the latest M2c run
-data_dir = Path("U:/Desktop/Nizam_Hisham/MNL/outputs/estimates/fr/spec/job_choice/gamspy/run_2026-02-19_10-48-35")
+data_dir = outputs_root() / "estimates/fr/spec/job_choice/gamspy/run_2026-02-19_10-48-35"
 
 files = {
     "singles_male": data_dir / "data_singles_male.parquet",

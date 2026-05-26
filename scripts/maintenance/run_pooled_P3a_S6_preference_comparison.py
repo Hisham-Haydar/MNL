@@ -1,11 +1,15 @@
 """S6 preference-block comparison: pooled corrected vs M1-clean verdict-selected."""
 import json
+import sys
 import numpy as np
 from pathlib import Path
 
-REPO = Path(r"\\crc\users\hisham\Desktop\Nizam_Hisham\MNL")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # scripts/
+from path_helpers import outputs_root, resolve_repo_root  # noqa: E402
 
-m1_path = REPO / "outputs" / "estimates" / "fr" / "spec" / "ruro_occ_M1_clean" / "gamspy" / "estimation_spec_ruro_occ_M1_clean" / "run_2026-05-18_11-33-46" / "estimation_results.json"
+REPO = resolve_repo_root()
+
+m1_path = outputs_root() / "estimates/fr/spec/ruro_occ_M1_clean/gamspy/estimation_spec_ruro_occ_M1_clean/run_2026-05-18_11-33-46/estimation_results.json"
 with open(m1_path) as f:
     m1 = json.load(f)
 m1_params = m1["results"]["singles_male"]["parameters"]

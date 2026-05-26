@@ -9,16 +9,20 @@ Usage:
 """
 
 import json
+import sys
 import numpy as np
 from pathlib import Path
 from datetime import datetime
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from path_helpers import outputs_root  # noqa: E402
 
 def generate_html_report():
     """Generate HTML report from estimation results with fit statistics."""
 
     # Load results
-    results_file = Path('outputs/estimates/fr/2016/fr_2016_joint_with_fit_stats.json')
-    out_file = Path('outputs/post_estimation/fr/2016/joint/fr_2016_joint_diagnostics.html')
+    results_file = outputs_root() / "estimates/fr/2016/fr_2016_joint_with_fit_stats.json"
+    out_file = outputs_root() / "post_estimation/fr/2016/joint/fr_2016_joint_diagnostics.html"
 
     print(f"Loading: {results_file}")
     with open(results_file, 'r') as f:

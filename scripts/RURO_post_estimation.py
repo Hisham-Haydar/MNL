@@ -16,12 +16,16 @@ Author: RURO Team
 """
 
 import logging
+import sys
 import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple, Callable
 from dataclasses import dataclass, field
 from datetime import datetime
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from path_helpers import outputs_root  # noqa: E402
 
 # Optional imports
 try:
@@ -2621,7 +2625,7 @@ def run_post_estimation(
     LOGGER.info("=" * 70)
     
     if out_dir is None:
-        out_dir = Path('outputs/post_estimation')
+        out_dir = outputs_root() / "post_estimation"
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     
@@ -2813,7 +2817,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
     
     # Load test data
-    with open('../outputs/estimates/fr/2016/fr_2016_joint.json', 'r') as f:
+    with open(outputs_root() / "estimates/fr/2016/fr_2016_joint.json", 'r') as f:
         results = json.load(f)
     
     theta = np.array(results['theta'])

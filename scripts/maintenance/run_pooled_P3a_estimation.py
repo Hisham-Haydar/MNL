@@ -32,17 +32,20 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]          # …/MNL
 PYTHON = ROOT / ".venv" / "Scripts" / "python.exe"
 
+sys.path.insert(0, str(ROOT / "scripts"))
+from path_helpers import outputs_root, data_root  # noqa: E402
+
 SPEC = ROOT / "scripts/enhanced/specifications/estimation_spec_ruro_occ_P3a_pooled.yaml"
-MNL_BASE = ROOT / "Data/processed/fr/pooled/fr_p3a_gsurv2_estimation_ready"
+MNL_BASE = data_root() / "processed/fr/pooled/fr_p3a_gsurv2_estimation_ready"
 
 M1CLEAN_JSON = (
-    ROOT
-    / "outputs/estimates/fr/spec/ruro_occ_M1_clean/gamspy"
+    outputs_root()
+    / "estimates/fr/spec/ruro_occ_M1_clean/gamspy"
     / "estimation_spec_ruro_occ_M1_clean/run_2026-05-18_12-38-37"
     / "estimation_results.json"
 )
 
-OUTPUT_BASE = ROOT / "outputs/estimates/fr/spec/ruro_occ_P3a_pooled/gamspy"
+OUTPUT_BASE = outputs_root() / "estimates/fr/spec/ruro_occ_P3a_pooled/gamspy"
 RESULTS_DIR = ROOT / "Results"
 
 logging.basicConfig(

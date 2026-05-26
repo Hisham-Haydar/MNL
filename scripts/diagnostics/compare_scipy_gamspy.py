@@ -1,6 +1,10 @@
 import json
 import math
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # scripts/
+from path_helpers import outputs_root  # noqa: E402
 
 print("="*100)
 print("PHASE 1 (SciPy) vs PHASE 2 (GAMSPy) COMPARISON")
@@ -8,7 +12,7 @@ print("="*100)
 print()
 
 # Load Phase 1 SciPy results
-phase1_dir = Path("outputs/estimates/fr/spec_tests")
+phase1_dir = outputs_root() / "estimates/fr/spec_tests"
 scipy_results = {}
 
 specs = [
@@ -36,7 +40,7 @@ for dir_name, spec_name in specs:
                 }
 
 # Load Phase 2 GAMSPy results
-phase2_dir = Path("outputs/estimates/fr/phase2")
+phase2_dir = outputs_root() / "estimates/fr/phase2"
 gamspy_results = {}
 
 specs_phase2 = [

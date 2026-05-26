@@ -85,6 +85,5 @@ mnl_config.yaml
 # generated package metadata
 src/*.egg-info/
 
-# Keep curated report deliverables under version control.
-!reports/
-!reports/**
+# reports/ now lives in EUROMOD-STORAGE (external storage), not in the repo.
+# The line above (reports/) keeps it ignored here.

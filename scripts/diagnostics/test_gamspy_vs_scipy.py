@@ -27,6 +27,9 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # scripts/
+from path_helpers import outputs_root  # noqa: E402
+
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
@@ -258,8 +261,8 @@ def main():
     logger.info(f"Started: {datetime.now().isoformat()}\n")
 
     # Paths
-    baseline_path = Path("outputs/estimates/fr/2016/estimation_results.json")
-    gamspy_path = Path("outputs/estimates/fr/2016_gamspy/estimation_results.json")
+    baseline_path = outputs_root() / "estimates/fr/2016/estimation_results.json"
+    gamspy_path = outputs_root() / "estimates/fr/2016_gamspy/estimation_results.json"
     spec_path = Path("scripts/enhanced/specifications/estimation_spec.yaml")
 
     # Check files exist
@@ -293,7 +296,7 @@ def main():
     comparison = compare_results(scipy_res, gamspy_res, spec_path)
 
     # Save detailed report
-    output_dir = Path("outputs/estimates/fr/2016_gamspy")
+    output_dir = outputs_root() / "estimates/fr/2016_gamspy"
     output_dir.mkdir(parents=True, exist_ok=True)
     report_path = output_dir / "comparison_gamspy_vs_scipy.csv"
     save_comparison_report(comparison, scipy_res, gamspy_res, report_path)

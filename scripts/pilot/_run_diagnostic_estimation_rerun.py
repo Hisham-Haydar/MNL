@@ -37,19 +37,21 @@ import numpy as np
 # Paths (all resolved to absolute before ensure_local_workdir changes CWD)
 # ---------------------------------------------------------------------------
 REPO = Path(__file__).resolve().parents[2].resolve()
-PKL_PATH = (REPO / "Data/pilot/nc_2016_couples/precomputed"
+sys.path.insert(0, str(REPO / "scripts"))
+sys.path.insert(0, str(REPO / "scripts/enhanced"))
+from path_helpers import outputs_root, data_root  # noqa: E402
+
+PKL_PATH = (data_root() / "pilot/nc_2016_couples/precomputed"
             / "fr_pilot_nc_2016_couples_precomputed_loc.pkl").resolve()
 SPEC_PATH = (REPO / "scripts/pilot/specs"
              / "estimation_spec_nc_pilot_couples_2016.yaml").resolve()
 P3A_JSON = (
-    REPO / "outputs/estimates/fr/spec/ruro_occ_P3a_pooled/gamspy/start_1"
+    outputs_root() / "estimates/fr/spec/ruro_occ_P3a_pooled/gamspy/start_1"
     / "run_2026-05-21_23-47-14/estimation_results.json"
 ).resolve()
 RESULTS_DIR = (REPO / "Results/pilot/nc_2016_couples/diagnostic_rerun_v1").resolve()
 REPORT_PATH = (REPO / "Results" / "NC_pilot"
                / "JMP_NC_pilot_diagnostic_estimation_rerun_report_v1.md").resolve()
-
-sys.path.insert(0, str(REPO / "scripts/enhanced"))
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -206,7 +208,7 @@ def main():
     # STEP 2c — Output-path check
     # -----------------------------------------------------------------------
     logger.info("STEP 2c: Output-path check ...")
-    p3a_out = REPO / "outputs/estimates/fr/spec/ruro_occ_P3a_pooled"
+    p3a_out = outputs_root() / "estimates/fr/spec/ruro_occ_P3a_pooled"
     results_str = str(RESULTS_DIR)
     p3a_str = str(p3a_out)
     if results_str.startswith(p3a_str) or p3a_str.startswith(results_str):

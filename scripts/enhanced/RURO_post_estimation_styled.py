@@ -41,6 +41,9 @@ from typing import Dict, List, Any, Optional, Tuple, Callable, Union
 from dataclasses import dataclass, field
 from datetime import datetime
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from path_helpers import reports_root  # noqa: E402
+
 # Diagnostics bundle: shared schema for HTML + Markdown rendering
 try:
     from diagnostics_bundle import (
@@ -7546,7 +7549,7 @@ def run_styled_post_estimation(
     prefix: str = "",
     compute_se: bool = False,
     spec_config: Path = None,
-    llm_summary_dir: Optional[Path] = Path("reports"),
+    llm_summary_dir: Optional[Path] = None,
     report_title: Optional[str] = None,
     report_profile: str = DEFAULT_PROFILE,
     cluster_se_path: Optional[Path] = None,
@@ -7581,6 +7584,9 @@ def run_styled_post_estimation(
     Dict with all results
     """
     post_est_start = time.time()
+
+    if llm_summary_dir is None:
+        llm_summary_dir = reports_root()
 
     LOGGER.info("=" * 70)
     LOGGER.info("RURO POST-ESTIMATION ANALYSIS (Styled Version)")
@@ -9510,10 +9516,10 @@ def main():
     parser.add_argument(
         '--llm-summary-dir',
         type=Path,
-        default=Path("reports"),
+        default=None,
         help=(
             'Directory for compact Markdown summaries designed for Git/LLM use '
-            '(default: reports)'
+            '(default: reports_root() from path_helpers)'
         )
     )
 
@@ -9647,7 +9653,10 @@ def main():
     )
 
     args = parser.parse_args()
-    
+
+    if args.llm_summary_dir is None:
+        args.llm_summary_dir = reports_root()
+
     # Set random seed if provided
     if args.seed is not None:
         np.random.seed(args.seed)

@@ -121,6 +121,7 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -128,6 +129,9 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from path_helpers import outputs_root  # noqa: E402
 
 # Optional imports for parallelization and JIT compilation
 try:
@@ -5685,8 +5689,8 @@ def main() -> None:
                 LOGGER.info("=" * 60)
                 sys.stdout.flush()
                 
-                out_dir = Path(args.out_file).parent if args.out_file else Path("outputs/estimates/fr")
-                
+                out_dir = Path(args.out_file).parent if args.out_file else outputs_root() / "estimates/fr"
+
                 # Compute standard errors using the joint gradient function
                 # We need to build a gradient function that returns gradient of NLL
                 def joint_grad_func(theta):
@@ -6157,8 +6161,8 @@ def main() -> None:
                     )
                     return neg_grad  # Already gradient of NLL (don't negate!)
             
-            out_dir = Path(args.out_file).parent if args.out_file else Path("outputs/estimates/fr")
-            
+            out_dir = Path(args.out_file).parent if args.out_file else outputs_root() / "estimates/fr"
+
             # Determine sex label
             sex_label = "pooled"
             if args.sex == "m":

@@ -145,15 +145,23 @@ def data_root() -> Path:
 
 
 @lru_cache(maxsize=1)
-def reports_root() -> Path:
-    """Return the reports/ directory under storage root (created lazily by callers)."""
-    return resolve_storage_root() / "reports"
+def outputs_root() -> Path:
+    """Return the outputs directory, honouring config and env overrides."""
+    cfg = _load_user_config()
+    val = cfg.get("outputs_root") or os.environ.get("MNL_OUTPUTS_ROOT")
+    if val:
+        return Path(val).expanduser()
+    return resolve_storage_root() / "outputs"
 
 
 @lru_cache(maxsize=1)
-def outputs_root() -> Path:
-    """Return the outputs/ directory under storage root (created lazily by callers)."""
-    return resolve_storage_root() / "outputs"
+def reports_root() -> Path:
+    """Return the reports directory, honouring config and env overrides."""
+    cfg = _load_user_config()
+    val = cfg.get("reports_root") or os.environ.get("MNL_REPORTS_ROOT")
+    if val:
+        return Path(val).expanduser()
+    return resolve_storage_root() / "reports"
 
 
 @lru_cache(maxsize=1)

@@ -20,7 +20,7 @@ import pandas as pd
 # Add scripts directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from path_helpers import data_root  # noqa: E402
+from path_helpers import data_root, outputs_root  # noqa: E402
 from RURO_post_estimation import run_post_estimation  # noqa: E402
 
 # Configure logging
@@ -34,9 +34,9 @@ def main():
     """Run post-estimation analysis on saved joint estimation results."""
 
     # File paths
-    results_file = Path('outputs/estimates/fr/2016/fr_2016_joint.json')
+    results_file = outputs_root() / "estimates/fr/2016/fr_2016_joint.json"
     mnl_file = data_root() / "processed" / "fr" / "2016" / "fr_2016_RURO_mnl.parquet"
-    out_dir = Path('outputs/post_estimation/fr/2016/joint')
+    out_dir = outputs_root() / "post_estimation/fr/2016/joint"
 
     # Create output directory
     out_dir.mkdir(parents=True, exist_ok=True)

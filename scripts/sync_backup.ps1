@@ -43,8 +43,8 @@ $ErrorActionPreference = "Stop"
 # Resolve paths from ~/.mnl/config.yaml or defaults
 # ---------------------------------------------------------------------------
 $configPath = Join-Path $env:USERPROFILE ".mnl\config.yaml"
-$localRoot  = "C:\Users\hisham\MNL\EUROMOD-STORAGE"
-$backupRoot = "\\crc\users\hisham\MNL_backup\EUROMOD-STORAGE"
+$localRoot  = ""
+$backupRoot = ""
 
 if (Test-Path $configPath) {
     $lines = Get-Content $configPath
@@ -57,6 +57,15 @@ if (Test-Path $configPath) {
             $backupRoot = Join-Path $raw "EUROMOD-STORAGE"
         }
     }
+}
+
+if (-not $localRoot) {
+    Write-Error "storage_root not set. Add 'storage_root: /path/to/EUROMOD-STORAGE' to $configPath"
+    exit 1
+}
+if (-not $backupRoot) {
+    Write-Error "backup_root not set. Add 'backup_root: //server/share/MNL_backup' to $configPath"
+    exit 1
 }
 
 Write-Host ""

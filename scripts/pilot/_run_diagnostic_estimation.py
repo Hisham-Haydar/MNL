@@ -24,6 +24,7 @@ import pandas as pd
 BASE = r"U:\Desktop\Nizam_Hisham\MNL"
 sys.path.insert(0, os.path.join(BASE, r"scripts\enhanced"))
 sys.path.insert(0, os.path.join(BASE, r"scripts\pilot"))
+sys.path.insert(0, os.path.join(BASE, r"scripts"))
 
 logging.basicConfig(level=logging.INFO)
 import estimation_engine as ee
@@ -34,7 +35,8 @@ PKL_PATH    = os.path.join(BASE, r"Data\pilot\nc_2016_couples\precomputed\fr_pil
 PARQUET_PATH = os.path.join(BASE, r"Data\pilot\nc_2016_couples\fr_pilot_nc_2016_couples_product__precompute_norm_ready.parquet")
 SPEC_PATH   = os.path.join(BASE, r"scripts\pilot\specs\estimation_spec_nc_pilot_couples_2016.yaml")
 OUT_ROOT    = os.path.join(BASE, r"Results\NC_pilot\diagnostic_estimation_v1")
-P3A_RESULTS = os.path.join(BASE, r"outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_1\run_2026-05-21_23-47-14\estimation_results.json")
+from path_helpers import outputs_root  # noqa: E402
+P3A_RESULTS = str(outputs_root() / "estimates/fr/spec/ruro_occ_P3a_pooled/gamspy/start_1/run_2026-05-21_23-47-14/estimation_results.json")
 
 EXPECTED_GROUPS = 2577
 EXPECTED_GSIZ   = 900

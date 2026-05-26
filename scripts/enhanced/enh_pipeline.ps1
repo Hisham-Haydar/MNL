@@ -64,8 +64,20 @@ $EM_COMBINED = "$SCEN_DIR\combined_draws_em.parquet"
 $GSUR_FILE = "$PROJ_ROOT\Data\external\FR_gsur_ruro.parquet"
 $MNL_BASE = "$PROC_DIR\fr_${YEAR}_RURO_mnl"
 
+# Resolve outputs root from ~/.mnl/config.yaml
+$_mnlConfig = Join-Path $env:USERPROFILE ".mnl\config.yaml"
+$_storageRoot = ""; $OUTPUTS_ROOT = ""
+if (Test-Path $_mnlConfig) {
+    Get-Content $_mnlConfig | ForEach-Object {
+        if ($_ -match '^\s*storage_root\s*:\s*(.+)$') { $_storageRoot = $Matches[1].Trim().Replace('/', '\') }
+        if ($_ -match '^\s*outputs_root\s*:\s*(.+)$') { $OUTPUTS_ROOT = $Matches[1].Trim().Replace('/', '\') }
+    }
+}
+if (-not $OUTPUTS_ROOT -and $_storageRoot) { $OUTPUTS_ROOT = Join-Path $_storageRoot "outputs" }
+if (-not $OUTPUTS_ROOT) { Write-Error "Cannot resolve outputs_root. Set outputs_root or storage_root in $_mnlConfig"; exit 1 }
+
 # Log setup
-$LOG_DIR = "$PROJ_ROOT\outputs\logs"
+$LOG_DIR = "$OUTPUTS_ROOT\logs"
 $TIMESTAMP = Get-Date -Format "yyyyMMdd_HHmmss"
 $LOG_FILE = "$LOG_DIR\enh_pipeline_${COUNTRY}_${YEAR}_${TIMESTAMP}.txt"
 

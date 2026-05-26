@@ -54,17 +54,29 @@ $EM_COMBINED = "$SCEN\combined_draws_em.parquet"
 $MNL_BASE = "$PROC\fr_${YEAR}_RURO_mnl"
 $MNL_FILE = "$MNL_BASE.parquet"
 
+# Resolve outputs root from ~/.mnl/config.yaml
+$_mnlConfig = Join-Path $env:USERPROFILE ".mnl\config.yaml"
+$_storageRoot = ""; $OUTPUTS_ROOT = ""
+if (Test-Path $_mnlConfig) {
+    Get-Content $_mnlConfig | ForEach-Object {
+        if ($_ -match '^\s*storage_root\s*:\s*(.+)$') { $_storageRoot = $Matches[1].Trim().Replace('/', '\') }
+        if ($_ -match '^\s*outputs_root\s*:\s*(.+)$') { $OUTPUTS_ROOT = $Matches[1].Trim().Replace('/', '\') }
+    }
+}
+if (-not $OUTPUTS_ROOT -and $_storageRoot) { $OUTPUTS_ROOT = Join-Path $_storageRoot "outputs" }
+if (-not $OUTPUTS_ROOT) { Write-Error "Cannot resolve outputs_root. Set outputs_root or storage_root in $_mnlConfig"; exit 1 }
+
 # Results output directory
-$RESULTS_DIR = "$PROJ_ROOT\outputs\estimates\fr\$YEAR"
+$RESULTS_DIR = "$OUTPUTS_ROOT\estimates\fr\$YEAR"
 $EST_FILE = "$RESULTS_DIR\fr_${YEAR}_joint.json"
-$POST_EST_DIR = "$PROJ_ROOT\outputs\post_estimation\fr\$YEAR"
+$POST_EST_DIR = "$OUTPUTS_ROOT\post_estimation\fr\$YEAR"
 
 # Initial parameter file (optional - set to $null to use defaults)
 # Using previous estimation results to speed up convergence
-$INIT_PARAMS_JOINT = "$PROJ_ROOT\outputs\estimates\fr\2016\fr_2016_joint.json"
+$INIT_PARAMS_JOINT = "$OUTPUTS_ROOT\estimates\fr\2016\fr_2016_joint.json"
 
 # Log file
-$LOG_DIR = "$PROJ_ROOT\outputs\logs"
+$LOG_DIR = "$OUTPUTS_ROOT\logs"
 $TIMESTAMP = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $LOG_FILE = "$LOG_DIR\fr_${YEAR}_joint_only_$TIMESTAMP.md"
 

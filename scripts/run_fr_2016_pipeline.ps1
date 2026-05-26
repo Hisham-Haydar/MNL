@@ -51,8 +51,20 @@ $EM_COMBINED = "$SCEN\combined_draws_em.parquet"
 $MNL_BASE = "$PROC\fr_${YEAR}_RURO_mnl"
 $MNL_FILE = "$MNL_BASE.parquet"
 
+# Resolve outputs root from ~/.mnl/config.yaml
+$_mnlConfig = Join-Path $env:USERPROFILE ".mnl\config.yaml"
+$_storageRoot = ""; $OUTPUTS_ROOT = ""
+if (Test-Path $_mnlConfig) {
+    Get-Content $_mnlConfig | ForEach-Object {
+        if ($_ -match '^\s*storage_root\s*:\s*(.+)$') { $_storageRoot = $Matches[1].Trim().Replace('/', '\') }
+        if ($_ -match '^\s*outputs_root\s*:\s*(.+)$') { $OUTPUTS_ROOT = $Matches[1].Trim().Replace('/', '\') }
+    }
+}
+if (-not $OUTPUTS_ROOT -and $_storageRoot) { $OUTPUTS_ROOT = Join-Path $_storageRoot "outputs" }
+if (-not $OUTPUTS_ROOT) { Write-Error "Cannot resolve outputs_root. Set outputs_root or storage_root in $_mnlConfig"; exit 1 }
+
 # Results output directory
-$RESULTS_DIR = "$PROJ_ROOT\outputs\estimates\fr\$YEAR"
+$RESULTS_DIR = "$OUTPUTS_ROOT\estimates\fr\$YEAR"
 
 # Initial parameter files (optional - set to $null to use defaults)
 # These CSV files should have columns: parameter, value
@@ -62,7 +74,7 @@ $INIT_PARAMS_COU = $null  # Couples (set path or $null for defaults)
 $INIT_PARAMS_JOINT = $null  # Joint estimation (set path or $null for defaults)
 
 # Log file for pipeline output
-$LOG_DIR = "$PROJ_ROOT\outputs\logs"
+$LOG_DIR = "$OUTPUTS_ROOT\logs"
 $TIMESTAMP = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $LOG_FILE = "$LOG_DIR\fr_${YEAR}_pipeline_$TIMESTAMP.md"
 

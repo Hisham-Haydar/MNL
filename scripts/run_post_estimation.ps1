@@ -19,8 +19,21 @@
 $YEAR = 2016
 $PROJ_ROOT = "U:\Desktop\Nizam_Hisham\MNL"
 $MNL_FILE = "U:\EUROMOD-STORAGE\Data\processed\fr\$YEAR\fr_${YEAR}_RURO_mnl.parquet"
-$RESULTS_DIR = "$PROJ_ROOT\outputs\estimates\fr\$YEAR"
-$OUTPUT_DIR = "$PROJ_ROOT\outputs\post_estimation\fr\$YEAR"
+
+# Resolve outputs root from ~/.mnl/config.yaml
+$_mnlConfig = Join-Path $env:USERPROFILE ".mnl\config.yaml"
+$_storageRoot = ""; $OUTPUTS_ROOT = ""
+if (Test-Path $_mnlConfig) {
+    Get-Content $_mnlConfig | ForEach-Object {
+        if ($_ -match '^\s*storage_root\s*:\s*(.+)$') { $_storageRoot = $Matches[1].Trim().Replace('/', '\') }
+        if ($_ -match '^\s*outputs_root\s*:\s*(.+)$') { $OUTPUTS_ROOT = $Matches[1].Trim().Replace('/', '\') }
+    }
+}
+if (-not $OUTPUTS_ROOT -and $_storageRoot) { $OUTPUTS_ROOT = Join-Path $_storageRoot "outputs" }
+if (-not $OUTPUTS_ROOT) { Write-Error "Cannot resolve outputs_root. Set outputs_root or storage_root in $_mnlConfig"; exit 1 }
+
+$RESULTS_DIR = "$OUTPUTS_ROOT\estimates\fr\$YEAR"
+$OUTPUT_DIR = "$OUTPUTS_ROOT\post_estimation\fr\$YEAR"
 
 # Python executable (use venv)
 $PYTHON = "python"

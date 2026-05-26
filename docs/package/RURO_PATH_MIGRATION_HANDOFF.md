@@ -90,6 +90,11 @@ Both copies of `path_helpers.py` are identical and updated:
 - `scripts/path_helpers.py`
 - `scripts/enhanced/path_helpers.py`
 
+**Note:** `outputs_root()` and `reports_root()` now honour `~/.mnl/config.yaml` keys
+(`outputs_root:`, `reports_root:`) and env vars (`MNL_OUTPUTS_ROOT`, `MNL_REPORTS_ROOT`)
+before falling back to `storage_root() / "outputs|reports"`. See
+`RURO_OUTPUT_PATH_DESIGN.md` for the full resolution order.
+
 ### The one rule for all scripts and package code
 
 ```python
@@ -147,6 +152,23 @@ Added 2026-05-26 (external data migration):
 |---|---|
 | `m1_config.py` | `external_data_dir`, `cpi_template_path`, `cpi_final_path` now resolve via `external_data_root()` |
 | `m1_isf_check_2018.py` | `EXTERNAL_DIR` now uses `external_data_root()` |
+
+### `scripts/` pipeline runners (PS1) — fixed (2026-05-26 follow-up)
+
+| File | Change |
+|---|---|
+| `run_fr_2016_pipeline.ps1` | `RESULTS_DIR`, `LOG_DIR` now resolved from `~/.mnl/config.yaml` via inline config block |
+| `run_fr_2016_joint_only.ps1` | `RESULTS_DIR`, `EST_FILE`, `POST_EST_DIR`, `INIT_PARAMS_JOINT`, `LOG_DIR` resolved from config |
+| `run_post_estimation.ps1` | `RESULTS_DIR`, `OUTPUT_DIR` resolved from config |
+| `enhanced/run_enhanced_pipeline.ps1` | same pattern as above |
+| `enhanced/enh_pipeline.ps1` | `LOG_DIR` resolved from config |
+| `sync_backup.ps1` | Removed hardcoded `C:\Users\hisham\...` and `\\crc\users\hisham\...` defaults; script now errors if `~/.mnl/config.yaml` does not provide `storage_root` and `backup_root` |
+
+### `scripts/pilot/` — fixed (2026-05-26 follow-up)
+
+| File | Change |
+|---|---|
+| `_run_diagnostic_estimation.py` | `scripts/` added to sys.path; `P3A_RESULTS` now uses `outputs_root()` |
 
 ### `scripts/bpool/` — fixed
 
@@ -214,10 +236,11 @@ main estimation pipeline. Fix when needed:
 - `check_nchildren_simple.py:8` — `Path("Z:/hisham/EUROMOD-STORAGE/...")`
 - `check_preference_diagnostics.py:8` — `Path(r"Z:/hisham/EUROMOD-STORAGE/...")`
 - `check_type_ids.py:7` — `Path(r"Z:/hisham/EUROMOD-STORAGE/...")`
-- `check_nchildren_variation.py:9` — `Path("U:/Desktop/Nizam_Hisham/MNL/outputs/...")`
 
 Fix pattern: replace with `from path_helpers import data_root` and
 `data_root() / "processed" / "fr" / "2016" / ...`.
+
+(`check_nchildren_variation.py` was fixed 2026-05-26: `outputs_root()` used instead of the old hardcoded path.)
 
 ### `scripts/archive/` — frozen, do not modify
 

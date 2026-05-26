@@ -186,9 +186,26 @@ male_ascsON_q99 1/1, boxcox_local 0/0. Z: legacy is fully captured in the archiv
 
 ---
 
-## 9. Pending: replica deletion (awaiting per-target go-ahead)
+## 9. Replica deletion — DONE (2026-05-26)
 
-Nothing on U:, Z:, or the repo working tree has been deleted yet. The exact
-deletion list (`U:\EUROMOD-STORAGE`, `Z:\hisham\EUROMOD-STORAGE`, and the gitignored
-repo `Data\processed\fr` + `Data\pilot`) is presented for sign-off in the session.
-`Data\external`, `Data\README.md`, and `Data\documentation` are kept.
+After sign-off and a per-target re-verification gate (canonical C: copy + `\\crc`
+copy confirmed present with >= file count before each delete), the replicas were
+removed:
+
+| Deleted | Files | Gate |
+|---|---|---|
+| repo `Data\pilot` | 169 | repo 169 = C: 169 = backup 169 |
+| repo `Data\processed` (pooled + flat parquets) | 50 | pooled 23 = C: 23 |
+| `U:\EUROMOD-STORAGE` (whole) | 2861 | C: Data 433 ≥ 161, new_data 104 = 104, legacy archived |
+| `Z:\hisham\EUROMOD-STORAGE` (whole) | 2734 | C: Data 433 ≥ 195, legacy SHA-256-verified |
+
+~32 GB reclaimed. **Kept in repo:** `Data\external` (tracked), `Data\README.md`,
+`Data\documentation`.
+
+### Final state
+
+- Single canonical store: `C:\Users\hisham\MNL\EUROMOD-STORAGE` (local SSD).
+- Backup (data only): `\\crc\users\hisham\MNL_backup\EUROMOD-STORAGE`, refreshed by
+  `scripts/sync_backup.ps1` (run after estimation, or manually).
+- Cold archive of legacy experiment dirs: `\\crc\users\hisham\MNL_backup\_legacy_archive`.
+- No data remains on `U:` or `Z:`; no data remains in the repo working tree.

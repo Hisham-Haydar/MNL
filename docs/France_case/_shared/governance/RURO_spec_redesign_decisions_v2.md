@@ -114,6 +114,22 @@ Notes: the **NC pilot ≈ a B2-flavoured couples-only probe** (product+W1) that 
 
 ---
 
+## D11 — Observed participation definition (chosen-row anchor + welfare margin)
+
+**Decision.** `working == 1` iff `lhw_obs > 0` (equivalently `les ∈ {1,2,3,10}` and `lhw > 0`). The chosen alternative encodes observed `(working, lhw, occ, wage)`; earnings reconstruct deterministically as `lhw × yivwg × (52/12) = yem00`-equivalent, identical to the simulated-draw earnings map.
+
+**Evidence.** The 280 chosen-vs-survey participation "flips" (1.5%) are 100% the EU-SILC reference-period mismatch (`lhw` = reference week; `yem` = prior calendar year): 102 A1 employees (`les = 3`, `lhw > 0`, `yem_obs = 0`, late job start) recovered as workers; 178 A2 non-employed (`les ∈ {5,7}`, `lhw = 0`, residual `yem`) placed at the non-work corner. `les_obs` is preserved in every case. No build defect. Verified read-only across all 6 priced files.
+
+---
+
+## D12 — Welfare object: base employment income (yem00), overtime/bonus excluded
+
+**Decision.** Structural earnings = `lhw × yivwg × (52/12)`, which is `yem00`-equivalent (base pay at the imputed hourly wage). `yemxp` (overtime + bonus + multi-job, per DRD `yem = yem00 + yemxp`) is NOT in the priced consumption; `yivwg` is a base hourly rate by construction. Money-metric well-being is therefore measured on base employment income.
+
+**Consequence.** For the worker tail, `yemxp` reaches €9k-€21k; results must state this boundary explicitly and, at the welfare stage, report robustness to the 102 wage-imputed-earnings households. Defensible: overtime/bonus is not a clean chosen-hours decision.
+
+---
+
 ## Open items to confirm during implementation
 
 1. **Single-year 2016 GSURv2 merge** — run it (the untagged GSURv2 files carry v1 in sidecar) if B0 single-year-GSURv2 is wanted; else B0 starts directly on P3a-GSURv2 and B1 collapses into B0.

@@ -444,6 +444,7 @@ class PrecomputedDataSingles:
     working_pt1: np.ndarray  # Part-time 1 indicator (~20h focal)
     working_pt2: np.ndarray  # Part-time 2 indicator (~30h focal)
     working_ft: np.ndarray   # Full-time indicator (~40h focal)
+    working_lh: np.ndarray   # Long-hours indicator (hours in [44.5,70]); F35 ref carries no flag
     gsur: np.ndarray         # Group-specific unemployment rate (0 if missing)
       # NEW: Interaction variables for hours opportunity
     female: np.ndarray       # 1 if female, 0 if male
@@ -533,11 +534,13 @@ class PrecomputedDataCouples:
     working_pt1_male: np.ndarray
     working_pt2_male: np.ndarray
     working_ft_male: np.ndarray
+    working_lh_male: np.ndarray   # Long-hours indicator (hours in [44.5,70]); F35 ref carries no flag
     gsur_male: np.ndarray    # Female hours opportunity
     working_female: np.ndarray
     working_pt1_female: np.ndarray
     working_pt2_female: np.ndarray
     working_ft_female: np.ndarray
+    working_lh_female: np.ndarray  # Long-hours indicator (hours in [44.5,70]); F35 ref carries no flag
     gsur_female: np.ndarray    # NEW: Interaction variables for hours opportunity (couples)
     female_male: np.ndarray   # Always 0 for male partner
     female_female: np.ndarray # Always 1 for female partner
@@ -690,7 +693,21 @@ def precompute_data_singles(
     # Focal hours peaks for RURO opportunity draws (narrow bands around typical schedules)
     working_pt1 = ((hours >= 18.5) & (hours <= 21.5)).astype(float)  # ~20-21h part-time
     working_pt2 = ((hours >= 29.5) & (hours <= 30.5)).astype(float)  # ~30h part-time
-    working_ft = ((hours >= 37.5) & (hours <= 40.5)).astype(float)   # ~40h full-time    # GSUR (check both column names for backwards compatibility)
+    working_ft = ((hours >= 37.5) & (hours <= 40.5)).astype(float)   # ~40h full-time
+    # Long-hours flag (spec beta_h_lh). MUST come from the data column, which the bpool
+    # builders define as (hours in [44.5,70]) AND working==1 (build_bpool_singles.py:219,
+    # build_bpool_couples.py:304). We do NOT re-derive here: a 2-condition fallback would
+    # silently drop the working==1 gate and mis-flag non-working long-hours rows. Fail loud
+    # if the column is absent so the contract gap surfaces rather than corrupts estimation.
+    if "working_lh" in df.columns:
+        working_lh = df["working_lh"].fillna(0.0).astype(float).values
+    else:
+        raise ValueError(
+            "working_lh column absent from singles data. The spec references beta_h_lh "
+            "(working_lh = 1[hours in [44.5,70]] AND working==1). Build it upstream "
+            "(build_bpool_*/harmoniser); this loader will not re-derive it."
+        )
+    # GSUR (check both column names for backwards compatibility)
     if "gsur" in df.columns:
         gsur = df["gsur"].fillna(0.0).values
     elif "u_rate" in df.columns:
@@ -867,6 +884,7 @@ def precompute_data_singles(
         working_pt1=working_pt1,
         working_pt2=working_pt2,
         working_ft=working_ft,
+        working_lh=working_lh,
         gsur=gsur,        female=female,
         in_couple=in_couple,
         drgn1=drgn1,
@@ -1024,6 +1042,14 @@ def precompute_data_couples(
     working_pt1_male = ((hours_male >= 18.5) & (hours_male <= 21.5)).astype(float)  # ~20-21h part-time
     working_pt2_male = ((hours_male >= 29.5) & (hours_male <= 30.5)).astype(float)  # ~30h part-time
     working_ft_male = ((hours_male >= 37.5) & (hours_male <= 40.5)).astype(float)   # ~40h full-time
+    if "working_lh_male" in df.columns:
+        working_lh_male = df["working_lh_male"].fillna(0.0).astype(float).values
+    else:
+        raise ValueError(
+            "working_lh_male column absent from couples data. Expected "
+            "1[hours_male in [44.5,70]] AND working_male==1 (build_bpool_couples.py:304). "
+            "Build it upstream; this loader will not re-derive it."
+        )
 
     if "gsur_male" in df.columns:
         gsur_male = df["gsur_male"].fillna(0.0).values
@@ -1040,6 +1066,14 @@ def precompute_data_couples(
     working_pt1_female = ((hours_female >= 18.5) & (hours_female <= 21.5)).astype(float)  # ~20-21h part-time
     working_pt2_female = ((hours_female >= 29.5) & (hours_female <= 30.5)).astype(float)  # ~30h part-time
     working_ft_female = ((hours_female >= 37.5) & (hours_female <= 40.5)).astype(float)   # ~40h full-time
+    if "working_lh_female" in df.columns:
+        working_lh_female = df["working_lh_female"].fillna(0.0).astype(float).values
+    else:
+        raise ValueError(
+            "working_lh_female column absent from couples data. Expected "
+            "1[hours_female in [44.5,70]] AND working_female==1 (build_bpool_couples.py:308). "
+            "Build it upstream; this loader will not re-derive it."
+        )
 
     if "gsur_female" in df.columns:
         gsur_female = df["gsur_female"].fillna(0.0).values
@@ -1253,11 +1287,13 @@ def precompute_data_couples(
         working_pt1_male=working_pt1_male,
         working_pt2_male=working_pt2_male,
         working_ft_male=working_ft_male,
+        working_lh_male=working_lh_male,
         gsur_male=gsur_male,
         working_female=working_female,
         working_pt1_female=working_pt1_female,
         working_pt2_female=working_pt2_female,
         working_ft_female=working_ft_female,
+        working_lh_female=working_lh_female,
         gsur_female=gsur_female,
         female_male=female_male,
         female_female=female_female,        in_couple_male=in_couple_male,

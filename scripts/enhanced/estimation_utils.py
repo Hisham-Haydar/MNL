@@ -460,6 +460,13 @@ class PrecomputedDataSingles:
     reg7: np.ndarray         # Region 7 dummy
     reg8: np.ndarray         # Region 8 dummy
 
+    # Household access shifters: urbanisation (D5; rural drgru = reference) + year indicators
+    drgur: np.ndarray        # Urban (db100==1)
+    drgmd: np.ndarray        # Middle density (db100==2)
+    drgru: np.ndarray        # Rural (db100==3) = reference
+    year_2015_indicator: np.ndarray
+    year_2017_indicator: np.ndarray
+
     # Wage opportunity (if vw or loc_empirical)
     log_wage: Optional[np.ndarray]  # log(wage) for workers, 0 for non-workers
     pexp_years: Optional[np.ndarray]  # Potential experience in years
@@ -557,6 +564,13 @@ class PrecomputedDataCouples:
     reg6: np.ndarray         # Region 6 dummy
     reg7: np.ndarray         # Region 7 dummy
     reg8: np.ndarray         # Region 8 dummy
+
+    # Household access shifters: urbanisation (D5; rural drgru = reference) + year indicators
+    drgur: np.ndarray        # Urban (db100==1), household-level
+    drgmd: np.ndarray        # Middle density (db100==2), household-level
+    drgru: np.ndarray        # Rural (db100==3) = reference, household-level
+    year_2015_indicator: np.ndarray
+    year_2017_indicator: np.ndarray
 
     # Male wage opportunity (if vw or loc_empirical)
     log_wage_male: Optional[np.ndarray]
@@ -786,6 +800,15 @@ def precompute_data_singles(
     else:
         reg2 = reg3 = reg4 = reg5 = reg6 = reg7 = reg8 = np.zeros(n_obs)
 
+    # Household access shifters: urbanisation (D5) + year indicators. Carried so the
+    # market-opportunity household block can load beta_E_drgur/drgmd/y2015/y2017.
+    # Mirrors the reg2..8 pattern; default 0.0 if absent (legacy parquets).
+    drgur = df.get("drgur", pd.Series(0.0, index=df.index)).fillna(0.0).values
+    drgmd = df.get("drgmd", pd.Series(0.0, index=df.index)).fillna(0.0).values
+    drgru = df.get("drgru", pd.Series(0.0, index=df.index)).fillna(0.0).values
+    year_2015_indicator = df.get("year_2015_indicator", pd.Series(0.0, index=df.index)).fillna(0.0).values
+    year_2017_indicator = df.get("year_2017_indicator", pd.Series(0.0, index=df.index)).fillna(0.0).values
+
     # Group structure: for pooled multi-year data group by (idhh, year_tag) so each
     # household-year is one independent choice situation (100 alternatives, 1 chosen).
     # For single-year data year_tag is constant so this is equivalent to groupby(idhh).
@@ -895,6 +918,11 @@ def precompute_data_singles(
         reg6=reg6,
         reg7=reg7,
         reg8=reg8,
+        drgur=drgur,
+        drgmd=drgmd,
+        drgru=drgru,
+        year_2015_indicator=year_2015_indicator,
+        year_2017_indicator=year_2017_indicator,
         log_wage=log_wage,
         pexp_years=pexp_years,
         pexp_years2=pexp_years2,
@@ -1183,6 +1211,15 @@ def precompute_data_couples(
             "Repair the couples split or add drgn1 to the input data before estimation."
         )
 
+    # Household access shifters: urbanisation (D5) + year indicators. Carried so the
+    # market-opportunity household block can load beta_E_drgur/drgmd/y2015/y2017.
+    # Mirrors the reg2..8 pattern; default 0.0 if absent (legacy parquets).
+    drgur = df.get("drgur", pd.Series(0.0, index=df.index)).fillna(0.0).values
+    drgmd = df.get("drgmd", pd.Series(0.0, index=df.index)).fillna(0.0).values
+    drgru = df.get("drgru", pd.Series(0.0, index=df.index)).fillna(0.0).values
+    year_2015_indicator = df.get("year_2015_indicator", pd.Series(0.0, index=df.index)).fillna(0.0).values
+    year_2017_indicator = df.get("year_2017_indicator", pd.Series(0.0, index=df.index)).fillna(0.0).values
+
     # Group structure: for pooled multi-year data group by (idhh, year_tag) so each
     # household-year is one independent choice situation (100 alternatives, 1 chosen).
     # For single-year data year_tag is constant so this is equivalent to groupby(idhh).
@@ -1307,6 +1344,11 @@ def precompute_data_couples(
         reg6=reg6,
         reg7=reg7,
         reg8=reg8,
+        drgur=drgur,
+        drgmd=drgmd,
+        drgru=drgru,
+        year_2015_indicator=year_2015_indicator,
+        year_2017_indicator=year_2017_indicator,
         log_wage_male=log_wage_male,
         pexp_years_male=pexp_years_male,
         pexp_years2_male=pexp_years2_male,

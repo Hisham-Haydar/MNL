@@ -236,6 +236,28 @@ def couples_dispy_lookup() -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
+# Urbanisation lookup (household-level; carried from priced files — d1w1 dropped it)
+# ---------------------------------------------------------------------------
+def urbanisation_lookup(mode: str) -> pd.DataFrame:
+    """
+    (stacked_hh_uid, data_year) -> drgur/drgmd/drgru, from the priced long files.
+    Household-constant (verified at source); take one row per (uid, data_year).
+    drgur=urban (db100==1), drgmd=middle (db100==2), drgru=rural (db100==3);
+    mutually exclusive, sum to 1. Rural is the reference category in the spec.
+    """
+    parts = []
+    for y in _YEARS:
+        pr = pd.read_parquet(
+            _BP / f"fr_p3a_bpool_priced__{y}__{mode}.parquet",
+            columns=["stacked_hh_uid", "drgur", "drgmd", "drgru"],
+        )
+        pr = pr.drop_duplicates("stacked_hh_uid")
+        pr["data_year"] = y
+        parts.append(pr)
+    return pd.concat(parts, ignore_index=True)
+
+
+# ---------------------------------------------------------------------------
 # Derivations
 # ---------------------------------------------------------------------------
 def add_region_dummies(df: pd.DataFrame) -> pd.DataFrame:
@@ -281,6 +303,9 @@ def build_singles() -> pd.DataFrame:
     df["consumption"] = df["ils_dispy_real"]   # estimation consumption = priced real disp income
     df = add_region_dummies(df)
     df = add_loc4_onehots(df, "singles")
+    # Urbanisation (household access increment, D5): drgur/drgmd/drgru, rural=reference
+    urb = urbanisation_lookup("singles")
+    df = df.merge(urb, on=["stacked_hh_uid", "data_year"], how="left")
     # New age-banded per-parent child counts (additive; existing n_children kept as-is)
     bands = child_band_columns("singles")
     df = df.merge(bands, on=["stacked_hh_uid", "data_year"], how="left")
@@ -301,6 +326,9 @@ def build_couples() -> pd.DataFrame:
     df["consumption"] = df["ils_dispy_real"]   # joint household real disposable income
     df = add_region_dummies(df)
     df = add_loc4_onehots(df, "couples")
+    # Urbanisation (household access increment, D5): drgur/drgmd/drgru, rural=reference
+    urb = urbanisation_lookup("couples")
+    df = df.merge(urb, on=["stacked_hh_uid", "data_year"], how="left")
     # New age-banded per-parent child counts, suffixed _male/_female (additive)
     bands = child_band_columns("couples")
     df = df.merge(bands, on=["stacked_hh_uid", "data_year"], how="left")

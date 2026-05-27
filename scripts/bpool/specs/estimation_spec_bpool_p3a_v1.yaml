@@ -10,7 +10,9 @@
 #   Hours-opportunity flags: working_pt1, working_pt2, working_ft, working_lh.
 #   F35 alternatives enter only via beta_E (the intercept).
 #
-# Parameter count: 56 (55 P3a pooled + beta_h_lh).
+# Parameter count: 58 (55 P3a pooled + beta_h_lh + beta_E_drgur + beta_E_drgmd).
+#   Urbanisation access increment (D5): drgur (urban) + drgmd (middle) into the
+#   market-opportunity block; RURAL (drgru) is the dropped reference. Access-only.
 #
 # Data input: U:/EUROMOD-STORAGE/new_data/fr_p3a_bpool_d1w1__singles.parquet
 #             U:/EUROMOD-STORAGE/new_data/fr_p3a_bpool_d1w1__couples.parquet
@@ -24,6 +26,9 @@
 #   3. hours_opportunity.shifters: added beta_h_lh entry (after beta_h_ft)
 #   4. initial_values: added beta_h_lh: 0.0
 #   5. optimization.bounds: added beta_h_lh: [-10.0, 10.0]
+#   6. market_opportunity.shifters: added drgur->beta_E_drgur and drgmd->beta_E_drgmd
+#      (urbanisation access increment, D5; rural=drgru is the dropped reference),
+#      interaction:["working"], applies_to:"household". +initial_values 0.0, bounds [-10,10].
 #   Everything else byte-identical to P3a pooled.
 #
 # Reference docs:
@@ -34,7 +39,7 @@
 
 specification:
   name: "bpool_p3a_v1"
-  description: "B-pool P3a v1: P3a pooled specification on B-pool D1+W1 draws. Adds beta_h_lh (long-hours increment, LH=[44.5,70]) to the hours-opportunity block. F35=[33.5,36.5) remains the reference category with no flag. Hours flags: pt1, pt2, ft, lh. 56 free parameters = 55 P3a pooled + beta_h_lh. Data: bpool_d1w1_gsurv2_opportunity_year_aligned draws."
+  description: "B-pool P3a v1: P3a pooled specification on B-pool D1+W1 draws. Adds beta_h_lh (long-hours increment, LH=[44.5,70]) to the hours-opportunity block. F35=[33.5,36.5) remains the reference category with no flag. Hours flags: pt1, pt2, ft, lh. Adds urbanisation access increment (D5): beta_E_drgur (urban) + beta_E_drgmd (middle) in the market-opportunity block, RURAL (drgru) = dropped reference, access-only. 58 free parameters = 55 P3a pooled + beta_h_lh + beta_E_drgur + beta_E_drgmd. Data: bpool_d1w1_gsurv2_opportunity_year_aligned draws."
   wage_spec: "vw"
   model_family: "regular"
 
@@ -140,6 +145,17 @@ market_opportunity:
       coefficient: "beta_E_y2017"
       interaction: ["working"]
       applies_to: "household"
+    # Urbanisation (D5): access-only increment. drgur=urban (db100==1),
+    # drgmd=middle (db100==2); RURAL (drgru, db100==3) is the dropped reference.
+    # Interpretation: urban / middle access RELATIVE TO rural. +2 df.
+    - variable: "drgur"
+      coefficient: "beta_E_drgur"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "drgmd"
+      coefficient: "beta_E_drgmd"
+      interaction: ["working"]
+      applies_to: "household"
 
 occupation_opportunity:
   variable: "loc4"
@@ -198,7 +214,7 @@ couples:
   leisure_interaction:
     coefficient: "beta_ll"
 
-# 56 free parameters:
+# 58 free parameters (was 56; +2 urbanisation access increment, D5):
 # Singles leisure: beta_l0_sm, beta_l_age_sm, beta_l_age2_sm, beta_c_sm, theta_l_sm  [5]
 #                  beta_l0_sf, beta_l_age_sf, beta_l_age2_sf, beta_l_nkids_sf, beta_c_sf, theta_l_sf  [6]
 #                  theta_c_singles  [1]
@@ -206,11 +222,15 @@ couples:
 #                  beta_l0_f, beta_l_age_f, beta_l_age2_f, beta_l_nkids_f, theta_l_f  [5]
 #                  beta_c  [1]  (theta_c FIXED at 0.0)
 # Hours opp:  beta_E, beta_h_pt1, beta_h_pt2, beta_h_ft, beta_h_lh  [5]
-# Market opp: beta_E_gsur, beta_E_drgn2..8, beta_E_y2015, beta_E_y2017  [10]
+# Market opp: beta_E_gsur, beta_E_drgn2..8, beta_E_y2015, beta_E_y2017,
+#             beta_E_drgur, beta_E_drgmd  [12]   <- +2 urbanisation (rural=reference)
 # Occ opp:    beta_occ_{2,3,4}_{sm,sf,cm,cf}  [12]
 # Wage:       beta_w0, beta_w_educL, beta_w_educH, beta_w_pexp, beta_w_pexp2, sigma  [6]
 # Couples:    beta_ll  [1]
-# TOTAL: 5+6+1+4+5+1+5+10+12+6+1 = 56
+# TOTAL: 5+6+1+4+5+1+5+12+12+6+1 = 58
+# Urbanisation: drgur (urban, db100==1) + drgmd (middle, db100==2); RURAL (drgru,
+# db100==3) is the dropped reference. Access-only (market-opp / offer margin), one
+# increment, per RURO_spec_redesign_decisions_v2.md §D5 / §D10 guardrails.
 
 initial_values:
   beta_l0_sm: 1.0
@@ -258,6 +278,9 @@ initial_values:
   beta_E_drgn8:  0.0
   beta_E_y2015:  0.0
   beta_E_y2017:  0.0
+
+  beta_E_drgur:  0.0   # NEW (D5): urban access vs rural (reference)
+  beta_E_drgmd:  0.0   # NEW (D5): middle-density access vs rural (reference)
 
   beta_w0:       2.0
   beta_w_educL: -0.1
@@ -340,6 +363,9 @@ optimization:
     beta_E_drgn8:  [-10.0, 10.0]
     beta_E_y2015:  [-5.0, 5.0]
     beta_E_y2017:  [-5.0, 5.0]
+
+    beta_E_drgur:  [-10.0, 10.0]   # NEW (D5)
+    beta_E_drgmd:  [-10.0, 10.0]   # NEW (D5)
 
     beta_occ_2_sm: [-10.0, 10.0]
     beta_occ_3_sm: [-10.0, 10.0]

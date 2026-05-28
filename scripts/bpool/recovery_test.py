@@ -28,6 +28,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Optional
 
 # Parallelism for ONE estimation: the LL/gradient is a sum over independent households,
 # which the engine vectorizes and (where numba is present) runs group-parallel via prange.
@@ -168,12 +169,21 @@ def numerical_hessian(theta, grad_func, eps=1e-5, workers=1) -> np.ndarray:
 # ----------------------------------------------------------------------------
 # Mode dispatch — country/year/mode agnostic data loading
 # ----------------------------------------------------------------------------
-def load_slice(country: str, mode: str, years: list[int], n_hh: int, engine_ready_stem: str):
-    """Load an engine-ready parquet slice. Stem is parameterized; country/year via columns."""
+def load_slice(country: str, mode: str, years: list[int], n_hh: int, engine_ready_stem: str,
+               sex: Optional[str] = None):
+    """Load an engine-ready parquet slice. Stem is parameterized; country/year via columns.
+
+    For mode=singles, `sex` ('male'|'female'|None) filters by the `dgn` column BEFORE the
+    HH sampling so n_hh counts unique HH within the requested sex. Couples ignore `sex`.
+    """
     path = bpool_dir() / f"{engine_ready_stem}__{mode}.parquet"
     df = pd.read_parquet(path)
     if years:
         df = df[df["data_year"].isin(years)].copy()
+    if mode == "singles" and sex is not None:
+        # dgn: 1.0 = male, 0.0 = female (project convention)
+        flag = 1.0 if sex == "male" else 0.0
+        df = df[df["dgn"] == flag].copy()
     draw_col = "draw" if mode == "singles" else "draw_joint"
     uids = pd.Series(df["stacked_hh_uid"].unique())
     if n_hh and n_hh < len(uids):
@@ -184,9 +194,14 @@ def load_slice(country: str, mode: str, years: list[int], n_hh: int, engine_read
     return sl, meta, draw_col
 
 
-def precompute(mode, sl, meta):
+def precompute(mode, sl, meta, sex: Optional[str] = None):
     if mode == "singles":
-        return eu.precompute_data_singles(sl, meta, is_male=True, include_wage_vars=True, include_loc_vars=True)
+        # `is_male` drives the gender_suffix the engine uses to read _sm / _sf params,
+        # so it MUST match the sex of the slice (or the wrong family is exercised).
+        # Default to male for backward-compat when sex is unspecified.
+        is_male = True if sex is None else (sex == "male")
+        return eu.precompute_data_singles(sl, meta, is_male=is_male,
+                                          include_wage_vars=True, include_loc_vars=True)
     return eu.precompute_data_couples(sl, meta, include_wage_vars=True, include_loc_vars=True)
 
 
@@ -206,6 +221,11 @@ def main():
                     help="stem of the engine-ready parquets ({stem}__{mode}.parquet, {stem}__mnlmeta.json)")
     ap.add_argument("--country", default="fr")
     ap.add_argument("--mode", default="couples", choices=["singles", "couples"])
+    ap.add_argument("--sex", default=None, choices=[None, "male", "female"],
+                    help="singles mode only: filter to one sex of the singles parquet "
+                         "(dgn==1 / dgn==0). REQUIRED for a meaningful singles recovery "
+                         "test — without it, all rows are treated as `is_male=True` "
+                         "regardless of actual sex, mixing the _sm and _sf families.")
     ap.add_argument("--years", default="2016", help="comma-separated, or 'all'")
     ap.add_argument("--n-hh", type=int, default=300)
     ap.add_argument("--seed", type=int, default=20260527)
@@ -254,8 +274,9 @@ def main():
           f"country={args.country} years={years or 'all'} n_hh={args.n_hh}")
 
     if not args.run:
+        sex_part = f' --sex {args.sex}' if args.sex else ''
         cmd = (f'& "U:\\Desktop\\Nizam_Hisham\\MNL\\.venv\\Scripts\\python.exe" -u '
-               f'"{Path(__file__)}" --run --mode {args.mode} --years {args.years} '
+               f'"{Path(__file__)}" --run --mode {args.mode}{sex_part} --years {args.years} '
                f'--n-hh {args.n_hh} --engine-ready-stem {args.engine_ready_stem}')
         print("\nTo run the recovery test in your terminal (live iterations):\n")
         print(cmd + "\n")
@@ -278,9 +299,12 @@ def main():
     else:
         print("numba not available — LL/gradient run vectorized single-process (BLAS-threaded)")
 
-    sl, meta, draw_col = load_slice(args.country, args.mode, years, args.n_hh, args.engine_ready_stem)
-    print(f"slice: {args.mode} {years or 'all'}  {sl['stacked_hh_uid'].nunique()} HH  {len(sl):,} rows")
-    data = precompute(args.mode, sl, meta)
+    sl, meta, draw_col = load_slice(args.country, args.mode, years, args.n_hh,
+                                    args.engine_ready_stem, sex=args.sex)
+    sex_tag = f" sex={args.sex}" if args.sex else ""
+    print(f"slice: {args.mode}{sex_tag} {years or 'all'}  "
+          f"{sl['stacked_hh_uid'].nunique()} HH  {len(sl):,} rows")
+    data = precompute(args.mode, sl, meta, sex=args.sex)
     llf, gf = ll_for(args.mode), grad_for(args.mode)
 
     theta_star = generate_theta_star(spec, rng)

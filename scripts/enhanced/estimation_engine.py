@@ -502,9 +502,14 @@ def _compute_utility_singles(
         
         beta_l_coeff = beta_l_coeff + params[coef_name] * var_data
 
-    # Consumption coefficient - gender-specific
+    # Consumption coefficient - gender-specific.
+    # If beta_c is fixed (scale normalisation), use the compile-time constant;
+    # it was removed from all_param_names so it is NOT in `params`.
     beta_c_name = f"{spec.utility_consumption_coef}{gender_suffix}"
-    beta_c = params[beta_c_name]
+    if getattr(spec, "utility_consumption_coef_fixed", None) is not None:
+        beta_c = spec.utility_consumption_coef_fixed
+    else:
+        beta_c = params[beta_c_name]
 
     # Optional consumption-leisure interaction (group-specific if available)
     beta_cl = 0.0
@@ -934,9 +939,15 @@ def _compute_utility_derivatives_singles(
             coef_name = f"{coef_base}{gender_suffix}"
             beta_l_coeff = beta_l_coeff + params[coef_name] * var_data
 
-    # Consumption coefficient - gender-specific
+    # Consumption coefficient - gender-specific.
+    # If beta_c is fixed (scale normalisation), use the compile-time constant;
+    # it is not in `params` and has no gradient column.
     beta_c_name = f"{spec.utility_consumption_coef}{gender_suffix}"
-    beta_c = params[beta_c_name]
+    beta_c_is_fixed = getattr(spec, "utility_consumption_coef_fixed", None) is not None
+    if beta_c_is_fixed:
+        beta_c = spec.utility_consumption_coef_fixed
+    else:
+        beta_c = params[beta_c_name]
 
     # Optional consumption-leisure interaction coefficient
     beta_cl = 0.0
@@ -968,9 +979,11 @@ def _compute_utility_derivatives_singles(
         var_data = getattr(data, var_name)
         dV_dtheta[:, idx] = var_data * bc_l
 
-    # Derivative w.r.t. consumption coefficient - gender-specific
-    idx_beta_c = spec.get_param_index(beta_c_name)
-    dV_dtheta[:, idx_beta_c] = bc_c
+    # Derivative w.r.t. consumption coefficient - gender-specific.
+    # Skipped when beta_c is fixed (no parameter, no gradient column).
+    if not beta_c_is_fixed:
+        idx_beta_c = spec.get_param_index(beta_c_name)
+        dV_dtheta[:, idx_beta_c] = bc_c
 
     # Derivative w.r.t. consumption-leisure interaction coefficient (if present)
     if beta_cl_name is not None:
@@ -1440,8 +1453,13 @@ def _compute_utility_couples(
         else:
             beta_l_coeff_female = beta_l_coeff_female + params[coef_name] * var_data
 
-    # Consumption coefficient (shared)
-    beta_c = params[spec.utility_consumption_coef]
+    # Consumption coefficient (shared).
+    # If beta_c is fixed (scale normalisation), use the compile-time constant;
+    # it was removed from all_param_names so it is NOT in `params`.
+    if getattr(spec, "utility_consumption_coef_fixed", None) is not None:
+        beta_c = spec.utility_consumption_coef_fixed
+    else:
+        beta_c = params[spec.utility_consumption_coef]
 
     # Male and female leisure utility (CONSUMPTION ADDED ONLY ONCE, NOT TWICE!)
     # This matches the R reference code where consumption appears once in total utility
@@ -1877,7 +1895,13 @@ def _compute_utility_derivatives_couples(
         else:
             beta_l_coeff_female = beta_l_coeff_female + params[coef_name] * var_data
 
-    beta_c = params[spec.utility_consumption_coef]
+    # If beta_c is fixed (scale normalisation), use the compile-time constant;
+    # it is not in `params` and has no gradient column.
+    beta_c_is_fixed = getattr(spec, "utility_consumption_coef_fixed", None) is not None
+    if beta_c_is_fixed:
+        beta_c = spec.utility_consumption_coef_fixed
+    else:
+        beta_c = params[spec.utility_consumption_coef]
 
     # Optional consumption-leisure interaction coefficients
     beta_cl_male = 0.0
@@ -1979,9 +2003,11 @@ def _compute_utility_derivatives_couples(
             dV_dtheta[:, idx] = deriv
 
     # Derivative w.r.t. beta_c (consumption coefficient - shared household public good)
-    # FIXED: Consumption appears ONCE in utility (not twice), matching R reference code
-    idx_beta_c = spec.get_param_index(spec.utility_consumption_coef)
-    dV_dtheta[:, idx_beta_c] = bc_c  # Once, not twice!
+    # FIXED: Consumption appears ONCE in utility (not twice), matching R reference code.
+    # Skipped when beta_c is fixed (no parameter, no gradient column).
+    if not beta_c_is_fixed:
+        idx_beta_c = spec.get_param_index(spec.utility_consumption_coef)
+        dV_dtheta[:, idx_beta_c] = bc_c  # Once, not twice!
 
     # Derivatives w.r.t. consumption-leisure interaction coefficients
     if beta_cl_name_m is not None and beta_cl_name_f is not None and beta_cl_name_m == beta_cl_name_f:

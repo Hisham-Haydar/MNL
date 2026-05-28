@@ -135,6 +135,15 @@ class EstimationSpec:
     # YAML key: utility.consumption.couples_fixed_box_cox_exponent
     utility_consumption_theta_couples_fixed: Optional[float] = None
 
+    # Fixed (non-estimated) consumption COEFFICIENT beta_c (scale normalisation).
+    # When set to a float, beta_c is the utility numeraire: it is used as a
+    # compile-time constant in ALL blocks (beta_c_sm, beta_c_sf, couples beta_c)
+    # and is NOT added to all_param_names. Breaks the consumption/leisure scale
+    # ridge (beta_c co-scaling with beta_l0). YAML key:
+    # utility.consumption.fixed_value. Mirrors the couples_fixed_box_cox_exponent
+    # mechanism (compile-time constant, removed from the estimated vector).
+    utility_consumption_coef_fixed: Optional[float] = None
+
     # Occupation choice configuration (NEW)
     occupation_choice: bool = False
     occupation_preferences: List[Dict[str, Any]] = field(default_factory=list)
@@ -507,6 +516,29 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
             utility_consumption_theta_couples_fixed,
         )
 
+    # Fixed (non-estimated) consumption COEFFICIENT beta_c — scale normalisation.
+    # When set, beta_c becomes the utility numeraire: a compile-time constant in
+    # every block; beta_c / beta_c_sm / beta_c_sf are removed from all_param_names.
+    _raw_coef_fixed = consumption_config.get("fixed_value", None)
+    utility_consumption_coef_fixed: Optional[float] = None
+    if _raw_coef_fixed is not None:
+        try:
+            utility_consumption_coef_fixed = float(_raw_coef_fixed)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "utility.consumption.fixed_value must be numeric."
+            ) from exc
+        if pool_consumption_across_groups:
+            raise ValueError(
+                "utility.consumption.fixed_value and "
+                "utility.consumption.pool_across_groups are mutually exclusive."
+            )
+        logger.info(
+            "beta_c FIXED (scale normalisation): consumption coefficient = %g "
+            "(not estimated; beta_c/beta_c_sm/beta_c_sf removed from parameter vector).",
+            utility_consumption_coef_fixed,
+        )
+
     consumption_leisure_interaction_config = utility_config.get("consumption_leisure_interaction", {})
     if isinstance(consumption_leisure_interaction_config, dict):
         utility_consumption_leisure_interaction_coef = consumption_leisure_interaction_config.get("coefficient", None)
@@ -776,6 +808,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
             pool_consumption=pool_consumption_across_groups,
             singles_shared_consumption_theta=utility_consumption_theta_singles_shared,
             couples_fixed_theta=utility_consumption_theta_couples_fixed,
+            consumption_coef_fixed=utility_consumption_coef_fixed,
         )
 
     logger.info(f"Total parameters: {len(all_param_names)}")
@@ -862,6 +895,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         pool_consumption_across_groups=pool_consumption_across_groups,
         utility_consumption_theta_singles_shared=utility_consumption_theta_singles_shared,
         utility_consumption_theta_couples_fixed=utility_consumption_theta_couples_fixed,
+        utility_consumption_coef_fixed=utility_consumption_coef_fixed,
         ac2013_use_log_age=(model_version == "AC2013"),
         ac2013_children_age_groups=(model_version == "AC2013"),
         ac2013_experience_in_wage=(model_version == "AC2013"),
@@ -1284,6 +1318,7 @@ def _build_parameter_list(
     pool_consumption: bool = False,
     singles_shared_consumption_theta: Optional[str] = None,
     couples_fixed_theta: Optional[float] = None,
+    consumption_coef_fixed: Optional[float] = None,
 ) -> List[str]:
     """
     Build ordered list of all parameter names.
@@ -1334,8 +1369,8 @@ def _build_parameter_list(
             continue
         singles_male_params.append(f"{shifter['coefficient']}_sm")
 
-    if not pool_consumption:
-        singles_male_params.append(f"{utility_consumption_coef}_sm")  # beta_c_sm
+    if not pool_consumption and consumption_coef_fixed is None:
+        singles_male_params.append(f"{utility_consumption_coef}_sm")  # beta_c_sm (skipped if fixed)
     if utility_consumption_leisure_interaction_coef:
         singles_male_params.append(f"{utility_consumption_leisure_interaction_coef}_sm")
 
@@ -1357,8 +1392,8 @@ def _build_parameter_list(
     for shifter in utility_leisure_shifters:
         singles_female_params.append(f"{shifter['coefficient']}_sf")
 
-    if not pool_consumption:
-        singles_female_params.append(f"{utility_consumption_coef}_sf")  # beta_c_sf
+    if not pool_consumption and consumption_coef_fixed is None:
+        singles_female_params.append(f"{utility_consumption_coef}_sf")  # beta_c_sf (skipped if fixed)
     if utility_consumption_leisure_interaction_coef:
         singles_female_params.append(f"{utility_consumption_leisure_interaction_coef}_sf")
 
@@ -1411,7 +1446,10 @@ def _build_parameter_list(
     params.extend(couples_female_params)
 
     # COUPLES HOUSEHOLD: Consumption (shared for couples, no suffix)
-    params.append(utility_consumption_coef)  # beta_c
+    # Skip beta_c when consumption_coef_fixed is set — it's the scale-normalisation
+    # numéraire (compile-time constant), not an estimated parameter.
+    if consumption_coef_fixed is None:
+        params.append(utility_consumption_coef)  # beta_c (skipped if fixed)
     # Skip theta_c when couples_fixed_theta is set — it's a compile-time constant,
     # not an estimated parameter.
     if utility_form == "box_cox" and utility_consumption_theta and couples_fixed_theta is None:

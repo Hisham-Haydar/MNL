@@ -289,7 +289,13 @@ def evaluate_constraint_value_numpy(
             theta_c_group,
             required=(spec.utility_form == "box_cox" and theta_c_base is not None),
         )
-    beta_c = _resolve_param_value(params, spec.utility_consumption_coef, theta_c_group, required=True)
+    # beta_c may be fixed (scale-normalisation numeraire) — then it is a compile-time
+    # constant, not in `params`. Mirror the fixed-theta_c handling above.
+    _fixed_beta_c = getattr(spec, "utility_consumption_coef_fixed", None)
+    if _fixed_beta_c is not None:
+        beta_c = float(_fixed_beta_c)
+    else:
+        beta_c = _resolve_param_value(params, spec.utility_consumption_coef, theta_c_group, required=True)
     bc_c = _utility_component_scalar(c, theta_c, spec.utility_form)
     dbc_c = _utility_derivative_scalar(c, theta_c, spec.utility_form)
 
@@ -546,7 +552,13 @@ def evaluate_constraint_value_gamspy(
             theta_c_group,
             required=(spec.utility_form == "box_cox" and theta_c_base is not None),
         )
-    beta_c = _resolve_param_symbol(param_vars, spec.utility_consumption_coef, theta_c_group, required=True)
+    # beta_c may be fixed (scale-normalisation numeraire) — then it is a compile-time
+    # constant, not a GAMSPy variable. Mirror the fixed-theta_c handling above.
+    _fixed_beta_c = getattr(spec, "utility_consumption_coef_fixed", None)
+    if _fixed_beta_c is not None:
+        beta_c = float(_fixed_beta_c)
+    else:
+        beta_c = _resolve_param_symbol(param_vars, spec.utility_consumption_coef, theta_c_group, required=True)
     bc_c = _utility_component_symbol(
         c, theta_c, spec.utility_form, box_cox_transform_fn, gp_log, log_eps
     )

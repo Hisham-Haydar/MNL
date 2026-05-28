@@ -56,6 +56,40 @@ def _prior_from_log_prior(log_prior: pd.Series) -> np.ndarray:
     return np.clip(prior, 1e-16, None)
 
 
+# Squared regressors entered in raw units are badly scaled for the optimizer: their
+# gradient is multiplied by the (large) regressor values, so the coefficient's |g|
+# dominates |g|max and blocks the convergence test even at the optimum (recovery-test
+# diagnosis: beta_w_pexp2 worst, then beta_l_age2_*). Fix: rescale each LINEAR term so its
+# SQUARE is O(1-6) — comparable across regressors. Coefficients reinterpret per the scale.
+#   pexp_years (0-49) -> /20  => pexp_years2 in [0,~6]   (decades was /10 -> still ~24,
+#                                 left pexp2 dominant; /20 standardizes it to age_norm2's scale)
+#   age_norm (+/-24)  -> /10  => age_norm2  in [0,~6.4]
+# Per-pair scale so pexp can be scaled harder than age.
+_SQUARED_PAIRS = [
+    # (linear_base, squared_base, scale)
+    ("pexp_years",         "pexp_years2",         20.0),
+    ("pexp_years_male",    "pexp_years2_male",    20.0),
+    ("pexp_years_female",  "pexp_years2_female",  20.0),
+    ("age_norm",           "age_norm2",           10.0),
+    ("age_norm_male",      "age_norm2_male",      10.0),
+    ("age_norm_female",    "age_norm2_female",    10.0),
+]
+
+
+def _rescale_squared_regressors(df: pd.DataFrame) -> pd.DataFrame:
+    """Rescale linear terms by their per-pair scale and recompute squares, in place.
+    Idempotency guard: only rescale a linear term still in raw-ish units (max|.| > 6)."""
+    for lin, sq, _SCALE in _SQUARED_PAIRS:
+        if lin not in df.columns:
+            continue
+        v = pd.to_numeric(df[lin], errors="coerce").fillna(0.0)
+        if float(v.abs().max()) > 6.0:   # raw units (decade-scaled would be <=~5)
+            df[lin] = v / _SCALE
+        if sq in df.columns:
+            df[sq] = df[lin] ** 2  # recompute square from the (now-decade) linear term
+    return df
+
+
 def harmonise_singles() -> tuple[pd.DataFrame, dict]:
     df = pd.read_parquet(_BP / "fr_p3a_bpool_estimation_ready__singles.parquet")
 
@@ -91,6 +125,8 @@ def harmonise_singles() -> tuple[pd.DataFrame, dict]:
     df["idhh"] = df["stacked_hh_uid"].astype("int64")
     df["year_tag"] = df["data_year"].map(_YEAR_TAG).astype("int64")
     df["cluster_id"] = df["idorighh"]
+
+    df = _rescale_squared_regressors(df)  # wage + leisure conditioning fix (pexp, age)
 
     df = df.sort_values(["idhh", "draw"]).reset_index(drop=True)
 
@@ -142,6 +178,8 @@ def harmonise_couples() -> tuple[pd.DataFrame, dict]:
     # 'is_chosen' or 'chosen'); mirror is_chosen_joint into is_chosen.
     df["is_chosen"] = df["is_chosen_joint"].astype(float)
 
+    df = _rescale_squared_regressors(df)  # wage + leisure conditioning fix (pexp, age)
+
     df = df.sort_values(["idhh", "draw_joint"]).reset_index(drop=True)
 
     scaling = {"c_scale": c_scale, "l_male_scale": l_male_scale,
@@ -177,6 +215,12 @@ def main() -> None:
             "couples": "household joint ils_dispy_real (sum over tax unit)",
         },
         "prior_convention": "prior = clip(exp(clip(log_prior,-700,700)),1e-16,None); engine uses V = ... - log(prior)",
+        "squared_regressor_scaling": "Linear terms rescaled to DECADES (/10) and squares "
+                            "recomputed: pexp_years(2)[_male/_female] and age_norm(2)[_male/_female]. "
+                            "Fixes optimizer conditioning: in raw units pexp_years2 reached ~2400 and "
+                            "age_norm2 ~640, so beta_w_pexp2 / beta_l_age2_* dominated |g|max and blocked "
+                            "the convergence test at the optimum (recovery-test diagnosis). Interpret "
+                            "beta_w_pexp/pexp2 and beta_l_age/age2 as per-decade.",
         "n_draws": {"singles": 101, "couples": 901},
         "normalization": {
             "singles": {"c_scale": scs["c_scale"], "l_scale": scs["l_scale"], "n_chosen": scs["n_chosen"]},

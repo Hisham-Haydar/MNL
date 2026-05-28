@@ -10,7 +10,8 @@
 #   Hours-opportunity flags: working_pt1, working_pt2, working_ft, working_lh.
 #   F35 alternatives enter only via beta_E (the intercept).
 #
-# Parameter count: 58 (55 P3a pooled + beta_h_lh + beta_E_drgur + beta_E_drgmd).
+# Parameter count: 55 (was 58; beta_c/beta_c_sm/beta_c_sf FIXED=1.0, v2 scale
+#   normalisation to break the consumption/leisure scale ridge).
 #   Urbanisation access increment (D5): drgur (urban) + drgmd (middle) into the
 #   market-opportunity block; RURAL (drgru) is the dropped reference. Access-only.
 #
@@ -48,6 +49,11 @@ utility:
 
   consumption:
     coefficient: "beta_c"
+    # SCALE NORMALISATION (v2): beta_c is FIXED to the numeraire value below. It is
+    # NOT estimated — beta_c, beta_c_sm, beta_c_sf are removed from the parameter
+    # vector. This pins the utility scale and breaks the consumption/leisure scale
+    # ridge (beta_c co-scaling with beta_l0) diagnosed in RURO_recovery_test_results_v1.
+    fixed_value: 1.0
     box_cox_exponent: "theta_c"
     singles_box_cox_exponent: "theta_c_singles"
     couples_fixed_box_cox_exponent: 0.0
@@ -214,20 +220,22 @@ couples:
   leisure_interaction:
     coefficient: "beta_ll"
 
-# 58 free parameters (was 56; +2 urbanisation access increment, D5):
-# Singles leisure: beta_l0_sm, beta_l_age_sm, beta_l_age2_sm, beta_c_sm, theta_l_sm  [5]
-#                  beta_l0_sf, beta_l_age_sf, beta_l_age2_sf, beta_l_nkids_sf, beta_c_sf, theta_l_sf  [6]
+# 55 free parameters (was 58; -3 beta_c scale normalisation, v2):
+#   beta_c, beta_c_sm, beta_c_sf are now FIXED to 1.0 (consumption numeraire) to
+#   break the consumption/leisure scale ridge. They are NOT estimated.
+# Singles leisure: beta_l0_sm, beta_l_age_sm, beta_l_age2_sm, theta_l_sm  [4]  (beta_c_sm FIXED)
+#                  beta_l0_sf, beta_l_age_sf, beta_l_age2_sf, beta_l_nkids_sf, theta_l_sf  [5]  (beta_c_sf FIXED)
 #                  theta_c_singles  [1]
 # Couples leisure: beta_l0_m, beta_l_age_m, beta_l_age2_m, theta_l_m  [4]
 #                  beta_l0_f, beta_l_age_f, beta_l_age2_f, beta_l_nkids_f, theta_l_f  [5]
-#                  beta_c  [1]  (theta_c FIXED at 0.0)
+#                  (beta_c FIXED at 1.0; theta_c FIXED at 0.0)
 # Hours opp:  beta_E, beta_h_pt1, beta_h_pt2, beta_h_ft, beta_h_lh  [5]
 # Market opp: beta_E_gsur, beta_E_drgn2..8, beta_E_y2015, beta_E_y2017,
 #             beta_E_drgur, beta_E_drgmd  [12]   <- +2 urbanisation (rural=reference)
 # Occ opp:    beta_occ_{2,3,4}_{sm,sf,cm,cf}  [12]
 # Wage:       beta_w0, beta_w_educL, beta_w_educH, beta_w_pexp, beta_w_pexp2, sigma  [6]
 # Couples:    beta_ll  [1]
-# TOTAL: 5+6+1+4+5+1+5+12+12+6+1 = 58
+# TOTAL: 4+5+1+4+5+5+12+12+6+1 = 55
 # Urbanisation: drgur (urban, db100==1) + drgmd (middle, db100==2); RURAL (drgru,
 # db100==3) is the dropped reference. Access-only (market-opp / offer margin), one
 # increment, per RURO_spec_redesign_decisions_v2.md §D5 / §D10 guardrails.
@@ -236,14 +244,14 @@ initial_values:
   beta_l0_sm: 1.0
   beta_l_age_sm: 0.0
   beta_l_age2_sm: 0.0
-  beta_c_sm: 1.0
+  # beta_c_sm REMOVED — beta_c fixed=1.0 (scale numeraire), not estimated.
   theta_l_sm: -1.0
 
   beta_l0_sf: 1.0
   beta_l_age_sf: 0.0
   beta_l_age2_sf: 0.0
   beta_l_nkids_sf: 0.0
-  beta_c_sf: 1.0
+  # beta_c_sf REMOVED — beta_c fixed=1.0 (scale numeraire), not estimated.
   theta_l_sf: -1.0
 
   theta_c_singles: -1.0
@@ -259,7 +267,7 @@ initial_values:
   beta_l_nkids_f: 0.0
   theta_l_f: -1.0
 
-  beta_c: 1.0
+  # beta_c REMOVED — fixed=1.0 (scale numeraire), not estimated.
   # theta_c is NOT listed — fixed at 0.0 and not estimated.
 
   beta_E:     0.0
@@ -322,9 +330,8 @@ optimization:
     theta_c_singles: [-8.0, 0.95]
     # theta_c NOT listed — fixed at 0.0, not estimated.
 
-    beta_c_sm: [0.05, 50.0]
-    beta_c_sf: [0.05, 50.0]
-    beta_c:    [0.05, 50.0]
+    # beta_c_sm / beta_c_sf / beta_c bounds REMOVED — beta_c fixed=1.0 (scale
+    # numeraire), not estimated. See utility.consumption.fixed_value above.
     beta_l0_sm: [0.05, 50.0]
     beta_l0_sf: [0.05, 50.0]
     beta_l0_m:  [1.0e-6, 50.0]

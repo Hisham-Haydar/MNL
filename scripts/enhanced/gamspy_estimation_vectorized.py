@@ -382,8 +382,18 @@ def _build_singles_ll_vectorized(
         raise NotImplementedError(f"Utility form {spec.utility_form} not implemented in vectorized GAMSPy")
 
     # === Consumption utility ===
-    beta_c_name = get_param_name(spec.utility_consumption_coef, group, param_vars)
-    beta_c = param_vars[beta_c_name]
+    # If beta_c is fixed (scale-normalisation numéraire), it is a compile-time
+    # constant and is NOT in param_vars. Mirror the numpy engine pattern at
+    # estimation_engine.py:506-514 and the expression-constraints handling at
+    # expression_constraints.py:292+. Phase 1 (commit 31eaecc) wired this through
+    # the numpy LL+gradient path and both expression-constraint paths; the GAMSPy
+    # LL builder was missed and is completed here.
+    _fixed_beta_c = getattr(spec, "utility_consumption_coef_fixed", None)
+    if _fixed_beta_c is not None:
+        beta_c = float(_fixed_beta_c)
+    else:
+        beta_c_name = get_param_name(spec.utility_consumption_coef, group, param_vars)
+        beta_c = param_vars[beta_c_name]
 
     if spec.utility_consumption_theta:
         # spec.theta_c_param_name routes singles_{male,female} to the shared
@@ -715,8 +725,17 @@ def _build_couples_ll_vectorized(
         raise NotImplementedError(f"Utility form {spec.utility_form} not implemented in vectorized GAMSPy")
 
     # Consumption utility (household-level)
-    beta_c_name = get_param_name(spec.utility_consumption_coef, "couples_household", param_vars)
-    beta_c = param_vars[beta_c_name]
+    # If beta_c is fixed (scale-normalisation numéraire), it is a compile-time
+    # constant and is NOT in param_vars. Mirror the singles path above and the
+    # numpy engine's couples LL at estimation_engine.py:1462-1473. Phase 1
+    # (commit 31eaecc) wired this through the numpy LL+gradient and expression
+    # constraints; the GAMSPy couples LL builder is completed here.
+    _fixed_beta_c = getattr(spec, "utility_consumption_coef_fixed", None)
+    if _fixed_beta_c is not None:
+        beta_c = float(_fixed_beta_c)
+    else:
+        beta_c_name = get_param_name(spec.utility_consumption_coef, "couples_household", param_vars)
+        beta_c = param_vars[beta_c_name]
 
     _couples_fixed_theta = getattr(spec, "utility_consumption_theta_couples_fixed", None)
     if _couples_fixed_theta is not None:

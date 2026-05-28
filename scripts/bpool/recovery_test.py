@@ -347,6 +347,12 @@ def main():
         # Capture the CONOPT solver log AND the GAMS listing (.lst) to outputs/logs so they
         # are retrievable (write_listing_file=True, report_solution=1 inside the estimator).
         gsolver = solver.split("-")[1]
+        # IMPORTANT: resolve absolute log paths BEFORE ensure_local_workdir() is called.
+        # That function may os.chdir() to a local-C: scratch dir to avoid the UNC-cwd
+        # wedge in GAMSPy's Container() (see gamspy_estimation_vectorized.py:165-189);
+        # after chdir, any relative path would resolve under the new CWD instead of
+        # the repo. bpool_dir() resolves through path_helpers to an absolute path, so
+        # logdir is already absolute here.
         logdir = bpool_dir().parent / "outputs" / "logs"
         logdir.mkdir(parents=True, exist_ok=True)
         stamp = f"recovery_{args.mode}_{args.years}_{gsolver}_{label}"
@@ -354,9 +360,23 @@ def main():
                      "listing_file": str(logdir / f"{stamp}.lst")}
         t0 = time.time()
         if args.mode == "singles":
-            from gamspy_estimation_vectorized import estimate_singles_vectorized_gamspy as est
+            from gamspy_estimation_vectorized import (
+                estimate_singles_vectorized_gamspy as est,
+                ensure_local_workdir,
+            )
         else:
-            from gamspy_estimation_vectorized import estimate_couples_vectorized_gamspy as est
+            from gamspy_estimation_vectorized import (
+                estimate_couples_vectorized_gamspy as est,
+                ensure_local_workdir,
+            )
+        # Fix-to-local-CWD for GAMSPy Container(): see gamspy_estimation_vectorized.py
+        # docstring at ensure_local_workdir(). On a UNC cwd (\\server\share\...) GAMS
+        # silently wedges — process alive, 0 CPU, .lst file 0 bytes — because Container()
+        # refuses to start. Every other GAMSPy entry point in the codebase calls this
+        # (enh_RURO_estimate_FR.py, pilot scripts, archived DCM*). The recovery_test
+        # harness was the only caller that didn't; added 2026-05-28 after a 2-hour
+        # silent wedge on a couples-full CONOPT run launched from \\\\users\\users\\...
+        ensure_local_workdir()
         # CONOPT caps matching the NC pilot's working invocation
         # (_run_diagnostic_estimation_rerun.py): iterlim major-iters, reslim wall-seconds.
         # NOTE: GAMSPy model GENERATION for this vectorized NLP is the binding cost

@@ -229,6 +229,43 @@ def _draw_singles_block(
     obs_row["log_prior"] = 0.0
     obs_row["is_chosen"] = np.int8(1)
 
+    # ------------------------------------------------------------------
+    # Chosen-row band flags: recompute from the chosen row's OWN hours/working
+    # so the chosen row carries the same band+gate as sim_df (line ~219).
+    #
+    # Why this is needed: the upstream pooled parquet has working_ft/pt1/pt2
+    # but does NOT carry working_lh. Without this block, working_lh is absent
+    # on obs_row, becomes NaN on the concat below, and the engine reads it as
+    # 0 on every chosen row — silently zeroing the LH-band indicator for
+    # ~17% of chosen workers and driving beta_h_lh to the lower bound in
+    # estimation. See docs/France_case/P3a/execution_logs/Bpool/
+    # RURO_recovery_test_results_singles_v1.md (LH-sparsity / working_lh
+    # construction-bug diagnosis, 2026-05-28).
+    #
+    # pt1/pt2/ft are recomputed as a GUARD: upstream supplies them, but we
+    # verify they match the same band+gate we use on sim_df. A mismatch would
+    # mean the chosen row carries an upstream definition that diverges from
+    # the simulated-row definition — a silent inconsistency in the regressor.
+    # On mismatch we PREFER the fresh recompute (consistent with sim) and
+    # warn; we never silently keep the divergent upstream value.
+    h = pd.to_numeric(obs_row["hours"], errors="coerce")
+    w = pd.to_numeric(obs_row["working"], errors="coerce")
+    fresh_ft  = ((h >= 36.5) & (h <= 40.5) & (w == 1)).astype(np.float64)
+    fresh_pt1 = ((h >= 17.5) & (h <  21.5) & (w == 1)).astype(np.float64)
+    fresh_pt2 = ((h >= 28.5) & (h <  30.5) & (w == 1)).astype(np.float64)
+    fresh_lh  = ((h >= 44.5) & (h <= 70.0) & (w == 1)).astype(np.float64)
+    for col_name, fresh in (("working_ft", fresh_ft), ("working_pt1", fresh_pt1),
+                            ("working_pt2", fresh_pt2)):
+        if col_name in obs_row.columns:
+            upstream = pd.to_numeric(obs_row[col_name], errors="coerce").fillna(-1.0)
+            diff = int((upstream.values != fresh.values).sum())
+            if diff > 0:
+                print(f"  WARN: upstream {col_name} disagrees with fresh recompute on "
+                      f"{diff}/{len(obs_row)} chosen rows for HH={int(df_hh['stacked_hh_uid'].iloc[0])} "
+                      f"(using fresh recompute).")
+        obs_row[col_name] = fresh
+    obs_row["working_lh"] = fresh_lh
+
     return pd.concat([obs_row, sim_df], ignore_index=True)
 
 

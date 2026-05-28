@@ -318,9 +318,39 @@ def _build_product_block(
     for col in ["working_male", "hours_male", "wage_male", "loc4_male",
                 "working_female", "hours_female", "wage_female", "loc4_female"]:
         chosen[col] = np.array([obs[col]])
-    for col in ["working_ft_male", "working_pt1_male", "working_pt2_male", "working_lh_male",
-                "working_ft_female", "working_pt1_female", "working_pt2_female", "working_lh_female"]:
-        chosen[col] = np.array([obs.get(col, 0.0)])
+
+    # Chosen-row band flags: recompute from the chosen row's OWN hours/working
+    # so the chosen row carries the same band+gate as sim_df (lines ~301-308).
+    #
+    # Why this is needed: the upstream pooled parquet has working_ft/pt1/pt2
+    # (suffixed) but does NOT carry working_lh_male/working_lh_female. The
+    # original code at this point was `chosen[col] = np.array([obs.get(col, 0.0)])`,
+    # which silently defaulted working_lh_* to 0.0 on every chosen couples row
+    # — zeroing the LH-band indicator for ~30% of male and ~13% of female chosen
+    # workers and driving beta_h_lh to the lower bound in estimation. See docs/
+    # France_case/P3a/execution_logs/Bpool/RURO_recovery_test_results_singles_v1.md
+    # (LH-sparsity / working_lh construction-bug diagnosis, 2026-05-28).
+    #
+    # pt1/pt2/ft are recomputed as a GUARD against silent upstream/simulated
+    # divergence (see singles builder for the same logic).
+    for gender, hours_col, work_col in (("male",   "hours_male",   "working_male"),
+                                        ("female", "hours_female", "working_female")):
+        hg = float(obs[hours_col]) if hours_col in obs else 0.0
+        wg = float(obs[work_col])  if work_col  in obs else 0.0
+        ft  = float((hg >= 36.5) and (hg <= 40.5) and (wg == 1.0))
+        pt1 = float((hg >= 17.5) and (hg <  21.5) and (wg == 1.0))
+        pt2 = float((hg >= 28.5) and (hg <  30.5) and (wg == 1.0))
+        lh  = float((hg >= 44.5) and (hg <= 70.0) and (wg == 1.0))
+        for col_name, fresh in ((f"working_ft_{gender}",  ft),
+                                (f"working_pt1_{gender}", pt1),
+                                (f"working_pt2_{gender}", pt2)):
+            if col_name in obs:
+                up = float(obs[col_name])
+                if up != fresh:
+                    print(f"  WARN: upstream {col_name}={up} disagrees with fresh "
+                          f"recompute={fresh} (using fresh).")
+            chosen[col_name] = np.array([fresh])
+        chosen[f"working_lh_{gender}"] = np.array([lh])
 
     # All log_q = 0 on chosen row (IS anchor)
     for col in ["log_q_E_male", "log_q_Occ_male", "log_q_H_male", "log_q_W_male",

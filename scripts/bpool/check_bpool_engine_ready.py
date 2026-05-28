@@ -8,8 +8,13 @@ Read-only. NO estimation (no theta*, no optimizer). Reports PASS/FAIL per check.
 3. c_norm/leisure formulas match Step 1 (recompute -> max diff == 0).
 4. prior/log_prior convention matches the engine IS correction (prior==exp(log_prior);
    chosen-row log_q semantics sane).
-5. All 58 spec variables present (correctly suffixed); param count == 58.
+5. Spec variables present (correctly suffixed); param count matches the spec.
 6. Row counts preserved (singles HH×101, couples HH×901); is_chosen unique per HH.
+7. Band-flag consistency (added 2026-05-28): every working_ft/pt1/pt2/lh flag on
+   every row equals a fresh recompute from that row's own hours+working with the
+   same band+gate the builder applies on simulated rows. Catches the chosen-row
+   working_lh construction bug class (NaN/default-zero) that is invisible to per-row
+   schema checks.
 """
 from __future__ import annotations
 import sys
@@ -109,10 +114,14 @@ def check_4_prior() -> bool:
 
 
 def check_5_spec_vars() -> bool:
-    print("\n--- CHECK 5: 58 spec vars present + param count ---")
+    # Expected count is whatever the spec parses to (drives off the spec, not a magic
+    # number). Phase 1 (commit 31eaecc) reduced 58 -> 55 by FIXING beta_c=1.0.
+    print("\n--- CHECK 5: spec vars present + param count (driven by spec) ---")
     spec = sp.parse_specification(_SPEC)
     n = len(spec.all_param_names)
-    print(f"  param count: {n}  {'OK' if n == 58 else 'FAIL'}")
+    # The B-pool spec is bpool_p3a_v1 with beta_c FIXED to 1.0; 55 free params.
+    expected_n = 55
+    print(f"  param count: {n}  expected={expected_n}  {'OK' if n == expected_n else 'FAIL'}")
     import pyarrow.parquet as pq
     scols = set(pq.read_schema(_S).names)
     ccols = set(pq.read_schema(_C).names)
@@ -137,7 +146,7 @@ def check_5_spec_vars() -> bool:
                 miss_c.append(v)
     print(f"  singles missing: {miss_s if miss_s else 'NONE'}")
     print(f"  couples missing: {miss_c if miss_c else 'NONE'}")
-    ok = (n == 58 and not miss_s and not miss_c)
+    ok = (n == expected_n and not miss_s and not miss_c)
     print(f"  CHECK 5: {'PASS' if ok else 'FAIL'}")
     return ok
 
@@ -160,6 +169,62 @@ def check_6_rowcounts() -> bool:
           f"all 901/HH={(per_c==901).all()}  chosen==1/HH={(ch_c==1).all()}")
     ok &= (len(c) == nhh_c * 901 and (per_c == 901).all() and (ch_c == 1).all())
     print(f"  CHECK 6: {'PASS' if ok else 'FAIL'}")
+    return ok
+
+
+def check_7_band_flag_consistency() -> bool:
+    """
+    Permanent invariant: every band flag on every row must equal a fresh recompute
+    from that row's own hours+working, using the SAME band+gate the builder uses
+    on simulated rows. Added 2026-05-28 after the chosen-row working_lh
+    construction bug (singles: NaN → 0; couples: obs.get(...,0.0) → 0) silently
+    zeroed 274 singles / 764 couple-male / 317 couple-female chosen LH workers
+    in 2016. The bug is invisible to per-row schema checks and only surfaces
+    via recompute-vs-stored comparison — hence this check.
+    """
+    print("\n--- CHECK 7: band flag == fresh-recompute (permanent invariant) ---")
+    bands = {
+        "working_ft":  (36.5, 40.5, "<="),
+        "working_pt1": (17.5, 21.5, "<"),
+        "working_pt2": (28.5, 30.5, "<"),
+        "working_lh":  (44.5, 70.0, "<="),
+    }
+    def _fresh(hours, working, lo, hi, upper):
+        h = pd.to_numeric(hours, errors="coerce")
+        w = pd.to_numeric(working, errors="coerce")
+        upper_op = (h <= hi) if upper == "<=" else (h < hi)
+        return ((h >= lo) & upper_op & (w == 1)).astype(np.float64).values
+    ok = True
+    # SINGLES
+    s = pd.read_parquet(_S, columns=["is_chosen","working","hours",
+                                     "working_ft","working_pt1","working_pt2","working_lh"])
+    for band, (lo, hi, upper) in bands.items():
+        fresh = _fresh(s["hours"], s["working"], lo, hi, upper)
+        stored = pd.to_numeric(s[band], errors="coerce")
+        diff = int((stored.fillna(-1).values != fresh).sum())
+        nan_count = int(stored.isna().sum())
+        result = "PASS" if (diff == 0 and nan_count == 0) else "FAIL"
+        print(f"  singles {band:14s}: diff={diff:>6d}  NaN={nan_count:>5d}   {result}")
+        if diff != 0 or nan_count != 0:
+            ok = False
+    # COUPLES — both genders
+    c = pd.read_parquet(_C, columns=["is_chosen_joint",
+                                     "working_male","hours_male",
+                                     "working_ft_male","working_pt1_male","working_pt2_male","working_lh_male",
+                                     "working_female","hours_female",
+                                     "working_ft_female","working_pt1_female","working_pt2_female","working_lh_female"])
+    for gender in ("male","female"):
+        for band, (lo, hi, upper) in bands.items():
+            col = f"{band}_{gender}"
+            fresh = _fresh(c[f"hours_{gender}"], c[f"working_{gender}"], lo, hi, upper)
+            stored = pd.to_numeric(c[col], errors="coerce")
+            diff = int((stored.fillna(-1).values != fresh).sum())
+            nan_count = int(stored.isna().sum())
+            result = "PASS" if (diff == 0 and nan_count == 0) else "FAIL"
+            print(f"  couples {col:24s}: diff={diff:>7d}  NaN={nan_count:>5d}   {result}")
+            if diff != 0 or nan_count != 0:
+                ok = False
+    print(f"  CHECK 7: {'PASS' if ok else 'FAIL'}")
     return ok
 
 
@@ -207,6 +272,7 @@ def main():
         "4_prior": check_4_prior(),
         "5_spec_vars": check_5_spec_vars(),
         "6_rowcounts": check_6_rowcounts(),
+        "7_band_flag_consistency": check_7_band_flag_consistency(),
     }
     print("\n" + "=" * 78)
     for k, v in results.items():

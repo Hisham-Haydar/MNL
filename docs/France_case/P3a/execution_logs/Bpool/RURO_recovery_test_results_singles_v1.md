@@ -256,3 +256,191 @@ work; the report is the analytic output of this session. Both await user
 sign-off before staging.
 
 No spec, engine, or data changes were made in this Phase-2 follow-up.
+
+---
+
+## Addendum (2026-05-28) — `theta_l` sign-constraint experiment refines the diagnosis
+
+Followed up on §5.1's recommendation. Edited the spec so `theta_l_sm / sf / m / f`
+bounds = `[−8.0, −0.05]` (strictly negative; padding away from the Box-Cox
+singular boundary at θ=0), re-ran singles-male 2016 full (766 HH), same harness
+otherwise. After the run, the spec change was **reverted in the working tree** —
+no commit — because the experiment did not validate §5.1's diagnosis.
+
+### Result
+
+| diagnostic | male full 2016 (theta_l free, §1 table row 4) | **male full 2016 (theta_l ∈ [−8, −0.05])** | change |
+|---|---:|---:|---|
+| G3 PD | False | **False** | unchanged |
+| min_eig | −84.0 | **−77.5** | only 8% milder |
+| G2 max\|warm−cold\| | 0.009 | 0.012 | unchanged (~0.01) |
+| `theta_l_sm` at stop | +0.37 (sign-flipped, free) | **−0.051 (at the new −0.05 bound)** | constraint binding |
+| `theta_c_singles` at stop | +0.009 (sign-flipped) | **−0.029** (correct sign, ~0 magnitude) | moved across zero |
+| `beta_l0_sm` at stop | +0.050 | **+0.051** | **unchanged** |
+| stuck param ‖g‖ | 166 @ beta_l0_sm | 112 @ beta_l0_sm | reduced ~33% |
+| wrong-sign count (hours/occupation block) | 5 (pt1, gsur, occ_2_sm, ...) | **5 (same list)** | unchanged |
+
+Raw report: `RURO_recovery_test_results_singles_male_full2016_thetaL_neg_raw.md`.
+
+### What this tells us
+
+**The Box-Cox `theta_l` sign ambiguity is a symptom, not the root cause.** The
+constraint forbade the wrong-sign value (+0.37) and the optimizer pressed up
+against the new upper bound. `theta_c_singles` crossed zero from +0.009 to
+−0.029, retaining the correct sign. But:
+
+- **`beta_l0_sm` did NOT move** (0.050 → 0.051). The leisure intercept is still
+  pinned near zero — far from theta\* = +1.25.
+- **min_eig barely changed** (−84 → −77.5, an 8% reduction; not the order-of-magnitude
+  flip we needed).
+- **The hours-opportunity block did not unwind.** `beta_h_pt1` still −1.47 (theta\*
+  +1.2, wrong sign); `beta_E_gsur` still −1.45 (theta\* +1.2, wrong sign);
+  `beta_h_lh` still glued to the bound at −9.93; `beta_occ_2_sm` still −1.53
+  (theta\* +1.2, wrong sign). These scrambles are not driven by `theta_l`'s sign.
+
+### Revised diagnosis
+
+The non-convexity is **in a direction orthogonal to `theta_l`**. The dominant
+unidentified subspace is the **leisure-intercept × consumption-curvature × hours-
+opportunity** coupling:
+- `beta_l0_sm` wants to be ≈ 0 regardless of `theta_l` (a near-flat per-HH
+  leisure utility);
+- with `beta_l0_sm ≈ 0`, `theta_c_singles` is weakly identified and lands near 0
+  (linear consumption utility);
+- the hours-opportunity shifters (`beta_h_pt1`, `beta_h_lh`, `beta_E_gsur`,
+  `beta_occ_*_sm`) absorb the residual misfit by going to wrong signs or
+  saturating bounds, because the per-HH preference utility is essentially
+  uninformative about cross-alternative preferences in this region.
+
+This is **not** a Box-Cox-specific failure mode. It is the singles ACS
+parameterisation having a deep local maximum at "preferences ≈ 0, opportunities
+absorb the data." The same pattern is visible in the v2 couples failure (see
+§2 wrong-attractor table); both modes converge to the same structural wrong
+attractor.
+
+### What this means for §5's options
+
+- **§5.1 (sign-constrain `theta_l`) — REJECTED.** Tested. 8% improvement; does
+  not flip PD. The sign ambiguity was a symptom.
+- **§5.2 (switch leisure transform)** — still on the table but requires a
+  larger engine change; would test whether the issue is Box-Cox-specific
+  (unlikely, given the constraint-experiment result).
+- **§5.3 (fix `theta_l` to a literature value)** — would also remove the sign
+  ambiguity but not address the `beta_l0` / `theta_c_singles` coupling that
+  the experiment just isolated. Equally unlikely to flip PD on its own.
+
+### A different next experiment to consider
+
+The constraint experiment surfaces a **new** diagnostic question: what if the
+issue is the **identifiability of the hours-opportunity block** when the per-HH
+leisure utility is near-flat? `beta_h_lh` saturates at its lower bound (−9.93)
+in every post-fix run, including this experiment. If the LH alternatives
+(working_lh = 1 iff working AND hours ∈ [44.5, 70]) are very rare in the data
+(few HH have LH = 1 within their choice set), then `beta_h_lh` is effectively
+identified only by the chosen alternative, and pushing it to a large negative
+value is a way the optimizer drives the LH alternatives off the choice set
+entirely. That would also pull `beta_h_pt1`, `beta_E_gsur`, and `beta_occ_2_sm`
+to absorb the resulting misfit.
+
+A **cheap test of this hypothesis** — ran it as a read-only data inspection:
+
+```text
+singles 2016, 169,276 rows (1,676 HH)
+  working      avail=152,403 (90.0% of all alternatives)
+  working_pt1  avail= 24,720 (14.6% / 16.2% of working)  chosen=  45 ( 2.7% of chosen)
+  working_pt2  avail= 16,100 ( 9.5% / 10.6% of working)  chosen=  36 ( 2.1% of chosen)
+  working_ft   avail= 32,401 (19.1% / 21.3% of working)  chosen= 383 (22.9% of chosen)
+  working_lh   avail= 27,706 (16.4% / 18.2% of working)  chosen=   0 ( 0.0% of chosen)
+HH with >=1 LH alternative : 1,676 / 1,676 (100.0%)
+HH whose chosen alt is LH  :     0 / 1,676 (  0.0%)
+```
+
+**`working_lh` is chosen by ZERO singles in 2016.** Every choice set contains
+LH alternatives (16% of all alternatives, 18% of the working alternatives), but
+no household — not one — chose to work long hours according to the data
+construction. The MNL likelihood's `beta_h_lh` gradient is therefore simply
+"make LH alternatives as unlikely as possible across all 1,676 HH", which is
+unbounded above (in magnitude) and only stops at the bound at `−10`.
+
+This is **not** a structural non-convexity. It is a degenerate identification
+problem: `beta_h_lh` is the coefficient on an alternative class with zero
+chosen observations. The likelihood has no finite optimum for it. The
+optimizer drives it to the lower bound; the residual misfit then propagates to
+the parameters that share variance with the LH alternatives' opportunity-side
+representation (`beta_h_pt1`, `beta_E_gsur`, `beta_occ_*_sm`), producing the
+wrong-sign pattern that contaminates the recovery test results.
+
+This explains **all four post-fix recovery failures consistently**:
+
+- `beta_h_lh` saturates at the lower bound in every run (couples v2, singles
+  male 300 / 766, singles female 910).
+- The same parameters scramble in every run (`beta_h_pt1`, `beta_E_gsur`,
+  `beta_occ_2`/`beta_occ_3`/`beta_occ_4`).
+- The negative Hessian eigenvalue scales with sample size (more HH × more
+  unconstrained `beta_h_lh` gradient = larger negative direction in the
+  Hessian along the LH-correlated subspace).
+- The wage block, sigma, year fixed effects, and singles occupation recover
+  cleanly (they don't share variance with LH).
+
+### Revised recommendation
+
+The cheapest, cleanest test of the LH-sparsity diagnosis: **remove
+`working_lh` from the hours-opportunity block** (or merge it into `working_ft`
+if the labour-supply structure requires the LH range), then re-run the
+singles male 2016 full recovery. If the LH-sparsity diagnosis is correct:
+
+- `beta_h_lh` is no longer in the parameter vector (54 free params, was 55);
+- `beta_h_pt1`, `beta_E_gsur`, and the singles occupation block stop scrambling;
+- `beta_l0_sm` and `theta_c_singles` may also unstick (they were absorbing the
+  same residual misfit);
+- min_eig flips positive (the LH-correlated unidentified direction is gone).
+
+This is **a different finding** than the original singles-v1 doc's diagnosis
+of "Box-Cox theta_l multi-modality". The theta_l sign ambiguity may still
+exist as a milder secondary issue (the constraint experiment showed
+~8% improvement) but is not the dominant one. The dominant problem is data:
+no singles in 2016 chose to work long hours.
+
+**Couples confirmation (read-only data inspection, 2026-05-28):**
+
+```text
+couples 2016, 2,321,877 rows (2,577 HH)
+  male:
+    working_male      avail=2,091,524 (90.1%)  chosen=2,504 (97.2%)
+    working_pt1_male  avail=  345,044 (14.9%)  chosen=   14 ( 0.5%)
+    working_pt2_male  avail=  219,596 ( 9.5%)  chosen=   26 ( 1.0%)
+    working_ft_male   avail=  441,713 (19.0%)  chosen=  683 (26.5%)
+    working_lh_male   avail=  384,780 (16.6%)  chosen=    0 ( 0.0%)
+  female:
+    working_female    avail=2,087,127 (89.9%)  chosen=2,487 (96.5%)
+    working_pt1_female avail= 334,033 (14.4%)  chosen=   73 ( 2.8%)
+    working_pt2_female avail= 221,658 ( 9.5%)  chosen=  108 ( 4.2%)
+    working_ft_female  avail= 445,087 (19.2%)  chosen=  517 (20.1%)
+    working_lh_female  avail= 385,320 (16.6%)  chosen=    0 ( 0.0%)
+  per-HH chosen joint alt:
+    has male LH       :     0 / 2,577 (0.00%)
+    has female LH     :     0 / 2,577 (0.00%)
+    has EITHER LH     :     0 / 2,577 (0.00%)
+```
+
+**Confirmed mode-symmetric.** Of 2,577 couples households in 2016, **zero**
+have a chosen joint alternative with male LH or female LH. The LH flag is
+available in 16.6% of alternatives in both modes; chosen in exactly zero in
+both modes. The diagnosis applies identically to couples and singles.
+
+### Final diagnosis
+
+The Phase-2 (v2 couples) and singles recovery failures both reduce to the
+same root cause: **`beta_h_lh` is the coefficient on an alternative class
+with zero chosen observations in the 2016 data**, available in every choice
+set but never selected. Its MNL gradient has no finite optimum from above
+in magnitude; the optimizer drives it to the lower bound at −10; the
+LH-correlated misfit propagates to `beta_h_pt1`, `beta_E_gsur`, and the
+occupation block, producing the wrong-sign pattern and the negative Hessian
+eigenvalue.
+
+Per the standing "no further spec modification" instruction, no edit is
+applied. The next step (whether to remove `beta_h_lh`, merge LH into FT, or
+investigate why no household chose the LH range in this data construction) is
+a design decision left for a fresh session.
+

@@ -4,7 +4,7 @@
 >
 > **Headline:**
 > - 4 scipy gradient-based methods tested on singles male 766 HH: **all trap at LL = −9737.31**.
-> - L-BFGS-B from 20 random starts (uniform within bounds): **20/20 converge to the same trap LL = −9737.31**, including starts where `LL@start` was as high as 10²⁵.
+> - L-BFGS-B from 6 random/structured starts (uniform within bounds + θ\* + spec initial; run killed early after pattern locked in): **6/6 converge to the same trap LL = −9737.31**, including starts where `LL@start` was as high as 10²⁵. Starting points span 21 orders of magnitude.
 > - CONOPT (GAMSPy) reaches LL = −2501.77 — **7236 negLL units better than the trap**.
 > - The mechanism is **not** approximation quality (FD Hessian vs BFGS approximation makes no difference): trust-ncg and Newton-CG with finite-difference Hessian both converge to the same trap as L-BFGS-B. CONOPT escapes via its GRG+SQP algorithm class — active-set-aware Newton steps that can traverse the basin barrier; pure gradient descent cannot.
 >
@@ -69,9 +69,7 @@ Hypothesis under test: even if gradient descent from θ\* traps, **random starts
 
 Method: 20 starts. Start 0 = θ\*. Start 1 = spec initial vector. Starts 2-19 = uniform random within bounds (infinite bounds clipped to [−10, +10] for the random draw). L-BFGS-B with `maxiter=1000`, `ftol=1e-10`, `gtol=1e-6`. Analytical gradient.
 
-### Partial results at time of writing
-
-(Updated after the full run lands.)
+### Partial results — 6 of 20 starts (run killed early; pattern decisively locked in)
 
 | start | LL @ start | LL @ converge | nit | wall | basin |
 |---|---:|---:|---:|---:|---|
@@ -81,16 +79,31 @@ Method: 20 starts. Start 0 = θ\*. Start 1 = spec initial vector. Starts 2-19 = 
 | random_03 | **1.37 × 10²⁵** | **−9737.3155** | 539 | 115s | trap |
 | random_04 | 37,119 | **−9737.3148** | 343 | 70s | trap |
 | random_05 | **2.07 × 10¹⁶** | **−9737.3147** | 490 | 105s | trap |
-| ... | ... | ... | ... | ... | (full table on completion) |
 
-The huge `LL @ start` values (10²⁵, 10¹⁶) are real and informative: they happen when random starts land at points where one or more `theta_l_*` parameters are near the upper bound +0.95, and the Box-Cox transform `BC(x, θ) = (x^θ − 1)/θ` produces enormous values on alternatives with x ≥ 1. **L-BFGS-B walks from these astronomic LL values all the way down to the trap basin at LL = −9737.31.** That basin is gravitationally enormous.
+The run was killed by user after 6 starts because the pattern was already
+decisively locked in. **All 6 converge to LL = −9737.31 to 4 decimal places.**
+The starting points span 21 orders of magnitude in initial LL value
+(10⁴ at theta_star to 10²⁵ at random_03) and represent qualitatively
+different regions of the bounded parameter space — yet all 6 walk to the
+same point. Running the remaining 14 starts would either all confirm
+the trap (most likely, given this evidence) or produce 1-2 outliers
+that wouldn't change the package conclusion (a "1-in-20 escape rate"
+is not a reliable strategy for a production tool).
+
+The huge `LL @ start` values (10²⁵, 10¹⁶) are real and informative: they
+happen when random starts land at points where one or more `theta_l_*`
+parameters are near the upper bound +0.95, and the Box-Cox transform
+`BC(x, θ) = (x^θ − 1)/θ` produces enormous values on alternatives with
+x ≥ 1. **L-BFGS-B walks from these astronomic LL values all the way down
+to the trap basin at LL = −9737.31.** That basin is gravitationally
+enormous.
 
 ### What this rules out
 
 | strategy | ruled out by |
 |---|---|
-| L-BFGS-B + random multistart, 20 starts | 100% trap rate observed |
-| L-BFGS-B + random multistart, 100 or 1000 starts | If 20/20 traps from uniform random in [−10, +10], more samples in the same distribution won't help |
+| L-BFGS-B + random multistart, 6 starts (observed) | 6/6 trap rate; pattern decisively locked in across 21 orders of magnitude of starting LL |
+| L-BFGS-B + random multistart, 100 or 1000 starts | If 6/6 traps from uniform random in [−10, +10] across qualitatively different regions, more samples in the same distribution are highly unlikely to help |
 | Any scipy gradient-based solver | The trap basin spans the feasible region; algorithm choice within "gradient descent" doesn't matter |
 | **cyipopt (interior-point, gradient-based)** | Strongly predicted to also trap. Not tested empirically because pip-install requires Windows compiler not present in your environment; the prediction is based on cyipopt being algorithmically gradient-class. |
 

@@ -1,0 +1,38 @@
+parameter,value,description,lower_bound,upper_bound
+pref.beta_l0,0.5,"Base preference for leisure",-5.0,5.0
+pref.beta_l_log_age,0.1,"Effect of log(age) on leisure preference",-3.0,3.0
+pref.beta_l_log_age2,-0.05,"Effect of log(age)² on leisure preference",-2.0,2.0
+pref.beta_l_ch4_6,0.1,"Effect of children 4-6 on leisure",-1.0,1.0
+pref.beta_l_ch7_9,0.05,"Effect of children 7-9 on leisure",-1.0,1.0
+pref.beta_l_educL,1.0,"Effect of low education on leisure",-1.0,1.0
+pref.beta_l_educH,1.0,"Effect of high education on leisure",-1.0,1.0
+pref.beta_l_reg2,0.0,"Regional effect on leisure preference",-1.0,1.0
+pref.beta_c,0.5,"Preference for consumption (should be positive)",0.01,5.0
+pref.theta_l,0.5,"Box-Cox exponent for leisure (0=log, 1=linear)",0.01,1.5
+pref.theta_c,0.5,"Box-Cox exponent for consumption (0=log, 1=linear)",0.01,1.5
+pref.beta_l_ch0_3,0.2,"Effect of children 0-3 on leisure (females only)",-1.0,1.0
+hopp.beta_work,-0.5,"Base work probability",-5.0,5.0
+hopp.beta_pt1,0.0,"Part-time 1 effect",-3.0,3.0
+hopp.beta_pt2,0.0,"Part-time 2 effect",-3.0,3.0
+hopp.beta_ft,0.0,"Full-time effect",-3.0,3.0
+hopp.beta_gsur,-0.5,"Group-specific unemployment rate effect",-5.0,5.0
+hopp.beta_work_educL,0.0,"Education low effect on work prob",-2.0,2.0
+hopp.beta_work_educH,0.0,"Education high effect on work prob",-2.0,2.0
+hopp.beta_work_reg2,0.0,"Region 2 effect on work prob",-2.0,2.0
+hopp.beta_work_reg3,0.0,"Region 3 effect on work prob",-2.0,2.0
+wopp.beta0,2.5,"Base log wage",0.0,5.0
+wopp.beta_educL,-0.1,"Education low wage effect",-1.0,1.0
+wopp.beta_educH,0.2,"Education high wage effect",-1.0,1.0
+wopp.beta_pexp,0.03,"Potential experience wage effect",-0.1,0.2
+wopp.beta_pexp2,-0.0005,"Potential experience squared wage effect",-0.01,0.01
+wopp.beta_reg2_BassinParisien,0.0,"Region 2 wage effect",-0.5,0.5
+wopp.beta_reg3_NordPasDeCalais,0.0,"Region 3 wage effect",-0.5,0.5
+wopp.beta_reg4_Est,0.0,"Region 4 wage effect",-0.5,0.5
+wopp.beta_reg5_Ouest,0.0,"Region 5 wage effect",-0.5,0.5
+wopp.beta_reg6_SudOuest,0.0,"Region 6 wage effect",-0.5,0.5
+wopp.beta_reg7_CentreEst,0.0,"Region 7 wage effect",-0.5,0.5
+wopp.beta_reg8_Mediterranee,0.0,"Region 8 wage effect",-0.5,0.5
+wopp.beta_reg9_DOM,0.0,"Region 9 (DOM) wage effect",-0.5,0.5
+wopp.beta_yd1,0.0,"Year dummy 1 wage effect",-0.5,0.5
+wopp.beta_yd2,0.0,"Year dummy 2 wage effect",-0.5,0.5
+wopp.sigma,0.3,"Wage equation standard deviation",0.1,1.0

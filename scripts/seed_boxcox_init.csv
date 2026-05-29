@@ -1,0 +1,13 @@
+Name,Value
+alpha_c,0.1
+alpha_l,0.1
+beta_c_single_m,6.0220702563
+beta_c_single_f,6.2759796743
+beta_c_couple_m,6.0220702563
+beta_c_couple_f,6.2759796743
+beta_l0_single_m,0.0849350277
+beta_l0_single_f,0.2930452804
+beta_l0_couple_m,0.0849350277
+beta_l0_couple_f,0.2930452804
+theta_h1,0.0
+theta_h2,0.0

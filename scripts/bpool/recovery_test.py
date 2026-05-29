@@ -483,19 +483,45 @@ def _gates_and_report(spec, args, data, results, theta_star, inert, grad,
     theta_hat = results["warm"]["theta"]
     theta_cold = results["cold"]["theta"] if "cold" in results else None  # G2 needs both starts
     H = numerical_hessian(theta_hat, grad, workers=hess_workers)
-    eig = np.linalg.eigvalsh(H)
+    # Symmetrize defensively (numerical_hessian may carry asymmetry).
+    H = 0.5 * (H + H.T)
+    eig_w, eig_v = np.linalg.eigh(H)
+    eig = eig_w
     pd_ok = bool(np.all(eig > 0))
     cond = float(eig.max() / eig.min()) if eig.min() > 0 else float("inf")
-    try:
-        cov = np.linalg.inv(H); se = np.sqrt(np.clip(np.diag(cov), 0, None))
-    except np.linalg.LinAlgError:
-        cov, se = None, np.full(len(theta_hat), np.nan)
+    # Covariance construction. PD path: standard inverse, SEs from positive diagonal.
+    # Non-PD path: pseudo-inverse (regularized cov), SEs set to NaN on directions
+    # whose cov diagonal is non-positive — DO NOT clip to 0 (that silently zeros SEs
+    # and poisons the err/se column and G3b correlations).
+    cov_caveat = None
+    if pd_ok:
+        cov = np.linalg.inv(H)
+        d = np.diag(cov)
+        se = np.where(d > 0, np.sqrt(np.maximum(d, 0.0)), np.nan)
+    else:
+        cov = np.linalg.pinv(H, hermitian=True, rcond=1e-10)
+        d = np.diag(cov)
+        se = np.where(d > 0, np.sqrt(d), np.nan)
+        cov_caveat = "Hessian non-PD; cov via pinv(rcond=1e-10). SE=NaN on non-positive diagonal directions."
+
+    # Eigenvector-loading diagnostic on non-positive curvature directions.
+    # For each eigenvalue λ_k ≤ 0, list params with |v_k[i]| > 0.2 (the
+    # directions along which the LL is flat or negatively curved).
+    loading_thresh = 0.20
+    bad_dirs = []  # list of (lam, [(pname, |v_k[i]|), ...])
+    for k in range(len(eig_w)):
+        if eig_w[k] <= 0:
+            v = eig_v[:, k]
+            loaders = sorted(
+                ((pnames[i], float(abs(v[i]))) for i in range(len(v)) if abs(v[i]) > loading_thresh),
+                key=lambda kv: -kv[1])
+            bad_dirs.append((float(eig_w[k]), loaders))
 
     inert_set = set(inert)
     rows = []
     for i, n in enumerate(pnames):
         err = theta_hat[i] - theta_star[i]
-        es = abs(err) / se[i] if (se is not None and np.isfinite(se[i]) and se[i] > 0) else np.nan
+        es = abs(err) / se[i] if (np.isfinite(se[i]) and se[i] > 0) else np.nan
         rows.append(dict(param=n, theta_star=theta_star[i], theta_hat=theta_hat[i], abs_err=abs(err),
                          err_over_se=es, wrong_sign=(np.sign(theta_hat[i]) != np.sign(theta_star[i]) and abs(theta_star[i]) > 1e-3),
                          inert=n in inert_set))
@@ -517,23 +543,49 @@ def _gates_and_report(spec, args, data, results, theta_star, inert, grad,
     pair_corrs = {f"{a}|{b}": corr(a, b) for j, a in enumerate(mkt) for b in mkt[j + 1:]}
     worst = max(((abs(v), k) for k, v in pair_corrs.items() if np.isfinite(v)), default=(np.nan, None))
 
+    # Three-state identification verdict.
+    if not pd_ok:
+        verdict_state = "NON-IDENTIFIED"
+        first_loaders = bad_dirs[0][1] if bad_dirs and bad_dirs[0][1] else []
+        loader_str = ", ".join(f"{n} ({w:.2f})" for n, w in first_loaders[:5]) if first_loaders else "no loadings above threshold"
+        verdict_str = f"NON-IDENTIFIED — Hessian non-PD ({len(bad_dirs)} non-positive eigenvalue(s)); first bad direction loads on: {loader_str}"
+    elif np.isfinite(worst[0]) and worst[0] > 0.9:
+        verdict_state = "NEAR-COLLINEAR"
+        verdict_str = f"NEAR-COLLINEAR at {worst[1]} (|corr| = {worst[0]:.3f})"
+    else:
+        verdict_state = "IDENTIFIED"
+        verdict_str = "SEPARATELY IDENTIFIED"
+
     print("\n" + "=" * 72 + "\nRECOVERY SUMMARY\n" + "=" * 72)
     print(f"  solver={solver_label}  G2 max|warm-cold|(testable)={g2:.3e}")
     print(f"  G3 PD={pd_ok} cond={cond:.3e} min_eig={eig.min():.3e}")
+    if cov_caveat:
+        print(f"  cov: {cov_caveat}")
+    if bad_dirs:
+        print(f"  G3 non-positive eigendirections ({len(bad_dirs)}):")
+        for lam, loaders in bad_dirs[:5]:
+            ls = ", ".join(f"{n}({w:.2f})" for n, w in loaders[:6]) if loaders else "<no loading > thresh>"
+            print(f"    λ={lam:+.3e}  loaders: {ls}")
     if worst[1]:
         print(f"  G3b worst market-opp |corr| = {worst[0]:.3f}  ({worst[1]})")
+    print(f"  VERDICT: {verdict_str}")
     tol = 0.10
     bad = g1[testable & ((g1["abs_err"] > tol) | g1["wrong_sign"])]
     print(f"  G1 recovery: {int(testable.sum()) - len(bad)}/{int(testable.sum())} testable within tol={tol} & correct sign")
     for _, r in bad.iterrows():
+        es_str = f"{r['err_over_se']:.2f}" if np.isfinite(r['err_over_se']) else "n/a"
         print(f"    {r['param']:16} *={r['theta_star']:+.3f} hat={r['theta_hat']:+.3f} "
-              f"err={r['abs_err']:.3f} err/se={r['err_over_se']:.2f} wrong_sign={r['wrong_sign']}")
+              f"err={r['abs_err']:.3f} err/se={es_str} wrong_sign={r['wrong_sign']}")
 
-    _write_md(args.report, spec, args, results, g1, g2, pd_ok, cond, eig, pair_corrs, worst, inert, solver_label)
+    _write_md(args.report, spec, args, results, g1, g2, pd_ok, cond, eig, pair_corrs, worst,
+              inert, solver_label, bad_dirs=bad_dirs,
+              verdict_str=verdict_str, cov_caveat=cov_caveat)
+    _ = verdict_state  # surfaced in stdout above; not needed in MD beyond verdict_str
     print(f"\nReport: {args.report}")
 
 
-def _write_md(path, spec, args, results, g1, g2, pd_ok, cond, eig, pair_corrs, worst, inert, solver_label="scipy"):
+def _write_md(path, spec, args, results, g1, g2, pd_ok, cond, eig, pair_corrs, worst, inert,
+              solver_label="scipy", bad_dirs=None, verdict_str=None, cov_caveat=None):
     path.parent.mkdir(parents=True, exist_ok=True)
     L = [f"# RURO Recovery Test Results — {getattr(spec,'name','spec')} ({len(spec.all_param_names)} params)\n",
          f"**mode:** {args.mode}  **years:** {args.years}  **n_hh:** {args.n_hh}  "
@@ -544,10 +596,21 @@ def _write_md(path, spec, args, results, g1, g2, pd_ok, cond, eig, pair_corrs, w
     for k, v in results.items():
         L.append(f"| {k} | {v['success']} | {v['ll']:.3f} | {v['nit']} | {v['sec']} |")
     L += [f"\n**G2** max|warm−cold| (testable) = {g2:.3e}",
-          f"\n## G3 Conditioning\n- PD: **{pd_ok}**\n- cond: **{cond:.3e}**\n- min eig: **{eig.min():.3e}**, max: {eig.max():.3e}",
-          f"\n## G3b market-opportunity collinearity (generic)\n- worst |corr| = **{worst[0]:.3f}** ({worst[1]})"]
-    redundant = np.isfinite(worst[0]) and worst[0] > 0.9
-    L.append(f"- **Verdict: market-opp access shifters {'NEAR-COLLINEAR (spatially redundant)' if redundant else 'SEPARATELY IDENTIFIED'}**\n")
+          f"\n## G3 Conditioning\n- PD: **{pd_ok}**\n- cond: **{cond:.3e}**\n- min eig: **{eig.min():.3e}**, max: {eig.max():.3e}"]
+    if cov_caveat:
+        L.append(f"- cov caveat: {cov_caveat}")
+    if bad_dirs:
+        L.append(f"\n### Non-positive eigendirections ({len(bad_dirs)})")
+        L.append("| λ | top loaders (|v_k[i]| > 0.20) |")
+        L.append("|---|---|")
+        for lam, loaders in bad_dirs:
+            ls = ", ".join(f"{n} ({w:.2f})" for n, w in loaders) if loaders else "<no loading > 0.20>"
+            L.append(f"| {lam:+.3e} | {ls} |")
+    L.append(f"\n## G3b market-opportunity collinearity (generic)\n- worst |corr| = **{worst[0]:.3f}** ({worst[1]})")
+    final_verdict = verdict_str if verdict_str is not None else (
+        "NEAR-COLLINEAR (spatially redundant)" if (np.isfinite(worst[0]) and worst[0] > 0.9) else "SEPARATELY IDENTIFIED"
+    )
+    L.append(f"- **Verdict: {final_verdict}**\n")
     if inert:
         L.append(f"\n_Inert on this slice (excluded from G1): {sorted(inert)}_\n")
     L += ["\n## G1 / G4 per-param recovery\n",

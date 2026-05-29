@@ -519,7 +519,25 @@ def estimate_singles_gamspy(
         raise ValueError(f"Unknown solver '{solver}'. Choose from: {list(SOLVER_MAP.keys())}")
     
     solver_name = SOLVER_MAP[solver]
-    
+
+    # Guard against the silent group/data mismatch that estimated female data
+    # against the _sm leisure block (see workitem-bpool-singles-female-leisure-suffix).
+    # `group` defaults to "singles_male"; if a caller forgets to pass it while handing
+    # in female data, fail loudly instead of silently using the wrong coefficients.
+    _is_male = getattr(data, "is_male", None)
+    if _is_male is not None:
+        if group == "singles_female" and _is_male:
+            raise ValueError(
+                "group='singles_female' but data.is_male=True — group/data mismatch "
+                "would estimate the wrong leisure block."
+            )
+        if group in ("singles_male", "singles_pooled") and not _is_male:
+            raise ValueError(
+                f"group={group!r} but data.is_male=False — group/data mismatch. "
+                "Pass group='singles_female' for female singles data "
+                "(see workitem-bpool-singles-female-leisure-suffix)."
+            )
+
     logger.info(f"Starting GAMSPy estimation (solver={solver_name.upper()}, group={group})")
     logger.info(f"  Observations: {data.n_obs:,}")
     logger.info(f"  Groups: {data.n_groups:,}")

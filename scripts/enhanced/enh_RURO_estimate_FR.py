@@ -1597,6 +1597,7 @@ Examples:
                     logger.info(f"Estimating {group_name} with GAMSPy...")
                     gamspy_result = estimate_singles_gamspy(
                         data=data, spec=spec, theta_init=theta_init,
+                        group=group_name,
                         solver=gamspy_solver, verbose=args.verbose,
                         solver_options=solver_options,
                         solver_artifacts=solver_artifacts
@@ -1608,6 +1609,7 @@ Examples:
                     logger.info(f"Estimating {group_name} with GAMSPy...")
                     gamspy_result = estimate_singles_gamspy(
                         data=data, spec=spec, theta_init=theta_init,
+                        group=group_name,
                         solver=gamspy_solver, verbose=args.verbose,
                         solver_options=solver_options,
                         solver_artifacts=solver_artifacts

@@ -23,10 +23,17 @@ pinned at their starting value, which is correct behavior, not a problem.
 | group | n_hh | alts | warm LL | cold LL | Δ(warm,cold) LL | wall | iters |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | singles_male   |   766 | 101 | −9746.176645 | −9746.176645 | 2e-12 | ~25 s | 9 / 10 |
-| singles_female |   910 | 101 | −11686.941967 | −11686.941967 | 0 | ~28 s | 9 / 12 |
+| singles_female | 910 | 101 | **−11684.8391** | **−11684.8391** | 0 | ~27 s | 9 / 10 |
 | couples        | 2,577 | 901 | −60767.131083 | −60767.131083 | 8e-11 | **~4.5 h** | 11 / 17 |
 
-All six runs report `SolveStatus.NormalCompletion` /
+> **singles_female numbers are the FIXED runs** (`sf2016_conopt_{warm,cold}_FIXED`).
+> The original Step-3 singles_female runs (LL −11686.9420) hit the
+> `_sm`/`_sf` leisure-suffix bug (finding #6) and are SUPERSEDED. The fix
+> (passing `group=` to the GAMSPy singles path) added the female leisure
+> block + female `n_children` effect, improving the LL by +2.10. The
+> singles_male and couples runs were never affected.
+
+All runs report `SolveStatus.NormalCompletion` /
 `ModelStatus.OptimalLocal`. All Hessians are non-PD (cond=inf) — expected,
 driven by the inert cross-group parameters; the active-block estimates are
 unaffected.
@@ -41,7 +48,7 @@ couples-full as a multi-hour job.
 | group | n_active | max\|warm − cold\| (active) |
 |---|---:|---:|
 | singles_male   | 20 | 9.21e-09 |
-| singles_female | 20 | 8.91e-10 |
+| singles_female (FIXED) | 21 | 9.93e-12 |
 | couples        | 36 | 1.15e-09 |
 
 The "active" set per slice = the parameter blocks the slice's data
@@ -50,9 +57,10 @@ actually identifies:
 - **singles_male:** the `_sm`-suffixed leisure block, `theta_c_singles`,
   the universal market-opportunity/hours/wage blocks, `beta_occ_*_sm`,
   `sigma`.
-- **singles_female:** the SAME `_sm`-suffixed leisure block (see
-  finding #6 below — the `_sf` leisure params are vestigial and inert),
-  `theta_c_singles`, the universal blocks, `beta_occ_*_sf`, `sigma`.
+- **singles_female:** (post-fix) the `_sf`-suffixed leisure block
+  including the female-only `beta_l_nkids_sf`, `theta_c_singles`, the
+  universal blocks, `beta_occ_*_sf`, `sigma`. (Before the fix it
+  incorrectly used the `_sm` block — see finding #6.)
 - **couples:** couples male+female (`_m`/`_f`) leisure blocks, the full
   market-opportunity block (region drgn2-8, urban/middle access),
   `beta_occ_*_cm/cf`, universal hours/wage/sigma.
@@ -66,23 +74,24 @@ identification failure.
 
 ## Parameter estimates (active blocks; warm-start values, identical to cold to 8+ dp)
 
+singles_female values are the FIXED runs (`sf2016_conopt_*_FIXED`).
+
 | param | singles_male | singles_female | couples | notes |
 |---|---:|---:|---:|---|
-| **Leisure (own block)** | | | | |
-| beta_l0 (sm/sf → m/f) | 0.5841 | — | m 0.0072 / f 1.7218 | sm own; couples per-partner |
-| theta_l (sm/sf → m/f) | −0.8223 | — | m −0.8245 / f −0.7669 | Box-Cox leisure exponent |
-| beta_l_age | 0.1621 | — | m −0.0099 / f −0.2229 | |
-| beta_l_age2 | 0.0395 | — | m 0.0187 / f 0.2637 | |
-| beta_l_nkids_f | — | — | 0.4326 | couples female only |
-| sf own leisure | — | sf block at theta\* (inert on sf-slice? see below) | — | |
-| theta_c_singles | −0.0560 | −0.0318 | (fixed/inert) | pooled singles consumption BC |
+| **Leisure (own block)** | (`_sm`) | (`_sf`) | (`_m` / `_f`) | each group's own suffix |
+| beta_l0 | 0.5841 | 0.4198 | m 0.0072 / f 1.7218 | leisure intercept |
+| theta_l | −0.8223 | −0.8092 | m −0.8245 / f −0.7669 | Box-Cox leisure exponent |
+| beta_l_age | 0.1621 | −0.0254 | m −0.0099 / f −0.2229 | |
+| beta_l_age2 | 0.0395 | 0.3365 | m 0.0187 / f 0.2637 | |
+| beta_l_nkids | — (male: none) | **0.6341** | 0.4326 (f) | female-only n_children leisure shifter |
+| theta_c_singles | −0.0560 | −0.0204 | (fixed/inert) | pooled singles consumption BC |
 | **Hours opportunity** | | | | |
-| beta_E | −1.9352 | −1.0361 | −0.7114 | base employment attractiveness |
-| beta_h_pt1 | −1.2854 | −0.9651 | −1.7040 | |
-| beta_h_pt2 | −2.1115 | 0.1460 | −0.0538 | sign flips sm→sf |
-| beta_h_ft | 1.1553 | 0.6874 | 1.1281 | |
-| beta_h_lh | −1.5780 | −1.8497 | −1.2201 | long-hours increment |
-| beta_E_gsur | −1.3556 | −2.3212 | −1.3890 | |
+| beta_E | −1.9352 | −1.0048 | −0.7114 | base employment attractiveness |
+| beta_h_pt1 | −1.2854 | −0.9686 | −1.7040 | |
+| beta_h_pt2 | −2.1115 | 0.1488 | −0.0538 | sign flips sm→sf |
+| beta_h_ft | 1.1553 | 0.6951 | 1.1281 | |
+| beta_h_lh | −1.5780 | −1.8428 | −1.2201 | long-hours increment |
+| beta_E_gsur | −1.3556 | −2.3237 | −1.3890 | |
 | **Market opportunity (region/access)** | | | | |
 | beta_E_drgn2..8 | (inert) | (inert) | 0.084 … −0.008 | identified on couples only |
 | beta_E_drgur | (inert) | (inert) | −0.1654 | urban access |
@@ -93,12 +102,12 @@ identification failure.
 | beta_occ_2/3/4_cm | (inert) | (inert) | −1.579 / −2.403 / 0.326 | couples only |
 | beta_occ_2/3/4_cf | (inert) | (inert) | 0.094 / −0.355 / 0.807 | couples only |
 | **Wage** | | | | |
-| beta_w0 | 2.1652 | 2.2250 | 2.2157 | very stable across slices |
-| beta_w_educL | 0.1477 | −0.1033 | −0.1071 | sm positive, others negative |
-| beta_w_educH | 0.3322 | 0.3382 | 0.3537 | stable, correct sign |
-| beta_w_pexp | 0.3219 | 0.1825 | 0.3691 | correct sign (was wrong in synthetic) |
-| beta_w_pexp2 | −0.0742 | −0.0277 | −0.0769 | correct concavity |
-| sigma | 0.4239 | 0.4016 | 0.4136 | wage-eqn scale; very stable |
+| beta_w0 | 2.1652 | 2.2249 | 2.2157 | very stable across slices |
+| beta_w_educL | 0.1477 | −0.1023 | −0.1071 | sm positive, others negative |
+| beta_w_educH | 0.3322 | 0.3376 | 0.3537 | stable, correct sign |
+| beta_w_pexp | 0.3219 | 0.1839 | 0.3691 | correct sign (was wrong in synthetic) |
+| beta_w_pexp2 | −0.0742 | −0.0285 | −0.0769 | correct concavity |
+| sigma | 0.4239 | 0.4017 | 0.4136 | wage-eqn scale; very stable |
 | beta_ll | 2.5000 (inert) | 2.5000 (inert) | 0.0000 (at bound/inert) | see note |
 
 Full 55-param vectors per slice (including inert) are in the per-group CSVs:
@@ -137,43 +146,36 @@ output dir.
    `identification_diagnostics.txt` in each output dir already flags
    which params have non-positive variance.
 
-6. **POSSIBLE BUG — singles_female appears to estimate the `_sm`-suffixed
-   leisure block, leaving the `_sf` params inert.** Direct evidence: on the
-   singles_female slice, `beta_l0_sm` moves to 0.8480 (data-identified,
-   warm=cold to 8+ dp), while `beta_l0_sf` stays at its starting value
-   (1.25 warm / 1.00 cold, i.e. inert). On the singles_male slice
-   `beta_l0_sm` = 0.5841. So the male and female singles slices each
-   produce a DIFFERENT data-identified value in the same `_sm`-named slot.
+6. **CONFIRMED BUG (now FIXED) — singles_female was estimating the
+   `_sm`-suffixed leisure block.** The original Step-3 singles_female runs
+   (LL −11686.94) incorrectly used the male leisure coefficients and
+   silently dropped the female-only `beta_l_nkids_sf`. Root cause:
+   `enh_RURO_estimate_FR.py` single-group GAMSPy path called
+   `estimate_singles_gamspy(data=data_sf, ...)` WITHOUT `group=`, which
+   defaults to `"singles_male"`, so coefficient lookup resolved to the
+   `_sm` suffix. The joint path (passes `group="singles_female"`) and the
+   numpy path (derives suffix from `data.is_male`) were never affected.
 
-   The spec (estimation_spec_bpool_p3a_v1.yaml lines 62-73, 226-227)
-   declares the leisure block with BASE names (`beta_l0`, `theta_l`,
-   `beta_l_age`, `beta_l_age2`, `beta_l_nkids`) that the parser suffixes
-   per group, and the header comment explicitly lists `_sm` [4] and `_sf`
-   [5] as SEPARATE singles-male and singles-female blocks (the `_sf` block
-   adds `beta_l_nkids_sf` via the `gender_specific: true` female-only
-   `n_children` shifter). So pooling is NOT the spec's intent — male and
-   female singles are supposed to get distinct leisure coefficients.
+   **Fix:** pass `group=group_name` at both single-group call sites, plus a
+   `group`/`data.is_male` consistency guard in both GAMSPy singles entry
+   points so the mismatch can never be silent again.
 
-   If the singles_female group is in fact mapping its leisure to the `_sm`
-   slot, this is a **genuine engine/coefficient-suffix-resolution bug**,
-   and it would mean: (a) the singles_female leisure estimate is sitting in
-   the wrong-named columns, and more seriously (b) the female-only
-   `n_children` leisure effect (`beta_l_nkids_sf`) was dropped from the
-   female likelihood entirely (the `_sm` block has no nkids term). The
-   sf2016 precompute DID load female `n_children` (32,421/91,910 nonzero),
-   so the data was present but possibly unused in the leisure block.
+   **Verified (fixed runs, warm = cold):** LL −11686.94 → **−11684.84**
+   (+2.10); `beta_l0_sf` 1.25(inert) → 0.4198; `theta_l_sf` → −0.8092;
+   `beta_l_nkids_sf` → **+0.6341** (single mothers value leisure more — the
+   effect that was silently absent); `beta_l0_sm` returns to its untouched
+   start. Two-start agreement on the corrected `_sf` block is 9.93e-12.
+   All numbers in this report's tables are the FIXED singles_female runs.
 
-   **This needs investigation before the singles_female estimate can be
-   trusted** — it is NOT yet confirmed whether the likelihood used the
-   right coefficients or just the reporting is mislabeled. Logged as
-   `workitem-bpool-singles-female-leisure-suffix.md` (HIGH priority).
-   The singles_male and couples estimates are unaffected by this question.
+   See `workitem-bpool-singles-female-leisure-suffix.md` (CLOSED). The
+   singles_male and couples estimates were never affected.
 
 ## Output locations
 
 - singles_male warm: `outputs/estimation/realdata_multibasin/sm2016_conopt_from_thetastar/`
 - singles_male cold: `outputs/estimation/realdata_2016/sm2016_conopt_cold/`
-- singles_female warm/cold: `outputs/estimation/realdata_2016/sf2016_conopt_{warm,cold}/`
+- singles_female warm/cold (**FIXED, canonical**): `outputs/estimation/realdata_2016/sf2016_conopt_{warm,cold}_FIXED/`
+- singles_female warm/cold (buggy, superseded): `outputs/estimation/realdata_2016/sf2016_conopt_{warm,cold}/`
 - couples warm/cold: `outputs/estimation/realdata_2016/c2016_conopt_{warm,cold}/`
 
 (all under `C:\Users\hisham\MNL\EUROMOD-STORAGE\`)

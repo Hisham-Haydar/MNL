@@ -17,7 +17,6 @@ Usage:
 from __future__ import annotations
 import argparse
 import json
-import shutil
 from pathlib import Path
 
 import pandas as pd
@@ -46,7 +45,13 @@ def main():
 
     # Find chosen rows in target slice; keep all rows for the surviving HHs.
     chosen = df[df["is_chosen"] == 1].copy()
-    sel = (chosen["year"] == args.year)
+    # Year column varies by household type: singles has `year`; couples has
+    # `data_year` / `year_for_ruro` (same values). Pick whichever is present.
+    year_col = "year" if "year" in chosen.columns else (
+        "data_year" if "data_year" in chosen.columns else "year_for_ruro"
+    )
+    print(f"  using year column: {year_col!r}")
+    sel = (chosen[year_col] == args.year)
     if args.household_type == "singles" and args.dgn is not None:
         sel &= (chosen["dgn"] == float(args.dgn))
     chosen_subset = chosen[sel]

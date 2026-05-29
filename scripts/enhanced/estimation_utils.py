@@ -393,6 +393,10 @@ def _validate_mnl_dataset(
     if _draw_range_col is not None:
         draw_min, draw_max = df[_draw_range_col].min(), df[_draw_range_col].max()
         n_draws = metadata.get("n_draws")
+        # n_draws may be a scalar (legacy) or per-household-type dict (bpool engine-ready,
+        # e.g. {"singles": 101, "couples": 901}). Resolve per dataset_type.
+        if isinstance(n_draws, dict):
+            n_draws = n_draws.get(dataset_type)
         if n_draws is not None:
             if draw_min != 0 or draw_max != n_draws - 1:
                 warnings_list.append(

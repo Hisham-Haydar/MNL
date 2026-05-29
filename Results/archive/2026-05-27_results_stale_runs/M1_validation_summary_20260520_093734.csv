@@ -1,0 +1,10 @@
+check,status,details,warnings
+V1,PASS,"Draw-expanded format: stacked_person_uid unique at person-year level (7438 person-years, 100 draws each, 743,800 total rows). | stacked_hh_uid unique per hh-year: 7438 hh-year groups.",
+V2,PASS,"Total rows in parquet: 743,800 |   year=2015 (tag=1): 256,600 rows, 2566 households |   year=2016 (tag=2): 257,700 rows, 2577 households |   year=2017 (tag=3): 229,500 rows, 2295 households","WARN: Row count 743,800 differs from expected 33,917 by 709883 rows (tolerance=10). If file is person-level this is expected; re-run on household-level parquet to verify hh count."
+V3,PASS,"PASS: All raw IDs present and non-null: ['idorighh', 'idorigperson', 'idhh', 'idperson']",
+V4,PASS,"PASS: year_tags {1, 2, 3} match config='p3a'.",
+V5,SKIP,,WARN: Columns 'ils_dispy' and/or 'ils_dispy_real' not found. CPI deflation spot-check skipped.
+V6,PASS,"cluster_id == idorighh for all rows | 2015 x 2016 repeat-hh overlap: 0 (expected approx 0, diff=0) | 2015 x 2017 repeat-hh overlap: 0 (expected approx 0, diff=0)","WARN: 2016 x 2017 repeat-hh overlap: 1,600 (expected approx 8,796, diff=7196) -- exceeds tolerance 200."
+V7,PASS,2016->2017: sex_stability=1.0000 | 2016->2017: hh_continuity=1.0000 | PASS: V7 identity checks passed.,
+V8,PASS,"PASS: GSUR columns ['gsur_female', 'gsur_male']: zero missing values",
+V9,PASS,PASS: No 'ruro' token in file path or column names,

@@ -1,0 +1,10 @@
+check,status,details,warnings
+V1,PASS,"Draw-expanded format: stacked_person_uid unique at person-year level (12445 person-years, 100 draws each, 1,244,500 total rows). | stacked_hh_uid unique per hh-year: 12445 hh-year groups.",
+V2,PASS,"Total rows in parquet: 1,244,500 | Row count 1,244,500 approx expected 1,244,500 (diff=0). |   year=2015 (tag=1): 423,500 rows, 4235 households |   year=2016 (tag=2): 425,300 rows, 4253 households |   year=2017 (tag=3): 395,700 rows, 3957 households",
+V3,PASS,"PASS: All raw IDs present and non-null: ['idorighh', 'idorigperson', 'idhh', 'idperson']",
+V4,PASS,"PASS: year_tags {1, 2, 3} match config='p3a'.",
+V5,PASS,PASS: CPI spot-checks passed.,"WARN: year=2015: mean ils_dispy_real=7,583 outside expected range [25,000.0-55,000.0]. Check RURO sample filter and phi_t. | WARN: year=2016: mean ils_dispy_real=7,587 outside expected range [25,000.0-55,000.0]. Check RURO sample filter and phi_t. | WARN: year=2017: mean ils_dispy_real=7,492 outside expected range [25,000.0-55,000.0]. Check RURO sample filter and phi_t."
+V6,PASS,"cluster_id == idorighh for all rows | 2015 x 2016 repeat-hh overlap: 0 (expected approx 0, diff=0) | 2015 x 2017 repeat-hh overlap: 0 (expected approx 0, diff=0)","WARN: 2016 x 2017 repeat-hh overlap: 2,788 (expected approx 8,796, diff=6008) -- exceeds tolerance 200."
+V7,PASS,2016->2017: sex_stability=1.0000 | 2016->2017: age_progression_within_1=1.0000 | 2016->2017: suspicious_rate=0.0000 | 2016->2017: hh_continuity=0.9985 | PASS: V7 identity checks passed.,
+V8,PASS,"singles (500,700 rows): gsur zero missing | couples (743,800 rows): gsur_female zero missing | couples (743,800 rows): gsur_male zero missing | PASS: Per-component GSUR coverage: all zero missing",
+V9,PASS,PASS: No 'ruro' token in file path or column names,

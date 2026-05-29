@@ -1,0 +1,39 @@
+# gsur_crosswalk_source.txt
+# Provenance for fr_drgn1_to_nuts2_crosswalk.csv
+# Created: 2026-05-17
+
+ASSET: fr_drgn1_to_nuts2_crosswalk.csv
+PURPOSE: Maps EUROMOD drgn1 (1-8) → drgn2 (1-22) → old NUTS-2 (FR10-FR83) → new NUTS-2 (NUTS 2016)
+         for use in GSUR v2 rebuild to join Eurostat GSUR rates to EUROMOD microdata.
+
+SOURCE 1 — drgn2 → old NUTS-2:
+  Origin: EUROMOD France 2016 Data Reference Document (DRD)
+  Local file: docs/euromod_reference/DRD_FR_2016_a3_export.txt
+  Content: drgn2 derivation formula assigns NUTS-2 codes FR10–FR83 (22 metropolitan regions)
+  Verified: Local evidence audit Results/RURO_GSUR_local_O1_evidence_audit_v1.md §3
+
+SOURCE 2 — drgn1 groupings:
+  Origin: EUROMOD France 2016 Data Reference Document (DRD)
+  Local file: docs/euromod_reference/DRD_FR_2016_a3_export.txt
+  Content: drgn1 derivation formula groups drgn2 values 1-22 into 8 metropolitan categories
+  Groups: drgn1=1:{1}, 2:{2-7}, 3:{8}, 4:{9-11}, 5:{12-14}, 6:{15-17}, 7:{18-19}, 8:{20-22}
+  Note: drgn1=9 (DOM) and drgn1=10 (residual) absent from 2016 metropolitan sample
+
+SOURCE 3 — old NUTS-2 → new NUTS-2 renaming:
+  Origin: Eurostat NUTS 2013-2016 correspondence table
+  URL: https://ec.europa.eu/eurostat/documents/345175/629341/NUTS2013-NUTS2016.xlsx
+  Downloaded: 2026-05-17
+  Local file: Data/external/NUTS2013-NUTS2016.xlsx
+  Sheet used: "Correspondence NUTS-2"
+  France rows: 22 rows (all recoded, no boundary changes)
+  Verification: All 22 old codes resolved; no MISSING entries; change type = "recoded" for all FR NUTS-2
+
+CONSTRUCTION:
+  Chain: drgn1 → [drgn2 values] → old_nuts2 → new_nuts2
+  All 22 drgn2 values (1-22) resolved without ambiguity.
+  The 22 old NUTS-2 codes renamed 1:1 to new NUTS-2 codes under NUTS 2016 reform.
+  No boundary changes affecting metropolitan France NUTS-2 at this level.
+
+LIMITATIONS:
+  - drgn1 groups 9 (DOM) and 10 (residual FRZZ) excluded; neither present in FR 2016 sample.
+  - Crosswalk covers metropolitan France only (drgn1=1-8).

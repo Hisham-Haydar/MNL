@@ -1,0 +1,5 @@
+year,price_index_source,index_value,base_year,phi_t,source_url_or_citation,notes
+2015,EUROMOD_HICP_HICPCONFIG_XML,100.00,2016,1.0031,EUROMOD J1.0+ HICPCONFIG.xml; Eurostat/AMECO 2023 spring forecasts,Provisional adoption — replace with INSEE IPC if retrieved; see docs/JMP_multi_year_CPI_HICP_source_decision_v1.md
+2016,EUROMOD_HICP_HICPCONFIG_XML,100.31,2016,1.0000,EUROMOD J1.0+ HICPCONFIG.xml; Eurostat/AMECO 2023 spring forecasts,Base year; phi_t = 1.0000 by definition
+2017,EUROMOD_HICP_HICPCONFIG_XML,101.47,2016,0.9886,EUROMOD J1.0+ HICPCONFIG.xml; Eurostat/AMECO 2023 spring forecasts,Provisional adoption — replace with INSEE IPC if retrieved; see docs/JMP_multi_year_CPI_HICP_source_decision_v1.md
+2018,EUROMOD_HICP_HICPCONFIG_XML,103.60,2016,0.9682,EUROMOD J1.0+ HICPCONFIG.xml; Eurostat/AMECO 2023 spring forecasts,ACTIVATE ONLY IF P3b PROCEEDS — ISF gate not yet cleared

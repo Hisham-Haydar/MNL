@@ -1,0 +1,23 @@
+drgn1,old_nuts2_code,region_name,new_nuts2_code_2016,verified_against_eurostat
+1,FR10,Ile-de-France,FR10,YES
+2,FR21,Champagne-Ardenne,FRF2,YES
+2,FR22,Picardie,FRE2,YES
+2,FR23,Haute-Normandie,FRD2,YES
+2,FR24,Centre — Val de Loire,FRB0,YES
+2,FR25,Basse-Normandie,FRD1,YES
+2,FR26,Bourgogne,FRC1,YES
+3,FR30,Nord-Pas de Calais,FRE1,YES
+4,FR41,Lorraine,FRF3,YES
+4,FR42,Alsace,FRF1,YES
+4,FR43,Franche-Comté,FRC2,YES
+5,FR51,Pays de la Loire,FRG0,YES
+5,FR52,Bretagne,FRH0,YES
+5,FR53,Poitou-Charentes,FRI3,YES
+6,FR61,Aquitaine,FRI1,YES
+6,FR62,Midi-Pyrénées,FRJ2,YES
+6,FR63,Limousin,FRI2,YES
+7,FR71,Rhône-Alpes,FRK2,YES
+7,FR72,Auvergne,FRK1,YES
+8,FR81,Languedoc-Roussillon,FRJ1,YES
+8,FR82,Provence-Alpes-Côte d’Azur,FRL0,YES
+8,FR83,Corse,FRM0,YES

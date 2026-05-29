@@ -1,0 +1,92 @@
+--- Job _0amTJp6vTH6NLln_Usn_LA.gms Start 05/24/26 09:53:29 51.4.0 91cb996b WEX-WEI x86 64bit/MS Windows
+--- Applying:
+    \\users\users\hisham\Desktop\Nizam_Hisham\MNL\.venv\Lib\site-packages\gamspy_base\gmsprmNT.txt
+--- GAMS Parameters defined
+    NLP conopt4
+    Input C:\Users\hisham\AppData\Local\Temp\24\tmpm8mtikd6\_0amTJp6vTH6NLln_Usn_LA.gms
+    Output \\users\users\hisham\Desktop\Nizam_Hisham\MNL\Results\pilot\nc_2016_couples\diagnostic_rerun_v1\start_1_warm_P3a\solver.lst
+    ScrDir C:\Users\hisham\AppData\Local\Temp\24\tmpm8mtikd6\tmp47a6go1x\
+    SysDir \\users\users\hisham\Desktop\Nizam_Hisham\MNL\.venv\Lib\site-packages\gamspy_base\
+    LogOption 2
+    LogFile \\users\users\hisham\Desktop\Nizam_Hisham\MNL\Results\pilot\nc_2016_couples\diagnostic_rerun_v1\start_1_warm_P3a\solver.log
+    Trace C:\Users\hisham\AppData\Local\Temp\24\tmpm8mtikd6\_0amTJp6vTH6NLln_Usn_LA.txt
+    License C:\Users\hisham\Documents\GAMSPy\gamspy_license.txt
+    OptFile 1
+    OptDir C:\Users\hisham\AppData\Local\Temp\24\tmpm8mtikd6\
+    LimRow 0
+    LimCol 0
+    TraceOpt 3
+    GDX C:\Users\hisham\AppData\Local\Temp\24\tmpm8mtikd6\_0amTJp6vTH6NLln_Usn_LAout.gdx
+    SolPrint 1
+    SolveLink 2
+    PreviousWork 1
+    gdxSymbols newOrChanged
+    writeOutput 1
+System information: 32 physical cores and 768 Gb physical memory detected
+--- Starting compilation
+--- _0amTJp6vTH6NLln_Usn_LA.gms(71) 1621 Mb
+--- Starting execution: elapsed 0:00:00.143
+--- Generating NLP model ruro_couples_mnl_vectorized
+--- _0amTJp6vTH6NLln_Usn_LA.gms(1517) 3789 Mb
+---   1 rows  36 columns  36 non-zeroes
+---   368,685,287 nl-code  35 nl-non-zeroes
+--- Range statistics (absolute non-zero finite values)
+--- RHS       [min, max] : [ 3.526E+04, 3.526E+04]
+--- Bound     [min, max] : [ 1.000E-06, 5.000E+01] - Zero values observed as well
+--- Matrix    [min, max] : [ 1.000E+00, 3.127E+06]
+--- _0amTJp6vTH6NLln_Usn_LA.gms(1517) 1792 Mb
+--- Executing CONOPT4 (Solvelink=2): elapsed 3:28:54.908
+
+CONOPT 4         51.4.0 91cb996b Nov 10, 2025          WEI x86 64bit/MS Window
+
+
+Reading parameter(s) from "C:\Users\hisham\AppData\Local\Temp\24\tmpm8mtikd6\conopt4.opt"
+>>  iterlim 500
+>>  reslim 1800
+Finished reading from "C:\Users\hisham\AppData\Local\Temp\24\tmpm8mtikd6\conopt4.opt"
+
+ 
+ 
+    C O N O P T   version 4.38.2
+    Copyright (C) GAMS Software GmbH
+                  GAMS Development Corporation
+ 
+    Will use up to 4 threads.
+ 
+ 
+    The user model has 1 constraints and 36 variables
+    with 36 Jacobian elements, 35 of which are nonlinear.
+    The Hessian of the Lagrangian has 35 elements on the diagonal,
+    574 elements below the diagonal, and 35 nonlinear variables.
+ 
+    Iter Phase   Ninf   Infeasibility   RGmax      NSB   Step  InItr MX OK
+       0   0          2.4495046976E+04 (Input point)
+ 
+    The post-triangular part of the model has 1 constraints and variables.
+ 
+    Preprocessed model has no constraints and 35 variables.
+   Elapsed time       48.9 seconds.
+ 
+    Iter Phase   Ninf   Infeasibility   RGmax      NSB   Step  InItr MX OK
+                      0.0000000000E+00 (Full preprocessed model)
+                      0.0000000000E+00 (After scaling)
+ 
+ ** Feasible solution. Value of objective =   -24495.0469758
+   Elapsed time       94.9 seconds.
+ 
+    Iter Phase   Ninf     Objective     RGmax      NSB   Step  InItr MX OK
+       1   4         -2.3742644175E+04 3.1E+06      34 4.8E-02     6 F  T
+       6   4         -1.6879923580E+04 8.0E+04      34 1.0E+00     5 F  T
+      11   4         -1.6559597199E+04 2.2E+03      35 1.0E+00     7 F  T
+      16   4         -1.6527656034E+04 3.1E+02      35 1.0E+00     9 F  T
+      21   4         -1.6527142191E+04 2.7E+00      35 1.0E+00    10 F  T
+      24   4         -1.6527142183E+04 6.8E-09      35
+ 
+ ** Optimal solution. Reduced gradient less than tolerance.
+ 
+--- Reading solution for model ruro_couples_mnl_vectorized
+--- Executing after solve: elapsed 3:47:52.216
+--- _0amTJp6vTH6NLln_Usn_LA.gms(1576) 1792 Mb
+--- GDX File C:\Users\hisham\AppData\Local\Temp\24\tmpm8mtikd6\_0amTJp6vTH6NLln_Usn_LAout.gdx
+*** Status: Normal completion
+--- Job _0amTJp6vTH6NLln_Usn_LA.gms Stop 05/24/26 13:41:22 elapsed 3:47:52.233

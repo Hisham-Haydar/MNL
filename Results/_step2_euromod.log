@@ -1,0 +1,7 @@
+Step 2 started at: 2026-05-13 10:29:06
+U:\Desktop\Nizam_Hisham\MNL\scripts\enhanced\enh_RURO_euromod.py:334: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+WARNING:root:[RURO_euromod] 375851 rows (34.6%) have ils_dispy=0. This is unusually high and may indicate issues.
+Simulation for system FR_2015 with dataset FR_training_data finished.
+EUROMOD combined draws saved at: \\aff300msh.cifs.myliser.lu\ComputeShare\Hisham\EUROMOD-STORAGE\interim\ruro\fr\2016\ruro_occ\scenarios\combined_draws_em.parquet
+Step 2 finished at: 2026-05-13 10:35:14

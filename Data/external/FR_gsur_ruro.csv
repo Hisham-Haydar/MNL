@@ -1,0 +1,2161 @@
+year,drgn1,region_code,region_name,dgn,sex,education,educ_code,educ3,gsur,age_group_used,region_key
+2007,0,FR,France,0,F,ED0-2,educL,0,0.12,Y20-64,0
+2007,0,FR,France,0,F,ED3_4,educM,1,0.079,Y20-64,0
+2007,0,FR,France,0,F,ED5-8,educH,2,0.053,Y20-64,0
+2007,0,FR,France,0,F,TOTAL,educALL,-1,0.081,Y20-64,0
+2007,0,FR,France,1,M,ED0-2,educL,0,0.115,Y20-64,0
+2007,0,FR,France,1,M,ED3_4,educM,1,0.059000000000000004,Y20-64,0
+2007,0,FR,France,1,M,ED5-8,educH,2,0.052000000000000005,Y20-64,0
+2007,0,FR,France,1,M,TOTAL,educALL,-1,0.07200000000000001,Y20-64,0
+2007,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.11800000000000001,Y20-64,1
+2007,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.069,Y20-64,1
+2007,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.057,Y20-64,1
+2007,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.075,Y20-64,1
+2007,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.111,Y20-64,1
+2007,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.068,Y20-64,1
+2007,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.06,Y20-64,1
+2007,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.075,Y20-64,1
+2007,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.066,Y20-64,2
+2007,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.062,Y20-64,2
+2007,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,,Y20-64,2
+2007,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.055,Y20-64,2
+2007,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.1,Y20-64,2
+2007,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.035,Y20-64,2
+2007,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,,Y20-64,2
+2007,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.052000000000000005,Y20-64,2
+2007,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.13,Y20-64,3
+2007,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.065,Y20-64,3
+2007,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,,Y20-64,3
+2007,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.078,Y20-64,3
+2007,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.09699999999999999,Y20-64,3
+2007,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.034,Y20-64,3
+2007,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,,Y20-64,3
+2007,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.055,Y20-64,3
+2007,4,FRD,Normandie,0,F,ED0-2,educL,0,0.10400000000000001,Y20-64,4
+2007,4,FRD,Normandie,0,F,ED3_4,educM,1,0.078,Y20-64,4
+2007,4,FRD,Normandie,0,F,ED5-8,educH,2,0.051,Y20-64,4
+2007,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.078,Y20-64,4
+2007,4,FRD,Normandie,1,M,ED0-2,educL,0,0.084,Y20-64,4
+2007,4,FRD,Normandie,1,M,ED3_4,educM,1,0.045,Y20-64,4
+2007,4,FRD,Normandie,1,M,ED5-8,educH,2,0.047,Y20-64,4
+2007,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.057,Y20-64,4
+2007,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.124,Y20-64,5
+2007,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.109,Y20-64,5
+2007,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.06,Y20-64,5
+2007,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.10099999999999999,Y20-64,5
+2007,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.157,Y20-64,5
+2007,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.09,Y20-64,5
+2007,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.061,Y20-64,5
+2007,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.10400000000000001,Y20-64,5
+2007,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.11699999999999999,Y20-64,6
+2007,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.073,Y20-64,6
+2007,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.033,Y20-64,6
+2007,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.073,Y20-64,6
+2007,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.11599999999999999,Y20-64,6
+2007,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.044000000000000004,Y20-64,6
+2007,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.039,Y20-64,6
+2007,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.061,Y20-64,6
+2007,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.08900000000000001,Y20-64,7
+2007,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.071,Y20-64,7
+2007,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,,Y20-64,7
+2007,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.065,Y20-64,7
+2007,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.084,Y20-64,7
+2007,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.04,Y20-64,7
+2007,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,,Y20-64,7
+2007,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.049,Y20-64,7
+2007,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.071,Y20-64,8
+2007,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.08,Y20-64,8
+2007,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.062,Y20-64,8
+2007,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.07200000000000001,Y20-64,8
+2007,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.079,Y20-64,8
+2007,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.042,Y20-64,8
+2007,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.073,Y20-64,8
+2007,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.057999999999999996,Y20-64,8
+2007,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.109,Y20-64,9
+2007,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.057999999999999996,Y20-64,9
+2007,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.042,Y20-64,9
+2007,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.067,Y20-64,9
+2007,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.083,Y20-64,9
+2007,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.048,Y20-64,9
+2007,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.053,Y20-64,9
+2007,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.057999999999999996,Y20-64,9
+2007,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.12,Y20-64,10
+2007,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.079,Y20-64,10
+2007,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.078,Y20-64,10
+2007,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.08800000000000001,Y20-64,10
+2007,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.139,Y20-64,10
+2007,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.07200000000000001,Y20-64,10
+2007,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.040999999999999995,Y20-64,10
+2007,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.08199999999999999,Y20-64,10
+2007,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.09300000000000001,Y20-64,11
+2007,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.073,Y20-64,11
+2007,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.05,Y20-64,11
+2007,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.07,Y20-64,11
+2007,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.078,Y20-64,11
+2007,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.054000000000000006,Y20-64,11
+2007,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.043,Y20-64,11
+2007,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.057,Y20-64,11
+2007,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.132,Y20-64,12
+2007,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.094,Y20-64,12
+2007,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.057,Y20-64,12
+2007,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.094,Y20-64,12
+2007,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.12,Y20-64,12
+2007,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.062,Y20-64,12
+2007,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.053,Y20-64,12
+2007,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.078,Y20-64,12
+2007,13,FRM,Corse,0,F,ED0-2,educL,0,,Y20-64,13
+2007,13,FRM,Corse,0,F,ED3_4,educM,1,,Y20-64,13
+2007,13,FRM,Corse,0,F,ED5-8,educH,2,,Y20-64,13
+2007,13,FRM,Corse,0,F,TOTAL,educALL,-1,,Y20-64,13
+2007,13,FRM,Corse,1,M,ED0-2,educL,0,,Y20-64,13
+2007,13,FRM,Corse,1,M,ED3_4,educM,1,,Y20-64,13
+2007,13,FRM,Corse,1,M,ED5-8,educH,2,,Y20-64,13
+2007,13,FRM,Corse,1,M,TOTAL,educALL,-1,,Y20-64,13
+2007,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.369,Y20-64,14
+2007,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.214,Y20-64,14
+2007,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.069,Y20-64,14
+2007,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.24,Y20-64,14
+2007,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.262,Y20-64,14
+2007,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.185,Y20-64,14
+2007,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.068,Y20-64,14
+2007,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.19899999999999998,Y20-64,14
+2008,0,FR,France,0,F,ED0-2,educL,0,0.11900000000000001,Y20-64,0
+2008,0,FR,France,0,F,ED3_4,educM,1,0.075,Y20-64,0
+2008,0,FR,France,0,F,ED5-8,educH,2,0.045,Y20-64,0
+2008,0,FR,France,0,F,TOTAL,educALL,-1,0.076,Y20-64,0
+2008,0,FR,France,1,M,ED0-2,educL,0,0.11,Y20-64,0
+2008,0,FR,France,1,M,ED3_4,educM,1,0.057999999999999996,Y20-64,0
+2008,0,FR,France,1,M,ED5-8,educH,2,0.040999999999999995,Y20-64,0
+2008,0,FR,France,1,M,TOTAL,educALL,-1,0.067,Y20-64,0
+2008,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.09300000000000001,Y20-64,1
+2008,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.053,Y20-64,1
+2008,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.044000000000000004,Y20-64,1
+2008,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.057,Y20-64,1
+2008,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.10800000000000001,Y20-64,1
+2008,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.075,Y20-64,1
+2008,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.049,Y20-64,1
+2008,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.07400000000000001,Y20-64,1
+2008,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.092,Y20-64,2
+2008,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.047,Y20-64,2
+2008,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,,Y20-64,2
+2008,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.062,Y20-64,2
+2008,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.096,Y20-64,2
+2008,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,,Y20-64,2
+2008,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,,Y20-64,2
+2008,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.043,Y20-64,2
+2008,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.09699999999999999,Y20-64,3
+2008,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.084,Y20-64,3
+2008,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,,Y20-64,3
+2008,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.07200000000000001,Y20-64,3
+2008,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.102,Y20-64,3
+2008,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.038,Y20-64,3
+2008,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,,Y20-64,3
+2008,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.054000000000000006,Y20-64,3
+2008,4,FRD,Normandie,0,F,ED0-2,educL,0,0.127,Y20-64,4
+2008,4,FRD,Normandie,0,F,ED3_4,educM,1,0.091,Y20-64,4
+2008,4,FRD,Normandie,0,F,ED5-8,educH,2,,Y20-64,4
+2008,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.085,Y20-64,4
+2008,4,FRD,Normandie,1,M,ED0-2,educL,0,0.094,Y20-64,4
+2008,4,FRD,Normandie,1,M,ED3_4,educM,1,0.040999999999999995,Y20-64,4
+2008,4,FRD,Normandie,1,M,ED5-8,educH,2,,Y20-64,4
+2008,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.057,Y20-64,4
+2008,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.138,Y20-64,5
+2008,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.095,Y20-64,5
+2008,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.055999999999999994,Y20-64,5
+2008,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.095,Y20-64,5
+2008,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.159,Y20-64,5
+2008,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.07200000000000001,Y20-64,5
+2008,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.031,Y20-64,5
+2008,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.087,Y20-64,5
+2008,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.126,Y20-64,6
+2008,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.085,Y20-64,6
+2008,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.032,Y20-64,6
+2008,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.079,Y20-64,6
+2008,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.098,Y20-64,6
+2008,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.049,Y20-64,6
+2008,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.035,Y20-64,6
+2008,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.057999999999999996,Y20-64,6
+2008,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.10099999999999999,Y20-64,7
+2008,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.055,Y20-64,7
+2008,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.052000000000000005,Y20-64,7
+2008,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.065,Y20-64,7
+2008,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.099,Y20-64,7
+2008,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.038,Y20-64,7
+2008,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,,Y20-64,7
+2008,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.051,Y20-64,7
+2008,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.084,Y20-64,8
+2008,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.049,Y20-64,8
+2008,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.039,Y20-64,8
+2008,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.052000000000000005,Y20-64,8
+2008,8,FRH,Bretagne,1,M,ED0-2,educL,0,,Y20-64,8
+2008,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.047,Y20-64,8
+2008,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.042,Y20-64,8
+2008,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.045,Y20-64,8
+2008,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.11199999999999999,Y20-64,9
+2008,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.07200000000000001,Y20-64,9
+2008,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.045,Y20-64,9
+2008,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.07400000000000001,Y20-64,9
+2008,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.085,Y20-64,9
+2008,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.049,Y20-64,9
+2008,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.048,Y20-64,9
+2008,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.057,Y20-64,9
+2008,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.11900000000000001,Y20-64,10
+2008,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.081,Y20-64,10
+2008,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.048,Y20-64,10
+2008,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.077,Y20-64,10
+2008,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.10800000000000001,Y20-64,10
+2008,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.067,Y20-64,10
+2008,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.036000000000000004,Y20-64,10
+2008,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.069,Y20-64,10
+2008,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.10400000000000001,Y20-64,11
+2008,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.063,Y20-64,11
+2008,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.049,Y20-64,11
+2008,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.067,Y20-64,11
+2008,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.08,Y20-64,11
+2008,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.057,Y20-64,11
+2008,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.036000000000000004,Y20-64,11
+2008,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.057,Y20-64,11
+2008,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.095,Y20-64,12
+2008,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.085,Y20-64,12
+2008,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.051,Y20-64,12
+2008,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.077,Y20-64,12
+2008,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.122,Y20-64,12
+2008,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.061,Y20-64,12
+2008,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.039,Y20-64,12
+2008,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.073,Y20-64,12
+2008,13,FRM,Corse,0,F,ED0-2,educL,0,,Y20-64,13
+2008,13,FRM,Corse,0,F,ED3_4,educM,1,,Y20-64,13
+2008,13,FRM,Corse,0,F,ED5-8,educH,2,,Y20-64,13
+2008,13,FRM,Corse,0,F,TOTAL,educALL,-1,,Y20-64,13
+2008,13,FRM,Corse,1,M,ED0-2,educL,0,,Y20-64,13
+2008,13,FRM,Corse,1,M,ED3_4,educM,1,,Y20-64,13
+2008,13,FRM,Corse,1,M,ED5-8,educH,2,,Y20-64,13
+2008,13,FRM,Corse,1,M,TOTAL,educALL,-1,,Y20-64,13
+2008,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.36,Y20-64,14
+2008,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.247,Y20-64,14
+2008,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.059000000000000004,Y20-64,14
+2008,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.251,Y20-64,14
+2008,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.266,Y20-64,14
+2008,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.18,Y20-64,14
+2008,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.053,Y20-64,14
+2008,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.195,Y20-64,14
+2009,0,FR,France,0,F,ED0-2,educL,0,0.133,Y20-64,0
+2009,0,FR,France,0,F,ED3_4,educM,1,0.092,Y20-64,0
+2009,0,FR,France,0,F,ED5-8,educH,2,0.054000000000000006,Y20-64,0
+2009,0,FR,France,0,F,TOTAL,educALL,-1,0.08800000000000001,Y20-64,0
+2009,0,FR,France,1,M,ED0-2,educL,0,0.138,Y20-64,0
+2009,0,FR,France,1,M,ED3_4,educM,1,0.076,Y20-64,0
+2009,0,FR,France,1,M,ED5-8,educH,2,0.054000000000000006,Y20-64,0
+2009,0,FR,France,1,M,TOTAL,educALL,-1,0.085,Y20-64,0
+2009,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.106,Y20-64,1
+2009,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.075,Y20-64,1
+2009,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.053,Y20-64,1
+2009,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.07200000000000001,Y20-64,1
+2009,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.141,Y20-64,1
+2009,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.079,Y20-64,1
+2009,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.054000000000000006,Y20-64,1
+2009,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.085,Y20-64,1
+2009,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.1,Y20-64,2
+2009,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.06,Y20-64,2
+2009,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.04,Y20-64,2
+2009,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.064,Y20-64,2
+2009,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.1,Y20-64,2
+2009,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.053,Y20-64,2
+2009,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,,Y20-64,2
+2009,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.06,Y20-64,2
+2009,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.122,Y20-64,3
+2009,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.077,Y20-64,3
+2009,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.038,Y20-64,3
+2009,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.076,Y20-64,3
+2009,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.11599999999999999,Y20-64,3
+2009,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.066,Y20-64,3
+2009,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.052000000000000005,Y20-64,3
+2009,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.076,Y20-64,3
+2009,4,FRD,Normandie,0,F,ED0-2,educL,0,0.135,Y20-64,4
+2009,4,FRD,Normandie,0,F,ED3_4,educM,1,0.086,Y20-64,4
+2009,4,FRD,Normandie,0,F,ED5-8,educH,2,0.048,Y20-64,4
+2009,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.08800000000000001,Y20-64,4
+2009,4,FRD,Normandie,1,M,ED0-2,educL,0,0.132,Y20-64,4
+2009,4,FRD,Normandie,1,M,ED3_4,educM,1,0.057,Y20-64,4
+2009,4,FRD,Normandie,1,M,ED5-8,educH,2,,Y20-64,4
+2009,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.07400000000000001,Y20-64,4
+2009,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.172,Y20-64,5
+2009,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.115,Y20-64,5
+2009,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.055999999999999994,Y20-64,5
+2009,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.111,Y20-64,5
+2009,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.19899999999999998,Y20-64,5
+2009,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.10400000000000001,Y20-64,5
+2009,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.057999999999999996,Y20-64,5
+2009,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.12,Y20-64,5
+2009,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.129,Y20-64,6
+2009,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.1,Y20-64,6
+2009,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.042,Y20-64,6
+2009,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.09,Y20-64,6
+2009,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.134,Y20-64,6
+2009,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.087,Y20-64,6
+2009,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.06,Y20-64,6
+2009,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.091,Y20-64,6
+2009,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.10300000000000001,Y20-64,7
+2009,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.084,Y20-64,7
+2009,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.067,Y20-64,7
+2009,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.083,Y20-64,7
+2009,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.10300000000000001,Y20-64,7
+2009,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.053,Y20-64,7
+2009,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.042,Y20-64,7
+2009,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.062,Y20-64,7
+2009,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.106,Y20-64,8
+2009,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.073,Y20-64,8
+2009,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.035,Y20-64,8
+2009,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.065,Y20-64,8
+2009,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.067,Y20-64,8
+2009,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.037000000000000005,Y20-64,8
+2009,8,FRH,Bretagne,1,M,ED5-8,educH,2,,Y20-64,8
+2009,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.042,Y20-64,8
+2009,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.126,Y20-64,9
+2009,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.078,Y20-64,9
+2009,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.06,Y20-64,9
+2009,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.083,Y20-64,9
+2009,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.10800000000000001,Y20-64,9
+2009,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.063,Y20-64,9
+2009,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.055,Y20-64,9
+2009,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.07200000000000001,Y20-64,9
+2009,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.13699999999999998,Y20-64,10
+2009,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.109,Y20-64,10
+2009,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.078,Y20-64,10
+2009,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.10400000000000001,Y20-64,10
+2009,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.156,Y20-64,10
+2009,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.091,Y20-64,10
+2009,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.065,Y20-64,10
+2009,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.099,Y20-64,10
+2009,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.10400000000000001,Y20-64,11
+2009,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.084,Y20-64,11
+2009,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.054000000000000006,Y20-64,11
+2009,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.078,Y20-64,11
+2009,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.113,Y20-64,11
+2009,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.073,Y20-64,11
+2009,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.049,Y20-64,11
+2009,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.076,Y20-64,11
+2009,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.134,Y20-64,12
+2009,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.094,Y20-64,12
+2009,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.042,Y20-64,12
+2009,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.087,Y20-64,12
+2009,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.12,Y20-64,12
+2009,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.08,Y20-64,12
+2009,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.064,Y20-64,12
+2009,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.087,Y20-64,12
+2009,13,FRM,Corse,0,F,ED0-2,educL,0,,Y20-64,13
+2009,13,FRM,Corse,0,F,ED3_4,educM,1,,Y20-64,13
+2009,13,FRM,Corse,0,F,ED5-8,educH,2,,Y20-64,13
+2009,13,FRM,Corse,0,F,TOTAL,educALL,-1,,Y20-64,13
+2009,13,FRM,Corse,1,M,ED0-2,educL,0,,Y20-64,13
+2009,13,FRM,Corse,1,M,ED3_4,educM,1,,Y20-64,13
+2009,13,FRM,Corse,1,M,ED5-8,educH,2,,Y20-64,13
+2009,13,FRM,Corse,1,M,TOTAL,educALL,-1,,Y20-64,13
+2009,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.359,Y20-64,14
+2009,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.273,Y20-64,14
+2009,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.08199999999999999,Y20-64,14
+2009,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.259,Y20-64,14
+2009,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.299,Y20-64,14
+2009,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.18899999999999997,Y20-64,14
+2009,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.07400000000000001,Y20-64,14
+2009,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.215,Y20-64,14
+2010,0,FR,France,0,F,ED0-2,educL,0,0.145,Y20-64,0
+2010,0,FR,France,0,F,ED3_4,educM,1,0.09300000000000001,Y20-64,0
+2010,0,FR,France,0,F,ED5-8,educH,2,0.053,Y20-64,0
+2010,0,FR,France,0,F,TOTAL,educALL,-1,0.091,Y20-64,0
+2010,0,FR,France,1,M,ED0-2,educL,0,0.14800000000000002,Y20-64,0
+2010,0,FR,France,1,M,ED3_4,educM,1,0.075,Y20-64,0
+2010,0,FR,France,1,M,ED5-8,educH,2,0.053,Y20-64,0
+2010,0,FR,France,1,M,TOTAL,educALL,-1,0.087,Y20-64,0
+2010,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.14,Y20-64,1
+2010,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.085,Y20-64,1
+2010,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.055999999999999994,Y20-64,1
+2010,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.084,Y20-64,1
+2010,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.139,Y20-64,1
+2010,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.077,Y20-64,1
+2010,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.055999999999999994,Y20-64,1
+2010,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.083,Y20-64,1
+2010,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.09,Y20-64,2
+2010,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.057,Y20-64,2
+2010,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.053,Y20-64,2
+2010,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.064,Y20-64,2
+2010,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.099,Y20-64,2
+2010,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.062,Y20-64,2
+2010,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.048,Y20-64,2
+2010,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.068,Y20-64,2
+2010,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.151,Y20-64,3
+2010,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.067,Y20-64,3
+2010,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.044000000000000004,Y20-64,3
+2010,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.084,Y20-64,3
+2010,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.127,Y20-64,3
+2010,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.07200000000000001,Y20-64,3
+2010,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.045,Y20-64,3
+2010,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.081,Y20-64,3
+2010,4,FRD,Normandie,0,F,ED0-2,educL,0,0.129,Y20-64,4
+2010,4,FRD,Normandie,0,F,ED3_4,educM,1,0.086,Y20-64,4
+2010,4,FRD,Normandie,0,F,ED5-8,educH,2,0.059000000000000004,Y20-64,4
+2010,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.09,Y20-64,4
+2010,4,FRD,Normandie,1,M,ED0-2,educL,0,0.14,Y20-64,4
+2010,4,FRD,Normandie,1,M,ED3_4,educM,1,0.064,Y20-64,4
+2010,4,FRD,Normandie,1,M,ED5-8,educH,2,0.049,Y20-64,4
+2010,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.081,Y20-64,4
+2010,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.191,Y20-64,5
+2010,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.11800000000000001,Y20-64,5
+2010,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.053,Y20-64,5
+2010,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.11599999999999999,Y20-64,5
+2010,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.19399999999999998,Y20-64,5
+2010,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.106,Y20-64,5
+2010,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.045,Y20-64,5
+2010,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.115,Y20-64,5
+2010,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.139,Y20-64,6
+2010,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.083,Y20-64,6
+2010,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.05,Y20-64,6
+2010,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.086,Y20-64,6
+2010,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.128,Y20-64,6
+2010,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.075,Y20-64,6
+2010,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.055999999999999994,Y20-64,6
+2010,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.08199999999999999,Y20-64,6
+2010,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.138,Y20-64,7
+2010,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.096,Y20-64,7
+2010,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.046,Y20-64,7
+2010,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.08900000000000001,Y20-64,7
+2010,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.12300000000000001,Y20-64,7
+2010,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.064,Y20-64,7
+2010,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.055,Y20-64,7
+2010,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.075,Y20-64,7
+2010,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.091,Y20-64,8
+2010,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.083,Y20-64,8
+2010,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.053,Y20-64,8
+2010,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.07400000000000001,Y20-64,8
+2010,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.098,Y20-64,8
+2010,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.045,Y20-64,8
+2010,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.054000000000000006,Y20-64,8
+2010,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.057,Y20-64,8
+2010,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.12,Y20-64,9
+2010,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.077,Y20-64,9
+2010,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.044000000000000004,Y20-64,9
+2010,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.075,Y20-64,9
+2010,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.129,Y20-64,9
+2010,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.062,Y20-64,9
+2010,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.044000000000000004,Y20-64,9
+2010,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.073,Y20-64,9
+2010,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.125,Y20-64,10
+2010,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.10800000000000001,Y20-64,10
+2010,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.051,Y20-64,10
+2010,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.09,Y20-64,10
+2010,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.195,Y20-64,10
+2010,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.08900000000000001,Y20-64,10
+2010,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.065,Y20-64,10
+2010,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.107,Y20-64,10
+2010,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.12,Y20-64,11
+2010,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.085,Y20-64,11
+2010,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.048,Y20-64,11
+2010,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.081,Y20-64,11
+2010,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.124,Y20-64,11
+2010,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.063,Y20-64,11
+2010,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.040999999999999995,Y20-64,11
+2010,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.07,Y20-64,11
+2010,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.138,Y20-64,12
+2010,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.10099999999999999,Y20-64,12
+2010,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.066,Y20-64,12
+2010,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.098,Y20-64,12
+2010,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.128,Y20-64,12
+2010,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.07400000000000001,Y20-64,12
+2010,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.061,Y20-64,12
+2010,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.086,Y20-64,12
+2010,13,FRM,Corse,0,F,ED0-2,educL,0,,Y20-64,13
+2010,13,FRM,Corse,0,F,ED3_4,educM,1,,Y20-64,13
+2010,13,FRM,Corse,0,F,ED5-8,educH,2,,Y20-64,13
+2010,13,FRM,Corse,0,F,TOTAL,educALL,-1,,Y20-64,13
+2010,13,FRM,Corse,1,M,ED0-2,educL,0,,Y20-64,13
+2010,13,FRM,Corse,1,M,ED3_4,educM,1,,Y20-64,13
+2010,13,FRM,Corse,1,M,ED5-8,educH,2,,Y20-64,13
+2010,13,FRM,Corse,1,M,TOTAL,educALL,-1,,Y20-64,13
+2010,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.364,Y20-64,14
+2010,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.271,Y20-64,14
+2010,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.08199999999999999,Y20-64,14
+2010,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.261,Y20-64,14
+2010,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.316,Y20-64,14
+2010,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.20600000000000002,Y20-64,14
+2010,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.08199999999999999,Y20-64,14
+2010,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.23,Y20-64,14
+2011,0,FR,France,0,F,ED0-2,educL,0,0.146,Y20-64,0
+2011,0,FR,France,0,F,ED3_4,educM,1,0.09699999999999999,Y20-64,0
+2011,0,FR,France,0,F,ED5-8,educH,2,0.054000000000000006,Y20-64,0
+2011,0,FR,France,0,F,TOTAL,educALL,-1,0.09300000000000001,Y20-64,0
+2011,0,FR,France,1,M,ED0-2,educL,0,0.145,Y20-64,0
+2011,0,FR,France,1,M,ED3_4,educM,1,0.076,Y20-64,0
+2011,0,FR,France,1,M,ED5-8,educH,2,0.05,Y20-64,0
+2011,0,FR,France,1,M,TOTAL,educALL,-1,0.085,Y20-64,0
+2011,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.13,Y20-64,1
+2011,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.08199999999999999,Y20-64,1
+2011,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.05,Y20-64,1
+2011,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.078,Y20-64,1
+2011,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.138,Y20-64,1
+2011,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.07400000000000001,Y20-64,1
+2011,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.057,Y20-64,1
+2011,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.08199999999999999,Y20-64,1
+2011,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.11800000000000001,Y20-64,2
+2011,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.084,Y20-64,2
+2011,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.06,Y20-64,2
+2011,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.084,Y20-64,2
+2011,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.124,Y20-64,2
+2011,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.066,Y20-64,2
+2011,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.059000000000000004,Y20-64,2
+2011,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.076,Y20-64,2
+2011,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.128,Y20-64,3
+2011,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.08199999999999999,Y20-64,3
+2011,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.066,Y20-64,3
+2011,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.08900000000000001,Y20-64,3
+2011,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.10400000000000001,Y20-64,3
+2011,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.069,Y20-64,3
+2011,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.044000000000000004,Y20-64,3
+2011,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.07200000000000001,Y20-64,3
+2011,4,FRD,Normandie,0,F,ED0-2,educL,0,0.11900000000000001,Y20-64,4
+2011,4,FRD,Normandie,0,F,ED3_4,educM,1,0.102,Y20-64,4
+2011,4,FRD,Normandie,0,F,ED5-8,educH,2,0.051,Y20-64,4
+2011,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.091,Y20-64,4
+2011,4,FRD,Normandie,1,M,ED0-2,educL,0,0.138,Y20-64,4
+2011,4,FRD,Normandie,1,M,ED3_4,educM,1,0.07400000000000001,Y20-64,4
+2011,4,FRD,Normandie,1,M,ED5-8,educH,2,0.040999999999999995,Y20-64,4
+2011,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.08199999999999999,Y20-64,4
+2011,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.182,Y20-64,5
+2011,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.126,Y20-64,5
+2011,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.04,Y20-64,5
+2011,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.113,Y20-64,5
+2011,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.171,Y20-64,5
+2011,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.084,Y20-64,5
+2011,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.045,Y20-64,5
+2011,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.098,Y20-64,5
+2011,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.151,Y20-64,6
+2011,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.09,Y20-64,6
+2011,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.047,Y20-64,6
+2011,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.09,Y20-64,6
+2011,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.15,Y20-64,6
+2011,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.07400000000000001,Y20-64,6
+2011,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.048,Y20-64,6
+2011,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.085,Y20-64,6
+2011,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.125,Y20-64,7
+2011,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.08900000000000001,Y20-64,7
+2011,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.055999999999999994,Y20-64,7
+2011,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.086,Y20-64,7
+2011,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.14,Y20-64,7
+2011,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.071,Y20-64,7
+2011,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.044000000000000004,Y20-64,7
+2011,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.077,Y20-64,7
+2011,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.095,Y20-64,8
+2011,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.07200000000000001,Y20-64,8
+2011,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.051,Y20-64,8
+2011,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.068,Y20-64,8
+2011,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.08199999999999999,Y20-64,8
+2011,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.067,Y20-64,8
+2011,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.057999999999999996,Y20-64,8
+2011,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.067,Y20-64,8
+2011,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.11199999999999999,Y20-64,9
+2011,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.075,Y20-64,9
+2011,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.066,Y20-64,9
+2011,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.08,Y20-64,9
+2011,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.134,Y20-64,9
+2011,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.076,Y20-64,9
+2011,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.053,Y20-64,9
+2011,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.083,Y20-64,9
+2011,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.156,Y20-64,10
+2011,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.111,Y20-64,10
+2011,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.055999999999999994,Y20-64,10
+2011,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.099,Y20-64,10
+2011,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.159,Y20-64,10
+2011,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.083,Y20-64,10
+2011,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.05,Y20-64,10
+2011,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.091,Y20-64,10
+2011,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.131,Y20-64,11
+2011,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.086,Y20-64,11
+2011,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.049,Y20-64,11
+2011,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.083,Y20-64,11
+2011,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.11,Y20-64,11
+2011,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.066,Y20-64,11
+2011,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.038,Y20-64,11
+2011,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.068,Y20-64,11
+2011,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.14,Y20-64,12
+2011,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.11199999999999999,Y20-64,12
+2011,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.067,Y20-64,12
+2011,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.102,Y20-64,12
+2011,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.15,Y20-64,12
+2011,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.07400000000000001,Y20-64,12
+2011,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.051,Y20-64,12
+2011,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.087,Y20-64,12
+2011,13,FRM,Corse,0,F,ED0-2,educL,0,,Y20-64,13
+2011,13,FRM,Corse,0,F,ED3_4,educM,1,,Y20-64,13
+2011,13,FRM,Corse,0,F,ED5-8,educH,2,,Y20-64,13
+2011,13,FRM,Corse,0,F,TOTAL,educALL,-1,,Y20-64,13
+2011,13,FRM,Corse,1,M,ED0-2,educL,0,,Y20-64,13
+2011,13,FRM,Corse,1,M,ED3_4,educM,1,,Y20-64,13
+2011,13,FRM,Corse,1,M,ED5-8,educH,2,,Y20-64,13
+2011,13,FRM,Corse,1,M,TOTAL,educALL,-1,,Y20-64,13
+2011,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.38799999999999996,Y20-64,14
+2011,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.273,Y20-64,14
+2011,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.10300000000000001,Y20-64,14
+2011,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.271,Y20-64,14
+2011,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.31,Y20-64,14
+2011,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.205,Y20-64,14
+2011,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.073,Y20-64,14
+2011,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.223,Y20-64,14
+2012,0,FR,France,0,F,ED0-2,educL,0,0.153,Y20-64,0
+2012,0,FR,France,0,F,ED3_4,educM,1,0.1,Y20-64,0
+2012,0,FR,France,0,F,ED5-8,educH,2,0.055,Y20-64,0
+2012,0,FR,France,0,F,TOTAL,educALL,-1,0.095,Y20-64,0
+2012,0,FR,France,1,M,ED0-2,educL,0,0.155,Y20-64,0
+2012,0,FR,France,1,M,ED3_4,educM,1,0.08800000000000001,Y20-64,0
+2012,0,FR,France,1,M,ED5-8,educH,2,0.055,Y20-64,0
+2012,0,FR,France,1,M,TOTAL,educALL,-1,0.094,Y20-64,0
+2012,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.125,Y20-64,1
+2012,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.081,Y20-64,1
+2012,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.05,Y20-64,1
+2012,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.075,Y20-64,1
+2012,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.133,Y20-64,1
+2012,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.086,Y20-64,1
+2012,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.052000000000000005,Y20-64,1
+2012,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.083,Y20-64,1
+2012,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.139,Y20-64,2
+2012,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.1,Y20-64,2
+2012,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.068,Y20-64,2
+2012,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.098,Y20-64,2
+2012,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.139,Y20-64,2
+2012,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.12,Y20-64,2
+2012,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.057999999999999996,Y20-64,2
+2012,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.107,Y20-64,2
+2012,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.12300000000000001,Y20-64,3
+2012,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.091,Y20-64,3
+2012,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.055,Y20-64,3
+2012,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.086,Y20-64,3
+2012,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.142,Y20-64,3
+2012,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.076,Y20-64,3
+2012,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.049,Y20-64,3
+2012,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.085,Y20-64,3
+2012,4,FRD,Normandie,0,F,ED0-2,educL,0,0.134,Y20-64,4
+2012,4,FRD,Normandie,0,F,ED3_4,educM,1,0.10400000000000001,Y20-64,4
+2012,4,FRD,Normandie,0,F,ED5-8,educH,2,0.046,Y20-64,4
+2012,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.09300000000000001,Y20-64,4
+2012,4,FRD,Normandie,1,M,ED0-2,educL,0,0.163,Y20-64,4
+2012,4,FRD,Normandie,1,M,ED3_4,educM,1,0.084,Y20-64,4
+2012,4,FRD,Normandie,1,M,ED5-8,educH,2,0.059000000000000004,Y20-64,4
+2012,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.09699999999999999,Y20-64,4
+2012,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.16699999999999998,Y20-64,5
+2012,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.132,Y20-64,5
+2012,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.053,Y20-64,5
+2012,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.115,Y20-64,5
+2012,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.203,Y20-64,5
+2012,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.107,Y20-64,5
+2012,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.049,Y20-64,5
+2012,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.11800000000000001,Y20-64,5
+2012,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.157,Y20-64,6
+2012,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.09300000000000001,Y20-64,6
+2012,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.05,Y20-64,6
+2012,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.09300000000000001,Y20-64,6
+2012,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.188,Y20-64,6
+2012,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.087,Y20-64,6
+2012,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.063,Y20-64,6
+2012,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.10400000000000001,Y20-64,6
+2012,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.14300000000000002,Y20-64,7
+2012,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.09,Y20-64,7
+2012,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.044000000000000004,Y20-64,7
+2012,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.086,Y20-64,7
+2012,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.13,Y20-64,7
+2012,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.064,Y20-64,7
+2012,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.052000000000000005,Y20-64,7
+2012,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.073,Y20-64,7
+2012,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.1,Y20-64,8
+2012,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.07400000000000001,Y20-64,8
+2012,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.076,Y20-64,8
+2012,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.079,Y20-64,8
+2012,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.127,Y20-64,8
+2012,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.075,Y20-64,8
+2012,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.054000000000000006,Y20-64,8
+2012,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.076,Y20-64,8
+2012,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.141,Y20-64,9
+2012,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.08900000000000001,Y20-64,9
+2012,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.053,Y20-64,9
+2012,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.087,Y20-64,9
+2012,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.121,Y20-64,9
+2012,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.075,Y20-64,9
+2012,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.057,Y20-64,9
+2012,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.081,Y20-64,9
+2012,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.18600000000000003,Y20-64,10
+2012,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.115,Y20-64,10
+2012,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.071,Y20-64,10
+2012,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.113,Y20-64,10
+2012,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.16399999999999998,Y20-64,10
+2012,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.1,Y20-64,10
+2012,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.071,Y20-64,10
+2012,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.106,Y20-64,10
+2012,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.134,Y20-64,11
+2012,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.087,Y20-64,11
+2012,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.047,Y20-64,11
+2012,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.081,Y20-64,11
+2012,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.124,Y20-64,11
+2012,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.077,Y20-64,11
+2012,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.05,Y20-64,11
+2012,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.078,Y20-64,11
+2012,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.14800000000000002,Y20-64,12
+2012,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.107,Y20-64,12
+2012,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.06,Y20-64,12
+2012,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.099,Y20-64,12
+2012,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.136,Y20-64,12
+2012,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.084,Y20-64,12
+2012,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.05,Y20-64,12
+2012,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.087,Y20-64,12
+2012,13,FRM,Corse,0,F,ED0-2,educL,0,,Y20-64,13
+2012,13,FRM,Corse,0,F,ED3_4,educM,1,,Y20-64,13
+2012,13,FRM,Corse,0,F,ED5-8,educH,2,,Y20-64,13
+2012,13,FRM,Corse,0,F,TOTAL,educALL,-1,,Y20-64,13
+2012,13,FRM,Corse,1,M,ED0-2,educL,0,,Y20-64,13
+2012,13,FRM,Corse,1,M,ED3_4,educM,1,,Y20-64,13
+2012,13,FRM,Corse,1,M,ED5-8,educH,2,,Y20-64,13
+2012,13,FRM,Corse,1,M,TOTAL,educALL,-1,,Y20-64,13
+2012,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.36700000000000005,Y20-64,14
+2012,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.27699999999999997,Y20-64,14
+2012,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.105,Y20-64,14
+2012,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.263,Y20-64,14
+2012,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.313,Y20-64,14
+2012,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.215,Y20-64,14
+2012,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.071,Y20-64,14
+2012,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.22399999999999998,Y20-64,14
+2013,0,FR,France,0,F,ED0-2,educL,0,0.16399999999999998,Y20-64,0
+2013,0,FR,France,0,F,ED3_4,educM,1,0.105,Y20-64,0
+2013,0,FR,France,0,F,ED5-8,educH,2,0.06,Y20-64,0
+2013,0,FR,France,0,F,TOTAL,educALL,-1,0.099,Y20-64,0
+2013,0,FR,France,1,M,ED0-2,educL,0,0.166,Y20-64,0
+2013,0,FR,France,1,M,ED3_4,educM,1,0.098,Y20-64,0
+2013,0,FR,France,1,M,ED5-8,educH,2,0.061,Y20-64,0
+2013,0,FR,France,1,M,TOTAL,educALL,-1,0.10099999999999999,Y20-64,0
+2013,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.13,Y20-64,1
+2013,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.086,Y20-64,1
+2013,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.057,Y20-64,1
+2013,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.081,Y20-64,1
+2013,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.138,Y20-64,1
+2013,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.10400000000000001,Y20-64,1
+2013,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.067,Y20-64,1
+2013,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.096,Y20-64,1
+2013,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.163,Y20-64,2
+2013,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.099,Y20-64,2
+2013,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.055999999999999994,Y20-64,2
+2013,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.098,Y20-64,2
+2013,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.17600000000000002,Y20-64,2
+2013,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.10400000000000001,Y20-64,2
+2013,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.055999999999999994,Y20-64,2
+2013,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.107,Y20-64,2
+2013,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.154,Y20-64,3
+2013,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.10300000000000001,Y20-64,3
+2013,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.05,Y20-64,3
+2013,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.09699999999999999,Y20-64,3
+2013,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.139,Y20-64,3
+2013,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.10800000000000001,Y20-64,3
+2013,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.06,Y20-64,3
+2013,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.102,Y20-64,3
+2013,4,FRD,Normandie,0,F,ED0-2,educL,0,0.16899999999999998,Y20-64,4
+2013,4,FRD,Normandie,0,F,ED3_4,educM,1,0.09699999999999999,Y20-64,4
+2013,4,FRD,Normandie,0,F,ED5-8,educH,2,0.052000000000000005,Y20-64,4
+2013,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.098,Y20-64,4
+2013,4,FRD,Normandie,1,M,ED0-2,educL,0,0.166,Y20-64,4
+2013,4,FRD,Normandie,1,M,ED3_4,educM,1,0.094,Y20-64,4
+2013,4,FRD,Normandie,1,M,ED5-8,educH,2,0.062,Y20-64,4
+2013,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.10099999999999999,Y20-64,4
+2013,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.209,Y20-64,5
+2013,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.145,Y20-64,5
+2013,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.06,Y20-64,5
+2013,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.129,Y20-64,5
+2013,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.23600000000000002,Y20-64,5
+2013,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.125,Y20-64,5
+2013,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.055,Y20-64,5
+2013,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.132,Y20-64,5
+2013,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.177,Y20-64,6
+2013,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.106,Y20-64,6
+2013,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.064,Y20-64,6
+2013,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.106,Y20-64,6
+2013,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.185,Y20-64,6
+2013,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.083,Y20-64,6
+2013,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.07200000000000001,Y20-64,6
+2013,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.1,Y20-64,6
+2013,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.131,Y20-64,7
+2013,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.091,Y20-64,7
+2013,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.063,Y20-64,7
+2013,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.08900000000000001,Y20-64,7
+2013,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.146,Y20-64,7
+2013,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.07,Y20-64,7
+2013,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.057,Y20-64,7
+2013,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.08,Y20-64,7
+2013,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.153,Y20-64,8
+2013,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.081,Y20-64,8
+2013,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.063,Y20-64,8
+2013,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.08199999999999999,Y20-64,8
+2013,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.11699999999999999,Y20-64,8
+2013,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.07200000000000001,Y20-64,8
+2013,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.049,Y20-64,8
+2013,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.071,Y20-64,8
+2013,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.127,Y20-64,9
+2013,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.086,Y20-64,9
+2013,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.066,Y20-64,9
+2013,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.086,Y20-64,9
+2013,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.121,Y20-64,9
+2013,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.08900000000000001,Y20-64,9
+2013,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.055,Y20-64,9
+2013,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.086,Y20-64,9
+2013,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.16899999999999998,Y20-64,10
+2013,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.109,Y20-64,10
+2013,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.063,Y20-64,10
+2013,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.099,Y20-64,10
+2013,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.184,Y20-64,10
+2013,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.10300000000000001,Y20-64,10
+2013,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.054000000000000006,Y20-64,10
+2013,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.10400000000000001,Y20-64,10
+2013,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.136,Y20-64,11
+2013,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.095,Y20-64,11
+2013,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.046,Y20-64,11
+2013,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.08199999999999999,Y20-64,11
+2013,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.134,Y20-64,11
+2013,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.077,Y20-64,11
+2013,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.055,Y20-64,11
+2013,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.08,Y20-64,11
+2013,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.151,Y20-64,12
+2013,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.12,Y20-64,12
+2013,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.071,Y20-64,12
+2013,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.107,Y20-64,12
+2013,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.13699999999999998,Y20-64,12
+2013,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.111,Y20-64,12
+2013,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.07400000000000001,Y20-64,12
+2013,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.105,Y20-64,12
+2013,13,FRM,Corse,0,F,ED0-2,educL,0,0.23600000000000002,Y20-64,13
+2013,13,FRM,Corse,0,F,ED3_4,educM,1,0.125,Y20-64,13
+2013,13,FRM,Corse,0,F,ED5-8,educH,2,0.096,Y20-64,13
+2013,13,FRM,Corse,0,F,TOTAL,educALL,-1,0.145,Y20-64,13
+2013,13,FRM,Corse,1,M,ED0-2,educL,0,0.114,Y20-64,13
+2013,13,FRM,Corse,1,M,ED3_4,educM,1,0.071,Y20-64,13
+2013,13,FRM,Corse,1,M,ED5-8,educH,2,0.091,Y20-64,13
+2013,13,FRM,Corse,1,M,TOTAL,educALL,-1,0.09,Y20-64,13
+2013,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.368,Y20-64,14
+2013,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.293,Y20-64,14
+2013,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.11,Y20-64,14
+2013,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.268,Y20-64,14
+2013,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.331,Y20-64,14
+2013,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.23199999999999998,Y20-64,14
+2013,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.075,Y20-64,14
+2013,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.237,Y20-64,14
+2014,0,FR,France,0,F,ED0-2,educL,0,0.154,Y20-64,0
+2014,0,FR,France,0,F,ED3_4,educM,1,0.106,Y20-64,0
+2014,0,FR,France,0,F,ED5-8,educH,2,0.063,Y20-64,0
+2014,0,FR,France,0,F,TOTAL,educALL,-1,0.09699999999999999,Y20-64,0
+2014,0,FR,France,1,M,ED0-2,educL,0,0.172,Y20-64,0
+2014,0,FR,France,1,M,ED3_4,educM,1,0.099,Y20-64,0
+2014,0,FR,France,1,M,ED5-8,educH,2,0.064,Y20-64,0
+2014,0,FR,France,1,M,TOTAL,educALL,-1,0.102,Y20-64,0
+2014,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.121,Y20-64,1
+2014,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.10099999999999999,Y20-64,1
+2014,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.069,Y20-64,1
+2014,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.08900000000000001,Y20-64,1
+2014,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.162,Y20-64,1
+2014,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.102,Y20-64,1
+2014,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.071,Y20-64,1
+2014,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.1,Y20-64,1
+2014,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.124,Y20-64,2
+2014,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.106,Y20-64,2
+2014,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.062,Y20-64,2
+2014,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.094,Y20-64,2
+2014,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.139,Y20-64,2
+2014,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.09300000000000001,Y20-64,2
+2014,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.046,Y20-64,2
+2014,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.091,Y20-64,2
+2014,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.139,Y20-64,3
+2014,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.107,Y20-64,3
+2014,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.046,Y20-64,3
+2014,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.092,Y20-64,3
+2014,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.147,Y20-64,3
+2014,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.105,Y20-64,3
+2014,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.092,Y20-64,3
+2014,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.109,Y20-64,3
+2014,4,FRD,Normandie,0,F,ED0-2,educL,0,0.163,Y20-64,4
+2014,4,FRD,Normandie,0,F,ED3_4,educM,1,0.107,Y20-64,4
+2014,4,FRD,Normandie,0,F,ED5-8,educH,2,0.057,Y20-64,4
+2014,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.102,Y20-64,4
+2014,4,FRD,Normandie,1,M,ED0-2,educL,0,0.168,Y20-64,4
+2014,4,FRD,Normandie,1,M,ED3_4,educM,1,0.084,Y20-64,4
+2014,4,FRD,Normandie,1,M,ED5-8,educH,2,0.059000000000000004,Y20-64,4
+2014,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.095,Y20-64,4
+2014,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.17800000000000002,Y20-64,5
+2014,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.136,Y20-64,5
+2014,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.064,Y20-64,5
+2014,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.11800000000000001,Y20-64,5
+2014,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.205,Y20-64,5
+2014,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.138,Y20-64,5
+2014,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.064,Y20-64,5
+2014,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.131,Y20-64,5
+2014,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.18,Y20-64,6
+2014,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.11699999999999999,Y20-64,6
+2014,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.061,Y20-64,6
+2014,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.109,Y20-64,6
+2014,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.168,Y20-64,6
+2014,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.098,Y20-64,6
+2014,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.07200000000000001,Y20-64,6
+2014,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.10400000000000001,Y20-64,6
+2014,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.16899999999999998,Y20-64,7
+2014,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.081,Y20-64,7
+2014,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.053,Y20-64,7
+2014,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.084,Y20-64,7
+2014,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.157,Y20-64,7
+2014,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.069,Y20-64,7
+2014,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.059000000000000004,Y20-64,7
+2014,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.08,Y20-64,7
+2014,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.113,Y20-64,8
+2014,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.07200000000000001,Y20-64,8
+2014,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.061,Y20-64,8
+2014,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.07200000000000001,Y20-64,8
+2014,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.124,Y20-64,8
+2014,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.068,Y20-64,8
+2014,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.048,Y20-64,8
+2014,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.07,Y20-64,8
+2014,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.12300000000000001,Y20-64,9
+2014,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.1,Y20-64,9
+2014,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.055999999999999994,Y20-64,9
+2014,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.087,Y20-64,9
+2014,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.171,Y20-64,9
+2014,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.094,Y20-64,9
+2014,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.065,Y20-64,9
+2014,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.09699999999999999,Y20-64,9
+2014,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.146,Y20-64,10
+2014,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.122,Y20-64,10
+2014,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.067,Y20-64,10
+2014,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.10099999999999999,Y20-64,10
+2014,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.18899999999999997,Y20-64,10
+2014,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.1,Y20-64,10
+2014,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.062,Y20-64,10
+2014,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.102,Y20-64,10
+2014,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.125,Y20-64,11
+2014,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.08199999999999999,Y20-64,11
+2014,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.055999999999999994,Y20-64,11
+2014,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.078,Y20-64,11
+2014,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.147,Y20-64,11
+2014,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.085,Y20-64,11
+2014,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.054000000000000006,Y20-64,11
+2014,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.085,Y20-64,11
+2014,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.13699999999999998,Y20-64,12
+2014,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.096,Y20-64,12
+2014,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.066,Y20-64,12
+2014,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.09,Y20-64,12
+2014,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.163,Y20-64,12
+2014,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.10300000000000001,Y20-64,12
+2014,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.065,Y20-64,12
+2014,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.10400000000000001,Y20-64,12
+2014,13,FRM,Corse,0,F,ED0-2,educL,0,0.27899999999999997,Y20-64,13
+2014,13,FRM,Corse,0,F,ED3_4,educM,1,0.129,Y20-64,13
+2014,13,FRM,Corse,0,F,ED5-8,educH,2,0.063,Y20-64,13
+2014,13,FRM,Corse,0,F,TOTAL,educALL,-1,0.129,Y20-64,13
+2014,13,FRM,Corse,1,M,ED0-2,educL,0,0.10099999999999999,Y20-64,13
+2014,13,FRM,Corse,1,M,ED3_4,educM,1,0.044000000000000004,Y20-64,13
+2014,13,FRM,Corse,1,M,ED5-8,educH,2,,Y20-64,13
+2014,13,FRM,Corse,1,M,TOTAL,educALL,-1,0.059000000000000004,Y20-64,13
+2014,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.349,Y20-64,14
+2014,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.25,Y20-64,14
+2014,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.11199999999999999,Y20-64,14
+2014,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.24600000000000002,Y20-64,14
+2014,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.293,Y20-64,14
+2014,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.22,Y20-64,14
+2014,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.067,Y20-64,14
+2014,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.218,Y20-64,14
+2015,0,FR,France,0,F,ED0-2,educL,0,0.16,Y20-64,0
+2015,0,FR,France,0,F,ED3_4,educM,1,0.106,Y20-64,0
+2015,0,FR,France,0,F,ED5-8,educH,2,0.061,Y20-64,0
+2015,0,FR,France,0,F,TOTAL,educALL,-1,0.096,Y20-64,0
+2015,0,FR,France,1,M,ED0-2,educL,0,0.18100000000000002,Y20-64,0
+2015,0,FR,France,1,M,ED3_4,educM,1,0.102,Y20-64,0
+2015,0,FR,France,1,M,ED5-8,educH,2,0.066,Y20-64,0
+2015,0,FR,France,1,M,TOTAL,educALL,-1,0.10400000000000001,Y20-64,0
+2015,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.121,Y20-64,1
+2015,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.1,Y20-64,1
+2015,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.059000000000000004,Y20-64,1
+2015,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.083,Y20-64,1
+2015,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.17600000000000002,Y20-64,1
+2015,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.1,Y20-64,1
+2015,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.076,Y20-64,1
+2015,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.10300000000000001,Y20-64,1
+2015,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.139,Y20-64,2
+2015,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.128,Y20-64,2
+2015,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.05,Y20-64,2
+2015,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.10099999999999999,Y20-64,2
+2015,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.17,Y20-64,2
+2015,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.102,Y20-64,2
+2015,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.067,Y20-64,2
+2015,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.107,Y20-64,2
+2015,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.11,Y20-64,3
+2015,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.092,Y20-64,3
+2015,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.05,Y20-64,3
+2015,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.081,Y20-64,3
+2015,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.145,Y20-64,3
+2015,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.08900000000000001,Y20-64,3
+2015,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.052000000000000005,Y20-64,3
+2015,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.09,Y20-64,3
+2015,4,FRD,Normandie,0,F,ED0-2,educL,0,0.128,Y20-64,4
+2015,4,FRD,Normandie,0,F,ED3_4,educM,1,0.10099999999999999,Y20-64,4
+2015,4,FRD,Normandie,0,F,ED5-8,educH,2,0.054000000000000006,Y20-64,4
+2015,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.08900000000000001,Y20-64,4
+2015,4,FRD,Normandie,1,M,ED0-2,educL,0,0.14400000000000002,Y20-64,4
+2015,4,FRD,Normandie,1,M,ED3_4,educM,1,0.09300000000000001,Y20-64,4
+2015,4,FRD,Normandie,1,M,ED5-8,educH,2,0.057999999999999996,Y20-64,4
+2015,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.095,Y20-64,4
+2015,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.175,Y20-64,5
+2015,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.142,Y20-64,5
+2015,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.076,Y20-64,5
+2015,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.12300000000000001,Y20-64,5
+2015,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.195,Y20-64,5
+2015,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.128,Y20-64,5
+2015,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.066,Y20-64,5
+2015,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.125,Y20-64,5
+2015,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.17800000000000002,Y20-64,6
+2015,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.107,Y20-64,6
+2015,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.059000000000000004,Y20-64,6
+2015,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.10099999999999999,Y20-64,6
+2015,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.223,Y20-64,6
+2015,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.11199999999999999,Y20-64,6
+2015,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.065,Y20-64,6
+2015,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.11599999999999999,Y20-64,6
+2015,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.155,Y20-64,7
+2015,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.083,Y20-64,7
+2015,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.059000000000000004,Y20-64,7
+2015,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.084,Y20-64,7
+2015,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.172,Y20-64,7
+2015,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.083,Y20-64,7
+2015,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.06,Y20-64,7
+2015,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.08900000000000001,Y20-64,7
+2015,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.105,Y20-64,8
+2015,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.071,Y20-64,8
+2015,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.052000000000000005,Y20-64,8
+2015,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.067,Y20-64,8
+2015,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.11599999999999999,Y20-64,8
+2015,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.08199999999999999,Y20-64,8
+2015,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.062,Y20-64,8
+2015,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.081,Y20-64,8
+2015,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.149,Y20-64,9
+2015,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.09300000000000001,Y20-64,9
+2015,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.066,Y20-64,9
+2015,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.09,Y20-64,9
+2015,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.16699999999999998,Y20-64,9
+2015,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.092,Y20-64,9
+2015,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.063,Y20-64,9
+2015,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.095,Y20-64,9
+2015,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.152,Y20-64,10
+2015,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.11199999999999999,Y20-64,10
+2015,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.063,Y20-64,10
+2015,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.096,Y20-64,10
+2015,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.192,Y20-64,10
+2015,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.111,Y20-64,10
+2015,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.062,Y20-64,10
+2015,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.10800000000000001,Y20-64,10
+2015,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.159,Y20-64,11
+2015,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.09300000000000001,Y20-64,11
+2015,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.053,Y20-64,11
+2015,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.085,Y20-64,11
+2015,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.175,Y20-64,11
+2015,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.08199999999999999,Y20-64,11
+2015,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.06,Y20-64,11
+2015,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.08900000000000001,Y20-64,11
+2015,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.184,Y20-64,12
+2015,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.11199999999999999,Y20-64,12
+2015,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.076,Y20-64,12
+2015,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.10800000000000001,Y20-64,12
+2015,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.174,Y20-64,12
+2015,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.106,Y20-64,12
+2015,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.066,Y20-64,12
+2015,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.106,Y20-64,12
+2015,13,FRM,Corse,0,F,ED0-2,educL,0,0.38,Y20-64,13
+2015,13,FRM,Corse,0,F,ED3_4,educM,1,0.099,Y20-64,13
+2015,13,FRM,Corse,0,F,ED5-8,educH,2,0.035,Y20-64,13
+2015,13,FRM,Corse,0,F,TOTAL,educALL,-1,0.139,Y20-64,13
+2015,13,FRM,Corse,1,M,ED0-2,educL,0,,Y20-64,13
+2015,13,FRM,Corse,1,M,ED3_4,educM,1,,Y20-64,13
+2015,13,FRM,Corse,1,M,ED5-8,educH,2,0.11900000000000001,Y20-64,13
+2015,13,FRM,Corse,1,M,TOTAL,educALL,-1,0.048,Y20-64,13
+2015,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.349,Y20-64,14
+2015,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.248,Y20-64,14
+2015,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.09300000000000001,Y20-64,14
+2015,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.235,Y20-64,14
+2015,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.27,Y20-64,14
+2015,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.217,Y20-64,14
+2015,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.071,Y20-64,14
+2015,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.204,Y20-64,14
+2016,0,FR,France,0,F,ED0-2,educL,0,0.172,Y20-64,0
+2016,0,FR,France,0,F,ED3_4,educM,1,0.105,Y20-64,0
+2016,0,FR,France,0,F,ED5-8,educH,2,0.059000000000000004,Y20-64,0
+2016,0,FR,France,0,F,TOTAL,educALL,-1,0.096,Y20-64,0
+2016,0,FR,France,1,M,ED0-2,educL,0,0.18100000000000002,Y20-64,0
+2016,0,FR,France,1,M,ED3_4,educM,1,0.1,Y20-64,0
+2016,0,FR,France,1,M,ED5-8,educH,2,0.055999999999999994,Y20-64,0
+2016,0,FR,France,1,M,TOTAL,educALL,-1,0.099,Y20-64,0
+2016,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.153,Y20-64,1
+2016,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.10300000000000001,Y20-64,1
+2016,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.057999999999999996,Y20-64,1
+2016,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.08800000000000001,Y20-64,1
+2016,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.16399999999999998,Y20-64,1
+2016,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.11,Y20-64,1
+2016,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.055999999999999994,Y20-64,1
+2016,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.094,Y20-64,1
+2016,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.125,Y20-64,2
+2016,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.131,Y20-64,2
+2016,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.048,Y20-64,2
+2016,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.1,Y20-64,2
+2016,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.159,Y20-64,2
+2016,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.099,Y20-64,2
+2016,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.048,Y20-64,2
+2016,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.095,Y20-64,2
+2016,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.124,Y20-64,3
+2016,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.077,Y20-64,3
+2016,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.055999999999999994,Y20-64,3
+2016,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.077,Y20-64,3
+2016,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.172,Y20-64,3
+2016,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.08900000000000001,Y20-64,3
+2016,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.05,Y20-64,3
+2016,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.092,Y20-64,3
+2016,4,FRD,Normandie,0,F,ED0-2,educL,0,0.159,Y20-64,4
+2016,4,FRD,Normandie,0,F,ED3_4,educM,1,0.105,Y20-64,4
+2016,4,FRD,Normandie,0,F,ED5-8,educH,2,0.053,Y20-64,4
+2016,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.09699999999999999,Y20-64,4
+2016,4,FRD,Normandie,1,M,ED0-2,educL,0,0.163,Y20-64,4
+2016,4,FRD,Normandie,1,M,ED3_4,educM,1,0.105,Y20-64,4
+2016,4,FRD,Normandie,1,M,ED5-8,educH,2,0.049,Y20-64,4
+2016,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.102,Y20-64,4
+2016,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.2,Y20-64,5
+2016,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.13,Y20-64,5
+2016,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.068,Y20-64,5
+2016,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.11900000000000001,Y20-64,5
+2016,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.21,Y20-64,5
+2016,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.125,Y20-64,5
+2016,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.068,Y20-64,5
+2016,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.127,Y20-64,5
+2016,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.18899999999999997,Y20-64,6
+2016,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.095,Y20-64,6
+2016,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.066,Y20-64,6
+2016,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.099,Y20-64,6
+2016,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.2,Y20-64,6
+2016,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.12,Y20-64,6
+2016,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.062,Y20-64,6
+2016,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.11699999999999999,Y20-64,6
+2016,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.174,Y20-64,7
+2016,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.086,Y20-64,7
+2016,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.052000000000000005,Y20-64,7
+2016,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.086,Y20-64,7
+2016,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.20199999999999999,Y20-64,7
+2016,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.07400000000000001,Y20-64,7
+2016,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.052000000000000005,Y20-64,7
+2016,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.083,Y20-64,7
+2016,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.149,Y20-64,8
+2016,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.098,Y20-64,8
+2016,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.07,Y20-64,8
+2016,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.09300000000000001,Y20-64,8
+2016,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.165,Y20-64,8
+2016,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.08,Y20-64,8
+2016,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.04,Y20-64,8
+2016,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.076,Y20-64,8
+2016,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.171,Y20-64,9
+2016,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.08900000000000001,Y20-64,9
+2016,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.06,Y20-64,9
+2016,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.08900000000000001,Y20-64,9
+2016,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.165,Y20-64,9
+2016,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.08199999999999999,Y20-64,9
+2016,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.062,Y20-64,9
+2016,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.09,Y20-64,9
+2016,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.149,Y20-64,10
+2016,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.11199999999999999,Y20-64,10
+2016,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.06,Y20-64,10
+2016,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.094,Y20-64,10
+2016,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.16699999999999998,Y20-64,10
+2016,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.10300000000000001,Y20-64,10
+2016,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.062,Y20-64,10
+2016,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.10099999999999999,Y20-64,10
+2016,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.139,Y20-64,11
+2016,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.08199999999999999,Y20-64,11
+2016,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.048,Y20-64,11
+2016,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.07400000000000001,Y20-64,11
+2016,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.151,Y20-64,11
+2016,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.069,Y20-64,11
+2016,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.052000000000000005,Y20-64,11
+2016,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.075,Y20-64,11
+2016,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.157,Y20-64,12
+2016,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.124,Y20-64,12
+2016,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.063,Y20-64,12
+2016,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.102,Y20-64,12
+2016,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.177,Y20-64,12
+2016,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.109,Y20-64,12
+2016,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.055999999999999994,Y20-64,12
+2016,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.10400000000000001,Y20-64,12
+2016,13,FRM,Corse,0,F,ED0-2,educL,0,0.312,Y20-64,13
+2016,13,FRM,Corse,0,F,ED3_4,educM,1,0.094,Y20-64,13
+2016,13,FRM,Corse,0,F,ED5-8,educH,2,0.037000000000000005,Y20-64,13
+2016,13,FRM,Corse,0,F,TOTAL,educALL,-1,0.099,Y20-64,13
+2016,13,FRM,Corse,1,M,ED0-2,educL,0,0.091,Y20-64,13
+2016,13,FRM,Corse,1,M,ED3_4,educM,1,0.083,Y20-64,13
+2016,13,FRM,Corse,1,M,ED5-8,educH,2,0.037000000000000005,Y20-64,13
+2016,13,FRM,Corse,1,M,TOTAL,educALL,-1,0.073,Y20-64,13
+2016,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.355,Y20-64,14
+2016,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.242,Y20-64,14
+2016,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.079,Y20-64,14
+2016,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.23,Y20-64,14
+2016,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.295,Y20-64,14
+2016,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.198,Y20-64,14
+2016,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.069,Y20-64,14
+2016,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.209,Y20-64,14
+2017,0,FR,France,0,F,ED0-2,educL,0,0.165,Y20-64,0
+2017,0,FR,France,0,F,ED3_4,educM,1,0.102,Y20-64,0
+2017,0,FR,France,0,F,ED5-8,educH,2,0.055,Y20-64,0
+2017,0,FR,France,0,F,TOTAL,educALL,-1,0.092,Y20-64,0
+2017,0,FR,France,1,M,ED0-2,educL,0,0.172,Y20-64,0
+2017,0,FR,France,1,M,ED3_4,educM,1,0.09300000000000001,Y20-64,0
+2017,0,FR,France,1,M,ED5-8,educH,2,0.05,Y20-64,0
+2017,0,FR,France,1,M,TOTAL,educALL,-1,0.092,Y20-64,0
+2017,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.151,Y20-64,1
+2017,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.10800000000000001,Y20-64,1
+2017,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.053,Y20-64,1
+2017,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.085,Y20-64,1
+2017,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.153,Y20-64,1
+2017,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.10400000000000001,Y20-64,1
+2017,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.044000000000000004,Y20-64,1
+2017,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.085,Y20-64,1
+2017,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.132,Y20-64,2
+2017,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.091,Y20-64,2
+2017,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.047,Y20-64,2
+2017,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.081,Y20-64,2
+2017,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.14400000000000002,Y20-64,2
+2017,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.08800000000000001,Y20-64,2
+2017,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.046,Y20-64,2
+2017,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.085,Y20-64,2
+2017,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.134,Y20-64,3
+2017,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.09300000000000001,Y20-64,3
+2017,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.054000000000000006,Y20-64,3
+2017,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.085,Y20-64,3
+2017,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.20199999999999999,Y20-64,3
+2017,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.084,Y20-64,3
+2017,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.045,Y20-64,3
+2017,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.091,Y20-64,3
+2017,4,FRD,Normandie,0,F,ED0-2,educL,0,0.17,Y20-64,4
+2017,4,FRD,Normandie,0,F,ED3_4,educM,1,0.08900000000000001,Y20-64,4
+2017,4,FRD,Normandie,0,F,ED5-8,educH,2,0.055,Y20-64,4
+2017,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.09300000000000001,Y20-64,4
+2017,4,FRD,Normandie,1,M,ED0-2,educL,0,0.14800000000000002,Y20-64,4
+2017,4,FRD,Normandie,1,M,ED3_4,educM,1,0.09699999999999999,Y20-64,4
+2017,4,FRD,Normandie,1,M,ED5-8,educH,2,0.052000000000000005,Y20-64,4
+2017,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.095,Y20-64,4
+2017,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.18899999999999997,Y20-64,5
+2017,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.13,Y20-64,5
+2017,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.049,Y20-64,5
+2017,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.109,Y20-64,5
+2017,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.21100000000000002,Y20-64,5
+2017,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.122,Y20-64,5
+2017,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.055,Y20-64,5
+2017,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.12300000000000001,Y20-64,5
+2017,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.16699999999999998,Y20-64,6
+2017,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.095,Y20-64,6
+2017,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.057999999999999996,Y20-64,6
+2017,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.09300000000000001,Y20-64,6
+2017,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.201,Y20-64,6
+2017,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.095,Y20-64,6
+2017,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.054000000000000006,Y20-64,6
+2017,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.1,Y20-64,6
+2017,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.11900000000000001,Y20-64,7
+2017,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.073,Y20-64,7
+2017,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.046,Y20-64,7
+2017,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.069,Y20-64,7
+2017,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.141,Y20-64,7
+2017,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.064,Y20-64,7
+2017,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.046,Y20-64,7
+2017,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.067,Y20-64,7
+2017,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.14800000000000002,Y20-64,8
+2017,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.076,Y20-64,8
+2017,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.057999999999999996,Y20-64,8
+2017,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.076,Y20-64,8
+2017,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.131,Y20-64,8
+2017,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.057999999999999996,Y20-64,8
+2017,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.062,Y20-64,8
+2017,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.067,Y20-64,8
+2017,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.141,Y20-64,9
+2017,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.095,Y20-64,9
+2017,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.063,Y20-64,9
+2017,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.08800000000000001,Y20-64,9
+2017,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.17,Y20-64,9
+2017,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.083,Y20-64,9
+2017,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.059000000000000004,Y20-64,9
+2017,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.08900000000000001,Y20-64,9
+2017,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.17300000000000001,Y20-64,10
+2017,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.107,Y20-64,10
+2017,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.06,Y20-64,10
+2017,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.09699999999999999,Y20-64,10
+2017,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.149,Y20-64,10
+2017,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.098,Y20-64,10
+2017,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.05,Y20-64,10
+2017,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.08900000000000001,Y20-64,10
+2017,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.128,Y20-64,11
+2017,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.086,Y20-64,11
+2017,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.047,Y20-64,11
+2017,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.07400000000000001,Y20-64,11
+2017,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.131,Y20-64,11
+2017,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.068,Y20-64,11
+2017,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.047,Y20-64,11
+2017,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.07,Y20-64,11
+2017,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.158,Y20-64,12
+2017,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.11599999999999999,Y20-64,12
+2017,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.061,Y20-64,12
+2017,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.098,Y20-64,12
+2017,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.18600000000000003,Y20-64,12
+2017,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.109,Y20-64,12
+2017,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.053,Y20-64,12
+2017,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.105,Y20-64,12
+2017,13,FRM,Corse,0,F,ED0-2,educL,0,0.256,Y20-64,13
+2017,13,FRM,Corse,0,F,ED3_4,educM,1,0.154,Y20-64,13
+2017,13,FRM,Corse,0,F,ED5-8,educH,2,,Y20-64,13
+2017,13,FRM,Corse,0,F,TOTAL,educALL,-1,0.114,Y20-64,13
+2017,13,FRM,Corse,1,M,ED0-2,educL,0,0.054000000000000006,Y20-64,13
+2017,13,FRM,Corse,1,M,ED3_4,educM,1,0.061,Y20-64,13
+2017,13,FRM,Corse,1,M,ED5-8,educH,2,0.07,Y20-64,13
+2017,13,FRM,Corse,1,M,TOTAL,educALL,-1,0.064,Y20-64,13
+2017,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.35,Y20-64,14
+2017,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.239,Y20-64,14
+2017,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.092,Y20-64,14
+2017,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.231,Y20-64,14
+2017,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.28600000000000003,Y20-64,14
+2017,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.195,Y20-64,14
+2017,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.085,Y20-64,14
+2017,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.20600000000000002,Y20-64,14
+2018,0,FR,France,0,F,ED0-2,educL,0,0.161,Y20-64,0
+2018,0,FR,France,0,F,ED3_4,educM,1,0.10099999999999999,Y20-64,0
+2018,0,FR,France,0,F,ED5-8,educH,2,0.055,Y20-64,0
+2018,0,FR,France,0,F,TOTAL,educALL,-1,0.08900000000000001,Y20-64,0
+2018,0,FR,France,1,M,ED0-2,educL,0,0.159,Y20-64,0
+2018,0,FR,France,1,M,ED3_4,educM,1,0.087,Y20-64,0
+2018,0,FR,France,1,M,ED5-8,educH,2,0.055,Y20-64,0
+2018,0,FR,France,1,M,TOTAL,educALL,-1,0.08800000000000001,Y20-64,0
+2018,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.145,Y20-64,1
+2018,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.098,Y20-64,1
+2018,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.057999999999999996,Y20-64,1
+2018,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.083,Y20-64,1
+2018,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.154,Y20-64,1
+2018,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.10099999999999999,Y20-64,1
+2018,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.059000000000000004,Y20-64,1
+2018,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.091,Y20-64,1
+2018,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.11,Y20-64,2
+2018,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.094,Y20-64,2
+2018,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.051,Y20-64,2
+2018,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.081,Y20-64,2
+2018,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.115,Y20-64,2
+2018,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.092,Y20-64,2
+2018,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.055999999999999994,Y20-64,2
+2018,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.084,Y20-64,2
+2018,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.122,Y20-64,3
+2018,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.077,Y20-64,3
+2018,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.05,Y20-64,3
+2018,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.076,Y20-64,3
+2018,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.12,Y20-64,3
+2018,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.07400000000000001,Y20-64,3
+2018,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.057,Y20-64,3
+2018,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.077,Y20-64,3
+2018,4,FRD,Normandie,0,F,ED0-2,educL,0,0.136,Y20-64,4
+2018,4,FRD,Normandie,0,F,ED3_4,educM,1,0.084,Y20-64,4
+2018,4,FRD,Normandie,0,F,ED5-8,educH,2,0.05,Y20-64,4
+2018,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.08,Y20-64,4
+2018,4,FRD,Normandie,1,M,ED0-2,educL,0,0.147,Y20-64,4
+2018,4,FRD,Normandie,1,M,ED3_4,educM,1,0.076,Y20-64,4
+2018,4,FRD,Normandie,1,M,ED5-8,educH,2,0.07200000000000001,Y20-64,4
+2018,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.08800000000000001,Y20-64,4
+2018,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.159,Y20-64,5
+2018,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.128,Y20-64,5
+2018,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.047,Y20-64,5
+2018,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.099,Y20-64,5
+2018,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.22899999999999998,Y20-64,5
+2018,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.107,Y20-64,5
+2018,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.057999999999999996,Y20-64,5
+2018,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.115,Y20-64,5
+2018,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.157,Y20-64,6
+2018,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.095,Y20-64,6
+2018,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.048,Y20-64,6
+2018,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.08800000000000001,Y20-64,6
+2018,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.158,Y20-64,6
+2018,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.084,Y20-64,6
+2018,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.05,Y20-64,6
+2018,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.085,Y20-64,6
+2018,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.128,Y20-64,7
+2018,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.095,Y20-64,7
+2018,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.053,Y20-64,7
+2018,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.08199999999999999,Y20-64,7
+2018,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.125,Y20-64,7
+2018,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.057,Y20-64,7
+2018,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.059000000000000004,Y20-64,7
+2018,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.068,Y20-64,7
+2018,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.161,Y20-64,8
+2018,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.081,Y20-64,8
+2018,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.035,Y20-64,8
+2018,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.068,Y20-64,8
+2018,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.08900000000000001,Y20-64,8
+2018,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.065,Y20-64,8
+2018,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.057999999999999996,Y20-64,8
+2018,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.065,Y20-64,8
+2018,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.162,Y20-64,9
+2018,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.09,Y20-64,9
+2018,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.066,Y20-64,9
+2018,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.08900000000000001,Y20-64,9
+2018,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.165,Y20-64,9
+2018,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.077,Y20-64,9
+2018,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.052000000000000005,Y20-64,9
+2018,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.08199999999999999,Y20-64,9
+2018,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.214,Y20-64,10
+2018,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.111,Y20-64,10
+2018,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.069,Y20-64,10
+2018,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.10400000000000001,Y20-64,10
+2018,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.13699999999999998,Y20-64,10
+2018,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.087,Y20-64,10
+2018,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.052000000000000005,Y20-64,10
+2018,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.081,Y20-64,10
+2018,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.132,Y20-64,11
+2018,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.083,Y20-64,11
+2018,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.046,Y20-64,11
+2018,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.071,Y20-64,11
+2018,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.11599999999999999,Y20-64,11
+2018,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.077,Y20-64,11
+2018,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.040999999999999995,Y20-64,11
+2018,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.069,Y20-64,11
+2018,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.133,Y20-64,12
+2018,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.11199999999999999,Y20-64,12
+2018,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.055999999999999994,Y20-64,12
+2018,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.09,Y20-64,12
+2018,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.165,Y20-64,12
+2018,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.09300000000000001,Y20-64,12
+2018,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.053,Y20-64,12
+2018,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.09300000000000001,Y20-64,12
+2018,13,FRM,Corse,0,F,ED0-2,educL,0,,Y20-64,13
+2018,13,FRM,Corse,0,F,ED3_4,educM,1,,Y20-64,13
+2018,13,FRM,Corse,0,F,ED5-8,educH,2,,Y20-64,13
+2018,13,FRM,Corse,0,F,TOTAL,educALL,-1,,Y20-64,13
+2018,13,FRM,Corse,1,M,ED0-2,educL,0,,Y20-64,13
+2018,13,FRM,Corse,1,M,ED3_4,educM,1,,Y20-64,13
+2018,13,FRM,Corse,1,M,ED5-8,educH,2,,Y20-64,13
+2018,13,FRM,Corse,1,M,TOTAL,educALL,-1,,Y20-64,13
+2018,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.36200000000000004,Y20-64,14
+2018,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.255,Y20-64,14
+2018,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.09,Y20-64,14
+2018,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.23600000000000002,Y20-64,14
+2018,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.3,Y20-64,14
+2018,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.213,Y20-64,14
+2018,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.09,Y20-64,14
+2018,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.215,Y20-64,14
+2019,0,FR,France,0,F,ED0-2,educL,0,0.156,Y20-64,0
+2019,0,FR,France,0,F,ED3_4,educM,1,0.095,Y20-64,0
+2019,0,FR,France,0,F,ED5-8,educH,2,0.049,Y20-64,0
+2019,0,FR,France,0,F,TOTAL,educALL,-1,0.08199999999999999,Y20-64,0
+2019,0,FR,France,1,M,ED0-2,educL,0,0.151,Y20-64,0
+2019,0,FR,France,1,M,ED3_4,educM,1,0.083,Y20-64,0
+2019,0,FR,France,1,M,ED5-8,educH,2,0.054000000000000006,Y20-64,0
+2019,0,FR,France,1,M,TOTAL,educALL,-1,0.083,Y20-64,0
+2019,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.126,Y20-64,1
+2019,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.099,Y20-64,1
+2019,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.05,Y20-64,1
+2019,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.07400000000000001,Y20-64,1
+2019,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.133,Y20-64,1
+2019,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.094,Y20-64,1
+2019,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.057999999999999996,Y20-64,1
+2019,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.08199999999999999,Y20-64,1
+2019,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.128,Y20-64,2
+2019,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.095,Y20-64,2
+2019,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.05,Y20-64,2
+2019,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.083,Y20-64,2
+2019,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.11599999999999999,Y20-64,2
+2019,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.078,Y20-64,2
+2019,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.051,Y20-64,2
+2019,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.076,Y20-64,2
+2019,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.136,Y20-64,3
+2019,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.085,Y20-64,3
+2019,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.055,Y20-64,3
+2019,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.079,Y20-64,3
+2019,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.128,Y20-64,3
+2019,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.069,Y20-64,3
+2019,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.055,Y20-64,3
+2019,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.07400000000000001,Y20-64,3
+2019,4,FRD,Normandie,0,F,ED0-2,educL,0,0.14800000000000002,Y20-64,4
+2019,4,FRD,Normandie,0,F,ED3_4,educM,1,0.124,Y20-64,4
+2019,4,FRD,Normandie,0,F,ED5-8,educH,2,0.031,Y20-64,4
+2019,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.091,Y20-64,4
+2019,4,FRD,Normandie,1,M,ED0-2,educL,0,0.126,Y20-64,4
+2019,4,FRD,Normandie,1,M,ED3_4,educM,1,0.068,Y20-64,4
+2019,4,FRD,Normandie,1,M,ED5-8,educH,2,0.079,Y20-64,4
+2019,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.081,Y20-64,4
+2019,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.16399999999999998,Y20-64,5
+2019,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.11900000000000001,Y20-64,5
+2019,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.044000000000000004,Y20-64,5
+2019,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.094,Y20-64,5
+2019,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.22,Y20-64,5
+2019,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.10300000000000001,Y20-64,5
+2019,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.043,Y20-64,5
+2019,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.10400000000000001,Y20-64,5
+2019,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.16899999999999998,Y20-64,6
+2019,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.08199999999999999,Y20-64,6
+2019,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.037000000000000005,Y20-64,6
+2019,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.075,Y20-64,6
+2019,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.15,Y20-64,6
+2019,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.071,Y20-64,6
+2019,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.06,Y20-64,6
+2019,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.079,Y20-64,6
+2019,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.145,Y20-64,7
+2019,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.08,Y20-64,7
+2019,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.054000000000000006,Y20-64,7
+2019,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.077,Y20-64,7
+2019,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.136,Y20-64,7
+2019,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.066,Y20-64,7
+2019,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.053,Y20-64,7
+2019,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.07,Y20-64,7
+2019,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.08800000000000001,Y20-64,8
+2019,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.07400000000000001,Y20-64,8
+2019,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.044000000000000004,Y20-64,8
+2019,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.061,Y20-64,8
+2019,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.13,Y20-64,8
+2019,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.07,Y20-64,8
+2019,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.055,Y20-64,8
+2019,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.07200000000000001,Y20-64,8
+2019,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.145,Y20-64,9
+2019,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.096,Y20-64,9
+2019,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.054000000000000006,Y20-64,9
+2019,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.084,Y20-64,9
+2019,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.172,Y20-64,9
+2019,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.07400000000000001,Y20-64,9
+2019,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.047,Y20-64,9
+2019,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.081,Y20-64,9
+2019,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.161,Y20-64,10
+2019,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.094,Y20-64,10
+2019,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.053,Y20-64,10
+2019,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.083,Y20-64,10
+2019,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.147,Y20-64,10
+2019,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.091,Y20-64,10
+2019,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.046,Y20-64,10
+2019,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.081,Y20-64,10
+2019,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.156,Y20-64,11
+2019,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.068,Y20-64,11
+2019,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.049,Y20-64,11
+2019,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.069,Y20-64,11
+2019,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.08900000000000001,Y20-64,11
+2019,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.075,Y20-64,11
+2019,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.04,Y20-64,11
+2019,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.063,Y20-64,11
+2019,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.13699999999999998,Y20-64,12
+2019,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.08800000000000001,Y20-64,12
+2019,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.053,Y20-64,12
+2019,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.077,Y20-64,12
+2019,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.154,Y20-64,12
+2019,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.091,Y20-64,12
+2019,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.07200000000000001,Y20-64,12
+2019,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.095,Y20-64,12
+2019,13,FRM,Corse,0,F,ED0-2,educL,0,,Y20-64,13
+2019,13,FRM,Corse,0,F,ED3_4,educM,1,,Y20-64,13
+2019,13,FRM,Corse,0,F,ED5-8,educH,2,,Y20-64,13
+2019,13,FRM,Corse,0,F,TOTAL,educALL,-1,,Y20-64,13
+2019,13,FRM,Corse,1,M,ED0-2,educL,0,,Y20-64,13
+2019,13,FRM,Corse,1,M,ED3_4,educM,1,,Y20-64,13
+2019,13,FRM,Corse,1,M,ED5-8,educH,2,,Y20-64,13
+2019,13,FRM,Corse,1,M,TOTAL,educALL,-1,,Y20-64,13
+2019,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.335,Y20-64,14
+2019,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.218,Y20-64,14
+2019,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.079,Y20-64,14
+2019,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.20800000000000002,Y20-64,14
+2019,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.28800000000000003,Y20-64,14
+2019,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.18899999999999997,Y20-64,14
+2019,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.076,Y20-64,14
+2019,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.19699999999999998,Y20-64,14
+2020,0,FR,France,0,F,ED0-2,educL,0,0.14,Y20-64,0
+2020,0,FR,France,0,F,ED3_4,educM,1,0.09,Y20-64,0
+2020,0,FR,France,0,F,ED5-8,educH,2,0.052000000000000005,Y20-64,0
+2020,0,FR,France,0,F,TOTAL,educALL,-1,0.078,Y20-64,0
+2020,0,FR,France,1,M,ED0-2,educL,0,0.133,Y20-64,0
+2020,0,FR,France,1,M,ED3_4,educM,1,0.081,Y20-64,0
+2020,0,FR,France,1,M,ED5-8,educH,2,0.053,Y20-64,0
+2020,0,FR,France,1,M,TOTAL,educALL,-1,0.078,Y20-64,0
+2020,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.1,Y20-64,1
+2020,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.096,Y20-64,1
+2020,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.064,Y20-64,1
+2020,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.078,Y20-64,1
+2020,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.126,Y20-64,1
+2020,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.098,Y20-64,1
+2020,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.065,Y20-64,1
+2020,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.084,Y20-64,1
+2020,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.128,Y20-64,2
+2020,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.08900000000000001,Y20-64,2
+2020,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.040999999999999995,Y20-64,2
+2020,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.075,Y20-64,2
+2020,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.14800000000000002,Y20-64,2
+2020,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.10099999999999999,Y20-64,2
+2020,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.054000000000000006,Y20-64,2
+2020,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.095,Y20-64,2
+2020,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.13,Y20-64,3
+2020,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.083,Y20-64,3
+2020,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.028999999999999998,Y20-64,3
+2020,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.065,Y20-64,3
+2020,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.128,Y20-64,3
+2020,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.057,Y20-64,3
+2020,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.051,Y20-64,3
+2020,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.064,Y20-64,3
+2020,4,FRD,Normandie,0,F,ED0-2,educL,0,0.14800000000000002,Y20-64,4
+2020,4,FRD,Normandie,0,F,ED3_4,educM,1,0.091,Y20-64,4
+2020,4,FRD,Normandie,0,F,ED5-8,educH,2,0.038,Y20-64,4
+2020,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.076,Y20-64,4
+2020,4,FRD,Normandie,1,M,ED0-2,educL,0,0.102,Y20-64,4
+2020,4,FRD,Normandie,1,M,ED3_4,educM,1,0.064,Y20-64,4
+2020,4,FRD,Normandie,1,M,ED5-8,educH,2,0.046,Y20-64,4
+2020,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.065,Y20-64,4
+2020,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.14300000000000002,Y20-64,5
+2020,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.10300000000000001,Y20-64,5
+2020,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.028999999999999998,Y20-64,5
+2020,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.076,Y20-64,5
+2020,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.162,Y20-64,5
+2020,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.095,Y20-64,5
+2020,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.049,Y20-64,5
+2020,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.092,Y20-64,5
+2020,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.172,Y20-64,6
+2020,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.094,Y20-64,6
+2020,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.055,Y20-64,6
+2020,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.08800000000000001,Y20-64,6
+2020,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.135,Y20-64,6
+2020,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.083,Y20-64,6
+2020,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.062,Y20-64,6
+2020,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.084,Y20-64,6
+2020,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.098,Y20-64,7
+2020,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.076,Y20-64,7
+2020,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.052000000000000005,Y20-64,7
+2020,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.068,Y20-64,7
+2020,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.127,Y20-64,7
+2020,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.064,Y20-64,7
+2020,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.042,Y20-64,7
+2020,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.063,Y20-64,7
+2020,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.122,Y20-64,8
+2020,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.064,Y20-64,8
+2020,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.054000000000000006,Y20-64,8
+2020,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.064,Y20-64,8
+2020,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.08199999999999999,Y20-64,8
+2020,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.07,Y20-64,8
+2020,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.047,Y20-64,8
+2020,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.063,Y20-64,8
+2020,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.128,Y20-64,9
+2020,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.08800000000000001,Y20-64,9
+2020,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.048,Y20-64,9
+2020,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.075,Y20-64,9
+2020,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.135,Y20-64,9
+2020,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.07,Y20-64,9
+2020,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.048,Y20-64,9
+2020,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.07200000000000001,Y20-64,9
+2020,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.149,Y20-64,10
+2020,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.078,Y20-64,10
+2020,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.047,Y20-64,10
+2020,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.07,Y20-64,10
+2020,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.12,Y20-64,10
+2020,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.075,Y20-64,10
+2020,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.043,Y20-64,10
+2020,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.067,Y20-64,10
+2020,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.12,Y20-64,11
+2020,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.07,Y20-64,11
+2020,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.049,Y20-64,11
+2020,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.066,Y20-64,11
+2020,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.11199999999999999,Y20-64,11
+2020,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.078,Y20-64,11
+2020,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.052000000000000005,Y20-64,11
+2020,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.07200000000000001,Y20-64,11
+2020,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.155,Y20-64,12
+2020,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.1,Y20-64,12
+2020,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.055,Y20-64,12
+2020,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.084,Y20-64,12
+2020,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.133,Y20-64,12
+2020,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.073,Y20-64,12
+2020,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.045,Y20-64,12
+2020,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.073,Y20-64,12
+2020,13,FRM,Corse,0,F,ED0-2,educL,0,,Y20-64,13
+2020,13,FRM,Corse,0,F,ED3_4,educM,1,,Y20-64,13
+2020,13,FRM,Corse,0,F,ED5-8,educH,2,,Y20-64,13
+2020,13,FRM,Corse,0,F,TOTAL,educALL,-1,0.111,Y20-64,13
+2020,13,FRM,Corse,1,M,ED0-2,educL,0,,Y20-64,13
+2020,13,FRM,Corse,1,M,ED3_4,educM,1,,Y20-64,13
+2020,13,FRM,Corse,1,M,ED5-8,educH,2,,Y20-64,13
+2020,13,FRM,Corse,1,M,TOTAL,educALL,-1,,Y20-64,13
+2020,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.268,Y20-64,14
+2020,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.2,Y20-64,14
+2020,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.08,Y20-64,14
+2020,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.17800000000000002,Y20-64,14
+2020,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.226,Y20-64,14
+2020,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.162,Y20-64,14
+2020,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.066,Y20-64,14
+2020,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.162,Y20-64,14
+2021,0,FR,France,0,F,ED0-2,educL,0,0.132,Y20-64,0
+2021,0,FR,France,0,F,ED3_4,educM,1,0.085,Y20-64,0
+2021,0,FR,France,0,F,ED5-8,educH,2,0.052000000000000005,Y20-64,0
+2021,0,FR,France,0,F,TOTAL,educALL,-1,0.07400000000000001,Y20-64,0
+2021,0,FR,France,1,M,ED0-2,educL,0,0.138,Y20-64,0
+2021,0,FR,France,1,M,ED3_4,educM,1,0.078,Y20-64,0
+2021,0,FR,France,1,M,ED5-8,educH,2,0.055,Y20-64,0
+2021,0,FR,France,1,M,TOTAL,educALL,-1,0.077,Y20-64,0
+2021,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.128,Y20-64,1
+2021,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.091,Y20-64,1
+2021,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.057,Y20-64,1
+2021,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.075,Y20-64,1
+2021,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.139,Y20-64,1
+2021,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.08800000000000001,Y20-64,1
+2021,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.057999999999999996,Y20-64,1
+2021,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.079,Y20-64,1
+2021,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.12,Y20-64,2
+2021,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.073,Y20-64,2
+2021,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.046,Y20-64,2
+2021,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.069,Y20-64,2
+2021,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.135,Y20-64,2
+2021,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.059000000000000004,Y20-64,2
+2021,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.044000000000000004,Y20-64,2
+2021,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.066,Y20-64,2
+2021,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.127,Y20-64,3
+2021,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.077,Y20-64,3
+2021,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.053,Y20-64,3
+2021,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.073,Y20-64,3
+2021,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.134,Y20-64,3
+2021,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.055999999999999994,Y20-64,3
+2021,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.043,Y20-64,3
+2021,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.061,Y20-64,3
+2021,4,FRD,Normandie,0,F,ED0-2,educL,0,0.12300000000000001,Y20-64,4
+2021,4,FRD,Normandie,0,F,ED3_4,educM,1,0.066,Y20-64,4
+2021,4,FRD,Normandie,0,F,ED5-8,educH,2,0.047,Y20-64,4
+2021,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.064,Y20-64,4
+2021,4,FRD,Normandie,1,M,ED0-2,educL,0,0.095,Y20-64,4
+2021,4,FRD,Normandie,1,M,ED3_4,educM,1,0.07200000000000001,Y20-64,4
+2021,4,FRD,Normandie,1,M,ED5-8,educH,2,0.055999999999999994,Y20-64,4
+2021,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.07,Y20-64,4
+2021,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.131,Y20-64,5
+2021,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.10800000000000001,Y20-64,5
+2021,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.040999999999999995,Y20-64,5
+2021,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.08,Y20-64,5
+2021,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.191,Y20-64,5
+2021,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.08199999999999999,Y20-64,5
+2021,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.059000000000000004,Y20-64,5
+2021,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.091,Y20-64,5
+2021,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.13699999999999998,Y20-64,6
+2021,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.083,Y20-64,6
+2021,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.044000000000000004,Y20-64,6
+2021,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.07400000000000001,Y20-64,6
+2021,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.136,Y20-64,6
+2021,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.08900000000000001,Y20-64,6
+2021,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.053,Y20-64,6
+2021,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.08199999999999999,Y20-64,6
+2021,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.08,Y20-64,7
+2021,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.057999999999999996,Y20-64,7
+2021,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.045,Y20-64,7
+2021,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.055,Y20-64,7
+2021,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.083,Y20-64,7
+2021,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.057,Y20-64,7
+2021,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.047,Y20-64,7
+2021,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.055999999999999994,Y20-64,7
+2021,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.107,Y20-64,8
+2021,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.076,Y20-64,8
+2021,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.042,Y20-64,8
+2021,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.062,Y20-64,8
+2021,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.086,Y20-64,8
+2021,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.048,Y20-64,8
+2021,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.037000000000000005,Y20-64,8
+2021,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.047,Y20-64,8
+2021,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.126,Y20-64,9
+2021,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.08,Y20-64,9
+2021,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.052000000000000005,Y20-64,9
+2021,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.07200000000000001,Y20-64,9
+2021,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.135,Y20-64,9
+2021,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.07200000000000001,Y20-64,9
+2021,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.062,Y20-64,9
+2021,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.075,Y20-64,9
+2021,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.162,Y20-64,10
+2021,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.09,Y20-64,10
+2021,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.054000000000000006,Y20-64,10
+2021,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.078,Y20-64,10
+2021,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.146,Y20-64,10
+2021,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.08800000000000001,Y20-64,10
+2021,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.057999999999999996,Y20-64,10
+2021,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.083,Y20-64,10
+2021,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.11800000000000001,Y20-64,11
+2021,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.075,Y20-64,11
+2021,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.05,Y20-64,11
+2021,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.066,Y20-64,11
+2021,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.113,Y20-64,11
+2021,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.076,Y20-64,11
+2021,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.053,Y20-64,11
+2021,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.071,Y20-64,11
+2021,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.115,Y20-64,12
+2021,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.09,Y20-64,12
+2021,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.057999999999999996,Y20-64,12
+2021,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.077,Y20-64,12
+2021,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.134,Y20-64,12
+2021,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.083,Y20-64,12
+2021,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.057,Y20-64,12
+2021,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.081,Y20-64,12
+2021,13,FRM,Corse,0,F,ED0-2,educL,0,,Y20-64,13
+2021,13,FRM,Corse,0,F,ED3_4,educM,1,,Y20-64,13
+2021,13,FRM,Corse,0,F,ED5-8,educH,2,,Y20-64,13
+2021,13,FRM,Corse,0,F,TOTAL,educALL,-1,0.121,Y20-64,13
+2021,13,FRM,Corse,1,M,ED0-2,educL,0,,Y20-64,13
+2021,13,FRM,Corse,1,M,ED3_4,educM,1,,Y20-64,13
+2021,13,FRM,Corse,1,M,ED5-8,educH,2,,Y20-64,13
+2021,13,FRM,Corse,1,M,TOTAL,educALL,-1,,Y20-64,13
+2021,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.235,Y20-64,14
+2021,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.188,Y20-64,14
+2021,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.08199999999999999,Y20-64,14
+2021,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.159,Y20-64,14
+2021,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.23800000000000002,Y20-64,14
+2021,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.155,Y20-64,14
+2021,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.081,Y20-64,14
+2021,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.159,Y20-64,14
+2022,0,FR,France,0,F,ED0-2,educL,0,0.11900000000000001,Y20-64,0
+2022,0,FR,France,0,F,ED3_4,educM,1,0.081,Y20-64,0
+2022,0,FR,France,0,F,ED5-8,educH,2,0.047,Y20-64,0
+2022,0,FR,France,0,F,TOTAL,educALL,-1,0.068,Y20-64,0
+2022,0,FR,France,1,M,ED0-2,educL,0,0.128,Y20-64,0
+2022,0,FR,France,1,M,ED3_4,educM,1,0.07400000000000001,Y20-64,0
+2022,0,FR,France,1,M,ED5-8,educH,2,0.049,Y20-64,0
+2022,0,FR,France,1,M,TOTAL,educALL,-1,0.071,Y20-64,0
+2022,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.11199999999999999,Y20-64,1
+2022,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.09300000000000001,Y20-64,1
+2022,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.057999999999999996,Y20-64,1
+2022,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.073,Y20-64,1
+2022,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.113,Y20-64,1
+2022,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.092,Y20-64,1
+2022,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.051,Y20-64,1
+2022,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.073,Y20-64,1
+2022,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,0.11699999999999999,Y20-64,2
+2022,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.079,Y20-64,2
+2022,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.025,Y20-64,2
+2022,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.061,Y20-64,2
+2022,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,0.141,Y20-64,2
+2022,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.055999999999999994,Y20-64,2
+2022,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.034,Y20-64,2
+2022,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.059000000000000004,Y20-64,2
+2022,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.111,Y20-64,3
+2022,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.073,Y20-64,3
+2022,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.035,Y20-64,3
+2022,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.061,Y20-64,3
+2022,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.127,Y20-64,3
+2022,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.062,Y20-64,3
+2022,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.027000000000000003,Y20-64,3
+2022,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.057,Y20-64,3
+2022,4,FRD,Normandie,0,F,ED0-2,educL,0,0.102,Y20-64,4
+2022,4,FRD,Normandie,0,F,ED3_4,educM,1,0.07400000000000001,Y20-64,4
+2022,4,FRD,Normandie,0,F,ED5-8,educH,2,0.031,Y20-64,4
+2022,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.059000000000000004,Y20-64,4
+2022,4,FRD,Normandie,1,M,ED0-2,educL,0,0.10400000000000001,Y20-64,4
+2022,4,FRD,Normandie,1,M,ED3_4,educM,1,0.07400000000000001,Y20-64,4
+2022,4,FRD,Normandie,1,M,ED5-8,educH,2,0.048,Y20-64,4
+2022,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.07,Y20-64,4
+2022,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.13699999999999998,Y20-64,5
+2022,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.10099999999999999,Y20-64,5
+2022,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.046,Y20-64,5
+2022,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.08199999999999999,Y20-64,5
+2022,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.147,Y20-64,5
+2022,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.076,Y20-64,5
+2022,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.071,Y20-64,5
+2022,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.086,Y20-64,5
+2022,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.11599999999999999,Y20-64,6
+2022,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.066,Y20-64,6
+2022,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.048,Y20-64,6
+2022,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.064,Y20-64,6
+2022,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.12,Y20-64,6
+2022,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.07,Y20-64,6
+2022,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.040999999999999995,Y20-64,6
+2022,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.067,Y20-64,6
+2022,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.076,Y20-64,7
+2022,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.057999999999999996,Y20-64,7
+2022,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.035,Y20-64,7
+2022,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.049,Y20-64,7
+2022,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.107,Y20-64,7
+2022,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.073,Y20-64,7
+2022,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.040999999999999995,Y20-64,7
+2022,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.063,Y20-64,7
+2022,8,FRH,Bretagne,0,F,ED0-2,educL,0,,Y20-64,8
+2022,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.067,Y20-64,8
+2022,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.044000000000000004,Y20-64,8
+2022,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.057,Y20-64,8
+2022,8,FRH,Bretagne,1,M,ED0-2,educL,0,,Y20-64,8
+2022,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.051,Y20-64,8
+2022,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.045,Y20-64,8
+2022,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.049,Y20-64,8
+2022,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.12,Y20-64,9
+2022,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.07400000000000001,Y20-64,9
+2022,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.046,Y20-64,9
+2022,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.065,Y20-64,9
+2022,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.14400000000000002,Y20-64,9
+2022,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.067,Y20-64,9
+2022,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.051,Y20-64,9
+2022,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.069,Y20-64,9
+2022,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.11699999999999999,Y20-64,10
+2022,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.081,Y20-64,10
+2022,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.048,Y20-64,10
+2022,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.068,Y20-64,10
+2022,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.133,Y20-64,10
+2022,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.073,Y20-64,10
+2022,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.057,Y20-64,10
+2022,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.075,Y20-64,10
+2022,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.102,Y20-64,11
+2022,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.075,Y20-64,11
+2022,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.046,Y20-64,11
+2022,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.062,Y20-64,11
+2022,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.125,Y20-64,11
+2022,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.067,Y20-64,11
+2022,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.044000000000000004,Y20-64,11
+2022,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.063,Y20-64,11
+2022,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.11199999999999999,Y20-64,12
+2022,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.077,Y20-64,12
+2022,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.044000000000000004,Y20-64,12
+2022,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.064,Y20-64,12
+2022,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.138,Y20-64,12
+2022,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.068,Y20-64,12
+2022,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.039,Y20-64,12
+2022,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.066,Y20-64,12
+2022,13,FRM,Corse,0,F,ED0-2,educL,0,,Y20-64,13
+2022,13,FRM,Corse,0,F,ED3_4,educM,1,,Y20-64,13
+2022,13,FRM,Corse,0,F,ED5-8,educH,2,,Y20-64,13
+2022,13,FRM,Corse,0,F,TOTAL,educALL,-1,,Y20-64,13
+2022,13,FRM,Corse,1,M,ED0-2,educL,0,,Y20-64,13
+2022,13,FRM,Corse,1,M,ED3_4,educM,1,,Y20-64,13
+2022,13,FRM,Corse,1,M,ED5-8,educH,2,,Y20-64,13
+2022,13,FRM,Corse,1,M,TOTAL,educALL,-1,,Y20-64,13
+2022,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.259,Y20-64,14
+2022,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.18899999999999997,Y20-64,14
+2022,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.057999999999999996,Y20-64,14
+2022,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.155,Y20-64,14
+2022,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.228,Y20-64,14
+2022,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.179,Y20-64,14
+2022,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.077,Y20-64,14
+2022,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.165,Y20-64,14
+2023,0,FR,France,0,F,ED0-2,educL,0,0.122,Y20-64,0
+2023,0,FR,France,0,F,ED3_4,educM,1,0.08,Y20-64,0
+2023,0,FR,France,0,F,ED5-8,educH,2,0.049,Y20-64,0
+2023,0,FR,France,0,F,TOTAL,educALL,-1,0.068,Y20-64,0
+2023,0,FR,France,1,M,ED0-2,educL,0,0.126,Y20-64,0
+2023,0,FR,France,1,M,ED3_4,educM,1,0.073,Y20-64,0
+2023,0,FR,France,1,M,ED5-8,educH,2,0.051,Y20-64,0
+2023,0,FR,France,1,M,TOTAL,educALL,-1,0.071,Y20-64,0
+2023,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.084,Y20-64,1
+2023,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.096,Y20-64,1
+2023,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.055999999999999994,Y20-64,1
+2023,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.069,Y20-64,1
+2023,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.12,Y20-64,1
+2023,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.096,Y20-64,1
+2023,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.06,Y20-64,1
+2023,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.079,Y20-64,1
+2023,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,,Y20-64,2
+2023,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.062,Y20-64,2
+2023,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.042,Y20-64,2
+2023,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.055,Y20-64,2
+2023,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,,Y20-64,2
+2023,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.052000000000000005,Y20-64,2
+2023,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.04,Y20-64,2
+2023,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.049,Y20-64,2
+2023,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,,Y20-64,3
+2023,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.071,Y20-64,3
+2023,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.038,Y20-64,3
+2023,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.057999999999999996,Y20-64,3
+2023,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.133,Y20-64,3
+2023,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.055999999999999994,Y20-64,3
+2023,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.047,Y20-64,3
+2023,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.064,Y20-64,3
+2023,4,FRD,Normandie,0,F,ED0-2,educL,0,0.122,Y20-64,4
+2023,4,FRD,Normandie,0,F,ED3_4,educM,1,0.079,Y20-64,4
+2023,4,FRD,Normandie,0,F,ED5-8,educH,2,0.038,Y20-64,4
+2023,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.066,Y20-64,4
+2023,4,FRD,Normandie,1,M,ED0-2,educL,0,0.099,Y20-64,4
+2023,4,FRD,Normandie,1,M,ED3_4,educM,1,0.055,Y20-64,4
+2023,4,FRD,Normandie,1,M,ED5-8,educH,2,0.034,Y20-64,4
+2023,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.053,Y20-64,4
+2023,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.163,Y20-64,5
+2023,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.095,Y20-64,5
+2023,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.064,Y20-64,5
+2023,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.09,Y20-64,5
+2023,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.172,Y20-64,5
+2023,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.09,Y20-64,5
+2023,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.053,Y20-64,5
+2023,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.09,Y20-64,5
+2023,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.125,Y20-64,6
+2023,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.065,Y20-64,6
+2023,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.051,Y20-64,6
+2023,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.065,Y20-64,6
+2023,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.105,Y20-64,6
+2023,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.059000000000000004,Y20-64,6
+2023,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.048,Y20-64,6
+2023,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.061,Y20-64,6
+2023,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.09300000000000001,Y20-64,7
+2023,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.063,Y20-64,7
+2023,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.04,Y20-64,7
+2023,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.055999999999999994,Y20-64,7
+2023,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.08800000000000001,Y20-64,7
+2023,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.063,Y20-64,7
+2023,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.037000000000000005,Y20-64,7
+2023,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.055,Y20-64,7
+2023,8,FRH,Bretagne,0,F,ED0-2,educL,0,,Y20-64,8
+2023,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.042,Y20-64,8
+2023,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.038,Y20-64,8
+2023,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.043,Y20-64,8
+2023,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.099,Y20-64,8
+2023,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.057,Y20-64,8
+2023,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.05,Y20-64,8
+2023,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.057999999999999996,Y20-64,8
+2023,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.125,Y20-64,9
+2023,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.086,Y20-64,9
+2023,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.040999999999999995,Y20-64,9
+2023,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.068,Y20-64,9
+2023,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.158,Y20-64,9
+2023,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.07,Y20-64,9
+2023,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.039,Y20-64,9
+2023,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.069,Y20-64,9
+2023,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.129,Y20-64,10
+2023,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.09,Y20-64,10
+2023,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.049,Y20-64,10
+2023,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.07200000000000001,Y20-64,10
+2023,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.13699999999999998,Y20-64,10
+2023,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.071,Y20-64,10
+2023,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.059000000000000004,Y20-64,10
+2023,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.07400000000000001,Y20-64,10
+2023,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.133,Y20-64,11
+2023,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.062,Y20-64,11
+2023,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.045,Y20-64,11
+2023,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.059000000000000004,Y20-64,11
+2023,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.098,Y20-64,11
+2023,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.068,Y20-64,11
+2023,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.049,Y20-64,11
+2023,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.063,Y20-64,11
+2023,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.109,Y20-64,12
+2023,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.08800000000000001,Y20-64,12
+2023,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.047,Y20-64,12
+2023,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.069,Y20-64,12
+2023,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.115,Y20-64,12
+2023,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.067,Y20-64,12
+2023,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.046,Y20-64,12
+2023,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.065,Y20-64,12
+2023,13,FRM,Corse,0,F,ED0-2,educL,0,,Y20-64,13
+2023,13,FRM,Corse,0,F,ED3_4,educM,1,,Y20-64,13
+2023,13,FRM,Corse,0,F,ED5-8,educH,2,,Y20-64,13
+2023,13,FRM,Corse,0,F,TOTAL,educALL,-1,,Y20-64,13
+2023,13,FRM,Corse,1,M,ED0-2,educL,0,,Y20-64,13
+2023,13,FRM,Corse,1,M,ED3_4,educM,1,,Y20-64,13
+2023,13,FRM,Corse,1,M,ED5-8,educH,2,,Y20-64,13
+2023,13,FRM,Corse,1,M,TOTAL,educALL,-1,,Y20-64,13
+2023,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.267,Y20-64,14
+2023,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.183,Y20-64,14
+2023,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.068,Y20-64,14
+2023,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.159,Y20-64,14
+2023,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.235,Y20-64,14
+2023,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.174,Y20-64,14
+2023,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.09,Y20-64,14
+2023,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.168,Y20-64,14
+2024,0,FR,France,0,F,ED0-2,educL,0,0.125,Y20-64,0
+2024,0,FR,France,0,F,ED3_4,educM,1,0.079,Y20-64,0
+2024,0,FR,France,0,F,ED5-8,educH,2,0.049,Y20-64,0
+2024,0,FR,France,0,F,TOTAL,educALL,-1,0.068,Y20-64,0
+2024,0,FR,France,1,M,ED0-2,educL,0,0.12300000000000001,Y20-64,0
+2024,0,FR,France,1,M,ED3_4,educM,1,0.07400000000000001,Y20-64,0
+2024,0,FR,France,1,M,ED5-8,educH,2,0.051,Y20-64,0
+2024,0,FR,France,1,M,TOTAL,educALL,-1,0.071,Y20-64,0
+2024,1,FR1,Ile de France,0,F,ED0-2,educL,0,0.095,Y20-64,1
+2024,1,FR1,Ile de France,0,F,ED3_4,educM,1,0.10099999999999999,Y20-64,1
+2024,1,FR1,Ile de France,0,F,ED5-8,educH,2,0.061,Y20-64,1
+2024,1,FR1,Ile de France,0,F,TOTAL,educALL,-1,0.076,Y20-64,1
+2024,1,FR1,Ile de France,1,M,ED0-2,educL,0,0.125,Y20-64,1
+2024,1,FR1,Ile de France,1,M,ED3_4,educM,1,0.096,Y20-64,1
+2024,1,FR1,Ile de France,1,M,ED5-8,educH,2,0.059000000000000004,Y20-64,1
+2024,1,FR1,Ile de France,1,M,TOTAL,educALL,-1,0.079,Y20-64,1
+2024,2,FRB,Centre — Val de Loire,0,F,ED0-2,educL,0,,Y20-64,2
+2024,2,FRB,Centre — Val de Loire,0,F,ED3_4,educM,1,0.051,Y20-64,2
+2024,2,FRB,Centre — Val de Loire,0,F,ED5-8,educH,2,0.04,Y20-64,2
+2024,2,FRB,Centre — Val de Loire,0,F,TOTAL,educALL,-1,0.049,Y20-64,2
+2024,2,FRB,Centre — Val de Loire,1,M,ED0-2,educL,0,,Y20-64,2
+2024,2,FRB,Centre — Val de Loire,1,M,ED3_4,educM,1,0.045,Y20-64,2
+2024,2,FRB,Centre — Val de Loire,1,M,ED5-8,educH,2,0.055,Y20-64,2
+2024,2,FRB,Centre — Val de Loire,1,M,TOTAL,educALL,-1,0.051,Y20-64,2
+2024,3,FRC,Bourgogne-Franche-Comté,0,F,ED0-2,educL,0,0.105,Y20-64,3
+2024,3,FRC,Bourgogne-Franche-Comté,0,F,ED3_4,educM,1,0.065,Y20-64,3
+2024,3,FRC,Bourgogne-Franche-Comté,0,F,ED5-8,educH,2,0.027999999999999997,Y20-64,3
+2024,3,FRC,Bourgogne-Franche-Comté,0,F,TOTAL,educALL,-1,0.054000000000000006,Y20-64,3
+2024,3,FRC,Bourgogne-Franche-Comté,1,M,ED0-2,educL,0,0.113,Y20-64,3
+2024,3,FRC,Bourgogne-Franche-Comté,1,M,ED3_4,educM,1,0.048,Y20-64,3
+2024,3,FRC,Bourgogne-Franche-Comté,1,M,ED5-8,educH,2,0.063,Y20-64,3
+2024,3,FRC,Bourgogne-Franche-Comté,1,M,TOTAL,educALL,-1,0.063,Y20-64,3
+2024,4,FRD,Normandie,0,F,ED0-2,educL,0,0.14300000000000002,Y20-64,4
+2024,4,FRD,Normandie,0,F,ED3_4,educM,1,0.08,Y20-64,4
+2024,4,FRD,Normandie,0,F,ED5-8,educH,2,0.042,Y20-64,4
+2024,4,FRD,Normandie,0,F,TOTAL,educALL,-1,0.068,Y20-64,4
+2024,4,FRD,Normandie,1,M,ED0-2,educL,0,0.138,Y20-64,4
+2024,4,FRD,Normandie,1,M,ED3_4,educM,1,0.069,Y20-64,4
+2024,4,FRD,Normandie,1,M,ED5-8,educH,2,0.049,Y20-64,4
+2024,4,FRD,Normandie,1,M,TOTAL,educALL,-1,0.071,Y20-64,4
+2024,5,FRE,Hauts-de-France,0,F,ED0-2,educL,0,0.155,Y20-64,5
+2024,5,FRE,Hauts-de-France,0,F,ED3_4,educM,1,0.09699999999999999,Y20-64,5
+2024,5,FRE,Hauts-de-France,0,F,ED5-8,educH,2,0.054000000000000006,Y20-64,5
+2024,5,FRE,Hauts-de-France,0,F,TOTAL,educALL,-1,0.08199999999999999,Y20-64,5
+2024,5,FRE,Hauts-de-France,1,M,ED0-2,educL,0,0.129,Y20-64,5
+2024,5,FRE,Hauts-de-France,1,M,ED3_4,educM,1,0.09300000000000001,Y20-64,5
+2024,5,FRE,Hauts-de-France,1,M,ED5-8,educH,2,0.047,Y20-64,5
+2024,5,FRE,Hauts-de-France,1,M,TOTAL,educALL,-1,0.081,Y20-64,5
+2024,6,FRF,Grand Est,0,F,ED0-2,educL,0,0.139,Y20-64,6
+2024,6,FRF,Grand Est,0,F,ED3_4,educM,1,0.073,Y20-64,6
+2024,6,FRF,Grand Est,0,F,ED5-8,educH,2,0.047,Y20-64,6
+2024,6,FRF,Grand Est,0,F,TOTAL,educALL,-1,0.067,Y20-64,6
+2024,6,FRF,Grand Est,1,M,ED0-2,educL,0,0.12300000000000001,Y20-64,6
+2024,6,FRF,Grand Est,1,M,ED3_4,educM,1,0.07200000000000001,Y20-64,6
+2024,6,FRF,Grand Est,1,M,ED5-8,educH,2,0.046,Y20-64,6
+2024,6,FRF,Grand Est,1,M,TOTAL,educALL,-1,0.069,Y20-64,6
+2024,7,FRG,Pays de la Loire,0,F,ED0-2,educL,0,0.076,Y20-64,7
+2024,7,FRG,Pays de la Loire,0,F,ED3_4,educM,1,0.066,Y20-64,7
+2024,7,FRG,Pays de la Loire,0,F,ED5-8,educH,2,0.035,Y20-64,7
+2024,7,FRG,Pays de la Loire,0,F,TOTAL,educALL,-1,0.052000000000000005,Y20-64,7
+2024,7,FRG,Pays de la Loire,1,M,ED0-2,educL,0,0.096,Y20-64,7
+2024,7,FRG,Pays de la Loire,1,M,ED3_4,educM,1,0.065,Y20-64,7
+2024,7,FRG,Pays de la Loire,1,M,ED5-8,educH,2,0.047,Y20-64,7
+2024,7,FRG,Pays de la Loire,1,M,TOTAL,educALL,-1,0.061,Y20-64,7
+2024,8,FRH,Bretagne,0,F,ED0-2,educL,0,0.08199999999999999,Y20-64,8
+2024,8,FRH,Bretagne,0,F,ED3_4,educM,1,0.047,Y20-64,8
+2024,8,FRH,Bretagne,0,F,ED5-8,educH,2,0.046,Y20-64,8
+2024,8,FRH,Bretagne,0,F,TOTAL,educALL,-1,0.049,Y20-64,8
+2024,8,FRH,Bretagne,1,M,ED0-2,educL,0,0.11699999999999999,Y20-64,8
+2024,8,FRH,Bretagne,1,M,ED3_4,educM,1,0.04,Y20-64,8
+2024,8,FRH,Bretagne,1,M,ED5-8,educH,2,0.064,Y20-64,8
+2024,8,FRH,Bretagne,1,M,TOTAL,educALL,-1,0.055999999999999994,Y20-64,8
+2024,9,FRI,Nouvelle-Aquitaine,0,F,ED0-2,educL,0,0.10400000000000001,Y20-64,9
+2024,9,FRI,Nouvelle-Aquitaine,0,F,ED3_4,educM,1,0.077,Y20-64,9
+2024,9,FRI,Nouvelle-Aquitaine,0,F,ED5-8,educH,2,0.037000000000000005,Y20-64,9
+2024,9,FRI,Nouvelle-Aquitaine,0,F,TOTAL,educALL,-1,0.06,Y20-64,9
+2024,9,FRI,Nouvelle-Aquitaine,1,M,ED0-2,educL,0,0.107,Y20-64,9
+2024,9,FRI,Nouvelle-Aquitaine,1,M,ED3_4,educM,1,0.065,Y20-64,9
+2024,9,FRI,Nouvelle-Aquitaine,1,M,ED5-8,educH,2,0.042,Y20-64,9
+2024,9,FRI,Nouvelle-Aquitaine,1,M,TOTAL,educALL,-1,0.06,Y20-64,9
+2024,10,FRJ,Occitanie,0,F,ED0-2,educL,0,0.14,Y20-64,10
+2024,10,FRJ,Occitanie,0,F,ED3_4,educM,1,0.07200000000000001,Y20-64,10
+2024,10,FRJ,Occitanie,0,F,ED5-8,educH,2,0.057,Y20-64,10
+2024,10,FRJ,Occitanie,0,F,TOTAL,educALL,-1,0.069,Y20-64,10
+2024,10,FRJ,Occitanie,1,M,ED0-2,educL,0,0.127,Y20-64,10
+2024,10,FRJ,Occitanie,1,M,ED3_4,educM,1,0.078,Y20-64,10
+2024,10,FRJ,Occitanie,1,M,ED5-8,educH,2,0.045,Y20-64,10
+2024,10,FRJ,Occitanie,1,M,TOTAL,educALL,-1,0.069,Y20-64,10
+2024,11,FRK,Auvergne-Rhône-Alpes,0,F,ED0-2,educL,0,0.166,Y20-64,11
+2024,11,FRK,Auvergne-Rhône-Alpes,0,F,ED3_4,educM,1,0.07400000000000001,Y20-64,11
+2024,11,FRK,Auvergne-Rhône-Alpes,0,F,ED5-8,educH,2,0.040999999999999995,Y20-64,11
+2024,11,FRK,Auvergne-Rhône-Alpes,0,F,TOTAL,educALL,-1,0.064,Y20-64,11
+2024,11,FRK,Auvergne-Rhône-Alpes,1,M,ED0-2,educL,0,0.13,Y20-64,11
+2024,11,FRK,Auvergne-Rhône-Alpes,1,M,ED3_4,educM,1,0.068,Y20-64,11
+2024,11,FRK,Auvergne-Rhône-Alpes,1,M,ED5-8,educH,2,0.047,Y20-64,11
+2024,11,FRK,Auvergne-Rhône-Alpes,1,M,TOTAL,educALL,-1,0.066,Y20-64,11
+2024,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED0-2,educL,0,0.094,Y20-64,12
+2024,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED3_4,educM,1,0.077,Y20-64,12
+2024,12,FRL,Provence-Alpes-Côte d’Azur,0,F,ED5-8,educH,2,0.052000000000000005,Y20-64,12
+2024,12,FRL,Provence-Alpes-Côte d’Azur,0,F,TOTAL,educALL,-1,0.066,Y20-64,12
+2024,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED0-2,educL,0,0.08900000000000001,Y20-64,12
+2024,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED3_4,educM,1,0.077,Y20-64,12
+2024,12,FRL,Provence-Alpes-Côte d’Azur,1,M,ED5-8,educH,2,0.047,Y20-64,12
+2024,12,FRL,Provence-Alpes-Côte d’Azur,1,M,TOTAL,educALL,-1,0.067,Y20-64,12
+2024,13,FRM,Corse,0,F,ED0-2,educL,0,,Y20-64,13
+2024,13,FRM,Corse,0,F,ED3_4,educM,1,,Y20-64,13
+2024,13,FRM,Corse,0,F,ED5-8,educH,2,,Y20-64,13
+2024,13,FRM,Corse,0,F,TOTAL,educALL,-1,,Y20-64,13
+2024,13,FRM,Corse,1,M,ED0-2,educL,0,,Y20-64,13
+2024,13,FRM,Corse,1,M,ED3_4,educM,1,,Y20-64,13
+2024,13,FRM,Corse,1,M,ED5-8,educH,2,,Y20-64,13
+2024,13,FRM,Corse,1,M,TOTAL,educALL,-1,,Y20-64,13
+2024,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED0-2,educL,0,0.253,Y20-64,14
+2024,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED3_4,educM,1,0.168,Y20-64,14
+2024,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,ED5-8,educH,2,0.067,Y20-64,14
+2024,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,0,F,TOTAL,educALL,-1,0.151,Y20-64,14
+2024,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED0-2,educL,0,0.257,Y20-64,14
+2024,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED3_4,educM,1,0.159,Y20-64,14
+2024,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,ED5-8,educH,2,0.08,Y20-64,14
+2024,14,FRY,RUP FR — Régions Ultrapériphériques Françaises,1,M,TOTAL,educALL,-1,0.16399999999999998,Y20-64,14

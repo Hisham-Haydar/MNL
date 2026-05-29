@@ -1,0 +1,7 @@
+year,year_tag,n_rows,unique_idorighh,unique_cluster_id,cluster_id_eq_idorighh,expected_overlap
+2015,1,423500,4235,4235,True,
+2016,2,425300,4253,4253,True,
+2017,3,395700,3957,3957,True,
+2015-2016 overlap,cross,0,0,0,True,0.0
+2015-2017 overlap,cross,0,0,0,True,0.0
+2016-2017 overlap,cross,2788,2788,2788,True,8796.0

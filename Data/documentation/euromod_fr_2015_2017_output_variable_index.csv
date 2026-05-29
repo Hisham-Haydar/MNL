@@ -1,0 +1,133 @@
+system,output_policy,policy_switch,policy_comment,function,function_switch,parameter,value,comment,group,order,value_type
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,File,FR_2015_std,,,0,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,id*,ID variables,,1,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,d*,Demographic variables,,2,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,l*,Labour market variables,,3,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,y*,Market income variables,,4,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,p*,Pension variables,,5,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,b*,Benefit variables,,6,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,t*,Tax variables,,7,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,x*,Expenditure variables,,8,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,a*,Asset variables,,10,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,ilgroup,ils_*,Standardized income lists,,17,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,TAX_UNIT,tu_individual_fr,,,36,taxunit
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,k*,In kind income,,9,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,ILGroup,il_*,,,18,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_fiscalunit_fr,,1,19,taxunit
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,1,20,categorical
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_bsa00_fr,,2,22,taxunit
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,2,23,categorical
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,12,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_bch_fr,,3,25,taxunit
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,3,26,categorical
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,37,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,1,21,categorical
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,2,24,categorical
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,3,27,categorical
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_bho_fr,,4,28,taxunit
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,4,30,categorical
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,4,29,categorical
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_bchlg_fr,,5,31,taxunit
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,5,32,categorical
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,5,33,categorical
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_household_fr,,6,34,taxunit
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,6,35,categorical
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,Var,n/a,,,38,variable
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,13,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,14,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,i_*,Intermediate Variables,,15,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,16,string
+FR_2015,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,s*,Auxiliary Variables,,11,string
+FR_2015,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,file,FR_2015_std_hh,,,1,string
+FR_2015,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,var,idhh,household ID,,2,variable
+FR_2015,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,var,dwt,weight,,3,variable
+FR_2015,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,ilgroup,ils*,,,4,string
+FR_2015,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,TAX_UNIT,tu_household_fr,,,5,taxunit
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,File,FR_2016_std,,,0,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,id*,ID variables,,1,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,d*,Demographic variables,,2,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,l*,Labour market variables,,3,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,y*,Market income variables,,4,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,p*,Pension variables,,5,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,b*,Benefit variables,,6,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,t*,Tax variables,,7,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,x*,Expenditure variables,,8,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,a*,Asset variables,,10,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,ilgroup,ils_*,Standardized income lists,,17,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,TAX_UNIT,tu_individual_fr,,,36,taxunit
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,k*,In kind income,,9,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,ILGroup,il_*,,,18,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_fiscalunit_fr,,1,19,taxunit
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,1,20,categorical
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_bsa00_fr,,2,22,taxunit
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,2,23,categorical
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,12,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_bch_fr,,3,25,taxunit
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,3,26,categorical
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,37,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,1,21,categorical
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,2,24,categorical
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,3,27,categorical
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_bho_fr,,4,28,taxunit
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,4,30,categorical
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,4,29,categorical
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_bchlg_fr,,5,31,taxunit
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,5,32,categorical
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,5,33,categorical
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_household_fr,,6,34,taxunit
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,6,35,categorical
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,Var,n/a,,,38,variable
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,13,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,14,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,i_*,Intermediate Variables,,15,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,16,string
+FR_2016,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,s*,Auxiliary Variables,,11,string
+FR_2016,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,file,FR_2016_std_hh,,,1,string
+FR_2016,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,var,idhh,household ID,,2,variable
+FR_2016,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,var,dwt,weight,,3,variable
+FR_2016,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,ilgroup,ils*,,,4,string
+FR_2016,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,TAX_UNIT,tu_household_fr,,,5,taxunit
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,File,FR_2017_std,,,0,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,id*,ID variables,,1,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,d*,Demographic variables,,2,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,l*,Labour market variables,,3,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,y*,Market income variables,,4,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,p*,Pension variables,,5,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,b*,Benefit variables,,6,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,t*,Tax variables,,7,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,x*,Expenditure variables,,8,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,vargroup,a*,Asset variables,,10,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,ilgroup,ils_*,Standardized income lists,,17,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,TAX_UNIT,tu_individual_fr,,,36,taxunit
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,k*,In kind income,,9,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,ILGroup,il_*,,,18,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_fiscalunit_fr,,1,19,taxunit
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,1,20,categorical
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_bsa00_fr,,2,22,taxunit
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,2,23,categorical
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,12,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_bch_fr,,3,25,taxunit
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,3,26,categorical
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,37,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,1,21,categorical
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,2,24,categorical
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,3,27,categorical
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_bho_fr,,4,28,taxunit
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,4,30,categorical
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,4,29,categorical
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_bchlg_fr,,5,31,taxunit
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,5,32,categorical
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,IsDepChild,,5,33,categorical
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_TU,tu_household_fr,,6,34,taxunit
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,UnitInfo_Id,HeadID,,6,35,categorical
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,Var,n/a,,,38,variable
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,13,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,14,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,i_*,Intermediate Variables,,15,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,n/a,,,16,string
+FR_2017,output_std_fr,on,DEF: STANDARD OUTPUT INDIVIDUAL LEVEL,DefOutput,on,VarGroup,s*,Auxiliary Variables,,11,string
+FR_2017,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,file,FR_2017_std_hh,,,1,string
+FR_2017,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,var,idhh,household ID,,2,variable
+FR_2017,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,var,dwt,weight,,3,variable
+FR_2017,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,ilgroup,ils*,,,4,string
+FR_2017,output_std_hh_fr,off,DEF: STANDARD OUTPUT HOUSEHOLD LEVEL,DefOutput,on,TAX_UNIT,tu_household_fr,,,5,taxunit

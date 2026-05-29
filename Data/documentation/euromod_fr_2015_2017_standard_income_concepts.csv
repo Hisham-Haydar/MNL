@@ -1,0 +1,715 @@
+system,concept,concept_comment,component,sign,component_comment,order,value_type
+FR_2015,ils_earns,ils_earns: Standardised Earnings,yse,+,Self-employment income,1,string
+FR_2015,ils_earns,ils_earns: Standardised Earnings,yem00,+,Regular hours employment income,2,string
+FR_2015,ils_earns,ils_earns: Standardised Earnings,yemxp,+,Overtime pay,3,string
+FR_2015,ils_earns,ils_earns: Standardised Earnings,yemmc_s,n/a,Covid-19 compensation paid by the firm,4,string
+FR_2015,ils_origy,ils_origy: Standardised Original income,ils_earns,+,earnings,2,variable
+FR_2015,ils_origy,ils_origy: Standardised Original income,ypp,+,income from private pensions,3,string
+FR_2015,ils_origy,ils_origy: Standardised Original income,yiy,+,income from investments,4,string
+FR_2015,ils_origy,ils_origy: Standardised Original income,ypr,+,income from rent,5,string
+FR_2015,ils_origy,ils_origy: Standardised Original income,yot,+,income received by children under 16,6,string
+FR_2015,ils_origy,ils_origy: Standardised Original income,ypt,+,income received through private transfers,7,string
+FR_2015,ils_origy,ils_origy: Standardised Original income,xmp,-,maintainance payments,8,string
+FR_2015,ils_dispy,ils_dispy: Standardised Disposable income,ils_origy,+,Standardized original income,1,variable
+FR_2015,ils_dispy,ils_dispy: Standardised Disposable income,ils_sicdy,-,all social insurance contributions paid by (self-)employed and others,6,variable
+FR_2015,ils_dispy,ils_dispy: Standardised Disposable income,ils_tax,-,Standardized taxes,8,variable
+FR_2015,ils_dispy,ils_dispy: Standardised Disposable income,ils_ben,+,Standardized benefits,2,string
+FR_2015,ils_tax,ils_tax: Standardised Taxes,tin_s,+,Personal income tax (IRPP),1,string
+FR_2015,ils_tax,ils_tax: Standardised Taxes,tpr,+,Property taxes,2,string
+FR_2015,ils_tax,ils_tax: Standardised Taxes,tscxc_s,+,Generalized social contributions (CSG),3,string
+FR_2015,ils_tax,ils_tax: Standardised Taxes,tscdf_s,+,Contributions for debt repayment (CRDS),4,string
+FR_2015,ils_tax,ils_tax: Standardised Taxes,tsckt_s,+,Social insurance contributions on capital income,5,string
+FR_2015,ils_tax,ils_tax: Standardised Taxes,tinto_s,+,Exceptional contributions on high income earners (CEHR),6,string
+FR_2015,ils_tax,ils_tax: Standardised Taxes,tmu,+,Residential tax (TH),9,string
+FR_2015,ils_tax,ils_tax: Standardised Taxes,twl,+,Wealth tax (ISF),8,string
+FR_2015,ils_tax,ils_tax: Standardised Taxes,tinto01_s,n/a,Differential contribution on high income (CDHR),7,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchyc_s,+,Means-tested benefit for young children (PAJE),1,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsuwd_s,+,Means-tested Survivor Minimum Pension (Allocation veuvage AV),2,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bunmt_s,+,Unemployment assitance Benefit (Allocation de solidarité spécifique ASS),3,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchlg_s,+,Means-tested benefit for large families (CF),4,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bched_s,+,Means tested educational grant (ARS),5,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchba_s,+,Means tested birth grant (PN),6,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsaoa_s,+,Means-tested allowance for the elderly (ASPA),7,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bdi_s,+,Income tested disability benefit (AAH),8,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchlp_s,n/a,Means-tested assistance for lone parents (API),9,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsa00_s,+,Means-tested guaranteed minimum income (RMI/RSA),10,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bhotn_s,+,Income tested housing allowance for those renting (AL),11,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,tinrf_s,+,Refund of the working tax credit (PPE),12,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchot_s,+,Other means-tested allowances for families with children,13,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsaot,+,Other means-tested benefits,14,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bhoot,+,Other means-tested housing benefits,15,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bed,+,Scholarships,16,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsawk_s,n/a,Activity allowance,17,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsaeccm_s,n/a,Covid-19 social assistance,18,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,binxp_s,n/a,Inflation compensation,19,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bhoey_s,n/a,Energy voucher,20,string
+FR_2015,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,binpb_s,n/a,Inflation compensation for civil servants,21,string
+FR_2015,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bhl,+,Contributory sickness benefit,1,string
+FR_2015,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bunct_s,+,Contributory unemployment benefit (ARE),3,string
+FR_2015,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bch00_s,+,Universal child benefit (AF),4,string
+FR_2015,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bchcc_s,+,Supplement for free choice of activity (CLCA),5,string
+FR_2015,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bchor_s,+,Family support allowance (ASF),6,string
+FR_2015,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bmact_s,+,Maternity allowance (PARBEN),7,string
+FR_2015,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bpact_s,+,Paternity allowance (PARBEN),8,string
+FR_2015,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bwkmcee_s,n/a,Covid-19 wage compensation paid by the state,9,string
+FR_2015,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bwkmcse_s,n/a,Covid-19 self-employment compensation paid by the state,10,string
+FR_2015,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bseec_s,n/a,Covid-19 exceptional support for self-employed (Aide CPSTI RCI COVID-19),11,string
+FR_2015,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,ils_origy,+,original market income,1,variable
+FR_2015,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,ils_pen,+,public pensions,2,variable
+FR_2015,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bunct_s,+,unemployment benefit,3,string
+FR_2015,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bhl,+,Contributory sickness benefit,4,string
+FR_2015,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bwkmcee_s,n/a,Covid-19 wage compensation paid by the state,6,string
+FR_2015,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bwkmcse_s,n/a,Covid-19 self-employment compensation paid by the state,7,string
+FR_2015,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bseec_s,n/a,Covid-19 exceptional support for self-employed (Aide CPSTI RCI COVID-19),8,string
+FR_2015,ils_pen,ils_pen: Standardised Public Pensions,poa00,+,old-age pensions,2,string
+FR_2015,ils_pen,ils_pen: Standardised Public Pensions,pdi00,+,disability pensions,3,string
+FR_2015,ils_pen,ils_pen: Standardised Public Pensions,psu,+,survivor pensions,4,string
+FR_2015,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscsefa_s,+,Family benefits insurance contributions,2,string
+FR_2015,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscsesi_s,+,Sickness insurance contributions,3,string
+FR_2015,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscsepi_s,+,Pension insurance contributions,4,string
+FR_2015,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscsedi_s,+,Death & invalidity insurance,5,string
+FR_2015,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscseir_s,+,Professional training contribution (only for artisans & I&T),6,string
+FR_2015,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscersi_s,+,Sickness insurance contributions,1,string
+FR_2015,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerfa_s,+,Family benefits insurance contributions,2,string
+FR_2015,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerho_s,+,Housing benefits insurance contributions,3,string
+FR_2015,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerpi_s,+,"""Pension insurance contributions (includes main contribution, CET & AGF)""",4,string
+FR_2015,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerot_s,+,Contingency insurance for white collar workers,5,string
+FR_2015,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerui_s,+,Unemployment insurance contributions,6,string
+FR_2015,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerir_s,+,Professional training,7,string
+FR_2015,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerrd_s,-,Reductions in employers’ social security contributions (Fillon reduction),9,string
+FR_2015,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerap_s,+,Apprenticeship tax,8,string
+FR_2015,ils_sicee,ils_sicee: Standardised Employee Social insurance contributions,tsceesi_s,+,Sinckness insurance contributions,2,string
+FR_2015,ils_sicee,ils_sicee: Standardised Employee Social insurance contributions,tsceepi_s,+,Pension insurance contributions,3,string
+FR_2015,ils_sicee,ils_sicee: Standardised Employee Social insurance contributions,tsceeui_s,+,Unemployment insurance contributions,4,string
+FR_2015,ils_ben,ils_ben: standardized benefit list,ils_pen,+,Public pensions,2,variable
+FR_2015,ils_ben,ils_ben: standardized benefit list,ils_benmt,+,Means-tested benefits,3,variable
+FR_2015,ils_ben,ils_ben: standardized benefit list,ils_bennt,+,Non means-tested benefits,4,variable
+FR_2015,ils_taxsim,ils_taxsim: standardized simulated taxes,tin_s,+,Personal income tax (IRPP),2,string
+FR_2015,ils_taxsim,ils_taxsim: standardized simulated taxes,tscxc_s,+,Generalized social contributions (CSG),3,string
+FR_2015,ils_taxsim,ils_taxsim: standardized simulated taxes,tscdf_s,+,Contributions for debt repayment (CRDS),4,string
+FR_2015,ils_taxsim,ils_taxsim: standardized simulated taxes,tsckt_s,+,Social insurance contributions on capital income,5,string
+FR_2015,ils_taxsim,ils_taxsim: standardized simulated taxes,tinto_s,+,Exceptional contributions on high income earners: singles,6,string
+FR_2015,ils_taxsim,ils_taxsim: standardized simulated taxes,tinto01_s,n/a,Differential contribution on high income (CDHR),7,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bunct_s,+,Contributory unemployment benefit (ARE),1,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bunmt_s,+,Means-tested unemployment benefit (ASS),2,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bdi_s,+,Means-tested disability benefit (AAH),3,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bsuwd_s,+,Means-tested widowhood benefit (AV),4,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bch00_s,+,Universal child benefit (AF),5,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bchba_s,+,Means tested birth grant (PN),6,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bchyc_s,+,Means tested benefit for young children (APJE/PAJE),7,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bchlg_s,+,Means-tested benefit for large families (CF),8,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bched_s,+,Means-tested education grant (ARS),9,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bchlp_s,n/a,Means-tested benefit for lone parents (API),10,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bsa00_s,n/a,Guaranteed minimum income (RMI/RSA),11,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bsaoa_s,+,Means-tested old-age benefit (ASPA),12,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bhotn_s,+,Means-tested housing benefit (AL),13,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,tinrf_s,+,Refund of the working tax credit (PPE),14,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bsawk_s,n/a,Activity allowance,15,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bchor_s,+,Family support allowance (ASF),17,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bchcc_s,+,Supplement for free choice of activity (CLCA),16,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bwkmcee_s,n/a,Covid-19 wage compensation paid by the state,18,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bwkmcse_s,n/a,Covid-19 self-employment compensation paid by the state,19,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bsaeccm_s,n/a,Covid-19 social assistance,20,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bseec_s,n/a,Covid-19 exceptional support for self-employed (Aide CPSTI RCI COVID-19),21,string
+FR_2015,ils_bensim,ils_bensim: Standardized simulated benefits,bhoey_s,n/a,Energy Voucher,22,string
+FR_2015,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bchot_s,+,Other family benefits,10,string
+FR_2015,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bchor_s,+,Family support allowance (ASF),6,string
+FR_2015,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bched_s,+,Means-tested educational allowance (ARS),5,string
+FR_2015,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bchlg_s,+,Means-tested beenfit for large families (CF),4,string
+FR_2015,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bch00_s,+,Universal/ Main child benefit (AF),2,string
+FR_2015,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bchlp_s,n/a,Means-tested benefit for lone parents (API),9,string
+FR_2015,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,ils_b1_bcb,+,,1,string
+FR_2015,ils_b1_bed,Education benefits (ils_b1_bed),bed,+,Educational allowances,2,string
+FR_2015,ils_b1_boa,Old-age benefits (ils_b1_boa),bsaoa_s,+,Solodarity allowance for the elderly (ASPA),3,string
+FR_2015,ils_b1_boa,Old-age benefits (ils_b1_boa),poa00,+,Old-age pensions,2,string
+FR_2015,ils_b1_bsu,Survivor benefits (ils_b1_bsu),bsuwd_s,+,Means-tested widow allowance,3,string
+FR_2015,ils_b1_bsu,Survivor benefits (ils_b1_bsu),psu,+,Survivor pensions,2,string
+FR_2015,ils_b1_bdi,Disability benefits (ils_b1_bdi),bdi_s,+,Means-tested disability benefit (AAH),3,string
+FR_2015,ils_b1_bdi,Disability benefits (ils_b1_bdi),pdi00,+,Invalidity pensions,2,string
+FR_2015,ils_b1_bun,Unemployment benefits (ils_b1_bun),bunmt_s,+,Means-tested unemployment benefit (ASS),2,string
+FR_2015,ils_b1_bun,Unemployment benefits (ils_b1_bun),bunct_s,+,Contributory unemployment benefit (ARE),1,string
+FR_2015,ils_b1_bun,Unemployment benefits (ils_b1_bun),bwkmcee_s,n/a,Covid-19 wage compensation paid by the state,3,string
+FR_2015,ils_b1_bun,Unemployment benefits (ils_b1_bun),bwkmcse_s,n/a,Covid-19 self-employment compensation paid by the state,4,string
+FR_2015,ils_b1_bun,Unemployment benefits (ils_b1_bun),bseec_s,n/a,Covid-19 exceptional support for self-employed (Aide CPSTI RCI COVID-19),5,string
+FR_2015,ils_b1_bhl,Health/sickness benefits (ils_b1_bhl),bhl,+,Sickness benefits,2,string
+FR_2015,ils_b1_bho,Housing benefits (ils_b1_bho),bhoot,+,Housing benefits for households not paying rent,2,string
+FR_2015,ils_b1_bho,Housing benefits (ils_b1_bho),bhotn_s,+,Means-tested housing assistance for tenants (APL),1,string
+FR_2015,ils_b1_bho,Housing benefits (ils_b1_bho),bhoey_s,n/a,Energy Voucher,3,string
+FR_2015,ils_b1_bsa,Social assistance (ils_b1_bsa),bsawk_s,n/a,Activity Allowance (PA),4,string
+FR_2015,ils_b1_bsa,Social assistance (ils_b1_bsa),bsaot,+,Other means-tested benefits,2,string
+FR_2015,ils_b1_bsa,Social assistance (ils_b1_bsa),bsa00_s,+,Guaranteed min income (RSA),1,string
+FR_2015,ils_b1_bsa,Social assistance (ils_b1_bsa),tinrf_s,+,Refund of the working tax credit (PPE),3,string
+FR_2015,ils_b1_bsa,Social assistance (ils_b1_bsa),bsaeccm_s,n/a,Covid-19 social assistance,5,string
+FR_2015,ils_b1_bsa,Social assistance (ils_b1_bsa),binxp_s,n/a,Inflation compensation,6,string
+FR_2015,ils_b1_bsa,Social assistance (ils_b1_bsa),binpb_s,n/a,Inflation compensation for civil servants,7,string
+FR_2015,ils_b2_bfaed,Family and education benefits (ils_b2_bfaed),ils_b1_bfa,+,,3,string
+FR_2015,ils_b2_bfaed,Family and education benefits (ils_b2_bfaed),ils_b1_bed,+,,2,string
+FR_2015,ils_b2_penhl,"Pensions, disability and health benefits (ils_b2_penhl)",ils_b1_bhl,+,,4,string
+FR_2015,ils_b2_penhl,"Pensions, disability and health benefits (ils_b2_penhl)",ils_b1_bdi,+,,3,string
+FR_2015,ils_b2_penhl,"Pensions, disability and health benefits (ils_b2_penhl)",ils_b1_boa,+,,2,string
+FR_2015,ils_b2_penhl,"Pensions, disability and health benefits (ils_b2_penhl)",ils_b1_bsu,+,,5,string
+FR_2015,ils_b2_bsaho,Social assistance and housing benefits (ils_b2_bsaho),ils_b1_bho,+,,3,string
+FR_2015,ils_b2_bsaho,Social assistance and housing benefits (ils_b2_bsaho),ils_b1_bsa,+,,2,string
+FR_2015,,all social insurance contributions paid by (self-)employed and others,name,ils_sicdy,,1,string
+FR_2015,,all social insurance contributions paid by (self-)employed and others,ils_sicee,+,employee social insurance contributions,8,string
+FR_2015,,all social insurance contributions paid by (self-)employed and others,ils_sicot,+,other social insurance contributions,7,string
+FR_2015,,all social insurance contributions paid by (self-)employed and others,ils_sicse,+,self-employed social insurance contributions,9,string
+FR_2015,ils_base_tin,Income tax list used to calculate implicit tax rates,bsuwd_s,+,,15,string
+FR_2015,ils_base_tin,Income tax list used to calculate implicit tax rates,ypr,+,,14,string
+FR_2015,ils_base_tin,Income tax list used to calculate implicit tax rates,yiy,+,,13,string
+FR_2015,ils_base_tin,Income tax list used to calculate implicit tax rates,yse,+,,12,string
+FR_2015,ils_base_tin,Income tax list used to calculate implicit tax rates,ypp,+,,11,string
+FR_2015,ils_base_tin,Income tax list used to calculate implicit tax rates,psu,+,,10,string
+FR_2015,ils_base_tin,Income tax list used to calculate implicit tax rates,pdi00,+,,9,string
+FR_2015,ils_base_tin,Income tax list used to calculate implicit tax rates,poa00,+,,8,string
+FR_2015,ils_base_tin,Income tax list used to calculate implicit tax rates,bunmt_s,+,,7,string
+FR_2015,ils_base_tin,Income tax list used to calculate implicit tax rates,bunct_s,+,,6,string
+FR_2015,ils_base_tin,Income tax list used to calculate implicit tax rates,yem00,+,,3,string
+FR_2015,ils_base_tin,Income tax list used to calculate implicit tax rates,yemxp,+,From 2019: overtime not taxed until 5000 euro/y - so only part above 5000 is included here,1,string
+FR_2015,ils_base_tin,Income tax list used to calculate implicit tax rates,yemxp_s,n/a,From 2019: overtime not taxed until 5000 euro/y - so only part above 5000 is included here,2,string
+FR_2015,ils_base_tin,Income tax list used to calculate implicit tax rates,bhl,+,,5,string
+FR_2015,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,bsuwd_s,+,,15,string
+FR_2015,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,ypr,+,,14,string
+FR_2015,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yiy,+,,13,string
+FR_2015,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yse,+,,12,string
+FR_2015,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,ypp,+,,11,string
+FR_2015,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,psu,+,,10,string
+FR_2015,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,pdi00,+,,9,string
+FR_2015,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,poa00,+,,8,string
+FR_2015,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,bunmt_s,+,,7,string
+FR_2015,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,bunct_s,+,,6,string
+FR_2015,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,bhl,+,,4,string
+FR_2015,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yem00,+,,3,string
+FR_2015,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yemxp,+,From 2019: overtime not taxed until 5000 euro/y - so only part above 5000 is included here,1,string
+FR_2015,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yemxp_s,n/a,,2,string
+FR_2015,ils_b1_bcb,Childbirth related benefits B1,bmact_s,+,Maternity allowance (PARBEN),4,string
+FR_2015,ils_b1_bcb,Childbirth related benefits B1,bpact_s,+,Paternity allowance (PARBEN),5,string
+FR_2015,ils_b1_bcb,Childbirth related benefits B1,bchba_s,+,Birth grant,2,string
+FR_2015,ils_b1_bcb,Childbirth related benefits B1,bchcc_s,+,Supplement for free choice of activity (CLCA),3,string
+FR_2015,ils_b1_bcb,Childbirth related benefits B1,bchyc_s,+,Means-tested benefit for young children (PAJE),1,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bhl,+,,1,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bmact_s,+,,3,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bpact_s,+,,4,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bunct_s,+,,5,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bwkmcee_s,n/a,,7,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,pdi00,+,,8,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,poa00,+,,9,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,psu,+,,10,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yem00,+,,11,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yemmc_s,n/a,,12,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yemxp,+,,13,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yiy,+,,14,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,ypp,+,,15,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,ypr,+,,16,string
+FR_2015,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yse,+,,17,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bch00_s,+,,1,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchba_s,+,,2,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchcc_s,+,,3,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bched_s,+,,4,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchlg_s,+,,5,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchor_s,+,,6,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchyc_s,+,,7,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bhl,+,,8,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bhoot,+,,10,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bhotn_s,+,,11,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bmact_s,+,,12,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bpact_s,+,,13,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bunct_s,+,,14,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bwkmcee_s,n/a,,16,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,pdi00,+,,17,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,poa00,+,,18,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,psu,+,,19,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yem00,+,,20,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yemmc_s,n/a,,21,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yemxp,+,,22,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yiy,+,,23,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,ypp,+,,24,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,ypr,+,,25,string
+FR_2015,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yse,+,,26,string
+FR_2015,ils_b2_bunwk,Work-related benefits (ils_b2_bunwk),ils_b1_bwk,+,In-work benefits,3,string
+FR_2015,ils_b2_bunwk,Work-related benefits (ils_b2_bunwk),ils_b1_bun,+,Unemployment benefits,2,string
+FR_2015,ils_taxin,ils_taxin: Income taxes,tin_s,+,Personal income tax (IRPP),1,string
+FR_2015,ils_taxin,ils_taxin: Income taxes,tscxc_s,+,Generalized social contributions (CSG),2,string
+FR_2015,ils_taxin,ils_taxin: Income taxes,tscdf_s,+,Contributions for debt repayment (CRDS),3,string
+FR_2015,ils_taxin,ils_taxin: Income taxes,tsckt_s,+,Social insurance contributions on capital income,4,string
+FR_2015,ils_taxin,ils_taxin: Income taxes,tinto_s,+,Exceptional contributions on high income earners,5,string
+FR_2015,ils_taxin,ils_taxin: Income taxes,tinto01_s,n/a,Differential contribution on high income (CDHR),6,string
+FR_2015,ils_taxwl,ils_taxwl: Wealth taxes,tpr,+,Property taxes,1,string
+FR_2015,ils_taxwl,ils_taxwl: Wealth taxes,tmu,+,Residential tax (TH),3,string
+FR_2015,ils_taxwl,ils_taxwl: Wealth taxes,twl,+,Wealth tax (ISF),2,string
+FR_2016,ils_earns,ils_earns: Standardised Earnings,yse,+,Self-employment income,1,string
+FR_2016,ils_earns,ils_earns: Standardised Earnings,yem00,+,Regular hours employment income,2,string
+FR_2016,ils_earns,ils_earns: Standardised Earnings,yemxp,+,Overtime pay,3,string
+FR_2016,ils_earns,ils_earns: Standardised Earnings,yemmc_s,n/a,Covid-19 compensation paid by the firm,4,string
+FR_2016,ils_origy,ils_origy: Standardised Original income,ils_earns,+,earnings,2,variable
+FR_2016,ils_origy,ils_origy: Standardised Original income,ypp,+,income from private pensions,3,string
+FR_2016,ils_origy,ils_origy: Standardised Original income,yiy,+,income from investments,4,string
+FR_2016,ils_origy,ils_origy: Standardised Original income,ypr,+,income from rent,5,string
+FR_2016,ils_origy,ils_origy: Standardised Original income,yot,+,income received by children under 16,6,string
+FR_2016,ils_origy,ils_origy: Standardised Original income,ypt,+,income received through private transfers,7,string
+FR_2016,ils_origy,ils_origy: Standardised Original income,xmp,-,maintainance payments,8,string
+FR_2016,ils_dispy,ils_dispy: Standardised Disposable income,ils_origy,+,Standardized original income,1,variable
+FR_2016,ils_dispy,ils_dispy: Standardised Disposable income,ils_sicdy,-,all social insurance contributions paid by (self-)employed and others,6,variable
+FR_2016,ils_dispy,ils_dispy: Standardised Disposable income,ils_tax,-,Standardized taxes,8,variable
+FR_2016,ils_dispy,ils_dispy: Standardised Disposable income,ils_ben,+,Standardized benefits,2,string
+FR_2016,ils_tax,ils_tax: Standardised Taxes,tin_s,+,Personal income tax (IRPP),1,string
+FR_2016,ils_tax,ils_tax: Standardised Taxes,tpr,+,Property taxes,2,string
+FR_2016,ils_tax,ils_tax: Standardised Taxes,tscxc_s,+,Generalized social contributions (CSG),3,string
+FR_2016,ils_tax,ils_tax: Standardised Taxes,tscdf_s,+,Contributions for debt repayment (CRDS),4,string
+FR_2016,ils_tax,ils_tax: Standardised Taxes,tsckt_s,+,Social insurance contributions on capital income,5,string
+FR_2016,ils_tax,ils_tax: Standardised Taxes,tinto_s,+,Exceptional contributions on high income earners (CEHR),6,string
+FR_2016,ils_tax,ils_tax: Standardised Taxes,tmu,+,Residential tax (TH),9,string
+FR_2016,ils_tax,ils_tax: Standardised Taxes,twl,+,Wealth tax (ISF),8,string
+FR_2016,ils_tax,ils_tax: Standardised Taxes,tinto01_s,n/a,Differential contribution on high income (CDHR),7,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchyc_s,+,Means-tested benefit for young children (PAJE),1,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsuwd_s,+,Means-tested Survivor Minimum Pension (Allocation veuvage AV),2,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bunmt_s,+,Unemployment assitance Benefit (Allocation de solidarité spécifique ASS),3,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchlg_s,+,Means-tested benefit for large families (CF),4,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bched_s,+,Means tested educational grant (ARS),5,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchba_s,+,Means tested birth grant (PN),6,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsaoa_s,+,Means-tested allowance for the elderly (ASPA),7,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bdi_s,+,Income tested disability benefit (AAH),8,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchlp_s,n/a,Means-tested assistance for lone parents (API),9,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsa00_s,+,Means-tested guaranteed minimum income (RMI/RSA),10,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bhotn_s,+,Income tested housing allowance for those renting (AL),11,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,tinrf_s,n/a,Refund of the working tax credit (PPE),12,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchot_s,+,Other means-tested allowances for families with children,13,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsaot,+,Other means-tested benefits,14,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bhoot,+,Other means-tested housing benefits,15,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bed,+,Scholarships,16,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsawk_s,+,Activity allowance,17,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsaeccm_s,n/a,Covid-19 social assistance,18,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,binxp_s,n/a,Inflation compensation,19,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bhoey_s,n/a,Energy voucher,20,string
+FR_2016,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,binpb_s,n/a,Inflation compensation for civil servants,21,string
+FR_2016,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bhl,+,Contributory sickness benefit,1,string
+FR_2016,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bunct_s,+,Contributory unemployment benefit (ARE),3,string
+FR_2016,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bch00_s,+,Universal child benefit (AF),4,string
+FR_2016,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bchcc_s,+,Supplement for free choice of activity (CLCA),5,string
+FR_2016,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bchor_s,+,Family support allowance (ASF),6,string
+FR_2016,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bmact_s,+,Maternity allowance (PARBEN),7,string
+FR_2016,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bpact_s,+,Paternity allowance (PARBEN),8,string
+FR_2016,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bwkmcee_s,n/a,Covid-19 wage compensation paid by the state,9,string
+FR_2016,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bwkmcse_s,n/a,Covid-19 self-employment compensation paid by the state,10,string
+FR_2016,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bseec_s,n/a,Covid-19 exceptional support for self-employed (Aide CPSTI RCI COVID-19),11,string
+FR_2016,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,ils_origy,+,original market income,1,variable
+FR_2016,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,ils_pen,+,public pensions,2,variable
+FR_2016,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bunct_s,+,unemployment benefit,3,string
+FR_2016,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bhl,+,Contributory sickness benefit,4,string
+FR_2016,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bwkmcee_s,n/a,Covid-19 wage compensation paid by the state,6,string
+FR_2016,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bwkmcse_s,n/a,Covid-19 self-employment compensation paid by the state,7,string
+FR_2016,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bseec_s,n/a,Covid-19 exceptional support for self-employed (Aide CPSTI RCI COVID-19),8,string
+FR_2016,ils_pen,ils_pen: Standardised Public Pensions,poa00,+,old-age pensions,2,string
+FR_2016,ils_pen,ils_pen: Standardised Public Pensions,pdi00,+,disability pensions,3,string
+FR_2016,ils_pen,ils_pen: Standardised Public Pensions,psu,+,survivor pensions,4,string
+FR_2016,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscsefa_s,+,Family benefits insurance contributions,2,string
+FR_2016,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscsesi_s,+,Sickness insurance contributions,3,string
+FR_2016,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscsepi_s,+,Pension insurance contributions,4,string
+FR_2016,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscsedi_s,+,Death & invalidity insurance,5,string
+FR_2016,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscseir_s,+,Professional training contribution (only for artisans & I&T),6,string
+FR_2016,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscersi_s,+,Sickness insurance contributions,1,string
+FR_2016,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerfa_s,+,Family benefits insurance contributions,2,string
+FR_2016,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerho_s,+,Housing benefits insurance contributions,3,string
+FR_2016,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerpi_s,+,"""Pension insurance contributions (includes main contribution, CET & AGF)""",4,string
+FR_2016,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerot_s,+,Contingency insurance for white collar workers,5,string
+FR_2016,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerui_s,+,Unemployment insurance contributions,6,string
+FR_2016,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerir_s,+,Professional training,7,string
+FR_2016,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerrd_s,-,Reductions in employers’ social security contributions (Fillon reduction),9,string
+FR_2016,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerap_s,+,Apprenticeship tax,8,string
+FR_2016,ils_sicee,ils_sicee: Standardised Employee Social insurance contributions,tsceesi_s,+,Sinckness insurance contributions,2,string
+FR_2016,ils_sicee,ils_sicee: Standardised Employee Social insurance contributions,tsceepi_s,+,Pension insurance contributions,3,string
+FR_2016,ils_sicee,ils_sicee: Standardised Employee Social insurance contributions,tsceeui_s,+,Unemployment insurance contributions,4,string
+FR_2016,ils_ben,ils_ben: standardized benefit list,ils_pen,+,Public pensions,2,variable
+FR_2016,ils_ben,ils_ben: standardized benefit list,ils_benmt,+,Means-tested benefits,3,variable
+FR_2016,ils_ben,ils_ben: standardized benefit list,ils_bennt,+,Non means-tested benefits,4,variable
+FR_2016,ils_taxsim,ils_taxsim: standardized simulated taxes,tin_s,+,Personal income tax (IRPP),2,string
+FR_2016,ils_taxsim,ils_taxsim: standardized simulated taxes,tscxc_s,+,Generalized social contributions (CSG),3,string
+FR_2016,ils_taxsim,ils_taxsim: standardized simulated taxes,tscdf_s,+,Contributions for debt repayment (CRDS),4,string
+FR_2016,ils_taxsim,ils_taxsim: standardized simulated taxes,tsckt_s,+,Social insurance contributions on capital income,5,string
+FR_2016,ils_taxsim,ils_taxsim: standardized simulated taxes,tinto_s,+,Exceptional contributions on high income earners: singles,6,string
+FR_2016,ils_taxsim,ils_taxsim: standardized simulated taxes,tinto01_s,n/a,Differential contribution on high income (CDHR),7,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bunct_s,+,Contributory unemployment benefit (ARE),1,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bunmt_s,+,Means-tested unemployment benefit (ASS),2,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bdi_s,+,Means-tested disability benefit (AAH),3,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bsuwd_s,+,Means-tested widowhood benefit (AV),4,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bch00_s,+,Universal child benefit (AF),5,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bchba_s,+,Means tested birth grant (PN),6,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bchyc_s,+,Means tested benefit for young children (APJE/PAJE),7,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bchlg_s,+,Means-tested benefit for large families (CF),8,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bched_s,+,Means-tested education grant (ARS),9,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bchlp_s,n/a,Means-tested benefit for lone parents (API),10,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bsa00_s,n/a,Guaranteed minimum income (RMI/RSA),11,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bsaoa_s,+,Means-tested old-age benefit (ASPA),12,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bhotn_s,+,Means-tested housing benefit (AL),13,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,tinrf_s,n/a,Refund of the working tax credit (PPE),14,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bsawk_s,+,Activity allowance,15,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bchor_s,+,Family support allowance (ASF),17,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bchcc_s,+,Supplement for free choice of activity (CLCA),16,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bwkmcee_s,n/a,Covid-19 wage compensation paid by the state,18,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bwkmcse_s,n/a,Covid-19 self-employment compensation paid by the state,19,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bsaeccm_s,n/a,Covid-19 social assistance,20,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bseec_s,n/a,Covid-19 exceptional support for self-employed (Aide CPSTI RCI COVID-19),21,string
+FR_2016,ils_bensim,ils_bensim: Standardized simulated benefits,bhoey_s,n/a,Energy Voucher,22,string
+FR_2016,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bchot_s,+,Other family benefits,10,string
+FR_2016,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bchor_s,+,Family support allowance (ASF),6,string
+FR_2016,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bched_s,+,Means-tested educational allowance (ARS),5,string
+FR_2016,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bchlg_s,+,Means-tested beenfit for large families (CF),4,string
+FR_2016,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bch00_s,+,Universal/ Main child benefit (AF),2,string
+FR_2016,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bchlp_s,n/a,Means-tested benefit for lone parents (API),9,string
+FR_2016,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,ils_b1_bcb,+,,1,string
+FR_2016,ils_b1_bed,Education benefits (ils_b1_bed),bed,+,Educational allowances,2,string
+FR_2016,ils_b1_boa,Old-age benefits (ils_b1_boa),bsaoa_s,+,Solodarity allowance for the elderly (ASPA),3,string
+FR_2016,ils_b1_boa,Old-age benefits (ils_b1_boa),poa00,+,Old-age pensions,2,string
+FR_2016,ils_b1_bsu,Survivor benefits (ils_b1_bsu),bsuwd_s,+,Means-tested widow allowance,3,string
+FR_2016,ils_b1_bsu,Survivor benefits (ils_b1_bsu),psu,+,Survivor pensions,2,string
+FR_2016,ils_b1_bdi,Disability benefits (ils_b1_bdi),bdi_s,+,Means-tested disability benefit (AAH),3,string
+FR_2016,ils_b1_bdi,Disability benefits (ils_b1_bdi),pdi00,+,Invalidity pensions,2,string
+FR_2016,ils_b1_bun,Unemployment benefits (ils_b1_bun),bunmt_s,+,Means-tested unemployment benefit (ASS),2,string
+FR_2016,ils_b1_bun,Unemployment benefits (ils_b1_bun),bunct_s,+,Contributory unemployment benefit (ARE),1,string
+FR_2016,ils_b1_bun,Unemployment benefits (ils_b1_bun),bwkmcee_s,n/a,Covid-19 wage compensation paid by the state,3,string
+FR_2016,ils_b1_bun,Unemployment benefits (ils_b1_bun),bwkmcse_s,n/a,Covid-19 self-employment compensation paid by the state,4,string
+FR_2016,ils_b1_bun,Unemployment benefits (ils_b1_bun),bseec_s,n/a,Covid-19 exceptional support for self-employed (Aide CPSTI RCI COVID-19),5,string
+FR_2016,ils_b1_bhl,Health/sickness benefits (ils_b1_bhl),bhl,+,Sickness benefits,2,string
+FR_2016,ils_b1_bho,Housing benefits (ils_b1_bho),bhoot,+,Housing benefits for households not paying rent,2,string
+FR_2016,ils_b1_bho,Housing benefits (ils_b1_bho),bhotn_s,+,Means-tested housing assistance for tenants (APL),1,string
+FR_2016,ils_b1_bho,Housing benefits (ils_b1_bho),bhoey_s,n/a,Energy Voucher,3,string
+FR_2016,ils_b1_bsa,Social assistance (ils_b1_bsa),bsawk_s,+,Activity Allowance (PA),4,string
+FR_2016,ils_b1_bsa,Social assistance (ils_b1_bsa),bsaot,+,Other means-tested benefits,2,string
+FR_2016,ils_b1_bsa,Social assistance (ils_b1_bsa),bsa00_s,+,Guaranteed min income (RSA),1,string
+FR_2016,ils_b1_bsa,Social assistance (ils_b1_bsa),tinrf_s,n/a,Refund of the working tax credit (PPE),3,string
+FR_2016,ils_b1_bsa,Social assistance (ils_b1_bsa),bsaeccm_s,n/a,Covid-19 social assistance,5,string
+FR_2016,ils_b1_bsa,Social assistance (ils_b1_bsa),binxp_s,n/a,Inflation compensation,6,string
+FR_2016,ils_b1_bsa,Social assistance (ils_b1_bsa),binpb_s,n/a,Inflation compensation for civil servants,7,string
+FR_2016,ils_b2_bfaed,Family and education benefits (ils_b2_bfaed),ils_b1_bfa,+,,3,string
+FR_2016,ils_b2_bfaed,Family and education benefits (ils_b2_bfaed),ils_b1_bed,+,,2,string
+FR_2016,ils_b2_penhl,"Pensions, disability and health benefits (ils_b2_penhl)",ils_b1_bhl,+,,4,string
+FR_2016,ils_b2_penhl,"Pensions, disability and health benefits (ils_b2_penhl)",ils_b1_bdi,+,,3,string
+FR_2016,ils_b2_penhl,"Pensions, disability and health benefits (ils_b2_penhl)",ils_b1_boa,+,,2,string
+FR_2016,ils_b2_penhl,"Pensions, disability and health benefits (ils_b2_penhl)",ils_b1_bsu,+,,5,string
+FR_2016,ils_b2_bsaho,Social assistance and housing benefits (ils_b2_bsaho),ils_b1_bho,+,,3,string
+FR_2016,ils_b2_bsaho,Social assistance and housing benefits (ils_b2_bsaho),ils_b1_bsa,+,,2,string
+FR_2016,,all social insurance contributions paid by (self-)employed and others,name,ils_sicdy,,1,string
+FR_2016,,all social insurance contributions paid by (self-)employed and others,ils_sicee,+,employee social insurance contributions,8,string
+FR_2016,,all social insurance contributions paid by (self-)employed and others,ils_sicot,+,other social insurance contributions,7,string
+FR_2016,,all social insurance contributions paid by (self-)employed and others,ils_sicse,+,self-employed social insurance contributions,9,string
+FR_2016,ils_base_tin,Income tax list used to calculate implicit tax rates,bsuwd_s,+,,15,string
+FR_2016,ils_base_tin,Income tax list used to calculate implicit tax rates,ypr,+,,14,string
+FR_2016,ils_base_tin,Income tax list used to calculate implicit tax rates,yiy,+,,13,string
+FR_2016,ils_base_tin,Income tax list used to calculate implicit tax rates,yse,+,,12,string
+FR_2016,ils_base_tin,Income tax list used to calculate implicit tax rates,ypp,+,,11,string
+FR_2016,ils_base_tin,Income tax list used to calculate implicit tax rates,psu,+,,10,string
+FR_2016,ils_base_tin,Income tax list used to calculate implicit tax rates,pdi00,+,,9,string
+FR_2016,ils_base_tin,Income tax list used to calculate implicit tax rates,poa00,+,,8,string
+FR_2016,ils_base_tin,Income tax list used to calculate implicit tax rates,bunmt_s,+,,7,string
+FR_2016,ils_base_tin,Income tax list used to calculate implicit tax rates,bunct_s,+,,6,string
+FR_2016,ils_base_tin,Income tax list used to calculate implicit tax rates,yem00,+,,3,string
+FR_2016,ils_base_tin,Income tax list used to calculate implicit tax rates,yemxp,+,From 2019: overtime not taxed until 5000 euro/y - so only part above 5000 is included here,1,string
+FR_2016,ils_base_tin,Income tax list used to calculate implicit tax rates,yemxp_s,n/a,From 2019: overtime not taxed until 5000 euro/y - so only part above 5000 is included here,2,string
+FR_2016,ils_base_tin,Income tax list used to calculate implicit tax rates,bhl,+,,5,string
+FR_2016,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,bsuwd_s,+,,15,string
+FR_2016,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,ypr,+,,14,string
+FR_2016,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yiy,+,,13,string
+FR_2016,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yse,+,,12,string
+FR_2016,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,ypp,+,,11,string
+FR_2016,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,psu,+,,10,string
+FR_2016,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,pdi00,+,,9,string
+FR_2016,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,poa00,+,,8,string
+FR_2016,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,bunmt_s,+,,7,string
+FR_2016,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,bunct_s,+,,6,string
+FR_2016,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,bhl,+,,4,string
+FR_2016,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yem00,+,,3,string
+FR_2016,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yemxp,+,From 2019: overtime not taxed until 5000 euro/y - so only part above 5000 is included here,1,string
+FR_2016,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yemxp_s,n/a,,2,string
+FR_2016,ils_b1_bcb,Childbirth related benefits B1,bmact_s,+,Maternity allowance (PARBEN),4,string
+FR_2016,ils_b1_bcb,Childbirth related benefits B1,bpact_s,+,Paternity allowance (PARBEN),5,string
+FR_2016,ils_b1_bcb,Childbirth related benefits B1,bchba_s,+,Birth grant,2,string
+FR_2016,ils_b1_bcb,Childbirth related benefits B1,bchcc_s,+,Supplement for free choice of activity (CLCA),3,string
+FR_2016,ils_b1_bcb,Childbirth related benefits B1,bchyc_s,+,Means-tested benefit for young children (PAJE),1,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bhl,+,,1,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bmact_s,+,,3,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bpact_s,+,,4,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bunct_s,+,,5,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bwkmcee_s,n/a,,7,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,pdi00,+,,8,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,poa00,+,,9,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,psu,+,,10,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yem00,+,,11,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yemmc_s,n/a,,12,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yemxp,+,,13,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yiy,+,,14,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,ypp,+,,15,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,ypr,+,,16,string
+FR_2016,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yse,+,,17,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bch00_s,+,,1,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchba_s,+,,2,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchcc_s,+,,3,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bched_s,+,,4,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchlg_s,+,,5,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchor_s,+,,6,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchyc_s,+,,7,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bhl,+,,8,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bhoot,+,,10,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bhotn_s,+,,11,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bmact_s,+,,12,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bpact_s,+,,13,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bunct_s,+,,14,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bwkmcee_s,n/a,,16,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,pdi00,+,,17,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,poa00,+,,18,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,psu,+,,19,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yem00,+,,20,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yemmc_s,n/a,,21,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yemxp,+,,22,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yiy,+,,23,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,ypp,+,,24,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,ypr,+,,25,string
+FR_2016,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yse,+,,26,string
+FR_2016,ils_b2_bunwk,Work-related benefits (ils_b2_bunwk),ils_b1_bwk,+,In-work benefits,3,string
+FR_2016,ils_b2_bunwk,Work-related benefits (ils_b2_bunwk),ils_b1_bun,+,Unemployment benefits,2,string
+FR_2016,ils_taxin,ils_taxin: Income taxes,tin_s,+,Personal income tax (IRPP),1,string
+FR_2016,ils_taxin,ils_taxin: Income taxes,tscxc_s,+,Generalized social contributions (CSG),2,string
+FR_2016,ils_taxin,ils_taxin: Income taxes,tscdf_s,+,Contributions for debt repayment (CRDS),3,string
+FR_2016,ils_taxin,ils_taxin: Income taxes,tsckt_s,+,Social insurance contributions on capital income,4,string
+FR_2016,ils_taxin,ils_taxin: Income taxes,tinto_s,+,Exceptional contributions on high income earners,5,string
+FR_2016,ils_taxin,ils_taxin: Income taxes,tinto01_s,n/a,Differential contribution on high income (CDHR),6,string
+FR_2016,ils_taxwl,ils_taxwl: Wealth taxes,tpr,+,Property taxes,1,string
+FR_2016,ils_taxwl,ils_taxwl: Wealth taxes,tmu,+,Residential tax (TH),3,string
+FR_2016,ils_taxwl,ils_taxwl: Wealth taxes,twl,+,Wealth tax (ISF),2,string
+FR_2017,ils_earns,ils_earns: Standardised Earnings,yse,+,Self-employment income,1,string
+FR_2017,ils_earns,ils_earns: Standardised Earnings,yem00,+,Regular hours employment income,2,string
+FR_2017,ils_earns,ils_earns: Standardised Earnings,yemxp,+,Overtime pay,3,string
+FR_2017,ils_earns,ils_earns: Standardised Earnings,yemmc_s,n/a,Covid-19 compensation paid by the firm,4,string
+FR_2017,ils_origy,ils_origy: Standardised Original income,ils_earns,+,earnings,2,variable
+FR_2017,ils_origy,ils_origy: Standardised Original income,ypp,+,income from private pensions,3,string
+FR_2017,ils_origy,ils_origy: Standardised Original income,yiy,+,income from investments,4,string
+FR_2017,ils_origy,ils_origy: Standardised Original income,ypr,+,income from rent,5,string
+FR_2017,ils_origy,ils_origy: Standardised Original income,yot,+,income received by children under 16,6,string
+FR_2017,ils_origy,ils_origy: Standardised Original income,ypt,+,income received through private transfers,7,string
+FR_2017,ils_origy,ils_origy: Standardised Original income,xmp,-,maintainance payments,8,string
+FR_2017,ils_dispy,ils_dispy: Standardised Disposable income,ils_origy,+,Standardized original income,1,variable
+FR_2017,ils_dispy,ils_dispy: Standardised Disposable income,ils_sicdy,-,all social insurance contributions paid by (self-)employed and others,6,variable
+FR_2017,ils_dispy,ils_dispy: Standardised Disposable income,ils_tax,-,Standardized taxes,8,variable
+FR_2017,ils_dispy,ils_dispy: Standardised Disposable income,ils_ben,+,Standardized benefits,2,string
+FR_2017,ils_tax,ils_tax: Standardised Taxes,tin_s,+,Personal income tax (IRPP),1,string
+FR_2017,ils_tax,ils_tax: Standardised Taxes,tpr,+,Property taxes,2,string
+FR_2017,ils_tax,ils_tax: Standardised Taxes,tscxc_s,+,Generalized social contributions (CSG),3,string
+FR_2017,ils_tax,ils_tax: Standardised Taxes,tscdf_s,+,Contributions for debt repayment (CRDS),4,string
+FR_2017,ils_tax,ils_tax: Standardised Taxes,tsckt_s,+,Social insurance contributions on capital income,5,string
+FR_2017,ils_tax,ils_tax: Standardised Taxes,tinto_s,+,Exceptional contributions on high income earners (CEHR),6,string
+FR_2017,ils_tax,ils_tax: Standardised Taxes,tmu,+,Residential tax (TH),9,string
+FR_2017,ils_tax,ils_tax: Standardised Taxes,twl,+,Wealth tax (ISF),8,string
+FR_2017,ils_tax,ils_tax: Standardised Taxes,tinto01_s,n/a,Differential contribution on high income (CDHR),7,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchyc_s,+,Means-tested benefit for young children (PAJE),1,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsuwd_s,+,Means-tested Survivor Minimum Pension (Allocation veuvage AV),2,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bunmt_s,+,Unemployment assitance Benefit (Allocation de solidarité spécifique ASS),3,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchlg_s,+,Means-tested benefit for large families (CF),4,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bched_s,+,Means tested educational grant (ARS),5,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchba_s,+,Means tested birth grant (PN),6,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsaoa_s,+,Means-tested allowance for the elderly (ASPA),7,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bdi_s,+,Income tested disability benefit (AAH),8,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchlp_s,n/a,Means-tested assistance for lone parents (API),9,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsa00_s,+,Means-tested guaranteed minimum income (RMI/RSA),10,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bhotn_s,+,Income tested housing allowance for those renting (AL),11,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,tinrf_s,n/a,Refund of the working tax credit (PPE),12,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bchot_s,+,Other means-tested allowances for families with children,13,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsaot,+,Other means-tested benefits,14,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bhoot,+,Other means-tested housing benefits,15,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bed,+,Scholarships,16,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsawk_s,+,Activity allowance,17,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bsaeccm_s,n/a,Covid-19 social assistance,18,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,binxp_s,n/a,Inflation compensation,19,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,bhoey_s,n/a,Energy voucher,20,string
+FR_2017,ils_benmt,ils_benmt: Standardised Means-tested benefit-standardized,binpb_s,n/a,Inflation compensation for civil servants,21,string
+FR_2017,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bhl,+,Contributory sickness benefit,1,string
+FR_2017,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bunct_s,+,Contributory unemployment benefit (ARE),3,string
+FR_2017,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bch00_s,+,Universal child benefit (AF),4,string
+FR_2017,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bchcc_s,+,Supplement for free choice of activity (CLCA),5,string
+FR_2017,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bchor_s,+,Family support allowance (ASF),6,string
+FR_2017,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bmact_s,+,Maternity allowance (PARBEN),7,string
+FR_2017,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bpact_s,+,Paternity allowance (PARBEN),8,string
+FR_2017,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bwkmcee_s,n/a,Covid-19 wage compensation paid by the state,9,string
+FR_2017,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bwkmcse_s,n/a,Covid-19 self-employment compensation paid by the state,10,string
+FR_2017,ils_bennt,ils_bennt: Standardised Non means-tested benefits,bseec_s,n/a,Covid-19 exceptional support for self-employed (Aide CPSTI RCI COVID-19),11,string
+FR_2017,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,ils_origy,+,original market income,1,variable
+FR_2017,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,ils_pen,+,public pensions,2,variable
+FR_2017,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bunct_s,+,unemployment benefit,3,string
+FR_2017,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bhl,+,Contributory sickness benefit,4,string
+FR_2017,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bwkmcee_s,n/a,Covid-19 wage compensation paid by the state,6,string
+FR_2017,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bwkmcse_s,n/a,Covid-19 self-employment compensation paid by the state,7,string
+FR_2017,ils_origrepy,ils_origrepy: Standardised Original & Replacement income,bseec_s,n/a,Covid-19 exceptional support for self-employed (Aide CPSTI RCI COVID-19),8,string
+FR_2017,ils_pen,ils_pen: Standardised Public Pensions,poa00,+,old-age pensions,2,string
+FR_2017,ils_pen,ils_pen: Standardised Public Pensions,pdi00,+,disability pensions,3,string
+FR_2017,ils_pen,ils_pen: Standardised Public Pensions,psu,+,survivor pensions,4,string
+FR_2017,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscsefa_s,+,Family benefits insurance contributions,2,string
+FR_2017,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscsesi_s,+,Sickness insurance contributions,3,string
+FR_2017,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscsepi_s,+,Pension insurance contributions,4,string
+FR_2017,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscsedi_s,+,Death & invalidity insurance,5,string
+FR_2017,ils_sicse,ils_sicse: Standardised Self-employed Social Insurance contributions,tscseir_s,+,Professional training contribution (only for artisans & I&T),6,string
+FR_2017,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscersi_s,+,Sickness insurance contributions,1,string
+FR_2017,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerfa_s,+,Family benefits insurance contributions,2,string
+FR_2017,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerho_s,+,Housing benefits insurance contributions,3,string
+FR_2017,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerpi_s,+,"""Pension insurance contributions (includes main contribution, CET & AGF)""",4,string
+FR_2017,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerot_s,+,Contingency insurance for white collar workers,5,string
+FR_2017,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerui_s,+,Unemployment insurance contributions,6,string
+FR_2017,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerir_s,+,Professional training,7,string
+FR_2017,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerrd_s,-,Reductions in employers’ social security contributions (Fillon reduction),9,string
+FR_2017,ils_sicer,ils_sicer: Standardised Employer Social insurance contributions,tscerap_s,+,Apprenticeship tax,8,string
+FR_2017,ils_sicee,ils_sicee: Standardised Employee Social insurance contributions,tsceesi_s,+,Sinckness insurance contributions,2,string
+FR_2017,ils_sicee,ils_sicee: Standardised Employee Social insurance contributions,tsceepi_s,+,Pension insurance contributions,3,string
+FR_2017,ils_sicee,ils_sicee: Standardised Employee Social insurance contributions,tsceeui_s,+,Unemployment insurance contributions,4,string
+FR_2017,ils_ben,ils_ben: standardized benefit list,ils_pen,+,Public pensions,2,variable
+FR_2017,ils_ben,ils_ben: standardized benefit list,ils_benmt,+,Means-tested benefits,3,variable
+FR_2017,ils_ben,ils_ben: standardized benefit list,ils_bennt,+,Non means-tested benefits,4,variable
+FR_2017,ils_taxsim,ils_taxsim: standardized simulated taxes,tin_s,+,Personal income tax (IRPP),2,string
+FR_2017,ils_taxsim,ils_taxsim: standardized simulated taxes,tscxc_s,+,Generalized social contributions (CSG),3,string
+FR_2017,ils_taxsim,ils_taxsim: standardized simulated taxes,tscdf_s,+,Contributions for debt repayment (CRDS),4,string
+FR_2017,ils_taxsim,ils_taxsim: standardized simulated taxes,tsckt_s,+,Social insurance contributions on capital income,5,string
+FR_2017,ils_taxsim,ils_taxsim: standardized simulated taxes,tinto_s,+,Exceptional contributions on high income earners: singles,6,string
+FR_2017,ils_taxsim,ils_taxsim: standardized simulated taxes,tinto01_s,n/a,Differential contribution on high income (CDHR),7,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bunct_s,+,Contributory unemployment benefit (ARE),1,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bunmt_s,+,Means-tested unemployment benefit (ASS),2,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bdi_s,+,Means-tested disability benefit (AAH),3,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bsuwd_s,+,Means-tested widowhood benefit (AV),4,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bch00_s,+,Universal child benefit (AF),5,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bchba_s,+,Means tested birth grant (PN),6,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bchyc_s,+,Means tested benefit for young children (APJE/PAJE),7,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bchlg_s,+,Means-tested benefit for large families (CF),8,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bched_s,+,Means-tested education grant (ARS),9,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bchlp_s,n/a,Means-tested benefit for lone parents (API),10,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bsa00_s,n/a,Guaranteed minimum income (RMI/RSA),11,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bsaoa_s,+,Means-tested old-age benefit (ASPA),12,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bhotn_s,+,Means-tested housing benefit (AL),13,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,tinrf_s,n/a,Refund of the working tax credit (PPE),14,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bsawk_s,+,Activity allowance,15,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bchor_s,+,Family support allowance (ASF),17,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bchcc_s,+,Supplement for free choice of activity (CLCA),16,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bwkmcee_s,n/a,Covid-19 wage compensation paid by the state,18,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bwkmcse_s,n/a,Covid-19 self-employment compensation paid by the state,19,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bsaeccm_s,n/a,Covid-19 social assistance,20,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bseec_s,n/a,Covid-19 exceptional support for self-employed (Aide CPSTI RCI COVID-19),21,string
+FR_2017,ils_bensim,ils_bensim: Standardized simulated benefits,bhoey_s,n/a,Energy Voucher,22,string
+FR_2017,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bchot_s,+,Other family benefits,10,string
+FR_2017,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bchor_s,+,Family support allowance (ASF),6,string
+FR_2017,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bched_s,+,Means-tested educational allowance (ARS),5,string
+FR_2017,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bchlg_s,+,Means-tested beenfit for large families (CF),4,string
+FR_2017,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bch00_s,+,Universal/ Main child benefit (AF),2,string
+FR_2017,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,bchlp_s,n/a,Means-tested benefit for lone parents (API),9,string
+FR_2017,ils_b1_bfa,Familiy benefits (ils_b1_bfa) - cleanup income list needed,ils_b1_bcb,+,,1,string
+FR_2017,ils_b1_bed,Education benefits (ils_b1_bed),bed,+,Educational allowances,2,string
+FR_2017,ils_b1_boa,Old-age benefits (ils_b1_boa),bsaoa_s,+,Solodarity allowance for the elderly (ASPA),3,string
+FR_2017,ils_b1_boa,Old-age benefits (ils_b1_boa),poa00,+,Old-age pensions,2,string
+FR_2017,ils_b1_bsu,Survivor benefits (ils_b1_bsu),bsuwd_s,+,Means-tested widow allowance,3,string
+FR_2017,ils_b1_bsu,Survivor benefits (ils_b1_bsu),psu,+,Survivor pensions,2,string
+FR_2017,ils_b1_bdi,Disability benefits (ils_b1_bdi),bdi_s,+,Means-tested disability benefit (AAH),3,string
+FR_2017,ils_b1_bdi,Disability benefits (ils_b1_bdi),pdi00,+,Invalidity pensions,2,string
+FR_2017,ils_b1_bun,Unemployment benefits (ils_b1_bun),bunmt_s,+,Means-tested unemployment benefit (ASS),2,string
+FR_2017,ils_b1_bun,Unemployment benefits (ils_b1_bun),bunct_s,+,Contributory unemployment benefit (ARE),1,string
+FR_2017,ils_b1_bun,Unemployment benefits (ils_b1_bun),bwkmcee_s,n/a,Covid-19 wage compensation paid by the state,3,string
+FR_2017,ils_b1_bun,Unemployment benefits (ils_b1_bun),bwkmcse_s,n/a,Covid-19 self-employment compensation paid by the state,4,string
+FR_2017,ils_b1_bun,Unemployment benefits (ils_b1_bun),bseec_s,n/a,Covid-19 exceptional support for self-employed (Aide CPSTI RCI COVID-19),5,string
+FR_2017,ils_b1_bhl,Health/sickness benefits (ils_b1_bhl),bhl,+,Sickness benefits,2,string
+FR_2017,ils_b1_bho,Housing benefits (ils_b1_bho),bhoot,+,Housing benefits for households not paying rent,2,string
+FR_2017,ils_b1_bho,Housing benefits (ils_b1_bho),bhotn_s,+,Means-tested housing assistance for tenants (APL),1,string
+FR_2017,ils_b1_bho,Housing benefits (ils_b1_bho),bhoey_s,n/a,Energy Voucher,3,string
+FR_2017,ils_b1_bsa,Social assistance (ils_b1_bsa),bsawk_s,+,Activity Allowance (PA),4,string
+FR_2017,ils_b1_bsa,Social assistance (ils_b1_bsa),bsaot,+,Other means-tested benefits,2,string
+FR_2017,ils_b1_bsa,Social assistance (ils_b1_bsa),bsa00_s,+,Guaranteed min income (RSA),1,string
+FR_2017,ils_b1_bsa,Social assistance (ils_b1_bsa),tinrf_s,n/a,Refund of the working tax credit (PPE),3,string
+FR_2017,ils_b1_bsa,Social assistance (ils_b1_bsa),bsaeccm_s,n/a,Covid-19 social assistance,5,string
+FR_2017,ils_b1_bsa,Social assistance (ils_b1_bsa),binxp_s,n/a,Inflation compensation,6,string
+FR_2017,ils_b1_bsa,Social assistance (ils_b1_bsa),binpb_s,n/a,Inflation compensation for civil servants,7,string
+FR_2017,ils_b2_bfaed,Family and education benefits (ils_b2_bfaed),ils_b1_bfa,+,,3,string
+FR_2017,ils_b2_bfaed,Family and education benefits (ils_b2_bfaed),ils_b1_bed,+,,2,string
+FR_2017,ils_b2_penhl,"Pensions, disability and health benefits (ils_b2_penhl)",ils_b1_bhl,+,,4,string
+FR_2017,ils_b2_penhl,"Pensions, disability and health benefits (ils_b2_penhl)",ils_b1_bdi,+,,3,string
+FR_2017,ils_b2_penhl,"Pensions, disability and health benefits (ils_b2_penhl)",ils_b1_boa,+,,2,string
+FR_2017,ils_b2_penhl,"Pensions, disability and health benefits (ils_b2_penhl)",ils_b1_bsu,+,,5,string
+FR_2017,ils_b2_bsaho,Social assistance and housing benefits (ils_b2_bsaho),ils_b1_bho,+,,3,string
+FR_2017,ils_b2_bsaho,Social assistance and housing benefits (ils_b2_bsaho),ils_b1_bsa,+,,2,string
+FR_2017,,all social insurance contributions paid by (self-)employed and others,name,ils_sicdy,,1,string
+FR_2017,,all social insurance contributions paid by (self-)employed and others,ils_sicee,+,employee social insurance contributions,8,string
+FR_2017,,all social insurance contributions paid by (self-)employed and others,ils_sicot,+,other social insurance contributions,7,string
+FR_2017,,all social insurance contributions paid by (self-)employed and others,ils_sicse,+,self-employed social insurance contributions,9,string
+FR_2017,ils_base_tin,Income tax list used to calculate implicit tax rates,bsuwd_s,+,,15,string
+FR_2017,ils_base_tin,Income tax list used to calculate implicit tax rates,ypr,+,,14,string
+FR_2017,ils_base_tin,Income tax list used to calculate implicit tax rates,yiy,+,,13,string
+FR_2017,ils_base_tin,Income tax list used to calculate implicit tax rates,yse,+,,12,string
+FR_2017,ils_base_tin,Income tax list used to calculate implicit tax rates,ypp,+,,11,string
+FR_2017,ils_base_tin,Income tax list used to calculate implicit tax rates,psu,+,,10,string
+FR_2017,ils_base_tin,Income tax list used to calculate implicit tax rates,pdi00,+,,9,string
+FR_2017,ils_base_tin,Income tax list used to calculate implicit tax rates,poa00,+,,8,string
+FR_2017,ils_base_tin,Income tax list used to calculate implicit tax rates,bunmt_s,+,,7,string
+FR_2017,ils_base_tin,Income tax list used to calculate implicit tax rates,bunct_s,+,,6,string
+FR_2017,ils_base_tin,Income tax list used to calculate implicit tax rates,yem00,+,,3,string
+FR_2017,ils_base_tin,Income tax list used to calculate implicit tax rates,yemxp,+,From 2019: overtime not taxed until 5000 euro/y - so only part above 5000 is included here,1,string
+FR_2017,ils_base_tin,Income tax list used to calculate implicit tax rates,yemxp_s,n/a,From 2019: overtime not taxed until 5000 euro/y - so only part above 5000 is included here,2,string
+FR_2017,ils_base_tin,Income tax list used to calculate implicit tax rates,bhl,+,,5,string
+FR_2017,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,bsuwd_s,+,,15,string
+FR_2017,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,ypr,+,,14,string
+FR_2017,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yiy,+,,13,string
+FR_2017,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yse,+,,12,string
+FR_2017,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,ypp,+,,11,string
+FR_2017,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,psu,+,,10,string
+FR_2017,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,pdi00,+,,9,string
+FR_2017,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,poa00,+,,8,string
+FR_2017,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,bunmt_s,+,,7,string
+FR_2017,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,bunct_s,+,,6,string
+FR_2017,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,bhl,+,,4,string
+FR_2017,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yem00,+,,3,string
+FR_2017,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yemxp,+,From 2019: overtime not taxed until 5000 euro/y - so only part above 5000 is included here,1,string
+FR_2017,ils_base_tinto,Exceptional high income tax list used to calculate implicit tax rates,yemxp_s,n/a,,2,string
+FR_2017,ils_b1_bcb,Childbirth related benefits B1,bmact_s,+,Maternity allowance (PARBEN),4,string
+FR_2017,ils_b1_bcb,Childbirth related benefits B1,bpact_s,+,Paternity allowance (PARBEN),5,string
+FR_2017,ils_b1_bcb,Childbirth related benefits B1,bchba_s,+,Birth grant,2,string
+FR_2017,ils_b1_bcb,Childbirth related benefits B1,bchcc_s,+,Supplement for free choice of activity (CLCA),3,string
+FR_2017,ils_b1_bcb,Childbirth related benefits B1,bchyc_s,+,Means-tested benefit for young children (PAJE),1,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bhl,+,,1,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bmact_s,+,,3,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bpact_s,+,,4,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bunct_s,+,,5,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,bwkmcee_s,n/a,,7,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,pdi00,+,,8,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,poa00,+,,9,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,psu,+,,10,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yem00,+,,11,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yemmc_s,n/a,,12,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yemxp,+,,13,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yiy,+,,14,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,ypp,+,,15,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,ypr,+,,16,string
+FR_2017,ils_base_tscxc,CDG tax list used to calcualte implicit tax rates,yse,+,,17,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bch00_s,+,,1,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchba_s,+,,2,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchcc_s,+,,3,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bched_s,+,,4,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchlg_s,+,,5,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchor_s,+,,6,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bchyc_s,+,,7,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bhl,+,,8,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bhoot,+,,10,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bhotn_s,+,,11,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bmact_s,+,,12,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bpact_s,+,,13,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bunct_s,+,,14,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,bwkmcee_s,n/a,,16,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,pdi00,+,,17,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,poa00,+,,18,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,psu,+,,19,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yem00,+,,20,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yemmc_s,n/a,,21,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yemxp,+,,22,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yiy,+,,23,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,ypp,+,,24,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,ypr,+,,25,string
+FR_2017,ils_base_tscdf,CRDS tax list used to calculate implicit tax rates,yse,+,,26,string
+FR_2017,ils_b2_bunwk,Work-related benefits (ils_b2_bunwk),ils_b1_bwk,+,In-work benefits,3,string
+FR_2017,ils_b2_bunwk,Work-related benefits (ils_b2_bunwk),ils_b1_bun,+,Unemployment benefits,2,string
+FR_2017,ils_taxin,ils_taxin: Income taxes,tin_s,+,Personal income tax (IRPP),1,string
+FR_2017,ils_taxin,ils_taxin: Income taxes,tscxc_s,+,Generalized social contributions (CSG),2,string
+FR_2017,ils_taxin,ils_taxin: Income taxes,tscdf_s,+,Contributions for debt repayment (CRDS),3,string
+FR_2017,ils_taxin,ils_taxin: Income taxes,tsckt_s,+,Social insurance contributions on capital income,4,string
+FR_2017,ils_taxin,ils_taxin: Income taxes,tinto_s,+,Exceptional contributions on high income earners,5,string
+FR_2017,ils_taxin,ils_taxin: Income taxes,tinto01_s,n/a,Differential contribution on high income (CDHR),6,string
+FR_2017,ils_taxwl,ils_taxwl: Wealth taxes,tpr,+,Property taxes,1,string
+FR_2017,ils_taxwl,ils_taxwl: Wealth taxes,tmu,+,Residential tax (TH),3,string
+FR_2017,ils_taxwl,ils_taxwl: Wealth taxes,twl,+,Wealth tax (ISF),2,string

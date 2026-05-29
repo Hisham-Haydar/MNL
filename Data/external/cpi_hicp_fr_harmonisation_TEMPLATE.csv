@@ -1,0 +1,5 @@
+year,price_index_source,index_value,base_year,phi_t,source_url_or_citation,notes
+2015,PLACEHOLDER,0.0,2016,0.0,PLACEHOLDER,FILL IN AFTER §7 DECISION — see docs/JMP_multi_year_stage_M1_implementation_plan_v2.md §7
+2016,PLACEHOLDER,0.0,2016,0.0,PLACEHOLDER,FILL IN AFTER §7 DECISION — base year; phi_t = 1.0000
+2017,PLACEHOLDER,0.0,2016,0.0,PLACEHOLDER,FILL IN AFTER §7 DECISION
+2018,PLACEHOLDER,0.0,2016,0.0,PLACEHOLDER,FILL IN IF P3b IS ACTIVATED — see §16 ISF check

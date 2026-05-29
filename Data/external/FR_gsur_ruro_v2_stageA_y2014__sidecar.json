@@ -1,0 +1,16 @@
+{
+  "opportunity_year": 2014,
+  "gsur_column_name": "gsur",
+  "output_path": "Data/external/FR_gsur_ruro_v2_stageA_y2014.parquet",
+  "input_d2": "Data/external/lfst_r_lfsd2pop_FR_2014.tsv",
+  "input_d1": "Data/external/lfst_r_lfp2acedu_FR_2014.tsv",
+  "input_unemployment_workbook": "Data/external/FR_gsur.xlsx",
+  "input_benchmark_csv": "Data/external/insee_001688526_2014.csv",
+  "benchmark_pct": 9.9,
+  "nuts_vintage": "NUTS2016",
+  "idf_parity_difference": 0.0,
+  "benchmark_difference_pct": 0.0494,
+  "row_count": 54,
+  "build_timestamp": "2026-05-20T19:09:10.891357+00:00",
+  "script_version": "178ca72bcb40b829a41648a470cb4c31aee9605b"
+}

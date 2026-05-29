@@ -1,0 +1,1653 @@
+2026-05-21 16:38:15,086 - INFO - Pooled P3a estimation orchestrator — 20260521T143815Z
+2026-05-21 16:38:15,088 - INFO - Repo root: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL
+2026-05-21 16:38:15,088 - INFO - Spec: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\specifications\estimation_spec_ruro_occ_P3a_pooled.yaml
+2026-05-21 16:38:15,089 - INFO - MNL base: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Data\processed\fr\pooled\fr_p3a_gsurv2_estimation_ready
+2026-05-21 16:38:15,090 - INFO - OK: Python interpreter
+2026-05-21 16:38:15,092 - INFO - OK: Pooled spec YAML
+2026-05-21 16:38:15,093 - INFO - OK: M1-clean estimation results
+2026-05-21 16:38:15,095 - INFO - OK: Singles parquet
+2026-05-21 16:38:15,096 - INFO - OK: Couples parquet
+2026-05-21 16:38:15,098 - INFO - OK: MNL metadata
+2026-05-21 16:38:15,098 - INFO - >>> START 1: warm from M1-clean (--init-params, no --vectorized)
+2026-05-21 16:38:15,099 - INFO - ======================================================================
+2026-05-21 16:38:15,099 - INFO - RUNNING: Start 1 estimation
+2026-05-21 16:38:15,100 - INFO - CMD: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\.venv\Scripts\python.exe \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\enh_RURO_estimate_FR.py --mnl-base \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Data\processed\fr\pooled\fr_p3a_gsurv2_estimation_ready --spec-config \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\specifications\estimation_spec_ruro_occ_P3a_pooled.yaml --output-dir \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_1 --no-spec-subdir --auto-timestamp --group joint --solver gamspy-conopt --vectorized --warm-start none --init-params \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_M1_clean\gamspy\estimation_spec_ruro_occ_M1_clean\run_2026-05-18_12-38-37\estimation_results.json --verbose
+2026-05-21 16:38:15,100 - INFO - ======================================================================
+INFO - ================================================================================
+INFO - Enhanced RURO MNL Estimation - France
+INFO - ================================================================================
+INFO - Started: 2026-05-21T16:38:29.575733
+INFO - Output directory: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_1\run_2026-05-21_16-38-29
+INFO -   (Timestamped run folder created automatically)
+INFO - 
+INFO - ================================================================================
+INFO - Step 1: Loading Specification
+INFO - ================================================================================
+INFO - ================================================================================
+INFO - Parsing specification: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\specifications\estimation_spec_ruro_occ_P3a_pooled.yaml
+INFO - ================================================================================
+INFO - Model version: legacy
+INFO - Specification: ruro_occ_P3a_pooled
+INFO - Description: P3a pooled: three-year pooled MNL specification derived from M1-clean. Adds two year-dummy shifters in the market-opportunity index (beta_E_y2015, beta_E_y2017) with FR_2016 as the omitted reference year. Covers survey years FR_2015 (year_tag=1), FR_2016 (year_tag=2), FR_2017 (year_tag=3) from the GSURv2 opportunity-year-aligned pooled parquet. All structural preference and opportunity blocks are carried forward unchanged from M1-clean. 55 free parameters = 53 M1-clean + 2 year dummies.
+INFO - Wage specification: vw
+INFO - Model family: regular
+INFO - Occupation choice enabled: False
+INFO - Singles theta_c POOLED: singles_male and singles_female share 'theta_c_singles'.
+INFO - Couples theta_c FIXED: couples consumption BC exponent = 0 (not estimated; theta_c removed from parameter vector).
+INFO - occupation_opportunity: parsed 12 shifter(s), variable='loc4', ref=1; appended to market_opportunity for engine evaluation.
+INFO - Total parameters: 55
+INFO - Expression constraints enabled: 2 constraints (default mode=soft, default weight=1.00e+03)
+INFO - ================================================================================
+INFO - Specification parsing complete
+INFO - ================================================================================
+INFO - 
+INFO - ================================================================================
+INFO - Step 2: Loading and Validating Data
+INFO - ================================================================================
+INFO - ================================================================================
+INFO - Loading and validating MNL datasets
+INFO - ================================================================================
+INFO - Loaded metadata from: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Data\processed\fr\pooled\fr_p3a_gsurv2_estimation_ready__mnlmeta.json
+INFO - Loaded singles dataset: 500,700 rows, 148 columns
+INFO - Loaded couples dataset: 743,800 rows, 148 columns
+INFO - Validating singles dataset...
+INFO -   Present optional columns: ['wage', 'gsur', 'loc4', 'age_norm', 'n_children', 'educL', 'educM', 'educH']
+INFO -   [OK] Singles dataset validation passed
+INFO - Validating couples dataset...
+INFO -   Present optional columns: ['wage_male', 'wage_female', 'gsur_male', 'gsur_female', 'loc4_male', 'loc4_female']
+INFO -   [OK] Couples dataset validation passed
+INFO - ================================================================================
+INFO - Data loading and validation complete
+INFO - ================================================================================
+INFO - 
+INFO - ================================================================================
+INFO - Step 3: Validating Data-Specification Compatibility
+INFO - ================================================================================
+INFO - Validating data-specification compatibility...
+INFO -   [OK] Data compatible with specification
+INFO - 
+INFO - ================================================================================
+INFO - Step 4: Filtering by Group
+INFO - ================================================================================
+INFO - Estimating joint (singles males + females + couples)
+INFO - 
+INFO - ================================================================================
+INFO - Step 5: Precomputing Data
+INFO - ================================================================================
+INFO - Spec-driven extra precompute variables: ['age_norm', 'age_norm2', 'gsur', 'loc4_2', 'loc4_3', 'loc4_4', 'n_children', 'reg2', 'reg3', 'reg4', 'reg5', 'reg6', 'reg7', 'reg8', 'year_2015_indicator', 'year_2017_indicator']
+INFO - Precomputing singles (male) data...
+INFO - Precomputing data for male singles (224,300 rows)...
+INFO -   Actual choices identified from 'is_chosen'
+INFO -   Extracted 2,243 groups with 224,300 total observations
+INFO -   Extra var 'age_norm': 224300/224300 nonzero
+INFO -   Extra var 'age_norm2': 224300/224300 nonzero
+INFO -   Extra var 'gsur': 224300/224300 nonzero
+INFO -   Extra var 'loc4_2': 29802/224300 nonzero
+INFO -   Extra var 'loc4_3': 19381/224300 nonzero
+INFO -   Extra var 'loc4_4': 92873/224300 nonzero
+INFO -   Extra var 'n_children': 0/224300 nonzero
+INFO -   Extra var 'reg2': 39900/224300 nonzero
+INFO -   Extra var 'reg3': 14700/224300 nonzero
+INFO -   Extra var 'reg4': 19400/224300 nonzero
+INFO -   Extra var 'reg5': 41000/224300 nonzero
+INFO -   Extra var 'reg6': 28400/224300 nonzero
+INFO -   Extra var 'reg7': 25700/224300 nonzero
+INFO -   Extra var 'reg8': 22400/224300 nonzero
+INFO -   Extra var 'year_2015_indicator': 72900/224300 nonzero
+INFO -   Extra var 'year_2017_indicator': 74800/224300 nonzero
+INFO - Precomputing singles (female) data...
+INFO - Precomputing data for female singles (276,400 rows)...
+INFO -   Actual choices identified from 'is_chosen'
+INFO -   Extracted 2,764 groups with 276,400 total observations
+INFO -   Extra var 'age_norm': 276400/276400 nonzero
+INFO -   Extra var 'age_norm2': 276400/276400 nonzero
+INFO -   Extra var 'gsur': 276400/276400 nonzero
+INFO -   Extra var 'loc4_2': 36806/276400 nonzero
+INFO -   Extra var 'loc4_3': 24019/276400 nonzero
+INFO -   Extra var 'loc4_4': 114323/276400 nonzero
+INFO -   Extra var 'n_children': 95600/276400 nonzero
+INFO -   Extra var 'reg2': 41300/276400 nonzero
+INFO -   Extra var 'reg3': 23400/276400 nonzero
+INFO -   Extra var 'reg4': 23600/276400 nonzero
+INFO -   Extra var 'reg5': 46500/276400 nonzero
+INFO -   Extra var 'reg6': 29200/276400 nonzero
+INFO -   Extra var 'reg7': 33000/276400 nonzero
+INFO -   Extra var 'reg8': 30100/276400 nonzero
+INFO -   Extra var 'year_2015_indicator': 94000/276400 nonzero
+INFO -   Extra var 'year_2017_indicator': 91400/276400 nonzero
+INFO - Precomputing couples data...
+INFO - Precomputing data for couples (743,800 rows)...
+INFO -   Actual choices identified from 'is_chosen'
+INFO -   Extracted 7,438 groups with 743,800 total observations
+INFO -   Extra var 'age_norm' (household): 0/743800 nonzero
+INFO -   Extra var 'age_norm_male': 743800/743800 nonzero
+INFO -   Extra var 'age_norm_female': 743800/743800 nonzero
+INFO -   Extra var 'age_norm2' (household): 0/743800 nonzero
+INFO -   Extra var 'age_norm2_male': 743800/743800 nonzero
+INFO -   Extra var 'age_norm2_female': 743800/743800 nonzero
+INFO -   Extra var 'gsur' (household): 0/743800 nonzero
+INFO -   Extra var 'gsur_male': 743800/743800 nonzero
+INFO -   Extra var 'gsur_female': 743800/743800 nonzero
+INFO -   Extra var 'loc4_2' (household): 0/743800 nonzero
+INFO -   Extra var 'loc4_2_male': 94851/743800 nonzero
+INFO -   Extra var 'loc4_2_female': 95205/743800 nonzero
+INFO -   Extra var 'loc4_3' (household): 0/743800 nonzero
+INFO -   Extra var 'loc4_3_male': 63064/743800 nonzero
+INFO -   Extra var 'loc4_3_female': 63904/743800 nonzero
+INFO -   Extra var 'loc4_4' (household): 0/743800 nonzero
+INFO -   Extra var 'loc4_4_male': 329444/743800 nonzero
+INFO -   Extra var 'loc4_4_female': 329711/743800 nonzero
+INFO -   Extra var 'n_children' (household): 481800/743800 nonzero
+WARNING -   Extra var 'n_children_male' could NOT be derived from couples data
+WARNING -   Extra var 'n_children_female' could NOT be derived from couples data
+INFO -   Extra var 'reg2' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg2_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg2_female' could NOT be derived from couples data
+INFO -   Extra var 'reg3' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg3_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg3_female' could NOT be derived from couples data
+INFO -   Extra var 'reg4' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg4_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg4_female' could NOT be derived from couples data
+INFO -   Extra var 'reg5' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg5_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg5_female' could NOT be derived from couples data
+INFO -   Extra var 'reg6' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg6_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg6_female' could NOT be derived from couples data
+INFO -   Extra var 'reg7' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg7_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg7_female' could NOT be derived from couples data
+INFO -   Extra var 'reg8' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg8_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg8_female' could NOT be derived from couples data
+INFO -   Extra var 'year_2015_indicator' (household): 256600/743800 nonzero
+WARNING -   Extra var 'year_2015_indicator_male' could NOT be derived from couples data
+WARNING -   Extra var 'year_2015_indicator_female' could NOT be derived from couples data
+INFO -   Extra var 'year_2017_indicator' (household): 229500/743800 nonzero
+WARNING -   Extra var 'year_2017_indicator_male' could NOT be derived from couples data
+WARNING -   Extra var 'year_2017_indicator_female' could NOT be derived from couples data
+INFO - Validating market opportunity variables on precomputed data...
+INFO - Market opportunity variable validation complete.
+INFO - 
+INFO - ================================================================================
+INFO - Step 6: Setting Initial Values
+INFO - ================================================================================
+INFO - Warm-start disabled - using specification defaults
+INFO - Overriding with custom initial values from: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_M1_clean\gamspy\estimation_spec_ruro_occ_M1_clean\run_2026-05-18_12-38-37\estimation_results.json
+INFO -   beta_l0_sm = 3.8361700702566406
+INFO -   beta_l_age_sm = 0.004051685823095354
+INFO -   beta_l_age2_sm = 0.0017545884347611189
+INFO -   beta_c_sm = 0.5536724537585629
+INFO -   theta_l_sm = -0.7124703800988823
+INFO -   beta_l0_sf = 4.46953644174803
+INFO -   beta_l_age_sf = 0.00033534329248785457
+INFO -   beta_l_age2_sf = 0.0039310549599108294
+INFO -   beta_l_nkids_sf = -0.08242154938438673
+INFO -   beta_c_sf = 0.5055857229151299
+INFO -   theta_l_sf = -0.7226691735528791
+INFO -   theta_c_singles = -1.0484826666112406
+INFO -   beta_l0_m = 0.012080276853605769
+INFO -   beta_l_age_m = -0.010336085675988115
+INFO -   beta_l_age2_m = 0.0009272397525147342
+INFO -   theta_l_m = -0.731399671114291
+INFO -   beta_l0_f = 2.5923484736139404
+INFO -   beta_l_age_f = -0.05938080335558622
+INFO -   beta_l_age2_f = 0.0030094210245777716
+INFO -   beta_l_nkids_f = 0.1694591542911626
+INFO -   theta_l_f = -0.6781298634073551
+INFO -   beta_c = 4.000030055855104
+INFO -   beta_E = -2.4992761668925056
+INFO -   beta_h_pt1 = -0.502193677308473
+INFO -   beta_h_pt2 = 0.3722467590315677
+INFO -   beta_h_ft = 1.4496799349387028
+INFO -   beta_E_gsur = -1.328948444637539
+INFO -   beta_E_drgn2 = 0.8013419963579709
+INFO -   beta_E_drgn3 = 0.6564007357621775
+INFO -   beta_E_drgn4 = 1.5625517981730583
+INFO -   beta_E_drgn5 = 0.7724958508166783
+INFO -   beta_E_drgn6 = 0.7665167198139865
+INFO -   beta_E_drgn7 = 0.6404509591503847
+INFO -   beta_E_drgn8 = 0.4631411881806246
+INFO -   beta_occ_2_sm = -1.4744303197192405
+INFO -   beta_occ_3_sm = -2.129194501326761
+INFO -   beta_occ_4_sm = 0.06041911392806083
+INFO -   beta_occ_2_sf = 0.051019230286411754
+INFO -   beta_occ_3_sf = -0.5000470126148637
+INFO -   beta_occ_4_sf = 0.8590791431141911
+INFO -   beta_occ_2_cm = -1.4955596715214137
+INFO -   beta_occ_3_cm = -2.2513279556105483
+INFO -   beta_occ_4_cm = 0.45940557002091587
+INFO -   beta_occ_2_cf = 0.13186839026059377
+INFO -   beta_occ_3_cf = -0.24904995941534272
+INFO -   beta_occ_4_cf = 1.0858499788514706
+INFO -   beta_w0 = 2.016251566763199
+INFO -   beta_w_educL = -0.040563126724658984
+INFO -   beta_w_educH = 0.32399040890418906
+INFO -   beta_w_pexp = 0.01846147788354198
+INFO -   beta_w_pexp2 = -0.000226179154337647
+INFO -   sigma = 0.42747422070018554
+INFO -   beta_ll = 2.6174646903437475
+INFO - Initial values by source: {'init_params_override': 53, 'spec_default': 2}
+INFO - Initial vector (first 10): [ 3.83617007e+00  4.05168582e-03  1.75458843e-03  5.53672454e-01
+ -7.12470380e-01  4.46953644e+00  3.35343292e-04  3.93105496e-03
+ -8.24215494e-02  5.05585723e-01]
+INFO - Initial vector (last 10): [ 1.31868390e-01 -2.49049959e-01  1.08584998e+00  2.01625157e+00
+ -4.05631267e-02  3.23990409e-01  1.84614779e-02 -2.26179154e-04
+  4.27474221e-01  2.61746469e+00]
+INFO - 
+INFO - ================================================================================
+INFO - Step 7: Running Estimation
+INFO - ================================================================================
+INFO - Using GAMSPy solver: CONOPT
+INFO - Note: GAMSPy uses automatic differentiation (no manual gradient)
+INFO - Using VECTORIZED GAMSPy implementation (3-5x faster)
+INFO - ================================================================================
+INFO - JOINT ESTIMATION WITH GAMSPy
+INFO - ================================================================================
+INFO - This will estimate all three groups simultaneously with shared parameters
+INFO - Expected runtime: 10-16 minutes (vs 30-40 min with SciPy)
+INFO - ================================================================================
+INFO - ================================================================================
+INFO - VECTORIZED JOINT ESTIMATION
+INFO - ================================================================================
+INFO -   Singles Male: 2,243 individuals
+INFO -   Singles Female: 2,764 individuals
+INFO -   Couples: 7,438 households
+INFO -   Alternatives: 100
+INFO -   Parameters: 55
+INFO -   Solver: CONOPT
+INFO -   Created 55 shared parameter variables
+INFO -   Building indexed data structure...
+INFO -     Created indexed data: 2243 individuals × 100 alternatives
+INFO -     Centered market opportunity within choice set (weights=proposal).
+INFO -     Utility expression built (vectorized)
+INFO -   Building vectorized log-likelihood...
+INFO -     Log-likelihood expression built (vectorized)
+INFO -   Building indexed data structure...
+INFO -     Created indexed data: 2764 individuals × 100 alternatives
+INFO -     Centered market opportunity within choice set (weights=proposal).
+INFO -     Utility expression built (vectorized)
+INFO -   Building vectorized log-likelihood...
+INFO -     Log-likelihood expression built (vectorized)
+INFO -   Building indexed data structure for couples...
+INFO -     Created indexed data: 7438 households × 100 alternatives
+INFO -     Centered market opportunity within choice set (weights=proposal).
+INFO -     Couples utility expression built (vectorized)
+INFO -   Building vectorized log-likelihood for couples...
+INFO -     Couples log-likelihood expression built (vectorized)
+INFO -   Applied expression constraints: 2 active, 0 hard inequalities
+INFO -   Solving joint model...
+INFO -   Proposal correction active: utility includes -log(prior) exactly once per group.
+INFO - ================================================================================
+INFO - VECTORIZED JOINT ESTIMATION COMPLETE
+INFO - ================================================================================
+INFO -   Solver status: SolveStatus.NormalCompletion
+INFO -   Model status: ModelStatus.OptimalLocal
+INFO -   Objective value (LL): -19093.5404
+INFO -   Wall time: 840.89 seconds
+INFO - 
+INFO - ================================================================================
+INFO - Step 7b: Computing Standard Errors (Numerical Hessian)
+INFO - ================================================================================
+INFO - Computing numerical Hessian using finite differences...
+INFO - Computing Hessian for 54/55 free parameters (1 at bounds/fixed)
+INFO - Computing numerical Hessian (54x54)...
+INFO -   Hessian column 10/54 computed
+INFO -   Hessian column 20/54 computed
+INFO -   Hessian column 30/54 computed
+INFO -   Hessian column 40/54 computed
+INFO -   Hessian column 50/54 computed
+INFO - Hessian condition number: 5.18e+24
+WARNING - Hessian is ill-conditioned (cond=5.18e+24)
+INFO - Using Moore-Penrose pseudoinverse for robustness...
+WARNING - Warning: 7 free parameters have negative variance (identification issue)
+INFO - Standard errors computed: 47/55 valid
+INFO - SE computation complete. 47 valid SEs out of 55
+INFO - 
+INFO - ================================================================================
+INFO - Step 8: Saving Results
+INFO - ================================================================================
+INFO - Saved results JSON: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_1\run_2026-05-21_16-38-29\estimation_results.json
+INFO - Saved singles_male parameters to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_1\run_2026-05-21_16-38-29\estimation_results_singles_male.csv
+INFO - Saved singles_female parameters to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_1\run_2026-05-21_16-38-29\estimation_results_singles_female.csv
+INFO - Saved couples parameters to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_1\run_2026-05-21_16-38-29\estimation_results_couples.csv
+INFO - Copied specification to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_1\run_2026-05-21_16-38-29\specification_used.yaml
+INFO - 
+INFO - ================================================================================
+ESTIMATION RESULTS SUMMARY
+================================================================================
+Specification: ruro_occ_P3a_pooled
+Wage specification: vw
+Optimization method: L-BFGS-B
+Analytical gradient: True
+
+Total observations: 1,244,500
+Total groups: 12,445
+Joint log-likelihood: -19093.54
+Total walltime: 840.9s
+Proposal correction: -log(prior) (applied once per alternative)
+Opportunity centering: enabled within each choice set
+
+--------------------------------------------------------------------------------
+SINGLES_MALE
+--------------------------------------------------------------------------------
+Success: True
+Message: SolveStatus.NormalCompletion (ModelStatus.OptimalLocal)
+Iterations: 14
+Function evaluations: 14
+Final LL: -19093.5404
+Gradient norm: N/A (GAMSPY uses automatic differentiation)
+Walltime: 280.3s
+
+Parameter estimates:
+  beta_l0_sm           =     4.348369
+  beta_l_age_sm        =     0.043685
+  beta_l_age2_sm       =     0.001761
+  beta_c_sm            =     2.746037
+  theta_l_sm           =    -0.719261
+  beta_l0_sf           =     4.457162
+  beta_l_age_sf        =     0.038770
+  beta_l_age2_sf       =     0.004707
+  beta_l_nkids_sf      =     0.386053
+  beta_c_sf            =     2.359708
+  theta_l_sf           =    -0.701927
+  theta_c_singles      =     0.048451
+  beta_l0_m            =     0.000001
+  beta_l_age_m         =     0.006831
+  beta_l_age2_m        =     0.001581
+  theta_l_m            =    -0.683695
+  beta_l0_f            =     2.613305
+  beta_l_age_f         =    -0.056330
+  beta_l_age2_f        =     0.005090
+  beta_l_nkids_f       =     0.142397
+  theta_l_f            =    -0.659007
+  beta_c               =     4.331393
+  beta_E               =    -2.280614
+  beta_h_pt1           =    -0.473101
+  beta_h_pt2           =     0.423733
+  beta_h_ft            =     1.403611
+  beta_E_gsur          =    -1.198054
+  beta_E_drgn2         =     0.801342
+  beta_E_drgn3         =     0.656401
+  beta_E_drgn4         =     1.562552
+  beta_E_drgn5         =     0.772496
+  beta_E_drgn6         =     0.766517
+  beta_E_drgn7         =     0.640451
+  beta_E_drgn8         =     0.463141
+  beta_E_y2015         =     0.109717
+  beta_E_y2017         =     0.325530
+  beta_occ_2_sm        =    -1.510499
+  beta_occ_3_sm        =    -2.152414
+  beta_occ_4_sm        =     0.060615
+  beta_occ_2_sf        =    -0.129549
+  beta_occ_3_sf        =    -0.556515
+  beta_occ_4_sf        =     0.740398
+  beta_occ_2_cm        =    -1.494608
+  beta_occ_3_cm        =    -2.209091
+  beta_occ_4_cm        =     0.482506
+  beta_occ_2_cf        =     0.132114
+  beta_occ_3_cf        =    -0.313212
+  beta_occ_4_cf        =     1.090385
+  beta_w0              =     2.034758
+  beta_w_educL         =    -0.041977
+  beta_w_educH         =     0.305805
+  beta_w_pexp          =     0.017236
+  beta_w_pexp2         =    -0.000181
+  sigma                =     0.403289
+  beta_ll              =     2.655290
+
+--------------------------------------------------------------------------------
+SINGLES_FEMALE
+--------------------------------------------------------------------------------
+Success: True
+Message: SolveStatus.NormalCompletion (ModelStatus.OptimalLocal)
+Iterations: 14
+Function evaluations: 14
+Final LL: -19093.5404
+Gradient norm: N/A (GAMSPY uses automatic differentiation)
+Walltime: 280.3s
+
+Parameter estimates:
+  beta_l0_sm           =     4.348369
+  beta_l_age_sm        =     0.043685
+  beta_l_age2_sm       =     0.001761
+  beta_c_sm            =     2.746037
+  theta_l_sm           =    -0.719261
+  beta_l0_sf           =     4.457162
+  beta_l_age_sf        =     0.038770
+  beta_l_age2_sf       =     0.004707
+  beta_l_nkids_sf      =     0.386053
+  beta_c_sf            =     2.359708
+  theta_l_sf           =    -0.701927
+  theta_c_singles      =     0.048451
+  beta_l0_m            =     0.000001
+  beta_l_age_m         =     0.006831
+  beta_l_age2_m        =     0.001581
+  theta_l_m            =    -0.683695
+  beta_l0_f            =     2.613305
+  beta_l_age_f         =    -0.056330
+  beta_l_age2_f        =     0.005090
+  beta_l_nkids_f       =     0.142397
+  theta_l_f            =    -0.659007
+  beta_c               =     4.331393
+  beta_E               =    -2.280614
+  beta_h_pt1           =    -0.473101
+  beta_h_pt2           =     0.423733
+  beta_h_ft            =     1.403611
+  beta_E_gsur          =    -1.198054
+  beta_E_drgn2         =     0.801342
+  beta_E_drgn3         =     0.656401
+  beta_E_drgn4         =     1.562552
+  beta_E_drgn5         =     0.772496
+  beta_E_drgn6         =     0.766517
+  beta_E_drgn7         =     0.640451
+  beta_E_drgn8         =     0.463141
+  beta_E_y2015         =     0.109717
+  beta_E_y2017         =     0.325530
+  beta_occ_2_sm        =    -1.510499
+  beta_occ_3_sm        =    -2.152414
+  beta_occ_4_sm        =     0.060615
+  beta_occ_2_sf        =    -0.129549
+  beta_occ_3_sf        =    -0.556515
+  beta_occ_4_sf        =     0.740398
+  beta_occ_2_cm        =    -1.494608
+  beta_occ_3_cm        =    -2.209091
+  beta_occ_4_cm        =     0.482506
+  beta_occ_2_cf        =     0.132114
+  beta_occ_3_cf        =    -0.313212
+  beta_occ_4_cf        =     1.090385
+  beta_w0              =     2.034758
+  beta_w_educL         =    -0.041977
+  beta_w_educH         =     0.305805
+  beta_w_pexp          =     0.017236
+  beta_w_pexp2         =    -0.000181
+  sigma                =     0.403289
+  beta_ll              =     2.655290
+
+--------------------------------------------------------------------------------
+COUPLES
+--------------------------------------------------------------------------------
+Success: True
+Message: SolveStatus.NormalCompletion (ModelStatus.OptimalLocal)
+Iterations: 14
+Function evaluations: 14
+Final LL: -19093.5404
+Gradient norm: N/A (GAMSPY uses automatic differentiation)
+Walltime: 280.3s
+
+Parameter estimates:
+  beta_l0_sm           =     4.348369
+  beta_l_age_sm        =     0.043685
+  beta_l_age2_sm       =     0.001761
+  beta_c_sm            =     2.746037
+  theta_l_sm           =    -0.719261
+  beta_l0_sf           =     4.457162
+  beta_l_age_sf        =     0.038770
+  beta_l_age2_sf       =     0.004707
+  beta_l_nkids_sf      =     0.386053
+  beta_c_sf            =     2.359708
+  theta_l_sf           =    -0.701927
+  theta_c_singles      =     0.048451
+  beta_l0_m            =     0.000001
+  beta_l_age_m         =     0.006831
+  beta_l_age2_m        =     0.001581
+  theta_l_m            =    -0.683695
+  beta_l0_f            =     2.613305
+  beta_l_age_f         =    -0.056330
+  beta_l_age2_f        =     0.005090
+  beta_l_nkids_f       =     0.142397
+  theta_l_f            =    -0.659007
+  beta_c               =     4.331393
+  beta_E               =    -2.280614
+  beta_h_pt1           =    -0.473101
+  beta_h_pt2           =     0.423733
+  beta_h_ft            =     1.403611
+  beta_E_gsur          =    -1.198054
+  beta_E_drgn2         =     0.801342
+  beta_E_drgn3         =     0.656401
+  beta_E_drgn4         =     1.562552
+  beta_E_drgn5         =     0.772496
+  beta_E_drgn6         =     0.766517
+  beta_E_drgn7         =     0.640451
+  beta_E_drgn8         =     0.463141
+  beta_E_y2015         =     0.109717
+  beta_E_y2017         =     0.325530
+  beta_occ_2_sm        =    -1.510499
+  beta_occ_3_sm        =    -2.152414
+  beta_occ_4_sm        =     0.060615
+  beta_occ_2_sf        =    -0.129549
+  beta_occ_3_sf        =    -0.556515
+  beta_occ_4_sf        =     0.740398
+  beta_occ_2_cm        =    -1.494608
+  beta_occ_3_cm        =    -2.209091
+  beta_occ_4_cm        =     0.482506
+  beta_occ_2_cf        =     0.132114
+  beta_occ_3_cf        =    -0.313212
+  beta_occ_4_cf        =     1.090385
+  beta_w0              =     2.034758
+  beta_w_educL         =    -0.041977
+  beta_w_educH         =     0.305805
+  beta_w_pexp          =     0.017236
+  beta_w_pexp2         =    -0.000181
+  sigma                =     0.403289
+  beta_ll              =     2.655290
+
+================================================================================
+INFO - Saved summary to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_1\run_2026-05-21_16-38-29\estimation_summary.txt
+INFO - Saved identification diagnostics: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_1\run_2026-05-21_16-38-29\identification_diagnostics.txt
+INFO - 
+INFO - ================================================================================
+INFO - Estimation Complete!
+INFO - ================================================================================
+INFO - Results saved to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_1\run_2026-05-21_16-38-29
+INFO - 
+Auto-timestamp enabled: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_1\run_2026-05-21_16-38-29
+2026-05-21 17:03:24,786 - INFO - Finished Start 1 estimation in 1509.7 s  (returncode=0)
+2026-05-21 17:03:24,793 - INFO - Start 1 run dir: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_1\run_2026-05-21_16-38-29
+2026-05-21 17:03:24,793 - INFO - ======================================================================
+2026-05-21 17:03:24,793 - INFO - RUNNING: Start 1 post-estimation SE
+2026-05-21 17:03:24,794 - INFO - CMD: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\.venv\Scripts\python.exe \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\run_cluster_robust_se.py --spec \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\specifications\estimation_spec_ruro_occ_P3a_pooled.yaml --mnl-base \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Data\processed\fr\pooled\fr_p3a_gsurv2_estimation_ready --results-json \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_1\run_2026-05-21_16-38-29\estimation_results.json --output \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Results\JMP_pooled_P3a_start1_cluster_robust_se.json --mode post-estimation --cluster-col idorighh
+2026-05-21 17:03:24,794 - INFO - ======================================================================
+WARNING:estimation_utils:  Extra var 'reg2_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg2_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg3_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg3_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg4_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg4_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg5_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg5_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg6_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg6_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg7_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg7_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg8_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg8_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'year_2015_indicator_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'year_2015_indicator_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'year_2017_indicator_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'year_2017_indicator_female' could NOT be derived from couples data
+2026-05-21 17:10:27,822 - INFO - Finished Start 1 post-estimation SE in 423.0 s  (returncode=0)
+2026-05-21 17:10:27,824 - INFO - >>> START 2: spec defaults
+2026-05-21 17:10:27,825 - INFO - ======================================================================
+2026-05-21 17:10:27,826 - INFO - RUNNING: Start 2 estimation
+2026-05-21 17:10:27,826 - INFO - CMD: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\.venv\Scripts\python.exe \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\enh_RURO_estimate_FR.py --mnl-base \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Data\processed\fr\pooled\fr_p3a_gsurv2_estimation_ready --spec-config \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\specifications\estimation_spec_ruro_occ_P3a_pooled.yaml --output-dir \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_2 --no-spec-subdir --auto-timestamp --group joint --solver gamspy-conopt --vectorized --warm-start none --verbose
+2026-05-21 17:10:27,826 - INFO - ======================================================================
+INFO - ================================================================================
+INFO - Enhanced RURO MNL Estimation - France
+INFO - ================================================================================
+INFO - Started: 2026-05-21T17:10:39.061683
+INFO - Output directory: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_2\run_2026-05-21_17-10-39
+INFO -   (Timestamped run folder created automatically)
+INFO - 
+INFO - ================================================================================
+INFO - Step 1: Loading Specification
+INFO - ================================================================================
+INFO - ================================================================================
+INFO - Parsing specification: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\specifications\estimation_spec_ruro_occ_P3a_pooled.yaml
+INFO - ================================================================================
+INFO - Model version: legacy
+INFO - Specification: ruro_occ_P3a_pooled
+INFO - Description: P3a pooled: three-year pooled MNL specification derived from M1-clean. Adds two year-dummy shifters in the market-opportunity index (beta_E_y2015, beta_E_y2017) with FR_2016 as the omitted reference year. Covers survey years FR_2015 (year_tag=1), FR_2016 (year_tag=2), FR_2017 (year_tag=3) from the GSURv2 opportunity-year-aligned pooled parquet. All structural preference and opportunity blocks are carried forward unchanged from M1-clean. 55 free parameters = 53 M1-clean + 2 year dummies.
+INFO - Wage specification: vw
+INFO - Model family: regular
+INFO - Occupation choice enabled: False
+INFO - Singles theta_c POOLED: singles_male and singles_female share 'theta_c_singles'.
+INFO - Couples theta_c FIXED: couples consumption BC exponent = 0 (not estimated; theta_c removed from parameter vector).
+INFO - occupation_opportunity: parsed 12 shifter(s), variable='loc4', ref=1; appended to market_opportunity for engine evaluation.
+INFO - Total parameters: 55
+INFO - Expression constraints enabled: 2 constraints (default mode=soft, default weight=1.00e+03)
+INFO - ================================================================================
+INFO - Specification parsing complete
+INFO - ================================================================================
+INFO - 
+INFO - ================================================================================
+INFO - Step 2: Loading and Validating Data
+INFO - ================================================================================
+INFO - ================================================================================
+INFO - Loading and validating MNL datasets
+INFO - ================================================================================
+INFO - Loaded metadata from: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Data\processed\fr\pooled\fr_p3a_gsurv2_estimation_ready__mnlmeta.json
+INFO - Loaded singles dataset: 500,700 rows, 148 columns
+INFO - Loaded couples dataset: 743,800 rows, 148 columns
+INFO - Validating singles dataset...
+INFO -   Present optional columns: ['wage', 'gsur', 'loc4', 'age_norm', 'n_children', 'educL', 'educM', 'educH']
+INFO -   [OK] Singles dataset validation passed
+INFO - Validating couples dataset...
+INFO -   Present optional columns: ['wage_male', 'wage_female', 'gsur_male', 'gsur_female', 'loc4_male', 'loc4_female']
+INFO -   [OK] Couples dataset validation passed
+INFO - ================================================================================
+INFO - Data loading and validation complete
+INFO - ================================================================================
+INFO - 
+INFO - ================================================================================
+INFO - Step 3: Validating Data-Specification Compatibility
+INFO - ================================================================================
+INFO - Validating data-specification compatibility...
+INFO -   [OK] Data compatible with specification
+INFO - 
+INFO - ================================================================================
+INFO - Step 4: Filtering by Group
+INFO - ================================================================================
+INFO - Estimating joint (singles males + females + couples)
+INFO - 
+INFO - ================================================================================
+INFO - Step 5: Precomputing Data
+INFO - ================================================================================
+INFO - Spec-driven extra precompute variables: ['age_norm', 'age_norm2', 'gsur', 'loc4_2', 'loc4_3', 'loc4_4', 'n_children', 'reg2', 'reg3', 'reg4', 'reg5', 'reg6', 'reg7', 'reg8', 'year_2015_indicator', 'year_2017_indicator']
+INFO - Precomputing singles (male) data...
+INFO - Precomputing data for male singles (224,300 rows)...
+INFO -   Actual choices identified from 'is_chosen'
+INFO -   Extracted 2,243 groups with 224,300 total observations
+INFO -   Extra var 'age_norm': 224300/224300 nonzero
+INFO -   Extra var 'age_norm2': 224300/224300 nonzero
+INFO -   Extra var 'gsur': 224300/224300 nonzero
+INFO -   Extra var 'loc4_2': 29802/224300 nonzero
+INFO -   Extra var 'loc4_3': 19381/224300 nonzero
+INFO -   Extra var 'loc4_4': 92873/224300 nonzero
+INFO -   Extra var 'n_children': 0/224300 nonzero
+INFO -   Extra var 'reg2': 39900/224300 nonzero
+INFO -   Extra var 'reg3': 14700/224300 nonzero
+INFO -   Extra var 'reg4': 19400/224300 nonzero
+INFO -   Extra var 'reg5': 41000/224300 nonzero
+INFO -   Extra var 'reg6': 28400/224300 nonzero
+INFO -   Extra var 'reg7': 25700/224300 nonzero
+INFO -   Extra var 'reg8': 22400/224300 nonzero
+INFO -   Extra var 'year_2015_indicator': 72900/224300 nonzero
+INFO -   Extra var 'year_2017_indicator': 74800/224300 nonzero
+INFO - Precomputing singles (female) data...
+INFO - Precomputing data for female singles (276,400 rows)...
+INFO -   Actual choices identified from 'is_chosen'
+INFO -   Extracted 2,764 groups with 276,400 total observations
+INFO -   Extra var 'age_norm': 276400/276400 nonzero
+INFO -   Extra var 'age_norm2': 276400/276400 nonzero
+INFO -   Extra var 'gsur': 276400/276400 nonzero
+INFO -   Extra var 'loc4_2': 36806/276400 nonzero
+INFO -   Extra var 'loc4_3': 24019/276400 nonzero
+INFO -   Extra var 'loc4_4': 114323/276400 nonzero
+INFO -   Extra var 'n_children': 95600/276400 nonzero
+INFO -   Extra var 'reg2': 41300/276400 nonzero
+INFO -   Extra var 'reg3': 23400/276400 nonzero
+INFO -   Extra var 'reg4': 23600/276400 nonzero
+INFO -   Extra var 'reg5': 46500/276400 nonzero
+INFO -   Extra var 'reg6': 29200/276400 nonzero
+INFO -   Extra var 'reg7': 33000/276400 nonzero
+INFO -   Extra var 'reg8': 30100/276400 nonzero
+INFO -   Extra var 'year_2015_indicator': 94000/276400 nonzero
+INFO -   Extra var 'year_2017_indicator': 91400/276400 nonzero
+INFO - Precomputing couples data...
+INFO - Precomputing data for couples (743,800 rows)...
+INFO -   Actual choices identified from 'is_chosen'
+INFO -   Extracted 7,438 groups with 743,800 total observations
+INFO -   Extra var 'age_norm' (household): 0/743800 nonzero
+INFO -   Extra var 'age_norm_male': 743800/743800 nonzero
+INFO -   Extra var 'age_norm_female': 743800/743800 nonzero
+INFO -   Extra var 'age_norm2' (household): 0/743800 nonzero
+INFO -   Extra var 'age_norm2_male': 743800/743800 nonzero
+INFO -   Extra var 'age_norm2_female': 743800/743800 nonzero
+INFO -   Extra var 'gsur' (household): 0/743800 nonzero
+INFO -   Extra var 'gsur_male': 743800/743800 nonzero
+INFO -   Extra var 'gsur_female': 743800/743800 nonzero
+INFO -   Extra var 'loc4_2' (household): 0/743800 nonzero
+INFO -   Extra var 'loc4_2_male': 94851/743800 nonzero
+INFO -   Extra var 'loc4_2_female': 95205/743800 nonzero
+INFO -   Extra var 'loc4_3' (household): 0/743800 nonzero
+INFO -   Extra var 'loc4_3_male': 63064/743800 nonzero
+INFO -   Extra var 'loc4_3_female': 63904/743800 nonzero
+INFO -   Extra var 'loc4_4' (household): 0/743800 nonzero
+INFO -   Extra var 'loc4_4_male': 329444/743800 nonzero
+INFO -   Extra var 'loc4_4_female': 329711/743800 nonzero
+INFO -   Extra var 'n_children' (household): 481800/743800 nonzero
+WARNING -   Extra var 'n_children_male' could NOT be derived from couples data
+WARNING -   Extra var 'n_children_female' could NOT be derived from couples data
+INFO -   Extra var 'reg2' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg2_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg2_female' could NOT be derived from couples data
+INFO -   Extra var 'reg3' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg3_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg3_female' could NOT be derived from couples data
+INFO -   Extra var 'reg4' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg4_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg4_female' could NOT be derived from couples data
+INFO -   Extra var 'reg5' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg5_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg5_female' could NOT be derived from couples data
+INFO -   Extra var 'reg6' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg6_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg6_female' could NOT be derived from couples data
+INFO -   Extra var 'reg7' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg7_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg7_female' could NOT be derived from couples data
+INFO -   Extra var 'reg8' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg8_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg8_female' could NOT be derived from couples data
+INFO -   Extra var 'year_2015_indicator' (household): 256600/743800 nonzero
+WARNING -   Extra var 'year_2015_indicator_male' could NOT be derived from couples data
+WARNING -   Extra var 'year_2015_indicator_female' could NOT be derived from couples data
+INFO -   Extra var 'year_2017_indicator' (household): 229500/743800 nonzero
+WARNING -   Extra var 'year_2017_indicator_male' could NOT be derived from couples data
+WARNING -   Extra var 'year_2017_indicator_female' could NOT be derived from couples data
+INFO - Validating market opportunity variables on precomputed data...
+INFO - Market opportunity variable validation complete.
+INFO - 
+INFO - ================================================================================
+INFO - Step 6: Setting Initial Values
+INFO - ================================================================================
+INFO - Warm-start disabled - using specification defaults
+INFO - Initial values by source: {'spec_default': 55}
+INFO - Initial vector (first 10): [ 1.  0.  0.  1. -1.  1.  0.  0.  0.  1.]
+INFO - Initial vector (last 10): [ 0.e+00  0.e+00  0.e+00  2.e+00 -1.e-01  2.e-01  2.e-02 -3.e-04  5.e-01
+  2.e+00]
+INFO - 
+INFO - ================================================================================
+INFO - Step 7: Running Estimation
+INFO - ================================================================================
+INFO - Using GAMSPy solver: CONOPT
+INFO - Note: GAMSPy uses automatic differentiation (no manual gradient)
+INFO - Using VECTORIZED GAMSPy implementation (3-5x faster)
+INFO - ================================================================================
+INFO - JOINT ESTIMATION WITH GAMSPy
+INFO - ================================================================================
+INFO - This will estimate all three groups simultaneously with shared parameters
+INFO - Expected runtime: 10-16 minutes (vs 30-40 min with SciPy)
+INFO - ================================================================================
+INFO - ================================================================================
+INFO - VECTORIZED JOINT ESTIMATION
+INFO - ================================================================================
+INFO -   Singles Male: 2,243 individuals
+INFO -   Singles Female: 2,764 individuals
+INFO -   Couples: 7,438 households
+INFO -   Alternatives: 100
+INFO -   Parameters: 55
+INFO -   Solver: CONOPT
+INFO -   Created 55 shared parameter variables
+INFO -   Building indexed data structure...
+INFO -     Created indexed data: 2243 individuals × 100 alternatives
+INFO -     Centered market opportunity within choice set (weights=proposal).
+INFO -     Utility expression built (vectorized)
+INFO -   Building vectorized log-likelihood...
+INFO -     Log-likelihood expression built (vectorized)
+INFO -   Building indexed data structure...
+INFO -     Created indexed data: 2764 individuals × 100 alternatives
+INFO -     Centered market opportunity within choice set (weights=proposal).
+INFO -     Utility expression built (vectorized)
+INFO -   Building vectorized log-likelihood...
+INFO -     Log-likelihood expression built (vectorized)
+INFO -   Building indexed data structure for couples...
+INFO -     Created indexed data: 7438 households × 100 alternatives
+INFO -     Centered market opportunity within choice set (weights=proposal).
+INFO -     Couples utility expression built (vectorized)
+INFO -   Building vectorized log-likelihood for couples...
+INFO -     Couples log-likelihood expression built (vectorized)
+INFO -   Applied expression constraints: 2 active, 0 hard inequalities
+INFO -   Solving joint model...
+INFO -   Proposal correction active: utility includes -log(prior) exactly once per group.
+INFO - ================================================================================
+INFO - VECTORIZED JOINT ESTIMATION COMPLETE
+INFO - ================================================================================
+INFO -   Solver status: SolveStatus.NormalCompletion
+INFO -   Model status: ModelStatus.OptimalLocal
+INFO -   Objective value (LL): -19093.5404
+INFO -   Wall time: 846.63 seconds
+INFO - 
+INFO - ================================================================================
+INFO - Step 7b: Computing Standard Errors (Numerical Hessian)
+INFO - ================================================================================
+INFO - Computing numerical Hessian using finite differences...
+INFO - Computing Hessian for 54/55 free parameters (1 at bounds/fixed)
+INFO - Computing numerical Hessian (54x54)...
+INFO -   Hessian column 10/54 computed
+INFO -   Hessian column 20/54 computed
+INFO -   Hessian column 30/54 computed
+INFO -   Hessian column 40/54 computed
+INFO -   Hessian column 50/54 computed
+INFO - Hessian condition number: 1.13e+25
+WARNING - Hessian is ill-conditioned (cond=1.13e+25)
+INFO - Using Moore-Penrose pseudoinverse for robustness...
+WARNING - Warning: 8 free parameters have negative variance (identification issue)
+INFO - Standard errors computed: 46/55 valid
+INFO - SE computation complete. 46 valid SEs out of 55
+INFO - 
+INFO - ================================================================================
+INFO - Step 8: Saving Results
+INFO - ================================================================================
+INFO - Saved results JSON: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_2\run_2026-05-21_17-10-39\estimation_results.json
+INFO - Saved singles_male parameters to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_2\run_2026-05-21_17-10-39\estimation_results_singles_male.csv
+INFO - Saved singles_female parameters to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_2\run_2026-05-21_17-10-39\estimation_results_singles_female.csv
+INFO - Saved couples parameters to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_2\run_2026-05-21_17-10-39\estimation_results_couples.csv
+INFO - Copied specification to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_2\run_2026-05-21_17-10-39\specification_used.yaml
+INFO - 
+INFO - ================================================================================
+ESTIMATION RESULTS SUMMARY
+================================================================================
+Specification: ruro_occ_P3a_pooled
+Wage specification: vw
+Optimization method: L-BFGS-B
+Analytical gradient: True
+
+Total observations: 1,244,500
+Total groups: 12,445
+Joint log-likelihood: -19093.54
+Total walltime: 846.6s
+Proposal correction: -log(prior) (applied once per alternative)
+Opportunity centering: enabled within each choice set
+
+--------------------------------------------------------------------------------
+SINGLES_MALE
+--------------------------------------------------------------------------------
+Success: True
+Message: SolveStatus.NormalCompletion (ModelStatus.OptimalLocal)
+Iterations: 16
+Function evaluations: 16
+Final LL: -19093.5404
+Gradient norm: N/A (GAMSPY uses automatic differentiation)
+Walltime: 282.2s
+
+Parameter estimates:
+  beta_l0_sm           =     4.348369
+  beta_l_age_sm        =     0.043685
+  beta_l_age2_sm       =     0.001761
+  beta_c_sm            =     2.746037
+  theta_l_sm           =    -0.719261
+  beta_l0_sf           =     4.457162
+  beta_l_age_sf        =     0.038770
+  beta_l_age2_sf       =     0.004707
+  beta_l_nkids_sf      =     0.386053
+  beta_c_sf            =     2.359708
+  theta_l_sf           =    -0.701927
+  theta_c_singles      =     0.048451
+  beta_l0_m            =     0.000001
+  beta_l_age_m         =     0.006831
+  beta_l_age2_m        =     0.001581
+  theta_l_m            =    -0.683695
+  beta_l0_f            =     2.613305
+  beta_l_age_f         =    -0.056330
+  beta_l_age2_f        =     0.005090
+  beta_l_nkids_f       =     0.142397
+  theta_l_f            =    -0.659007
+  beta_c               =     4.331393
+  beta_E               =    -2.280614
+  beta_h_pt1           =    -0.473101
+  beta_h_pt2           =     0.423733
+  beta_h_ft            =     1.403611
+  beta_E_gsur          =    -1.198054
+  beta_E_drgn2         =     0.000000
+  beta_E_drgn3         =     0.000000
+  beta_E_drgn4         =     0.000000
+  beta_E_drgn5         =     0.000000
+  beta_E_drgn6         =     0.000000
+  beta_E_drgn7         =     0.000000
+  beta_E_drgn8         =     0.000000
+  beta_E_y2015         =     0.109717
+  beta_E_y2017         =     0.325530
+  beta_occ_2_sm        =    -1.510499
+  beta_occ_3_sm        =    -2.152414
+  beta_occ_4_sm        =     0.060615
+  beta_occ_2_sf        =    -0.129549
+  beta_occ_3_sf        =    -0.556515
+  beta_occ_4_sf        =     0.740398
+  beta_occ_2_cm        =    -1.494608
+  beta_occ_3_cm        =    -2.209091
+  beta_occ_4_cm        =     0.482506
+  beta_occ_2_cf        =     0.132114
+  beta_occ_3_cf        =    -0.313212
+  beta_occ_4_cf        =     1.090385
+  beta_w0              =     2.034758
+  beta_w_educL         =    -0.041977
+  beta_w_educH         =     0.305805
+  beta_w_pexp          =     0.017236
+  beta_w_pexp2         =    -0.000181
+  sigma                =     0.403289
+  beta_ll              =     2.655290
+
+--------------------------------------------------------------------------------
+SINGLES_FEMALE
+--------------------------------------------------------------------------------
+Success: True
+Message: SolveStatus.NormalCompletion (ModelStatus.OptimalLocal)
+Iterations: 16
+Function evaluations: 16
+Final LL: -19093.5404
+Gradient norm: N/A (GAMSPY uses automatic differentiation)
+Walltime: 282.2s
+
+Parameter estimates:
+  beta_l0_sm           =     4.348369
+  beta_l_age_sm        =     0.043685
+  beta_l_age2_sm       =     0.001761
+  beta_c_sm            =     2.746037
+  theta_l_sm           =    -0.719261
+  beta_l0_sf           =     4.457162
+  beta_l_age_sf        =     0.038770
+  beta_l_age2_sf       =     0.004707
+  beta_l_nkids_sf      =     0.386053
+  beta_c_sf            =     2.359708
+  theta_l_sf           =    -0.701927
+  theta_c_singles      =     0.048451
+  beta_l0_m            =     0.000001
+  beta_l_age_m         =     0.006831
+  beta_l_age2_m        =     0.001581
+  theta_l_m            =    -0.683695
+  beta_l0_f            =     2.613305
+  beta_l_age_f         =    -0.056330
+  beta_l_age2_f        =     0.005090
+  beta_l_nkids_f       =     0.142397
+  theta_l_f            =    -0.659007
+  beta_c               =     4.331393
+  beta_E               =    -2.280614
+  beta_h_pt1           =    -0.473101
+  beta_h_pt2           =     0.423733
+  beta_h_ft            =     1.403611
+  beta_E_gsur          =    -1.198054
+  beta_E_drgn2         =     0.000000
+  beta_E_drgn3         =     0.000000
+  beta_E_drgn4         =     0.000000
+  beta_E_drgn5         =     0.000000
+  beta_E_drgn6         =     0.000000
+  beta_E_drgn7         =     0.000000
+  beta_E_drgn8         =     0.000000
+  beta_E_y2015         =     0.109717
+  beta_E_y2017         =     0.325530
+  beta_occ_2_sm        =    -1.510499
+  beta_occ_3_sm        =    -2.152414
+  beta_occ_4_sm        =     0.060615
+  beta_occ_2_sf        =    -0.129549
+  beta_occ_3_sf        =    -0.556515
+  beta_occ_4_sf        =     0.740398
+  beta_occ_2_cm        =    -1.494608
+  beta_occ_3_cm        =    -2.209091
+  beta_occ_4_cm        =     0.482506
+  beta_occ_2_cf        =     0.132114
+  beta_occ_3_cf        =    -0.313212
+  beta_occ_4_cf        =     1.090385
+  beta_w0              =     2.034758
+  beta_w_educL         =    -0.041977
+  beta_w_educH         =     0.305805
+  beta_w_pexp          =     0.017236
+  beta_w_pexp2         =    -0.000181
+  sigma                =     0.403289
+  beta_ll              =     2.655290
+
+--------------------------------------------------------------------------------
+COUPLES
+--------------------------------------------------------------------------------
+Success: True
+Message: SolveStatus.NormalCompletion (ModelStatus.OptimalLocal)
+Iterations: 16
+Function evaluations: 16
+Final LL: -19093.5404
+Gradient norm: N/A (GAMSPY uses automatic differentiation)
+Walltime: 282.2s
+
+Parameter estimates:
+  beta_l0_sm           =     4.348369
+  beta_l_age_sm        =     0.043685
+  beta_l_age2_sm       =     0.001761
+  beta_c_sm            =     2.746037
+  theta_l_sm           =    -0.719261
+  beta_l0_sf           =     4.457162
+  beta_l_age_sf        =     0.038770
+  beta_l_age2_sf       =     0.004707
+  beta_l_nkids_sf      =     0.386053
+  beta_c_sf            =     2.359708
+  theta_l_sf           =    -0.701927
+  theta_c_singles      =     0.048451
+  beta_l0_m            =     0.000001
+  beta_l_age_m         =     0.006831
+  beta_l_age2_m        =     0.001581
+  theta_l_m            =    -0.683695
+  beta_l0_f            =     2.613305
+  beta_l_age_f         =    -0.056330
+  beta_l_age2_f        =     0.005090
+  beta_l_nkids_f       =     0.142397
+  theta_l_f            =    -0.659007
+  beta_c               =     4.331393
+  beta_E               =    -2.280614
+  beta_h_pt1           =    -0.473101
+  beta_h_pt2           =     0.423733
+  beta_h_ft            =     1.403611
+  beta_E_gsur          =    -1.198054
+  beta_E_drgn2         =     0.000000
+  beta_E_drgn3         =     0.000000
+  beta_E_drgn4         =     0.000000
+  beta_E_drgn5         =     0.000000
+  beta_E_drgn6         =     0.000000
+  beta_E_drgn7         =     0.000000
+  beta_E_drgn8         =     0.000000
+  beta_E_y2015         =     0.109717
+  beta_E_y2017         =     0.325530
+  beta_occ_2_sm        =    -1.510499
+  beta_occ_3_sm        =    -2.152414
+  beta_occ_4_sm        =     0.060615
+  beta_occ_2_sf        =    -0.129549
+  beta_occ_3_sf        =    -0.556515
+  beta_occ_4_sf        =     0.740398
+  beta_occ_2_cm        =    -1.494608
+  beta_occ_3_cm        =    -2.209091
+  beta_occ_4_cm        =     0.482506
+  beta_occ_2_cf        =     0.132114
+  beta_occ_3_cf        =    -0.313212
+  beta_occ_4_cf        =     1.090385
+  beta_w0              =     2.034758
+  beta_w_educL         =    -0.041977
+  beta_w_educH         =     0.305805
+  beta_w_pexp          =     0.017236
+  beta_w_pexp2         =    -0.000181
+  sigma                =     0.403289
+  beta_ll              =     2.655290
+
+================================================================================
+INFO - Saved summary to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_2\run_2026-05-21_17-10-39\estimation_summary.txt
+INFO - Saved identification diagnostics: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_2\run_2026-05-21_17-10-39\identification_diagnostics.txt
+INFO - 
+INFO - ================================================================================
+INFO - Estimation Complete!
+INFO - ================================================================================
+INFO - Results saved to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_2\run_2026-05-21_17-10-39
+INFO - 
+Auto-timestamp enabled: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_2\run_2026-05-21_17-10-39
+2026-05-21 17:31:30,711 - INFO - Finished Start 2 estimation in 1262.9 s  (returncode=0)
+2026-05-21 17:31:30,715 - INFO - Start 2 run dir: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_2\run_2026-05-21_17-10-39
+2026-05-21 17:31:30,716 - INFO - ======================================================================
+2026-05-21 17:31:30,716 - INFO - RUNNING: Start 2 post-estimation SE
+2026-05-21 17:31:30,716 - INFO - CMD: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\.venv\Scripts\python.exe \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\run_cluster_robust_se.py --spec \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\specifications\estimation_spec_ruro_occ_P3a_pooled.yaml --mnl-base \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Data\processed\fr\pooled\fr_p3a_gsurv2_estimation_ready --results-json \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_2\run_2026-05-21_17-10-39\estimation_results.json --output \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Results\JMP_pooled_P3a_start2_cluster_robust_se.json --mode post-estimation --cluster-col idorighh
+2026-05-21 17:31:30,717 - INFO - ======================================================================
+WARNING:estimation_utils:  Extra var 'reg2_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg2_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg3_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg3_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg4_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg4_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg5_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg5_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg6_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg6_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg7_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg7_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg8_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg8_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'year_2015_indicator_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'year_2015_indicator_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'year_2017_indicator_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'year_2017_indicator_female' could NOT be derived from couples data
+2026-05-21 17:42:18,879 - INFO - Finished Start 2 post-estimation SE in 648.2 s  (returncode=0)
+2026-05-21 17:42:18,879 - INFO - >>> START 3: perturbed warm start from Start 1
+2026-05-21 17:42:18,995 - INFO - ================================================================================
+2026-05-21 17:42:18,996 - INFO - Parsing specification: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\specifications\estimation_spec_ruro_occ_P3a_pooled.yaml
+2026-05-21 17:42:18,996 - INFO - ================================================================================
+2026-05-21 17:42:19,036 - INFO - Model version: legacy
+2026-05-21 17:42:19,036 - INFO - Specification: ruro_occ_P3a_pooled
+2026-05-21 17:42:19,036 - INFO - Description: P3a pooled: three-year pooled MNL specification derived from M1-clean. Adds two year-dummy shifters in the market-opportunity index (beta_E_y2015, beta_E_y2017) with FR_2016 as the omitted reference year. Covers survey years FR_2015 (year_tag=1), FR_2016 (year_tag=2), FR_2017 (year_tag=3) from the GSURv2 opportunity-year-aligned pooled parquet. All structural preference and opportunity blocks are carried forward unchanged from M1-clean. 55 free parameters = 53 M1-clean + 2 year dummies.
+2026-05-21 17:42:19,037 - INFO - Wage specification: vw
+2026-05-21 17:42:19,037 - INFO - Model family: regular
+2026-05-21 17:42:19,038 - INFO - Occupation choice enabled: False
+2026-05-21 17:42:19,038 - INFO - Singles theta_c POOLED: singles_male and singles_female share 'theta_c_singles'.
+2026-05-21 17:42:19,038 - INFO - Couples theta_c FIXED: couples consumption BC exponent = 0 (not estimated; theta_c removed from parameter vector).
+2026-05-21 17:42:19,039 - INFO - occupation_opportunity: parsed 12 shifter(s), variable='loc4', ref=1; appended to market_opportunity for engine evaluation.
+2026-05-21 17:42:19,039 - INFO - Total parameters: 55
+2026-05-21 17:42:19,040 - INFO - Expression constraints enabled: 2 constraints (default mode=soft, default weight=1.00e+03)
+2026-05-21 17:42:19,040 - INFO - ================================================================================
+2026-05-21 17:42:19,040 - INFO - Specification parsing complete
+2026-05-21 17:42:19,041 - INFO - ================================================================================
+2026-05-21 17:42:19,142 - INFO - Wrote perturbed init params to \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Results\JMP_pooled_P3a_start3_perturbed_init.json
+2026-05-21 17:42:19,143 - INFO - ======================================================================
+2026-05-21 17:42:19,143 - INFO - RUNNING: Start 3 estimation
+2026-05-21 17:42:19,143 - INFO - CMD: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\.venv\Scripts\python.exe \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\enh_RURO_estimate_FR.py --mnl-base \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Data\processed\fr\pooled\fr_p3a_gsurv2_estimation_ready --spec-config \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\specifications\estimation_spec_ruro_occ_P3a_pooled.yaml --output-dir \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_3 --no-spec-subdir --auto-timestamp --group joint --solver gamspy-conopt --vectorized --warm-start none --init-params \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Results\JMP_pooled_P3a_start3_perturbed_init.json --verbose
+2026-05-21 17:42:19,144 - INFO - ======================================================================
+INFO - ================================================================================
+INFO - Enhanced RURO MNL Estimation - France
+INFO - ================================================================================
+INFO - Started: 2026-05-21T17:42:29.888102
+INFO - Output directory: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_3\run_2026-05-21_17-42-29
+INFO -   (Timestamped run folder created automatically)
+INFO - 
+INFO - ================================================================================
+INFO - Step 1: Loading Specification
+INFO - ================================================================================
+INFO - ================================================================================
+INFO - Parsing specification: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\specifications\estimation_spec_ruro_occ_P3a_pooled.yaml
+INFO - ================================================================================
+INFO - Model version: legacy
+INFO - Specification: ruro_occ_P3a_pooled
+INFO - Description: P3a pooled: three-year pooled MNL specification derived from M1-clean. Adds two year-dummy shifters in the market-opportunity index (beta_E_y2015, beta_E_y2017) with FR_2016 as the omitted reference year. Covers survey years FR_2015 (year_tag=1), FR_2016 (year_tag=2), FR_2017 (year_tag=3) from the GSURv2 opportunity-year-aligned pooled parquet. All structural preference and opportunity blocks are carried forward unchanged from M1-clean. 55 free parameters = 53 M1-clean + 2 year dummies.
+INFO - Wage specification: vw
+INFO - Model family: regular
+INFO - Occupation choice enabled: False
+INFO - Singles theta_c POOLED: singles_male and singles_female share 'theta_c_singles'.
+INFO - Couples theta_c FIXED: couples consumption BC exponent = 0 (not estimated; theta_c removed from parameter vector).
+INFO - occupation_opportunity: parsed 12 shifter(s), variable='loc4', ref=1; appended to market_opportunity for engine evaluation.
+INFO - Total parameters: 55
+INFO - Expression constraints enabled: 2 constraints (default mode=soft, default weight=1.00e+03)
+INFO - ================================================================================
+INFO - Specification parsing complete
+INFO - ================================================================================
+INFO - 
+INFO - ================================================================================
+INFO - Step 2: Loading and Validating Data
+INFO - ================================================================================
+INFO - ================================================================================
+INFO - Loading and validating MNL datasets
+INFO - ================================================================================
+INFO - Loaded metadata from: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Data\processed\fr\pooled\fr_p3a_gsurv2_estimation_ready__mnlmeta.json
+INFO - Loaded singles dataset: 500,700 rows, 148 columns
+INFO - Loaded couples dataset: 743,800 rows, 148 columns
+INFO - Validating singles dataset...
+INFO -   Present optional columns: ['wage', 'gsur', 'loc4', 'age_norm', 'n_children', 'educL', 'educM', 'educH']
+INFO -   [OK] Singles dataset validation passed
+INFO - Validating couples dataset...
+INFO -   Present optional columns: ['wage_male', 'wage_female', 'gsur_male', 'gsur_female', 'loc4_male', 'loc4_female']
+INFO -   [OK] Couples dataset validation passed
+INFO - ================================================================================
+INFO - Data loading and validation complete
+INFO - ================================================================================
+INFO - 
+INFO - ================================================================================
+INFO - Step 3: Validating Data-Specification Compatibility
+INFO - ================================================================================
+INFO - Validating data-specification compatibility...
+INFO -   [OK] Data compatible with specification
+INFO - 
+INFO - ================================================================================
+INFO - Step 4: Filtering by Group
+INFO - ================================================================================
+INFO - Estimating joint (singles males + females + couples)
+INFO - 
+INFO - ================================================================================
+INFO - Step 5: Precomputing Data
+INFO - ================================================================================
+INFO - Spec-driven extra precompute variables: ['age_norm', 'age_norm2', 'gsur', 'loc4_2', 'loc4_3', 'loc4_4', 'n_children', 'reg2', 'reg3', 'reg4', 'reg5', 'reg6', 'reg7', 'reg8', 'year_2015_indicator', 'year_2017_indicator']
+INFO - Precomputing singles (male) data...
+INFO - Precomputing data for male singles (224,300 rows)...
+INFO -   Actual choices identified from 'is_chosen'
+INFO -   Extracted 2,243 groups with 224,300 total observations
+INFO -   Extra var 'age_norm': 224300/224300 nonzero
+INFO -   Extra var 'age_norm2': 224300/224300 nonzero
+INFO -   Extra var 'gsur': 224300/224300 nonzero
+INFO -   Extra var 'loc4_2': 29802/224300 nonzero
+INFO -   Extra var 'loc4_3': 19381/224300 nonzero
+INFO -   Extra var 'loc4_4': 92873/224300 nonzero
+INFO -   Extra var 'n_children': 0/224300 nonzero
+INFO -   Extra var 'reg2': 39900/224300 nonzero
+INFO -   Extra var 'reg3': 14700/224300 nonzero
+INFO -   Extra var 'reg4': 19400/224300 nonzero
+INFO -   Extra var 'reg5': 41000/224300 nonzero
+INFO -   Extra var 'reg6': 28400/224300 nonzero
+INFO -   Extra var 'reg7': 25700/224300 nonzero
+INFO -   Extra var 'reg8': 22400/224300 nonzero
+INFO -   Extra var 'year_2015_indicator': 72900/224300 nonzero
+INFO -   Extra var 'year_2017_indicator': 74800/224300 nonzero
+INFO - Precomputing singles (female) data...
+INFO - Precomputing data for female singles (276,400 rows)...
+INFO -   Actual choices identified from 'is_chosen'
+INFO -   Extracted 2,764 groups with 276,400 total observations
+INFO -   Extra var 'age_norm': 276400/276400 nonzero
+INFO -   Extra var 'age_norm2': 276400/276400 nonzero
+INFO -   Extra var 'gsur': 276400/276400 nonzero
+INFO -   Extra var 'loc4_2': 36806/276400 nonzero
+INFO -   Extra var 'loc4_3': 24019/276400 nonzero
+INFO -   Extra var 'loc4_4': 114323/276400 nonzero
+INFO -   Extra var 'n_children': 95600/276400 nonzero
+INFO -   Extra var 'reg2': 41300/276400 nonzero
+INFO -   Extra var 'reg3': 23400/276400 nonzero
+INFO -   Extra var 'reg4': 23600/276400 nonzero
+INFO -   Extra var 'reg5': 46500/276400 nonzero
+INFO -   Extra var 'reg6': 29200/276400 nonzero
+INFO -   Extra var 'reg7': 33000/276400 nonzero
+INFO -   Extra var 'reg8': 30100/276400 nonzero
+INFO -   Extra var 'year_2015_indicator': 94000/276400 nonzero
+INFO -   Extra var 'year_2017_indicator': 91400/276400 nonzero
+INFO - Precomputing couples data...
+INFO - Precomputing data for couples (743,800 rows)...
+INFO -   Actual choices identified from 'is_chosen'
+INFO -   Extracted 7,438 groups with 743,800 total observations
+INFO -   Extra var 'age_norm' (household): 0/743800 nonzero
+INFO -   Extra var 'age_norm_male': 743800/743800 nonzero
+INFO -   Extra var 'age_norm_female': 743800/743800 nonzero
+INFO -   Extra var 'age_norm2' (household): 0/743800 nonzero
+INFO -   Extra var 'age_norm2_male': 743800/743800 nonzero
+INFO -   Extra var 'age_norm2_female': 743800/743800 nonzero
+INFO -   Extra var 'gsur' (household): 0/743800 nonzero
+INFO -   Extra var 'gsur_male': 743800/743800 nonzero
+INFO -   Extra var 'gsur_female': 743800/743800 nonzero
+INFO -   Extra var 'loc4_2' (household): 0/743800 nonzero
+INFO -   Extra var 'loc4_2_male': 94851/743800 nonzero
+INFO -   Extra var 'loc4_2_female': 95205/743800 nonzero
+INFO -   Extra var 'loc4_3' (household): 0/743800 nonzero
+INFO -   Extra var 'loc4_3_male': 63064/743800 nonzero
+INFO -   Extra var 'loc4_3_female': 63904/743800 nonzero
+INFO -   Extra var 'loc4_4' (household): 0/743800 nonzero
+INFO -   Extra var 'loc4_4_male': 329444/743800 nonzero
+INFO -   Extra var 'loc4_4_female': 329711/743800 nonzero
+INFO -   Extra var 'n_children' (household): 481800/743800 nonzero
+WARNING -   Extra var 'n_children_male' could NOT be derived from couples data
+WARNING -   Extra var 'n_children_female' could NOT be derived from couples data
+INFO -   Extra var 'reg2' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg2_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg2_female' could NOT be derived from couples data
+INFO -   Extra var 'reg3' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg3_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg3_female' could NOT be derived from couples data
+INFO -   Extra var 'reg4' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg4_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg4_female' could NOT be derived from couples data
+INFO -   Extra var 'reg5' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg5_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg5_female' could NOT be derived from couples data
+INFO -   Extra var 'reg6' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg6_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg6_female' could NOT be derived from couples data
+INFO -   Extra var 'reg7' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg7_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg7_female' could NOT be derived from couples data
+INFO -   Extra var 'reg8' (household): 0/743800 nonzero
+WARNING -   Extra var 'reg8_male' could NOT be derived from couples data
+WARNING -   Extra var 'reg8_female' could NOT be derived from couples data
+INFO -   Extra var 'year_2015_indicator' (household): 256600/743800 nonzero
+WARNING -   Extra var 'year_2015_indicator_male' could NOT be derived from couples data
+WARNING -   Extra var 'year_2015_indicator_female' could NOT be derived from couples data
+INFO -   Extra var 'year_2017_indicator' (household): 229500/743800 nonzero
+WARNING -   Extra var 'year_2017_indicator_male' could NOT be derived from couples data
+WARNING -   Extra var 'year_2017_indicator_female' could NOT be derived from couples data
+INFO - Validating market opportunity variables on precomputed data...
+INFO - Market opportunity variable validation complete.
+INFO - 
+INFO - ================================================================================
+INFO - Step 6: Setting Initial Values
+INFO - ================================================================================
+INFO - Warm-start disabled - using specification defaults
+INFO - Overriding with custom initial values from: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Results\JMP_pooled_P3a_start3_perturbed_init.json
+INFO -   beta_l0_sm = 4.403160405614271
+INFO -   beta_l_age_sm = 0.03146049689327737
+INFO -   beta_l_age2_sm = 0.07348083020828292
+INFO -   beta_c_sm = 2.785510590041744
+INFO -   theta_l_sm = -0.8004258380471584
+INFO -   beta_l0_sf = 4.552286909403861
+INFO -   beta_l_age_sf = 0.09099788710153237
+INFO -   beta_l_age2_sf = 0.061919935529011275
+INFO -   beta_l_nkids_sf = 0.31167544622278814
+INFO -   beta_c_sf = 2.349785185468673
+INFO -   theta_l_sf = -0.7277671771739601
+INFO -   theta_c_singles = 0.13380394470255144
+INFO -   beta_l0_m = 0.02877402401613291
+INFO -   beta_l_age_m = 0.07138378381843066
+INFO -   beta_l_age2_m = -0.009736562192216426
+INFO -   theta_l_m = -0.7382474743670124
+INFO -   beta_l0_f = 2.6242223032812597
+INFO -   beta_l_age_f = -0.14356640697642653
+INFO -   beta_l_age2_f = 0.07061650048189294
+INFO -   beta_l_nkids_f = 0.1687301281085489
+INFO -   theta_l_f = -0.60738994875399
+INFO -   beta_c = 4.302298667497391
+INFO -   beta_E = -2.1864740344849265
+INFO -   beta_h_pt1 = -0.3944766162121131
+INFO -   beta_h_pt2 = 0.47940993300523516
+INFO -   beta_h_ft = 1.3425391011863061
+INFO -   beta_E_gsur = -1.2047094473796018
+INFO -   beta_E_drgn2 = 0.7101027495154166
+INFO -   beta_E_drgn3 = 0.587258634175687
+INFO -   beta_E_drgn4 = 1.5991615888215494
+INFO -   beta_E_drgn5 = 0.8214482819982417
+INFO -   beta_E_drgn6 = 0.8600186663008285
+INFO -   beta_E_drgn7 = 0.6056160307780152
+INFO -   beta_E_drgn8 = 0.4372331293875984
+INFO -   beta_E_y2015 = 0.10362864322995509
+INFO -   beta_E_y2017 = 0.2634247052428296
+INFO -   beta_occ_2_sm = -1.5845144838015268
+INFO -   beta_occ_3_sm = -2.157273281612123
+INFO -   beta_occ_4_sm = 0.005996586242426702
+INFO -   beta_occ_2_sf = -0.09558633933794172
+INFO -   beta_occ_3_sf = -0.5690843485197857
+INFO -   beta_occ_4_sf = 0.8069337261271035
+INFO -   beta_occ_2_cm = -1.4545553654844514
+INFO -   beta_occ_3_cm = -2.2466175477445653
+INFO -   beta_occ_4_cm = 0.5489575418730881
+INFO -   beta_occ_2_cf = 0.19306725183688775
+INFO -   beta_occ_3_cf = -0.3357164233884359
+INFO -   beta_occ_4_cf = 1.048050878623651
+INFO -   beta_w0 = 2.071256674412238
+INFO -   beta_w_educL = -0.1140269648548296
+INFO -   beta_w_educH = 0.24578685759064725
+INFO -   beta_w_pexp = -0.08129123780765952
+INFO -   beta_w_pexp2 = 0.05720425372957437
+INFO -   sigma = 0.43625929141281283
+INFO -   beta_ll = 2.696323035650424
+INFO - Initial values by source: {'init_params_override': 55}
+INFO - Initial vector (first 10): [ 4.40316041  0.0314605   0.07348083  2.78551059 -0.80042584  4.55228691
+  0.09099789  0.06191994  0.31167545  2.34978519]
+INFO - Initial vector (last 10): [ 0.19306725 -0.33571642  1.04805088  2.07125667 -0.11402696  0.24578686
+ -0.08129124  0.05720425  0.43625929  2.69632304]
+INFO - 
+INFO - ================================================================================
+INFO - Step 7: Running Estimation
+INFO - ================================================================================
+INFO - Using GAMSPy solver: CONOPT
+INFO - Note: GAMSPy uses automatic differentiation (no manual gradient)
+INFO - Using VECTORIZED GAMSPy implementation (3-5x faster)
+INFO - ================================================================================
+INFO - JOINT ESTIMATION WITH GAMSPy
+INFO - ================================================================================
+INFO - This will estimate all three groups simultaneously with shared parameters
+INFO - Expected runtime: 10-16 minutes (vs 30-40 min with SciPy)
+INFO - ================================================================================
+INFO - ================================================================================
+INFO - VECTORIZED JOINT ESTIMATION
+INFO - ================================================================================
+INFO -   Singles Male: 2,243 individuals
+INFO -   Singles Female: 2,764 individuals
+INFO -   Couples: 7,438 households
+INFO -   Alternatives: 100
+INFO -   Parameters: 55
+INFO -   Solver: CONOPT
+INFO -   Created 55 shared parameter variables
+INFO -   Building indexed data structure...
+INFO -     Created indexed data: 2243 individuals × 100 alternatives
+INFO -     Centered market opportunity within choice set (weights=proposal).
+INFO -     Utility expression built (vectorized)
+INFO -   Building vectorized log-likelihood...
+INFO -     Log-likelihood expression built (vectorized)
+INFO -   Building indexed data structure...
+INFO -     Created indexed data: 2764 individuals × 100 alternatives
+INFO -     Centered market opportunity within choice set (weights=proposal).
+INFO -     Utility expression built (vectorized)
+INFO -   Building vectorized log-likelihood...
+INFO -     Log-likelihood expression built (vectorized)
+INFO -   Building indexed data structure for couples...
+INFO -     Created indexed data: 7438 households × 100 alternatives
+INFO -     Centered market opportunity within choice set (weights=proposal).
+INFO -     Couples utility expression built (vectorized)
+INFO -   Building vectorized log-likelihood for couples...
+INFO -     Couples log-likelihood expression built (vectorized)
+INFO -   Applied expression constraints: 2 active, 0 hard inequalities
+INFO -   Solving joint model...
+INFO -   Proposal correction active: utility includes -log(prior) exactly once per group.
+INFO - ================================================================================
+INFO - VECTORIZED JOINT ESTIMATION COMPLETE
+INFO - ================================================================================
+INFO -   Solver status: SolveStatus.NormalCompletion
+INFO -   Model status: ModelStatus.OptimalLocal
+INFO -   Objective value (LL): -19093.5404
+INFO -   Wall time: 899.38 seconds
+INFO - 
+INFO - ================================================================================
+INFO - Step 7b: Computing Standard Errors (Numerical Hessian)
+INFO - ================================================================================
+INFO - Computing numerical Hessian using finite differences...
+INFO - Computing Hessian for 54/55 free parameters (1 at bounds/fixed)
+INFO - Computing numerical Hessian (54x54)...
+INFO -   Hessian column 10/54 computed
+INFO -   Hessian column 20/54 computed
+INFO -   Hessian column 30/54 computed
+INFO -   Hessian column 40/54 computed
+INFO -   Hessian column 50/54 computed
+INFO - Hessian condition number: 2.83e+25
+WARNING - Hessian is ill-conditioned (cond=2.83e+25)
+INFO - Using Moore-Penrose pseudoinverse for robustness...
+WARNING - Warning: 9 free parameters have negative variance (identification issue)
+INFO - Standard errors computed: 45/55 valid
+INFO - SE computation complete. 45 valid SEs out of 55
+INFO - 
+INFO - ================================================================================
+INFO - Step 8: Saving Results
+INFO - ================================================================================
+INFO - Saved results JSON: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_3\run_2026-05-21_17-42-29\estimation_results.json
+INFO - Saved singles_male parameters to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_3\run_2026-05-21_17-42-29\estimation_results_singles_male.csv
+INFO - Saved singles_female parameters to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_3\run_2026-05-21_17-42-29\estimation_results_singles_female.csv
+INFO - Saved couples parameters to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_3\run_2026-05-21_17-42-29\estimation_results_couples.csv
+INFO - Copied specification to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_3\run_2026-05-21_17-42-29\specification_used.yaml
+INFO - 
+INFO - ================================================================================
+ESTIMATION RESULTS SUMMARY
+================================================================================
+Specification: ruro_occ_P3a_pooled
+Wage specification: vw
+Optimization method: L-BFGS-B
+Analytical gradient: True
+
+Total observations: 1,244,500
+Total groups: 12,445
+Joint log-likelihood: -19093.54
+Total walltime: 899.4s
+Proposal correction: -log(prior) (applied once per alternative)
+Opportunity centering: enabled within each choice set
+
+--------------------------------------------------------------------------------
+SINGLES_MALE
+--------------------------------------------------------------------------------
+Success: True
+Message: SolveStatus.NormalCompletion (ModelStatus.OptimalLocal)
+Iterations: 19
+Function evaluations: 19
+Final LL: -19093.5404
+Gradient norm: N/A (GAMSPY uses automatic differentiation)
+Walltime: 299.8s
+
+Parameter estimates:
+  beta_l0_sm           =     4.348369
+  beta_l_age_sm        =     0.043685
+  beta_l_age2_sm       =     0.001761
+  beta_c_sm            =     2.746037
+  theta_l_sm           =    -0.719261
+  beta_l0_sf           =     4.457162
+  beta_l_age_sf        =     0.038770
+  beta_l_age2_sf       =     0.004707
+  beta_l_nkids_sf      =     0.386053
+  beta_c_sf            =     2.359708
+  theta_l_sf           =    -0.701927
+  theta_c_singles      =     0.048451
+  beta_l0_m            =     0.000001
+  beta_l_age_m         =     0.006831
+  beta_l_age2_m        =     0.001581
+  theta_l_m            =    -0.683695
+  beta_l0_f            =     2.613305
+  beta_l_age_f         =    -0.056330
+  beta_l_age2_f        =     0.005090
+  beta_l_nkids_f       =     0.142397
+  theta_l_f            =    -0.659007
+  beta_c               =     4.331393
+  beta_E               =    -2.280614
+  beta_h_pt1           =    -0.473101
+  beta_h_pt2           =     0.423733
+  beta_h_ft            =     1.403611
+  beta_E_gsur          =    -1.198054
+  beta_E_drgn2         =     0.710103
+  beta_E_drgn3         =     0.587259
+  beta_E_drgn4         =     1.599162
+  beta_E_drgn5         =     0.821448
+  beta_E_drgn6         =     0.860019
+  beta_E_drgn7         =     0.605616
+  beta_E_drgn8         =     0.437233
+  beta_E_y2015         =     0.109717
+  beta_E_y2017         =     0.325530
+  beta_occ_2_sm        =    -1.510499
+  beta_occ_3_sm        =    -2.152414
+  beta_occ_4_sm        =     0.060615
+  beta_occ_2_sf        =    -0.129549
+  beta_occ_3_sf        =    -0.556515
+  beta_occ_4_sf        =     0.740398
+  beta_occ_2_cm        =    -1.494608
+  beta_occ_3_cm        =    -2.209091
+  beta_occ_4_cm        =     0.482506
+  beta_occ_2_cf        =     0.132114
+  beta_occ_3_cf        =    -0.313212
+  beta_occ_4_cf        =     1.090385
+  beta_w0              =     2.034758
+  beta_w_educL         =    -0.041977
+  beta_w_educH         =     0.305805
+  beta_w_pexp          =     0.017236
+  beta_w_pexp2         =    -0.000181
+  sigma                =     0.403289
+  beta_ll              =     2.655290
+
+--------------------------------------------------------------------------------
+SINGLES_FEMALE
+--------------------------------------------------------------------------------
+Success: True
+Message: SolveStatus.NormalCompletion (ModelStatus.OptimalLocal)
+Iterations: 19
+Function evaluations: 19
+Final LL: -19093.5404
+Gradient norm: N/A (GAMSPY uses automatic differentiation)
+Walltime: 299.8s
+
+Parameter estimates:
+  beta_l0_sm           =     4.348369
+  beta_l_age_sm        =     0.043685
+  beta_l_age2_sm       =     0.001761
+  beta_c_sm            =     2.746037
+  theta_l_sm           =    -0.719261
+  beta_l0_sf           =     4.457162
+  beta_l_age_sf        =     0.038770
+  beta_l_age2_sf       =     0.004707
+  beta_l_nkids_sf      =     0.386053
+  beta_c_sf            =     2.359708
+  theta_l_sf           =    -0.701927
+  theta_c_singles      =     0.048451
+  beta_l0_m            =     0.000001
+  beta_l_age_m         =     0.006831
+  beta_l_age2_m        =     0.001581
+  theta_l_m            =    -0.683695
+  beta_l0_f            =     2.613305
+  beta_l_age_f         =    -0.056330
+  beta_l_age2_f        =     0.005090
+  beta_l_nkids_f       =     0.142397
+  theta_l_f            =    -0.659007
+  beta_c               =     4.331393
+  beta_E               =    -2.280614
+  beta_h_pt1           =    -0.473101
+  beta_h_pt2           =     0.423733
+  beta_h_ft            =     1.403611
+  beta_E_gsur          =    -1.198054
+  beta_E_drgn2         =     0.710103
+  beta_E_drgn3         =     0.587259
+  beta_E_drgn4         =     1.599162
+  beta_E_drgn5         =     0.821448
+  beta_E_drgn6         =     0.860019
+  beta_E_drgn7         =     0.605616
+  beta_E_drgn8         =     0.437233
+  beta_E_y2015         =     0.109717
+  beta_E_y2017         =     0.325530
+  beta_occ_2_sm        =    -1.510499
+  beta_occ_3_sm        =    -2.152414
+  beta_occ_4_sm        =     0.060615
+  beta_occ_2_sf        =    -0.129549
+  beta_occ_3_sf        =    -0.556515
+  beta_occ_4_sf        =     0.740398
+  beta_occ_2_cm        =    -1.494608
+  beta_occ_3_cm        =    -2.209091
+  beta_occ_4_cm        =     0.482506
+  beta_occ_2_cf        =     0.132114
+  beta_occ_3_cf        =    -0.313212
+  beta_occ_4_cf        =     1.090385
+  beta_w0              =     2.034758
+  beta_w_educL         =    -0.041977
+  beta_w_educH         =     0.305805
+  beta_w_pexp          =     0.017236
+  beta_w_pexp2         =    -0.000181
+  sigma                =     0.403289
+  beta_ll              =     2.655290
+
+--------------------------------------------------------------------------------
+COUPLES
+--------------------------------------------------------------------------------
+Success: True
+Message: SolveStatus.NormalCompletion (ModelStatus.OptimalLocal)
+Iterations: 19
+Function evaluations: 19
+Final LL: -19093.5404
+Gradient norm: N/A (GAMSPY uses automatic differentiation)
+Walltime: 299.8s
+
+Parameter estimates:
+  beta_l0_sm           =     4.348369
+  beta_l_age_sm        =     0.043685
+  beta_l_age2_sm       =     0.001761
+  beta_c_sm            =     2.746037
+  theta_l_sm           =    -0.719261
+  beta_l0_sf           =     4.457162
+  beta_l_age_sf        =     0.038770
+  beta_l_age2_sf       =     0.004707
+  beta_l_nkids_sf      =     0.386053
+  beta_c_sf            =     2.359708
+  theta_l_sf           =    -0.701927
+  theta_c_singles      =     0.048451
+  beta_l0_m            =     0.000001
+  beta_l_age_m         =     0.006831
+  beta_l_age2_m        =     0.001581
+  theta_l_m            =    -0.683695
+  beta_l0_f            =     2.613305
+  beta_l_age_f         =    -0.056330
+  beta_l_age2_f        =     0.005090
+  beta_l_nkids_f       =     0.142397
+  theta_l_f            =    -0.659007
+  beta_c               =     4.331393
+  beta_E               =    -2.280614
+  beta_h_pt1           =    -0.473101
+  beta_h_pt2           =     0.423733
+  beta_h_ft            =     1.403611
+  beta_E_gsur          =    -1.198054
+  beta_E_drgn2         =     0.710103
+  beta_E_drgn3         =     0.587259
+  beta_E_drgn4         =     1.599162
+  beta_E_drgn5         =     0.821448
+  beta_E_drgn6         =     0.860019
+  beta_E_drgn7         =     0.605616
+  beta_E_drgn8         =     0.437233
+  beta_E_y2015         =     0.109717
+  beta_E_y2017         =     0.325530
+  beta_occ_2_sm        =    -1.510499
+  beta_occ_3_sm        =    -2.152414
+  beta_occ_4_sm        =     0.060615
+  beta_occ_2_sf        =    -0.129549
+  beta_occ_3_sf        =    -0.556515
+  beta_occ_4_sf        =     0.740398
+  beta_occ_2_cm        =    -1.494608
+  beta_occ_3_cm        =    -2.209091
+  beta_occ_4_cm        =     0.482506
+  beta_occ_2_cf        =     0.132114
+  beta_occ_3_cf        =    -0.313212
+  beta_occ_4_cf        =     1.090385
+  beta_w0              =     2.034758
+  beta_w_educL         =    -0.041977
+  beta_w_educH         =     0.305805
+  beta_w_pexp          =     0.017236
+  beta_w_pexp2         =    -0.000181
+  sigma                =     0.403289
+  beta_ll              =     2.655290
+
+================================================================================
+INFO - Saved summary to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_3\run_2026-05-21_17-42-29\estimation_summary.txt
+INFO - Saved identification diagnostics: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_3\run_2026-05-21_17-42-29\identification_diagnostics.txt
+INFO - 
+INFO - ================================================================================
+INFO - Estimation Complete!
+INFO - ================================================================================
+INFO - Results saved to: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_3\run_2026-05-21_17-42-29
+INFO - 
+Auto-timestamp enabled: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_3\run_2026-05-21_17-42-29
+2026-05-21 18:04:20,477 - INFO - Finished Start 3 estimation in 1321.3 s  (returncode=0)
+2026-05-21 18:04:20,477 - INFO - Start 3 run dir: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_3\run_2026-05-21_17-42-29
+2026-05-21 18:04:20,477 - INFO - ======================================================================
+2026-05-21 18:04:20,477 - INFO - RUNNING: Start 3 post-estimation SE
+2026-05-21 18:04:20,477 - INFO - CMD: \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\.venv\Scripts\python.exe \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\run_cluster_robust_se.py --spec \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\scripts\enhanced\specifications\estimation_spec_ruro_occ_P3a_pooled.yaml --mnl-base \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Data\processed\fr\pooled\fr_p3a_gsurv2_estimation_ready --results-json \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\outputs\estimates\fr\spec\ruro_occ_P3a_pooled\gamspy\start_3\run_2026-05-21_17-42-29\estimation_results.json --output \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Results\JMP_pooled_P3a_start3_cluster_robust_se.json --mode post-estimation --cluster-col idorighh
+2026-05-21 18:04:20,477 - INFO - ======================================================================
+WARNING:estimation_utils:  Extra var 'reg2_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg2_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg3_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg3_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg4_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg4_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg5_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg5_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg6_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg6_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg7_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg7_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg8_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'reg8_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'year_2015_indicator_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'year_2015_indicator_female' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'year_2017_indicator_male' could NOT be derived from couples data
+WARNING:estimation_utils:  Extra var 'year_2017_indicator_female' could NOT be derived from couples data
+2026-05-21 18:11:14,584 - INFO - Finished Start 3 post-estimation SE in 414.1 s  (returncode=0)
+2026-05-21 18:11:14,584 - INFO - Summary written to \\crc\users\hisham\Desktop\Nizam_Hisham\MNL\Results\JMP_pooled_P3a_orchestrator_summary.json
+2026-05-21 18:11:14,584 - INFO - Orchestration complete.

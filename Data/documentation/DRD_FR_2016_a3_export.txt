@@ -1,0 +1,581 @@
+=== Sheet: personal ===
+Unnamed: 0	Personal Information	Unnamed: 2	Unnamed: 3	Unnamed: 4	Unnamed: 5	Unnamed: 6	Unnamed: 7	Unnamed: 8	Unnamed: 9	Unnamed: 10	Unnamed: 11	Unnamed: 12	Unnamed: 13
+				Description				Descriptive statistics					
+	Variable	Label	Notes: derivation from original data, and comments	Description (name in original language in brackets)	Monetary Variable	Default Variable	Default Value	Applicable Observations	"Number  
+(weighted)"	"Mean  
+(weighted)"	"Std. Dev.
+(weighted)"	Min	Max
+*	idhh	IDENTIFIER : hh	idhh = db030	idhh contains the id number of the household.	0			26560	62548614.8	2918964	2378590	1483000	93800000
+*	idperson	IDENTIFIER : person	idperson = rb030	id number of the individual	0			26560	62548614.8	292000000	238000000	148000000	9380000000
+*	idfather	IDENTIFIER : father	idfather = rb220	idfather includes the id of the step/adoptive/foster father. If a person is living with his/her step-father, the personal id of his/her step-father will be provided as the personal id of the father.	0			6354	14264452.9	288000000	83600000	148000000	435000000
+*	idmother	IDENTIFIER : mother	idmother = rb230	idmother includes the id of the step/adoptive/foster mother. If a person is living with his/her step-mother, the personal id of his/her step-mother will be provided as the personal id of the mother.	0			7528	17042258.3	287000000	84200000	148000000	435000000
+*	idpartner	IDENTIFIER : partner	idpartner = rb240	idpartner contains the id number of the partner. It includes married people and partners in consensual union (with or without a legal basis).	0			13842	31026521.5	284000000	84500000	148000000	435000000
+*	idorighh	IDENTIFIER : orighh	idorighh = db030	id number of the household.	0			26560	62548614.8	2918964	2378590	1483000	93800000
+*	idorigperson	IDENTIFIER : origperson	idorigperson = rb030	id number of the individual	0			26560	62548614.8	288000000	156000000	16700000	9380000000
+*	dag	DEMOGRAPHIC : Age	dag = rx020	"information on the age of the individual at the end of the income reference period (end of previous calendar year)
+"	0			26560	62548614.8	40.74439	23.31568	0	80
+*	dgn	"DEMOGRAPHIC : Gender
+ 0: Female
+ 1: Male"	dgn = rb090	gender	0			12804	30329196.6	1	0	1	1
+*	dms	"DEMOGRAPHIC : Marital Status
+ 1: Single
+ 2: Married
+ 3: Separated
+ 4: Divorced
+ 5: Widowed"	dms = pb190	marital status of the individual	0			26560	62548614.8	1.817005	1.132809	1	5
+*	dcz	"DEMOGRAPHIC : Citizenship
+ 1: This country
+ 2: other EU
+ 3: Other"	"dcz = 1 if pb220a == ""LOC"" 
+dcz = 2 if pb220a == ""EU"" 
+dcz = 3 if pb220a == ""OTH"" "	information on citizenship	0			26560	62548614.8	1.08229	0.3704743	1	3
+*	ddi	"DEMOGRAPHIC : Disability
+ 0: Not disabled
+ 1: Disabled
+-1: not applicable (individual younger than 16)"	"ddi = 1 if pl031 == 8
+ddi = 0 if pl031 != 8 & pl031 != .
+ddi = -1  if pl031 == . & pb030 == ."	ddi contains basic information on whether a person is permanently disabled or/and unfit to work.	0			517	991943.796	1	0	1	1
+*	ddt	DEMOGRAPHIC : Date Of Interview	ddt = pb100 * 10000 + pb110	Date of the interview	0			26560	62548614.8	22029.95	373.1825	22016	32016
+*	dwt	DEMOGRAPHIC : Weight	dwt = db090	household cross-sectional weights	0			26560	62548614.8	3927.133	3823.409	273.3634	41902.59
+*	dsu00	DEMOGRAPHIC : Sample Units : Main/Basic	dsu00 = db070	order of selection of PSU	0			0	0	0	0	0	0
+*	dsu01	DEMOGRAPHIC : Sample Units : 01	dsu01 = db060	primary sampling units	0			26560	62548614.8	433.0725	261.7689	1	895
+*	dsu02	DEMOGRAPHIC : Sample Units : 02	dsu02 = db062	secondary sampling units	0			24867	55450100.3	335.2091	192.9761	1	637
+*	dncsy	DEMOGRAPHIC : Number of children born in survey year	Children born after income reference period are identified with condition: rb080 = rb010. Number of such children per parent is computed and assigned to mother/father/or household head.	household cross-sectional weights	0			85	284076.181	1.018343	0.1349838	1	2
+*	dct	"DEMOGRAPHIC : Country
+ 1: AT
+ 2: BE
+ 3: DK
+ 4: FI
+ 5: FR
+ 6: DE
+ 7: EL
+ 8: IE
+ 9: IT
+ 10: LU
+ 11: NL
+ 12: PT
+ 13: ES
+ 14: SE
+ 15: UK
+ 16: EE
+ 17: HU
+ 18: PL
+ 19: SI
+ 20: BG
+ 21: CZ
+ 22: CY
+ 23: LV
+ 24: LT
+ 25: MT
+ 26: RO
+ 27: SK
+ 28: HR"	dct=5	Country code	0			26560	62548614.8	5	0	5	5
+	dcu	"DEMOGRAPHIC : Consensual Union
+ 0: single 
+ 1: Married or couple without a legal basis"	derivated from pb200	consuensual Union legal basis or not 	0			14051	31603737	1	0	1	1
+*	dec	"DEMOGRAPHIC : Education - Current Status
+ 0: Not in Education
+ 1: Pre-primary
+ 2: Primary
+ 3: Lower Secondary
+ 4: Upper Secondary
+ 5: Post Secondary
+ 6: Tertiary"	"gen temp_pe020 = pe020
+recode temp_pe020 (10 = 1) (20 = 2) (30/39 = 3) (40/49 = 4) (50/80 = 5)
+gen dec = temp_pe020
+recode dec (0=1) (1=2) (2=3) (3=4) (4=5) (5=6)
+dec is replaced dec= 0 if pe010 == 2"	ISCED level currently attended	0			6886	15604021	2.736961	1.679781	1	6
+*	decde	"DEMOGRAPHIC : Education - Current Status (detailed)
+-1: Not in education
+0: Early childhood 
+10: Primary
+20: Lower secondary 
+30: Upper secondary (not further specified)
+34: Upper secondary general 
+35: Upper secondary vocational 
+40: Post-secondary non tertiary (not further specified)
+44: Post-secondary general
+45: Post-secondary vocational
+50: Short cycle tertiary
+60: Bachelor or equivalent
+70: Master or equivalent
+80: Doctorate or equivalent"	"gen decde = pe020
+replace decde = -1 if pe010 == 2"	ISCED level currently attended (detailed)	0			5008	10785662.8	25.97986	14.99285	10	50
+*	deh	"DEMOGRAPHIC : Education - Highest Status
+ 0: Not completed Primary
+ 1: Primary
+ 2: Lower Secondary
+ 3: Upper Secondary
+ 4: Post Secondary
+ 5: Tertiary"	"gen temp_pe040 = pe040
+recode temp_pe040 (100 = 1) (200 = 2) (300/399 = 3) (400/499 = 4) (500/800 = 5)
+gen deh = temp_pe040
+replace deh = 0 if (dec == 1 | dec == 2) & deh == .
+"	highest ISCED level attended	0			21962	51588998.4	3.072087	1.373818	1	5
+*	dehde	"DEMOGRAPHIC : Education - Highest Status (detailed)
+0: Less than primary education
+100: Primary 
+200: Lower secondary 
+300: Upper secondary (not further specified)
+340: General upper secondary (not further specified)
+342: General upper secondary partial level completion (no access to tertiary education)
+343: General upper secondary level completion (no access to tertiary education)
+344: General upper secondary level completion (with access to tertiary education)
+350: Vocational upper secondary (not further specified)
+352: Vocational upper secondary partial level completion (no access to tertiary education)
+353: Vocational upper secondary level completion (no access to tertiary education)
+354: Vocational upper secondary level completion (with access to tertiary education)
+400: Post-secondary non-tertiary  (not further specified)
+440: Post-secondary general 
+450: Post-secondary vocational 
+500: Short cycle tertiary
+600: Bachelor or equivalent
+700: Master or equivalent
+800: Doctorate or equivalent"	"gen dehde = pe040
+replace dehde = 0 if (dec == 1 | dec == 2) & dehde == ."	highest ISCED level attended (detailed)	0			21962	51588998.4	327.3812	138.7586	32	500
+*	dey	DEMOGRAPHIC : Education - Number of Years	"dey = 0 if deh == 0
+dey = 5 if deh == 1
+dey = 8 if deh == 2
+dey = 13 if deh == 3 | deh == 4
+dey = 18 if deh == 5"	number of years spent in education	0			21962	51588998.4	12.28969	4.531939	5	18
+*	dew	DEMOGRAPHIC : Education - When achieved Highest Status	dew = pe030	the year when the highest level of education was attained	0			21980	51644356.7	1988	21.06588	1930	2016
+*	drgn1	DEMOGRAPHIC : Region : NUTS Level 1	"drgn1 = 1 if drgn2==1  
+replace drgn1= 2 if drgn2==2 | drgn2==3 | drgn2==4 | drgn2==5| drgn2==6| drgn2==7 
+replace drgn1= 3 if drgn2==8 
+replace drgn1= 4 if drgn2==9 | drgn2==10 | drgn2==11 
+replace drgn1= 5 if drgn2==12 | drgn2==13 | drgn2==14 
+replace drgn1= 6 if drgn2==15 | drgn2==16 | drgn2==17 
+replace drgn1= 7 if drgn2==18 | drgn2==19 
+replace drgn1= 8 if drgn2==20 | drgn2==21| drgn2==22 
+replace drgn1= 9 if drgn2==23 | drgn2==24 | drgn2==25  | drgn2==26 
+replace drgn1= 10 if drgn2==27                                                          replace drgn1 = 1 if drgn1 == . "	region of residence of the household at the date of interview	0			26560	62548614.8	4.204019	2.370699	1	8
+	drgn2	DEMOGRAPHIC : Region : NUTS Level 2	"derivated from db040                                                                             drgn2 = 1 if db040 == ""FR10""       
+replace drgn2 = 2 if db040 == ""FR21"" 
+replace drgn2 = 3 if db040 == ""FR22""
+replace drgn2 = 4 if db040 == ""FR23""
+replace drgn2 = 5 if db040 == ""FR24""
+replace drgn2 = 6 if db040 == ""FR25""
+replace drgn2 = 7 if db040 == ""FR26""
+replace drgn2 = 8 if db040 == ""FR30""
+replace drgn2 = 9 if db040 == ""FR41""
+replace drgn2 = 10 if db040 == ""FR42""
+replace drgn2 = 11 if db040 == ""FR43""
+replace drgn2 = 12 if db040 == ""FR51""
+replace drgn2 = 13 if db040 == ""FR52""
+replace drgn2 = 14 if db040 == ""FR53""
+replace drgn2 = 15 if db040 == ""FR61""
+replace drgn2 = 16 if db040 == ""FR62""
+replace drgn2 = 17 if db040 == ""FR63""
+replace drgn2 = 18 if db040 == ""FR71""
+replace drgn2 = 19 if db040 == ""FR72""
+replace drgn2 = 20 if db040 == ""FR81""
+replace drgn2 = 21 if db040 == ""FR82""
+replace drgn2 = 22 if db040 == ""FR83""
+replace drgn2 = 23 if db040 == ""FR91""
+replace drgn2 = 24 if db040 == ""FR92""
+replace drgn2 = 25 if db040 == ""FR93""
+replace drgn2 = 26 if db040 == ""FR94""
+replace drgn2 = 27 if db040 == ""FRZZ""                                            replace drgn2 = 1 if drgn2 == . "	region of residence of the household at the date of interview Level 2	0			26560	62548614.8	10.4324	6.681511	1	22
+	drg01	DEMOGRAPHIC : Region : Housing Benefit	"derivated from db100, drgn1, drgn2                                                    drg01 = 2 if db100==1 | db100==2 | drgn2==22  
+drg01 = 1 if drgn1==1       
+drg01 = 3 if drg01 ==."	Region for Housing Benefits (zone pour le calcul des APL)	0			26560	62548614.8	2.142024	0.7036307	1	3
+*	drgur	"DEMOGRAPHIC : Region : Urban
+ 0: No urban region
+ 1: Urban region"	drgur = 1 if db100 == 1	urban region	0			10892	28553916.9	1	0	1	1
+*	drgmd	"DEMOGRAPHIC : Region : Middle density
+ 0: No middle density region
+ 1: Middle region"	drgmd = 1 if db100 == 2	middle density region	0			5196	12798181.8	1	0	1	1
+*	drgru	"DEMOGRAPHIC : Region : Rural
+ 0: No rural region
+ 1: Rural region"	drgru = 1 if db100 == 3	urban region	0			10472	21196516.1	1	0	1	1
+*	dmb	"DEMOGRAPHIC : Month of Birth
+2:  1st quarter of the year
+5:  2nd quarter of the year
+8:  3rd quarter of the year
+11: 4th quarter of the year
+"	"dmb =  2 if rb070 == 1     dmb =  5 if rb070 == 2    dmb =  8 if rb070 == 3    dmb = 11 if rb070 == 4
+"	month of birth (proxied by the quarter of the year)	0			26560	62548614.8	6.467712	3.325781	2	11
+
+=== Sheet: labour ===
+Unnamed: 0	Labour market information 	Unnamed: 2	Unnamed: 3	Unnamed: 4	Unnamed: 5	Unnamed: 6	Unnamed: 7	Unnamed: 8	Unnamed: 9	Unnamed: 10	Unnamed: 11	Unnamed: 12	Unnamed: 13
+				Description				Descriptive statistics					
+	Variable	Label	Notes: derivation from original data, and comments	Description (name in original language in brackets)	Monetary Variable	Default Variable	Default Value	Applicable Observations	"Number  
+(weighted)"	"Mean  
+(weighted)"	"Std. Dev.
+(weighted)"	Min	Max
+*	les	"LABOUR MARKET : Economic Status
+ 0 Pre-school
+ 1 Farmer
+ 2 Employer or self-employed
+ 3 Employee
+ 4 Pensioner
+ 5 Unemployed
+ 6 Student
+ 7 Inactive
+ 8 Sick or Disabled
+ 9 Other
+ 10 Family worker"	"les = 0 if dec == 1
+les = 4 if pl031 == 7 & les == .
+les = 5 if pl031 == 5 & les == .
+les = 6 if (pl031 == 6 | ((dec >=2 & dec <= 6)   & pl031 == .)) & les == .
+les = 7 if pl031 == 9 & les == .
+les = 7 if pl031 == 11 & les == .
+les = 8 if pl031 == 8 & les == .
+les = 9 if pl031 == 10 & les == .
+les = 2 if (pl040 == 1 | pl040 == 2 | pl040 == 4) & les == .
+les = 3 if pl040 == 3 & les == .
+"	basic labour information on the self-declared current activity status and current main job, including information on last main job for unemployed	0			24682	57730256.6	4.180504	1.570449	2	9
+*	lcs	"LABOUR MARKET : Civil Servant
+ 1 yes
+ 0 no"	"derivated from temp_occup=pl051                                                                                lcs=1 if temp_occup==1 | temp_occup==2 | temp_occup==3 | temp_occup==11 | temp_occup==23 | temp_occup==34 | temp_occup==54 
+replace lcs=0 if lcs==."	civil servant				1847	4324068.36	1	0	1	1
+*	lfs	LABOUR MARKET : Firm size	"lfs = 0 if (pl031 != 1 & pl031 != 2 & pl031 != 3 & pl031 != 4 )
+lfs = 0 if pl130_f == -2
+lfs = 0 if pb030 == .
+lfs = pl130 if pl130 <= 10
+lfs = 15 if pl130 == 11
+lfs = 35 if pl130 == 12
+lfs = 50 if pl130 == 13
+lfs = 5 if pl130 == 14
+lfs = 15 if pl130 == 15"	number of persons working at the local unit	0			12477	30493969.8	22.47321	20.65019	1	50
+*	lindi	"LABOUR MARKET : Industry (NACE)
+ 1 Agriculture
+ 2 Industry
+ 3 Services
+ 0 Not  appl : Detailed Industry
+ 1: Agriculture and Fishing
+ 2: Mining, Manifact. and Utilities
+ 3: Construction
+ 4: Wholesale and retail
+ 5: Hotels and restaurants
+ 6: Transport and communication
+ 7: Financial intermediation
+ 8: Real estate and business
+ 9: Public administ. and defence
+ 10: Education
+ 11: Health and social work
+ 12: Other"	"lindi = 1 if pl111 == ""a"" 
+lindi = 2 if pl111 == ""b - e"" 
+lindi = 3 if pl111 == ""f"" 
+lindi = 4 if pl111 == ""g"" 
+lindi = 5 if pl111 == ""i"" 
+lindi = 6 if pl111 == ""h"" | pl111 == ""j"" 
+lindi = 7 if pl111 == ""k"" 
+lindi = 8 if pl111 == ""l - n"" 
+lindi = 9 if pl111 == ""o"" 
+lindi = 10 if pl111 == ""p"" 
+lindi = 11 if pl111 == ""q"" 
+lindi = 12 if pl111 == ""r - u"" 
+lindi = 0 if pl111_f == -2 & lindi == .
+lindi = 0 if py010 == 0 & py050 == 0 & lindi == .
+"	economic activity of the main job for respondents who are currently at work	0			12477	30493969.8	6.251911	3.183676	1	12
+*	liwmy	LABOUR MARKET : In work : Months per year	liwmy = rowtotal(pl073 pl074 pl075 pl076)	number of months spent in full-time work and/or in part-time work	0			11067	27138310.2	11.19609	2.307694	1	12
+*	liwmy_f	LABOUR MARKET : In work : Months per year - flag	"liwmy_silc = pl073 + pl074 + pl075 + pl076 if pl073_f == 1 & pl074_f == 1 & pl075_f == 1 & pl076_f == 1
+
+liwmy_f = .
+replace liwmy_f = 1 if liwmy == liwmy_silc & liwmy != . & liwmy_silc != . 
+replace liwmy_f = 2 if liwmy != liwmy_silc & liwmy != . & liwmy_silc != .   
+replace liwmy_f = 3 if liwmy == 0 & liwmy_silc == .       
+replace liwmy_f = 4 if liwmy > 0 & liwmy != . & liwmy_silc == .     "	flag for number of months spent in full-time work and/or in part-time work	0			26560	62548614.8	1.412831	0.8094796	1	3
+*	liwftmy	LABOUR MARKET : In work :  Full time: Months per year	liwmy = rowtotal(pl073 pl075)	number of months spent in full-time work	0			9196	22826430.9	11.10817	2.417432	1	12
+*	liwptmy	LABOUR MARKET : In work :  Part time: Months per year	liwmy = rowtotal(pl074 pl076)	number of months spent in part-time work	0			2189	5148453.57	9.766617	3.560007	1	12
+*	lhw	LABOUR MARKET : Hours worked per week	lhw = rowtotal(pl060 pl100)	number of hours usually worked per week in main job and in second, third... Jobs	0			12683	31054948.6	38.24145	11.38078	1	130
+*	lhw_f	LABOUR MARKET : Hours worked per week: flag	"lhw_silc = pl060 if pl060_f == 1
+replace lhw_silc = pl060 + pl100 if pl060_f == 1 & pl100_f == 1
+
+lhw_f = .
+replace lhw_f = 1 if lhw == lhw_silc & lhw != . & lhw_silc != . 
+replace lhw_f = 2 if lhw != lhw_silc & lhw != . & lhw_silc != .   
+replace lhw_f = 3 if lhw == 0 & lhw_silc == .       
+replace lhw_f = 4 if lhw > 0 & lhw != . & lhw_silc == .    "	flag for number of hours usually worked per week in main job and in second, third... Jobs				26560	62548614.8	2.296205	1.096129	1	4
+*	liwwh	LABOUR MARKET : In work : Work history (length of time in months)	liwwh = pl200 * 12	number of years spent in paid work	0			19689	47088244.2	290.5782	173.738	1	780
+*	liwwh_f	LABOUR MARKET : In work : Work history (length of time in months): flag	"liwwh_silc = pl200 * 12 if pl200_f == 1
+
+liwwh_f = .
+replace liwwh_f = 1 if liwwh == liwwh_silc & liwwh != . & liwwh_silc != . 
+replace liwwh_f = 2 if liwwh != liwwh_silc & liwwh != . & liwwh_silc != .   
+replace liwwh_f = 3 if liwwh == 0 & liwwh_silc == .       
+replace liwwh_f = 4 if liwwh > 0 & liwwh != . & liwwh_silc == . "	flag for number of years spent in paid work				26560	62548614.8	1.668091	0.9745423	1	4
+*	loc	"LABOUR MARKET : Occupation (ISCO 1-Digit)
+ 0 Armed forces
+ 1 Senior officials and managers
+ 2 Professionals
+ 3 Technicians and associate professionals
+ 4 Clerks
+ 5 Service and sales workers
+ 6 Skilled agricultural
+ 7 Craft and trades workers
+ 8 Plant and machine operators
+ 9 Elementary  occupations
+ -1 Not Applicable"	"loc  = 0 if pl051 == 1 | pl051 == 2 | pl051 == 3
+loc = 1 if pl051 == 11 | pl051 == 12 | pl051 == 13 | pl051 == 14 
+loc = 2 if pl051 == 21 | pl051 == 22 | pl051 == 23 | pl051 == 24 | pl051 == 25 | pl051 == 26
+loc = 3 if pl051 == 31 | pl051 == 32 | pl051 == 33 | pl051 == 34 | pl051 == 35
+loc = 4 if pl051 == 41 | pl051 == 42 | pl051 == 43 | pl051 == 44
+loc = 5 if pl051 == 51 | pl051 == 52 | pl051 == 53 | pl051 == 54
+loc = 6 if pl051 == 61 | pl051 == 62 | pl051 == 63
+loc = 7 if pl051 == 71 | pl051 == 72 | pl051 == 73 | pl051 == 74 | pl051 == 75
+loc = 8 if pl051 == 81 | pl051 == 82 | pl051 == 83 
+loc = 9 if pl051 == 91 | pl051 == 92 | pl051 == 93 | pl051 == 94 | pl051 == 95 | pl051 == 96
+loc = -1 if py010 == 0 & py050 == 0 & loc == .
+loc = -1 if pb030 == . & loc  == .
+"	occupation	0			19196	45888435.5	4.864886	2.45811	1	9
+*	lpemy	LABOUR MARKET : Pensioner : Months per year	lpemy = pl085	number of months spent in retirement	0			6254	14398708.7	11.75762	1.337071	1	12
+*	lse	"LABOUR MARKET : Self Employed
+ 1 with employees
+ 2 without employees
+ 3 family worker
+ 0 not appl"	"lse = 1 if pl040 == 1
+lse = 2 if pl040 == 2
+lse = 3 if pl040 == 4
+lse = 0 if lse == . & pl040_f != .
+lse = 0 if lse == . & pb030 == ."	status of employment in main job	0			2263	5611044.75	2.044	0.2894815	1	3
+*	lunmy	LABOUR MARKET : Unemployed : Months per year	lunmy = pl080	number of months spent in unemployment	0			1822	4791792.31	8.056593	3.944415	1	12
+*	lunmy_f	LABOUR MARKET : Unemployed : Months per year: flag	"lunmy_silc = pl080 if pl080_f == 1
+
+lunmy_f = .
+replace lunmy_f = 1 if lunmy == lunmy_silc & lunmy != . & lunmy_silc != . 
+replace lunmy_f = 2 if lunmy != lunmy_silc & lunmy != . & lunmy_silc != .   
+replace lunmy_f = 3 if lunmy == 0 & lunmy_silc == .       
+replace lunmy_f = 4 if lunmy > 0 & lunmy != . & lunmy_silc == .  "	flag for number of months spent in unemployment				26560	62548614.8	1.412831	0.8094796	1	3
+*	lowas	LABOUR MARKET : Out of work : Actively Seeking	"lowas = 1 if pl020 == 1
+lowas = 0 if pl020 == 2
+lowas = 0 if pl020_f == -2
+lowas = 0 if pb030 == ."	currently not working and actively looking for a job in the last 4 weeks 	0			1041	2574986.32	1	0	1	1
+
+=== Sheet: income ===
+Unnamed: 0	Income, Benefits and Taxes	Unnamed: 2	Unnamed: 3	Unnamed: 4	Unnamed: 5	Unnamed: 6	Unnamed: 7	Unnamed: 8	Unnamed: 9	Unnamed: 10	Unnamed: 11	Unnamed: 12	Unnamed: 13
+				Description				Descriptive statistics					
+	Variable	Label	Notes: derivation from original data, and comments	Description (name in original language in brackets)	Monetary Variable	Default Variable	Default Value	Applicable Observations	"Number  
+(weighted)"	"Mean  
+(weighted)"	"Std. Dev.
+(weighted)"	Min	Max
+*	yem	INCOME : Employment	yem = py010g / 12 * hx010	gross employee cash or near cash income	1		0	11870	28955249.5	2206.556	2028.969	0.8333333	67845
+	yempv	INCOME : Employment income previous year	imputed by inverting the unemployment benefit function	imputed by inverting the unemployment benefit function	1		0	1610	4124055.61	1909.869	1576.699	849.3031	31916.38
+*	yem_f	INCOME : Employment: flag	"yem_silc = round(py010g / 12 * hx010)     // round in order to avoid small rounding errors
+replace yem = round(yem)         // round in order to avoid small rounding errors
+
+yem_f = .
+replace yem_f = 1 if yem == yem_silc & yem != . & yem_silc != . 
+replace yem_f = 2 if yem != yem_silc & yem != . & yem_silc != .   
+replace yem_f = 3 if yem == 0 & yem_silc == .       
+replace yem_f = 4 if yem > 0 & yem != . & yem_silc == .  "	flag for gross employee cash or near cash income	0		0	26560	62548614.8	1.376532	0.7818636	1	3
+*	kfb	IN KIND : Fringe benefit	kfb = py020g / 12 * hx010	non-cash employee income	1		0	3536	3536	3536	3536	3536	3536
+*	kfbcc	IN KIND : Fringe benefit: company car	"kfbcc = py021g / 12 * hx010 
+"	company car	1		0	0	0	0	0	0	0
+*	ypp	INCOME : Private Pension	ypp = py080g / 12 * hx010	income received from pensions from individual private plans 	1		0	16	35070.6475	965.5227	1257.595	31.66667	5564.167
+*	yse	INCOME : Self Employment	yse = py050g / 12 * hx010	self-employment income 	1		0	1187	3068523.93	2044.538	2565.699	5	39954.17
+*	yse_f	INCOME : Self Employment: flag	"yse_silc = round(py050g / 12 * hx010)     // round in order to avoid small rounding errors
+replace yse = round(yse)         // round in order to avoid small rounding errors
+
+yse_f = .
+replace yse_f = 1 if yse == yse_silc & yse != . & yse_silc != . 
+replace yse_f = 2 if yse != yse_silc & yse != . & yse_silc != .   
+replace yse_f = 3 if yse == 0 & yse_silc == .       
+replace yse_f = 4 if yse > 0 & yse != . & yse_silc == . "	flag for self-employment income 	0		0	26560	62548614.8	1.376532	0.7818636	1	3
+*	bed	BENEFIT/PENSION : Education	bed = py140g / 12 * hx010	education-related allowances 	1		0	357	847521.67	110.0444	95.63879	1.583333	500
+*	bun	BENEFIT/PENSION : Unemployment	bun = py090g / 12 * hx010	unemployment benefits 	1		0	2038	5222509.35	515.3553	516.0474	0.8333333	5250.833
+*	bhl	BENEFIT/PENSION : Health	bhl = py120g / 12 * hx010	sickness benefits 	1		0	213	531983.73	263.2989	327.7301	2.75	2200
+*	pdi	BENEFIT/PENSION : Disability	pdi = py130g / 12 * hx010	disability benefits 	1		0	479	1111234.95	564.1266	389.6656	0.8333333	3700
+*	poa	BENEFIT/PENSION : Old Age	poa = py100g / 12 * hx010	old-age benefits 	1		0	6933	15733534.4	1658.5	1131.868	1.666667	22684.17
+*	psu	BENEFIT/PENSION : Survivors	psu = py110g / 12 * hx010	survivor benefits 	1		0	124	301141.926	886.1491	667.9115	23.33333	4740
+*	kivho	IN KIND : Imputed value: Housing	"kivho = (hy030g / 12 * hx010)  and assigned to household members responsible for the accommodation
+"	imputed housing rent	1		0	14292	32641553.3	324.3755	249.5951	0.5	5327
+*	yiy	INCOME : Investment	yiy = (hy090g / 12 * hx010) and shared equally between the oldest household member and his/her partner	income from interest, dividends, and profit from capital investments in unincorporated business 	1		0	15440	36521546	226.8979	3035.028	0.4166667	450445
+*	ypr	INCOME : Property	ypr = yprrt	income from rent	1		0	2996	6827615.52	463.5545	1000.189	0.4166667	30866.67
+*	ypt	INCOME : Private Transfers	ypt = (hy080g / 12 * hx010) * (int_order == 1)	regular inter-household cash transfers received 	1		0	808	2089372.34	323.9056	289.3325	0.8333333	2941.667
+*	yptmp	INCOME : Private Transfers : Maintenance Payments	ypt = (hy081g / 12 * hx010) * (int_order == 1)	maintenance payments received 	1		0	478	1151500.58	326.7085	258.5461	8.333333	2941.667
+*	bfa	BENEFIT/PENSION : Family	bfa = (hy050g / 12 * hx010)* (int_order == 1)	family/children related allowances 	1		0	2992	7057429.78	306.6424	264.4762	4.083333	1928.583
+*	bho	BENEFIT/PENSION : Housing	bho = (hy070g / 12 * hx010) / int_tothouse * (int_house == 1)	"housing allowances 
+"	1		0	3876	9799128.07	139.2385	98.35365	0.6666667	674.25
+*	bsa	BENEFIT/PENSION : Social Assistance	bsa = (hy060g / 12 * hx010) * (int_order == 1)	social exclusion/assistance benefits	1		0	1127	2720794.33	310.9471	322.5752	0.6666667	7058.333
+*	twl	TAX : Wealth tax	twl = (hy120g / 12 * hx010) * (int_order == 1)	regular taxes on wealth 	1		0	107	107	107	107	107	107
+*	yot	INCOME : Other	yot = (hy110g / 12 * hx010) / totchild * (child == 1) if totchild > 0	income received by people aged under 16 	1		0	398	800955.352	20.59706	41.49806	0.625	600
+*	yds	INCOME : Disposable	yds = (hy020 * hy025) / 12 * hx010 if idhh != idhh[_n-1]	disposable income	1		0	11457	28264539.1	3274.444	3774.316	-5678.333	372926.7
+*	ydses_o	INCOME : Disposable: equivalized: original SILC	ydses_o = hx090 / 12 * hx010 	equivalized disposable income	1		0	26555	62536636.8	2106.884	2373.18	-2839.167	372926.7
+*	tad	TAX : Repayments/Receipts	tad = hy145n / 12 * hx010 if idhh != idhh[_n-1]	repayments/receipts for tax adjustment	1		0	10198	10198	10198	10198	10198	10198
+*	yemmy	INCOME : Employment : Months per Year	"replace yemmy = 0
+replace yemmy = . if yem!=0
+egen temp_yemmy = rowtotal(pl073 pl074)       
+replace yemmy = min(12, temp_yemmy) if yemmy == . & temp_yemmy > 0 
+replace yemmy = pl2111 + pl2112     if yemmy == . & pl2111 + pl2112 > 0"	number of months spent in full-time and part-time employment	0		0	11870	28955249.5	10.17143	3.563494	1	12
+*	kfbmy	IN KIND :  Month per Year	"kfbmy = 0 
+replace kfbmy = . if kfb != 0 
+replace kfbmy = yemmy if kfbmy == . & yemmy > 0"	number of months while receiving fringe benefits 	0		0	3536	3536	3536	3536	3536	3536
+*	ysemy	INCOME : Self Employment : Months per Year	"replace ysemy = 0 
+replace ysemy = . if yse != 0 
+egen temp_ysemy = rowtotal(pl075 pl076)       
+replace ysemy = min(12, temp_ysemy)    if ysemy == . & temp_ysemy > 0
+replace ysemy = pl2113 + pl2114     if ysemy == . & pl2113 + pl2114 > 0"	number of months spent in full-time and part-time self-employment	0		0	1187	3068523.93	10.25586	3.63415	1	12
+*	bunmy	BENEFIT/PENSION : Unemployment : Months per year	"bunmy = 0 
+replace bunmy = . if bun != 0 
+replace bunmy = min(12, pl080) if bunmy == . & pl080 > 0 & bun!=0
+replace bunmy = pl2105 if bunmy == . & pl2105 > 0 & bun!=0"	number of months spent in unemployment	0		0	2038	5222509.35	6.929805	4.186182	1	12
+*	pdimy	BENEFIT/PENSION : Disability : Months per year	"pdimy = 0 
+replace pdimy = . if pdi != 0 
+replace pdimy = min(12, pl085)  if pdimy == . & (yem == 0 | yem == .) & pl085 > 0 & pl085 != . & pdi!=0
+replace pdimy = min(12, pl090)  if pdimy == . & (yem == 0 | yem == .) & pl090 > 0 & pl090 != . & pdi!=0
+replace pdimy = pl2106 + pl2108 if pdimy == . & pl2106 + pl2108 > 0 & pdi!=0"	number of months spent in retirement	0		0	479	1111234.95	10.30997	3.105477	1	12
+*	poamy	BENEFIT/PENSION : Old Age : Months per year	"poamy = 0
+replace poamy = . if poa != 0 
+replace poamy = min(12, pl085)  if poamy == . & (yem == 0 | yem == .) & pl085 > 0 & pl085 != . & poa!=0
+replace poamy = min(12, pl090)  if poamy == . & (yem == 0 | yem == .) & pl090 > 0 & pl090 != . & poa!=0
+replace poamy = pl2106 + pl2108 if poamy == . & pl2106 + pl2108 > 0 & poa!=0"	number of months spent in retirement	0		0	6933	15733534.4	11.48376	1.973571	1	12
+*	psumy	BENEFIT/PENSION : Survivors : Months per year	"psumy = . if psu != 0 
+replace psumy = min(12, pl085)  if psumy == . & (yem == 0 | yem == .) & pl085 > 0 & pl085 != . & psu!=0
+replace psumy = min(12, pl090)  if psumy == . & (yem == 0 | yem == .) & pl090 > 0 & pl090 != . & psu!=0
+replace psumy = pl2106 + pl2108  if psumy == . & pl2106 + pl2108 > 0 & psu!=0"	number of months spent in retirement	0		0	127	305562.23	10.63141	2.790422	1	12
+*	tscer	TAX: SIC: Employer	tscer = py030g / 12 * hx010	employer social insurance contributions	1		0	9120	9120	9120	9120	9120	9120
+*	tis	TAX: Income Tax and SIC	tis = (hy140g) / 12 if idhh != idhh[_n-1]	tax on income and social contributions	1		0	11405	11405	11405	11405	11405	11405
+*	yivwg	INCOME : Imputed value : Wage/Salary	Imputed in do file 13b_Wage	Hourly predicted wage (all individuals aged 18-65).	1		0	26541	62499287.2	14.44144	10.44044	0.0224359	588.4615
+	yem00	INCOME : Employment: Main	Imputed based on yem, number of hours worked and number of months in employment	gross employee cash or near cash income	1		0	11870	28955249.5	1863.621	1441.88	0.8333333	57269.17
+	yemxp	INCOME : Employment: Extra pay	yem-yem00	wages received for overtime pay' 	1		0	5076	12545304.3	791.5112	1228.214	0.3333333	44403.98
+	bch00	BENEFIT/PENSION : Child : Main/Basic	The benefit has been imputed from bfa, replicating the eligibility criteria	monthly Family Allowance (Allocation Familiale AF)	1		0	2016	4504973.07	198.688	131.3806	8.166667	1256
+	bched	BENEFIT/PENSION : Child : Education	The benefit has been imputed from bfa, replicating the eligibility criteria	yearly Mean Tested education related family benefit (Allocation de rentrée scolaire ARS)	1		0	1133	2461191.31	53.3436	25.74968	1.143333	190.0383
+	bchlg	BENEFIT/PENSION : Child : Large Family	The benefit has been imputed from bfa, replicating the eligibility criteria	monthly Family Complement (Complément Familial CF)	1		0	401	773705.647	161.2919	29.34468	1.583333	169.19
+	bchyc	BENEFIT/PENSION : Child : Young Children	The benefit has been imputed from bfa, replicating the eligibility criteria	monthly Mean Tested Young Children Allowance and Baby Bonus (Prestation d'accueil des jeunes enfants PAJE + Prime de naissance)	1		0	596	1647787.05	173.666	43.96746	15.58333	262.8492
+	bchcc	BENEFIT/PENSION : Child : Young Children	The benefit has been imputed from bfa, replicating the eligibility criteria	parental benefit (Complement de libre choix d'activite -CLCA)	1		0	32	75600.0595	118.2377	74.34674	33.65	425.15
+	bchot	BENEFIT/PENSION : Child : Other	The variable is imputed and is equal to the remining benefits after subtracting bch00,bchlg,bched,bchyc,bchcc from bfa	monthly Other Family Benefit (autres prestations familiales)	1		0	1960	4705498.31	152.3855	164.8539	1.008333	1488.583
+	bdi	BENEFIT/PENSION : Disability	derivated from pdi	monthly Disabled Benefit (Allocation de l'adulte Handicapé AAH)	1		0	324	735144.975	504.7975	299.0097	1.666667	943.3333
+	bsa00	BENEFIT/PENSION : Social Assistance : Main/Basic	The benefit has been imputed from bsa, replicating the eligibility criteria	monthly mean-tested minimum income (Revenu minimum d'insertion RMI)	1		0	979	2353688.37	279.8056	234.266	0.6666667	1965.083
+	bsaoa	BENEFIT/PENSION : Social Assistance : Old-Age	The benefit has been imputed from poa, replicating the eligibility criteria	monthly amount from means-tested old-age benefit (Allocation de solidarité aux personnes agées ASPA)	1		0	102	235336.649	976.1101	222.7389	187.5	1269.167
+	bsuwd	BENEFIT/PENSION : Survivors : Widow	imputated with the French Sytem rules	monthly Survivor minimum pensions (allocation veuvage)	1		0	4	5861.0796	307.9126	201.2911	142.5	602.12
+	bunct	BENEFIT/PENSION : Unemployment : Contributory	derivated from bun	monthly amount from contributory unemployment benefit (Allocation de retour à l’emploi ARE)	1		0	1610	4124055.61	612.453	536.6402	40.83333	5250.833
+	bunmt	BENEFIT/PENSION : Unemployment : Means-Tested	derivated from bun	monthly amount from means-tested unemployment benefit (Allocation de solidarité spécifique ASS)	1		0	428	1098453.73	150.8096	129.2931	0.8333333	485
+	pdi00	BENEFIT/PENSION : Disability : Main/Basic	dissaggregated from pdi;it is max(0, pdi-bdi)	monthly amount from invalidity pension	1		0	155	376089.978	680.0973	504.7704	0.8333333	3700
+	poa00	BENEFIT/PENSION : Other Old Age	poa00=max(poa-bsaoa, 0)                                                                               replace poa=poa00+bsaoa	calculate other old-age pensions as differential 	1		0	6831	15498197.7	1668.862	1136.951	1.666667	22684.17
+	bhoot	BENEFIT/PENSION : Housing	bhoot=bho-bhotn	dissaggregation of bho	1		0	824	1819348.04	86.43738	64.51183	1.375	545.3333
+	bhotn	BENEFIT/PENSION : Housing	"bhotn=bho if (hh060>0 & hh060!=.) 
+replace bhotn=0 if bhotn==."	dissaggregation of bho	1		0	3052	7979780.04	151.2769	100.7518	0.6666667	674.25
+	bsaot	MEAN-TESTED MINIMUM INCOME (RSA): store remaining exclusion benefits	bsaot=max(0, bsa-bsa00)	RSA store remaining exclusion benefits	1		0	293	705728.109	265.609	449.036	0.2066667	6976.34
+
+=== Sheet: sumstats ===
+Unnamed: 0	Unnamed: 1	Unnamed: 2	Unnamed: 3	Unnamed: 4	Unnamed: 5	Unnamed: 6
+Variable	Obs	Weight	Mean	Std. Dev.	Min	Max
+						
+Results below are just for ilustration purposes, please delete them before pasting new ones.						
+aca	26560	62548614.8	1.177988	0.5457745	1	3
+aco	26560	62548614.8	1.227027	0.6132186	1	3
+afc	15440	36521546	195883.1	2620168	359.7122	389000000
+amrrm	26560	62548614.8	4.249068	1.265798	1	6
+amrtn	26560	62548614.8	2.256703	1.18629	1	6
+ate	26560	62548614.8	1.002067	0.0623541	1	3
+bch00	2016	4504973.07	198.688	131.3806	8.166667	1256
+bchcc	32	75600.0595	118.2377	74.34674	33.65	425.15
+bched	1133	2461191.31	53.3436	25.74968	1.143333	190.0383
+bchlg	401	773705.647	161.2919	29.34468	1.583333	169.19
+bchot	1960	4705498.31	152.3855	164.8539	1.008333	1488.583
+bchyc	596	1647787.05	173.666	43.96746	15.58333	262.8492
+bdi	324	735144.975	504.7975	299.0097	1.666667	943.3333
+bed	357	847521.67	110.0444	95.63879	1.583333	500
+bfa	2992	7057429.78	306.6424	264.4762	4.083333	1928.583
+bhl	213	531983.73	263.2989	327.7301	2.75	2200
+bho	3876	9799128.07	139.2385	98.35365	0.6666667	674.25
+bhoot	824	1819348.04	86.43738	64.51183	1.375	545.3333
+bhotn	3052	7979780.04	151.2769	100.7518	0.6666667	674.25
+bsa	1127	2720794.33	310.9471	322.5752	0.6666667	7058.333
+bsa00	979	2353688.37	279.8056	234.266	0.6666667	1965.083
+bsaoa	102	235336.649	976.1101	222.7389	187.5	1269.167
+bsaot	293	705728.109	265.609	449.036	0.2066667	6976.34
+bsuwd	4	5861.0796	307.9126	201.2911	142.5	602.12
+bun	2038	5222509.35	515.3553	516.0474	0.8333333	5250.833
+bunct	1610	4124055.61	612.453	536.6402	40.83333	5250.833
+bunmt	428	1098453.73	150.8096	129.2931	0.8333333	485
+bunmy	2038	5222509.35	6.929805	4.186182	1	12
+dag	26560	62548614.8	40.74439	23.31568	0	80
+dct	26560	62548614.8	5	0	5	5
+dcu	14051	31603737	1	0	1	1
+dcz	26560	62548614.8	1.08229	0.3704743	1	3
+ddi	517	991943.796	1	0	1	1
+ddt	26560	62548614.8	22029.95	373.1825	22016	32016
+dec	6886	15604021	2.736961	1.679781	1	6
+decde	5008	10785662.8	25.97986	14.99285	10	50
+deh	21962	51588998.4	3.072087	1.373818	1	5
+dehde	21962	51588998.4	327.3812	138.7586	32	500
+dew	21980	51644356.7	1988	21.06588	1930	2016
+dey	21962	51588998.4	12.28969	4.531939	5	18
+dgn	12804	30329196.6	1	0	1	1
+dmb	26560	62548614.8	6.467712	3.325781	2	11
+dms	26560	62548614.8	1.817005	1.132809	1	5
+dncsy	85	284076.181	1.018343	0.1349838	1	2
+drg01	26560	62548614.8	2.142024	0.7036307	1	3
+drgmd	5196	12798181.8	1	0	1	1
+drgn1	26560	62548614.8	4.204019	2.370699	1	8
+drgn2	26560	62548614.8	10.4324	6.681511	1	22
+drgru	10472	21196516.1	1	0	1	1
+drgur	10892	28553916.9	1	0	1	1
+dsu00	0	0				
+dsu01	26560	62548614.8	433.0725	261.7689	1	895
+dsu02	24867	55450100.3	335.2091	192.9761	1	637
+dwt	26560	62548614.8	3927.133	3823.409	273.3634	41902.59
+e20ps_o	4720	11438922.1	77.39836	42.18194	1	111
+e20pslw_o	8897	20459286.2	1.810272	0.3921076	1	2
+e20psmd_o	1167	2773404.37	1	0	1	1
+e20pspo_o	3564	8537380.85	1	0	1	1
+idfather	6354	14264452.9	288000000	83600000	148000000	435000000
+idhh	26560	62548614.8	2918964	2378590	1483000	93800000
+idmother	7528	17042258.3	287000000	84200000	148000000	435000000
+idorighh	26560	62548614.8	2918964	2378590	1483000	93800000
+idorigperson	26560	62548614.8	288000000	156000000	16700000	9380000000
+idpartner	13842	31026521.5	284000000	84500000	148000000	435000000
+idperson	26560	62548614.8	292000000	238000000	148000000	9380000000
+lcs	1847	4324068.36	1	0	1	1
+les	24682	57730256.6	4.180504	1.570449	2	9
+lfs	12477	30493969.8	22.47321	20.65019	1	50
+lhw	12683	31054948.6	38.24145	11.38078	1	130
+lhw_f	26560	62548614.8	2.296205	1.096129	1	4
+lindi	12477	30493969.8	6.251911	3.183676	1	12
+liwftmy	9196	22826430.9	11.10817	2.417432	1	12
+liwmy	11067	27138310.2	11.19609	2.307694	1	12
+liwmy_f	26560	62548614.8	1.412831	0.8094796	1	3
+liwptmy	2189	5148453.57	9.766617	3.560007	1	12
+liwwh	19689	47088244.2	290.5782	173.738	1	780
+liwwh_f	26560	62548614.8	1.668091	0.9745423	1	4
+loc	19196	45888435.5	4.864886	2.45811	1	9
+lowas	1041	2574986.32	1	0	1	1
+lpemy	6254	14398708.7	11.75762	1.337071	1	12
+lse	2263	5611044.75	2.044	0.2894815	1	3
+lunmy	1822	4791792.31	8.056593	3.944415	1	12
+lunmy_f	26560	62548614.8	1.412831	0.8094796	1	3
+pdi	479	1111234.95	564.1266	389.6656	0.8333333	3700
+pdi00	155	376089.978	680.0973	504.7704	0.8333333	3700
+pdimy	479	1111234.95	10.30997	3.105477	1	12
+poa	6933	15733534.4	1658.5	1131.868	1.666667	22684.17
+poa00	6831	15498197.7	1668.862	1136.951	1.666667	22684.17
+poamy	6933	15733534.4	11.48376	1.973571	1	12
+psu	124	301141.926	886.1491	667.9115	23.33333	4740
+psumy	127	305562.23	10.63141	2.790422	1	12
+xhc	18250	43367013.7	309.6263	219.6599	1.67	3548.67
+xhcmomi	4278	10129295.8	136.4949	125.7081	0.0416667	3430.417
+xhcot	18213	43229687.3	164.15	96.84198	0.67	3206.25
+xhcrt	5042	13737918.5	360.2304	195.7854	4	2300
+xmp	728	1776408.45	386.8036	393.8104	8.333333	3335.833
+xpp	1350	3228627.69	133.5697	263.3908	0.0833333	5000
+yds	11457	28264539.1	3274.444	3774.316	-5678.333	372926.7
+ydses_o	26555	62536636.8	2106.884	2373.18	-2839.167	372926.7
+yem	11870	28955249.5	2206.556	2028.969	0.8333333	67845
+yem00	11870	28955249.5	1863.621	1441.88	0.8333333	57269.17
+yem_f	26560	62548614.8	1.376532	0.7818636	1	3
+yem_hour	11870	28955249.5	59.40176	41.02004	0.0571429	1428.01
+yemmy	11870	28955249.5	10.17143	3.563494	1	12
+yempv	1610	4124055.61	1909.869	1576.699	849.3031	31916.38
+yemxp	5076	12545304.3	791.5112	1228.214	0.3333333	44403.98
+yivwg	26541	62499287.2	14.44144	10.44044	0.0224359	588.4615
+yiy	15440	36521546	226.8979	3035.028	0.4166667	450445
+yot	398	800955.352	20.59706	41.49806	0.625	600
+ypp	16	35070.6475	965.5227	1257.595	31.66667	5564.167
+ypr	2996	6827615.52	463.5545	1000.189	0.4166667	30866.67
+ypt	808	2089372.34	323.9056	289.3325	0.8333333	2941.667
+yptmp	478	1151500.58	326.7085	258.5461	8.333333	2941.667
+yse	1187	3068523.93	2044.538	2565.699	5	39954.17
+yse_f	26560	62548614.8	1.376532	0.7818636	1	3
+ysemy	1187	3068523.93	10.25586	3.63415	1	12
+twl	107	310448.128	697.8838	851.4565	0.5833333	5833.333
+tad	10198	25057439.1	253.9315	688.135	-1624.167	36733.33
+tscer	9120	22316868.4	1025.918	967.7883	0.25	22641.58
+tis	11405	28160808	826.1108	1325.876	-1065.25	80493.33
+kfb	3536	8755032.2	89.86235	189.3407	0.3333333	11000
+kfbcc	0	0				
+kfbmy	3536	8755032.2	11.49054	1.817002	1	12
+kivho	14292	32641553.3	324.3755	249.5951	0.5	5327
+

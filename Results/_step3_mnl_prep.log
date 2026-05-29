@@ -1,0 +1,109 @@
+Loaded prior parameters from drawsmeta: Z:/hisham/EUROMOD-STORAGE/Data/processed/fr/2016/singles_RURO_ready_RURO_draws__drawsmeta.json
+  h_min=5.0, h_max=70.0
+  w_min=2.0, w_max=170.0
+  pi0_m=0.1, pi0_f=0.1
+  wage_spec=vw
+Loaded EUROMOD outputs: 1,087,300 rows
+Loaded GSUR lookup: 2,160 rows
+Loaded singles draws: 168,319 rows
+EUROMOD merge: Using ils_dispy_em (EUROMOD counterfactual output) as canonical ils_dispy (missing rate: 0.0%)
+Decider restriction: kept 167600/168319 rows using hh_IsHead/hh_IsPartner.
+Singles estimation sample after decider restriction: 167,600 rows
+GSUR merge (singles): filled 167400 rows using fallback age_group=Y20-64
+Singles normalization: c_scale=7590.29, l_scale=10.00
+Prior (singles): using R reference layered proposal density log_q_E + working*(log_q_H + log_q_W + log_q_Occ).
+Singles MNL dataset ready: 167,600 rows, 962 columns
+Loaded couples draws: 518,724 rows
+EUROMOD merge: Using ils_dispy_em (EUROMOD counterfactual output) as canonical ils_dispy (missing rate: 0.0%)
+Decider restriction (couples, household-level): kept 515400/518724 rows (257700 household-draws with deciders only, excluding children)
+Couples estimation sample after decider restriction: 515,400 rows
+Running couples gender balance sanity check before reshape...
+
+============================================================
+Sanity Check: MNL_prep_couples - Couples Gender Balance
+============================================================
+[MNL_prep_couples] \u2713 All required columns present: ['idhh', 'draw', 'dgn']
+[MNL_prep_couples] \u2713 Gender composition valid: all 257700 household-draws have 1 male + 1 female
+[MNL_prep_couples] \u2713 Couples gender balance check passed
+
+\u2713 Couples gender balance check passed
+Reshaping couples: 257700 male rows, 257700 female rows
+Pivoting 493 columns to _male/_female format
+Excluded 284 columns from pivoting (flags, IDs, internals)
+Applied consumption floor=1.0 to couples disposable income:
+  Male:   min -2149.51 \u2192 1.00 (4037 obs floored)
+  Female: min -1576.10 \u2192 1.00 (2702 obs floored)
+Dropping 892 duplicate columns from merge (kept 446 originals)
+Created consumption_male and consumption_female from ils_dispy_male/female (min_male: 1.00, min_female: 1.00)
+Reshaped couples data: 257700 rows (was 515400 in long format)
+GSUR merge (male): filled 257700 rows using fallback age_group=Y20-64
+GSUR merge (female): filled 257700 rows using fallback age_group=Y20-64
+Couples normalization: c_scale=15106.18, l_male_scale=10.00, l_female_scale=10.00
+Prior (couples): using R reference layered proposal density summed over spouses.
+Couples MNL dataset ready: 257,700 rows, 1468 columns
+U:\Desktop\Nizam_Hisham\MNL\scripts\enhanced\enh_RURO_prep_mnl_basic.py:2277: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+
+================================================================================
+Running final MNL dataset sanity checks...
+================================================================================
+
+============================================================
+Sanity Check: MNL_prep_singles
+============================================================
+[MNL_prep_singles] \u2713 All required columns present: ['idhh', 'draw']
+[MNL_prep_singles] \u2713 All required columns present: ['idhh', 'draw', 'consumption', 'leisure']
+[MNL_prep_singles] \u2713 No missing values in ['idhh', 'draw', 'consumption', 'leisure']
+[MNL_prep_singles] \u2713 All values positive in ['consumption', 'leisure']
+[MNL_prep_singles] \u2713 Draw counts valid: all 1676 households have 100 draws
+[MNL_prep_singles] \u2713 Consumption variance: std=6006.47
+[MNL_prep_singles] \u2713 Leisure variance: std=21.01
+[MNL_prep_singles] \u2713 All sanity checks passed
+
+\u2713 Singles MNL dataset passed all sanity checks
+
+============================================================
+Sanity Check: MNL_prep_couples
+============================================================
+[MNL_prep_couples] \u2713 All required columns present: ['idhh', 'draw']
+[MNL_prep_couples] \u2713 All required columns present: ['idhh', 'draw', 'leisure_male', 'leisure_female']
+[MNL_prep_couples] \u2713 No missing values in ['idhh', 'draw', 'leisure_male', 'leisure_female']
+[MNL_prep_couples] \u2713 All values positive in ['leisure_male', 'leisure_female']
+[MNL_prep_couples] \u2713 No missing values in ['consumption']
+[MNL_prep_couples] \u2713 All values positive in ['consumption']
+[MNL_prep_couples] \u2713 Draw counts valid: all 2577 households have 100 draws
+[MNL_prep_couples] \u2713 Consumption variance: std=8456.30
+[MNL_prep_couples] \u2713 Leisure variance: std=21.01
+[MNL_prep_couples] \u2713 All sanity checks passed
+
+\u2713 Couples MNL dataset passed all sanity checks
+All MNL dataset sanity checks passed \u2713
+
+================================================================================
+COLUMN FILTERING ENABLED
+================================================================================
+Column filtering (singles):
+  Original columns: 962
+  Essential columns kept: 75
+  Columns dropped: 887 (92.2% reduction)
+  Sample dropped: ['__all__', 'aca', 'aca_em', 'aca_input', 'aco', 'aco_em', 'aco_input', 'afc', 'afc_em', 'afc_input']
+  ... and 877 more
+Column filtering (couples):
+  Original columns: 1468
+  Essential columns kept: 93
+  Columns dropped: 1375 (93.7% reduction)
+  Sample dropped: ['__all___female', '__all___male', 'aca_em_female', 'aca_em_male', 'aca_female', 'aca_input_female', 'aca_input_male', 'aca_male', 'aco_em_female', 'aco_em_male']
+  ... and 1365 more
+Wrote singles MNL: \\aff300msh.cifs.myliser.lu\ComputeShare\Hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_mnl__singles.parquet (167,600 rows, 75 cols, 20.5 MB)
+Wrote couples MNL: \\aff300msh.cifs.myliser.lu\ComputeShare\Hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_mnl__couples.parquet (257,700 rows, 93 cols, 41.1 MB)
+Wrote metadata sidecar: \\aff300msh.cifs.myliser.lu\ComputeShare\Hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_mnl__mnlmeta.json
+
+================================================================================
+MNL dataset preparation complete!
+================================================================================
+
+Output files:
+  singles: \\aff300msh.cifs.myliser.lu\ComputeShare\Hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_mnl__singles.parquet
+  couples: \\aff300msh.cifs.myliser.lu\ComputeShare\Hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_mnl__couples.parquet
+  metadata: \\aff300msh.cifs.myliser.lu\ComputeShare\Hisham\EUROMOD-STORAGE\Data\processed\fr\2016\fr_2016_RURO_mnl__mnlmeta.json
+

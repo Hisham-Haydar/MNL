@@ -11,6 +11,11 @@ env/
 build/
 dist/
 logs/
+*.tmp
+*.bak
+*.swp
+debug.log
+Thumbs.db
 data/**/*.parquet
 data/**/*.feather
 Data/interim/
@@ -45,6 +50,16 @@ artifacts/
 *.gz
 *.bz2
 *.rar
+*.npy
+*.npz
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.hdf5
+*.gdx
+*.gms
+*.lst
 
 # EUROMOD distribution dumps
 EUROMOD_RELEASES_J1.0+/
@@ -68,6 +83,12 @@ RURO_MNL_project_files_structure*.md
 
 # solver working directories
 _gams_work/
+
+# local diagnostic scratch outputs; durable summaries belong in Results/ or docs/
+scripts/**/_tmp*/
+scripts/**/_tmp_*/
+scripts/**/_tmp*.py
+scripts/**/tmp*/
 
 # accidental local cache/config folders
 Microsoft/

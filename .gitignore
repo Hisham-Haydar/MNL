@@ -1,89 +1,39 @@
+# Python caches
 __pycache__/
 *.py[cod]
+*.pyo
+*.pyd
 *.egg-info/
+src/*.egg-info/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
 .ipynb_checkpoints/
+
+# Virtual environments and local env files
 .env
-.venv/
-env/
-build/
-dist/
-logs/
-data/**/*.parquet
-data/**/*.feather
-Data/interim/
-Data/processed/
-notebooks/*checkpoint*.ipynb
-
-# --- data & outputs (never commit) ---
-Data/
-data/
-raw_data/
-reports/
-outputs/*
-!outputs/KEEP_RESULTS.md
-output/
-artifacts/
-*.parquet
-*.feather
-*.dta
-*.sav
-*.xlsx
-*.xls
-*.csv
-*.html
-*.pdf
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.zip
-*.7z
-*.tar
-*.gz
-*.bz2
-*.rar
-
-# EUROMOD distribution dumps
-EUROMOD_RELEASES_J1.0+/
-
-# notebooks & caches
-*.ipynb
-.ipynb_checkpoints/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.log
-
-# virtual envs
+.env/
 .venv/
 venv/
-.env/
+env/
 
-# generated project inventories
-RURO_MNL_project_files_structure*.md
+# Build/package outputs
+build/
+dist/
 
-# solver working directories
-_gams_work/
-
-# accidental local cache/config folders
-Microsoft/
-.mplconfig/
+# Local IDE, assistant, and machine-specific folders
 .claude/
 .idea/
 .vscode/
+.mplconfig/
+Microsoft/
 
-# Machine-specific path config — never commit (contains local drive paths)
-# Users create this once via: mnl-setup
-# See docs/package/RURO_DATA_STORAGE_AND_PATH_RESOLUTION.md
+# Machine-specific path config; recreate locally via mnl-setup
 mnl_config.yaml
 .mnl/
 
-# generated package metadata
-src/*.egg-info/
+# Solver scratch/work directories
+_gams_work/
 
-# reports/ now lives in EUROMOD-STORAGE (external storage), not in the repo.
-# The line above (reports/) keeps it ignored here.
+# Generated project inventories
+RURO_MNL_project_files_structure*.md

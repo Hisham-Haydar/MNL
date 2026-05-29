@@ -823,10 +823,22 @@ def compute_structural_elasticities(parsed_params: ParsedParameters, spec: Optio
                 'β_c': f'{beta_c:.3f}',
             })
         else:
-            # For singles groups, try with suffix first
-            suffix = f'_{group}' if group in ['sm', 'sf', 'm', 'f'] else ''
+            # For singles groups, resolve the parameter suffix. The group key may
+            # be a short form ('sm'/'sf'/'m'/'f') or a full name ('singles_male'/
+            # 'singles_female') depending on the results layout (single-group runs
+            # use the full name). Map both to the canonical _sm/_sf/_m/_f suffix.
+            _suffix_map = {
+                'sm': '_sm', 'sf': '_sf', 'm': '_m', 'f': '_f',
+                'singles_male': '_sm', 'singles_female': '_sf',
+                'couples_male': '_m', 'couples_female': '_f',
+            }
+            suffix = _suffix_map.get(group, '')
+            # theta_c is pooled across singles ('theta_c_singles') under this spec;
+            # fall back to that name before the generic default.
             theta_l = params.get(f'theta_l{suffix}', params.get('theta_l', 0.5))
-            theta_c = params.get(f'theta_c{suffix}', params.get('theta_c', 0.5))
+            theta_c = params.get(f'theta_c{suffix}',
+                                 params.get('theta_c_singles',
+                                            params.get('theta_c', 0.5)))
             beta_l0 = params.get(f'beta_l0{suffix}', params.get('beta_l0', 0.0))
             beta_c = params.get(f'beta_c{suffix}', params.get('beta_c', 1.0))
 
@@ -3102,12 +3114,16 @@ def plot_hours_distribution_comparison(
         if singles_path.exists():
             df_singles = pd.read_parquet(singles_path)
             gender_col = 'dgn' if 'dgn' in df_singles.columns else 'gender'
-            for gender_code, group_key in [(1, 'sm'), (0, 'sf')]:
+            for gender_code, group_key, gender_name in [(1, 'sm', 'male'), (0, 'sf', 'female')]:
                 df_g = df_singles[df_singles[gender_col] == gender_code].copy()
                 if len(df_g) == 0:
                     continue
                 params = None
-                for try_key in [group_key, group_key.upper()]:
+                # Include 'joint' and the full 'singles_<gender>' key so this
+                # lookup matches the single-group results layout (group key is
+                # 'singles_male' / 'singles_female', not 'sm'/'sf'). Mirrors the
+                # fallback list used by the fit-diagnostics path.
+                for try_key in ['joint', group_key, f'singles_{gender_name}', group_key.upper()]:
                     if try_key in parsed_params.params_by_group:
                         params = parsed_params.get_all_params_for_group(try_key)
                         break
@@ -3246,17 +3262,17 @@ def plot_wage_distribution_comparison(
         if singles_path.exists():
             df_singles = pd.read_parquet(singles_path)
             gender_col = 'dgn' if 'dgn' in df_singles.columns else 'gender'
-            for gender_code, group_key in [(1, 'sm'), (0, 'sf')]:
+            for gender_code, group_key, gender_name in [(1, 'sm', 'male'), (0, 'sf', 'female')]:
                 df_g = df_singles[df_singles[gender_col] == gender_code].copy()
                 if len(df_g) == 0:
                     continue
                 params = None
-                for try_key in [group_key, group_key.upper()]:
+                # Match single-group results layout ('singles_male'/'singles_female')
+                # in addition to 'sm'/'sf'/'joint'.
+                for try_key in ['joint', group_key, f'singles_{gender_name}', group_key.upper()]:
                     if try_key in parsed_params.params_by_group:
                         params = parsed_params.get_all_params_for_group(try_key)
                         break
-                if not params and 'joint' in parsed_params.params_by_group:
-                    params = parsed_params.get_all_params_for_group('joint')
                 if not params:
                     continue
                 df_g = _add_predicted_probabilities(
@@ -3267,7 +3283,7 @@ def plot_wage_distribution_comparison(
                     group_suffix=f'_{group_key}'
                 )
                 df_g['group'] = group_key
-                group_defs.append((f'singles_{"male" if group_key == "sm" else "female"}', df_g, 'wage', 'hours'))
+                group_defs.append((f'singles_{gender_name}', df_g, 'wage', 'hours'))
 
         if couples_path.exists():
             df_couples = pd.read_parquet(couples_path)
@@ -4917,11 +4933,24 @@ def compute_fit_diagnostics_from_data(
                     break
 
         group_suffix = f'_{group_key}'  # '_sm' or '_sf'
-        has_beta_c = (
+        # beta_c may be FIXED=1 (numéraire normalisation, e.g. bpool_p3a_v1
+        # commit 31eaecc) and therefore absent from the param vector. The
+        # prediction code defaults beta_c -> 1.0 in that case, so fit
+        # diagnostics are still valid; gate instead on the leisure block,
+        # which is what actually drives the per-group utility.
+        def _has_leisure_param(p, sfx):
+            if p is None:
+                return False
+            for base in ('beta_l0', 'theta_l'):
+                if f'{base}{sfx}' in p or base in p:
+                    return True
+            return False
+        has_params = (
             params is not None
-            and (f'beta_c{group_suffix}' in params or 'beta_c' in params)
+            and (f'beta_c{group_suffix}' in params or 'beta_c' in params
+                 or _has_leisure_param(params, group_suffix))
         )
-        if not has_beta_c:
+        if not has_params:
             LOGGER.warning(f"No parameters found for {group_key}, skipping fit diagnostics")
             continue
 

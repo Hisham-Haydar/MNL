@@ -1,5 +1,7 @@
 # RURO Recovery Test Results — bpool_p3a_v1 (58 params)
 
+> **Corrections-of-record (2026-05-29):** the diagnostic in this document used scipy trust-constr / L-BFGS-B, which on this LL surface get trapped near initial values. CONOPT (analytical Hessian) on the same slices finds an LL 7000-50000 units better and recovers parameters here marked as structurally unidentified. The **beta_c=1 numéraire recommendation in §5 was correct** (commit `31eaecc`). The **"structural" framings of the scale ridge and the failure characterisation should be read as scipy trust-constr local-plateau descriptions**, not as LL surface properties. See `RURO_recovery_test_results_v3.md` §5 for the full reframe.
+
 > ## VERDICT: ❌ DID NOT PASS — did not converge; recovery inconclusive
 >
 > The warm start **hit maxiter=400 without converging** (`success=False`), and the

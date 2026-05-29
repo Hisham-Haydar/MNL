@@ -1,5 +1,7 @@
 # RURO Recovery Test Results — Singles isolation (bpool_p3a_v1, 55 params, beta_c=1)
 
+> **Corrections-of-record (2026-05-29):** the "Box-Cox theta_l multi-modality" and "leisure preference scale freedom" framings in §3 are scipy trust-constr local-plateau descriptions, NOT properties of the RURO LL surface. CONOPT (analytical Hessian) on the same singles male 766 and singles female 910 slices reaches an LL 7236 / 8933 units better with G2 = 2e-6 / 0.60 reproducibility, recovers theta_l_sm / theta_l_sf with **correct sign**, and reaches OptimalLocal both starts. The theta_l sign-constraint experiment recommendation in §5.1 of this document should **not** be acted on. **The chosen-row LH-flag diagnostic that this doc led to was correct** and was fixed in commit `099e5c4` — that part stands and is decisively validated. The "structural" identification framing is reframed in `RURO_recovery_test_results_v3.md` §5 as a description of trust-constr's BFGS-approximation breakdown, not LL geometry.
+
 > ## VERDICT: ❌ Singles fail STRUCTURALLY — same Box-Cox multi-modality as couples v2, NOT a couples-specific failure
 >
 > Three singles slices (male 300 HH, male 766 HH, female 910 HH) all fail the G3

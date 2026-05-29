@@ -1,5 +1,7 @@
 # RURO Recovery Test Results v2 — bpool_p3a_v1 (55 params, beta_c=1 scale normalisation)
 
+> **Corrections-of-record (2026-05-29):** the "non-convexity in the couples leisure block on the 9×9 joint-leisure grid" diagnosed here was a scipy trust-constr local-plateau artefact, NOT a real LL surface feature. CONOPT on the same slice recovers the entire couples leisure interior with correct signs (9 of 9 within err 0.43) and the entire market-opportunity block with correct signs (11 of 11 within err 0.41). The actual root cause was a chosen-row `working_lh` flag construction bug (fixed in commit `099e5c4` — see `RURO_recovery_test_results_v3.md`), which silently zeroed the LH indicator on chosen rows and drove `beta_h_lh` to the −10 bound, with the LH-correlated misfit propagating to the leisure block. **Do not act on the "parsimonise the couples leisure block" recommendation in §5 of this document** — it would be solving the wrong problem. The v2 diagnostic of the scale ridge being eliminated is correct; the verdict against the leisure block is overturned.
+
 > ## VERDICT: ❌ DID NOT PASS — beta_c=1 broke the v1 ridge but exposed a SECOND, sharper non-convexity in the couples leisure block.
 >
 > The Phase-1 fix (beta_c fixed to 1.0 as utility numeraire) **was correctly applied

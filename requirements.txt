@@ -14,8 +14,9 @@ async-lru==2.0.5
 attrs==25.4.0
 babel==2.17.0
 beautifulsoup4==4.14.2
-biogeme==3.3.1
-biogeme-optimization==0.0.11
+# Biogeme is intentionally not pinned in the main runtime environment.
+# Current validated JAX estimator code uses jax==0.4.31, while biogeme>=3.3.1
+# requires jax>=0.6.2. Use a separate archival/RUM environment for Biogeme.
 bleach==6.2.0
 certifi==2025.10.5
 cffi==2.0.0

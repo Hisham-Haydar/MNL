@@ -1,0 +1,122 @@
+{
+  "timestamp": "2026-05-29T09:34:49",
+  "slice": {
+    "mode": "singles",
+    "sex": "male",
+    "year": 2016,
+    "n_hh": 766,
+    "n_rows": 77366
+  },
+  "results": [
+    {
+      "cell": "01_t01_disk",
+      "threads": 1,
+      "solve_link": "disk",
+      "wall_s": 24.15,
+      "ll": -9746.1766,
+      "solver_status": "SolveStatus.NormalCompletion",
+      "model_status": "ModelStatus.OptimalLocal",
+      "n_iter": 9,
+      "error": null
+    },
+    {
+      "cell": "02_t04_disk",
+      "threads": 4,
+      "solve_link": "disk",
+      "wall_s": 24.44,
+      "ll": -9746.1766,
+      "solver_status": "SolveStatus.NormalCompletion",
+      "model_status": "ModelStatus.OptimalLocal",
+      "n_iter": 9,
+      "error": null
+    },
+    {
+      "cell": "03_t08_disk",
+      "threads": 8,
+      "solve_link": "disk",
+      "wall_s": 24.46,
+      "ll": -9746.1766,
+      "solver_status": "SolveStatus.NormalCompletion",
+      "model_status": "ModelStatus.OptimalLocal",
+      "n_iter": 9,
+      "error": null
+    },
+    {
+      "cell": "04_t16_disk",
+      "threads": 16,
+      "solve_link": "disk",
+      "wall_s": 24.27,
+      "ll": -9746.1766,
+      "solver_status": "SolveStatus.NormalCompletion",
+      "model_status": "ModelStatus.OptimalLocal",
+      "n_iter": 9,
+      "error": null
+    },
+    {
+      "cell": "05_t32_disk",
+      "threads": 32,
+      "solve_link": "disk",
+      "wall_s": 23.7,
+      "ll": -9746.1766,
+      "solver_status": "SolveStatus.NormalCompletion",
+      "model_status": "ModelStatus.OptimalLocal",
+      "n_iter": 9,
+      "error": null
+    },
+    {
+      "cell": "06_t01_memory",
+      "threads": 1,
+      "solve_link": "memory",
+      "wall_s": 24.3,
+      "ll": -9746.1766,
+      "solver_status": "SolveStatus.NormalCompletion",
+      "model_status": "ModelStatus.OptimalLocal",
+      "n_iter": 9,
+      "error": null
+    },
+    {
+      "cell": "07_t04_memory",
+      "threads": 4,
+      "solve_link": "memory",
+      "wall_s": 23.25,
+      "ll": -9746.1766,
+      "solver_status": "SolveStatus.NormalCompletion",
+      "model_status": "ModelStatus.OptimalLocal",
+      "n_iter": 9,
+      "error": null
+    },
+    {
+      "cell": "08_t08_memory",
+      "threads": 8,
+      "solve_link": "memory",
+      "wall_s": 23.74,
+      "ll": -9746.1766,
+      "solver_status": "SolveStatus.NormalCompletion",
+      "model_status": "ModelStatus.OptimalLocal",
+      "n_iter": 9,
+      "error": null
+    },
+    {
+      "cell": "09_t16_memory",
+      "threads": 16,
+      "solve_link": "memory",
+      "wall_s": 23.73,
+      "ll": -9746.1766,
+      "solver_status": "SolveStatus.NormalCompletion",
+      "model_status": "ModelStatus.OptimalLocal",
+      "n_iter": 9,
+      "error": null
+    },
+    {
+      "cell": "10_t32_memory",
+      "threads": 32,
+      "solve_link": "memory",
+      "wall_s": 23.29,
+      "ll": -9746.1766,
+      "solver_status": "SolveStatus.NormalCompletion",
+      "model_status": "ModelStatus.OptimalLocal",
+      "n_iter": 9,
+      "error": null
+    }
+  ]
+}

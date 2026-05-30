@@ -202,12 +202,20 @@ def _run_part_c(args, spec, data_sm, data_sf, data_cou,
         # enters the model, so GAMS rejects it as a modifiable. Retry-exclude
         # such names; at full data all years are present and every var is in.
         present = list(spec.all_param_names)
+        levels_only = getattr(args, "freeze_levels_only", False)
+        if levels_only:
+            print("  [freeze] LEVELS-ONLY: modifiables = var.l only "
+                  "(bounds fixed at spec values; warm/cold differ only in start). "
+                  "Tests whether dropping .lo/.up cuts the freeze setup cost.")
 
         def _build_modifiables(names):
             mods = []
             for pname in names:
                 v = fc_pvars[pname]
-                mods += [v.l, v.lo, v.up]
+                if levels_only:
+                    mods.append(v.l)
+                else:
+                    mods += [v.l, v.lo, v.up]
             return mods
 
         fc_opt = _mk_options(best_link, args.reuse_threads, suppress_listing=True,
@@ -243,7 +251,11 @@ def _run_part_c(args, spec, data_sm, data_sf, data_cou,
                     continue
                 v = fc_pvars[pname]
                 v.l = float(start_vec[i])
-                if pname in spec.bounds:
+                # Only reassign bounds when they are modifiable (full mode).
+                # In levels-only mode bounds stay at the values baked in at
+                # freeze time (the spec bounds), which is correct: warm and
+                # cold use the SAME bounds, only the start differs.
+                if not levels_only and pname in spec.bounds:
                     lb, ub = spec.bounds[pname]
                     if lb is not None:
                         v.lo = float(lb)
@@ -540,6 +552,10 @@ def main():
                     help="Skip PART A (option matrix) and PART B (reuse); run only "
                          "one baseline + the frozen-model warm/warm/cold collapse "
                          "measurement. Fast: ~1 generation + a few solves.")
+    ap.add_argument("--freeze-levels-only", action="store_true",
+                    help="Freeze ONLY var.l (not .lo/.up). Bounds stay fixed at "
+                         "spec values; warm/cold differ only in start. Tests whether "
+                         "dropping bound-modifiables cuts the freeze() setup cost.")
     ap.add_argument("--report", type=Path,
                     default=(_script_dir.parent.parent / "docs" / "France_case" / "P3a"
                              / "execution_logs" / "Bpool"

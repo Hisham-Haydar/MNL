@@ -316,23 +316,78 @@ def run_benchmark(args) -> dict:
                 extra={"solve_link": best_link, "threads": args.reuse_threads,
                        "reuse": True})
 
-    # ----- PART C: freeze feasibility probe (no solve; report applicability) -----
-    print(f"\n--- PART C: freeze feasibility probe ---")
-    freeze_note = (
-        "Model.freeze(modifiables=[Parameter|ImplicitParameter]) modifies "
-        "PARAMETERS between solves. The 49 unknowns here are free VARIABLES; "
-        "theta-start is variable.l and bounds are variable.lo/.up. Freeze does "
-        "NOT modify variable levels/bounds, so a frozen re-solve with different "
-        "theta starts is NOT a drop-in without restructuring (would require "
-        "data Parameters as the only modifiables, which is what changes between "
-        "Check 2 and Check 6, NOT between Check 2 and Check 4). "
-        "Conclusion: freeze helps the Check6-vs-Check2 case (same model, "
-        "different synthetic CHOICE data as a Parameter) but NOT the warm/cold "
-        "restart case. Part B (container reuse + variable reset) is the safe win "
-        "for warm/cold."
-    )
-    print(f"  {freeze_note}")
-    results["freeze_probe"] = freeze_note
+    # ----- PART C: FROZEN MODEL (model instance) — executed, not just probed -----
+    # GAMSPy docs (advanced/model_instance): freeze generates the model instance
+    # ONCE and re-solves repeatedly without regeneration. modifiables accepts
+    # variable attributes .l/.lo/.up (each an ImplicitParameter), and .l is
+    # "mainly used for starting non-linear models from different starting points"
+    # -- exactly the warm/cold case. CONOPT has no frozen-model limitations.
+    # This branch MEASURES whether model_generation_time collapses on solves 2-3.
+    print(f"\n--- PART C: FROZEN MODEL (freeze once, re-solve warm/warm/cold) ---")
+    results["freeze_executed"] = False
+    try:
+        _fc_container, fc_model, fc_pvars, fc_bt = build_joint_model(
+            spec, data_sm, data_sf, data_cou, theta_star)
+        print(f"  [freeze] one-time build: "
+              f"ll_expr={fc_bt['ll_expr_build']:.1f}s")
+
+        # Modifiables: the level (.l), lower (.lo), upper (.up) of every param var.
+        modifiables = []
+        for pname in spec.all_param_names:
+            v = fc_pvars[pname]
+            modifiables += [v.l, v.lo, v.up]
+
+        fc_opt = _mk_options(best_link, args.reuse_threads, suppress_listing=True,
+                             step_summary=args.step_summary)
+        t_freeze0 = time.time()
+        fc_model.freeze(modifiables=modifiables)
+        freeze_call_s = time.time() - t_freeze0
+        print(f"  [freeze] freeze() call: {freeze_call_s:.1f}s")
+
+        def _set_frozen_start(start_vec):
+            # Assign scalar level/bounds on the frozen instance's modifiables.
+            for i, pname in enumerate(spec.all_param_names):
+                v = fc_pvars[pname]
+                v.l = float(start_vec[i])
+                if pname in spec.bounds:
+                    lb, ub = spec.bounds[pname]
+                    if lb is not None:
+                        v.lo = float(lb)
+                    if ub is not None:
+                        v.up = float(ub)
+
+        for k, start_vec, tag in [(1, theta_star, "warm1"),
+                                  (2, theta_star, "warm2"),
+                                  (3, theta_cold, "cold")]:
+            _set_frozen_start(start_vec)
+            t0 = time.time()
+            fc_model.solve(solver="conopt", options=fc_opt)
+            wall = time.time() - t0
+            theta_hat = np.array([gev._extract_var_level(fc_pvars[p])
+                                  for p in spec.all_param_names])
+            ll = getattr(fc_model, "objective_value", None)
+            tm = {
+                "wall_solve_call": wall,
+                "model_generation_time": getattr(fc_model, "model_generation_time", None),
+                "solve_model_time": getattr(fc_model, "solve_model_time", None),
+                "total_solve_time": getattr(fc_model, "total_solve_time", None),
+                "num_iterations": gev._extract_num_iterations(fc_model),
+                "ll": float(ll) if ll is not None else None,
+                "freeze_solve_index": k,
+                "freeze_call_s": freeze_call_s,
+            }
+            _record(f"C.frozen_{tag}", theta_hat, ll, tm,
+                    extra={"solve_link": best_link, "threads": args.reuse_threads,
+                           "frozen": True})
+
+        fc_model.unfreeze()
+        results["freeze_executed"] = True
+    except Exception as exc:
+        import traceback
+        tb = traceback.format_exc()
+        print(f"  [freeze] EXCEPTION: {exc}")
+        results["freeze_error"] = str(exc)
+        results["freeze_traceback"] = tb
 
     return results
 
@@ -362,7 +417,42 @@ def _write_markdown(results: dict, out_path: Path) -> None:
             f"| {_r(c.get('wall_solve_call'))} | {_r(c.get('model_generation_time'))} "
             f"| {_r(c.get('solve_model_time'))} | {c.get('num_iterations','')} "
             f"| {c.get('ll_match_reference')} |")
-    lines += ["", "## Freeze feasibility", "", results.get("freeze_probe", ""), ""]
+    # Frozen-model outcome: did model_generation_time collapse on re-solves?
+    frozen_rows = [c for c in results["configs"]
+                   if c.get("label", "").startswith("C.frozen_")]
+    lines += ["", "## Frozen model (model instance) — did generation collapse?", ""]
+    if results.get("freeze_executed") and frozen_rows:
+        lines += [
+            "Freeze generates the model instance ONCE; subsequent solves modify "
+            "variable .l/.lo/.up and re-solve. If `modelgen` drops to ~0 on "
+            "frozen_warm2 / frozen_cold, generation is skipped -> 4x solves pay "
+            "generation once. LL match confirms no economic change.",
+            "",
+            "| Solve | wall (s) | modelgen (s) | solve (s) | iters | LL match |",
+            "|---|---:|---:|---:|---:|---|",
+        ]
+        for c in frozen_rows:
+            def _r2(x):
+                return "" if x is None else (f"{x:.1f}" if isinstance(x, float) else str(x))
+            lines.append(
+                f"| {c['label']} | {_r2(c.get('wall_solve_call'))} "
+                f"| {_r2(c.get('model_generation_time'))} "
+                f"| {_r2(c.get('solve_model_time'))} | {c.get('num_iterations','')} "
+                f"| {c.get('ll_match_reference')} |")
+        # verdict
+        mg = [c.get("model_generation_time") for c in frozen_rows
+              if c.get("model_generation_time") is not None]
+        if len(mg) >= 2 and mg[0] and mg[1] is not None:
+            collapse = mg[1] < 0.25 * mg[0]
+            lines += ["", f"**Generation collapse on re-solve: "
+                          f"{'YES' if collapse else 'NO'}** "
+                          f"(solve1 modelgen={mg[0]:.1f}s -> solve2 modelgen={mg[1]:.1f}s)."]
+    elif results.get("freeze_error"):
+        lines += [f"Freeze raised an exception: `{results['freeze_error']}`",
+                  "", "```", results.get("freeze_traceback", ""), "```"]
+    else:
+        lines += ["_Frozen-model branch did not execute._"]
+    lines.append("")
 
     # Build-phase breakdown from the first config (one-time Python expr build)
     first = results["configs"][0] if results["configs"] else {}

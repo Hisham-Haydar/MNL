@@ -69,6 +69,28 @@ _OLD_OCC_PARAMS = {
 # ---------------------------------------------------------------------------
 # Shared theta* generation (reused from recovery_test.py, spec-agnostic)
 # ---------------------------------------------------------------------------
+def load_theta_star_from_csv(path: Path, spec) -> np.ndarray:
+    """
+    Load theta_star from a CSV file with columns 'parameter,value'.
+
+    Any parameter in the spec that is absent from the CSV gets its spec
+    initial value.  Extra CSV rows not in the spec are silently ignored.
+    This allows loading from real-data slice estimates (produced by
+    dump_theta_star.py) as the DGP anchor for recovery tests.
+    """
+    df = pd.read_csv(path)
+    if "parameter" not in df.columns or "value" not in df.columns:
+        raise ValueError(f"theta_star CSV must have 'parameter' and 'value' columns: {path}")
+    lookup = dict(zip(df["parameter"].astype(str), df["value"].astype(float)))
+    names = spec.all_param_names
+    th = np.array(
+        [lookup.get(n, float(spec.initial_values.get(n, 0.0))) for n in names],
+        dtype=float)
+    loaded = sum(1 for n in names if n in lookup)
+    print(f"  [theta_star] loaded {loaded}/{len(names)} params from {path.name}")
+    return th
+
+
 def generate_theta_star(spec, rng, scale_perturb: float = 0.25,
                         shifter_frac: float = 0.12) -> np.ndarray:
     """
@@ -79,6 +101,10 @@ def generate_theta_star(spec, rng, scale_perturb: float = 0.25,
       - v0 == 0     -> assign non-zero alternating-sign signal:
                        sign * shifter_frac * half-width-of-finite-bounds.
     Deterministic given rng seed; fully driven by the spec.
+
+    NOTE: this produces a theta_star that may not be near any MLE.  For
+    meaningful recovery tests, prefer --theta-star <csv> anchored to
+    real-data slice estimates.
     """
     names = spec.all_param_names
     th = np.array([float(spec.initial_values.get(n, 0.0)) for n in names], dtype=float)
@@ -1377,8 +1403,15 @@ def _run_full_recovery(args, spec) -> None:
     results["preflight_occ_new"] = _NEW_OCC_PARAMS.issubset(set(pnames))
     results["preflight_occ_old"] = _OLD_OCC_PARAMS.isdisjoint(set(pnames))
 
-    # beta_ll interior check: theta_star must be well above lower bound
-    theta_star = generate_theta_star(spec, rng)
+    # theta_star: load from CSV if supplied, else auto-generate
+    ts_path = getattr(args, "theta_star", None)
+    if ts_path is not None and Path(ts_path).exists():
+        theta_star = load_theta_star_from_csv(Path(ts_path), spec)
+        print(f"  theta_star loaded from {ts_path}")
+    else:
+        theta_star = generate_theta_star(spec, rng)
+        print("  theta_star auto-generated from spec (perturbed initial values)")
+
     if "beta_ll" in pnames:
         idx_ll = pnames.index("beta_ll")
         lb = spec.bounds.get("beta_ll", (0.0, None))[0]
@@ -1443,7 +1476,21 @@ def _run_full_recovery(args, spec) -> None:
     # ------------------------------------------------------------------
     ll_at_star_raw = ee.compute_likelihood_joint(
         theta_star, data_sm, data_sf, data_cou, spec)
-    print(f"\nLL at theta_star (raw data, before synthetic draw): {ll_at_star_raw:.4f}")
+    # ll_at_star_raw is the negative LL value (positive = bad for CONOPT which maximises)
+    # A positive value here means theta_star yields negLL > 0, which is unusual.
+    # For a sensible DGP, we expect the negLL to be a large positive number (good).
+    # Actually: compute_likelihood_joint returns NEGATIVE LL (for minimisation),
+    # so a value of +4704 means the POSITIVE LL is -4704 — theta_star is a BAD point
+    # (very unlikely under the 100-HH sample). This is the small-sample problem:
+    # the sample MLE on 100 HH may be far from the full-data MLE.
+    ll_pos_at_star = -ll_at_star_raw  # convert to positive LL
+    print(f"\nLL at theta_star (raw data): negLL={ll_at_star_raw:.1f}  posLL={ll_pos_at_star:.1f}")
+    if ll_at_star_raw > 0:
+        print(f"  WARNING: negLL > 0 means theta_star is a poor fit on this {args.n_hh}-HH sample.")
+        print(f"  Small-sample problem: increase --n-hh (try 500+) for meaningful recovery.")
+        results["small_sample_warning"] = True
+    else:
+        results["small_sample_warning"] = False
 
     # ------------------------------------------------------------------
     # CHECK 1 — Synthetic DGP
@@ -1451,11 +1498,9 @@ def _run_full_recovery(args, spec) -> None:
     print("\n--- CHECK 1: Synthetic DGP ---")
     data_sm_syn, data_sf_syn, data_cou_syn = run_synthetic_dgp(
         spec, data_sm, data_sf, data_cou, theta_star, rng)
-    # Sanity: LL at theta_star on the synthetic data should be lower than
-    # the global optimum but not wildly different from ll_at_star_raw
     ll_at_star_syn = ee.compute_likelihood_joint(
         theta_star, data_sm_syn, data_sf_syn, data_cou_syn, spec)
-    print(f"  LL at theta_star (synthetic data): {ll_at_star_syn:.4f}")
+    print(f"  LL at theta_star (synthetic data): negLL={ll_at_star_syn:.1f}")
     c1_passed = (int(data_sm_syn.actual_choice.sum()) == data_sm.n_groups
                  and int(data_sf_syn.actual_choice.sum()) == data_sf.n_groups
                  and int(data_cou_syn.actual_choice.sum()) == data_cou.n_groups)
@@ -1595,6 +1640,11 @@ def main():
                     help="numba threads for per-household LL/gradient")
     ap.add_argument("--report", type=Path, default=_default_report(),
                     help="Output path for the Markdown report")
+    ap.add_argument("--theta-star", type=Path, default=None,
+                    help="CSV file (parameter,value) to use as DGP theta_star. "
+                         "Preferred over the auto-generated value: anchor to real-data "
+                         "slice estimates so the DGP is near the data's MLE. "
+                         "Absent params get spec initial values.")
     ap.add_argument("--max-alts-couples", type=int, default=0,
                     help="Cap couples alternatives per HH for recovery tests "
                          "(0=full 901, 100=10x10, 400=20x20). "

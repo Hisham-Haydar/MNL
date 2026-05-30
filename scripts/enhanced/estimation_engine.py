@@ -113,8 +113,10 @@ def _compute_market_opportunity_singles(
                 continue
             if applies_to in {"female", "sf"} and data.is_male:
                 continue
-            if applies_to in {"cm", "cf", "household"}:
+            if applies_to in {"cm", "cf"}:
                 continue
+            # "household" falls through to the same single-variable path as "both":
+            # singles data has reg2/drgur/year_* directly (no gender split needed).
             if not hasattr(data, var_name):
                 logger.warning(
                     "Market opportunity (singles): skipping shifter '%s' "

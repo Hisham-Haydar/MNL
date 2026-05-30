@@ -578,8 +578,10 @@ def _build_singles_ll_vectorized(
                 continue
             if applies_to in {"female", "sf"} and getattr(data, "is_male", False):
                 continue
-            if applies_to in {"cm", "cf", "household"}:
+            if applies_to in {"cm", "cf"}:
                 continue
+            # "household" falls through to the same single-variable path as "both":
+            # singles data has reg2/drgur/year_* directly (no gender split needed).
             var_param = get_var_param(var_name)
             if var_param is None:
                 continue

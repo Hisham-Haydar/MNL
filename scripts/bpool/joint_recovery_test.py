@@ -616,6 +616,89 @@ def run_smoke_test(args, spec) -> bool:
     checks.append(("T1 score_sum == -gradient", t1_ok, t1_msg))
 
     # ------------------------------------------------------------------
+    # C8: routing assertion — household market shifters active on singles
+    # Verify that beta_E_drgn2..8, beta_E_y2015/y2017, beta_E_drgur/drgmd
+    # contribute nonzero gradient on the singles sub-LL (i.e. they are NOT
+    # silently dead due to the applies_to: household routing bug).
+    # ------------------------------------------------------------------
+    _HOUSEHOLD_SHARED_PARAMS = [
+        "beta_E_drgn2", "beta_E_drgn3", "beta_E_drgn4",
+        "beta_E_drgn5", "beta_E_drgn6", "beta_E_drgn7", "beta_E_drgn8",
+        "beta_E_y2015", "beta_E_y2017",
+        "beta_E_drgur", "beta_E_drgmd",
+    ]
+    if grad_ok and data_sm is not None and data_sf is not None:
+        try:
+            # Gradient on singles-only sub-LL (sm + sf, no couples)
+            grad_sm_only = ee.compute_gradient_joint(
+                theta_star, data_sm, data_sf, None, spec)
+            # Map spec coefficient names to the attribute name on the data object.
+            # Spec uses "reg2" etc.; data object has data.reg2.
+            _coef_to_var = {
+                s["coefficient"]: s["variable"]
+                for s in (getattr(spec, "market_opportunity_shifters", None) or [])
+                if s.get("coefficient") and s.get("variable")
+            }
+            dead = []
+            for pn in _HOUSEHOLD_SHARED_PARAMS:
+                if pn not in pnames:
+                    continue
+                idx = pnames.index(pn)
+                if abs(grad_sm_only[idx]) >= 1e-15:
+                    continue  # nonzero gradient — routing works
+                # Zero gradient: check whether the variable is all-zero in the
+                # sample (data artefact) vs genuinely dead (routing bug).
+                var_name = _coef_to_var.get(pn)
+                var_sm = getattr(data_sm, var_name, None) if var_name else None
+                var_sf = getattr(data_sf, var_name, None) if var_name else None
+                sm_nonzero = (var_sm is not None and np.any(var_sm != 0))
+                sf_nonzero = (var_sf is not None and np.any(var_sf != 0))
+                if sm_nonzero or sf_nonzero:
+                    # Variable has nonzero values but gradient is zero → routing bug
+                    dead.append(pn)
+                # else: variable is all-zero in this sample (e.g. y2017 absent) — not a bug
+            routing_ok = len(dead) == 0
+            _n_present = sum(
+                1 for pn in _HOUSEHOLD_SHARED_PARAMS
+                if pn in pnames and abs(grad_sm_only[pnames.index(pn)]) >= 1e-15
+            )
+            routing_msg = (f"{_n_present}/{len(_HOUSEHOLD_SHARED_PARAMS)} "
+                           f"household shifters nonzero (rest all-zero in sample)"
+                           if routing_ok
+                           else f"ROUTING BUG — dead despite nonzero var: {dead}")
+        except Exception as exc:
+            routing_ok = False
+            routing_msg = str(exc)
+    else:
+        routing_ok = False
+        routing_msg = "skipped (grad or data unavailable)"
+    checks.append(("C8 household shifters active on singles", routing_ok, routing_msg))
+
+    # ------------------------------------------------------------------
+    # C9: synthetic-choice draw (Gumbel-max from theta_star)
+    # ------------------------------------------------------------------
+    if ts_ok and data_sm is not None and data_sf is not None and data_cou is not None:
+        try:
+            sm_syn, sf_syn, cou_syn = run_synthetic_dgp(
+                spec, data_sm, data_sf, data_cou, theta_star, rng)
+            sm_n = int(sm_syn.actual_choice.sum())
+            sf_n = int(sf_syn.actual_choice.sum())
+            cou_n = int(cou_syn.actual_choice.sum())
+            exp_sm = data_sm.n_groups
+            exp_sf = data_sf.n_groups
+            exp_cou = data_cou.n_groups
+            draw_ok = (sm_n == exp_sm and sf_n == exp_sf and cou_n == exp_cou)
+            draw_msg = (f"sm={sm_n}/{exp_sm} sf={sf_n}/{exp_sf} "
+                        f"cou={cou_n}/{exp_cou} chosen")
+        except Exception as exc:
+            draw_ok = False
+            draw_msg = str(exc)
+    else:
+        draw_ok = False
+        draw_msg = "skipped (theta_star invalid or data unavailable)"
+    checks.append(("C9 synthetic-choice draw", draw_ok, draw_msg))
+
+    # ------------------------------------------------------------------
     # Print table and verdict
     # ------------------------------------------------------------------
     _print_table(checks)
@@ -658,7 +741,7 @@ def main():
                                   formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--spec", type=Path, default=_default_spec(),
                     help="Joint estimation spec YAML (default: joint_pooled_v1)")
-    ap.add_argument("--engine-ready-stem", default="fr_p3a_bpool_d1w1",
+    ap.add_argument("--engine-ready-stem", default="fr_p3a_bpool_engine_ready",
                     help="Stem of the engine-ready parquets: "
                          "{stem}__singles.parquet, {stem}__couples.parquet, "
                          "{stem}__mnlmeta.json  (resolved under bpool_dir())")

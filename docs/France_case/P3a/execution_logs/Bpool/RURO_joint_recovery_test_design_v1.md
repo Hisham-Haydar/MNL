@@ -155,14 +155,14 @@ All three accept `Optional[PrecomputedDataSingles]` for male/female singles and 
 
 **Parser** (`estimation_spec_parser.py`, lines 703-718): occupation shifters from `occupation_opportunity.shifters` are appended verbatim to `market_opportunity_shifters` with their `applies_to` tag preserved. No interpretation happens at parse time.
 
-**Singles path** (`_compute_market_opportunity_singles`, engine.py lines 112-117):
+**Singles path** (`_compute_market_opportunity_singles`, engine.py lines 112-118 after `58d0dba`):
 
 ```python
 if applies_to in {"male", "sm"} and not data.is_male:
     continue
 if applies_to in {"female", "sf"} and data.is_male:
     continue
-if applies_to in {"cm", "cf", "household"}:
+if applies_to in {"cm", "cf"}:
     continue
 ```
 
@@ -185,28 +185,27 @@ if applies_to in ("female", "cf", "both"): # line 254
 
 The `PrecomputedDataCouples` struct has `loc4_2_male` and `loc4_2_female` (estimation_utils.py lines 585-596), built from `loc4_male` and `loc4_female` columns on the couples parquet. The singles data has `loc4_2` (estimation_utils.py line 482). The engine reads `getattr(data, var_name)` for singles and `data.loc4_2_male` / `data.loc4_2_female` for couples. Both attributes exist. **PASS.**
 
-### Year shifter activation on pooled data
+### Household market-shifter activation on pooled data
 
-Year shifters (`beta_E_y2015`, `beta_E_y2017`) have `applies_to: household` in the spec (spec lines 162-167).
+Household-level market shifters have `applies_to: household` in the spec. This includes:
 
-**Singles engine (engine.py line 116-117):**
+- Region: `beta_E_drgn2..8`
+- Year: `beta_E_y2015`, `beta_E_y2017`
+- Urbanisation: `beta_E_drgur`, `beta_E_drgmd`
+
+**Singles engine after commit `58d0dba`:**
 ```python
-if applies_to in {"cm", "cf", "household"}:
+if applies_to in {"cm", "cf"}:
     continue
 ```
-`applies_to: household` **skips the year shifters for all singles** (both male and female). The singles parquets carry `year_2015_indicator` and `year_2017_indicator` columns (estimation_utils.py lines 813-814), but the engine never uses them for singles because of the `household` skip.
 
-**Couples engine (engine.py line 194-222):** `applies_to == "household"` is handled by a dedicated branch that reads `data.year_2015_indicator` directly (no `_male`/`_female` suffix) and interacts it with `working_male + working_female`. This works because `PrecomputedDataCouples` stores `year_2015_indicator` as a household-level attribute (estimation_utils.py line 576).
+`applies_to: household` now falls through to the normal singles read path. This is correct because `PrecomputedDataSingles` stores region dummies, year indicators, and urbanisation indicators as plain arrays (`data.reg2`, `data.year_2015_indicator`, `data.drgur`, etc.), not gender-suffixed arrays.
 
-**Routing gap identified:** Year shifters are DEAD for singles. The spec intends these as shared market-access parameters across a pooled 2015-2017 dataset, but the `applies_to: household` tag causes both singles engines (numpy and GAMSPy vectorised) to skip them entirely. The year fixed effect identified only affects the couples sub-LL, not singles. **FAIL / NEED-FIX.**
+**GAMSPy vectorised singles path after commit `58d0dba`:** the same skip-list change was made in `gamspy_estimation_vectorized.py`; `household` now falls through there as well.
 
-**Status at Step 3a:** The routing gap is documented but the fix is deferred to Step 3b authorization. The smoke test passes at the current spec state because `beta_E_y2015` and `beta_E_y2017` are still present in the 49-element theta vector and receive finite gradient contributions from the couples sub-LL. The gap does not affect spec validation or smoke-test correctness; it affects estimation semantics on the singles sub-LL. Two fix options are recorded below.
+**Couples engine unchanged:** `applies_to == "household"` is handled by a dedicated couples branch that reads the non-gendered household attribute directly and interacts it with `working_male + working_female`. This remains semantically correct for couples.
 
-**Fix options (for Step 3b):**
-
-- **Option A (recommended, ~3 lines):** Keep `applies_to: household` in the spec for the couples engine. Add `year_2015_indicator_male = year_2015_indicator` and `year_2015_indicator_female = year_2015_indicator` aliases to `build_precomputed_data_couples` in `estimation_utils.py` (year is household-level so both point to the same array). Change the two year-shifter entries in the spec from `applies_to: household` to `applies_to: both`. The singles engine will then read `data.year_2015_indicator` via `getattr(data, var_name)` (the attribute exists on `PrecomputedDataSingles`), and the couples engine will read the new aliased male/female attributes. Net change: 2 spec lines + 2 utils lines.
-
-- **Option B (engine fix, ~3 locations):** In `_compute_market_opportunity_singles`, remove `"household"` from the skip-list so it falls through to the normal `getattr(data, var_name)` path. Keep `applies_to: household` in the spec. Same one-token change required in the GAMSPy builder (`gamspy_estimation_vectorized.py` line 581) and the gradient function.
+**Routing verification:** C8 in `joint_recovery_test.py` computes the singles-only gradient for all 11 household market shifters and checks that each coefficient has nonzero singles gradient whenever the corresponding singles variable is nonzero in the smoke sample. The corrected smoke test reports **10/11 nonzero**. The remaining zero is `beta_E_y2017`, which is numerically zero because the first 100 sampled UIDs contain no 2017 rows (`year_2017_indicator` is all zero), not because the route is dead. **PASS.**
 
 ### beta_ll couples-only confirmation
 
@@ -220,7 +219,7 @@ if applies_to in {"cm", "cf", "household"}:
 | `applies_to: male` routes `beta_occ_*_m` to singles_male AND couples_male | PASS |
 | Shared params (single index in 49-element vector) vs group-specific params (_sm/_sf/_m/_f) | PASS |
 | `beta_ll` is couples-only | PASS |
-| Year shifters (`beta_E_y2015`, `beta_E_y2017`) activate on pooled data | **ROUTING GAP — dead for singles; fix deferred to Step 3b** |
+| Household market shifters (`reg2..8`, `y2015/y2017`, `drgur/drgmd`) activate on singles and couples | PASS after `58d0dba`; C8 confirms singles gradients when variables are nonzero |
 | `estimate_joint_vectorized_gamspy` accepts three data objects | PASS (gamspy_estimation_vectorized.py lines 1573-1576) |
 | Single shared parameter vector, no per-group duplication | PASS |
 | Occupation `applies_to: male/female` handled correctly in GAMSPy builder | PASS (gamspy_estimation_vectorized.py lines 577-582, 1023-1061) |
@@ -238,14 +237,14 @@ The harness is structured in two tiers. The smoke test (Step 3a) runs at invocat
 `--spec`, `--engine-ready-stem`, `--years`, `--n-hh`, `--seed`, `--solver`, `--starts`, `--threads`, `--report`, `--smoke`, `--run`
 
 Default spec: `scripts/bpool/specs/estimation_spec_joint_pooled_v1.yaml`
-Default stem: `fr_p3a_bpool_d1w1`
+Default stem: `fr_p3a_bpool_engine_ready`
 Default years: `2015,2016,2017`
 Default n-hh: 100 per group (smoke test)
 Default seed: 20260530
 
-### Smoke test criteria (C0-C7)
+### Smoke test criteria (C0-C9)
 
-The smoke test (`--smoke`) validates seven criteria without running the optimizer:
+The smoke test (`--smoke`) validates the construction/routing criteria below without running the optimizer:
 
 | ID | Criterion |
 |---|---|
@@ -257,6 +256,8 @@ The smoke test (`--smoke`) validates seven criteria without running the optimize
 | C5 | `compute_gradient_joint` finite, length 49 |
 | C6 | `compute_scores_joint` correct shape `(n_groups_total, 49)`, finite, `cluster_ids` aligned |
 | T1 | `scores.sum(axis=0) == -gradient` within `1e-6` (sign consistency check) |
+| C8 | Household market shifters have nonzero singles gradient whenever their singles variable is nonzero in the smoke sample |
+| C9 | Synthetic-choice draw succeeds and assigns exactly one chosen alternative per choice-set group |
 
 ### Six scaffolded checks (Step 3b, NOT auto-run)
 
@@ -297,19 +298,21 @@ Each check is defined as a callable that raises `NotImplementedError` with an au
 | n_params == 49 | **PASS** | got 49 |
 | new occ params present | **PASS** | missing: set() |
 | old occ params absent | **PASS** | still present: set() |
-| data objects load | **PASS** | sm=100 sf=100 cou=100 groups [4.9s] |
+| data objects load | **PASS** | sm=100 sf=100 cou=100 groups [5.4s] |
 | cluster_ids non-null (sm) | **PASS** | singles_male: 100 ids OK |
 | cluster_ids non-null (sf) | **PASS** | singles_female: 100 ids OK |
 | cluster_ids non-null (cou) | **PASS** | couples: 100 ids OK |
 | theta_star finite | **PASS** | len=49 n_nonzero=49 |
-| compute_likelihood_joint finite | **PASS** | negLL=5421.304067 |
-| compute_gradient_joint finite | **PASS** | shape=(49,) max\|g\|=1.823e+02 |
+| compute_likelihood_joint finite | **PASS** | negLL=5438.750215 |
+| compute_gradient_joint finite | **PASS** | shape=(49,) max\|g\|=1.824e+02 |
 | compute_scores_joint finite+aligned | **PASS** | shape=(300, 49) finite=True cids_len=300 expected_groups=300 |
-| T1 score_sum == -gradient | **PASS** | max\|score_sum - (-grad)\|=8.527e-14 |
+| T1 score_sum == -gradient | **PASS** | max\|score_sum - (-grad)\|=4.263e-14 |
+| C8 household shifters active on singles | **PASS** | 10/11 household shifters nonzero (rest all-zero in sample) |
+| C9 synthetic-choice draw | **PASS** | sm=100/100 sf=100/100 cou=100/100 chosen |
 
 **Overall result: SMOKE TEST PASSED**
 
-**Errors/tracebacks:** None. An initial invocation failed with exit code 2 because `--years` was passed as space-separated values (`2015 2016 2017`) instead of comma-separated (`2015,2016,2017`). This was a CLI invocation issue, not a code bug. No changes were made to the script. The second invocation succeeded immediately.
+**Errors/tracebacks:** None. The smoke test now runs with the corrected default engine-ready stem `fr_p3a_bpool_engine_ready`; no explicit `--engine-ready-stem` override is required.
 
 ---
 

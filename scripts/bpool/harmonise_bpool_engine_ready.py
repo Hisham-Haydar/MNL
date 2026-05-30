@@ -49,6 +49,11 @@ _OUT_S = Path(str(_OUT_BASE) + "__singles.parquet")
 _OUT_C = Path(str(_OUT_BASE) + "__couples.parquet")
 _OUT_META = Path(str(_OUT_BASE) + "__mnlmeta.json")
 
+# Optional couples-grid variant suffix (e.g. "_20x20"). When set, the couples
+# estimation-ready INPUT and engine-ready OUTPUT carry this suffix, so a coarse-
+# grid variant does not overwrite production. Singles unaffected (101 alts).
+_COUPLES_SUFFIX = ""
+
 
 def _prior_from_log_prior(log_prior: pd.Series) -> np.ndarray:
     lp = pd.to_numeric(log_prior, errors="coerce").to_numpy()
@@ -135,7 +140,9 @@ def harmonise_singles() -> tuple[pd.DataFrame, dict]:
 
 
 def harmonise_couples() -> tuple[pd.DataFrame, dict]:
-    df = pd.read_parquet(_BP / "fr_p3a_bpool_estimation_ready__couples.parquet")
+    in_path = _BP / f"fr_p3a_bpool_estimation_ready{_COUPLES_SUFFIX}__couples.parquet"
+    print(f"  [harmonise_couples] reading {in_path.name}")
+    df = pd.read_parquet(in_path)
 
     # --- per-gender leisure ---
     for g in ("male", "female"):
@@ -188,13 +195,37 @@ def harmonise_couples() -> tuple[pd.DataFrame, dict]:
 
 
 def main() -> None:
+    import argparse
+    global _COUPLES_SUFFIX, _OUT_C, _OUT_META
+    ap = argparse.ArgumentParser(description="Harmonise B-pool track to engine-ready contract.")
+    ap.add_argument("--couples-suffix", default="",
+                    help="Suffix for couples estimation-ready INPUT and engine-ready OUTPUT "
+                         "(e.g. '_20x20'). Couples-only rebuild; singles untouched. "
+                         "Writes a suffixed mnlmeta with the correct couples n_draws.")
+    args = ap.parse_args()
+    _COUPLES_SUFFIX = args.couples_suffix
+    couples_only = bool(_COUPLES_SUFFIX)
+    if couples_only:
+        _OUT_C = Path(str(_OUT_BASE) + f"{_COUPLES_SUFFIX}__couples.parquet")
+        _OUT_META = Path(str(_OUT_BASE) + f"{_COUPLES_SUFFIX}__mnlmeta.json")
+        print(f"[couples-variant] suffix={_COUPLES_SUFFIX!r}; couples-only -> {_OUT_C.name}")
+
     print("Harmonising B-pool track to engine-ready contract...\n")
 
-    print("=== SINGLES ===")
-    ds, scs = harmonise_singles()
-    print(f"  shape={ds.shape}  c_scale={scs['c_scale']:.2f}  l_scale={scs['l_scale']:.4f}")
-    ds.to_parquet(_OUT_S, index=False)
-    print(f"  written: {_OUT_S}")
+    if couples_only:
+        # Reuse production singles normalization (singles are grid-independent).
+        prod_meta_path = Path(str(_OUT_BASE) + "__mnlmeta.json")
+        with open(prod_meta_path) as f:
+            prod_meta = json.load(f)
+        scs = prod_meta["normalization"]["singles"]
+        ds = None
+        print("=== SINGLES === (skipped; reusing production normalization)")
+    else:
+        print("=== SINGLES ===")
+        ds, scs = harmonise_singles()
+        print(f"  shape={ds.shape}  c_scale={scs['c_scale']:.2f}  l_scale={scs['l_scale']:.4f}")
+        ds.to_parquet(_OUT_S, index=False)
+        print(f"  written: {_OUT_S}")
 
     print("\n=== COUPLES ===")
     dc, scc = harmonise_couples()
@@ -202,6 +233,10 @@ def main() -> None:
           f"l_male_scale={scc['l_male_scale']:.4f}  l_female_scale={scc['l_female_scale']:.4f}")
     dc.to_parquet(_OUT_C, index=False)
     print(f"  written: {_OUT_C}")
+
+    # Couples alts/HH inferred from the actual data (401 for 20x20, 901 for 30x30)
+    couples_alts = int(dc.groupby("stacked_hh_uid").size().mode().iloc[0])
+    singles_rows = int(len(ds)) if ds is not None else None
 
     meta = {
         "source": "fr_p3a_bpool_engine_ready (harmonised from fr_p3a_bpool_estimation_ready__{singles,couples})",
@@ -226,14 +261,17 @@ def main() -> None:
                             "age_norm2 ~640, so beta_w_pexp2 / beta_l_age2_* dominated |g|max and blocked "
                             "the convergence test at the optimum (recovery-test diagnosis). Interpret "
                             "beta_w_pexp/pexp2 and beta_l_age/age2 as per-decade.",
-        "n_draws": {"singles": 101, "couples": 901},
+        "n_draws": {"singles": 101, "couples": couples_alts},
+        "couples_product_grid": f"{int(round((couples_alts-1)**0.5))}x"
+                                f"{int(round((couples_alts-1)**0.5))} = {couples_alts-1} sim + 1 chosen",
+        "couples_variant_suffix": _COUPLES_SUFFIX or None,
         "normalization": {
             "singles": {"c_scale": scs["c_scale"], "l_scale": scs["l_scale"], "n_chosen": scs["n_chosen"]},
             "couples": {"c_scale": scc["c_scale"], "l_male_scale": scc["l_male_scale"],
                         "l_female_scale": scc["l_female_scale"], "n_chosen": scc["n_chosen"]},
         },
-        "row_counts": {"singles": int(len(ds)), "couples": int(len(dc)),
-                       "total": int(len(ds) + len(dc))},
+        "row_counts": {"singles": singles_rows, "couples": int(len(dc)),
+                       "total": (singles_rows + int(len(dc))) if singles_rows is not None else None},
         "year_indicators": {
             "year_2015_indicator": "1[year_tag == 1]",
             "year_2017_indicator": "1[year_tag == 3]",

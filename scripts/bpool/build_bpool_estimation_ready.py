@@ -59,6 +59,12 @@ _OUT_S = _BP / "fr_p3a_bpool_estimation_ready__singles.parquet"
 _OUT_C = _BP / "fr_p3a_bpool_estimation_ready__couples.parquet"
 _META  = _BP / "fr_p3a_bpool_estimation_ready__meta.json"
 
+# Optional couples-grid variant suffix (e.g. "_20x20"). When set, the couples
+# input d1w1 file and the couples output file carry this suffix, so a coarse-grid
+# variant build does NOT overwrite the production 901-alt files. Singles are
+# unaffected (always 101 alts). Set via --couples-suffix.
+_COUPLES_SUFFIX = ""
+
 
 # ---------------------------------------------------------------------------
 # Spec variable extraction (for the hard gate)
@@ -344,7 +350,9 @@ def build_singles() -> pd.DataFrame:
 
 
 def build_couples() -> pd.DataFrame:
-    df = pd.read_parquet(_BP / "fr_p3a_bpool_d1w1__couples.parquet")
+    in_path = _BP / f"fr_p3a_bpool_d1w1{_COUPLES_SUFFIX}__couples.parquet"
+    print(f"  [build_couples] reading {in_path.name}")
+    df = pd.read_parquet(in_path)
     df = deflate_wages_for_estimation(df)
     df = df.drop(columns=[c for c in _STALE_DISPY if c in df.columns])
     look = couples_dispy_lookup()
@@ -506,6 +514,22 @@ def run_checks(df: pd.DataFrame, mode: str) -> dict:
 # Main
 # ---------------------------------------------------------------------------
 def main() -> None:
+    import argparse
+    global _COUPLES_SUFFIX, _OUT_C, _META
+    ap = argparse.ArgumentParser(description="Build B-pool estimation-ready parquets.")
+    ap.add_argument("--couples-suffix", default="",
+                    help="Suffix for the couples d1w1 INPUT and estimation-ready OUTPUT "
+                         "(e.g. '_20x20'). Keeps coarse-grid variants from overwriting the "
+                         "production 901-alt files. Singles unaffected (always 101 alts). "
+                         "When set, ONLY the couples file is rebuilt.")
+    args = ap.parse_args()
+    _COUPLES_SUFFIX = args.couples_suffix
+    if _COUPLES_SUFFIX:
+        _OUT_C = _BP / f"fr_p3a_bpool_estimation_ready{_COUPLES_SUFFIX}__couples.parquet"
+        _META = _BP / f"fr_p3a_bpool_estimation_ready{_COUPLES_SUFFIX}__meta.json"
+        print(f"[couples-variant] suffix={_COUPLES_SUFFIX!r}; "
+              f"couples-only rebuild -> {_OUT_C.name}")
+
     required = spec_required_variables()
     print(f"Spec references {len(required)} input variables:")
     print("  " + ", ".join(required))
@@ -524,8 +548,12 @@ def main() -> None:
     hard_gate_ok = True
     all_checks_ok = True
 
-    for mode, builder, out in [("singles", build_singles, _OUT_S),
-                                ("couples", build_couples, _OUT_C)]:
+    build_targets = [("singles", build_singles, _OUT_S),
+                     ("couples", build_couples, _OUT_C)]
+    if _COUPLES_SUFFIX:
+        # Couples-only variant rebuild: singles are grid-independent (101 alts).
+        build_targets = [t for t in build_targets if t[0] == "couples"]
+    for mode, builder, out in build_targets:
         print(f"\n{'='*70}\nBUILD {mode}\n{'='*70}")
         df = builder()
         print(f"  shape: {df.shape}")

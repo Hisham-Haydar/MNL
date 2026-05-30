@@ -381,8 +381,14 @@ def run_checks(df: pd.DataFrame, mode: str) -> dict:
     r["check1_consumption_nonnull"] = {"n_null": n_null, "n_total": len(df), "pass": n_null == 0}
 
     # CHECK 2: row counts
-    expected = 101 if mode == "singles" else 901
+    # Singles are fixed at 101. Couples depend on the product grid: 30x30 -> 901,
+    # 20x20 -> 401. Infer the expected per-HH count from the modal row count so
+    # the check is grid-agnostic, then verify every HH matches it.
     per_hh = df.groupby("stacked_hh_uid").size()
+    if mode == "singles":
+        expected = 101
+    else:
+        expected = int(per_hh.mode().iloc[0])  # modal alts/HH (e.g. 401 or 901)
     ok_counts = bool((per_hh == expected).all())
     r["check2_row_counts"] = {
         "n_hh": int(n_hh), "expected_per_hh": expected,

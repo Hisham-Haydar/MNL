@@ -162,14 +162,21 @@ def _build_product_block(
     mincer: dict,
     rng: np.random.Generator,
     seed: int,
+    product_size: int = PRODUCT_SIZE,
 ) -> pd.DataFrame:
-    """Build 900-alt product for one household."""
+    """Build product_size**2-alt product for one household.
+
+    product_size marginal alternatives per partner -> product_size**2 joint
+    Cartesian cells + 1 chosen row. The log_prior proposal weight is computed
+    per draw from its own marginal densities, so it is correct for any
+    product_size with no recalibration (the draws ARE the proposal sample).
+    """
 
     year_tag = int(obs["year_tag"])
 
-    # Male marginals (draws 1..30)
+    # Male marginals (draws 1..product_size)
     m = _draw_partner_marginals(
-        n=PRODUCT_SIZE,
+        n=product_size,
         dgn=DGN_MALE,
         educ3=int(obs["educ3_male"]),
         educL=float(obs["educL_male"]),
@@ -182,9 +189,9 @@ def _build_product_block(
         seed=seed,
     )
 
-    # Female marginals (draws 1..30)
+    # Female marginals (draws 1..product_size)
     f = _draw_partner_marginals(
-        n=PRODUCT_SIZE,
+        n=product_size,
         dgn=DGN_FEMALE,
         educ3=int(obs["educ3_female"]),
         educL=float(obs["educL_female"]),
@@ -197,14 +204,14 @@ def _build_product_block(
         seed=seed + 1,  # distinct seed for female wage draws
     )
 
-    # Cartesian product: 30×30 = 900
-    draw_m_idx = np.repeat(np.arange(PRODUCT_SIZE), PRODUCT_SIZE)  # 0..29, repeated 30 times
-    draw_f_idx = np.tile(np.arange(PRODUCT_SIZE), PRODUCT_SIZE)    # 0..29, tiled 30 times
+    # Cartesian product: product_size x product_size
+    draw_m_idx = np.repeat(np.arange(product_size), product_size)  # repeated
+    draw_f_idx = np.tile(np.arange(product_size), product_size)    # tiled
 
     # draw_male/draw_female: 1-indexed (0 reserved for chosen)
     draw_male = draw_m_idx + 1
     draw_female = draw_f_idx + 1
-    draw_joint = PRODUCT_SIZE * draw_m_idx + draw_f_idx  # 0..899
+    draw_joint = product_size * draw_m_idx + draw_f_idx  # 0..(product_size**2 - 1)
 
     # --- Simulated product row assembly ---
     # Household-constant columns (not partner-specific, not draw-varying)
@@ -251,8 +258,8 @@ def _build_product_block(
         "dgn": obs["dgn"],
     }
 
-    # Build 900-row simulated block
-    n_joint = N_JOINT
+    # Build simulated block (product_size**2 rows)
+    n_joint = product_size * product_size
     sim = {k: np.full(n_joint, v) for k, v in hh_const.items()}
 
     sim["draw_male"] = draw_male
@@ -368,7 +375,9 @@ def build_couples(
     source_path: Path | None = None,
     out_path: Path | None = None,
     seed: int = 2026,
+    product_size: int = PRODUCT_SIZE,
 ) -> Path:
+    n_joint = product_size * product_size
     if source_path is None:
         source_path = _DATA_DIR / f"{_SOURCE_STEM}.parquet"
     if out_path is None:
@@ -397,18 +406,19 @@ def build_couples(
         obs = row.to_dict()
         uid = obs["stacked_hh_uid"]
         hh_rng = np.random.default_rng(hh_seeds[uid])
-        block = _build_product_block(obs, mincer, hh_rng, seed=hh_seeds[uid])
+        block = _build_product_block(obs, mincer, hh_rng, seed=hh_seeds[uid],
+                                     product_size=product_size)
         results.append(block)
 
     out_df = pd.concat(results, ignore_index=True)
     print(f"  Output shape: {out_df.shape}")
 
-    # Verify row counts: (N_JOINT + 1) rows per HH
-    expected_rows = n_hh * (N_JOINT + 1)
+    # Verify row counts: (n_joint + 1) rows per HH
+    expected_rows = n_hh * (n_joint + 1)
     if len(out_df) != expected_rows:
         print(f"  WARNING: expected {expected_rows} rows, got {len(out_df)}")
     else:
-        print(f"  Row count check: PASS ({len(out_df)} = {n_hh} HH × {N_JOINT+1})")
+        print(f"  Row count check: PASS ({len(out_df)} = {n_hh} HH × {n_joint+1})")
 
     out_df.to_parquet(out_path, index=False)
     print(f"  Written: {out_path}")
@@ -421,12 +431,14 @@ def write_metadata(
     n_hh: int,
     seed: int,
     mincer: dict,
+    product_size: int = PRODUCT_SIZE,
 ) -> Path:
+    n_joint = product_size * product_size
     meta = {
         "provisioning_label": "bpool_d1w1_gsurv2_opportunity_year_aligned_couples_product",
         "gsur_source": "GSURv2_opportunity_year_aligned",
         "gsur_provenance": "Inherited from source parquet; provisioning_label=gsurv2_opportunity_year_aligned confirmed in stage_m1_meta.json",
-        "product_design": f"{PRODUCT_SIZE}x{PRODUCT_SIZE}={N_JOINT} joint alternatives per household",
+        "product_design": f"{product_size}x{product_size}={n_joint} joint alternatives per household",
         "chosen_row": "draw_male=0, draw_female=0, draw_joint=0 (observed outcome)",
         "hours_spec": "D1_five_mode_mixture",
         "hours_spec_ref": "RURO_spec_redesign_decisions_v2.md §D1",
@@ -456,9 +468,10 @@ def write_metadata(
         "chosen_row_log_q": "0 for all log_q columns (IS anchor)",
         "dgn_coding": "male=1, female=0 (opposite-sex couples only)",
         "n_hh": n_hh,
-        "n_joint_per_hh": N_JOINT,
-        "expected_rows_per_hh": N_JOINT + 1,
-        "expected_total_rows": n_hh * (N_JOINT + 1),
+        "product_size": product_size,
+        "n_joint_per_hh": n_joint,
+        "expected_rows_per_hh": n_joint + 1,
+        "expected_total_rows": n_hh * (n_joint + 1),
         "seed": seed,
         "source_file": str(source_path),
         "guardrails": [
@@ -480,10 +493,15 @@ def write_metadata(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Build B-pool couples 900-alt product (D1+W1)")
+    parser = argparse.ArgumentParser(
+        description="Build B-pool couples product (D1+W1). Default 30x30=900 alts.")
     parser.add_argument("--source", type=Path, default=None)
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--seed", type=int, default=2026)
+    parser.add_argument("--product-size", type=int, default=PRODUCT_SIZE,
+                        help="Marginal alternatives per partner. "
+                             "30 -> 900 joint (production), 20 -> 400 joint (recovery-gate). "
+                             "log_prior is computed per draw so any size is correct-by-construction.")
     args = parser.parse_args()
 
     mincer = _load_mincer()
@@ -493,6 +511,10 @@ if __name__ == "__main__":
     df_source = pd.read_parquet(source)
     n_hh = df_source[df_source["draw"] == 0]["idhh"].nunique()
 
-    out_path = build_couples(source_path=source, out_path=out, seed=args.seed)
-    write_metadata(out_path, source, n_hh, args.seed, mincer)
+    print(f"[build_bpool_couples] product_size={args.product_size} "
+          f"-> {args.product_size**2} joint alts/HH")
+    out_path = build_couples(source_path=source, out_path=out, seed=args.seed,
+                             product_size=args.product_size)
+    write_metadata(out_path, source, n_hh, args.seed, mincer,
+                   product_size=args.product_size)
     print("Done.")

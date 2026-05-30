@@ -190,15 +190,33 @@ def _load_parquet_slice(stem: str, mode: str, years: list[int], n_hh: int,
           .sort_values(["stacked_hh_uid", draw_col])
           .reset_index(drop=True))
 
-    # Coarse-draw subsetting for couples: keep first max_alts draws per HH.
-    # This is for recovery-test speed only; does NOT change the production spec.
+    # Coarse-draw subsetting for couples: keep the chosen row + (max_alts-1)
+    # non-chosen rows sampled WITHOUT replacement per household.
+    # head(N) is WRONG because draw_joint=0 is not the chosen row; is_chosen_joint=1
+    # marks the chosen alternative and may fall anywhere in draw_joint 0-900.
     if max_alts > 0 and mode == "couples":
-        df = (df.groupby("stacked_hh_uid", sort=False)
-                .head(max_alts)
+        rng_sub = np.random.default_rng(42)  # fixed seed for reproducibility
+        chosen_col = ("is_chosen_joint" if "is_chosen_joint" in df.columns
+                      else "actual_choice")
+        parts = []
+        for _, grp in df.groupby("stacked_hh_uid", sort=False):
+            chosen = grp[grp[chosen_col] == 1]
+            non_chosen = grp[grp[chosen_col] != 1]
+            n_nc = min(max_alts - len(chosen), len(non_chosen))
+            if n_nc > 0:
+                nc_sample = non_chosen.sample(n=n_nc,
+                                               replace=False,
+                                               random_state=int(rng_sub.integers(1 << 31)))
+            else:
+                nc_sample = non_chosen.iloc[:0]
+            parts.append(pd.concat([chosen, nc_sample]))
+        df = (pd.concat(parts, ignore_index=True)
+                .sort_values(["stacked_hh_uid", draw_col])
                 .reset_index(drop=True))
         actual_alts = int(df.groupby("stacked_hh_uid")[draw_col].count().max())
         print(f"  [couples coarse-draw] max_alts={max_alts} -> "
-              f"actual max alts/HH={actual_alts}")
+              f"actual max alts/HH={actual_alts} "
+              f"(chosen row preserved)")
 
     meta_path = bpool_dir() / f"{stem}__mnlmeta.json"
     meta = json.load(open(meta_path))
@@ -1421,11 +1439,23 @@ def _run_full_recovery(args, spec) -> None:
         print(f"  C8 routing: EXCEPTION {exc}")
 
     # ------------------------------------------------------------------
+    # Sanity: LL at theta_star on raw (pre-synthetic) data
+    # ------------------------------------------------------------------
+    ll_at_star_raw = ee.compute_likelihood_joint(
+        theta_star, data_sm, data_sf, data_cou, spec)
+    print(f"\nLL at theta_star (raw data, before synthetic draw): {ll_at_star_raw:.4f}")
+
+    # ------------------------------------------------------------------
     # CHECK 1 — Synthetic DGP
     # ------------------------------------------------------------------
     print("\n--- CHECK 1: Synthetic DGP ---")
     data_sm_syn, data_sf_syn, data_cou_syn = run_synthetic_dgp(
         spec, data_sm, data_sf, data_cou, theta_star, rng)
+    # Sanity: LL at theta_star on the synthetic data should be lower than
+    # the global optimum but not wildly different from ll_at_star_raw
+    ll_at_star_syn = ee.compute_likelihood_joint(
+        theta_star, data_sm_syn, data_sf_syn, data_cou_syn, spec)
+    print(f"  LL at theta_star (synthetic data): {ll_at_star_syn:.4f}")
     c1_passed = (int(data_sm_syn.actual_choice.sum()) == data_sm.n_groups
                  and int(data_sf_syn.actual_choice.sum()) == data_sf.n_groups
                  and int(data_cou_syn.actual_choice.sum()) == data_cou.n_groups)

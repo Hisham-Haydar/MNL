@@ -1,0 +1,71 @@
+{
+  "couples_path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\fr_p3a_bpool_engine_ready_20x20__couples.parquet",
+  "n_hh": 7438,
+  "alts_per_hh": 401,
+  "product_size": 20,
+  "lh_expected_draws_per_partner": 2.0,
+  "male_marginal_mass": {
+    "n_hh": 7438,
+    "n_unique_marginal_draws": 148760,
+    "band_counts_total": {
+      "PT1": 22010,
+      "PT2": 14180,
+      "F35": 33430,
+      "FT": 28388,
+      "LH": 24533
+    },
+    "band_mean_draws_per_partner": {
+      "PT1": 2.9591,
+      "PT2": 1.9064,
+      "F35": 4.4945,
+      "FT": 3.8166,
+      "LH": 3.2983
+    }
+  },
+  "female_marginal_mass": {
+    "n_hh": 7438,
+    "n_unique_marginal_draws": 148760,
+    "band_counts_total": {
+      "PT1": 21824,
+      "PT2": 14490,
+      "F35": 33230,
+      "FT": 28375,
+      "LH": 24225
+    },
+    "band_mean_draws_per_partner": {
+      "PT1": 2.9341,
+      "PT2": 1.9481,
+      "F35": 4.4676,
+      "FT": 3.8149,
+      "LH": 3.2569
+    }
+  },
+  "chosen_lh": {
+    "male": 2172,
+    "female": 895,
+    "n_chosen_hh": 7438
+  },
+  "chosen_lh_benchmark": {
+    "male": 764,
+    "female": 317
+  },
+  "chosen_lh_support": {
+    "male": {
+      "n_chosen_lh_hh": 2172,
+      "n_with_support": 2115,
+      "frac": 0.9738
+    },
+    "female": {
+      "n_chosen_lh_hh": 895,
+      "n_with_support": 866,
+      "frac": 0.9676
+    }
+  },
+  "thresholds": {
+    "lh_min_draws_per_partner": 1.5,
+    "lh_chosen_support_frac": 0.95
+  },
+  "pass_mass": true,
+  "pass_support": true,
+  "gate_pass": true
+}

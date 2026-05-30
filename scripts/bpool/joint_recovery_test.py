@@ -250,27 +250,34 @@ def _load_parquet_slice(stem: str, mode: str, years: list[int], n_hh: int,
 
 
 def build_data_objects(stem: str, years: list[int], n_hh: int,
-                        max_alts_couples: int = 0):
+                        max_alts_couples: int = 0,
+                        couples_stem: Optional[str] = None):
     """
     Return (data_sm, data_sf, data_cou) for the joint estimation.
 
     n_hh is the per-group household count.
     max_alts_couples: if > 0, subsample couples alternatives to this count
-    per household (e.g. 100 for 10x10, 400 for 20x20). For recovery tests
-    only — production estimates must use the full 901-alt choice set.
+    per household (e.g. 100 for 10x10, 400 for 20x20). For COARSE recovery
+    diagnostics only — biases the IS partition function; not a valid gate.
+    couples_stem: if set, load couples from this stem instead of `stem`
+    (e.g. fr_p3a_bpool_engine_ready_20x20 for the production-resolution gate
+    at 20x20 with PROPER draws). Singles always use `stem` (101 alts,
+    grid-independent). The couples meta is read from couples_stem so n_draws
+    and normalization match the variant grid.
     """
-    df_sm, meta = _load_parquet_slice(stem, "singles", years, n_hh, sex="male")
+    cou_stem = couples_stem or stem
+    df_sm, meta_s = _load_parquet_slice(stem, "singles", years, n_hh, sex="male")
     df_sf, _ = _load_parquet_slice(stem, "singles", years, n_hh, sex="female")
-    df_cou, _ = _load_parquet_slice(stem, "couples", years, n_hh,
-                                     max_alts=max_alts_couples)
+    df_cou, meta_c = _load_parquet_slice(cou_stem, "couples", years, n_hh,
+                                         max_alts=max_alts_couples)
 
-    data_sm = eu.precompute_data_singles(df_sm, meta, is_male=True,
+    data_sm = eu.precompute_data_singles(df_sm, meta_s, is_male=True,
                                           include_wage_vars=True,
                                           include_loc_vars=True)
-    data_sf = eu.precompute_data_singles(df_sf, meta, is_male=False,
+    data_sf = eu.precompute_data_singles(df_sf, meta_s, is_male=False,
                                           include_wage_vars=True,
                                           include_loc_vars=True)
-    data_cou = eu.precompute_data_couples(df_cou, meta,
+    data_cou = eu.precompute_data_couples(df_cou, meta_c,
                                            include_wage_vars=True,
                                            include_loc_vars=True)
     return data_sm, data_sf, data_cou
@@ -428,7 +435,8 @@ def _run_conopt(spec, data_sm, data_sf, data_cou, theta_init,
 # CHECK 2 — Shared-from-pooled recovery
 # ===========================================================================
 def run_shared_recovery(spec, data_sm, data_sf, data_cou, theta_star,
-                         solver: str = "gamspy-conopt") -> dict:
+                         solver: str = "gamspy-conopt",
+                         pass_thresh: float = 0.5) -> dict:
     """
     CHECK 2 — Re-estimate from the pooled synthetic likelihood.
 
@@ -451,10 +459,8 @@ def run_shared_recovery(spec, data_sm, data_sf, data_cou, theta_star,
     errs = np.abs(theta_hat[shared_idx] - theta_star[shared_idx])
     max_err = float(errs.max())
     worst_name = shared_names[int(errs.argmax())]
-    # Threshold 0.5: accommodates ~0.5 unit draw-resolution artefact from 10x10
-    # vs 901-alt couples (market/hours params shift when choice-set odds change).
-    # Tighten to 0.05 only when running at full 901-alt resolution.
-    pass_thresh = 0.5
+    # pass_thresh passed in by caller: ~0.05 for the strict production-resolution
+    # gate, ~0.5 for coarse 10x10 diagnostics (draw-resolution artefact band).
     passed = max_err <= pass_thresh
 
     print(f"  [CHECK 2] shared recovery: max|err|={max_err:.4f} "
@@ -483,7 +489,8 @@ def run_shared_recovery(spec, data_sm, data_sf, data_cou, theta_star,
 # CHECK 3 — Group-specific recovery
 # ===========================================================================
 def run_group_specific_recovery(spec, data_sm, data_sf, data_cou,
-                                  theta_star, theta_hat_full) -> dict:
+                                  theta_star, theta_hat_full,
+                                  pass_thresh: float = 0.75) -> dict:
     """
     CHECK 3 — Assess recovery of the 20 group-specific preference params.
 
@@ -509,11 +516,9 @@ def run_group_specific_recovery(spec, data_sm, data_sf, data_cou,
                        if "beta_ll" in pnames else []),
     }
 
-    # Threshold 0.75: leisure blocks are harder to recover than shared params
-    # (only one group's data identifies each block). The Box-Cox leisure ridge
-    # (theta_l / beta_l0 near-collinearity) can add ~0.5-1.0 error even at
-    # full resolution. Tighten to 0.1 only after the ridge is resolved.
-    pass_thresh = 0.75
+    # pass_thresh passed in by caller. Leisure blocks are harder than shared
+    # (one group identifies each). Strict gate ~0.1; coarse diagnostic ~0.75
+    # to absorb the Box-Cox ridge before tighten-leisure-bounds is applied.
     block_results = {}
     all_passed = True
     for bname, idx in blocks.items():
@@ -581,7 +586,7 @@ def run_group_specific_recovery(spec, data_sm, data_sf, data_cou,
 # CHECK 4 — Two-start basin agreement
 # ===========================================================================
 def run_two_start_agreement(spec, data_sm, data_sf, data_cou,
-                              theta_star) -> dict:
+                              theta_star, pass_thresh: float = 0.2) -> dict:
     """
     CHECK 4 — Warm (theta_star) vs cold (spec init values) start agreement.
 
@@ -609,11 +614,9 @@ def run_two_start_agreement(spec, data_sm, data_sf, data_cou,
 
     diff = np.abs(theta_warm_hat - theta_cold_hat)
     max_diff = float(diff.max())
-    # Threshold 0.2: tolerates Box-Cox leisure ridge near-collinearity and
-    # year-shifter zero-gradient (when running single-year data, beta_E_y* have
-    # no signal and will differ between starts by their theta_star perturbation).
-    # 1e-6 is the ideal (basin-agreement) threshold for full multi-year data.
-    pass_thresh = 0.2
+    # pass_thresh passed in by caller. STRICT gate = 1e-6 (true basin agreement;
+    # prompt-mandated for the production-resolution gate). Coarse diagnostic = 0.2
+    # to tolerate the Box-Cox ridge + year-shifter zero-gradient.
     passed = max_diff <= pass_thresh
     disagreed = [(pnames[i], float(diff[i]))
                  for i in np.where(diff > pass_thresh)[0]]
@@ -878,9 +881,10 @@ def run_smoke_test(args, spec) -> bool:
     t0 = time.time()
     try:
         max_alts_cou = getattr(args, "max_alts_couples", 0)
+        couples_stem = getattr(args, "couples_stem", None)
         data_sm, data_sf, data_cou = build_data_objects(
             args.engine_ready_stem, years, args.n_hh,
-            max_alts_couples=max_alts_cou)
+            max_alts_couples=max_alts_cou, couples_stem=couples_stem)
         n_cou_alts = data_cou.n_obs // data_cou.n_groups if data_cou.n_groups else 0
         load_ok = True
         load_msg = (f"sm={data_sm.n_groups} sf={data_sf.n_groups} "
@@ -1409,6 +1413,25 @@ def _run_full_recovery(args, spec) -> None:
     results: dict = {}
 
     # ------------------------------------------------------------------
+    # Remedy #1 (Check 4/5 ridge): tighten leisure-curvature bounds.
+    # The Box-Cox theta_l ridge lives in the flat tails [-8,-4] and [-0.5,0.95];
+    # real-data estimates are all near -0.8. Tightening to [-4.0,-0.3] cuts off
+    # the ridge tails so warm and cold starts land in the same well. This is a
+    # recovery-run override ONLY; the spec file is unchanged.
+    # ------------------------------------------------------------------
+    if getattr(args, "tighten_leisure_bounds", False):
+        lo, hi = -4.0, -0.3
+        tightened = []
+        for pn in ("theta_l_sm", "theta_l_sf", "theta_l_m", "theta_l_f"):
+            if pn in spec.bounds:
+                spec.bounds[pn] = (lo, hi)
+                tightened.append(pn)
+        results["tighten_leisure_bounds"] = {"applied": tightened, "bounds": [lo, hi]}
+        print(f"  [remedy] tightened leisure-curvature bounds to [{lo},{hi}]: {tightened}")
+    else:
+        results["tighten_leisure_bounds"] = {"applied": [], "bounds": None}
+
+    # ------------------------------------------------------------------
     # Preflight gates
     # ------------------------------------------------------------------
     results["preflight_occ_new"] = _NEW_OCC_PARAMS.issubset(set(pnames))
@@ -1422,6 +1445,27 @@ def _run_full_recovery(args, spec) -> None:
     else:
         theta_star = generate_theta_star(spec, rng)
         print("  theta_star auto-generated from spec (perturbed initial values)")
+
+    # Defensive: clamp theta_star into (possibly tightened) bounds so the warm
+    # start is feasible. Report any param that needed clamping.
+    clamped = []
+    for i, pn in enumerate(pnames):
+        if pn in spec.bounds:
+            blo, bhi = spec.bounds[pn]
+            v0 = float(theta_star[i])
+            v = v0
+            if blo is not None:
+                v = max(v, float(blo) + 1e-9)
+            if bhi is not None:
+                v = min(v, float(bhi) - 1e-9)
+            if v != v0:
+                clamped.append((pn, v0, v))
+                theta_star[i] = v
+    if clamped:
+        print(f"  [theta_star] clamped {len(clamped)} param(s) into bounds: "
+              f"{[(n, round(a,3), round(b,3)) for n,a,b in clamped]}")
+        results["theta_star_clamped"] = [
+            {"param": n, "from": a, "to": b} for n, a, b in clamped]
 
     if "beta_ll" in pnames:
         idx_ll = pnames.index("beta_ll")
@@ -1439,12 +1483,15 @@ def _run_full_recovery(args, spec) -> None:
     # Load data
     # ------------------------------------------------------------------
     max_alts_cou = getattr(args, "max_alts_couples", 0)
+    couples_stem = getattr(args, "couples_stem", None)
+    _cou_src = (couples_stem or args.engine_ready_stem)
     print(f"\nLoading data ({args.n_hh} HH per group, "
-          f"couples max_alts={max_alts_cou if max_alts_cou else '901 (full)'}) ...")
+          f"couples stem={_cou_src}, "
+          f"max_alts={max_alts_cou if max_alts_cou else 'full (from parquet)'}) ...")
     t0 = time.time()
     data_sm, data_sf, data_cou = build_data_objects(
         args.engine_ready_stem, years, args.n_hh,
-        max_alts_couples=max_alts_cou)
+        max_alts_couples=max_alts_cou, couples_stem=couples_stem)
     n_cou_alts = data_cou.n_obs // data_cou.n_groups if data_cou.n_groups else 0
     print(f"  loaded in {time.time()-t0:.1f}s  "
           f"sm={data_sm.n_groups} sf={data_sf.n_groups} cou={data_cou.n_groups} "
@@ -1521,11 +1568,29 @@ def _run_full_recovery(args, spec) -> None:
     print(f"  CHECK 1: {'PASS' if c1_passed else 'FAIL'}")
 
     # ------------------------------------------------------------------
+    # Threshold mode: STRICT for the production-resolution gate (proper draws,
+    # i.e. NOT --max-alts-couples), COARSE for the subsample diagnostic.
+    #   strict: Check2<=0.05, Check3<=0.10, Check4<=1e-6 (prompt-mandated)
+    #   coarse: Check2<=0.5,  Check3<=0.75, Check4<=0.2
+    # ------------------------------------------------------------------
+    coarse_mode = bool(max_alts_cou)  # --max-alts-couples set => biased subsample
+    if coarse_mode:
+        thr_c2, thr_c3, thr_c4 = 0.5, 0.75, 0.2
+        print(f"\n  [thresholds] COARSE diagnostic (max_alts={max_alts_cou}): "
+              f"C2<={thr_c2} C3<={thr_c3} C4<={thr_c4}")
+    else:
+        thr_c2, thr_c3, thr_c4 = 0.05, 0.10, 1e-6
+        print(f"\n  [thresholds] STRICT gate (proper draws): "
+              f"C2<={thr_c2} C3<={thr_c3} C4<={thr_c4}")
+    results["threshold_mode"] = "coarse" if coarse_mode else "strict"
+    results["thresholds"] = {"c2": thr_c2, "c3": thr_c3, "c4": thr_c4}
+
+    # ------------------------------------------------------------------
     # CHECK 2 — Shared-from-pooled recovery
     # ------------------------------------------------------------------
     print("\n--- CHECK 2: Shared-from-pooled recovery ---")
     c2 = run_shared_recovery(spec, data_sm_syn, data_sf_syn, data_cou_syn,
-                              theta_star)
+                              theta_star, pass_thresh=thr_c2)
     results["check2"] = c2
 
     # Small-sample / draw-resolution diagnostic: if CONOPT found a much better
@@ -1549,7 +1614,8 @@ def _run_full_recovery(args, spec) -> None:
     print("\n--- CHECK 3: Group-specific recovery ---")
     theta_hat_full = np.array(c2["theta_hat_full"])
     c3 = run_group_specific_recovery(spec, data_sm_syn, data_sf_syn,
-                                      data_cou_syn, theta_star, theta_hat_full)
+                                      data_cou_syn, theta_star, theta_hat_full,
+                                      pass_thresh=thr_c3)
     results["check3"] = c3
     print(f"  CHECK 3: {'PASS' if c3['all_passed'] else 'FAIL'}")
 
@@ -1558,7 +1624,7 @@ def _run_full_recovery(args, spec) -> None:
     # ------------------------------------------------------------------
     print("\n--- CHECK 4: Two-start basin agreement ---")
     c4 = run_two_start_agreement(spec, data_sm_syn, data_sf_syn, data_cou_syn,
-                                  theta_star)
+                                  theta_star, pass_thresh=thr_c4)
     results["check4"] = c4
     print(f"  CHECK 4: {'PASS' if c4['passed'] else 'FAIL'}")
 
@@ -1644,6 +1710,13 @@ def main():
                     help="Stem of the engine-ready parquets: "
                          "{stem}__singles.parquet, {stem}__couples.parquet, "
                          "{stem}__mnlmeta.json  (resolved under bpool_dir())")
+    ap.add_argument("--couples-stem", default=None,
+                    help="Override stem for COUPLES only (e.g. "
+                         "fr_p3a_bpool_engine_ready_20x20 for the 20x20 production-"
+                         "resolution gate with PROPER draws). Singles keep "
+                         "--engine-ready-stem. Couples meta read from this stem. "
+                         "Prefer this over --max-alts-couples: the 20x20 build has "
+                         "correct per-draw proposal weights; subsampling does not.")
     ap.add_argument("--years", default="2015,2016,2017",
                     help="Comma-separated data years or 'all' (default: 2015,2016,2017)")
     ap.add_argument("--n-hh", type=int, default=100,
@@ -1665,9 +1738,14 @@ def main():
                          "slice estimates so the DGP is near the data's MLE. "
                          "Absent params get spec initial values.")
     ap.add_argument("--max-alts-couples", type=int, default=0,
-                    help="Cap couples alternatives per HH for recovery tests "
-                         "(0=full 901, 100=10x10, 400=20x20). "
-                         "ONLY for recovery speed; production estimates must use full 901.")
+                    help="COARSE diagnostic only: subsample couples alts per HH "
+                         "(biases the IS partition function -- NOT a valid gate). "
+                         "For the real gate use --couples-stem with a proper 20x20 build.")
+    ap.add_argument("--tighten-leisure-bounds", action="store_true",
+                    help="Remedy for the Box-Cox theta_l ridge (Check 4/5): override "
+                         "theta_l_{sm,sf,m,f} bounds to [-4.0,-0.3] for the recovery "
+                         "run (spec file unchanged). Real-data estimates ~-0.8 sit "
+                         "well inside; cuts off the flat ridge tails.")
     ap.add_argument("--smoke", action="store_true",
                     help="Run the smoke test (Step 3a). "
                          "Full Checks 1-6 require --run (Step 3b).")

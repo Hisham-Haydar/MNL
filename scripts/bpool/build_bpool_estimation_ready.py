@@ -13,8 +13,10 @@ male/female suffixing. The ONLY things we add here:
        singles : decider-row value, keyed (uid, draw, data_year)
        couples : JOINT household disposable income = sum of per-person ils_dispy_real
                  over the tax unit, keyed (uid, draw_joint, is_chosen_joint, data_year)
-  2. reg2..reg8        = reg_nuts1_2..reg_nuts1_8 (reg_nuts1_1 is the omitted base)
-  3. loc4 one-hots     loc4_2/3/4 (singles) ; loc4_{2,3,4}_{male,female} (couples)
+  2. wage columns      — nominal values retained as *_nominal; estimator-facing
+                         wage / wage_male / wage_female converted to 2016-real
+  3. reg2..reg8        = reg_nuts1_2..reg_nuts1_8 (reg_nuts1_1 is the omitted base)
+  4. loc4 one-hots     loc4_2/3/4 (singles) ; loc4_{2,3,4}_{male,female} (couples)
 
 Read-only on all sources. Writes:
   fr_p3a_bpool_estimation_ready__singles.parquet
@@ -51,6 +53,8 @@ _CHILD_BANDS = {
 }
 _SPEC = Path(__file__).resolve().parent / "specs" / "estimation_spec_bpool_p3a_v1.yaml"
 _YEARS = (2015, 2016, 2017)
+_CPI = {2015: 1.0031, 2016: 1.0000, 2017: 0.9886}
+_WAGE_COLUMNS = ("wage", "wage_male", "wage_female")
 _OUT_S = _BP / "fr_p3a_bpool_estimation_ready__singles.parquet"
 _OUT_C = _BP / "fr_p3a_bpool_estimation_ready__couples.parquet"
 _META  = _BP / "fr_p3a_bpool_estimation_ready__meta.json"
@@ -285,6 +289,28 @@ def add_loc4_onehots(df: pd.DataFrame, mode: str) -> pd.DataFrame:
     return df
 
 
+def deflate_wages_for_estimation(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Keep EUROMOD earnings inputs nominal upstream, but expose estimator-facing wages
+    in 2016-real euros. This is deliberately applied after pricing inputs are no
+    longer used to construct yivwg/yem, preventing double deflation of ils_dispy_real.
+    """
+    phi = df["data_year"].map(_CPI)
+    if phi.isna().any():
+        bad_years = sorted(df.loc[phi.isna(), "data_year"].dropna().unique().tolist())
+        raise ValueError(f"Missing CPI phi for data_year values: {bad_years}")
+
+    for col in _WAGE_COLUMNS:
+        if col not in df.columns:
+            continue
+        nominal_col = f"{col}_nominal"
+        if nominal_col not in df.columns:
+            df[nominal_col] = df[col]
+        nominal = pd.to_numeric(df[nominal_col], errors="coerce")
+        df[col] = nominal * phi
+    return df
+
+
 # ---------------------------------------------------------------------------
 # Build
 # ---------------------------------------------------------------------------
@@ -297,6 +323,7 @@ _STALE_DISPY = ["ils_dispy_real", "consumption", "ils_dispy", "ils_dispy_em",
 
 def build_singles() -> pd.DataFrame:
     df = pd.read_parquet(_BP / "fr_p3a_bpool_d1w1__singles.parquet")
+    df = deflate_wages_for_estimation(df)
     df = df.drop(columns=[c for c in _STALE_DISPY if c in df.columns])
     look = singles_dispy_lookup()
     df = df.merge(look, on=["stacked_hh_uid", "draw", "data_year"], how="left")
@@ -318,6 +345,7 @@ def build_singles() -> pd.DataFrame:
 
 def build_couples() -> pd.DataFrame:
     df = pd.read_parquet(_BP / "fr_p3a_bpool_d1w1__couples.parquet")
+    df = deflate_wages_for_estimation(df)
     df = df.drop(columns=[c for c in _STALE_DISPY if c in df.columns])
     look = couples_dispy_lookup()
     df = df.merge(
@@ -431,6 +459,40 @@ def run_checks(df: pd.DataFrame, mode: str) -> dict:
             ok6 = False
     check6["pass"] = ok6
     r["check6_child_band_total_identity"] = check6
+
+    # CHECK 7: wage columns consumed by estimation are 2016-real; nominal copies retained.
+    phi = df["data_year"].map(_CPI)
+    check7 = {}
+    for col in _WAGE_COLUMNS:
+        if col not in df.columns:
+            continue
+        nominal_col = f"{col}_nominal"
+        if nominal_col not in df.columns:
+            check7[col] = {"pass": False, "missing_nominal_col": nominal_col}
+            continue
+        real = pd.to_numeric(df[col], errors="coerce")
+        nominal = pd.to_numeric(df[nominal_col], errors="coerce")
+        mask = real.notna() & nominal.notna()
+        max_abs = float((real[mask] - nominal[mask] * phi[mask]).abs().max()) if mask.any() else 0.0
+        check7[col] = {
+            "nominal_col": nominal_col,
+            "max_abs_diff": max_abs,
+            "pass": max_abs <= 1e-9,
+        }
+    check7["pass"] = bool(check7) and all(v.get("pass") for k, v in check7.items() if k != "pass")
+    r["check7_wage_2016_real"] = check7
+
+    # CHECK 8: idorighh is the clustered-SE key, not stacked_hh_uid/restacked idhh.
+    has_idorighh = "idorighh" in df.columns
+    n_nonnull = int(df["idorighh"].notna().sum()) if has_idorighh else 0
+    cluster_equal = bool((df["cluster_id"] == df["idorighh"]).all()) if has_idorighh and "cluster_id" in df.columns else False
+    r["check8_idorighh_cluster_key"] = {
+        "present": has_idorighh,
+        "nonnull": n_nonnull,
+        "n_rows": int(len(df)),
+        "cluster_id_eq_idorighh": cluster_equal,
+        "pass": has_idorighh and n_nonnull == len(df) and cluster_equal,
+    }
     return r
 
 
@@ -442,7 +504,17 @@ def main() -> None:
     print(f"Spec references {len(required)} input variables:")
     print("  " + ", ".join(required))
 
-    summary = {"spec_required_variables": required, "files": {}}
+    summary = {
+        "spec_required_variables": required,
+        "wage_price_basis": {
+            "estimator_columns": list(_WAGE_COLUMNS),
+            "nominal_copies": [f"{c}_nominal" for c in _WAGE_COLUMNS],
+            "cpi_phi": _CPI,
+            "convention": "wage/wage_male/wage_female are 2016-real; *_nominal keeps the original drawn nominal wage",
+        },
+        "cluster_key": {"cluster_id_col": "cluster_id", "source_col": "idorighh"},
+        "files": {},
+    }
     hard_gate_ok = True
     all_checks_ok = True
 

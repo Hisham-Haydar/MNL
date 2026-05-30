@@ -214,6 +214,11 @@ def main() -> None:
             "singles": "ils_dispy_real",
             "couples": "household joint ils_dispy_real (sum over tax unit)",
         },
+        "wage_price_basis": {
+            "estimator_columns": ["wage", "wage_male", "wage_female"],
+            "nominal_copies": ["wage_nominal", "wage_male_nominal", "wage_female_nominal"],
+            "basis": "2016-real wages carried through from build_bpool_estimation_ready.py; nominal draw wages retained in *_nominal columns",
+        },
         "prior_convention": "prior = clip(exp(clip(log_prior,-700,700)),1e-16,None); engine uses V = ... - log(prior)",
         "squared_regressor_scaling": "Linear terms rescaled to DECADES (/10) and squares "
                             "recomputed: pexp_years(2)[_male/_female] and age_norm(2)[_male/_female]. "

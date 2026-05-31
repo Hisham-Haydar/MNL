@@ -139,10 +139,22 @@ decomposition (deferred to the welfare phase, separately authorized).</small></p
       from zero" = p&lt;.10 under the clustered SE.</small></p>
     </div>
     <div class="section" id="joint-lr-pooling">
-      <h2>Pooling test (LR, gender-relaxed)</h2>
-      <p><em>LR pooling test not yet available. A coefficient flagged as
-      potentially group-varying is tested by relaxing it male-vs-female and
-      comparing the restricted (shared) and relaxed log-likelihoods; results
-      appear here once the LR-test step has run against the baseline MLE.</em></p>
+      <h2>Pooling test (LR, gender-relaxed): beta_E, beta_h_pt2</h2>
+      <p><em>RESTRICTED = baseline (shared coefficient); RELAXED = coefficient
+      split male/female (male legs = singles-male + couples-male; female legs =
+      singles-female + couples-female), df=1. LR = 2·(LL_relaxed −
+      LL_restricted) ~ χ²(1).</em></p>
+      <table class="table table-striped table-sm param-table">
+        <thead><tr>
+          <th>Param</th><th>shared</th><th>est (m)</th><th>est (f)</th>
+          <th>LR</th><th>df</th><th>p (χ²)</th><th>decision</th>
+        </tr></thead>
+        <tbody><tr><td><code>beta_E</code></td><td>-0.7527</td><td>-0.3586</td><td>-0.9972</td><td>65.692</td><td>1</td><td>5.273e-16</td><td style='color:var(--danger-color,#c0392b);font-weight:bold'>relax to gender-specific</td></tr><tr><td><code>beta_h_pt2</code></td><td>-0.1037</td><td>-1.1882</td><td>0.3734</td><td>206.563</td><td>1</td><td>7.723e-47</td><td style='color:var(--danger-color,#c0392b);font-weight:bold'>relax to gender-specific</td></tr></tbody>
+      </table>
+      <div class="alert alert-warning">
+        <strong>Outcome.</strong> At least one coefficient REJECTS pooling → the baseline should relax it to gender-specific (one increment, written reason) and be re-estimated before it is final.
+      </div>
+      <p style="color:var(--text-muted,#888)"><small>✓ relaxed model nests the restricted at the shared-value seed. Restricted
+      negLL = 238504.6361.</small></p>
     </div>
 </body></html>

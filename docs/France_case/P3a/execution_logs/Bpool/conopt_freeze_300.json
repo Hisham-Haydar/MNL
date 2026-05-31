@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "n_params": 49,
+    "n_alt_rows": 180900,
+    "n_hh": {
+      "sm": 300,
+      "sf": 300,
+      "cou": 300
+    },
+    "couples_alts": 401,
+    "years": "2015,2016,2017"
+  },
+  "configs": [
+    {
+      "label": "ref.baseline_fresh",
+      "ll_match_reference": true,
+      "wall_solve_call": 432.6401331424713,
+      "model_generation_time": 405.516,
+      "solve_model_time": 26.422,
+      "total_solve_time": 432.6020000036806,
+      "total_solver_time": 27.00000002514571,
+      "algorithm_time": 2e+300,
+      "num_iterations": 13,
+      "ll": -3355.121950937877,
+      "solve_status": "SolveStatus.NormalCompletion",
+      "model_status": "ModelStatus.OptimalLocal",
+      "build_container_create": 0.05495595932006836,
+      "build_param_vars": 1.4156742095947266,
+      "build_ll_expr_build": 2.947051763534546,
+      "build_model_create": 0.025039196014404297,
+      "solve_link": "memory",
+      "threads": 8
+    },
+    {
+      "label": "C.frozen_warm1",
+      "ll_match_reference": true,
+      "wall_solve_call": 27.469303607940674,
+      "model_generation_time": 0.00022869929671287537,
+      "solve_model_time": 26.797,
+      "total_solve_time": null,
+      "num_iterations": 13,
+      "ll": -3355.121950937877,
+      "freeze_solve_index": 1,
+      "freeze_call_s": 818.1182096004486,
+      "solve_link": "memory",
+      "threads": 8,
+      "frozen": true
+    },
+    {
+      "label": "C.frozen_warm2",
+      "ll_match_reference": true,
+      "wall_solve_call": 27.097081661224365,
+      "model_generation_time": 0.00027250126004219055,
+      "solve_model_time": 26.453,
+      "total_solve_time": null,
+      "num_iterations": 13,
+      "ll": -3355.121950937877,
+      "freeze_solve_index": 2,
+      "freeze_call_s": 818.1182096004486,
+      "solve_link": "memory",
+      "threads": 8,
+      "frozen": true
+    },
+    {
+      "label": "C.frozen_cold",
+      "ll_match_reference": true,
+      "wall_solve_call": 42.274821281433105,
+      "model_generation_time": 0.00027579814195632935,
+      "solve_model_time": 41.64,
+      "total_solve_time": null,
+      "num_iterations": 21,
+      "ll": -3355.121950937877,
+      "freeze_solve_index": 3,
+      "freeze_call_s": 818.1182096004486,
+      "solve_link": "memory",
+      "threads": 8,
+      "frozen": true
+    }
+  ],
+  "freeze_executed": true,
+  "freeze_excluded_vars": [
+    "beta_E_y2017"
+  ]
+}

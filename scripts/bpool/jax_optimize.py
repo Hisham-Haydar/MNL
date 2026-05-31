@@ -141,15 +141,26 @@ def main():
     print(f"\n  warm-start negLL = {fun(theta0):.6f}")
 
     # Stage 1: scipy L-BFGS-B (box-constrained) gets into the basin fast.
+    # LIVE iteration output (honour the watch-iterations-live instruction):
+    # scipy L-BFGS-B is silent by default, so a callback streams progress.
     print(f"  Stage 1: scipy L-BFGS-B (box-constrained, JAX grad) ...")
+    print(f"    (compiling full-data JAX graph on first eval; first line may lag)")
     t0 = time.time()
+    _it = {"k": 0}
+    def _cb(xk):
+        _it["k"] += 1
+        if _it["k"] % 25 == 0 or _it["k"] == 1:
+            print(f"    [iter {_it['k']:4d}] negLL={fun(xk):.4f} "
+                  f"max|grad|={float(np.max(np.abs(grad(xk)))):.3e} "
+                  f"[{time.time()-t0:.0f}s]", flush=True)
     res = minimize(fun, theta0, jac=grad, method="L-BFGS-B", bounds=bnds,
+                   callback=_cb,
                    options={"maxiter": args.maxiter, "gtol": args.gtol,
-                            "ftol": 1e-15, "maxls": 60})
+                            "ftol": 1e-15, "maxls": 60, "disp": False})
     theta_hat = res.x
     g1 = float(np.max(np.abs(grad(theta_hat))))
-    print(f"    {time.time()-t0:.1f}s  negLL={res.fun:.6f}  max|grad|={g1:.3e}  "
-          f"iters={res.nit}")
+    print(f"    Stage1 done {time.time()-t0:.1f}s  negLL={res.fun:.6f}  "
+          f"max|grad|={g1:.3e}  iters={res.nit}", flush=True)
 
     # Stage 2: optimistix BFGS (pure-JAX, tight) polishes to small gradient.
     # Unconstrained: warm-started from the stage-1 (in-bounds) point. We verify
@@ -157,17 +168,18 @@ def main():
     # equals the constrained one and the exact Hessian there is the valid Check-5.
     if args.solver in ("optimistix", "both"):
         import optimistix as optx
-        print(f"  Stage 2: optimistix BFGS (pure-JAX, rtol={args.gtol}) ...")
+        print(f"  Stage 2: optimistix BFGS (pure-JAX, rtol={args.gtol}) ...", flush=True)
         t0 = time.time()
         def ox_fn(y, _args):
             return joint(y)
-        solver = optx.BFGS(rtol=args.gtol, atol=args.gtol)
+        # verbose=True streams optimistix step / loss each iteration.
+        solver = optx.BFGS(rtol=args.gtol, atol=args.gtol, verbose=True)
         sol = optx.minimise(ox_fn, solver, jnp.asarray(theta_hat),
                             max_steps=args.maxiter, throw=False)
         theta_hat = np.asarray(sol.value, dtype=np.float64)
         g2 = float(np.max(np.abs(grad(theta_hat))))
-        print(f"    {time.time()-t0:.1f}s  negLL={fun(theta_hat):.6f}  "
-              f"max|grad|={g2:.3e}  result={sol.result}")
+        print(f"    Stage2 done {time.time()-t0:.1f}s  negLL={fun(theta_hat):.6f}  "
+              f"max|grad|={g2:.3e}  result={sol.result}", flush=True)
 
     gnorm = float(np.max(np.abs(grad(theta_hat))))
     print(f"\n  FINAL max|grad| at theta_hat = {gnorm:.3e}")

@@ -9468,6 +9468,451 @@ def _extract_spec_config_from_results_json(results_json_path: Path) -> Optional[
     return None
 
 
+# =============================================================================
+# JOINT POOLED BASELINE SECTIONS (Step 4)
+# -----------------------------------------------------------------------------
+# Additive, self-contained HTML builders for the 47-param joint pooled baseline
+# (joint_pooled_v1_bll0_tlmpin). They consume the Step-4 baseline JSON
+# (step4_realdata_baseline.py -> RURO_realdata_*_joint_901_v1.md embedded JSON)
+# and the optional LR-pooling-test JSON (step4_lr_pooling_test.py). REPORTING
+# ONLY — no estimate/spec/likelihood is touched; no welfare/decomposition.
+#
+# The joint baseline differs from the single-slice runs the rest of this module
+# handles in three reportable ways, one builder each:
+#   1. SHARED-vs-GROUP-SPECIFIC block structure (+ pinned params flagged)
+#   2. SE asymmetry (unclustered vs idorighh-clustered, with a precision summary)
+#   3. LR pooling-test outcome (beta_E / beta_h_pt2 male-vs-female)
+# =============================================================================
+
+def _load_json_or_md(path: Path) -> Dict[str, Any]:
+    """Load a dict from a raw .json file, or extract the LAST ```json fenced
+    block from a .md report (the Step-4 scripts embed their full JSON there)."""
+    import json as _json
+    text = Path(path).read_text(encoding="utf-8")
+    s = text.lstrip()
+    if s.startswith("{"):
+        return _json.loads(text)
+    # find fenced json blocks
+    import re as _re
+    blocks = _re.findall(r"```json\s*(.*?)```", text, flags=_re.DOTALL)
+    if not blocks:
+        # last resort: try to parse the whole thing
+        return _json.loads(text)
+    # the embedded full JSON is the last/longest fence
+    cand = max(blocks, key=len)
+    return _json.loads(cand)
+
+
+def _wrap_standalone_html(title: str, body: str) -> str:
+    """Minimal self-contained HTML page (Bootstrap-ish CSS vars) for the
+    standalone joint-baseline report."""
+    return f"""<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>{title}</title>
+<style>
+  :root {{ --text-muted:#6c757d; --warning-color:#e0a800; --danger-color:#c0392b;
+           --success-color:#27ae60; }}
+  body {{ font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+          margin: 2rem auto; max-width: 1100px; color: #222; line-height: 1.45; }}
+  h1 {{ font-size: 1.6rem; }} h2 {{ font-size: 1.3rem; margin-top: 1.6rem;
+        border-bottom: 2px solid #eee; padding-bottom: .3rem; }}
+  h3 {{ font-size: 1.12rem; margin-top: 1.2rem; }} h4 {{ font-size: 1rem; }}
+  table {{ border-collapse: collapse; width: 100%; margin: .5rem 0 1rem; font-size: .9rem; }}
+  th, td {{ border: 1px solid #ddd; padding: 4px 8px; text-align: right; }}
+  th:first-child, td:first-child {{ text-align: left; }}
+  thead th {{ background: #f5f5f5; }}
+  tr.bound-hit td {{ background: #fff3cd; }}
+  .alert {{ padding: .8rem 1rem; border-radius: 6px; margin: 1rem 0; }}
+  .alert-info {{ background: #e7f3fe; border-left: 4px solid #2196F3; }}
+  .alert-warning {{ background: #fff3cd; border-left: 4px solid var(--warning-color); }}
+  .alert-success {{ background: #e8f5e9; border-left: 4px solid var(--success-color); }}
+  code {{ background: #f0f0f0; padding: 1px 4px; border-radius: 3px; }}
+</style></head><body>
+<h1>{title}</h1>
+<p style="color:var(--text-muted)"><small>Reporting only — no welfare or
+decomposition (deferred to the welfare phase, separately authorized).</small></p>
+{body}
+</body></html>"""
+
+
+# Reporting taxonomy: which Step-4 `block` values are SHARED opportunity vs
+# GROUP-SPECIFIC preference. This is a STRUCTURAL classification (offer vs
+# taste), not country/year/spec-specific — it keys on the generic block names
+# the estimator emits. Unknown blocks degrade to "other" and are still shown.
+_JOINT_SHARED_BLOCKS = {"market_hours_opp", "occupation_opp", "wage_opp"}
+_JOINT_GROUPSPEC_BLOCKS = {"couples_leisure", "singles_leisure"}
+
+# Human labels for the generic Step-4 block keys (taxonomy, not spec content).
+_JOINT_BLOCK_LABELS = {
+    "market_hours_opp": "Employment, hours &amp; market opportunity",
+    "occupation_opp": "Occupation opportunity",
+    "wage_opp": "Wage opportunity",
+    "couples_leisure": "Couples leisure preference",
+    "singles_leisure": "Singles leisure preference",
+    "other": "Other",
+}
+
+
+def _jb_pinned_justification(jb: Dict[str, Any], name: str, value: Any) -> str:
+    """Data-driven justification text for a pinned param. AGNOSTIC: prefers a
+    per-param note carried in the JSON (`fixed_params_justification[name]` or a
+    `pin_notes` map written by the estimator); falls back to a generic
+    statement. No hardcoded param names or spec content."""
+    for key in ("fixed_params_justification", "pin_notes", "fixed_params_notes"):
+        m = jb.get(key)
+        if isinstance(m, dict) and name in m and m[name]:
+            return str(m[name])
+    return (f"fixed at {safe_format(value, '.4g')}, not estimated "
+            "(see the spec / estimation memo for the data justification).")
+
+
+def _jb_sig_marker(est: Any, se: Any) -> Tuple[str, Optional[float]]:
+    """Return (significance stars, |t|) from an estimate and an SE. '' if SE
+    missing/zero. Stars: *** p<.001, ** p<.01, * p<.05, (.) p<.10."""
+    if not (is_num(est) and is_num(se)) or float(se) <= 0:
+        return "", None
+    t = abs(float(est) / float(se))
+    if not SCIPY_AVAILABLE:
+        # normal-approx thresholds without scipy
+        if t >= 3.291:
+            return "***", t
+        if t >= 2.576:
+            return "**", t
+        if t >= 1.960:
+            return "*", t
+        if t >= 1.645:
+            return "(.)", t
+        return "", t
+    p = 2.0 * (1.0 - norm.cdf(t))
+    if p < 0.001:
+        return "***", t
+    if p < 0.01:
+        return "**", t
+    if p < 0.05:
+        return "*", t
+    if p < 0.10:
+        return "(.)", t
+    return "", t
+
+
+def _jb_param_row_html(p: Dict[str, Any]) -> str:
+    """One <tr> for a Step-4 param dict (param, block, estimate, se_hessian,
+    se_clustered, clu_over_hess, at_bound). Significance uses the CLUSTERED SE
+    (the conservative one)."""
+    name = p.get("param", "")
+    est = p.get("estimate")
+    seh = p.get("se_hessian")
+    sec = p.get("se_clustered")
+    ratio = p.get("clu_over_hess")
+    at_bound = bool(p.get("at_bound"))
+    sig, t_clu = _jb_sig_marker(est, sec)
+    row_cls = ' class="bound-hit"' if at_bound else ""
+    star = " *" if at_bound else ""
+    distinguishable = bool(sig)  # nonzero under clustered SE at <=10%
+    sig_cls = "" if distinguishable else ' style="color:var(--text-muted,#888)"'
+    return (
+        f"<tr{row_cls}>"
+        f"<td>{name}{star}</td>"
+        f"<td>{safe_format(est, '.4f')}</td>"
+        f"<td>{safe_format(seh, '.4f')}</td>"
+        f"<td>{safe_format(sec, '.4f')}</td>"
+        f"<td>{safe_format(ratio, '.2f')}</td>"
+        f"<td>{safe_format(t_clu, '.2f')}</td>"
+        f"<td{sig_cls}>{sig if sig else '—'}</td>"
+        f"</tr>"
+    )
+
+
+def _jb_block_table_html(params: List[Dict[str, Any]], block_keys: List[str],
+                         title: str, intro: str) -> str:
+    """A grouped parameter table (one <h4> sub-header per block key present),
+    dual SE columns, clustered-SE significance."""
+    present = [b for b in block_keys
+               if any(p.get("block") == b for p in params)]
+    if not present:
+        return ""
+    sub_html = ""
+    for b in present:
+        rows = [p for p in params if p.get("block") == b]
+        rows_html = "".join(_jb_param_row_html(p) for p in rows)
+        label = _JOINT_BLOCK_LABELS.get(b, b)
+        sub_html += f"""
+        <h4 style="margin-top:1em">{label} <span style="font-weight:normal;color:var(--text-muted,#888)">({len(rows)})</span></h4>
+        <table class="table table-striped table-sm param-table">
+          <thead><tr>
+            <th>Parameter</th><th>Estimate</th>
+            <th>SE (Hessian)</th><th>SE (clustered)</th><th>clu/H</th>
+            <th>|t| (clu)</th><th>sig</th>
+          </tr></thead>
+          <tbody>{rows_html}</tbody>
+        </table>"""
+    return f"""
+    <h3>{title}</h3>
+    <p><em>{intro}</em></p>
+    {sub_html}
+    """
+
+
+def generate_joint_shared_groupspec_html(jb: Dict[str, Any]) -> str:
+    """SECTION 1 — present the 47 params in TWO separated tables (SHARED
+    opportunity vs GROUP-SPECIFIC preference), with the pinned params flagged.
+
+    `jb` is the Step-4 baseline JSON dict (has 'params', 'fixed_params',
+    'n_params', 'negLL', 'hessian', 'n_hh', 'couples_alts')."""
+    params = jb.get("params", []) or []
+    fixed = jb.get("fixed_params", {}) or {}
+    _csum = jb.get("cluster_summary", {}) or {}
+    _ckey = jb.get("cluster_key") or _csum.get("cluster_key") or "clustered"
+
+    # pinned-params callout (generic: iterates jb['fixed_params'], justification
+    # text is data-driven via _jb_pinned_justification — no hardcoded names)
+    pinned_rows = ""
+    for name, val in fixed.items():
+        just = _jb_pinned_justification(jb, name, val)
+        pinned_rows += (f"<tr><td><code>{name}</code></td>"
+                        f"<td>{safe_format(val, '.4f')}</td>"
+                        f"<td>{just}</td></tr>")
+    pinned_html = ("" if not pinned_rows else f"""
+    <div class="alert alert-info" style="margin:1em 0">
+      <strong>Pinned parameters (fixed, NOT estimated):</strong>
+      <table class="table table-sm" style="margin-top:.5em">
+        <thead><tr><th>Param</th><th>Fixed value</th><th>Data justification</th></tr></thead>
+        <tbody>{pinned_rows}</tbody>
+      </table>
+    </div>""")
+
+    n_shared = sum(1 for p in params if p.get("block") in _JOINT_SHARED_BLOCKS)
+    n_group = sum(1 for p in params if p.get("block") in _JOINT_GROUPSPEC_BLOCKS)
+
+    shared_tbl = _jb_block_table_html(
+        params, ["market_hours_opp", "occupation_opp", "wage_opp"],
+        f"🌐 Shared opportunity parameters ({n_shared})",
+        "Market primitives shared across ALL groups (singles &amp; couples, male "
+        "&amp; female): the employment/hours offer, the log-normal wage offer, the "
+        "market-access shifters (gsur, region, urbanisation, year), and the "
+        "gender-specific occupation offer. These carry the opportunity component "
+        "of any downstream decomposition.")
+    group_tbl = _jb_block_table_html(
+        params, ["couples_leisure", "singles_leisure", "other"],
+        f"👥 Group-specific preference parameters ({n_group})",
+        "Leisure preference (intercept, age profile, children, Box-Cox curvature) "
+        "estimated separately per group, plus the singles consumption Box-Cox "
+        "θ_c. These are tastes, not offers.")
+
+    hess = jb.get("hessian", {}) or {}
+    nhh = jb.get("n_hh", {}) or {}
+    header = f"""
+    <p>
+      <strong>{jb.get('n_params','?')}-param joint pooled baseline</strong>
+      ({n_shared} shared opportunity + {n_group} group-specific preference;
+      {len(fixed)} pinned). negLL = {safe_format(jb.get('negLL'), '.4f')},
+      Hessian PD = {hess.get('pd')}, min eig = {safe_format(hess.get('min_eig'), '.3e')}.
+      Households: sm={nhh.get('sm','?')}, sf={nhh.get('sf','?')}, couples={nhh.get('cou','?')}
+      (couples alts/HH = {jb.get('couples_alts','?')}).
+    </p>"""
+
+    return f"""
+    <div class="section" id="joint-block-structure">
+      <h2>Parameter structure — shared opportunity vs group-specific preference</h2>
+      {header}
+      {pinned_html}
+      {shared_tbl}
+      {group_tbl}
+      <p style="color:var(--text-muted,#888)"><small>* = parameter at a bound.
+      Significance uses the <strong>clustered</strong> ({_ckey}) SE — the
+      conservative one. Stars: *** p&lt;.001, ** p&lt;.01, * p&lt;.05, (.) p&lt;.10.</small></p>
+    </div>"""
+
+
+def generate_joint_se_asymmetry_html(jb: Dict[str, Any]) -> str:
+    """SECTION 2 — the SE-asymmetry precision story (headline-relevant).
+
+    Block-level median SEs (Hessian + clustered), the expected/confirmed
+    asymmetry (opportunity tight, singles-leisure wide), and the count of params
+    distinguishable from zero under the CLUSTERED SE."""
+    params = jb.get("params", []) or []
+    block_se = jb.get("block_se", {}) or {}
+
+    # block summary rows in a fixed, readable order
+    order = ["market_hours_opp", "occupation_opp", "wage_opp",
+             "couples_leisure", "singles_leisure", "other"]
+    rows = ""
+    for b in order:
+        d = block_se.get(b)
+        if not d:
+            continue
+        kind = ("shared opportunity" if b in _JOINT_SHARED_BLOCKS
+                else "group-specific" if b in _JOINT_GROUPSPEC_BLOCKS else "—")
+        rows += (f"<tr><td>{_JOINT_BLOCK_LABELS.get(b, b)}</td>"
+                 f"<td>{kind}</td><td>{d.get('n','?')}</td>"
+                 f"<td>{safe_format(d.get('median_se_hessian'), '.4f')}</td>"
+                 f"<td>{safe_format(d.get('median_se_clustered'), '.4f')}</td>"
+                 f"<td>{safe_format(d.get('max_se_hessian'), '.4f')}</td></tr>")
+
+    # distinguishable-from-zero under clustered SE, split by shared/group
+    def _distinguishable(p):
+        sig, _ = _jb_sig_marker(p.get("estimate"), p.get("se_clustered"))
+        return bool(sig)
+    shared_ps = [p for p in params if p.get("block") in _JOINT_SHARED_BLOCKS]
+    group_ps = [p for p in params if p.get("block") in _JOINT_GROUPSPEC_BLOCKS]
+    n_shared_sig = sum(1 for p in shared_ps if _distinguishable(p))
+    n_group_sig = sum(1 for p in group_ps if _distinguishable(p))
+
+    # Flattest directions — DATA-DRIVEN (agnostic): the group-specific params
+    # with the largest clustered SE. Optionally overridable by a JSON-carried
+    # list `flat_directions` (e.g. if the recovery gate named them explicitly).
+    # No hardcoded param names.
+    named = jb.get("flat_directions")
+    if isinstance(named, (list, tuple)) and named:
+        flat = [q for nm in named for q in params if q.get("param") == nm]
+    else:
+        gp = [p for p in group_ps
+              if is_num(p.get("se_clustered"))]
+        flat = sorted(gp, key=lambda p: -float(p.get("se_clustered", 0.0)))[:3]
+    trio_rows = ""
+    for p in flat:
+        sig, t = _jb_sig_marker(p.get("estimate"), p.get("se_clustered"))
+        trio_rows += (f"<tr><td><code>{p.get('param','')}</code></td>"
+                      f"<td>{safe_format(p.get('estimate'), '.4f')}</td>"
+                      f"<td>{safe_format(p.get('se_hessian'), '.4f')}</td>"
+                      f"<td>{safe_format(p.get('se_clustered'), '.4f')}</td>"
+                      f"<td>{sig if sig else '— (not distinguishable from 0)'}</td></tr>")
+    trio_html = ("" if not trio_rows else f"""
+      <h4 style="margin-top:1em">Flattest directions (largest group-specific SEs)</h4>
+      <p><em>The group-specific parameters with the widest clustered standard
+      errors — the weakest-curved likelihood directions (identified, Hessian PD,
+      but imprecise). For this baseline these were anticipated by the recovery
+      gate.</em></p>
+      <table class="table table-sm param-table">
+        <thead><tr><th>Param</th><th>Estimate</th><th>SE (Hessian)</th>
+        <th>SE (clustered)</th><th>sig (clustered)</th></tr></thead>
+        <tbody>{trio_rows}</tbody>
+      </table>""")
+
+    # AGNOSTIC: cluster-key name + repeat-share derived from the JSON, not
+    # hardcoded. cluster_key defaults to a generic label if the estimator did
+    # not name it.
+    csum = jb.get("cluster_summary", {}) or {}
+    ckey = jb.get("cluster_key") or csum.get("cluster_key") or "the cluster key"
+    nclu = csum.get("n_clusters")
+    nmulti = csum.get("n_multi_group_clusters")
+    repeat_note = ""
+    if is_num(nclu) and is_num(nmulti) and nclu:
+        pct = 100.0 * float(nmulti) / float(nclu)
+        repeat_note = (f"the {pct:.0f}% of clusters spanning more than one "
+                       f"choice-set (repeat observations) make the clustered "
+                       f"SEs wider; ")
+
+    return f"""
+    <div class="section" id="joint-se-asymmetry">
+      <h2>Precision &amp; standard-error asymmetry</h2>
+      <div class="alert alert-info">
+        <strong>Headline precision story.</strong> Precision is
+        <em>asymmetric</em>: the <strong>shared opportunity</strong> block is
+        tightly identified (<strong>{n_shared_sig}/{len(shared_ps)}</strong>
+        params distinguishable from zero under the conservative clustered SE) and
+        carries the opportunity component of any decomposition; the
+        <strong>group-specific preference</strong> directions are wider — the
+        flattest directions in the likelihood (identified, PD Hessian, but
+        imprecise: <strong>{n_group_sig}/{len(group_ps)}</strong> group-specific
+        params distinguishable from zero). This is a precision feature, not an
+        identification failure.
+      </div>
+      <h4>Median SE by block (Hessian vs {ckey}-clustered)</h4>
+      <table class="table table-striped table-sm param-table">
+        <thead><tr><th>Block</th><th>Kind</th><th>n</th>
+          <th>median SE (Hessian)</th><th>median SE (clustered)</th>
+          <th>max SE (Hessian)</th></tr></thead>
+        <tbody>{rows}</tbody>
+      </table>
+      {trio_html}
+      <p style="color:var(--text-muted,#888)"><small>Clustered = {ckey}
+      cluster-robust sandwich (V = H⁻¹ B H⁻¹); {repeat_note}"distinguishable
+      from zero" = p&lt;.10 under the clustered SE.</small></p>
+    </div>"""
+
+
+def generate_joint_lr_pooling_html(lr: Optional[Dict[str, Any]]) -> str:
+    """SECTION 3 — LR pooling-test outcome for beta_E / beta_h_pt2 (m vs f).
+
+    `lr` is the step4_lr_pooling_test.py JSON dict (has 'tests', a list of
+    {param, shared_value, estimate_m, estimate_f, LR_stat, p_value,
+    reject_pooling, decision, nesting_gap_at_seed}). If None -> a 'pending' note."""
+    if not lr or not lr.get("tests"):
+        return """
+    <div class="section" id="joint-lr-pooling">
+      <h2>Pooling test (LR, gender-relaxed)</h2>
+      <p><em>LR pooling test not yet available. A coefficient flagged as
+      potentially group-varying is tested by relaxing it male-vs-female and
+      comparing the restricted (shared) and relaxed log-likelihoods; results
+      appear here once the LR-test step has run against the baseline MLE.</em></p>
+    </div>"""
+
+    # AGNOSTIC: tested-param names come from the LR JSON, not hardcoded.
+    tested = ", ".join(str(t.get("param", "?")) for t in lr.get("tests", []))
+    rows = ""
+    any_relaxed = False
+    for t in lr.get("tests", []):
+        reject = bool(t.get("reject_pooling"))
+        any_relaxed = any_relaxed or reject
+        decision = t.get("decision", "keep shared")
+        dec_cls = "color:var(--danger-color,#c0392b);font-weight:bold" if reject else "color:var(--success-color,#27ae60)"
+        rows += (
+            f"<tr>"
+            f"<td><code>{t.get('param','')}</code></td>"
+            f"<td>{safe_format(t.get('shared_value'), '.4f')}</td>"
+            f"<td>{safe_format(t.get('estimate_m'), '.4f')}</td>"
+            f"<td>{safe_format(t.get('estimate_f'), '.4f')}</td>"
+            f"<td>{safe_format(t.get('LR_stat'), '.3f')}</td>"
+            f"<td>{t.get('df', 1)}</td>"
+            f"<td>{safe_format(t.get('p_value'), '.4g')}</td>"
+            f"<td style='{dec_cls}'>{decision}</td>"
+            f"</tr>")
+
+    nesting_ok = all(abs(float(t.get("nesting_gap_at_seed", 1.0))) < 1e-4
+                     for t in lr.get("tests", []))
+    nesting_note = ("✓ relaxed model nests the restricted at the shared-value seed"
+                    if nesting_ok else
+                    "⚠ nesting gap nonzero at seed — LR statistic may be unreliable; check")
+    summary = ("At least one coefficient REJECTS pooling → the baseline should "
+               "relax it to gender-specific (one increment, written reason) and "
+               "be re-estimated before it is final."
+               if any_relaxed else
+               "No coefficient rejects pooling → both stay SHARED in the "
+               "baseline; the certified spec is unchanged.")
+
+    return f"""
+    <div class="section" id="joint-lr-pooling">
+      <h2>Pooling test (LR, gender-relaxed): {tested}</h2>
+      <p><em>RESTRICTED = baseline (shared coefficient); RELAXED = coefficient
+      split male/female (male legs = singles-male + couples-male; female legs =
+      singles-female + couples-female), df=1. LR = 2·(LL_relaxed −
+      LL_restricted) ~ χ²(1).</em></p>
+      <table class="table table-striped table-sm param-table">
+        <thead><tr>
+          <th>Param</th><th>shared</th><th>est (m)</th><th>est (f)</th>
+          <th>LR</th><th>df</th><th>p (χ²)</th><th>decision</th>
+        </tr></thead>
+        <tbody>{rows}</tbody>
+      </table>
+      <div class="alert {'alert-warning' if any_relaxed else 'alert-success'}">
+        <strong>Outcome.</strong> {summary}
+      </div>
+      <p style="color:var(--text-muted,#888)"><small>{nesting_note}. Restricted
+      negLL = {safe_format(lr.get('restricted_negLL'), '.4f')}.</small></p>
+    </div>"""
+
+
+def build_joint_baseline_sections(jb: Dict[str, Any],
+                                  lr: Optional[Dict[str, Any]] = None) -> str:
+    """Assemble the three joint-baseline sections into one HTML fragment."""
+    return (
+        generate_joint_shared_groupspec_html(jb)
+        + generate_joint_se_asymmetry_html(jb)
+        + generate_joint_lr_pooling_html(lr)
+    )
+
+
 def main():
     """Command-line interface."""
     parser = argparse.ArgumentParser(
@@ -9681,7 +10126,57 @@ def main():
         )
     )
 
+    # ------------------------------------------------------------------
+    # Joint pooled baseline (Step 4) — standalone reporting mode
+    # ------------------------------------------------------------------
+    parser.add_argument(
+        '--joint-baseline-json',
+        type=Path,
+        default=None,
+        metavar='PATH',
+        help=(
+            'Path to the Step-4 joint pooled baseline JSON '
+            '(step4_realdata_baseline.py output). When supplied, emit a '
+            'STANDALONE HTML with the three joint-baseline sections '
+            '(shared-vs-group-specific structure, SE asymmetry, LR pooling) and '
+            'exit — the single-slice pipeline is skipped. Accepts the raw JSON '
+            'or the .md report that embeds it in a ```json fence.'
+        )
+    )
+    parser.add_argument(
+        '--lr-test-json',
+        type=Path,
+        default=None,
+        metavar='PATH',
+        help=(
+            'Path to the LR pooling-test JSON (step4_lr_pooling_test.py output) '
+            'or the .md embedding it. Used only with --joint-baseline-json; '
+            'populates the pooling-test section. Optional.'
+        )
+    )
+
     args = parser.parse_args()
+
+    # Joint-baseline standalone mode: build the three sections and exit. This
+    # path does NOT touch the single-slice pipeline (scope guard: reporting
+    # only). --results-json is still required by argparse but is ignored here.
+    if args.joint_baseline_json is not None:
+        try:
+            jb = _load_json_or_md(args.joint_baseline_json)
+            lr = (_load_json_or_md(args.lr_test_json)
+                  if args.lr_test_json is not None else None)
+        except Exception as e:
+            LOGGER.error(f"Failed to load joint-baseline JSON: {e}", exc_info=True)
+            return 1
+        body = build_joint_baseline_sections(jb, lr)
+        out_dir = Path(args.output_dir) if args.output_dir else args.joint_baseline_json.parent
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_path = out_dir / f"{args.prefix}joint_baseline_report.html"
+        html = _wrap_standalone_html(
+            f"Joint pooled baseline — {jb.get('spec', 'report')}", body)
+        out_path.write_text(html, encoding="utf-8")
+        print(f"[joint-baseline] standalone report -> {out_path}")
+        return 0
 
     if args.llm_summary_dir is None:
         args.llm_summary_dir = reports_root()

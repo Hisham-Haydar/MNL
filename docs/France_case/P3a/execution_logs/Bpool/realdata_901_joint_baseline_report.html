@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Joint pooled baseline — joint_pooled_v1_bll0_tlmpin</title>
+<style>
+  :root { --text-muted:#6c757d; --warning-color:#e0a800; --danger-color:#c0392b;
+           --success-color:#27ae60; }
+  body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+          margin: 2rem auto; max-width: 1100px; color: #222; line-height: 1.45; }
+  h1 { font-size: 1.6rem; } h2 { font-size: 1.3rem; margin-top: 1.6rem;
+        border-bottom: 2px solid #eee; padding-bottom: .3rem; }
+  h3 { font-size: 1.12rem; margin-top: 1.2rem; } h4 { font-size: 1rem; }
+  table { border-collapse: collapse; width: 100%; margin: .5rem 0 1rem; font-size: .9rem; }
+  th, td { border: 1px solid #ddd; padding: 4px 8px; text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { background: #f5f5f5; }
+  tr.bound-hit td { background: #fff3cd; }
+  .alert { padding: .8rem 1rem; border-radius: 6px; margin: 1rem 0; }
+  .alert-info { background: #e7f3fe; border-left: 4px solid #2196F3; }
+  .alert-warning { background: #fff3cd; border-left: 4px solid var(--warning-color); }
+  .alert-success { background: #e8f5e9; border-left: 4px solid var(--success-color); }
+  code { background: #f0f0f0; padding: 1px 4px; border-radius: 3px; }
+</style></head><body>
+<h1>Joint pooled baseline — joint_pooled_v1_bll0_tlmpin</h1>
+<p style="color:var(--text-muted)"><small>Reporting only — no welfare or
+decomposition (deferred to the welfare phase, separately authorized).</small></p>
+
+    <div class="section" id="joint-block-structure">
+      <h2>Parameter structure — shared opportunity vs group-specific preference</h2>
+      
+    <p>
+      <strong>47-param joint pooled baseline</strong>
+      (29 shared opportunity + 18 group-specific preference;
+      1 pinned). negLL = 238504.6361,
+      Hessian PD = True, min eig = 4.588e-01.
+      Households: sm=2243, sf=2764, couples=7438
+      (couples alts/HH = 901).
+    </p>
+      
+    <div class="alert alert-info" style="margin:1em 0">
+      <strong>Pinned parameters (fixed, NOT estimated):</strong>
+      <table class="table table-sm" style="margin-top:.5em">
+        <thead><tr><th>Param</th><th>Fixed value</th><th>Data justification</th></tr></thead>
+        <tbody><tr><td><code>theta_l_m</code></td><td>-0.8000</td><td>fixed at -0.8, not estimated (see the spec / estimation memo for the data justification).</td></tr></tbody>
+      </table>
+    </div>
+      
+    <h3>🌐 Shared opportunity parameters (29)</h3>
+    <p><em>Market primitives shared across ALL groups (singles &amp; couples, male &amp; female): the employment/hours offer, the log-normal wage offer, the market-access shifters (gsur, region, urbanisation, year), and the gender-specific occupation offer. These carry the opportunity component of any downstream decomposition.</em></p>
+    
+        <h4 style="margin-top:1em">Employment, hours &amp; market opportunity <span style="font-weight:normal;color:var(--text-muted,#888)">(17)</span></h4>
+        <table class="table table-striped table-sm param-table">
+          <thead><tr>
+            <th>Parameter</th><th>Estimate</th>
+            <th>SE (Hessian)</th><th>SE (clustered)</th><th>clu/H</th>
+            <th>|t| (clu)</th><th>sig</th>
+          </tr></thead>
+          <tbody><tr><td>beta_E</td><td>-0.7527</td><td>0.1664</td><td>0.1893</td><td>1.14</td><td>3.98</td><td>***</td></tr><tr><td>beta_h_pt1</td><td>-1.4333</td><td>0.0517</td><td>0.0586</td><td>1.13</td><td>24.46</td><td>***</td></tr><tr><td>beta_h_pt2</td><td>-0.1037</td><td>0.0474</td><td>0.0555</td><td>1.17</td><td>1.87</td><td>(.)</td></tr><tr><td>beta_h_ft</td><td>1.0413</td><td>0.0204</td><td>0.0272</td><td>1.33</td><td>38.34</td><td>***</td></tr><tr><td>beta_h_lh</td><td>-1.2185</td><td>0.0322</td><td>0.0495</td><td>1.54</td><td>24.60</td><td>***</td></tr><tr><td>beta_E_gsur</td><td>-1.3062</td><td>0.0856</td><td>0.0947</td><td>1.11</td><td>13.79</td><td>***</td></tr><tr><td>beta_E_drgn2</td><td>-0.0750</td><td>0.1321</td><td>0.1553</td><td>1.18</td><td>0.48</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>beta_E_drgn3</td><td>0.0313</td><td>0.1523</td><td>0.1814</td><td>1.19</td><td>0.17</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>beta_E_drgn4</td><td>-0.0169</td><td>0.1580</td><td>0.1855</td><td>1.17</td><td>0.09</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>beta_E_drgn5</td><td>-0.1402</td><td>0.1374</td><td>0.1613</td><td>1.17</td><td>0.87</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>beta_E_drgn6</td><td>-0.0485</td><td>0.1531</td><td>0.1768</td><td>1.15</td><td>0.27</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>beta_E_drgn7</td><td>-0.1752</td><td>0.1461</td><td>0.1691</td><td>1.16</td><td>1.04</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>beta_E_drgn8</td><td>-0.3657</td><td>0.1352</td><td>0.1591</td><td>1.18</td><td>2.30</td><td>*</td></tr><tr><td>beta_E_y2015</td><td>-0.2546</td><td>0.0865</td><td>0.0931</td><td>1.08</td><td>2.74</td><td>**</td></tr><tr><td>beta_E_y2017</td><td>-0.0695</td><td>0.0913</td><td>0.0753</td><td>0.82</td><td>0.92</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>beta_E_drgur</td><td>-0.5305</td><td>0.0921</td><td>0.1112</td><td>1.21</td><td>4.77</td><td>***</td></tr><tr><td>beta_E_drgmd</td><td>-0.6675</td><td>0.1022</td><td>0.1243</td><td>1.22</td><td>5.37</td><td>***</td></tr></tbody>
+        </table>
+        <h4 style="margin-top:1em">Occupation opportunity <span style="font-weight:normal;color:var(--text-muted,#888)">(6)</span></h4>
+        <table class="table table-striped table-sm param-table">
+          <thead><tr>
+            <th>Parameter</th><th>Estimate</th>
+            <th>SE (Hessian)</th><th>SE (clustered)</th><th>clu/H</th>
+            <th>|t| (clu)</th><th>sig</th>
+          </tr></thead>
+          <tbody><tr><td>beta_occ_2_m</td><td>-1.5916</td><td>0.0425</td><td>0.0553</td><td>1.30</td><td>28.77</td><td>***</td></tr><tr><td>beta_occ_3_m</td><td>-2.2941</td><td>0.0561</td><td>0.0700</td><td>1.25</td><td>32.76</td><td>***</td></tr><tr><td>beta_occ_4_m</td><td>0.2906</td><td>0.0244</td><td>0.0314</td><td>1.29</td><td>9.25</td><td>***</td></tr><tr><td>beta_occ_2_f</td><td>-0.0476</td><td>0.0344</td><td>0.0449</td><td>1.31</td><td>1.06</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>beta_occ_3_f</td><td>-0.4729</td><td>0.0374</td><td>0.0492</td><td>1.32</td><td>9.62</td><td>***</td></tr><tr><td>beta_occ_4_f</td><td>0.7718</td><td>0.0296</td><td>0.0375</td><td>1.27</td><td>20.56</td><td>***</td></tr></tbody>
+        </table>
+        <h4 style="margin-top:1em">Wage opportunity <span style="font-weight:normal;color:var(--text-muted,#888)">(6)</span></h4>
+        <table class="table table-striped table-sm param-table">
+          <thead><tr>
+            <th>Parameter</th><th>Estimate</th>
+            <th>SE (Hessian)</th><th>SE (clustered)</th><th>clu/H</th>
+            <th>|t| (clu)</th><th>sig</th>
+          </tr></thead>
+          <tbody><tr><td>beta_w0</td><td>2.1968</td><td>0.0114</td><td>0.0146</td><td>1.28</td><td>150.31</td><td>***</td></tr><tr><td>beta_w_educL</td><td>-0.0608</td><td>0.0095</td><td>0.0123</td><td>1.29</td><td>4.96</td><td>***</td></tr><tr><td>beta_w_educH</td><td>0.3382</td><td>0.0066</td><td>0.0086</td><td>1.30</td><td>39.15</td><td>***</td></tr><tr><td>beta_w_pexp</td><td>0.3828</td><td>0.0216</td><td>0.0280</td><td>1.29</td><td>13.69</td><td>***</td></tr><tr><td>beta_w_pexp2</td><td>-0.0822</td><td>0.0097</td><td>0.0126</td><td>1.29</td><td>6.54</td><td>***</td></tr><tr><td>sigma</td><td>0.3898</td><td>0.0021</td><td>0.0043</td><td>2.02</td><td>91.14</td><td>***</td></tr></tbody>
+        </table>
+    
+      
+    <h3>👥 Group-specific preference parameters (18)</h3>
+    <p><em>Leisure preference (intercept, age profile, children, Box-Cox curvature) estimated separately per group, plus the singles consumption Box-Cox θ_c. These are tastes, not offers.</em></p>
+    
+        <h4 style="margin-top:1em">Couples leisure preference <span style="font-weight:normal;color:var(--text-muted,#888)">(8)</span></h4>
+        <table class="table table-striped table-sm param-table">
+          <thead><tr>
+            <th>Parameter</th><th>Estimate</th>
+            <th>SE (Hessian)</th><th>SE (clustered)</th><th>clu/H</th>
+            <th>|t| (clu)</th><th>sig</th>
+          </tr></thead>
+          <tbody><tr class="bound-hit"><td>beta_l0_m *</td><td>0.0000</td><td>0.0996</td><td>0.1222</td><td>1.23</td><td>0.00</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>beta_l_age_m</td><td>-0.0672</td><td>0.0647</td><td>0.0657</td><td>1.01</td><td>1.02</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>beta_l_age2_m</td><td>0.0878</td><td>0.0614</td><td>0.0620</td><td>1.01</td><td>1.42</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>beta_l0_f</td><td>10.0522</td><td>1.3822</td><td>2.5053</td><td>1.81</td><td>4.01</td><td>***</td></tr><tr><td>beta_l_age_f</td><td>-1.7803</td><td>0.5431</td><td>0.6663</td><td>1.23</td><td>2.67</td><td>**</td></tr><tr class="bound-hit"><td>beta_l_age2_f *</td><td>1.0000</td><td>0.5510</td><td>0.7479</td><td>1.36</td><td>1.34</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>beta_l_nkids_f</td><td>0.5857</td><td>0.5290</td><td>0.8549</td><td>1.62</td><td>0.69</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>theta_l_f</td><td>-2.1317</td><td>0.0811</td><td>0.1006</td><td>1.24</td><td>21.20</td><td>***</td></tr></tbody>
+        </table>
+        <h4 style="margin-top:1em">Singles leisure preference <span style="font-weight:normal;color:var(--text-muted,#888)">(10)</span></h4>
+        <table class="table table-striped table-sm param-table">
+          <thead><tr>
+            <th>Parameter</th><th>Estimate</th>
+            <th>SE (Hessian)</th><th>SE (clustered)</th><th>clu/H</th>
+            <th>|t| (clu)</th><th>sig</th>
+          </tr></thead>
+          <tbody><tr><td>beta_l0_sm</td><td>4.5487</td><td>0.8406</td><td>1.1551</td><td>1.37</td><td>3.94</td><td>***</td></tr><tr><td>beta_l_age_sm</td><td>0.6775</td><td>0.4211</td><td>0.5196</td><td>1.23</td><td>1.30</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>beta_l_age2_sm</td><td>0.3819</td><td>0.3529</td><td>0.3916</td><td>1.11</td><td>0.98</td><td style="color:var(--text-muted,#888)">—</td></tr><tr><td>theta_l_sm</td><td>-1.8616</td><td>0.1752</td><td>0.1687</td><td>0.96</td><td>11.03</td><td>***</td></tr><tr><td>beta_l0_sf</td><td>3.7285</td><td>0.6652</td><td>0.9640</td><td>1.45</td><td>3.87</td><td>***</td></tr><tr><td>beta_l_age_sf</td><td>0.4986</td><td>0.3152</td><td>0.3832</td><td>1.22</td><td>1.30</td><td style="color:var(--text-muted,#888)">—</td></tr><tr class="bound-hit"><td>beta_l_age2_sf *</td><td>1.0000</td><td>0.3047</td><td>0.3116</td><td>1.02</td><td>3.21</td><td>**</td></tr><tr><td>beta_l_nkids_sf</td><td>1.7395</td><td>0.5029</td><td>0.7414</td><td>1.47</td><td>2.35</td><td>*</td></tr><tr><td>theta_l_sf</td><td>-1.3491</td><td>0.1211</td><td>0.1541</td><td>1.27</td><td>8.76</td><td>***</td></tr><tr><td>theta_c_singles</td><td>0.0076</td><td>0.0403</td><td>0.0838</td><td>2.08</td><td>0.09</td><td style="color:var(--text-muted,#888)">—</td></tr></tbody>
+        </table>
+    
+      <p style="color:var(--text-muted,#888)"><small>* = parameter at a bound.
+      Significance uses the <strong>clustered</strong> (cluster) SE — the
+      conservative one. Stars: *** p&lt;.001, ** p&lt;.01, * p&lt;.05, (.) p&lt;.10.</small></p>
+    </div>
+    <div class="section" id="joint-se-asymmetry">
+      <h2>Precision &amp; standard-error asymmetry</h2>
+      <div class="alert alert-info">
+        <strong>Headline precision story.</strong> Precision is
+        <em>asymmetric</em>: the <strong>shared opportunity</strong> block is
+        tightly identified (<strong>21/29</strong>
+        params distinguishable from zero under the conservative clustered SE) and
+        carries the opportunity component of any decomposition; the
+        <strong>group-specific preference</strong> directions are wider — the
+        flattest directions in the likelihood (identified, PD Hessian, but
+        imprecise: <strong>9/18</strong> group-specific
+        params distinguishable from zero). This is a precision feature, not an
+        identification failure.
+      </div>
+      <h4>Median SE by block (Hessian vs cluster-clustered)</h4>
+      <table class="table table-striped table-sm param-table">
+        <thead><tr><th>Block</th><th>Kind</th><th>n</th>
+          <th>median SE (Hessian)</th><th>median SE (clustered)</th>
+          <th>max SE (Hessian)</th></tr></thead>
+        <tbody><tr><td>Employment, hours &amp; market opportunity</td><td>shared opportunity</td><td>17</td><td>0.1022</td><td>0.1243</td><td>0.1664</td></tr><tr><td>Occupation opportunity</td><td>shared opportunity</td><td>6</td><td>0.0359</td><td>0.0470</td><td>0.0561</td></tr><tr><td>Wage opportunity</td><td>shared opportunity</td><td>6</td><td>0.0096</td><td>0.0124</td><td>0.0216</td></tr><tr><td>Couples leisure preference</td><td>group-specific</td><td>8</td><td>0.3143</td><td>0.3943</td><td>1.3822</td></tr><tr><td>Singles leisure preference</td><td>group-specific</td><td>10</td><td>0.3341</td><td>0.3874</td><td>0.8406</td></tr></tbody>
+      </table>
+      
+      <h4 style="margin-top:1em">Flattest directions (largest group-specific SEs)</h4>
+      <p><em>The group-specific parameters with the widest clustered standard
+      errors — the weakest-curved likelihood directions (identified, Hessian PD,
+      but imprecise). For this baseline these were anticipated by the recovery
+      gate.</em></p>
+      <table class="table table-sm param-table">
+        <thead><tr><th>Param</th><th>Estimate</th><th>SE (Hessian)</th>
+        <th>SE (clustered)</th><th>sig (clustered)</th></tr></thead>
+        <tbody><tr><td><code>beta_l0_f</code></td><td>10.0522</td><td>1.3822</td><td>2.5053</td><td>***</td></tr><tr><td><code>beta_l0_sm</code></td><td>4.5487</td><td>0.8406</td><td>1.1551</td><td>***</td></tr><tr><td><code>beta_l0_sf</code></td><td>3.7285</td><td>0.6652</td><td>0.9640</td><td>***</td></tr></tbody>
+      </table>
+      <p style="color:var(--text-muted,#888)"><small>Clustered = cluster
+      cluster-robust sandwich (V = H⁻¹ B H⁻¹); the 29% of clusters spanning more than one choice-set (repeat observations) make the clustered SEs wider; "distinguishable
+      from zero" = p&lt;.10 under the clustered SE.</small></p>
+    </div>
+    <div class="section" id="joint-lr-pooling">
+      <h2>Pooling test (LR, gender-relaxed)</h2>
+      <p><em>LR pooling test not yet available. A coefficient flagged as
+      potentially group-varying is tested by relaxing it male-vs-female and
+      comparing the restricted (shared) and relaxed log-likelihoods; results
+      appear here once the LR-test step has run against the baseline MLE.</em></p>
+    </div>
+</body></html>

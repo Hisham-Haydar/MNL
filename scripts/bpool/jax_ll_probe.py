@@ -95,16 +95,30 @@ def _center_proposal(log_market, prior, n_groups, n_alts):
     return (lm - mean_val).reshape(-1)
 
 
-def build_jax_singles_ll(data, spec, is_male, use_actual_choice=False):
+def build_jax_singles_ll(data, spec, is_male, use_actual_choice=False,
+                         per_group=False, gender_split=None):
     """Return a jit-compiled negLL(theta) for one singles group, plus the
     param-name->index map used to slot the 49-vector into named scalars.
 
     use_actual_choice=True -> observed term uses data.actual_choice (REQUIRED
     for synthetic recovery); False -> column-0 (validated real-data path).
 
+    per_group=True -> instead of the summed negLL scalar, return a fn giving the
+    per-group POSITIVE log-likelihood VECTOR (shape (n_groups,)). jax.jacrev of
+    that vector is the per-choice-set score matrix (rows = groups), the meat for
+    the clustered sandwich. The summed path is unchanged (negLL = -sum(vector)).
+
+    gender_split: optional set of HOURS-shifter base coef names (e.g.
+    {"beta_E","beta_h_pt2"}) to relax male-vs-female for the LR pooling test.
+    For each base coef in the set, this builder reads `coef + "_m"` (male group)
+    or `coef + "_f"` (female group) instead of the shared `coef`. Default None
+    -> baseline path is byte-identical. The names must exist in the spec.
+
     All data arrays are captured as float64 jnp constants (device-resident).
     """
     suffix = "_sm" if is_male else "_sf"
+    _gsplit = set(gender_split or ())
+    _gsuf_split = "_m" if is_male else "_f"
     pidx = {n: spec.get_param_index(n) for n in spec.all_param_names}
     _ac = (jnp.asarray(data.actual_choice, dtype=jnp.float64)
            if use_actual_choice else None)
@@ -152,7 +166,8 @@ def build_jax_singles_ll(data, spec, is_male, use_actual_choice=False):
             continue
         inter = sh.get("interaction", None)
         use_working = (inter == "working") or (isinstance(inter, (list, tuple)) and "working" in inter)
-        hours.append((coef, arr, use_working))
+        coef_use = (coef + _gsuf_split) if coef in _gsplit else coef
+        hours.append((coef_use, arr, use_working))
 
     # wage mean shifters + sigma
     wage_terms = []
@@ -244,14 +259,22 @@ def build_jax_singles_ll(data, spec, is_male, use_actual_choice=False):
         # ---- composite V and grouped LL ----
         V = u + log_h + log_w + log_market - log_prior
         V_obs, lse = jgroup_logsumexp(V, n_groups, n_alts, _ac)
-        ll = jnp.sum(V_obs - lse)
-        return -ll  # negative LL (matches engine convention)
+        per = V_obs - lse                 # per-group positive log-likelihood
+        if per_group:
+            return per                    # vector (n_groups,) — jacrev => scores
+        return -jnp.sum(per)              # negative LL (matches engine convention)
 
     return jax.jit(neg_ll), pidx
 
 
-def build_jax_couples_ll(data, spec, use_actual_choice=False):
+def build_jax_couples_ll(data, spec, use_actual_choice=False,
+                        per_group=False, gender_split=None):
     """Return a jit-compiled negLL(theta) for the couples group.
+
+    gender_split: optional set of HOURS-shifter base coef names to relax
+    male-vs-female (LR pooling test). For each base coef in the set the male
+    leg reads coef+"_m" and the female leg coef+"_f"; default None -> shared
+    coef (baseline path byte-identical). See build_jax_singles_ll.
 
     use_actual_choice=True -> observed term uses data.actual_choice (REQUIRED
     for synthetic recovery); False -> column-0 (validated real-data path).
@@ -270,6 +293,7 @@ def build_jax_couples_ll(data, spec, use_actual_choice=False):
     n_alts = int(data.n_obs // data.n_groups)
     _ac = (jnp.asarray(data.actual_choice, dtype=jnp.float64)
            if use_actual_choice else None)
+    _gsplit = set(gender_split or ())
 
     def _arr(name):
         v = getattr(data, name, None)
@@ -308,8 +332,11 @@ def build_jax_couples_ll(data, spec, use_actual_choice=False):
         if af is not None:
             leis_f.append((coef + "_f", af))
 
-    # hours: shared coef (fallback), gender data + gender working interaction
-    def _hours(suffix, working):
+    # hours: shared coef (fallback), gender data + gender working interaction.
+    # gender_split: for base coefs in the set, the male leg reads coef+"_m" and
+    # the female leg coef+"_f" (LR pooling test). Default None -> shared coef
+    # (baseline path byte-identical).
+    def _hours(suffix, working, coef_gsuf):
         terms = []
         for sh in spec.hours_shifters:
             var, coef = sh["variable"], sh["coefficient"]
@@ -318,10 +345,11 @@ def build_jax_couples_ll(data, spec, use_actual_choice=False):
                 continue
             inter = sh.get("interaction", None)
             uw = (inter == "working") or (isinstance(inter, (list, tuple)) and "working" in inter)
-            terms.append((coef, arr, uw, working))
+            coef_use = (coef + coef_gsuf) if coef in _gsplit else coef
+            terms.append((coef_use, arr, uw, working))
         return terms
-    hours_m = _hours("_male", working_m)
-    hours_f = _hours("_female", working_f)
+    hours_m = _hours("_male", working_m, "_m")
+    hours_f = _hours("_female", working_f, "_f")
 
     # wage: shared coef, gender data, worker-gated
     def _wage(suffix, working):
@@ -432,7 +460,10 @@ def build_jax_couples_ll(data, spec, use_actual_choice=False):
 
         V = u + log_h + log_w + log_market - log_prior
         V_obs, lse = jgroup_logsumexp(V, n_groups, n_alts, _ac)
-        return -jnp.sum(V_obs - lse)
+        per = V_obs - lse                 # per-group positive log-likelihood
+        if per_group:
+            return per                    # vector (n_groups,) — jacrev => scores
+        return -jnp.sum(per)
 
     return jax.jit(neg_ll), pidx
 

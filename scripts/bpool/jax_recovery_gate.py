@@ -140,6 +140,13 @@ def main():
     ap.add_argument("--seed", type=int, default=20260530)
     ap.add_argument("--theta-star", type=Path,
                     default=_script_dir / "specs" / "theta_star_joint_v1.csv")
+    ap.add_argument("--draw-spec", type=Path, default=None,
+                    help="UN-pinned spec for the synthetic DGP draw (the numpy "
+                         "engine, used only by run_synthetic_dgp, can't resolve "
+                         "fixed_params). Required when --spec has fixed_params: "
+                         "point this at the sibling spec where those params are "
+                         "FREE (their pinned values are read from --theta-star / "
+                         "fixed_params). The DGP is identical; only the FIT pins.")
     ap.add_argument("--tighten-leisure-bounds", action="store_true")
     ap.add_argument("--gtol", type=float, default=1e-6)
     ap.add_argument("--maxiter", type=int, default=3000)
@@ -192,9 +199,38 @@ def main():
     thr_c2, thr_c3, thr_c4 = 0.05, 0.10, 1e-6
 
     # ===== CHECK 1: synthetic DGP =====
+    # run_synthetic_dgp draws via the NUMPY engine, which can't resolve
+    # fixed_params (KeyError on the pinned name). When the fit spec pins params,
+    # draw from the UN-pinned --draw-spec with the pinned values inserted into a
+    # full theta. The DGP is identical (true value = pinned value); only the FIT
+    # pins. This keeps the numpy engine untouched (JAX-backend-only policy).
     print("\n--- CHECK 1: synthetic DGP ---")
-    sm_s, sf_s, cou_s = jrt.run_synthetic_dgp(spec, data_sm, data_sf, data_cou,
-                                              theta_star, rng)
+    # draw_spec_obj + _full_theta() let the NUMPY DGP draw run with the pinned
+    # params present (the numpy engine can't resolve fixed_params). For an
+    # un-pinned fit spec, draw_spec_obj is the fit spec itself.
+    if getattr(spec, "fixed_params", None):
+        if args.draw_spec is None:
+            raise SystemExit("--spec has fixed_params; you must pass --draw-spec "
+                             "(the sibling spec where those params are FREE).")
+        draw_spec_obj = sp.parse_specification(args.draw_spec)
+        if args.tighten_leisure_bounds:
+            for pn_ in ("theta_l_sm", "theta_l_sf", "theta_l_m", "theta_l_f"):
+                if pn_ in draw_spec_obj.bounds:
+                    draw_spec_obj.bounds[pn_] = (-4.0, -0.3)
+        print(f"  [draw] using un-pinned {draw_spec_obj.name} "
+              f"({len(draw_spec_obj.all_param_names)} params); "
+              f"pinned {list(spec.fixed_params)} inserted at fixed values")
+    else:
+        draw_spec_obj = spec
+
+    def _full_theta(fit_theta):
+        """Map a FIT-order theta (47-vec) to DRAW-spec order, inserting fixed vals."""
+        m = dict(zip(pnames, fit_theta))
+        m.update(getattr(spec, "fixed_params", {}) or {})
+        return np.array([m[n] for n in draw_spec_obj.all_param_names], dtype=np.float64)
+
+    sm_s, sf_s, cou_s = jrt.run_synthetic_dgp(
+        draw_spec_obj, data_sm, data_sf, data_cou, _full_theta(theta_star), rng)
     c1 = (int(sm_s.actual_choice.sum()) == data_sm.n_groups
           and int(sf_s.actual_choice.sum()) == data_sf.n_groups
           and int(cou_s.actual_choice.sum()) == data_cou.n_groups)
@@ -305,17 +341,19 @@ def main():
     if "beta_E" in pnames:
         ie = pnames.index("beta_E")
         def mk(b):
-            t = theta_star.copy(); t[ie] = b; return t
+            # fit-order theta with beta_E overridden, mapped to DRAW-spec order
+            t = theta_star.copy(); t[ie] = b
+            return _full_theta(t)
         rng_c = np.random.default_rng(args.seed + 6)
         import copy
         def draw_s(data, th):
             import estimation_engine as ee
-            comp = ee.compute_likelihood_singles(th, data, spec, return_components=True)
+            comp = ee.compute_likelihood_singles(th, data, draw_spec_obj, return_components=True)
             ac = jrt.draw_synthetic_choice(comp["V"], data.group_starts, data.group_ends, rng_c)
             d = copy.copy(data); d.actual_choice = ac; return d
         def draw_c(data, th):
             import estimation_engine as ee
-            comp = ee.compute_likelihood_couples(th, data, spec, return_components=True)
+            comp = ee.compute_likelihood_couples(th, data, draw_spec_obj, return_components=True)
             ac = jrt.draw_synthetic_choice(comp["V"], data.group_starts, data.group_ends, rng_c)
             d = copy.copy(data); d.actual_choice = ac; return d
         sm_c = draw_s(data_sm, mk(BE["sm"]))

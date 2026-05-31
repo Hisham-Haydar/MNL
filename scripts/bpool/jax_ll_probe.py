@@ -65,17 +65,24 @@ def jbox_cox(x, theta):
     return jnp.where(jnp.abs(theta) < 1e-8, jnp.log(x), powered)
 
 
-def jgroup_logsumexp(V, n_groups, n_alts):
+def jgroup_logsumexp(V, n_groups, n_alts, actual_choice=None):
     """LSE per group; data laid out as (n_groups, n_alts) row-major.
 
-    The engine groups by contiguous [group_starts[i]:group_ends[i]] with the
-    observed choice at group_starts[i] (draw==0 first). Here we reshape to
-    (n_groups, n_alts) so row i is group i and column 0 is the observed choice.
+    Observed-choice term:
+      - actual_choice=None  -> V_obs = column 0 (the numpy-engine convention,
+        valid for REAL data where draw==0 is the observed row, 100% at col 0).
+      - actual_choice given  -> V_obs = sum_j(actual_choice_j * V_j) per group
+        (the GAMSPy-engine convention; REQUIRED for SYNTHETIC data where the
+        Gumbel-max draw lands the chosen alt anywhere, ~0% at col 0).
     """
     Vg = V.reshape(n_groups, n_alts)
     mx = jnp.max(Vg, axis=1, keepdims=True)
     lse = (mx[:, 0] + jnp.log(jnp.sum(jnp.exp(Vg - mx), axis=1)))
-    V_obs = Vg[:, 0]
+    if actual_choice is None:
+        V_obs = Vg[:, 0]
+    else:
+        acg = actual_choice.reshape(n_groups, n_alts)
+        V_obs = jnp.sum(acg * Vg, axis=1)
     return V_obs, lse
 
 
@@ -88,14 +95,19 @@ def _center_proposal(log_market, prior, n_groups, n_alts):
     return (lm - mean_val).reshape(-1)
 
 
-def build_jax_singles_ll(data, spec, is_male):
+def build_jax_singles_ll(data, spec, is_male, use_actual_choice=False):
     """Return a jit-compiled negLL(theta) for one singles group, plus the
     param-name->index map used to slot the 49-vector into named scalars.
+
+    use_actual_choice=True -> observed term uses data.actual_choice (REQUIRED
+    for synthetic recovery); False -> column-0 (validated real-data path).
 
     All data arrays are captured as float64 jnp constants (device-resident).
     """
     suffix = "_sm" if is_male else "_sf"
     pidx = {n: spec.get_param_index(n) for n in spec.all_param_names}
+    _ac = (jnp.asarray(data.actual_choice, dtype=jnp.float64)
+           if use_actual_choice else None)
     n_groups = int(data.n_groups)
     n_alts = int(data.n_obs // data.n_groups)
 
@@ -226,15 +238,18 @@ def build_jax_singles_ll(data, spec, is_male):
 
         # ---- composite V and grouped LL ----
         V = u + log_h + log_w + log_market - log_prior
-        V_obs, lse = jgroup_logsumexp(V, n_groups, n_alts)
+        V_obs, lse = jgroup_logsumexp(V, n_groups, n_alts, _ac)
         ll = jnp.sum(V_obs - lse)
         return -ll  # negative LL (matches engine convention)
 
     return jax.jit(neg_ll), pidx
 
 
-def build_jax_couples_ll(data, spec):
+def build_jax_couples_ll(data, spec, use_actual_choice=False):
     """Return a jit-compiled negLL(theta) for the couples group.
+
+    use_actual_choice=True -> observed term uses data.actual_choice (REQUIRED
+    for synthetic recovery); False -> column-0 (validated real-data path).
 
     Faithful to compute_likelihood_couples:
       u = beta_l_coeff_m*BC(l_m) + beta_l_coeff_f*BC(l_f) + beta_c*BC(c)
@@ -243,11 +258,13 @@ def build_jax_couples_ll(data, spec):
       log_w = sum over genders of log-normal wage density (worker-gated)
       log_market = gsur(both) + region/year/urb(household) + occ(male/female),
                    then proposal-weighted within-group centering
-      V = u + log_h + log_w + log_market - log(prior); grouped LSE; obs at col 0.
+      V = u + log_h + log_w + log_market - log(prior); grouped LSE.
     """
     pidx = {n: spec.get_param_index(n) for n in spec.all_param_names}
     n_groups = int(data.n_groups)
     n_alts = int(data.n_obs // data.n_groups)
+    _ac = (jnp.asarray(data.actual_choice, dtype=jnp.float64)
+           if use_actual_choice else None)
 
     def _arr(name):
         v = getattr(data, name, None)
@@ -406,7 +423,7 @@ def build_jax_couples_ll(data, spec):
                 log_market = (lm - jnp.mean(lm, axis=1, keepdims=True)).reshape(-1)
 
         V = u + log_h + log_w + log_market - log_prior
-        V_obs, lse = jgroup_logsumexp(V, n_groups, n_alts)
+        V_obs, lse = jgroup_logsumexp(V, n_groups, n_alts, _ac)
         return -jnp.sum(V_obs - lse)
 
     return jax.jit(neg_ll), pidx

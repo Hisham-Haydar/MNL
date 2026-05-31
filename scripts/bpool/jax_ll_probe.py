@@ -194,8 +194,13 @@ def build_jax_singles_ll(data, spec, is_male, use_actual_choice=False):
 
     LOG2PI = float(np.log(2 * np.pi))
 
+    _fixed = dict(getattr(spec, "fixed_params", {}) or {})
+
     def neg_ll(theta):
         def P(name):
+            # fixed_params take precedence (pinned, not in theta / pidx)
+            if name in _fixed:
+                return _fixed[name]
             return theta[pidx[name]]
 
         # ---- utility ----
@@ -374,9 +379,12 @@ def build_jax_couples_ll(data, spec, use_actual_choice=False):
     center_prop = (getattr(spec, "market_opportunity_center_weights", None) == "proposal")
 
     LOG2PI = float(np.log(2 * np.pi))
+    _fixed = dict(getattr(spec, "fixed_params", {}) or {})
 
     def neg_ll(theta):
         def P(name):
+            if name in _fixed:
+                return _fixed[name]
             return theta[pidx[name]]
 
         theta_l_m = P(theta_l_m_name) if theta_l_m_name else 0.0

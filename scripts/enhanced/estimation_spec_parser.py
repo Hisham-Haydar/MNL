@@ -163,6 +163,12 @@ class EstimationSpec:
     all_param_names: List[str] = field(default_factory=list)
     initial_values: Dict[str, float] = field(default_factory=dict)
     bounds: Dict[str, Tuple[float, float]] = field(default_factory=dict)
+    # Generic fixed-parameter mechanism (package-agnostic): any parameter listed
+    # in a top-level `fixed_params:` YAML block is PINNED to the given value,
+    # removed from all_param_names/bounds, and resolved by the JAX backend's P()
+    # helper. Use to pin weakly-identified params (e.g. a Box-Cox curvature whose
+    # coefficient is ~0) without touching the model structure or the numpy engine.
+    fixed_params: Dict[str, float] = field(default_factory=dict)
     expression_constraints_enabled: bool = False
     expression_constraints_default_mode: str = "soft"
     expression_constraints_default_weight: float = 1e4
@@ -811,9 +817,31 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
             consumption_coef_fixed=utility_consumption_coef_fixed,
         )
 
+    # ------------------------------------------------------------------
+    # Generic fixed_params: pin any parameter to a value and remove it from
+    # the estimated vector. Package-agnostic (any param / country / spec).
+    # Resolved by the JAX backend's P() helper; the numpy engine is untouched.
+    # ------------------------------------------------------------------
+    fixed_params_raw = config.get("fixed_params", {}) or {}
+    fixed_params: Dict[str, float] = {}
+    if fixed_params_raw:
+        if not isinstance(fixed_params_raw, dict):
+            raise ValueError("fixed_params must be a mapping {param: value}")
+        for k, v in fixed_params_raw.items():
+            try:
+                fixed_params[str(k)] = float(v)
+            except (TypeError, ValueError):
+                raise ValueError(f"fixed_params[{k}] must be numeric, got {v!r}")
+        before = len(all_param_names)
+        all_param_names = [p for p in all_param_names if p not in fixed_params]
+        for p in fixed_params:
+            bounds.pop(p, None)
+        logger.info(f"fixed_params: pinned {sorted(fixed_params)} "
+                    f"({before} -> {len(all_param_names)} free params)")
+
     logger.info(f"Total parameters: {len(all_param_names)}")
 
-    # Validate initial values
+    # Validate initial values (skip fixed params — they are not estimated)
     missing_initial = [p for p in all_param_names if p not in initial_values]
     if missing_initial:
         raise ValueError(f"Missing initial values for parameters: {missing_initial}")
@@ -863,6 +891,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         all_param_names=all_param_names,
         initial_values=initial_values,
         bounds=bounds_dict,
+        fixed_params=fixed_params,
         expression_constraints_enabled=expr_constraints_enabled,
         expression_constraints_default_mode=expr_constraints_default_mode,
         expression_constraints_default_weight=expr_constraints_default_weight,

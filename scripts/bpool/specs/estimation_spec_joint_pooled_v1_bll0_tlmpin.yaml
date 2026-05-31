@@ -1,0 +1,401 @@
+# Joint pooled spec: estimation_spec_joint_pooled_v1_bll0_tlmpin (beta_ll=0 AND theta_l_m pinned)
+# Parent: estimation_spec_bpool_p3a_v1.yaml (55 params)
+# Change: 48 -> 47 params (theta_l_m pinned at -0.8; weakly ID when beta_l0_m~0)
+# Occupation collapse: sm/cm -> male (beta_occ_*_m); sf/cf -> female (beta_occ_*_f)
+# Wage basis: estimator-facing wages are 2016-real (RURO_build_fix_wage_idorighh_v1)
+# Cluster key: idorighh (present on engine-ready parquets, cluster_id == idorighh)
+#
+# ==============================================================================
+# Joint pooled RURO estimation spec — v1
+# ==============================================================================
+# Derived from estimation_spec_bpool_p3a_v1.yaml (55 params).
+#
+# ONE joint maximum-likelihood run over singles AND couples, pooled 2015-2017.
+# Shared opportunity parameters + group-specific preference parameters.
+# Operationalises the single shared g restriction (RURO / Aaberge-Colombino tradition).
+#
+# KEY CHANGE: Occupation opportunity collapsed from four blocks (sm/sf/cm/cf) to
+#   two gender-specific blocks (male / female), pooled across marital status.
+#   - beta_occ_*_sm + beta_occ_*_cm -> beta_occ_*_m  (males, both marital statuses)
+#   - beta_occ_*_sf + beta_occ_*_cf -> beta_occ_*_f  (females, both marital statuses)
+#   Rationale: occupation offer mass is gender-specific (occupational segregation is an
+#   offer-side fact) but the market does not condition offers on marital status. Slice
+#   pre-test supports the collapse: sm vs cm close within gender, sm vs sf/cm vs cf sharp.
+#   See governance doc §1c (joint_pooled_design_memo.md).
+#
+# PARAMETER PARTITION (49 total):
+#   SHARED OPPORTUNITY (29):
+#     Hours (5):    beta_E, beta_h_pt1, beta_h_pt2, beta_h_ft, beta_h_lh
+#     Market (12):  beta_E_gsur, beta_E_drgn2..8, beta_E_drgur, beta_E_drgmd,
+#                   beta_E_y2015, beta_E_y2017
+#     Occupation (6): beta_occ_{2,3,4}_m, beta_occ_{2,3,4}_f
+#     Wage (6):     beta_w0, beta_w_educL, beta_w_educH, beta_w_pexp, beta_w_pexp2, sigma
+#   GROUP-SPECIFIC PREFERENCE (20):
+#     Singles male (4):   beta_l0_sm, beta_l_age_sm, beta_l_age2_sm, theta_l_sm
+#     Singles female (5): beta_l0_sf, beta_l_age_sf, beta_l_age2_sf, beta_l_nkids_sf, theta_l_sf
+#     Singles cons. (1):  theta_c_singles
+#     Couples male (4):   beta_l0_m, beta_l_age_m, beta_l_age2_m, theta_l_m
+#     Couples female (5): beta_l0_f, beta_l_age_f, beta_l_age2_f, beta_l_nkids_f, theta_l_f
+#     Couples interact (1): beta_ll
+#   FIXED (not in the 49):
+#     beta_c = 1.0 (scale numeraire)
+#     couples theta_c = 0.0 (fixed)
+#
+# Data inputs:
+#   U:/EUROMOD-STORAGE/new_data/fr_p3a_bpool_d1w1__singles.parquet
+#   U:/EUROMOD-STORAGE/new_data/fr_p3a_bpool_d1w1__couples.parquet
+#   provisioning_label: bpool_d1w1_gsurv2_opportunity_year_aligned
+#
+# Reference docs:
+#   docs/France_case/_shared/governance/joint_pooled_design_memo.md
+#   docs/France_case/_shared/governance/RURO_spec_redesign_decisions_v2.md §D1,D2,D5
+#   scripts/bpool/specs/estimation_spec_bpool_p3a_v1.yaml (parent)
+# ==============================================================================
+
+specification:
+  name: "joint_pooled_v1_bll0_tlmpin"
+  description: "Joint pooled P3a spec: 49 params, occupation collapsed to gender (male/female), shared opportunity + group-specific leisure. Wage 2016-real. Cluster key: idorighh."
+  wage_spec: "vw"
+  model_family: "regular"
+
+utility:
+  functional_form: "box_cox"
+
+  consumption:
+    coefficient: "beta_c"
+    # SCALE NORMALISATION (v2): beta_c is FIXED to the numeraire value below. It is
+    # NOT estimated — beta_c, beta_c_sm, beta_c_sf are removed from the parameter
+    # vector. This pins the utility scale and breaks the consumption/leisure scale
+    # ridge (beta_c co-scaling with beta_l0) diagnosed in RURO_recovery_test_results_v1.
+    fixed_value: 1.0
+    box_cox_exponent: "theta_c"
+    singles_box_cox_exponent: "theta_c_singles"
+    couples_fixed_box_cox_exponent: 0.0
+    box_cox_bounds: [-8.0, 0.95]
+
+  leisure:
+    intercept: "beta_l0"
+    box_cox_exponent: "theta_l"
+    box_cox_bounds: [-8.0, 0.95]
+    shifters:
+      - variable: "age_norm"
+        coefficient: "beta_l_age"
+      - variable: "age_norm2"
+        coefficient: "beta_l_age2"
+      - variable: "n_children"
+        coefficient: "beta_l_nkids"
+        gender_specific: true   # female only
+
+hours_opportunity:
+  shifters:
+    - variable: "working"
+      coefficient: "beta_E"
+    - variable: "working_pt1"
+      coefficient: "beta_h_pt1"
+    - variable: "working_pt2"
+      coefficient: "beta_h_pt2"
+    - variable: "working_ft"
+      coefficient: "beta_h_ft"
+    - variable: "working_lh"
+      coefficient: "beta_h_lh"   # long-hours [44.5,70]; F35 remains reference
+
+wage_opportunity:
+  specification: "log_normal"
+  mean_shifters:
+    - variable: "intercept"
+      coefficient: "beta_w0"
+    - variable: "educL"
+      coefficient: "beta_w_educL"
+    - variable: "educH"
+      coefficient: "beta_w_educH"
+    - variable: "pexp_years"
+      coefficient: "beta_w_pexp"
+    - variable: "pexp_years2"
+      coefficient: "beta_w_pexp2"
+  variance:
+    parameter: "sigma"
+
+market_opportunity:
+  applies_to: "both"
+  employment_indicator: "working"
+  gsur_variable: "gsur"
+  offer_only_vars: ["gsur"]
+  center_within_choice_set: true
+  center_weights: "proposal"
+  variable_scales:
+    gsur: 10.0
+
+  shifters:
+    - variable: "gsur"
+      coefficient: "beta_E_gsur"
+      interaction: ["working"]
+    - variable: "reg2"
+      coefficient: "beta_E_drgn2"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg3"
+      coefficient: "beta_E_drgn3"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg4"
+      coefficient: "beta_E_drgn4"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg5"
+      coefficient: "beta_E_drgn5"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg6"
+      coefficient: "beta_E_drgn6"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg7"
+      coefficient: "beta_E_drgn7"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "reg8"
+      coefficient: "beta_E_drgn8"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "year_2015_indicator"
+      coefficient: "beta_E_y2015"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "year_2017_indicator"
+      coefficient: "beta_E_y2017"
+      interaction: ["working"]
+      applies_to: "household"
+    # Urbanisation (D5): access-only increment. drgur=urban (db100==1),
+    # drgmd=middle (db100==2); RURAL (drgru, db100==3) is the dropped reference.
+    # Interpretation: urban / middle access RELATIVE TO rural. +2 df.
+    - variable: "drgur"
+      coefficient: "beta_E_drgur"
+      interaction: ["working"]
+      applies_to: "household"
+    - variable: "drgmd"
+      coefficient: "beta_E_drgmd"
+      interaction: ["working"]
+      applies_to: "household"
+
+occupation_opportunity:
+  variable: "loc4"
+  reference: 1
+  # JOINT POOLED COLLAPSE: 12 group-specific blocks (sm/sf/cm/cf) -> 6 gender-specific
+  # blocks (male/female). Occupation offer mass is gender-specific (admissible: occupational
+  # segregation is an offer-side fact) and pooled across marital status (marital status
+  # acts through preferences, not the offer distribution). Slice pre-test supports collapse:
+  # beta_occ_*_sm vs beta_occ_*_cm are close within gender; sm vs sf / cm vs cf are sharp.
+  # See governance doc §1c.
+  shifters:
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_m"
+      applies_to: "male"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_m"
+      applies_to: "male"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_m"
+      applies_to: "male"
+      interaction: ["working"]
+    - variable: "loc4_2"
+      coefficient: "beta_occ_2_f"
+      applies_to: "female"
+      interaction: ["working"]
+    - variable: "loc4_3"
+      coefficient: "beta_occ_3_f"
+      applies_to: "female"
+      interaction: ["working"]
+    - variable: "loc4_4"
+      coefficient: "beta_occ_4_f"
+      applies_to: "female"
+      interaction: ["working"]
+
+# couples.leisure_interaction REMOVED (beta_ll fixed at 0 -> 48-param spec)
+# Rationale: v2 Check-5 Hessian non-PD loads on the beta_ll/beta_l0_m/theta_l_m
+# subspace (confirmed by exact jax.hessian). Memo §5: fix beta_ll=0, re-gate.
+
+# 49 free parameters (parent had 55; -6 from occupation collapse sm/cm->m, sf/cf->f):
+# Singles leisure: beta_l0_sm, beta_l_age_sm, beta_l_age2_sm, theta_l_sm  [4]  (beta_c_sm FIXED)
+#                  beta_l0_sf, beta_l_age_sf, beta_l_age2_sf, beta_l_nkids_sf, theta_l_sf  [5]  (beta_c_sf FIXED)
+#                  theta_c_singles  [1]
+# Couples leisure: beta_l0_m, beta_l_age_m, beta_l_age2_m, theta_l_m  [4]
+#                  beta_l0_f, beta_l_age_f, beta_l_age2_f, beta_l_nkids_f, theta_l_f  [5]
+#                  (beta_c FIXED at 1.0; theta_c FIXED at 0.0)
+# Hours opp:  beta_E, beta_h_pt1, beta_h_pt2, beta_h_ft, beta_h_lh  [5]
+# Market opp: beta_E_gsur, beta_E_drgn2..8, beta_E_y2015, beta_E_y2017,
+#             beta_E_drgur, beta_E_drgmd  [12]
+# Occ opp:    beta_occ_{2,3,4}_{m,f}  [6]   <- was 12 in parent
+# Wage:       beta_w0, beta_w_educL, beta_w_educH, beta_w_pexp, beta_w_pexp2, sigma  [6]
+# Couples:    beta_ll  [1]
+# TOTAL: 4+5+1+4+5+5+12+6+6+1 = 49
+
+initial_values:
+  beta_l0_sm: 1.0
+  beta_l_age_sm: 0.0
+  beta_l_age2_sm: 0.0
+  # beta_c_sm REMOVED — beta_c fixed=1.0 (scale numeraire), not estimated.
+  theta_l_sm: -1.0
+
+  beta_l0_sf: 1.0
+  beta_l_age_sf: 0.0
+  beta_l_age2_sf: 0.0
+  beta_l_nkids_sf: 0.0
+  # beta_c_sf REMOVED — beta_c fixed=1.0 (scale numeraire), not estimated.
+  theta_l_sf: -1.0
+
+  theta_c_singles: -1.0
+
+  beta_l0_m: 0.01
+  beta_l_age_m: 0.0
+  beta_l_age2_m: 0.0
+  # theta_l_m REMOVED -> pinned via fixed_params (weakly identified: beta_l0_m~0)
+
+  beta_l0_f: 1.0
+  beta_l_age_f: 0.0
+  beta_l_age2_f: 0.0
+  beta_l_nkids_f: 0.0
+  theta_l_f: -1.0
+
+  # beta_c REMOVED — fixed=1.0 (scale numeraire), not estimated.
+  # theta_c is NOT listed — fixed at 0.0 and not estimated.
+
+  beta_E:     0.0
+  beta_h_pt1: 0.0
+  beta_h_pt2: 0.0
+  beta_h_ft:  0.0
+  beta_h_lh:  0.0
+
+  beta_E_gsur:   0.0
+  beta_E_drgn2:  0.0
+  beta_E_drgn3:  0.0
+  beta_E_drgn4:  0.0
+  beta_E_drgn5:  0.0
+  beta_E_drgn6:  0.0
+  beta_E_drgn7:  0.0
+  beta_E_drgn8:  0.0
+  beta_E_y2015:  0.0
+  beta_E_y2017:  0.0
+
+  beta_E_drgur:  0.0
+  beta_E_drgmd:  0.0
+
+  beta_w0:       2.0
+  beta_w_educL: -0.1
+  beta_w_educH:  0.2
+  beta_w_pexp:   0.02
+  beta_w_pexp2: -0.0003
+
+  # Occupation opportunity — gender-specific, pooled across marital status.
+  # Replaces the 12 group-specific params (sm/sf/cm/cf) from the parent spec.
+  beta_occ_2_m: 0.0
+  beta_occ_3_m: 0.0
+  beta_occ_4_m: 0.0
+  beta_occ_2_f: 0.0
+  beta_occ_3_f: 0.0
+  beta_occ_4_f: 0.0
+
+  sigma: 0.5
+
+  # beta_ll REMOVED — fixed at 0.0 (memo §5), not estimated (48-param spec)
+
+optimization:
+  method: "L-BFGS-B"
+  analytical_gradient: true
+  max_iterations: 6000
+  tolerance: 1.0e-8
+  gradient_tolerance: 1.0e-6
+  disp: true
+  iprint: 1
+
+  bounds:
+    theta_l_sm: [-8.0, 0.95]
+    theta_l_sf: [-8.0, 0.95]
+  # theta_l_m REMOVED -> pinned via fixed_params (weakly identified: beta_l0_m~0)
+    theta_l_f:  [-8.0, 0.95]
+    theta_c_singles: [-8.0, 0.95]
+    # theta_c NOT listed — fixed at 0.0, not estimated.
+
+    # beta_c_sm / beta_c_sf / beta_c bounds REMOVED — beta_c fixed=1.0 (scale
+    # numeraire), not estimated. See utility.consumption.fixed_value above.
+    beta_l0_sm: [0.05, 50.0]
+    beta_l0_sf: [0.05, 50.0]
+    beta_l0_m:  [1.0e-6, 50.0]
+    beta_l0_f:  [0.05, 50.0]
+
+    beta_l_age_sm:   [-5.0, 5.0]
+    beta_l_age2_sm:  [-1.0, 1.0]
+    beta_l_age_sf:   [-5.0, 5.0]
+    beta_l_age2_sf:  [-1.0, 1.0]
+    beta_l_age_m:    [-5.0, 5.0]
+    beta_l_age2_m:   [-1.0, 1.0]
+    beta_l_age_f:    [-5.0, 5.0]
+    beta_l_age2_f:   [-1.0, 1.0]
+    beta_l_nkids_sf: [-5.0, 5.0]
+    beta_l_nkids_f:  [-5.0, 5.0]
+
+    beta_E:     [-25.0, 25.0]
+    beta_h_pt1: [-10.0, 10.0]
+    beta_h_pt2: [-10.0, 10.0]
+    beta_h_ft:  [-10.0, 10.0]
+    beta_h_lh:  [-10.0, 10.0]
+
+    beta_w0:       [-10.0, 20.0]
+    beta_w_educL:  [-5.0, 5.0]
+    beta_w_educH:  [-5.0, 5.0]
+    beta_w_pexp:   [-1.0, 1.0]
+    beta_w_pexp2:  [-0.1, 0.1]
+
+    beta_E_gsur:   [-10.0, 10.0]
+    beta_E_drgn2:  [-10.0, 10.0]
+    beta_E_drgn3:  [-10.0, 10.0]
+    beta_E_drgn4:  [-10.0, 10.0]
+    beta_E_drgn5:  [-10.0, 10.0]
+    beta_E_drgn6:  [-10.0, 10.0]
+    beta_E_drgn7:  [-10.0, 10.0]
+    beta_E_drgn8:  [-10.0, 10.0]
+    beta_E_y2015:  [-5.0, 5.0]
+    beta_E_y2017:  [-5.0, 5.0]
+
+    beta_E_drgur:  [-10.0, 10.0]
+    beta_E_drgmd:  [-10.0, 10.0]
+
+    # Occupation bounds — wider than parent spec [-10,10] to allow gender pooling to land
+    # at values that span the within-gender range from both marital-status slices.
+    beta_occ_2_m: [-15.0, 15.0]
+    beta_occ_3_m: [-15.0, 15.0]
+    beta_occ_4_m: [-15.0, 15.0]
+    beta_occ_2_f: [-15.0, 15.0]
+    beta_occ_3_f: [-15.0, 15.0]
+    beta_occ_4_f: [-15.0, 15.0]
+
+    sigma: [0.1, 20.0]
+
+  # beta_ll REMOVED — fixed at 0.0 (memo §5), not estimated (48-param spec)
+
+  expression_constraints:
+    enabled: true
+    default_mode: soft
+    default_weight: 1000.0
+    constraints:
+      - name: mul_cou_m_positive
+        expression: mul
+        group: couples_male
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        lower: 1.0e-6
+      - name: mul_cou_f_positive
+        expression: mul
+        group: couples_female
+        at: {consumption: 1.0, leisure_male: 1.0, leisure_female: 1.0}
+        lower: 1.0e-6
+
+gradient_verification:
+  enabled: false
+
+# Pin theta_l_m: the couples-male leisure Box-Cox CURVATURE is unidentified
+# because beta_l0_m (the intercept) is ~0 in the data (profile + bounded-real
+# arbiter, RURO_couples_leisure_profile_v1.md). Pinned to -0.8, the stable
+# theta_l value across the OTHER identified groups (sm -0.82, sf -0.81, f -0.77).
+fixed_params:
+  theta_l_m: -0.8

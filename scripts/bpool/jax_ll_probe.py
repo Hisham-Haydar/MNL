@@ -233,6 +233,185 @@ def build_jax_singles_ll(data, spec, is_male):
     return jax.jit(neg_ll), pidx
 
 
+def build_jax_couples_ll(data, spec):
+    """Return a jit-compiled negLL(theta) for the couples group.
+
+    Faithful to compute_likelihood_couples:
+      u = beta_l_coeff_m*BC(l_m) + beta_l_coeff_f*BC(l_f) + beta_c*BC(c)
+          + beta_ll*BC(l_m)*BC(l_f)           [consumption added ONCE]
+      log_h = sum over genders of hours shifters (shared coefs, gender data)
+      log_w = sum over genders of log-normal wage density (worker-gated)
+      log_market = gsur(both) + region/year/urb(household) + occ(male/female),
+                   then proposal-weighted within-group centering
+      V = u + log_h + log_w + log_market - log(prior); grouped LSE; obs at col 0.
+    """
+    pidx = {n: spec.get_param_index(n) for n in spec.all_param_names}
+    n_groups = int(data.n_groups)
+    n_alts = int(data.n_obs // data.n_groups)
+
+    def _arr(name):
+        v = getattr(data, name, None)
+        return None if v is None else jnp.asarray(v, dtype=jnp.float64)
+
+    leisure_m = _arr("leisure_male")
+    leisure_f = _arr("leisure_female")
+    consumption = _arr("consumption")
+    working_m = _arr("working_male")
+    working_f = _arr("working_female")
+    prior = _arr("prior")
+    log_prior = jnp.log(prior)
+    n_children = _arr("n_children")
+
+    # couples Box-Cox exponents: theta_l_m / theta_l_f; theta_c fixed (couples)
+    theta_l_m_name = (spec.utility_leisure_theta + "_m") if spec.utility_leisure_theta else None
+    theta_l_f_name = (spec.utility_leisure_theta + "_f") if spec.utility_leisure_theta else None
+    couples_theta_c_fixed = getattr(spec, "utility_consumption_theta_couples_fixed", None)
+    beta_c_fixed = getattr(spec, "utility_consumption_coef_fixed", None)
+    beta_l0_m_name = spec.utility_leisure_intercept + "_m"
+    beta_l0_f_name = spec.utility_leisure_intercept + "_f"
+    interaction_name = spec.couples_interaction_coef  # beta_ll
+
+    # leisure shifters: male -> _male data + _m coef; female -> _female data + _f coef;
+    # n_children -> household-level data, female-only, _f coef
+    leis_m, leis_f = [], []
+    for sh in spec.utility_leisure_shifters:
+        var, coef = sh["variable"], sh["coefficient"]
+        if var == "n_children":
+            if n_children is not None:
+                leis_f.append((coef + "_f", n_children))
+            continue
+        am = _arr(var + "_male"); af = _arr(var + "_female")
+        if am is not None:
+            leis_m.append((coef + "_m", am))
+        if af is not None:
+            leis_f.append((coef + "_f", af))
+
+    # hours: shared coef (fallback), gender data + gender working interaction
+    def _hours(suffix, working):
+        terms = []
+        for sh in spec.hours_shifters:
+            var, coef = sh["variable"], sh["coefficient"]
+            arr = _arr(var + suffix)
+            if arr is None:
+                continue
+            inter = sh.get("interaction", None)
+            uw = (inter == "working") or (isinstance(inter, (list, tuple)) and "working" in inter)
+            terms.append((coef, arr, uw, working))
+        return terms
+    hours_m = _hours("_male", working_m)
+    hours_f = _hours("_female", working_f)
+
+    # wage: shared coef, gender data, worker-gated
+    def _wage(suffix, working):
+        terms = []
+        lw = _arr("log_wage" + suffix)
+        for sh in spec.wage_mean_shifters:
+            var, coef = sh["variable"], sh["coefficient"]
+            if var == "intercept":
+                terms.append((coef, None))
+            else:
+                arr = _arr(var + suffix)
+                if arr is not None:
+                    terms.append((coef, arr))
+        return lw, working, terms
+    wage_m = _wage("_male", working_m)
+    wage_f = _wage("_female", working_f)
+    sigma_name = spec.wage_variance_param
+
+    # market: gsur(both: male+female), region/year/urb(household: var * (wm+wf)),
+    # occupation loc4(male/female). gsur scaled by 10.
+    scale_map = getattr(spec, "market_opportunity_variable_scales", None) or {}
+    mkt_terms = []  # list of (coef, contribution_array)
+    wfsum = (working_m + working_f)
+    for sh in (getattr(spec, "market_opportunity_shifters", None) or []):
+        var, coef = sh["variable"], sh["coefficient"]
+        applies = str(sh.get("applies_to", "both")).strip().lower()
+        scale = float(scale_map.get(var, 1.0))
+        inter = sh.get("interaction", None)
+        uw = (inter == "working") or (isinstance(inter, (list, tuple)) and "working" in inter)
+        if applies == "household":
+            arr = _arr(var)
+            if arr is None:
+                continue
+            contrib = arr * scale
+            if uw:
+                contrib = contrib * wfsum
+            mkt_terms.append((coef, contrib))
+        else:
+            # male/cm/both -> male var * working_male ; female/cf/both -> female var * working_female
+            if applies in ("male", "cm", "both"):
+                am = _arr(var + "_male")
+                if am is not None:
+                    c = am * scale
+                    if uw:
+                        c = c * working_m
+                    mkt_terms.append((coef, c))
+            if applies in ("female", "cf", "both"):
+                af = _arr(var + "_female")
+                if af is not None:
+                    c = af * scale
+                    if uw:
+                        c = c * working_f
+                    mkt_terms.append((coef, c))
+    do_center = bool(getattr(spec, "market_opportunity_center_within_choice_set", False))
+    center_prop = (getattr(spec, "market_opportunity_center_weights", None) == "proposal")
+
+    LOG2PI = float(np.log(2 * np.pi))
+
+    def neg_ll(theta):
+        def P(name):
+            return theta[pidx[name]]
+
+        theta_l_m = P(theta_l_m_name) if theta_l_m_name else 0.0
+        theta_l_f = P(theta_l_f_name) if theta_l_f_name else 0.0
+        theta_c = (float(couples_theta_c_fixed) if couples_theta_c_fixed is not None else 0.0)
+        bc_l_m = jbox_cox(leisure_m, theta_l_m)
+        bc_l_f = jbox_cox(leisure_f, theta_l_f)
+        bc_c = jbox_cox(consumption, theta_c)
+
+        blc_m = P(beta_l0_m_name)
+        for cn, arr in leis_m:
+            blc_m = blc_m + P(cn) * arr
+        blc_f = P(beta_l0_f_name)
+        for cn, arr in leis_f:
+            blc_f = blc_f + P(cn) * arr
+        beta_c = beta_c_fixed if beta_c_fixed is not None else P(spec.utility_consumption_coef)
+        beta_ll = P(interaction_name) if interaction_name else 0.0
+        u = (blc_m * bc_l_m + blc_f * bc_l_f + beta_c * bc_c
+             + beta_ll * bc_l_m * bc_l_f)
+
+        log_h = jnp.zeros_like(u)
+        for cn, arr, uw, wk in (hours_m + hours_f):
+            x = arr * wk if uw else arr
+            log_h = log_h + P(cn) * x
+
+        log_w = jnp.zeros_like(u)
+        for (lw, wk, terms) in (wage_m, wage_f):
+            mu = jnp.zeros_like(u)
+            for cn, arr in terms:
+                mu = mu + (P(cn) if arr is None else P(cn) * arr)
+            sigma = P(sigma_name)
+            resid = (lw - mu) / sigma
+            lwd = -0.5 * resid**2 - jnp.log(sigma) - 0.5 * LOG2PI - lw
+            log_w = log_w + jnp.where(wk > 0, lwd, 0.0)
+
+        log_market = jnp.zeros_like(u)
+        for cn, contrib in mkt_terms:
+            log_market = log_market + P(cn) * contrib
+        if do_center:
+            if center_prop:
+                log_market = _center_proposal(log_market, prior, n_groups, n_alts)
+            else:
+                lm = log_market.reshape(n_groups, n_alts)
+                log_market = (lm - jnp.mean(lm, axis=1, keepdims=True)).reshape(-1)
+
+        V = u + log_h + log_w + log_market - log_prior
+        V_obs, lse = jgroup_logsumexp(V, n_groups, n_alts)
+        return -jnp.sum(V_obs - lse)
+
+    return jax.jit(neg_ll), pidx
+
+
 # ---------------------------------------------------------------------------
 # Probe driver
 # ---------------------------------------------------------------------------
@@ -245,9 +424,11 @@ def main():
     ap.add_argument("--years", default="2015,2016,2017")
     ap.add_argument("--n-hh", type=int, default=200, help="cap (0=full)")
     ap.add_argument("--group", default="singles_male",
-                    choices=["singles_male", "singles_female"])
+                    choices=["singles_male", "singles_female", "couples"])
     ap.add_argument("--theta-star", type=Path,
                     default=_script_dir / "specs" / "theta_star_joint_v1.csv")
+    ap.add_argument("--couples-stem", default="fr_p3a_bpool_engine_ready_20x20",
+                    help="Couples engine-ready stem (20x20 proper draws).")
     ap.add_argument("--seed", type=int, default=20260530)
     args = ap.parse_args()
 
@@ -261,15 +442,29 @@ def main():
 
     spec = sp.parse_specification(args.spec)
     years = [] if args.years.strip().lower() == "all" else [int(y) for y in args.years.split(",")]
-    is_male = (args.group == "singles_male")
+    is_couples = (args.group == "couples")
 
-    # Load the singles slice exactly as the harness does
-    sex = "male" if is_male else "female"
-    df, meta = jrt._load_parquet_slice(args.engine_ready_stem, "singles",
-                                       years, args.n_hh, sex=sex)
-    data = eu.precompute_data_singles(df, meta, is_male=is_male,
-                                      include_wage_vars=True, include_loc_vars=True)
-    print(f"loaded {args.group}: n_groups={data.n_groups} n_alts={data.n_obs//data.n_groups}")
+    # Load the slice exactly as the harness does; build the right engine refs.
+    if is_couples:
+        df, meta = jrt._load_parquet_slice(args.couples_stem, "couples",
+                                           years, args.n_hh)
+        data = eu.precompute_data_couples(df, meta, include_wage_vars=True,
+                                          include_loc_vars=True)
+        eng_ll = lambda th: ee.compute_likelihood_couples(th, data, spec)
+        eng_grad = lambda th: ee.compute_gradient_couples(th, data, spec)
+        build_jax = lambda: build_jax_couples_ll(data, spec)
+    else:
+        is_male = (args.group == "singles_male")
+        sex = "male" if is_male else "female"
+        df, meta = jrt._load_parquet_slice(args.engine_ready_stem, "singles",
+                                           years, args.n_hh, sex=sex)
+        data = eu.precompute_data_singles(df, meta, is_male=is_male,
+                                          include_wage_vars=True, include_loc_vars=True)
+        eng_ll = lambda th: ee.compute_likelihood_singles(th, data, spec)
+        eng_grad = lambda th: ee.compute_gradient_singles(th, data, spec)
+        build_jax = lambda: build_jax_singles_ll(data, spec, is_male)
+    print(f"loaded {args.group}: n_groups={data.n_groups} "
+          f"n_alts={data.n_obs//data.n_groups}")
 
     # theta_star (clamped into bounds exactly like the gate)
     theta = jrt.load_theta_star_from_csv(args.theta_star, spec)
@@ -277,15 +472,15 @@ def main():
 
     # ---- engine reference: negLL + analytic gradient ----
     t0 = time.time()
-    ll_eng = ee.compute_likelihood_singles(theta, data, spec)
+    ll_eng = eng_ll(theta)
     t_eng_ll = time.time() - t0
     t0 = time.time()
-    grad_eng = ee.compute_gradient_singles(theta, data, spec)
+    grad_eng = eng_grad(theta)
     t_eng_grad = time.time() - t0
 
     # ---- JAX: build, jit-warm, then time ----
     t0 = time.time()
-    jneg_ll, pidx = build_jax_singles_ll(data, spec, is_male)
+    jneg_ll, pidx = build_jax()
     jgrad = jax.jit(jax.grad(jneg_ll))
     th = jnp.asarray(theta, dtype=jnp.float64)
     ll_jax = float(jneg_ll(th)); _ = jgrad(th)  # warm-up compile
@@ -303,7 +498,7 @@ def main():
     wname = spec.all_param_names[wi]
 
     print("\n" + "=" * 72)
-    print("JAX vs ENGINE — singles correctness probe")
+    print(f"JAX vs ENGINE — {args.group} correctness probe")
     print("=" * 72)
     print(f"  negLL  engine = {float(ll_eng):.10f}")
     print(f"  negLL  jax    = {ll_jax:.10f}")
@@ -327,8 +522,7 @@ def main():
         for i in mismatched:
             tp = theta.copy(); tp[i] += 1e-6
             tm = theta.copy(); tm[i] -= 1e-6
-            fd = (float(ee.compute_likelihood_singles(tp, data, spec))
-                  - float(ee.compute_likelihood_singles(tm, data, spec))) / (2e-6)
+            fd = (float(eng_ll(tp)) - float(eng_ll(tm))) / (2e-6)
             d_jax = abs(grad_jax[i] - fd)
             d_eng = abs(grad_eng[i] - fd)
             verdict = ("JAX correct, ENGINE wrong" if d_jax < d_eng

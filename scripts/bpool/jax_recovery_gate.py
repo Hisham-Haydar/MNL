@@ -221,6 +221,28 @@ def main():
     print(f"  CHECK 2: max|err|={c2_max:.4f} ({c2_worst})  "
           f"{'PASS' if c2 else 'FAIL'}")
 
+    # ---- CONVERGENCE + INTERIORITY GUARD on the warm MLE ----
+    # The warm theta_hat feeds Checks 3 & 5. If it did NOT converge (large
+    # grad) or a param BINDS a bound, Checks 3/5 are invalid (the Hessian is
+    # at a non-optimum / bound-stranded point, not the MLE). Warn loudly.
+    bind = []
+    for i, (lo, hi) in enumerate(bnds):
+        v = theta_warm[i]
+        if lo is not None and abs(v - lo) < 1e-5:
+            bind.append((pnames[i], "lo", float(lo)))
+        if hi is not None and abs(v - hi) < 1e-5:
+            bind.append((pnames[i], "hi", float(hi)))
+    R["warm_converged"] = bool(g_warm < 1e-2)
+    R["warm_bound_binding"] = [(n, s) for n, s, _ in bind]
+    if g_warm >= 1e-2:
+        print(f"  ** WARNING: warm MLE NOT converged (max|grad|={g_warm:.2e}); "
+              f"Checks 3/5 are UNRELIABLE.")
+    if bind:
+        print(f"  ** WARNING: {len(bind)} param(s) BIND a bound: "
+              f"{[(n, s) for n, s, _ in bind]} -- the unconstrained Hessian "
+              f"Check-5 is INVALID (interiority required). Loosen bounds / drop "
+              f"--tighten-leisure-bounds so the synthetic MLE is interior.")
+
     # ===== CHECK 3: group-specific recovery =====
     print("\n--- CHECK 3: group-specific recovery ---")
     blocks = {

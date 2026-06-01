@@ -210,10 +210,12 @@ def _slice_data_groups(data, g0, g1):
 
 
 def _chunked_scores(build_fn, data, spec, theta_hat, *, is_male=None,
-                    chunk_groups=400):
+                    chunk_groups=400, gender_split=None):
     """Per-group score matrix (n_groups, n_params) computed in group-chunks so
     jax.jacrev memory stays bounded. build_fn is build_jax_singles_ll or
-    build_jax_couples_ll; is_male is passed through for the singles builder."""
+    build_jax_couples_ll; is_male is passed through for the singles builder.
+    gender_split is threaded through so the scores match the (possibly relaxed)
+    joint LL used for the estimate + Hessian."""
     th = jnp.asarray(theta_hat, dtype=jnp.float64)
     n_groups = int(data.n_groups)
     out = []
@@ -221,15 +223,16 @@ def _chunked_scores(build_fn, data, spec, theta_hat, *, is_male=None,
         g1 = min(g0 + chunk_groups, n_groups)
         dchunk = _slice_data_groups(data, g0, g1)
         if is_male is None:
-            f, _ = build_fn(dchunk, spec, per_group=True)
+            f, _ = build_fn(dchunk, spec, per_group=True, gender_split=gender_split)
         else:
-            f, _ = build_fn(dchunk, spec, is_male=is_male, per_group=True)
+            f, _ = build_fn(dchunk, spec, is_male=is_male, per_group=True,
+                            gender_split=gender_split)
         out.append(np.asarray(jax.jacrev(f)(th)))
     return np.vstack(out)
 
 
 def _clustered_sandwich(spec, data_sm, data_sf, data_cou, theta_hat, Hinv,
-                        chunk_groups=400):
+                        chunk_groups=400, gender_split=None):
     """Cluster-robust sandwich V = H^-1 B H^-1 with B = sum_j s_j s_j'.
 
     Per-group scores via jax.jacrev of the per-group POSITIVE-LL vector (the
@@ -240,11 +243,13 @@ def _clustered_sandwich(spec, data_sm, data_sf, data_cou, theta_hat, Hinv,
     th = jnp.asarray(theta_hat, dtype=jnp.float64)
 
     S_sm = _chunked_scores(build_jax_singles_ll, data_sm, spec, theta_hat,
-                           is_male=True, chunk_groups=chunk_groups)
+                           is_male=True, chunk_groups=chunk_groups,
+                           gender_split=gender_split)
     S_sf = _chunked_scores(build_jax_singles_ll, data_sf, spec, theta_hat,
-                           is_male=False, chunk_groups=chunk_groups)
+                           is_male=False, chunk_groups=chunk_groups,
+                           gender_split=gender_split)
     S_cou = _chunked_scores(build_jax_couples_ll, data_cou, spec, theta_hat,
-                            chunk_groups=chunk_groups)
+                            chunk_groups=chunk_groups, gender_split=gender_split)
     scores = np.vstack([S_sm, S_sf, S_cou])
 
     cids = np.concatenate([
@@ -302,7 +307,17 @@ def main():
     ap.add_argument("--maxiter", type=int, default=3000)
     ap.add_argument("--out-csv", type=Path, default=None)
     ap.add_argument("--report", type=Path, default=None)
+    ap.add_argument("--gender-split", default="",
+                    help="Comma list of hours-shifter base coefs to relax "
+                         "male-vs-female (coef -> coef_m/coef_f), e.g. "
+                         "'beta_E,beta_h_pt2'. The spec MUST declare the "
+                         "gendered names (initial_values + bounds). Used to "
+                         "estimate a pooling-relaxed baseline. Empty -> the "
+                         "shared spec (default).")
     args = ap.parse_args()
+    # gender_split: CLI override OR (default) the spec's own gender_split block
+    # (spec-driven, agnostic). The two must be consistent with the spec's params.
+    cli_gs = {c.strip() for c in args.gender_split.split(",") if c.strip()}
 
     try:
         sys.stdout.reconfigure(encoding="utf-8")
@@ -314,8 +329,14 @@ def main():
     spec = sp.parse_specification(args.spec)
     pnames = spec.all_param_names
     years = [] if args.years.strip().lower() == "all" else [int(y) for y in args.years.split(",")]
+    # gender_split: prefer the CLI override; else the spec's own block (the
+    # parser has already renamed beta_X -> beta_X_m/_f in all_param_names, so the
+    # LL builders must apply the same split via gender_split).
+    spec_gs = set(getattr(spec, "gender_split", []) or [])
+    gender_split = cli_gs or spec_gs
     print(f"spec: {spec.name}  ({len(pnames)} params)  "
-          f"fixed_params={dict(getattr(spec, 'fixed_params', {}) or {})}")
+          f"fixed_params={dict(getattr(spec, 'fixed_params', {}) or {})}  "
+          f"gender_split={sorted(gender_split)}")
 
     # ---- load REAL data ----
     t0 = time.time()
@@ -345,7 +366,10 @@ def main():
             theta0[i] = min(theta0[i], hi - 1e-9)
 
     # ---- joint negLL (REAL data: col-0 observed-choice path, the validated one) ----
-    joint = build_joint_neg_ll(spec, data_sm, data_sf, data_cou)
+    joint = build_joint_neg_ll(spec, data_sm, data_sf, data_cou,
+                               gender_split=gender_split or None)
+    if gender_split:
+        print(f"  [gender-split] relaxing {sorted(gender_split)} -> _m/_f")
 
     # ===== DELIVERABLE 1: estimate =====
     print("\n=== DELIVERABLE 1: real-data 47-param estimate ===")
@@ -401,7 +425,8 @@ def main():
     print("\n=== DELIVERABLE 2: idorighh-clustered sandwich SE ===")
     t0 = time.time()
     V_cluster, csum = _clustered_sandwich(spec, data_sm, data_sf, data_cou,
-                                          theta_hat, Hinv)
+                                          theta_hat, Hinv,
+                                          gender_split=gender_split or None)
     se_clu = np.sqrt(np.maximum(np.diag(V_cluster), 0.0))
     print(f"  sandwich {time.time()-t0:.1f}s  clusters={csum['n_clusters']} "
           f"groups={csum['n_groups']} multi-group-clusters="

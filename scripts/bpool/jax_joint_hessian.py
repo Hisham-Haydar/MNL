@@ -57,12 +57,18 @@ import jax.numpy as jnp                     # noqa: E402
 from jax_ll_probe import build_jax_singles_ll, build_jax_couples_ll  # noqa: E402
 
 
-def build_joint_neg_ll(spec, data_sm, data_sf, data_cou):
+def build_joint_neg_ll(spec, data_sm, data_sf, data_cou, gender_split=None):
     """joint negLL(theta) = singles_male + singles_female + couples, one shared
-    49-vector. Each sub-builder is the machine-precision-validated JAX fn."""
-    f_sm, _ = build_jax_singles_ll(data_sm, spec, is_male=True)
-    f_sf, _ = build_jax_singles_ll(data_sf, spec, is_male=False)
-    f_cou, _ = build_jax_couples_ll(data_cou, spec)
+    theta-vector. Each sub-builder is the machine-precision-validated JAX fn.
+
+    gender_split: optional set of hours-shifter base coef names to relax
+    male-vs-female (coef -> coef_m / coef_f on the respective legs); default
+    None -> all callers unchanged (baseline path byte-identical)."""
+    f_sm, _ = build_jax_singles_ll(data_sm, spec, is_male=True,
+                                   gender_split=gender_split)
+    f_sf, _ = build_jax_singles_ll(data_sf, spec, is_male=False,
+                                   gender_split=gender_split)
+    f_cou, _ = build_jax_couples_ll(data_cou, spec, gender_split=gender_split)
 
     def joint(theta):
         return f_sm(theta) + f_sf(theta) + f_cou(theta)

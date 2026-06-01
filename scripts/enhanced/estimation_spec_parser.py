@@ -169,6 +169,7 @@ class EstimationSpec:
     # helper. Use to pin weakly-identified params (e.g. a Box-Cox curvature whose
     # coefficient is ~0) without touching the model structure or the numpy engine.
     fixed_params: Dict[str, float] = field(default_factory=dict)
+    gender_split: List[str] = field(default_factory=list)
     expression_constraints_enabled: bool = False
     expression_constraints_default_mode: str = "soft"
     expression_constraints_default_weight: float = 1e4
@@ -839,6 +840,45 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         logger.info(f"fixed_params: pinned {sorted(fixed_params)} "
                     f"({before} -> {len(all_param_names)} free params)")
 
+    # ------------------------------------------------------------------
+    # Generic gender_split: relax a SHARED coefficient to male/female
+    # (coef -> coef_m, coef_f), applied at LL-build time by the JAX builders'
+    # gender_split= hook. Package-agnostic (any coef / country / spec). The
+    # base coef is REMOVED from the estimated vector and the two gendered names
+    # are added (with bounds/initials taken from the gendered entries in the
+    # YAML, falling back to the base coef's). The numpy engine is untouched
+    # (JAX-backend-only, like fixed_params).
+    # ------------------------------------------------------------------
+    gender_split_raw = config.get("gender_split", []) or []
+    gender_split: List[str] = []
+    if gender_split_raw:
+        if not isinstance(gender_split_raw, (list, tuple)):
+            raise ValueError("gender_split must be a list of base coef names")
+        gender_split = [str(c) for c in gender_split_raw]
+        for base in gender_split:
+            m, f = base + "_m", base + "_f"
+            # remove the shared base, insert the two gendered names in place
+            if base in all_param_names:
+                idx = all_param_names.index(base)
+                all_param_names[idx:idx + 1] = [m, f]
+            else:
+                # base not in the list (already split in the spec) — ensure present
+                for nm in (m, f):
+                    if nm not in all_param_names:
+                        all_param_names.append(nm)
+            # bounds/initials: gendered entries win; else inherit the base's
+            base_bnd = bounds.get(base)
+            base_iv = initial_values.get(base)
+            for nm in (m, f):
+                if nm not in bounds and base_bnd is not None:
+                    bounds[nm] = base_bnd
+                if nm not in initial_values and base_iv is not None:
+                    initial_values[nm] = base_iv
+            bounds.pop(base, None)
+            initial_values.pop(base, None)
+        logger.info(f"gender_split: relaxed {gender_split} -> _m/_f "
+                    f"({len(all_param_names)} free params)")
+
     logger.info(f"Total parameters: {len(all_param_names)}")
 
     # Validate initial values (skip fixed params — they are not estimated)
@@ -892,6 +932,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         initial_values=initial_values,
         bounds=bounds_dict,
         fixed_params=fixed_params,
+        gender_split=gender_split,
         expression_constraints_enabled=expr_constraints_enabled,
         expression_constraints_default_mode=expr_constraints_default_mode,
         expression_constraints_default_weight=expr_constraints_default_weight,

@@ -16,7 +16,7 @@ Key Features:
 8. **Worst-Fit Households**: Table of households with lowest log-likelihood
 9. **Utility Decomposition**: Component breakdown (U_pref, log_opp, log_prior)
 10. **Hours Distribution by Bin**: Probability-mass method for predicted shares
-11. **Weight Support**: Detects and uses sample weights when available
+11. **Weighted Diagnostics**: Uses choice-probability weights for predicted moments
 12. **Bootstrap Confidence Intervals**: Optional bootstrap for key fit moments
 
 Compatible with:
@@ -27,19 +27,20 @@ Author: Enhanced RURO Pipeline
 Date: 2026
 """
 
-import logging
-import numpy as np
-import pandas as pd
-import json
-import sys
 import argparse
-import time
+import json
+import logging
 import re
-from html import escape
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple, Callable, Union
+import sys
+import time
 from dataclasses import dataclass, field
 from datetime import datetime
+from html import escape
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+import numpy as np
+import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from path_helpers import reports_root  # noqa: E402
@@ -52,9 +53,6 @@ try:
         render_fit_stats_split_html,
         render_fit_stats_split_markdown,
         render_solver_section_markdown,
-        render_gradient_section_markdown,
-        render_inference_section_markdown,
-        render_decision_summary_markdown,
         # Phase 2: per-block parameter table, identification, solver,
         # probability-fit renderers shared between HTML and Markdown.
         render_param_table_html,
@@ -69,7 +67,6 @@ try:
         render_conopt_trace_markdown,
         # solver-family classification (agnostic solver reporting)
         classify_solver_family,
-        SOLVER_FAMILY_CONOPT,
         PROFILE_CHOICES,
         DEFAULT_PROFILE,
     )
@@ -167,69 +164,25 @@ def _join_signed_terms(terms: List[str]) -> str:
     return " ".join(cleaned)
 
 
-def canonicalize_group_name(group: str) -> str:
-    """
-    Normalize group names to canonical form: 'sm', 'sf', 'cou'.
-    
-    Maps various naming conventions:
-    - 'singles_male', 'SM', 'single_male' → 'sm'
-    - 'singles_female', 'SF', 'single_female' → 'sf'
-    - 'couples', 'couple', 'COU' → 'cou'
-    
-    Parameters
-    ----------
-    group : str
-        Group name in any format
-    
-    Returns
-    -------
-    str
-        Canonical group name
-    """
-    g = group.lower().strip()
-    if g in ('sm', 'singles_male', 'single_male', 'm'):
-        return 'sm'
-    if g in ('sf', 'singles_female', 'single_female', 'f'):
-        return 'sf'
-    if g in ('cou', 'couples', 'couple'):
-        return 'cou'
-    # Keep sub-group identifiers
-    if g in ('cou_m', 'couples_m', 'couples_male'):
-        return 'cou_m'
-    if g in ('cou_f', 'couples_f', 'couples_female'):
-        return 'cou_f'
-    return group  # Return as-is if unknown
-
 # Optional imports
 try:
     import matplotlib
     matplotlib.use('Agg')  # Non-interactive backend
     import matplotlib.pyplot as plt
-    import matplotlib.colors as mcolors
     MATPLOTLIB_AVAILABLE = True
 except ImportError:
     MATPLOTLIB_AVAILABLE = False
 
 try:
-    from scipy.special import logsumexp
     from scipy.stats import norm
     SCIPY_AVAILABLE = True
 except ImportError:
     SCIPY_AVAILABLE = False
 
-# Import from enhanced pipeline
 try:
-    from estimation_utils import (
-        load_and_validate_mnl_data,
-        precompute_data_singles,
-        precompute_data_couples,
-        PrecomputedDataSingles,
-        PrecomputedDataCouples
-    )
-    from estimation_spec_parser import parse_specification, EstimationSpec
-    ENHANCED_IMPORTS = True
+    from estimation_spec_parser import parse_specification
 except ImportError:
-    ENHANCED_IMPORTS = False
+    parse_specification = None
 
 # Configure logging
 logging.basicConfig(
@@ -683,7 +636,7 @@ def load_estimation_results_from_json(json_path: Path) -> Tuple[ParsedParameters
 
 def load_estimation_results_legacy(json_path: Path) -> Tuple[ParsedParameters, Dict[str, Any]]:
     """
-    Load from legacy JSON format (fr_2016_joint.json style).
+    Load from the older flat JSON format.
     """
     LOGGER.info(f"Loading legacy estimation results from: {json_path}")
 
@@ -1251,17 +1204,6 @@ def plot_mu_distributions_by_group(
     c_grid = np.linspace(0.05, 2.5, 200)
     l_grid = np.linspace(0.1, 2.5, 200)
     
-    # Load data to compute median shifters
-    try:
-        singles_path = Path(str(mnl_base) + '__singles.parquet')
-        couples_path = Path(str(mnl_base) + '__couples.parquet')
-        df_singles = pd.read_parquet(singles_path) if singles_path.exists() else None
-        df_couples = pd.read_parquet(couples_path) if couples_path.exists() else None
-    except Exception as e:
-        LOGGER.warning(f"Could not load data for MU plots: {e}")
-        df_singles = None
-        df_couples = None
-    
     # Process each group
     all_groups = []
     
@@ -1669,93 +1611,6 @@ def generate_identification_diagnostics_html(
             </table>
             """
 
-    # Build parameter significance table
-    param_rows = []
-    all_params = parsed_params.all_param_names if hasattr(parsed_params, 'all_param_names') else []
-
-    for group in parsed_params.preference_groups:
-        params = parsed_params.get_all_params_for_group(group)
-
-        # Try to get standard errors from parsed_params
-        if hasattr(parsed_params, 'standard_errors') and parsed_params.standard_errors:
-            se_dict = parsed_params.standard_errors
-        else:
-            se_dict = {}
-
-        if hasattr(parsed_params, 't_values') and parsed_params.t_values:
-            t_dict = parsed_params.t_values
-        else:
-            t_dict = {}
-
-        if hasattr(parsed_params, 'p_values') and parsed_params.p_values:
-            p_dict = parsed_params.p_values
-        else:
-            p_dict = {}
-
-        for param_name, param_value in params.items():
-            # Get SE, t, p for this parameter
-            se = se_dict.get(param_name)
-            t_val = t_dict.get(param_name)
-            p_val = p_dict.get(param_name)
-
-            if se is None or t_val is None or p_val is None:
-                continue  # Skip if we don't have diagnostics
-
-            # Determine significance stars
-            if p_val < 0.01:
-                sig_stars = "***"
-                sig_color = "var(--success-color)"
-            elif p_val < 0.05:
-                sig_stars = "**"
-                sig_color = "var(--warning-color)"
-            elif p_val < 0.10:
-                sig_stars = "*"
-                sig_color = "#f39c12"
-            else:
-                sig_stars = ""
-                sig_color = "#999"
-
-            # Highlight poorly identified
-            row_style = ""
-            if param_name in poorly_identified:
-                row_style = 'style="background-color: #fff3cd;"'  # Light yellow
-
-            param_rows.append(f"""
-                <tr {row_style}>
-                    <td><code>{param_name}</code></td>
-                    <td>{param_value:.6f}</td>
-                    <td>{se:.6f}</td>
-                    <td>{t_val:.3f}</td>
-                    <td>{p_val:.4f}</td>
-                    <td style="color: {sig_color}; font-weight: bold;">{sig_stars}</td>
-                </tr>
-            """)
-
-    param_table_html = ""
-    if param_rows:
-        param_table_html = f"""
-        <h3>Parameter Standard Errors and Significance</h3>
-        <p style="font-size: 0.9em; color: #666; margin-bottom: 1em;">
-            Significance levels: *** p&lt;0.01, ** p&lt;0.05, * p&lt;0.10.
-            Highlighted rows indicate poorly identified parameters (large SE or p&gt;0.10).
-        </p>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Parameter</th>
-                    <th>Estimate</th>
-                    <th>Std Error</th>
-                    <th>t-value</th>
-                    <th>p-value</th>
-                    <th>Sig</th>
-                </tr>
-            </thead>
-            <tbody>
-                {"".join(param_rows)}
-            </tbody>
-        </table>
-        """
-
     eigenvector_html = ""
     if eigenvector_diagnostics:
         rows = ""
@@ -1852,8 +1707,8 @@ def generate_identification_diagnostics_html(
 # whichever shifters the YAML declares and bind them to estimated parameter
 # values from `ParsedParameters`. Group suffixes (`_sm`, `_sf`, `_cm`, `_cf`,
 # `_m`, `_f`) are tolerated when looking up estimates for a shared coefficient.
-# Falls back gracefully if the YAML cannot be read; in that case the legacy
-# hard-coded renderers below are used.
+# Falls back gracefully if the YAML cannot be read; in that case the neutral
+# legacy renderers below are used.
 # ============================================================================
 
 _GROUP_SUFFIXES: Tuple[str, ...] = (
@@ -2320,7 +2175,10 @@ def build_occupation_opportunity_html_specdriven(
 
 
 # ============================================================================
-# Legacy hard-coded renderers (used as fallback when YAML is unavailable)
+# Legacy fallback renderers
+# ----------------------------------------------------------------------------
+# Used only when the YAML specification cannot be read. Spec-driven renderers
+# above are canonical and should carry any country/year/case-specific labels.
 # ============================================================================
 
 
@@ -2331,9 +2189,6 @@ def build_wage_equation_html_dynamic(wage_params: Dict[str, float]) -> str:
     """
     if not wage_params:
         return ""
-
-    # Core wage parameters (always include if present)
-    core_params = ['beta_w0', 'beta_w_educL', 'beta_w_educH', 'beta_pexp', 'beta_pexp2']
 
     # Additional demographic shifters
     demographic_params = ['beta_w_female', 'beta_w_couple', 'beta_w_age',
@@ -2410,24 +2265,16 @@ def build_hours_opportunity_html_dynamic(wage_params: Dict[str, float]) -> str:
     if not wage_params:
         return ""
 
-    # Core hours parameters (focal peaks)
-    core_params = ['beta_work', 'beta_pt1', 'beta_pt2', 'beta_ft']
-
-    # Additional shifters
-    shifter_params = ['beta_gsur', 'beta_work_educL', 'beta_work_educH',
-                     'beta_work_female', 'beta_work_couple', 'beta_work_idf',
-                     'beta_work_age', 'beta_work_age2', 'beta_work_nc']
-
     # Build symbolic equation
     symbolic_parts = []
     if 'beta_work' in wage_params:
-        symbolic_parts.append('β<sub>work</sub> · I(h>0)')
+        symbolic_parts.append('β<sub>work</sub> · working')
     if 'beta_pt1' in wage_params:
-        symbolic_parts.append('β<sub>pt1</sub> · I(h∈[18.5,20.5])')
+        symbolic_parts.append('β<sub>pt1</sub> · working_pt1')
     if 'beta_pt2' in wage_params:
-        symbolic_parts.append('β<sub>pt2</sub> · I(h∈[29.5,30.5])')
+        symbolic_parts.append('β<sub>pt2</sub> · working_pt2')
     if 'beta_ft' in wage_params:
-        symbolic_parts.append('β<sub>ft</sub> · I(h∈[37.5,40.5])')
+        symbolic_parts.append('β<sub>ft</sub> · working_ft')
 
     # Add shifters
     if 'beta_gsur' in wage_params:
@@ -2451,13 +2298,13 @@ def build_hours_opportunity_html_dynamic(wage_params: Dict[str, float]) -> str:
     # Line 1: Core parameters
     line1_parts = []
     if 'beta_work' in wage_params:
-        line1_parts.append(_format_signed_term(wage_params['beta_work'], "I(h>0)", ".4f"))
+        line1_parts.append(_format_signed_term(wage_params['beta_work'], "working", ".4f"))
     if 'beta_pt1' in wage_params:
-        line1_parts.append(_format_signed_term(wage_params['beta_pt1'], "I(h∈[18.5,20.5])", ".4f"))
+        line1_parts.append(_format_signed_term(wage_params['beta_pt1'], "working_pt1", ".4f"))
     if 'beta_pt2' in wage_params:
-        line1_parts.append(_format_signed_term(wage_params['beta_pt2'], "I(h∈[29.5,30.5])", ".4f"))
+        line1_parts.append(_format_signed_term(wage_params['beta_pt2'], "working_pt2", ".4f"))
     if 'beta_ft' in wage_params:
-        line1_parts.append(_format_signed_term(wage_params['beta_ft'], "I(h∈[37.5,40.5])", ".4f"))
+        line1_parts.append(_format_signed_term(wage_params['beta_ft'], "working_ft", ".4f"))
 
     if line1_parts:
         numerical_lines.append(_join_signed_terms(line1_parts))
@@ -2656,6 +2503,22 @@ def _resolve_column(df: pd.DataFrame, base: str, gender: Optional[str] = None) -
     return None
 
 
+def _legacy_hours_indicator(values: Any, variable_name: str, working: np.ndarray) -> Optional[np.ndarray]:
+    """Last-resort compatibility for old no-spec/no-flag inputs."""
+    bounds = {
+        # Historical legacy report bins. Spec-owned reporting.hours_bins and
+        # explicit data columns take precedence everywhere else.
+        'working_pt1': (18.5, 20.5),
+        'working_pt2': (29.5, 30.5),
+        'working_ft': (37.5, 40.5),
+    }
+    if variable_name not in bounds:
+        return None
+    lo, hi = bounds[variable_name]
+    arr = pd.to_numeric(pd.Series(values), errors='coerce').to_numpy(dtype=float)
+    return ((arr >= lo) & (arr <= hi)).astype(float) * working
+
+
 def _compute_log_h(
     df: pd.DataFrame,
     params: Dict[str, float],
@@ -2668,9 +2531,6 @@ def _compute_log_h(
     """Compute hours opportunity log-density using spec when available."""
     hours = df[hours_col].values
     working = (hours > 0).astype(float)
-    pt1 = ((hours >= 18.5) & (hours <= 20.5)).astype(float)
-    pt2 = ((hours >= 29.5) & (hours <= 30.5)).astype(float)
-    ft = ((hours >= 37.5) & (hours <= 40.5)).astype(float)
 
     log_h = np.zeros(len(df))
 
@@ -2702,7 +2562,7 @@ def _compute_log_h(
                         df[hours_col], var_name, spec, working,
                     )
                 if var is None:
-                    var = pt1
+                    var = _legacy_hours_indicator(df[hours_col], var_name, working)
             elif var_name == 'working_pt2':
                 var = _resolve_column(df, var_name, gender=gender)
                 if var is None:
@@ -2710,7 +2570,7 @@ def _compute_log_h(
                         df[hours_col], var_name, spec, working,
                     )
                 if var is None:
-                    var = pt2
+                    var = _legacy_hours_indicator(df[hours_col], var_name, working)
             elif var_name == 'working_ft':
                 var = _resolve_column(df, var_name, gender=gender)
                 if var is None:
@@ -2718,7 +2578,7 @@ def _compute_log_h(
                         df[hours_col], var_name, spec, working,
                     )
                 if var is None:
-                    var = ft
+                    var = _legacy_hours_indicator(df[hours_col], var_name, working)
             else:
                 var = _resolve_column(df, var_name, gender=gender)
                 if var is None:
@@ -2741,14 +2601,23 @@ def _compute_log_h(
 
     beta_pt1 = _get_param_value(params, 'beta_pt1', (group_suffix,))
     if beta_pt1 is not None:
+        pt1 = _resolve_column(df, 'working_pt1', gender=gender)
+        if pt1 is None:
+            pt1 = _legacy_hours_indicator(df[hours_col], 'working_pt1', working)
         log_h += beta_pt1 * pt1
 
     beta_pt2 = _get_param_value(params, 'beta_pt2', (group_suffix,))
     if beta_pt2 is not None:
+        pt2 = _resolve_column(df, 'working_pt2', gender=gender)
+        if pt2 is None:
+            pt2 = _legacy_hours_indicator(df[hours_col], 'working_pt2', working)
         log_h += beta_pt2 * pt2
 
     beta_ft = _get_param_value(params, 'beta_ft', (group_suffix,))
     if beta_ft is not None:
+        ft = _resolve_column(df, 'working_ft', gender=gender)
+        if ft is None:
+            ft = _legacy_hours_indicator(df[hours_col], 'working_ft', working)
         log_h += beta_ft * ft
 
     beta_gsur = _get_param_value(params, 'beta_gsur', (group_suffix,))
@@ -4162,7 +4031,7 @@ def generate_html_report_styled(
 
     # Build model-specific specification blocks.
     # Spec-driven path: re-load the YAML and render the four opportunity blocks
-    # generically. Falls back to legacy hard-coded renderers if YAML unavailable.
+    # generically. Falls back to neutral legacy renderers if YAML unavailable.
     _spec_path_for_blocks = run_metadata.get("spec_config_path") if run_metadata else None
     _spec_blocks = _load_yaml_spec_blocks(_spec_path_for_blocks)
 
@@ -4307,7 +4176,6 @@ def generate_html_report_styled(
     if prob_diagnostics:
         prob_sum = prob_diagnostics.get('prob_sum_errors', {})
         p_chosen = prob_diagnostics.get('p_chosen_dist', {})
-        worst_fit = prob_diagnostics.get('worst_fit_households', [])
         
         if prob_sum or p_chosen:
             prob_diag_html = """
@@ -4998,68 +4866,6 @@ def compute_null_log_likelihood_prior_corrected(
     return float(ll0)
 
 
-def load_mnl_metadata(mnl_base: Path) -> Optional[Dict[str, Any]]:
-    """
-    Load metadata from __mnlmeta.json file.
-    
-    Parameters
-    ----------
-    mnl_base : Path
-        Base path for MNL files (e.g., fr_2016_RURO_mnl)
-    
-    Returns
-    -------
-    Optional[Dict[str, Any]]
-        Metadata dict or None if not found
-    """
-    metadata_path = Path(str(mnl_base) + '__mnlmeta.json')
-    if not metadata_path.exists():
-        LOGGER.warning(f"Metadata file not found: {metadata_path}")
-        return None
-    
-    try:
-        with open(metadata_path, 'r') as f:
-            metadata = json.load(f)
-        LOGGER.info(f"Loaded MNL metadata from: {metadata_path.name}")
-        return metadata
-    except Exception as e:
-        LOGGER.warning(f"Could not load metadata: {e}")
-        return None
-
-
-def get_column_name(metadata: Optional[Dict[str, Any]], dataset: str, preferred: str, fallbacks: List[str]) -> str:
-    """
-    Get the correct column name from metadata with fallbacks.
-    
-    Parameters
-    ----------
-    metadata : Optional[Dict[str, Any]]
-        MNL metadata dict
-    dataset : str
-        'singles' or 'couples'
-    preferred : str
-        Preferred column name
-    fallbacks : List[str]
-        List of fallback column names to try
-    
-    Returns
-    -------
-    str
-        Column name to use
-    """
-    # Check metadata first
-    if metadata is not None:
-        columns = metadata.get('columns', {}).get(dataset, [])
-        if preferred in columns:
-            return preferred
-        for fb in fallbacks:
-            if fb in columns:
-                return fb
-    
-    # Return preferred if no metadata
-    return preferred
-
-
 def compute_fit_diagnostics_from_data(
     parsed_params: ParsedParameters,
     mnl_base: Path,
@@ -5084,10 +4890,6 @@ def compute_fit_diagnostics_from_data(
     
     # Load data files
     try:
-        metadata_path = Path(str(mnl_base) + '__mnlmeta.json')
-        with open(metadata_path) as f:
-            metadata = json.load(f)
-        
         singles_path = Path(str(mnl_base) + '__singles.parquet')
         couples_path = Path(str(mnl_base) + '__couples.parquet')
         
@@ -5834,31 +5636,6 @@ def compute_bound_diagnostics(parsed_params: ParsedParameters, tol: float = 1e-6
         LOGGER.info(f"  Found {len(at_bounds)} parameters at bounds")
     
     return at_bounds
-
-
-def detect_weight_column(df: pd.DataFrame, metadata: Dict = None) -> Optional[str]:
-    """
-    Detect sample weight column from metadata or common naming conventions.
-    
-    Returns column name if found, else None.
-    """
-    # Check metadata first
-    if metadata:
-        weight_col = metadata.get('weight_column')
-        if weight_col and weight_col in df.columns:
-            return weight_col
-    
-    # Common weight column names
-    candidates = ['weight', 'wgt', 'sample_weight', 'pweight', 'pw', 'dwgt', 'wt', 'weights']
-    for col in candidates:
-        if col in df.columns:
-            return col
-        # Case-insensitive
-        for c in df.columns:
-            if c.lower() == col:
-                return c
-    
-    return None
 
 
 # =============================================================================
@@ -6672,16 +6449,6 @@ def _hours_distribution_rows(fit_results: Dict[str, Dict[str, Any]]) -> List[Lis
         for bin_label in sorted(set(obs) | set(pred), key=str):
             rows.append([group, bin_label, obs.get(bin_label), pred.get(bin_label)])
     return rows
-
-
-def _row_get_suffix(row: Dict[str, Any], suffix: str, default: Any = None) -> Any:
-    """Get a dict value by exact key or by ASCII-safe suffix match."""
-    if suffix in row:
-        return row.get(suffix)
-    for key, value in row.items():
-        if str(key).endswith(suffix):
-            return value
-    return default
 
 
 def _muc_beta_theta_values(row: Dict[str, Any]) -> Tuple[Any, Any]:
@@ -7765,7 +7532,7 @@ def run_styled_post_estimation(
     Parameters
     ----------
     results_json_path : Path
-        Path to estimation_results.json or legacy fr_2016_joint.json
+        Path to estimation_results.json or an older flat JSON results file
     mnl_base : Path, optional
         Base path for MNL data files
     output_dir : Path, optional
@@ -7827,7 +7594,6 @@ def run_styled_post_estimation(
             LOGGER.warning(f"   Failed to parse spec config ({spec_config}): {e}")
 
     # Check if SEs or diagnostics are missing and compute if requested
-    se_computed = False
     hess_diag = data.get('hessian_diagnostics')
     needs_diag = (
         hess_diag is None or
@@ -7852,7 +7618,6 @@ def run_styled_post_estimation(
                     parsed, data = _compute_and_update_standard_errors(
                         parsed, data, mnl_base, spec_config, results_json_path
                     )
-                    se_computed = True
                     LOGGER.info("   Standard errors computed and saved")
                 except Exception as e:
                     LOGGER.error(f"   Failed to compute SEs: {e}")
@@ -8783,7 +8548,6 @@ def _build_reproducibility_metadata(
     """Assemble reproducibility metadata: git state, Python version, key packages, hashes."""
     import sys as _sys
     import platform
-    import hashlib
     import importlib
 
     out: Dict[str, Any] = {
@@ -10403,7 +10167,7 @@ def main():
         LOGGER.info(f"Timestamped output directory: {output_dir}")
     
     try:
-        results = run_styled_post_estimation(
+        run_styled_post_estimation(
             results_json_path=args.results_json,
             mnl_base=args.mnl_base,
             output_dir=output_dir,

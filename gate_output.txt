@@ -1,0 +1,34 @@
+C:\Users\hisham\Repo\MNL\.venv\Lib\site-packages\jax\_src\interpreters\mlir.py:1194: UserWarning: A large amount of constants were captured during lowering (2.79GB total). If this is intentional, disable this warning by setting JAX_CAPTURED_CONSTANTS_WARN_BYTES=-1. To obtain a report of where these constants were encountered, set JAX_CAPTURED_CONSTANTS_REPORT_FRAMES=-1.
+  warnings.warn(message)
+E0601 12:02:33.247280  213356 slow_operation_alarm.cc:73] Constant folding an instruction is taking > 1s:
+
+  %reduce-window.13 = f64[7438,29]{1,0} reduce-window(%constant.457, %constant.412), window={size=1x32 stride=1x32 pad=0_0x13_14}, to_apply=%region_12.24
+
+This isn't necessarily a bug; constant-folding is inherently a trade-off between compilation time and speed at runtime. XLA has some guards that attempt to keep constant folding from taking too long, but fundamentally you'll always be able to come up with an input program that takes a long time.
+
+If you'd like to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+E0601 12:02:33.253861  195384 slow_operation_alarm.cc:140] The operation took 1.006935s
+Constant folding an instruction is taking > 1s:
+
+  %reduce-window.13 = f64[7438,29]{1,0} reduce-window(%constant.457, %constant.412), window={size=1x32 stride=1x32 pad=0_0x13_14}, to_apply=%region_12.24
+
+This isn't necessarily a bug; constant-folding is inherently a trade-off between compilation time and speed at runtime. XLA has some guards that attempt to keep constant folding from taking too long, but fundamentally you'll always be able to come up with an input program that takes a long time.
+
+If you'd like to file a bug, run with envvar XLA_FLAGS=--xla_dump_to=/tmp/foo and attach the results.
+C:\Users\hisham\Repo\MNL\.venv\Lib\site-packages\jax\_src\interpreters\mlir.py:1194: UserWarning: A large amount of constants were captured during lowering (2.30GB total). If this is intentional, disable this warning by setting JAX_CAPTURED_CONSTANTS_WARN_BYTES=-1. To obtain a report of where these constants were encountered, set JAX_CAPTURED_CONSTANTS_REPORT_FRAMES=-1.
+  warnings.warn(message)
+JAX 0.10.1  backend=cpu  x64=True
+spec: joint_pooled_v1_bll0_tlmpin_gsplit  (49 params)
+  [remedy] tightened leisure bounds to [-4.0,-0.3]
+loaded: sm=2243 sf=2764 cou=7438 (cou alts=901)
+  [theta_star] loaded 45/49 params from theta_star_joint_v1.csv
+
+--- CHECK 1: synthetic DGP ---
+  [draw] using un-pinned joint_pooled_v1_bll0_gsplit_draw (50 params); pinned ['theta_l_m'] inserted at fixed values
+  [CHECK 1] synthetic chosen alts: sm=2243 sf=2764 cou=7438
+  CHECK 1: PASS
+
+--- CHECK 2: shared recovery (warm) ---
+      [C2/warm iter    1] negLL=54683.668 max|g|=1.13e+03 [246s]
+      [C2/warm iter   50] negLL=54369.819 max|g|=3.94e+01 [522s]
+      [C2/warm iter  100] negLL=54367.143 max|g|=8.14e+00 [808s]

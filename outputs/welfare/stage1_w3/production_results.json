@@ -1,0 +1,315 @@
+{
+  "which": "production",
+  "config": "scripts/welfare/configs/welfare_stage1_w3.yaml",
+  "spec": "joint_pooled_v1_bll0_tlmpin",
+  "n_params": 47,
+  "label": "production",
+  "n_hh_per_group": 0,
+  "couples_alts": 901,
+  "groups": {
+    "singles_male": {
+      "n_groups": 2243,
+      "n_alts": 101
+    },
+    "singles_female": {
+      "n_groups": 2764,
+      "n_alts": 101
+    },
+    "couples": {
+      "n_groups": 7438,
+      "n_alts": 901
+    }
+  },
+  "gate0": {
+    "singles_male": {
+      "group": "singles_male",
+      "status": "ok",
+      "estimator_negll": 28489.042816294535,
+      "welfare_negll": 28489.042816294535,
+      "max_abs": 0.0
+    },
+    "singles_female": {
+      "group": "singles_female",
+      "status": "ok",
+      "estimator_negll": 35411.86351549324,
+      "welfare_negll": 35411.86351549324,
+      "max_abs": 0.0
+    },
+    "couples": {
+      "group": "couples",
+      "status": "ok",
+      "estimator_negll": 174603.72976561091,
+      "welfare_negll": 174603.72976561091,
+      "max_abs": 0.0
+    },
+    "tolerance": 1e-06,
+    "pass": true
+  },
+  "gate1": {
+    "singles_male": {
+      "ess_summary": {
+        "n": 2243,
+        "min": 1.7325633019002264,
+        "p05": 6.530908117251614,
+        "p25": 14.21871303032494,
+        "median": 20.262753336120685,
+        "p75": 26.0959811714491,
+        "p95": 35.46030007141939,
+        "max": 48.86257599464142,
+        "mean": 20.42981095957693
+      },
+      "ess_below_threshold": 1918,
+      "ess_threshold": 30.0,
+      "max_normalised_weight_summary": {
+        "n": 2243,
+        "min": 0.03948740527909433,
+        "p05": 0.07216999152716172,
+        "p25": 0.10840713350760664,
+        "median": 0.13869126924850145,
+        "p75": 0.201167882336382,
+        "p95": 0.36014929845874005,
+        "max": 0.7581778886534718,
+        "mean": 0.16838920847688077
+      },
+      "V_is_summary": {
+        "n": 2243,
+        "min": 7.582807333360545,
+        "p05": 9.388379704900132,
+        "p25": 10.054229101809216,
+        "median": 10.497067917519177,
+        "p75": 11.011296807076803,
+        "p95": 11.887717717240308,
+        "max": 13.478346587359315,
+        "mean": 10.540087242156677
+      }
+    },
+    "singles_female": {
+      "ess_summary": {
+        "n": 2764,
+        "min": 1.581962271778433,
+        "p05": 5.695562318545292,
+        "p25": 12.886425289554758,
+        "median": 18.843496569923524,
+        "p75": 24.57715866660853,
+        "p95": 32.94102675910992,
+        "max": 45.73664414384357,
+        "mean": 18.921986464315818
+      },
+      "ess_below_threshold": 2493,
+      "ess_threshold": 30.0,
+      "max_normalised_weight_summary": {
+        "n": 2764,
+        "min": 0.047627378331339995,
+        "p05": 0.0721517520092992,
+        "p25": 0.11155763701052658,
+        "median": 0.14692464246828155,
+        "p75": 0.21144795418418866,
+        "p95": 0.38824634509064687,
+        "max": 0.7942641414256759,
+        "mean": 0.17724795667056234
+      },
+      "V_is_summary": {
+        "n": 2764,
+        "min": 8.635160939136096,
+        "p05": 10.504850374391363,
+        "p25": 11.317103853119908,
+        "median": 12.115534278234659,
+        "p75": 13.003162957702864,
+        "p95": 14.175675622732138,
+        "max": 18.290269664760434,
+        "mean": 12.207028849502008
+      }
+    },
+    "couples": {
+      "ess_summary": {
+        "n": 7438,
+        "min": 1.7948746682758618,
+        "p05": 16.436013633196865,
+        "p25": 38.43127590008802,
+        "median": 63.15641928165423,
+        "p75": 95.75229846437429,
+        "p95": 151.2211715252236,
+        "max": 307.0309292698764,
+        "mean": 71.10460370479937
+      },
+      "ess_below_threshold": 1285,
+      "ess_threshold": 30.0,
+      "max_normalised_weight_summary": {
+        "n": 7438,
+        "min": 0.010550439727441088,
+        "p05": 0.024797157559359528,
+        "p25": 0.04249036640168127,
+        "median": 0.06452210835160821,
+        "p75": 0.10047420807204041,
+        "p95": 0.18886097999941726,
+        "max": 0.7451097679533747,
+        "mean": 0.08092909590736908
+      },
+      "V_is_summary": {
+        "n": 7438,
+        "min": 14.245772588664874,
+        "p05": 18.817744802298524,
+        "p25": 19.892598304745462,
+        "median": 20.740587792933503,
+        "p75": 21.723503822822714,
+        "p95": 23.379154455454426,
+        "max": 26.61526151147377,
+        "mean": 20.856250601670983
+      }
+    }
+  },
+  "gate2": {
+    "singles_male": {
+      "status": "ok",
+      "zero_recovery_max_abs_phi0": 0.0,
+      "monotone_all": true,
+      "monotone_frac": 1.0,
+      "bracketed_all": true,
+      "converged_all": true,
+      "converged_frac": 1.0,
+      "n_nonconverged": 0,
+      "omega_summary": {
+        "n": 2243,
+        "min": -2.9103830456733704e-10,
+        "p05": -2.9103830456733704e-10,
+        "p25": -2.9103830456733704e-10,
+        "median": -2.9103830456733704e-10,
+        "p75": -2.9103830456733704e-10,
+        "p95": -2.9103830456733704e-10,
+        "max": -2.9103830456733704e-10,
+        "mean": -2.9103830456733704e-10
+      }
+    },
+    "singles_female": {
+      "status": "ok",
+      "zero_recovery_max_abs_phi0": 0.0,
+      "monotone_all": true,
+      "monotone_frac": 1.0,
+      "bracketed_all": true,
+      "converged_all": true,
+      "converged_frac": 1.0,
+      "n_nonconverged": 0,
+      "omega_summary": {
+        "n": 2764,
+        "min": -2.9103830456733704e-10,
+        "p05": -2.9103830456733704e-10,
+        "p25": -2.9103830456733704e-10,
+        "median": -2.9103830456733704e-10,
+        "p75": -2.9103830456733704e-10,
+        "p95": -2.9103830456733704e-10,
+        "max": -2.9103830456733704e-10,
+        "mean": -2.9103830456733704e-10
+      }
+    },
+    "couples": {
+      "status": "ok",
+      "zero_recovery_max_abs_phi0": 0.0,
+      "monotone_all": true,
+      "monotone_frac": 1.0,
+      "bracketed_all": true,
+      "converged_all": true,
+      "converged_frac": 1.0,
+      "n_nonconverged": 0,
+      "omega_summary": {
+        "n": 7438,
+        "min": -2.9103830456733704e-10,
+        "p05": -2.9103830456733704e-10,
+        "p25": -2.9103830456733704e-10,
+        "median": -2.9103830456733704e-10,
+        "p75": -2.9103830456733704e-10,
+        "p95": -2.9103830456733704e-10,
+        "max": -2.9103830456733704e-10,
+        "mean": -2.9103830456733704e-10
+      }
+    }
+  },
+  "gate3": {
+    "singles_male": {
+      "n_groups": 2243,
+      "one_omega_per_group": true,
+      "per_capita_split": false,
+      "type_conditional_reference": true,
+      "n_unique_cluster_ids": 1738
+    },
+    "singles_female": {
+      "n_groups": 2764,
+      "one_omega_per_group": true,
+      "per_capita_split": false,
+      "type_conditional_reference": true,
+      "n_unique_cluster_ids": 2164
+    },
+    "couples": {
+      "n_groups": 7438,
+      "one_omega_per_group": true,
+      "per_capita_split": false,
+      "type_conditional_reference": true,
+      "n_unique_cluster_ids": 5838
+    },
+    "couples_joint_unit": true
+  },
+  "gate4": {
+    "singles_male": {
+      "all_c_ij_finite": true,
+      "n_nonfinite_c_ij": 0,
+      "all_c_ij_positive": true,
+      "n_nonpositive_c_ij": 0
+    },
+    "singles_female": {
+      "all_c_ij_finite": true,
+      "n_nonfinite_c_ij": 0,
+      "all_c_ij_positive": true,
+      "n_nonpositive_c_ij": 0
+    },
+    "couples": {
+      "all_c_ij_finite": true,
+      "n_nonfinite_c_ij": 0,
+      "all_c_ij_positive": true,
+      "n_nonpositive_c_ij": 0
+    },
+    "abar_j_o_required": false,
+    "note": "W^3 uses own-set-with-pay; Abar/J/o EUROMOD exposure is a later W^5/W^6/W^4 issue, not triggered by W^3."
+  },
+  "gate1_draw_growth": {
+    "status": "BLOCKED",
+    "reason": "draw-multiplier datasets at 2x/4x the 901-alt production draws do not exist; not rebuilt and not fabricated. Production-resolution ESS diagnostics computed instead (Gate 1 part ii).",
+    "configured_multipliers": [
+      1,
+      2,
+      4
+    ]
+  },
+  "gate1_vdir_crosscheck": {
+    "status": "BLOCKED",
+    "reason": "V_i^dir redraw-from-g_i machinery not implemented in Stage One; flagged-subset cross-check cannot run. Reported, not approximated."
+  },
+  "decomposition_readiness": {
+    "exposes": [
+      "Omega_i^k",
+      "V_i",
+      "I(Omega^k)",
+      "block_structure"
+    ],
+    "block_structure_from_config": true,
+    "preference_equalisation_pinned_switch": "held",
+    "pool_opportunity_share": false,
+    "blocks_present": {
+      "preference": 20,
+      "ability": 6,
+      "access": 23
+    }
+  },
+  "internal_artifact_I_omega3": {
+    "singles_male": {
+      "gini_INTERNAL_VALIDATION_ONLY": 0.0,
+      "note": "INTERNAL validation artifact, NOT a welfare finding."
+    },
+    "singles_female": {
+      "gini_INTERNAL_VALIDATION_ONLY": 0.0,
+      "note": "INTERNAL validation artifact, NOT a welfare finding."
+    },
+    "couples": {
+      "gini_INTERNAL_VALIDATION_ONLY": 0.0,
+      "note": "INTERNAL validation artifact, NOT a welfare finding."
+    }
+  }
+}

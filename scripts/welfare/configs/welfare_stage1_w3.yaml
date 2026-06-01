@@ -1,0 +1,86 @@
+# Welfare Stage-One resolved config — W^3 only.
+# Grounded on RURO_welfare_scaffold_design_contract_v2.md (§4 schema) and
+# JMP_welfare_spec_v5.md. ALL country/year/spec/specification values live here,
+# NOT in source. The welfare source reads everything below; it hardcodes nothing.
+#
+# STAGE ONE: build + validate W^3. No decomposition, no bootstrap, no other
+# measures as reportable. Any W^3 distribution / I(Omega^3) computed here is an
+# INTERNAL validation artifact, not a welfare finding.
+
+welfare:
+  baseline:
+    spec_yaml_path: "scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml"
+    theta_hat_path: "scripts/bpool/specs/theta_hat_realdata_901_v1.csv"   # cols: parameter,value,se_hessian,se_clustered
+    engine_ready_stem: "fr_p3a_bpool_engine_ready"   # singles legs (101 alts) + default couples
+    couples_stem: "fr_p3a_bpool_engine_ready"        # 901-alt; resolution asserted at load
+    years: []                                        # [] = all pooled years (2015-2017); cross-section filter is config
+    resolution_guard:
+      couples_alts: 901                              # MUST match at load or abort
+
+  core:
+    proposal_correction: "minus_log_prior"           # mandatory; prior = exp(log_prior) from parquet
+    proposal_correction_required: true               # a V_i without it is rejected
+    draw_scheme: "bpool_d1w1"                         # recorded in provenance
+    parity:
+      smoke_tol: 1.0e-8                               # |welfare logsum - estimator lse| max abs, smoke
+      production_tol: 1.0e-6                          # same, production
+    integration:
+      primary_estimator: "importance_sampling_existing_draws"  # V_i^IS over existing draws
+      per_household_stability:
+        enabled: true
+        draw_multipliers: [1, 2, 4]                  # 2x/4x datasets absent -> gate BLOCKED (no rebuild/fabrication)
+        tolerance: 1.0e-6
+      ess_threshold: 30.0                            # flag households with ESS_i below this (production ESS only)
+      report_max_normalised_weight: true
+      cross_check_on_flagged: "redraw_v_dir"         # V_i^dir on flagged subset; BLOCKED if redraw machinery absent
+
+  measures:
+    active: ["W3"]                                   # STAGE ONE: W^3 only
+    reference_preference:
+      default: "own"                                 # W^3 evaluated under own preferences R
+    reference_sets:
+      # W^3 laissez-faire uses the household's OWN set with pay; no Abar/J/o needed.
+      # Abar/J/o left unset here — they are W^5/W^6/W^4 (later stages), not W^3.
+      o_nonemployment_key: null
+      J_universal: null
+      Abar_reference: null
+
+  unit:
+    household: true                                  # one Omega per couple; never split
+    report_groups: ["singles_male", "singles_female", "couples"]
+    pool_opportunity_share: false                    # couples/singles NEVER pre-pooled (v5 §3a)
+
+  fixed_params:                                      # mirrors estimation fixed_params; held in welfare too
+    theta_l_m: -0.8
+    beta_ll: 0.0
+  pinned_zero_uncertainty: ["theta_l_m", "beta_ll"]
+
+  blocks:                                            # channel membership read from config (decomp-readiness only)
+    preference: ["beta_l0_sm", "beta_l_age_sm", "beta_l_age2_sm", "theta_l_sm",
+                 "beta_l0_sf", "beta_l_age_sf", "beta_l_age2_sf", "beta_l_nkids_sf", "theta_l_sf",
+                 "theta_c_singles",
+                 "beta_l0_m", "beta_l_age_m", "beta_l_age2_m", "theta_l_m",
+                 "beta_l0_f", "beta_l_age_f", "beta_l_age2_f", "beta_l_nkids_f", "theta_l_f",
+                 "beta_ll"]
+    ability:    ["beta_w0", "beta_w_educL", "beta_w_educH", "beta_w_pexp", "beta_w_pexp2", "sigma"]
+    access:     ["beta_E", "beta_h_pt1", "beta_h_pt2", "beta_h_ft", "beta_h_lh",
+                 "beta_E_gsur", "beta_E_drgn2", "beta_E_drgn3", "beta_E_drgn4", "beta_E_drgn5",
+                 "beta_E_drgn6", "beta_E_drgn7", "beta_E_drgn8", "beta_E_drgur", "beta_E_drgmd",
+                 "beta_E_y2015", "beta_E_y2017",
+                 "beta_occ_2_m", "beta_occ_3_m", "beta_occ_4_m",
+                 "beta_occ_2_f", "beta_occ_3_f", "beta_occ_4_f"]
+
+  inequality:
+    active_indices: ["gini"]                         # internal validation artifact only (not a finding)
+
+  decomposition_readiness:                           # interfaces only; NOT implemented this stage
+    preference_equalisation_pinned_switch: "held"    # held | swapped (default held)
+    expose_block_structure: true
+    separable_opportunity_shares: true
+
+  smoke:
+    n_hh_per_group: 25                               # small configured subset for the smoke pass
+
+  output:
+    dir: "outputs/welfare/stage1_w3"
+    provenance: "write_resolved_config_and_draw_scheme"

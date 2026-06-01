@@ -1,0 +1,315 @@
+{
+  "which": "smoke",
+  "config": "scripts/welfare/configs/welfare_stage1_w3.yaml",
+  "spec": "joint_pooled_v1_bll0_tlmpin",
+  "n_params": 47,
+  "label": "smoke",
+  "n_hh_per_group": 25,
+  "couples_alts": 901,
+  "groups": {
+    "singles_male": {
+      "n_groups": 25,
+      "n_alts": 101
+    },
+    "singles_female": {
+      "n_groups": 25,
+      "n_alts": 101
+    },
+    "couples": {
+      "n_groups": 25,
+      "n_alts": 901
+    }
+  },
+  "gate0": {
+    "singles_male": {
+      "group": "singles_male",
+      "status": "ok",
+      "estimator_negll": 308.20497652326145,
+      "welfare_negll": 308.20497652326156,
+      "max_abs": 1.1368683772161603e-13
+    },
+    "singles_female": {
+      "group": "singles_female",
+      "status": "ok",
+      "estimator_negll": 313.82515658212714,
+      "welfare_negll": 313.82515658212714,
+      "max_abs": 0.0
+    },
+    "couples": {
+      "group": "couples",
+      "status": "ok",
+      "estimator_negll": 595.141835177351,
+      "welfare_negll": 595.141835177351,
+      "max_abs": 0.0
+    },
+    "tolerance": 1e-08,
+    "pass": true
+  },
+  "gate1": {
+    "singles_male": {
+      "ess_summary": {
+        "n": 25,
+        "min": 7.498514633478291,
+        "p05": 10.813339818163238,
+        "p25": 16.524214465532925,
+        "median": 21.58774515324296,
+        "p75": 26.43750165113168,
+        "p95": 37.38350989780627,
+        "max": 39.0627961740524,
+        "mean": 22.66495275360353
+      },
+      "ess_below_threshold": 20,
+      "ess_threshold": 30.0,
+      "max_normalised_weight_summary": {
+        "n": 25,
+        "min": 0.0505822285895384,
+        "p05": 0.07807640985160494,
+        "p25": 0.09540933797028103,
+        "median": 0.12471772821470069,
+        "p75": 0.1524639934488408,
+        "p95": 0.27041788000580735,
+        "max": 0.33782698510804765,
+        "mean": 0.14227484802186185
+      },
+      "V_is_summary": {
+        "n": 25,
+        "min": 8.921723460227163,
+        "p05": 9.612447350331626,
+        "p25": 9.868963596583392,
+        "median": 10.304512068180609,
+        "p75": 10.86720345313199,
+        "p95": 11.443385222587375,
+        "max": 11.610812834724193,
+        "mean": 10.388597114911738
+      }
+    },
+    "singles_female": {
+      "ess_summary": {
+        "n": 25,
+        "min": 7.291819117571069,
+        "p05": 7.486386308574618,
+        "p25": 9.985379224897994,
+        "median": 17.529538214838897,
+        "p75": 20.72727107695164,
+        "p95": 26.663320386835274,
+        "max": 30.949230089991232,
+        "mean": 16.201554908478787
+      },
+      "ess_below_threshold": 24,
+      "ess_threshold": 30.0,
+      "max_normalised_weight_summary": {
+        "n": 25,
+        "min": 0.07118111587422972,
+        "p05": 0.10518865743347938,
+        "p25": 0.13685670916598142,
+        "median": 0.18774607227462142,
+        "p75": 0.27124506695491274,
+        "p95": 0.3040830790203859,
+        "max": 0.3363882424859975,
+        "mean": 0.19635646934376846
+      },
+      "V_is_summary": {
+        "n": 25,
+        "min": 10.391747377467881,
+        "p05": 10.697356718693431,
+        "p25": 11.459647922594563,
+        "median": 12.133047957045237,
+        "p75": 13.107562089259462,
+        "p95": 14.15324707293957,
+        "max": 14.320874684887738,
+        "mean": 12.225426463847848
+      }
+    },
+    "couples": {
+      "ess_summary": {
+        "n": 25,
+        "min": 17.439089425736753,
+        "p05": 26.25940733585986,
+        "p25": 48.54210731235774,
+        "median": 68.51997915553412,
+        "p75": 86.72066249073512,
+        "p95": 141.55619630755496,
+        "max": 185.88199697161977,
+        "mean": 73.53976563019765
+      },
+      "ess_below_threshold": 4,
+      "ess_threshold": 30.0,
+      "max_normalised_weight_summary": {
+        "n": 25,
+        "min": 0.020702402173871887,
+        "p05": 0.031347950337969555,
+        "p25": 0.04289900317356815,
+        "median": 0.059794638062751385,
+        "p75": 0.09732488974008655,
+        "p95": 0.14342783635930942,
+        "max": 0.18697719917418143,
+        "mean": 0.07278422613926577
+      },
+      "V_is_summary": {
+        "n": 25,
+        "min": 17.985831937623715,
+        "p05": 19.05345621649205,
+        "p25": 19.72988694421267,
+        "median": 20.729850620992917,
+        "p75": 21.361296277154565,
+        "p95": 23.307353210311764,
+        "max": 24.332560043412595,
+        "mean": 20.77586405940506
+      }
+    }
+  },
+  "gate2": {
+    "singles_male": {
+      "status": "ok",
+      "zero_recovery_max_abs_phi0": 0.0,
+      "monotone_all": true,
+      "monotone_frac": 1.0,
+      "bracketed_all": true,
+      "converged_all": true,
+      "converged_frac": 1.0,
+      "n_nonconverged": 0,
+      "omega_summary": {
+        "n": 25,
+        "min": -2.9103830456733704e-10,
+        "p05": -2.9103830456733704e-10,
+        "p25": -2.9103830456733704e-10,
+        "median": -2.9103830456733704e-10,
+        "p75": -2.9103830456733704e-10,
+        "p95": -2.9103830456733704e-10,
+        "max": -2.9103830456733704e-10,
+        "mean": -2.9103830456733704e-10
+      }
+    },
+    "singles_female": {
+      "status": "ok",
+      "zero_recovery_max_abs_phi0": 0.0,
+      "monotone_all": true,
+      "monotone_frac": 1.0,
+      "bracketed_all": true,
+      "converged_all": true,
+      "converged_frac": 1.0,
+      "n_nonconverged": 0,
+      "omega_summary": {
+        "n": 25,
+        "min": -2.9103830456733704e-10,
+        "p05": -2.9103830456733704e-10,
+        "p25": -2.9103830456733704e-10,
+        "median": -2.9103830456733704e-10,
+        "p75": -2.9103830456733704e-10,
+        "p95": -2.9103830456733704e-10,
+        "max": -2.9103830456733704e-10,
+        "mean": -2.9103830456733704e-10
+      }
+    },
+    "couples": {
+      "status": "ok",
+      "zero_recovery_max_abs_phi0": 0.0,
+      "monotone_all": true,
+      "monotone_frac": 1.0,
+      "bracketed_all": true,
+      "converged_all": true,
+      "converged_frac": 1.0,
+      "n_nonconverged": 0,
+      "omega_summary": {
+        "n": 25,
+        "min": -2.9103830456733704e-10,
+        "p05": -2.9103830456733704e-10,
+        "p25": -2.9103830456733704e-10,
+        "median": -2.9103830456733704e-10,
+        "p75": -2.9103830456733704e-10,
+        "p95": -2.9103830456733704e-10,
+        "max": -2.9103830456733704e-10,
+        "mean": -2.9103830456733704e-10
+      }
+    }
+  },
+  "gate3": {
+    "singles_male": {
+      "n_groups": 25,
+      "one_omega_per_group": true,
+      "per_capita_split": false,
+      "type_conditional_reference": true,
+      "n_unique_cluster_ids": 25
+    },
+    "singles_female": {
+      "n_groups": 25,
+      "one_omega_per_group": true,
+      "per_capita_split": false,
+      "type_conditional_reference": true,
+      "n_unique_cluster_ids": 25
+    },
+    "couples": {
+      "n_groups": 25,
+      "one_omega_per_group": true,
+      "per_capita_split": false,
+      "type_conditional_reference": true,
+      "n_unique_cluster_ids": 25
+    },
+    "couples_joint_unit": true
+  },
+  "gate4": {
+    "singles_male": {
+      "all_c_ij_finite": true,
+      "n_nonfinite_c_ij": 0,
+      "all_c_ij_positive": true,
+      "n_nonpositive_c_ij": 0
+    },
+    "singles_female": {
+      "all_c_ij_finite": true,
+      "n_nonfinite_c_ij": 0,
+      "all_c_ij_positive": true,
+      "n_nonpositive_c_ij": 0
+    },
+    "couples": {
+      "all_c_ij_finite": true,
+      "n_nonfinite_c_ij": 0,
+      "all_c_ij_positive": true,
+      "n_nonpositive_c_ij": 0
+    },
+    "abar_j_o_required": false,
+    "note": "W^3 uses own-set-with-pay; Abar/J/o EUROMOD exposure is a later W^5/W^6/W^4 issue, not triggered by W^3."
+  },
+  "gate1_draw_growth": {
+    "status": "BLOCKED",
+    "reason": "draw-multiplier datasets at 2x/4x the 901-alt production draws do not exist; not rebuilt and not fabricated. Production-resolution ESS diagnostics computed instead (Gate 1 part ii).",
+    "configured_multipliers": [
+      1,
+      2,
+      4
+    ]
+  },
+  "gate1_vdir_crosscheck": {
+    "status": "BLOCKED",
+    "reason": "V_i^dir redraw-from-g_i machinery not implemented in Stage One; flagged-subset cross-check cannot run. Reported, not approximated."
+  },
+  "decomposition_readiness": {
+    "exposes": [
+      "Omega_i^k",
+      "V_i",
+      "I(Omega^k)",
+      "block_structure"
+    ],
+    "block_structure_from_config": true,
+    "preference_equalisation_pinned_switch": "held",
+    "pool_opportunity_share": false,
+    "blocks_present": {
+      "preference": 20,
+      "ability": 6,
+      "access": 23
+    }
+  },
+  "internal_artifact_I_omega3": {
+    "singles_male": {
+      "gini_INTERNAL_VALIDATION_ONLY": 0.0,
+      "note": "INTERNAL validation artifact, NOT a welfare finding."
+    },
+    "singles_female": {
+      "gini_INTERNAL_VALIDATION_ONLY": 0.0,
+      "note": "INTERNAL validation artifact, NOT a welfare finding."
+    },
+    "couples": {
+      "gini_INTERNAL_VALIDATION_ONLY": 0.0,
+      "note": "INTERNAL validation artifact, NOT a welfare finding."
+    }
+  }
+}

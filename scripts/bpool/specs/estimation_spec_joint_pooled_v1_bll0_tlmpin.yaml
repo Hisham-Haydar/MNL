@@ -99,6 +99,67 @@ hours_opportunity:
     - variable: "working_lh"
       coefficient: "beta_h_lh"   # long-hours [44.5,70]; F35 remains reference
 
+reporting:
+  # Used by post-estimation plots only; estimation uses hours_opportunity above.
+  # Keep this block case/spec-owned so reports do not hardcode France/P3a bins.
+  hours_bins:
+    - key: "zero"
+      label: "0"
+      lower: 0.0
+      upper: 0.0
+    - key: "h_0_10"
+      label: "0-10"
+      lower: 0.0
+      upper: 10.0
+      include_lower: false
+      include_upper: true
+    - key: "h_10_17_5"
+      label: "10-17.5"
+      lower: 10.0
+      upper: 17.5
+      include_lower: false
+    - key: "pt1"
+      label: "PT1\n(17.5-21.5)"
+      lower: 17.5
+      upper: 21.5
+    - key: "h_21_5_28_5"
+      label: "21.5-28.5"
+      lower: 21.5
+      upper: 28.5
+    - key: "pt2"
+      label: "PT2\n(28.5-30.5)"
+      lower: 28.5
+      upper: 30.5
+    - key: "h_30_5_33_5"
+      label: "30.5-33.5"
+      lower: 30.5
+      upper: 33.5
+    - key: "f35"
+      label: "F35 ref\n(33.5-36.5)"
+      lower: 33.5
+      upper: 36.5
+      reference: true
+    - key: "ft"
+      label: "FT\n(36.5-40.5)"
+      lower: 36.5
+      upper: 40.5
+      include_upper: true
+    - key: "h_40_5_44_5"
+      label: "40.5-44.5"
+      lower: 40.5
+      upper: 44.5
+      include_lower: false
+    - key: "lh"
+      label: "LH\n(44.5-70)"
+      lower: 44.5
+      upper: 70.0
+      include_upper: true
+    - key: "h_70_plus"
+      label: "70+"
+      lower: 70.0
+      upper: null
+      include_lower: false
+
 wage_opportunity:
   specification: "log_normal"
   mean_shifters:

@@ -174,6 +174,7 @@ class EstimationSpec:
     expression_constraints_default_mode: str = "soft"
     expression_constraints_default_weight: float = 1e4
     expression_constraints: List[Dict[str, Any]] = field(default_factory=list)
+    reporting: Dict[str, Any] = field(default_factory=dict)
 
     # Optimization settings
     opt_method: str = "L-BFGS-B"
@@ -456,6 +457,22 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
     logger.info(f"Description: {description}")
     logger.info(f"Wage specification: {wage_spec}")
     logger.info(f"Model family: {model_family}")
+
+    # Optional reporting metadata. Estimation ignores this block; reporting
+    # modules use it to avoid hardcoded country/year/spec labels and bins.
+    reporting_config = config.get("reporting", {}) or {}
+    if not isinstance(reporting_config, dict):
+        raise ValueError("Top-level reporting block must be a mapping if provided.")
+    hours_bins_config = reporting_config.get("hours_bins", None)
+    if hours_bins_config is not None:
+        if not isinstance(hours_bins_config, list):
+            raise ValueError("reporting.hours_bins must be a list of mappings.")
+        for idx, bin_cfg in enumerate(hours_bins_config):
+            if not isinstance(bin_cfg, dict):
+                raise ValueError(
+                    f"reporting.hours_bins[{idx}] must be a mapping, "
+                    f"got {type(bin_cfg).__name__}."
+                )
 
     # Check if occupation choice is enabled
     occupation_choice = spec_meta.get("occupation_choice", False)
@@ -937,6 +954,7 @@ def parse_specification(yaml_path: Path) -> EstimationSpec:
         expression_constraints_default_mode=expr_constraints_default_mode,
         expression_constraints_default_weight=expr_constraints_default_weight,
         expression_constraints=expr_constraints,
+        reporting=reporting_config,
         opt_method=opt_method,
         opt_analytical_gradient=opt_analytical_gradient,
         opt_max_iterations=opt_max_iterations,

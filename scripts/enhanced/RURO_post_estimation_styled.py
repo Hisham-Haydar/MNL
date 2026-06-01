@@ -2692,15 +2692,39 @@ def _compute_log_h(
                 continue
 
             if var_name == 'working':
-                var = working
+                var = _resolve_column(df, var_name, gender=gender)
+                if var is None:
+                    var = working
             elif var_name == 'working_pt1':
-                var = pt1
+                var = _resolve_column(df, var_name, gender=gender)
+                if var is None:
+                    var = _hours_indicator_from_reporting_bins(
+                        df[hours_col], var_name, spec, working,
+                    )
+                if var is None:
+                    var = pt1
             elif var_name == 'working_pt2':
-                var = pt2
+                var = _resolve_column(df, var_name, gender=gender)
+                if var is None:
+                    var = _hours_indicator_from_reporting_bins(
+                        df[hours_col], var_name, spec, working,
+                    )
+                if var is None:
+                    var = pt2
             elif var_name == 'working_ft':
-                var = ft
+                var = _resolve_column(df, var_name, gender=gender)
+                if var is None:
+                    var = _hours_indicator_from_reporting_bins(
+                        df[hours_col], var_name, spec, working,
+                    )
+                if var is None:
+                    var = ft
             else:
                 var = _resolve_column(df, var_name, gender=gender)
+                if var is None:
+                    var = _hours_indicator_from_reporting_bins(
+                        df[hours_col], var_name, spec, working,
+                    )
                 if var is None:
                     continue
 
@@ -3110,6 +3134,122 @@ def _add_predicted_probabilities(
     return df
 
 
+def _default_hours_reporting_bins() -> List[Dict[str, Any]]:
+    """Neutral fallback used only when the spec has no reporting bins."""
+    return [
+        {"key": "zero", "label": "0", "lower": 0.0, "upper": 0.0},
+        {"key": "h_0_10", "label": "0-10", "lower": 0.0, "upper": 10.0, "include_lower": False, "include_upper": True},
+        {"key": "h_10_20", "label": "10-20", "lower": 10.0, "upper": 20.0, "include_lower": False},
+        {"key": "h_20_30", "label": "20-30", "lower": 20.0, "upper": 30.0},
+        {"key": "h_30_40", "label": "30-40", "lower": 30.0, "upper": 40.0},
+        {"key": "h_40_50", "label": "40-50", "lower": 40.0, "upper": 50.0},
+        {"key": "h_50_60", "label": "50-60", "lower": 50.0, "upper": 60.0},
+        {"key": "h_60_plus", "label": "60+", "lower": 60.0, "upper": None},
+    ]
+
+
+def _coerce_hours_reporting_bins(raw_bins: Any) -> List[Dict[str, Any]]:
+    bins: List[Dict[str, Any]] = []
+    if not isinstance(raw_bins, list):
+        return bins
+
+    for idx, raw_bin in enumerate(raw_bins):
+        if not isinstance(raw_bin, dict):
+            LOGGER.warning("Ignoring reporting.hours_bins[%s]: expected mapping", idx)
+            continue
+        try:
+            lower_raw = raw_bin.get("lower", raw_bin.get("min", None))
+            upper_raw = raw_bin.get("upper", raw_bin.get("max", None))
+            lower = -np.inf if lower_raw is None else float(lower_raw)
+            upper = np.inf if upper_raw is None else float(upper_raw)
+        except (TypeError, ValueError):
+            LOGGER.warning("Ignoring reporting.hours_bins[%s]: non-numeric bounds", idx)
+            continue
+        if lower > upper:
+            LOGGER.warning("Ignoring reporting.hours_bins[%s]: lower > upper", idx)
+            continue
+
+        label = str(raw_bin.get("label") or raw_bin.get("key") or f"Bin {idx + 1}")
+        exact = bool(raw_bin.get("exact", False)) or np.isclose(lower, upper)
+        bins.append({
+            "key": str(raw_bin.get("key") or f"bin_{idx + 1}"),
+            "label": label,
+            "lower": lower,
+            "upper": upper,
+            "include_lower": bool(raw_bin.get("include_lower", True)),
+            "include_upper": bool(raw_bin.get("include_upper", False)),
+            "exact": exact,
+        })
+    return bins
+
+
+def _hours_reporting_bins_from_spec(spec: Optional[Any]) -> List[Dict[str, Any]]:
+    reporting = getattr(spec, "reporting", {}) if spec is not None else {}
+    raw_bins = reporting.get("hours_bins") if isinstance(reporting, dict) else None
+    bins = _coerce_hours_reporting_bins(raw_bins)
+    if bins:
+        return bins
+    return _coerce_hours_reporting_bins(_default_hours_reporting_bins())
+
+
+def _hours_bin_mask(values: pd.Series, bin_cfg: Dict[str, Any]) -> pd.Series:
+    numeric = pd.to_numeric(values, errors="coerce")
+    mask = numeric.notna()
+    lower = float(bin_cfg["lower"])
+    upper = float(bin_cfg["upper"])
+
+    if bool(bin_cfg.get("exact", False)):
+        if np.isfinite(lower):
+            exact_mask = pd.Series(
+                np.isclose(numeric.to_numpy(dtype=float), lower),
+                index=values.index,
+            )
+            return mask & exact_mask
+        return pd.Series(False, index=values.index)
+
+    if np.isfinite(lower):
+        if bool(bin_cfg.get("include_lower", True)):
+            mask &= numeric >= lower
+        else:
+            mask &= numeric > lower
+    if np.isfinite(upper):
+        if bool(bin_cfg.get("include_upper", False)):
+            mask &= numeric <= upper
+        else:
+            mask &= numeric < upper
+    return mask
+
+
+def _hours_distribution_share(values: Any, hour_bins: List[Dict[str, Any]]) -> Dict[str, float]:
+    series = pd.Series(values)
+    counts: Dict[str, float] = {}
+    for bin_cfg in hour_bins:
+        label = str(bin_cfg.get("label") or bin_cfg.get("key"))
+        counts[label] = float(_hours_bin_mask(series, bin_cfg).sum())
+    total = sum(counts.values())
+    if total <= 0:
+        return {}
+    return {key: val / total for key, val in counts.items()}
+
+
+def _hours_indicator_from_reporting_bins(
+    values: Any,
+    variable_name: str,
+    spec: Optional[Any],
+    working: np.ndarray,
+) -> Optional[np.ndarray]:
+    if not variable_name.startswith("working_"):
+        return None
+    target_key = variable_name.replace("working_", "", 1)
+    bins = _hours_reporting_bins_from_spec(spec)
+    for bin_cfg in bins:
+        if str(bin_cfg.get("key", "")) != target_key:
+            continue
+        mask = _hours_bin_mask(pd.Series(values), bin_cfg).to_numpy(dtype=float)
+        return mask * working
+    return None
+
+
 def plot_hours_distribution_comparison(
     parsed_params: ParsedParameters,
     mnl_base: Path,
@@ -3127,9 +3267,8 @@ def plot_hours_distribution_comparison(
 
     plot_paths = {}
 
-    # Define bins for hours (0, 10, 18.5, 20.5, 29.5, 30.5, 37.5, 40.5, 50, 60+)
-    bins = [0, 10, 18.5, 20.5, 29.5, 30.5, 37.5, 40.5, 50, 60, 100]
-    bin_labels = ['0', '0-10', '10-18.5', 'PT1\n(18.5-20.5)', '20.5-29.5', 'PT2\n(29.5-30.5)', '30.5-37.5', 'FT\n(37.5-40.5)', '40.5-50', '50+']
+    hour_bins = _hours_reporting_bins_from_spec(spec)
+    bin_labels = [b["label"] for b in hour_bins]
 
     try:
         # Load data
@@ -3199,17 +3338,20 @@ def plot_hours_distribution_comparison(
         chosen_col = 'chosen' if 'chosen' in df_all.columns else 'is_chosen'
 
         def _build_obs_pred(df: pd.DataFrame, hours_col: str) -> Tuple[np.ndarray, np.ndarray]:
-            obs_counts, _ = np.histogram(df.loc[df[chosen_col] == 1, hours_col].values, bins=bins)
+            chosen_mask = df[chosen_col] == 1
+            obs_counts = np.zeros(len(hour_bins), dtype=float)
+            pred_counts = np.zeros(len(hour_bins), dtype=float)
+            for i, bin_cfg in enumerate(hour_bins):
+                mask = _hours_bin_mask(df[hours_col], bin_cfg)
+                obs_counts[i] = float((mask & chosen_mask).sum())
+                pred_counts[i] = float(df.loc[mask, 'pred_prob'].sum())
             obs_freq = obs_counts / obs_counts.sum() * 100 if obs_counts.sum() > 0 else obs_counts
-            pred_counts = np.zeros(len(bins) - 1)
-            for i in range(len(bins) - 1):
-                mask = (df[hours_col] >= bins[i]) & (df[hours_col] < bins[i+1])
-                pred_counts[i] = df.loc[mask, 'pred_prob'].sum()
             pred_freq = pred_counts / pred_counts.sum() * 100 if pred_counts.sum() > 0 else pred_counts
             return obs_freq, pred_freq
 
         def _plot_dist(obs_freq: np.ndarray, pred_freq: np.ndarray, title: str, out_key: str) -> None:
-            fig, ax = plt.subplots(figsize=(10, 6))
+            fig_width = max(10.0, 0.85 * len(bin_labels))
+            fig, ax = plt.subplots(figsize=(fig_width, 6))
             x = np.arange(len(bin_labels))
             width = 0.35
 
@@ -4938,6 +5080,7 @@ def compute_fit_diagnostics_from_data(
     
     mnl_base = Path(mnl_base)
     fit_results = {}
+    hour_bins = _hours_reporting_bins_from_spec(spec)
     
     # Load data files
     try:
@@ -5029,13 +5172,8 @@ def compute_fit_diagnostics_from_data(
                 include_groups=False
             ).mean()
             
-            # Hours distribution (binned) for observed
-            bins = [0, 5, 15, 25, 35, 45, 55, 65, 100]
-            bin_labels = ['0', '1-10', '11-20', '21-30', '31-40', '41-50', '51-60', '60+']
             obs_hours_array = chosen['hours'].values
-            obs_binned = pd.cut(obs_hours_array, bins=bins, labels=bin_labels, include_lowest=True)
-            obs_vc = obs_binned.value_counts()
-            hours_dist_observed = (obs_vc / obs_vc.sum()).to_dict() if obs_vc.sum() > 0 else {}
+            hours_dist_observed = _hours_distribution_share(obs_hours_array, hour_bins)
             
             # Hours distribution for predicted (expected hours per household)
             expected_hours_list = []
@@ -5043,9 +5181,7 @@ def compute_fit_diagnostics_from_data(
                 exp_h = (group_df['prob'] * group_df['hours']).sum()
                 expected_hours_list.append(exp_h)
             expected_hours_arr = np.array(expected_hours_list)
-            pred_binned = pd.cut(expected_hours_arr, bins=bins, labels=bin_labels, include_lowest=True)
-            pred_vc = pred_binned.value_counts()
-            hours_dist_predicted = (pred_vc / pred_vc.sum()).to_dict() if pred_vc.sum() > 0 else {}
+            hours_dist_predicted = _hours_distribution_share(expected_hours_arr, hour_bins)
             
             fit_results[group_key] = {
                 'participation_observed': obs_participation,
@@ -5126,13 +5262,8 @@ def compute_fit_diagnostics_from_data(
                         include_groups=False
                     ).mean()
                     
-                    # Hours distribution (binned) for observed
-                    bins = [0, 5, 15, 25, 35, 45, 55, 65, 100]
-                    bin_labels = ['0', '1-10', '11-20', '21-30', '31-40', '41-50', '51-60', '60+']
                     obs_hours_array = chosen[hours_col].values
-                    obs_binned = pd.cut(obs_hours_array, bins=bins, labels=bin_labels, include_lowest=True)
-                    obs_vc = obs_binned.value_counts()
-                    hours_dist_observed = (obs_vc / obs_vc.sum()).to_dict() if obs_vc.sum() > 0 else {}
+                    hours_dist_observed = _hours_distribution_share(obs_hours_array, hour_bins)
                     
                     # Hours distribution for predicted
                     expected_hours_list = []
@@ -5140,9 +5271,7 @@ def compute_fit_diagnostics_from_data(
                         exp_h = (group_df['prob'] * group_df[hours_col]).sum()
                         expected_hours_list.append(exp_h)
                     expected_hours_arr = np.array(expected_hours_list)
-                    pred_binned = pd.cut(expected_hours_arr, bins=bins, labels=bin_labels, include_lowest=True)
-                    pred_vc = pred_binned.value_counts()
-                    hours_dist_predicted = (pred_vc / pred_vc.sum()).to_dict() if pred_vc.sum() > 0 else {}
+                    hours_dist_predicted = _hours_distribution_share(expected_hours_arr, hour_bins)
                     
                     fit_results[group_key] = {
                         'participation_observed': obs_participation,

@@ -523,7 +523,8 @@ def main():
         "in_bounds": not out_of_bounds, "out_of_bounds": out_of_bounds,
         "at_bound": [(n, s, b) for n, s, b, v in at_bound],
         "hessian": {"pd": bool(pd_ok), "min_eig": float(eig.min()),
-                    "cond": float(verdict["cond"]), "verdict": verdict["verdict_str"]},
+                    "max_eig": float(eig.max()), "cond": float(verdict["cond"]),
+                    "verdict": verdict["verdict_str"]},
         "cluster_summary": csum,
         "block_se": block_se,
         "beta_l0_m": bl0m,
@@ -603,7 +604,7 @@ def _write_report(path, R):
          "",
          "## Hessian @ MLE (PD verification)", "",
          f"- **PD** = {R['hessian']['pd']}  **min_eig** = {R['hessian']['min_eig']:.3e}  "
-         f"**cond** = {R['hessian']['cond']:.3e}",
+         f"**max_eig** = {R['hessian']['max_eig']:.3e}  **cond** = {R['hessian']['cond']:.3e}",
          f"- verdict: {R['hessian']['verdict']}",
          ("" if R['hessian']['pd'] else
           "\n> ** STOP: Hessian NON-PD on real data despite the synthetic gate "

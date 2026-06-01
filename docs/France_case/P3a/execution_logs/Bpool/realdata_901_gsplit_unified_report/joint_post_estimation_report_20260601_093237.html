@@ -77,7 +77,7 @@
     <h1>📊 RURO Post-Estimation Analysis</h1>
 
     <div class="header-info">
-        <p><strong>Generated:</strong> 2026-06-01 09:32:37</p>
+        <p><strong>Generated:</strong> 2026-06-01 10:35:08</p>
         <p><strong>Total Parameters:</strong> 50 | <strong>Groups:</strong> joint</p>
         <p><strong>Estimation Results Source:</strong> <code>C:\Users\hisham\MNL\EUROMOD-STORAGE\outputs\post_estimation\realdata_joint_901_gsplit_UNIFIED\joint\estimation_results.json</code></p>
         
@@ -106,11 +106,11 @@
         </div>
         <div>
           <div style="font-size: 0.9em; opacity: 0.8;">Post-Estimation</div>
-          <div class="time-value">1m 58s</div>
+          <div class="time-value">2m 1s</div>
         </div>
         <div>
           <div style="font-size: 0.9em; opacity: 0.8;">Total</div>
-          <div class="time-value">26m 22s</div>
+          <div class="time-value">26m 25s</div>
         </div>
         <div>
           <div style="font-size: 0.9em; opacity: 0.8;">Iterations</div>
@@ -144,7 +144,8 @@
 
 <section>
   <h2>📈 D. Economic Sanity Diagnostics</h2>
-  <p><em>Not available: Marginal-utility diagnostics not computed (requires --mnl-base).</em></p>
+  <p><em>These are not model-fit statistics. They check whether estimated preferences are economically sensible.</em></p>
+  <table class="table" style="width:auto;"><tr><th>negative_muc_count</th><td>0.0000e+00</td></tr><tr><th>negative_muc_pct</th><td>0.0000e+00</td></tr><tr><th>negative_mul_count</th><td>0.0000e+00</td></tr><tr><th>negative_mul_pct</th><td>0.0000e+00</td></tr></table>
 </section>
 
     <section>
@@ -167,17 +168,17 @@
         </details>
     </section>
 
-    <section><h2>🔍 Identification &amp; Hessian Diagnostics (from DiagnosticsBundle)</h2><table class="table" style="width:auto;"><tr><th>Condition number κ</th><td>1.45e+06</td></tr><tr><th>Min eigenvalue</th><td>0.4080</td></tr><tr><th>Max eigenvalue</th><td>—</td></tr><tr><th>Negative eigenvalues</th><td>0</td></tr></table></section>
+    <section><h2>🔍 Identification &amp; Hessian Diagnostics (from DiagnosticsBundle)</h2><table class="table" style="width:auto;"><tr><th>Condition number κ</th><td>1.45e+06</td></tr><tr><th>Min eigenvalue</th><td>0.4080</td></tr><tr><th>Max eigenvalue</th><td>592952.9842</td></tr><tr><th>Negative eigenvalues</th><td>0</td></tr></table></section>
 
     
     <section>
         <h2>🔍 Identification Diagnostics</h2>
         <p>Hessian-based diagnostics for parameter identification quality.</p>
 
-        <div class="stats-box" style="border-left-color: var(--danger-color); margin-bottom: 1em;">
+        <div class="stats-box" style="border-left-color: var(--warning-color); margin-bottom: 1em;">
             <h3 style="margin-top:0;">Condition Number: 1.45e+06</h3>
-            <p style="font-size: 1.1em; margin: 0.5em 0;"><strong>✗ Severe Identification Problem</strong></p>
-            <p style="margin:0;">The Hessian is severely ill-conditioned (κ ≥ 10,000). This indicates serious identification issues with unreliable parameter estimates.</p>
+            <p style="font-size: 1.1em; margin: 0.5em 0;"><strong>Positive-Definite Hessian; High Condition Number</strong></p>
+            <p style="margin:0;">The Hessian is positive definite with zero negative eigenvalues, so the local-curvature identification check passes. The large condition number is a scaling and numerical-precision warning; by itself it is not evidence that the model is unidentified.</p>
         </div>
 
         <h3>Eigenvalue Analysis</h3>
@@ -189,13 +190,13 @@
             </div>
             <div class="stats-box" style="border-left-color: #3498db;">
                 <h4 style="margin-top:0;">Maximum Eigenvalue</h4>
-                <p style="font-size: 1.5em; margin: 0;">N/A</p>
+                <p style="font-size: 1.5em; margin: 0;">5.93e+05</p>
             </div>
             <div class="stats-box" style="border-left-color: var(--success-color);">
                 <h4 style="margin-top:0;">Negative Eigenvalues</h4>
                 <p style="font-size: 1.5em; margin: 0;">0</p>
                 <p style="font-size: 0.9em; margin: 0.5em 0 0 0; color: #666;">
-                    ✓ Local maximum confirmed
+                    Local maximum confirmed
                 </p>
             </div>
         </div>
@@ -646,7 +647,7 @@
     </section>
     
 
-    <section><h2>📋 Parameter Estimates (by block — from DiagnosticsBundle)</h2><p><strong>Primary SE: Hessian (classical)</strong> <em>(supply --cluster-se-json for cluster-robust SE)</em></p><p style='font-size:0.9em;color:#555;'><em>Primary SE is robust/cluster when --cluster-se-json is supplied; otherwise the Hessian (classical) SE is primary.</em></p><h3>Block: preference (19 params)</h3><table class="table table-sm"><thead><tr><th>parameter</th><th>estimate</th><th>se_hessian</th><th>t_hessian</th><th>se_robust</th><th>t_robust</th><th>p_robust</th><th>fixed</th><th>at_lower</th><th>at_upper</th><th>primary_se</th></tr></thead><tbody><tr><td>joint.beta_l0_sm</td><td>4.428684</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_l_age_sm</td><td>0.666821</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_l_age2_sm</td><td>0.369904</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.theta_l_sm</td><td>-1.790248</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_l0_sf</td><td>3.848124</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_l_age_sf</td><td>0.490208</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr class="warning-row"><td>joint.beta_l_age2_sf</td><td>1.000000</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td>⬆</td><td>hessian</td></tr><tr><td>joint.beta_l_nkids_sf</td><td>1.781787</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.theta_l_sf</td><td>-1.440449</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.theta_c_singles</td><td>0.009507</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr class="warning-row"><td>joint.beta_l0_m</td><td>1.000000e-06</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td>⬇</td><td></td><td>hessian</td></tr><tr><td>joint.beta_l_age_m</td><td>-0.069861</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_l_age2_m</td><td>0.131498</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_l0_f</td><td>10.259291</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_l_age_f</td><td>-1.920809</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr class="warning-row"><td>joint.beta_l_age2_f</td><td>1.000000</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td>⬆</td><td>hessian</td></tr><tr><td>joint.beta_l_nkids_f</td><td>0.521224</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.theta_l_f</td><td>-2.227295</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.theta_l_m</td><td>-0.800000</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr></tbody></table><h3>Block: employment_hours_opportunity (19 params)</h3><table class="table table-sm"><thead><tr><th>parameter</th><th>estimate</th><th>se_hessian</th><th>t_hessian</th><th>se_robust</th><th>t_robust</th><th>p_robust</th><th>fixed</th><th>at_lower</th><th>at_upper</th><th>primary_se</th></tr></thead><tbody><tr><td>joint.beta_E_m</td><td>-0.331053</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_E_f</td><td>-1.023511</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_h_pt1</td><td>-1.427496</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_h_pt2_m</td><td>-1.210799</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_h_pt2_f</td><td>0.391147</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_h_ft</td><td>1.033849</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_h_lh</td><td>-1.244271</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_E_gsur</td><td>-1.404148</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_E_drgn2</td><td>-0.070089</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_E_drgn3</td><td>0.084490</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_E_drgn4</td><td>0.002706</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_E_drgn5</td><td>-0.141500</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_E_drgn6</td><td>-0.053847</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_E_drgn7</td><td>-0.181117</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_E_drgn8</td><td>-0.344429</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_E_y2015</td><td>-0.250966</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_E_y2017</td><td>-0.064186</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_E_drgur</td><td>-0.532338</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_E_drgmd</td><td>-0.664402</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr></tbody></table><h3>Block: wage_opportunity (6 params)</h3><table class="table table-sm"><thead><tr><th>parameter</th><th>estimate</th><th>se_hessian</th><th>t_hessian</th><th>se_robust</th><th>t_robust</th><th>p_robust</th><th>fixed</th><th>at_lower</th><th>at_upper</th><th>primary_se</th></tr></thead><tbody><tr><td>joint.beta_w0</td><td>2.197091</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_w_educL</td><td>-0.060629</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_w_educH</td><td>0.338371</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_w_pexp</td><td>0.381648</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_w_pexp2</td><td>-0.081830</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.sigma</td><td>0.389943</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr></tbody></table><h3>Block: occupation_opportunity (6 params)</h3><table class="table table-sm"><thead><tr><th>parameter</th><th>estimate</th><th>se_hessian</th><th>t_hessian</th><th>se_robust</th><th>t_robust</th><th>p_robust</th><th>fixed</th><th>at_lower</th><th>at_upper</th><th>primary_se</th></tr></thead><tbody><tr><td>joint.beta_occ_2_m</td><td>-1.626456</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_occ_3_m</td><td>-2.327864</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_occ_4_m</td><td>0.257237</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_occ_2_f</td><td>0.017888</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_occ_3_f</td><td>-0.404136</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr><tr><td>joint.beta_occ_4_f</td><td>0.837571</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>hessian</td></tr></tbody></table></section>
+    <section><h2>📋 Parameter Estimates (by block — from DiagnosticsBundle)</h2><p><strong>Primary SE: cluster-robust</strong> (Hessian SE shown as diagnostic/classical)</p><p style='font-size:0.9em;color:#555;'><em>Primary SE is robust/cluster when cluster SEs are supplied by --cluster-se-json or embedded in results JSON; otherwise the Hessian (classical) SE is primary.</em></p><h3>Block: preference (19 params)</h3><table class="table table-sm"><thead><tr><th>parameter</th><th>estimate</th><th>se_hessian</th><th>t_hessian</th><th>se_robust</th><th>t_robust</th><th>p_robust</th><th>fixed</th><th>at_lower</th><th>at_upper</th><th>primary_se</th></tr></thead><tbody><tr><td>joint.beta_l0_sm</td><td>4.428684</td><td>0.817188</td><td>5.419</td><td>1.120366</td><td>3.953</td><td>7.7213e-05</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_l_age_sm</td><td>0.666821</td><td>0.400720</td><td>1.664</td><td>0.491170</td><td>1.358</td><td>0.1746</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_l_age2_sm</td><td>0.369904</td><td>0.335558</td><td>1.102</td><td>0.370349</td><td>0.999</td><td>0.3179</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.theta_l_sm</td><td>-1.790248</td><td>0.174163</td><td>-10.279</td><td>0.171061</td><td>-10.466</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_l0_sf</td><td>3.848124</td><td>0.709324</td><td>5.425</td><td>1.024382</td><td>3.757</td><td>1.7228e-04</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_l_age_sf</td><td>0.490208</td><td>0.339854</td><td>1.442</td><td>0.412999</td><td>1.187</td><td>0.2352</td><td></td><td></td><td></td><td>robust</td></tr><tr class="warning-row"><td>joint.beta_l_age2_sf</td><td>1.000000</td><td>0.323436</td><td>3.092</td><td>0.324295</td><td>3.084</td><td>0.0020</td><td></td><td></td><td>⬆</td><td>robust</td></tr><tr><td>joint.beta_l_nkids_sf</td><td>1.781787</td><td>0.538335</td><td>3.310</td><td>0.801648</td><td>2.223</td><td>0.0262</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.theta_l_sf</td><td>-1.440449</td><td>0.125058</td><td>-11.518</td><td>0.153748</td><td>-9.369</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.theta_c_singles</td><td>0.009507</td><td>0.040478</td><td>0.235</td><td>0.083838</td><td>0.113</td><td>0.9097</td><td></td><td></td><td></td><td>robust</td></tr><tr class="warning-row"><td>joint.beta_l0_m</td><td>1.000000e-06</td><td>0.099922</td><td>1.001e-05</td><td>0.122936</td><td>8.134e-06</td><td>1.0000</td><td></td><td>⬇</td><td></td><td>robust</td></tr><tr><td>joint.beta_l_age_m</td><td>-0.069861</td><td>0.065642</td><td>-1.064</td><td>0.067430</td><td>-1.036</td><td>0.3002</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_l_age2_m</td><td>0.131498</td><td>0.062385</td><td>2.108</td><td>0.063765</td><td>2.062</td><td>0.0392</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_l0_f</td><td>10.259291</td><td>1.460781</td><td>7.023</td><td>2.661319</td><td>3.855</td><td>1.1575e-04</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_l_age_f</td><td>-1.920809</td><td>0.581396</td><td>-3.304</td><td>0.715431</td><td>-2.685</td><td>0.0073</td><td></td><td></td><td></td><td>robust</td></tr><tr class="warning-row"><td>joint.beta_l_age2_f</td><td>1.000000</td><td>0.587153</td><td>1.703</td><td>0.805133</td><td>1.242</td><td>0.2142</td><td></td><td></td><td>⬆</td><td>robust</td></tr><tr><td>joint.beta_l_nkids_f</td><td>0.521224</td><td>0.564056</td><td>0.924</td><td>0.922047</td><td>0.565</td><td>0.5719</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.theta_l_f</td><td>-2.227295</td><td>0.084624</td><td>-26.320</td><td>0.101354</td><td>-21.976</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.theta_l_m</td><td>-0.800000</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr></tbody></table><h3>Block: employment_hours_opportunity (19 params)</h3><table class="table table-sm"><thead><tr><th>parameter</th><th>estimate</th><th>se_hessian</th><th>t_hessian</th><th>se_robust</th><th>t_robust</th><th>p_robust</th><th>fixed</th><th>at_lower</th><th>at_upper</th><th>primary_se</th></tr></thead><tbody><tr><td>joint.beta_E_m</td><td>-0.331053</td><td>0.175530</td><td>-1.886</td><td>0.202607</td><td>-1.634</td><td>0.1023</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_E_f</td><td>-1.023511</td><td>0.168678</td><td>-6.068</td><td>0.190813</td><td>-5.364</td><td>8.1421e-08</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_h_pt1</td><td>-1.427496</td><td>0.051633</td><td>-27.647</td><td>0.058563</td><td>-24.375</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_h_pt2_m</td><td>-1.210799</td><td>0.112135</td><td>-10.798</td><td>0.120184</td><td>-10.075</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_h_pt2_f</td><td>0.391147</td><td>0.053073</td><td>7.370</td><td>0.064346</td><td>6.079</td><td>1.2111e-09</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_h_ft</td><td>1.033849</td><td>0.020315</td><td>50.892</td><td>0.026999</td><td>38.293</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_h_lh</td><td>-1.244271</td><td>0.031982</td><td>-38.906</td><td>0.049142</td><td>-25.320</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_E_gsur</td><td>-1.404148</td><td>0.087889</td><td>-15.976</td><td>0.099116</td><td>-14.167</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_E_drgn2</td><td>-0.070089</td><td>0.132144</td><td>-0.530</td><td>0.155098</td><td>-0.452</td><td>0.6513</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_E_drgn3</td><td>0.084490</td><td>0.152862</td><td>0.553</td><td>0.182272</td><td>0.464</td><td>0.6430</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_E_drgn4</td><td>0.002706</td><td>0.158273</td><td>0.017</td><td>0.186184</td><td>0.015</td><td>0.9884</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_E_drgn5</td><td>-0.141500</td><td>0.137443</td><td>-1.030</td><td>0.161397</td><td>-0.877</td><td>0.3806</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_E_drgn6</td><td>-0.053847</td><td>0.153106</td><td>-0.352</td><td>0.176831</td><td>-0.305</td><td>0.7607</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_E_drgn7</td><td>-0.181117</td><td>0.145957</td><td>-1.241</td><td>0.168750</td><td>-1.073</td><td>0.2831</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_E_drgn8</td><td>-0.344429</td><td>0.135262</td><td>-2.546</td><td>0.158592</td><td>-2.172</td><td>0.0299</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_E_y2015</td><td>-0.250966</td><td>0.086482</td><td>-2.902</td><td>0.092955</td><td>-2.700</td><td>0.0069</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_E_y2017</td><td>-0.064186</td><td>0.091367</td><td>-0.703</td><td>0.075305</td><td>-0.852</td><td>0.3940</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_E_drgur</td><td>-0.532338</td><td>0.092162</td><td>-5.776</td><td>0.111240</td><td>-4.786</td><td>1.7056e-06</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_E_drgmd</td><td>-0.664402</td><td>0.102265</td><td>-6.497</td><td>0.124221</td><td>-5.349</td><td>8.8670e-08</td><td></td><td></td><td></td><td>robust</td></tr></tbody></table><h3>Block: wage_opportunity (6 params)</h3><table class="table table-sm"><thead><tr><th>parameter</th><th>estimate</th><th>se_hessian</th><th>t_hessian</th><th>se_robust</th><th>t_robust</th><th>p_robust</th><th>fixed</th><th>at_lower</th><th>at_upper</th><th>primary_se</th></tr></thead><tbody><tr><td>joint.beta_w0</td><td>2.197091</td><td>0.011372</td><td>193.206</td><td>0.014591</td><td>150.575</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_w_educL</td><td>-0.060629</td><td>0.009524</td><td>-6.366</td><td>0.012256</td><td>-4.947</td><td>7.5330e-07</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_w_educH</td><td>0.338371</td><td>0.006626</td><td>51.071</td><td>0.008648</td><td>39.127</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_w_pexp</td><td>0.381648</td><td>0.021617</td><td>17.655</td><td>0.027943</td><td>13.658</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_w_pexp2</td><td>-0.081830</td><td>0.009722</td><td>-8.417</td><td>0.012586</td><td>-6.501</td><td>7.9567e-11</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.sigma</td><td>0.389943</td><td>0.002122</td><td>183.789</td><td>0.004284</td><td>91.022</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr></tbody></table><h3>Block: occupation_opportunity (6 params)</h3><table class="table table-sm"><thead><tr><th>parameter</th><th>estimate</th><th>se_hessian</th><th>t_hessian</th><th>se_robust</th><th>t_robust</th><th>p_robust</th><th>fixed</th><th>at_lower</th><th>at_upper</th><th>primary_se</th></tr></thead><tbody><tr><td>joint.beta_occ_2_m</td><td>-1.626456</td><td>0.042626</td><td>-38.157</td><td>0.055603</td><td>-29.251</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_occ_3_m</td><td>-2.327864</td><td>0.056245</td><td>-41.388</td><td>0.070271</td><td>-33.127</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_occ_4_m</td><td>0.257237</td><td>0.024633</td><td>10.443</td><td>0.031593</td><td>8.142</td><td>3.3307e-16</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_occ_2_f</td><td>0.017888</td><td>0.035725</td><td>0.501</td><td>0.047441</td><td>0.377</td><td>0.7061</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_occ_3_f</td><td>-0.404136</td><td>0.038607</td><td>-10.468</td><td>0.051473</td><td>-7.851</td><td>4.1078e-15</td><td></td><td></td><td></td><td>robust</td></tr><tr><td>joint.beta_occ_4_f</td><td>0.837571</td><td>0.031131</td><td>26.905</td><td>0.040335</td><td>20.765</td><td>0.0000</td><td></td><td></td><td></td><td>robust</td></tr></tbody></table></section>
 
     <section>
         <h2>📋 Parameter Estimates by Category (legacy view)</h2>
@@ -683,9 +684,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_l0_sm</td>
                 <td>4.4287</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.8172</td>
+                <td>5.42</td>
+                <td >0.0000 ***</td>
                 <td>0.0500</td>
                 <td>50.0000</td>
                 <td>1.0000</td>
@@ -694,9 +695,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_l_age_sm</td>
                 <td>0.6668</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.4007</td>
+                <td>1.66</td>
+                <td class="pval-marginal">0.0961 </td>
                 <td>-5.0000</td>
                 <td>5.0000</td>
                 <td>0.0000</td>
@@ -705,9 +706,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_l_age2_sm</td>
                 <td>0.3699</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.3356</td>
+                <td>1.10</td>
+                <td class="pval-insig">0.2703 </td>
                 <td>-1.0000</td>
                 <td>1.0000</td>
                 <td>0.0000</td>
@@ -716,9 +717,9 @@
             <tr class="bounded-param">
                 <td>joint.theta_l_sm</td>
                 <td>-1.7902</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.1742</td>
+                <td>-10.28</td>
+                <td >0.0000 ***</td>
                 <td>-8.0000</td>
                 <td>0.9500</td>
                 <td>-1.0000</td>
@@ -727,9 +728,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_l0_sf</td>
                 <td>3.8481</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.7093</td>
+                <td>5.43</td>
+                <td >0.0000 ***</td>
                 <td>0.0500</td>
                 <td>50.0000</td>
                 <td>1.0000</td>
@@ -738,9 +739,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_l_age_sf</td>
                 <td>0.4902</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.3399</td>
+                <td>1.44</td>
+                <td class="pval-weak">0.1492 </td>
                 <td>-5.0000</td>
                 <td>5.0000</td>
                 <td>0.0000</td>
@@ -749,9 +750,9 @@
             <tr class="bound-hit">
                 <td>joint.beta_l_age2_sf</td>
                 <td>1.0000</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.3234</td>
+                <td>3.09</td>
+                <td >0.0020 **</td>
                 <td>-1.0000</td>
                 <td>1.0000</td>
                 <td>0.0000</td>
@@ -760,9 +761,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_l_nkids_sf</td>
                 <td>1.7818</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.5383</td>
+                <td>3.31</td>
+                <td >0.0009 ***</td>
                 <td>-5.0000</td>
                 <td>5.0000</td>
                 <td>0.0000</td>
@@ -771,9 +772,9 @@
             <tr class="bounded-param">
                 <td>joint.theta_l_sf</td>
                 <td>-1.4404</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.1251</td>
+                <td>-11.52</td>
+                <td >0.0000 ***</td>
                 <td>-8.0000</td>
                 <td>0.9500</td>
                 <td>-1.0000</td>
@@ -782,9 +783,9 @@
             <tr class="bounded-param">
                 <td>joint.theta_c_singles</td>
                 <td>0.0095</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0405</td>
+                <td>0.23</td>
+                <td class="pval-insig">0.8143 </td>
                 <td>-8.0000</td>
                 <td>0.9500</td>
                 <td>-1.0000</td>
@@ -793,9 +794,9 @@
             <tr class="bound-hit">
                 <td>joint.beta_l0_m</td>
                 <td>0.0000</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0999</td>
+                <td>0.00</td>
+                <td class="pval-insig">1.0000 </td>
                 <td>0.0000</td>
                 <td>50.0000</td>
                 <td>0.0100</td>
@@ -804,9 +805,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_l_age_m</td>
                 <td>-0.0699</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0656</td>
+                <td>-1.06</td>
+                <td class="pval-insig">0.2872 </td>
                 <td>-5.0000</td>
                 <td>5.0000</td>
                 <td>0.0000</td>
@@ -815,9 +816,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_l_age2_m</td>
                 <td>0.1315</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0624</td>
+                <td>2.11</td>
+                <td >0.0350 *</td>
                 <td>-1.0000</td>
                 <td>1.0000</td>
                 <td>0.0000</td>
@@ -826,9 +827,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_l0_f</td>
                 <td>10.2593</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >1.4608</td>
+                <td>7.02</td>
+                <td >0.0000 ***</td>
                 <td>0.0500</td>
                 <td>50.0000</td>
                 <td>1.0000</td>
@@ -837,9 +838,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_l_age_f</td>
                 <td>-1.9208</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.5814</td>
+                <td>-3.30</td>
+                <td >0.0010 ***</td>
                 <td>-5.0000</td>
                 <td>5.0000</td>
                 <td>0.0000</td>
@@ -848,9 +849,9 @@
             <tr class="bound-hit">
                 <td>joint.beta_l_age2_f</td>
                 <td>1.0000</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.5872</td>
+                <td>1.70</td>
+                <td class="pval-marginal">0.0885 </td>
                 <td>-1.0000</td>
                 <td>1.0000</td>
                 <td>0.0000</td>
@@ -859,9 +860,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_l_nkids_f</td>
                 <td>0.5212</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.5641</td>
+                <td>0.92</td>
+                <td class="pval-insig">0.3555 </td>
                 <td>-5.0000</td>
                 <td>5.0000</td>
                 <td>0.0000</td>
@@ -870,9 +871,9 @@
             <tr class="bounded-param">
                 <td>joint.theta_l_f</td>
                 <td>-2.2273</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0846</td>
+                <td>-26.32</td>
+                <td >0.0000 ***</td>
                 <td>-8.0000</td>
                 <td>0.9500</td>
                 <td>-1.0000</td>
@@ -912,9 +913,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_E_m</td>
                 <td>-0.3311</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.1755</td>
+                <td>-1.89</td>
+                <td class="pval-marginal">0.0593 </td>
                 <td>-25.0000</td>
                 <td>25.0000</td>
                 <td>-0.3600</td>
@@ -923,9 +924,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_E_f</td>
                 <td>-1.0235</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.1687</td>
+                <td>-6.07</td>
+                <td >0.0000 ***</td>
                 <td>-25.0000</td>
                 <td>25.0000</td>
                 <td>-1.0000</td>
@@ -934,9 +935,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_h_pt1</td>
                 <td>-1.4275</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0516</td>
+                <td>-27.65</td>
+                <td >0.0000 ***</td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>0.0000</td>
@@ -945,9 +946,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_h_pt2_m</td>
                 <td>-1.2108</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.1121</td>
+                <td>-10.80</td>
+                <td >0.0000 ***</td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>-1.1900</td>
@@ -956,9 +957,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_h_pt2_f</td>
                 <td>0.3911</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0531</td>
+                <td>7.37</td>
+                <td >0.0000 ***</td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>0.3700</td>
@@ -967,9 +968,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_h_ft</td>
                 <td>1.0338</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0203</td>
+                <td>50.89</td>
+                <td >0.0000 ***</td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>0.0000</td>
@@ -978,9 +979,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_h_lh</td>
                 <td>-1.2443</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0320</td>
+                <td>-38.91</td>
+                <td >0.0000 ***</td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>0.0000</td>
@@ -989,9 +990,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_E_gsur</td>
                 <td>-1.4041</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0879</td>
+                <td>-15.98</td>
+                <td >0.0000 ***</td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>0.0000</td>
@@ -1000,9 +1001,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_E_drgn2</td>
                 <td>-0.0701</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.1321</td>
+                <td>-0.53</td>
+                <td class="pval-insig">0.5958 </td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>0.0000</td>
@@ -1011,9 +1012,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_E_drgn3</td>
                 <td>0.0845</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.1529</td>
+                <td>0.55</td>
+                <td class="pval-insig">0.5805 </td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>0.0000</td>
@@ -1022,9 +1023,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_E_drgn4</td>
                 <td>0.0027</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.1583</td>
+                <td>0.02</td>
+                <td class="pval-insig">0.9864 </td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>0.0000</td>
@@ -1033,9 +1034,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_E_drgn5</td>
                 <td>-0.1415</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.1374</td>
+                <td>-1.03</td>
+                <td class="pval-insig">0.3032 </td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>0.0000</td>
@@ -1044,9 +1045,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_E_drgn6</td>
                 <td>-0.0538</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.1531</td>
+                <td>-0.35</td>
+                <td class="pval-insig">0.7251 </td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>0.0000</td>
@@ -1055,9 +1056,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_E_drgn7</td>
                 <td>-0.1811</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.1460</td>
+                <td>-1.24</td>
+                <td class="pval-weak">0.2146 </td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>0.0000</td>
@@ -1066,9 +1067,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_E_drgn8</td>
                 <td>-0.3444</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.1353</td>
+                <td>-2.55</td>
+                <td >0.0109 *</td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>0.0000</td>
@@ -1077,9 +1078,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_E_y2015</td>
                 <td>-0.2510</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0865</td>
+                <td>-2.90</td>
+                <td >0.0037 **</td>
                 <td>-5.0000</td>
                 <td>5.0000</td>
                 <td>0.0000</td>
@@ -1088,9 +1089,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_E_y2017</td>
                 <td>-0.0642</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0914</td>
+                <td>-0.70</td>
+                <td class="pval-insig">0.4824 </td>
                 <td>-5.0000</td>
                 <td>5.0000</td>
                 <td>0.0000</td>
@@ -1099,9 +1100,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_E_drgur</td>
                 <td>-0.5323</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0922</td>
+                <td>-5.78</td>
+                <td >0.0000 ***</td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>0.0000</td>
@@ -1110,9 +1111,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_E_drgmd</td>
                 <td>-0.6644</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.1023</td>
+                <td>-6.50</td>
+                <td >0.0000 ***</td>
                 <td>-10.0000</td>
                 <td>10.0000</td>
                 <td>0.0000</td>
@@ -1141,9 +1142,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_w0</td>
                 <td>2.1971</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0114</td>
+                <td>193.21</td>
+                <td >0.0000 ***</td>
                 <td>-10.0000</td>
                 <td>20.0000</td>
                 <td>2.0000</td>
@@ -1152,9 +1153,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_w_educL</td>
                 <td>-0.0606</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0095</td>
+                <td>-6.37</td>
+                <td >0.0000 ***</td>
                 <td>-5.0000</td>
                 <td>5.0000</td>
                 <td>-0.1000</td>
@@ -1163,9 +1164,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_w_educH</td>
                 <td>0.3384</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0066</td>
+                <td>51.07</td>
+                <td >0.0000 ***</td>
                 <td>-5.0000</td>
                 <td>5.0000</td>
                 <td>0.2000</td>
@@ -1174,9 +1175,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_w_pexp</td>
                 <td>0.3816</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0216</td>
+                <td>17.65</td>
+                <td >0.0000 ***</td>
                 <td>-1.0000</td>
                 <td>1.0000</td>
                 <td>0.0200</td>
@@ -1185,9 +1186,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_w_pexp2</td>
                 <td>-0.0818</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0097</td>
+                <td>-8.42</td>
+                <td >0.0000 ***</td>
                 <td>-0.1000</td>
                 <td>0.1000</td>
                 <td>-0.0003</td>
@@ -1196,9 +1197,9 @@
             <tr class="bounded-param">
                 <td>joint.sigma</td>
                 <td>0.3899</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0021</td>
+                <td>183.79</td>
+                <td >0.0000 ***</td>
                 <td>0.1000</td>
                 <td>20.0000</td>
                 <td>0.5000</td>
@@ -1227,9 +1228,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_occ_2_m</td>
                 <td>-1.6265</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0426</td>
+                <td>-38.16</td>
+                <td >0.0000 ***</td>
                 <td>-15.0000</td>
                 <td>15.0000</td>
                 <td>0.0000</td>
@@ -1238,9 +1239,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_occ_3_m</td>
                 <td>-2.3279</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0562</td>
+                <td>-41.39</td>
+                <td >0.0000 ***</td>
                 <td>-15.0000</td>
                 <td>15.0000</td>
                 <td>0.0000</td>
@@ -1249,9 +1250,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_occ_4_m</td>
                 <td>0.2572</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0246</td>
+                <td>10.44</td>
+                <td >0.0000 ***</td>
                 <td>-15.0000</td>
                 <td>15.0000</td>
                 <td>0.0000</td>
@@ -1260,9 +1261,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_occ_2_f</td>
                 <td>0.0179</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0357</td>
+                <td>0.50</td>
+                <td class="pval-insig">0.6166 </td>
                 <td>-15.0000</td>
                 <td>15.0000</td>
                 <td>0.0000</td>
@@ -1271,9 +1272,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_occ_3_f</td>
                 <td>-0.4041</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0386</td>
+                <td>-10.47</td>
+                <td >0.0000 ***</td>
                 <td>-15.0000</td>
                 <td>15.0000</td>
                 <td>0.0000</td>
@@ -1282,9 +1283,9 @@
             <tr class="bounded-param">
                 <td>joint.beta_occ_4_f</td>
                 <td>0.8376</td>
-                <td >N/A</td>
-                <td>N/A</td>
-                <td >N/A </td>
+                <td >0.0311</td>
+                <td>26.90</td>
+                <td >0.0000 ***</td>
                 <td>-15.0000</td>
                 <td>15.0000</td>
                 <td>0.0000</td>
@@ -1296,7 +1297,7 @@
     </section>
 
     <footer>
-        <p>Generated by Enhanced RURO Post-Estimation (Styled) | 2026-06-01 09:32:37</p>
+        <p>Generated by Enhanced RURO Post-Estimation (Styled) | 2026-06-01 10:35:08</p>
     </footer>
 </body>
 </html>

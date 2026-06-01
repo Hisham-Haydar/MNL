@@ -847,14 +847,30 @@ def build_diagnostics_bundle(
     )
 
     # --- D. economic sanity
+    # The marginal-utility computation (compute_marginal_utilities_at_chosen)
+    # writes totals under the keys n_negative_muc_total / pct_negative_muc_total
+    # (and the _mul_ variants). Accept those AND the older negative_muc_count /
+    # _pct aliases so the section populates whenever MUC was computed (it is
+    # whenever --mnl-base is supplied). Previously the key names did not match
+    # and the section falsely reported "not computed (requires --mnl-base)".
     econ_data = {}
     if mu_results and isinstance(mu_results, dict):
         totals = mu_results.get("totals", {}) or {}
+        _alias = {
+            "n_negative_muc_total": "negative_muc_count",
+            "pct_negative_muc_total": "negative_muc_pct",
+            "n_negative_mul_total": "negative_mul_count",
+            "pct_negative_mul_total": "negative_mul_pct",
+        }
+        for src, dst in _alias.items():
+            if src in totals:
+                econ_data[dst] = totals.get(src)
+        # also pass through any already-canonical keys
         for k in ("negative_muc_count", "negative_muc_pct",
                   "negative_mul_count", "negative_mul_pct",
                   "negative_mu_count", "negative_mu_pct",
                   "monotonicity_violations"):
-            if k in totals:
+            if k in totals and k not in econ_data:
                 econ_data[k] = totals.get(k)
     bundle.economic_sanity = Section(
         available=bool(econ_data),
@@ -1023,12 +1039,19 @@ def build_diagnostics_bundle(
     )
 
     # --- Robust SE / cluster section
-    robust_available = bool(cluster_se_data)
+    std_errors_data = results_data.get("standard_errors")
+    nested_cluster_available = False
+    if isinstance(std_errors_data, dict):
+        se_clustered_vec = std_errors_data.get("se_clustered") or std_errors_data.get("se_robust")
+        if isinstance(se_clustered_vec, (list, tuple)):
+            nested_cluster_available = any(_safe_num(v) is not None for v in se_clustered_vec)
+    robust_available = bool(cluster_se_data) or nested_cluster_available
     robust_data: Dict[str, Any] = {}
     if robust_available:
         checks = (cluster_se_data or {}).get("checks", {}) or {}
         robust_data = {
-            "source_artifact": "cluster-SE JSON",
+            "source_artifact": ("cluster-SE JSON" if cluster_se_data
+                                else "results_json.standard_errors.se_clustered"),
             "T3_cluster_count": checks.get("T3_cluster_count"),
             "T4_se_positivity": checks.get("T4_se_positivity"),
             "T5_robust_vs_hessian": checks.get("T5_robust_vs_hessian"),
@@ -1066,6 +1089,8 @@ def build_diagnostics_bundle(
     se_full = _extract_se_array(results_data, parsed_params)
     t_full = _extract_t_array(results_data, parsed_params)
     cluster_param_map = _cluster_se_param_map(cluster_se_data, parsed_params=parsed_params)
+    if not cluster_param_map:
+        cluster_param_map = _cluster_se_param_map(std_errors_data, parsed_params=parsed_params)
     for i, name in enumerate(names):
         try:
             est = float(theta[i]) if theta is not None and i < len(theta) else None
@@ -1108,7 +1133,8 @@ def build_diagnostics_bundle(
             "rows": inf_rows,
             "primary_se_for_run": "robust" if cluster_param_map else "hessian",
             "note": (
-                "Primary SE is robust/cluster when --cluster-se-json is supplied; "
+                "Primary SE is robust/cluster when cluster SEs are supplied "
+                "by --cluster-se-json or embedded in results JSON; "
                 "otherwise the Hessian (classical) SE is primary."
             ),
         },
@@ -1169,9 +1195,26 @@ def build_diagnostics_bundle(
 
 
 def _extract_se_array(results_data: Dict[str, Any], parsed_params: Any) -> Optional[np.ndarray]:
-    """Return SE array aligned to parsed_params.param_names, or None."""
+    """Return SE array aligned to parsed_params.param_names, or None.
+
+    Handles three layouts of ``standard_errors``:
+      1. flat name->value dict   ({"beta_E": 0.1, ...})
+      2. flat list/tuple aligned to theta
+      3. nested {"se": [...], "t_values": [...]} (the enhanced-pipeline layout;
+         the ``se`` list is theta-aligned).
+      4. nested {"se_hessian": [...], "se_clustered": [...]} from the joint
+         Step-4 bridge; the Hessian vector is used for this classical column.
+    """
     se = results_data.get("standard_errors")
     if isinstance(se, dict):
+        # nested joint-emitter layout with both SE flavours. The inference table
+        # treats Hessian SE as the classical diagnostic column.
+        if isinstance(se.get("se_hessian"), (list, tuple)):
+            return np.array([_safe_num(v) for v in se["se_hessian"]], dtype=float)
+        # nested layout: {"se": [...], "t_values": [...], "p_values": [...]}
+        if isinstance(se.get("se"), (list, tuple)):
+            return np.array([_safe_num(v) for v in se["se"]], dtype=float)
+        # flat name->value dict
         names = getattr(parsed_params, "param_names", []) or []
         return np.array([_safe_num(se.get(n)) for n in names], dtype=float)
     if isinstance(se, (list, tuple)):
@@ -1180,8 +1223,19 @@ def _extract_se_array(results_data: Dict[str, Any], parsed_params: Any) -> Optio
 
 
 def _extract_t_array(results_data: Dict[str, Any], parsed_params: Any) -> Optional[np.ndarray]:
-    """Return t-values aligned to parsed_params.param_names, or None."""
+    """Return t-values aligned to parsed_params.param_names, or None.
+
+    Mirrors _extract_se_array: supports the nested
+    standard_errors={"t_values": [...]} layout in addition to a top-level
+    ``t_values`` dict/list.
+    """
     tv = results_data.get("t_values")
+    if tv is None:
+        se = results_data.get("standard_errors")
+        if isinstance(se, dict) and isinstance(se.get("t_hessian"), (list, tuple)):
+            return np.array([_safe_num(v) for v in se["t_hessian"]], dtype=float)
+        if isinstance(se, dict) and isinstance(se.get("t_values"), (list, tuple)):
+            return np.array([_safe_num(v) for v in se["t_values"]], dtype=float)
     if isinstance(tv, dict):
         names = getattr(parsed_params, "param_names", []) or []
         return np.array([_safe_num(tv.get(n)) for n in names], dtype=float)
@@ -1200,13 +1254,52 @@ def _cluster_se_param_map(
 
     1. ``parameters``/``rows`` list of dicts (one row per parameter);
     2. ``parameters``/``rows`` dict keyed by parameter name;
-    3. ``cluster_robust_se_artifacts.se_robust_vector`` parallel list to
+    3. nested ``standard_errors.se_clustered`` parallel list from the joint
+       Step-4 bridge;
+    4. ``cluster_robust_se_artifacts.se_robust_vector`` parallel list to
        ``parsed_params.param_names`` (the layout used by
        ``cluster_robust_se.py``).
     """
     if not cluster_se_data:
         return {}
     out: Dict[str, Dict[str, Any]] = {}
+
+    # Nested standard_errors layout emitted by the joint Step-4 bridge:
+    # {"se_hessian": [...], "se_clustered": [...], "t_clustered": [...], ...}.
+    # Map it to the same robust columns used by an external cluster-SE artifact.
+    if parsed_params is not None and isinstance(cluster_se_data, dict):
+        names = list(getattr(parsed_params, "param_names", []) or [])
+        se_clustered_vec = (
+            cluster_se_data.get("se_clustered")
+            or cluster_se_data.get("se_robust")
+            or cluster_se_data.get("robust_se")
+        )
+        if isinstance(se_clustered_vec, (list, tuple)) and names:
+            t_clustered_vec = (
+                cluster_se_data.get("t_clustered")
+                or cluster_se_data.get("t_robust")
+                or cluster_se_data.get("t_values")
+                or []
+            )
+            p_clustered_vec = (
+                cluster_se_data.get("p_clustered")
+                or cluster_se_data.get("p_robust")
+                or cluster_se_data.get("p_values")
+                or []
+            )
+            for i, name in enumerate(names[:len(se_clustered_vec)]):
+                se_r = _safe_num(se_clustered_vec[i])
+                if se_r is None:
+                    continue
+                t_r = _safe_num(t_clustered_vec[i]) if i < len(t_clustered_vec) else None
+                p_r = _safe_num(p_clustered_vec[i]) if i < len(p_clustered_vec) else None
+                out[str(name)] = {
+                    "se_robust": se_r,
+                    "t_robust": t_r,
+                    "p_robust": p_r,
+                }
+            if out:
+                return out
 
     rows = cluster_se_data.get("parameters") or cluster_se_data.get("rows")
     if isinstance(rows, list):

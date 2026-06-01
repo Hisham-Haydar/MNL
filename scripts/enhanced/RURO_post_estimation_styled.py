@@ -1532,7 +1532,19 @@ def generate_identification_diagnostics_html(
     condition_number = hessian_diagnostics.get('condition_number')
     min_eigenvalue = hessian_diagnostics.get('min_eigenvalue')
     max_eigenvalue = hessian_diagnostics.get('max_eigenvalue')
-    n_negative = hessian_diagnostics.get('n_negative_eigenvalues', 0)
+    n_negative_raw = hessian_diagnostics.get('n_negative_eigenvalues', 0)
+    try:
+        n_negative = int(n_negative_raw) if n_negative_raw is not None and is_num(n_negative_raw) else None
+    except (TypeError, ValueError):
+        n_negative = None
+    has_negative_eigs = n_negative is not None and n_negative > 0
+    hessian_is_pd = (
+        n_negative == 0
+        and min_eigenvalue is not None
+        and is_num(min_eigenvalue)
+        and np.isfinite(float(min_eigenvalue))
+        and float(min_eigenvalue) > 0
+    )
     eigenvalues = hessian_diagnostics.get('eigenvalues')
     eigenvector_diagnostics = hessian_diagnostics.get('eigenvector_diagnostics', [])
     top_correlations = hessian_diagnostics.get('top_correlations', [])
@@ -1568,6 +1580,14 @@ def generate_identification_diagnostics_html(
         cond_color = "var(--warning-color)"  # Yellow/Orange
         cond_status = "⚠ Moderate Conditioning"
         cond_interpretation = f"The Hessian shows moderate conditioning issues (100 ≤ κ < 10,000). Some parameters may have larger standard errors."
+    elif hessian_is_pd:
+        cond_color = "var(--warning-color)"  # Yellow/Orange
+        cond_status = "Positive-Definite Hessian; High Condition Number"
+        cond_interpretation = (
+            "The Hessian is positive definite with zero negative eigenvalues, so the local-curvature "
+            "identification check passes. The large condition number is a scaling and numerical-precision "
+            "warning; by itself it is not evidence that the model is unidentified."
+        )
     else:
         cond_color = "var(--danger-color)"  # Red
         cond_status = "✗ Severe Identification Problem"
@@ -1589,11 +1609,11 @@ def generate_identification_diagnostics_html(
                 <h4 style="margin-top:0;">Maximum Eigenvalue</h4>
                 <p style="font-size: 1.5em; margin: 0;">{max_ev_text}</p>
             </div>
-            <div class="stats-box" style="border-left-color: {'var(--danger-color)' if n_negative > 0 else 'var(--success-color)'};">
+            <div class="stats-box" style="border-left-color: {'var(--danger-color)' if has_negative_eigs else 'var(--success-color)'};">
                 <h4 style="margin-top:0;">Negative Eigenvalues</h4>
-                <p style="font-size: 1.5em; margin: 0;">{n_negative}</p>
+                <p style="font-size: 1.5em; margin: 0;">{n_negative if n_negative is not None else 'N/A'}</p>
                 <p style="font-size: 0.9em; margin: 0.5em 0 0 0; color: #666;">
-                    {'✗ NOT a local maximum!' if n_negative > 0 else '✓ Local maximum confirmed'}
+                    {'NOT a local maximum' if has_negative_eigs else ('Local maximum confirmed' if hessian_is_pd else 'No negative eigenvalues reported')}
                 </p>
             </div>
         </div>

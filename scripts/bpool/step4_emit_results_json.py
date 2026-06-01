@@ -128,6 +128,8 @@ def main():
     se_c = (dict(zip(df["parameter"].astype(str), df["se_clustered"]))
             if "se_clustered" in df.columns else {})
     theta = np.array([val[n] for n in pnames], dtype=np.float64)
+    se_h_vec = [(_f(se_h.get(n))) for n in pnames]
+    se_c_vec = [(_f(se_c.get(n))) for n in pnames]
     se_src = se_c if args.se == "clustered" else se_h
     se_vec = [(_f(se_src.get(n))) for n in pnames]
 
@@ -146,30 +148,56 @@ def main():
         initial_dict[n] = float(spec.initial_values.get(n, 0.0))
 
     hess = jb.get("hessian", {}) or {}
+    max_eig = hess.get("max_eig")
+    if max_eig is None:
+        min_eig = _f(hess.get("min_eig"))
+        cond = _f(hess.get("cond"))
+        if min_eig is not None and cond is not None:
+            max_eig = float(abs(min_eig) * cond)
     hessian_diag = {
         "condition_number": hess.get("cond"),
         "min_eigenvalue": hess.get("min_eig"),
-        "max_eigenvalue": None,
+        "max_eigenvalue": max_eig,
         "n_negative_eigenvalues": 0 if hess.get("pd") else None,
         "poorly_identified_params": [],
         "eigenvalues": None,
         "top_correlations": [],
     }
 
-    # t / p from the chosen SE
-    t_vals, p_vals = [], []
+    # t / p from the chosen SE and both stored SE flavours
     from math import erf, sqrt
     def _norm_sf(z):
         return 0.5 * (1 - erf(abs(z) / sqrt(2)))
-    for i, n in enumerate(pnames):
-        s = se_vec[i]
-        if s is None or s <= 0:
-            t_vals.append(None); p_vals.append(None)
-        else:
-            t = float(theta[i] / s)
-            t_vals.append(t); p_vals.append(2.0 * _norm_sf(t))
 
-    standard_errors = {"se": se_vec, "t_values": t_vals, "p_values": p_vals}
+    def _tp_from(se_values):
+        t_vals, p_vals = [], []
+        for i, s in enumerate(se_values):
+            if s is None or s <= 0:
+                t_vals.append(None); p_vals.append(None)
+            else:
+                t = float(theta[i] / s)
+                t_vals.append(t); p_vals.append(2.0 * _norm_sf(t))
+        return t_vals, p_vals
+
+    t_vals, p_vals = _tp_from(se_vec)
+    t_h_vals, p_h_vals = _tp_from(se_h_vec)
+    t_c_vals, p_c_vals = _tp_from(se_c_vec)
+
+    standard_errors = {
+        "se": se_vec,
+        "se_kind": args.se,
+        "t_values": t_vals,
+        "p_values": p_vals,
+        "se_hessian": se_h_vec,
+        "t_hessian": t_h_vals,
+        "p_hessian": p_h_vals,
+        "se_clustered": se_c_vec,
+        "t_clustered": t_c_vals,
+        "p_clustered": p_c_vals,
+    }
+    se_h_by_name = {n: se_h_vec[i] for i, n in enumerate(pnames) if se_h_vec[i] is not None}
+    t_h_by_name = {n: t_h_vals[i] for i, n in enumerate(pnames) if t_h_vals[i] is not None}
+    p_h_by_name = {n: p_h_vals[i] for i, n in enumerate(pnames) if p_h_vals[i] is not None}
 
     # per-group HH counts from the joint JSON (n_obs_total must be a real int —
     # the pipeline does `n_obs_total > 0`, which crashes on None).
@@ -259,6 +287,9 @@ def main():
                     "gradient_kind": _diag.get("gradient_kind"),
                     "chosen_optimizer": _diag.get("chosen_optimizer"),
                     "parameters": parameters,
+                    "standard_errors": se_h_by_name,
+                    "t_values": t_h_by_name,
+                    "p_values": p_h_by_name,
                     "theta": [float(x) for x in theta],
                     "bounds": bounds_dict,
                     "initial_values": initial_dict,

@@ -132,10 +132,11 @@ def _two_stage_optimize(joint, theta0, bnds, gtol, maxiter, pnames,
     res = minimize(fun, theta0, jac=grad, method="L-BFGS-B", bounds=bnds,
                    callback=cb, options={"maxiter": maxiter, "gtol": gtol,
                                          "ftol": 1e-15, "maxls": 60})
+    t_stage1 = time.time() - t0
     th_scipy = res.x
     ll_scipy = fun(th_scipy)
     g_scipy = float(np.max(np.abs(grad(th_scipy))))
-    print(f"    Stage1 done {time.time()-t0:.0f}s negLL={ll_scipy:.6f} "
+    print(f"    Stage1 done {t_stage1:.0f}s negLL={ll_scipy:.6f} "
           f"max|g|={g_scipy:.3e} iters={res.nit}", flush=True)
 
     # checkpoint the scipy MLE so a Stage-2 crash never loses it
@@ -156,6 +157,7 @@ def _two_stage_optimize(joint, theta0, bnds, gtol, maxiter, pnames,
     import optimistix as optx
     print("  Stage 2: optimistix BFGS polish ...", flush=True)
     t0 = time.time()
+    _t2_start = t0
     # NOTE: optimistix >=0.1.0 changed BFGS(verbose=...) — it no longer accepts a
     # frozenset, only True or a callable. The scipy callback above already streams
     # live iterations; optimistix is the fast final polish, so we omit verbose
@@ -171,8 +173,9 @@ def _two_stage_optimize(joint, theta0, bnds, gtol, maxiter, pnames,
             th_ox_clip[i] = lo; n_clipped += 1
         if hi is not None and th_ox_clip[i] > hi:
             th_ox_clip[i] = hi; n_clipped += 1
+    t_stage2 = time.time() - _t2_start
     ll_ox = fun(th_ox_clip)
-    print(f"    Stage2 done {time.time()-t0:.0f}s negLL={ll_ox:.6f} "
+    print(f"    Stage2 done {t_stage2:.0f}s negLL={ll_ox:.6f} "
           f"(clipped {n_clipped} coord(s)) result={sol.result}", flush=True)
 
     cands = [(ll_scipy, th_scipy, "scipy")]
@@ -181,7 +184,24 @@ def _two_stage_optimize(joint, theta0, bnds, gtol, maxiter, pnames,
     ll_best, th_best, which = min(cands, key=lambda c: c[0])
     g_best = float(np.max(np.abs(grad(th_best))))
     print(f"  -> chose {which}: negLL={ll_best:.6f} max|grad|={g_best:.3e}", flush=True)
-    return th_best, ll_best, g_best, which
+    # diagnostics for the report: iters, fn-evals, per-stage + total times,
+    # solver identity, and the FINAL gradient (scipy max|grad| -- the analogue
+    # of CONOPT's RGmax for this solver family).
+    diag = {
+        "solver": "L-BFGS-B (scipy, box) -> optimistix BFGS polish (JAX)",
+        "solver_family": "bfgs",
+        "chosen_optimizer": which,
+        "n_iterations": int(res.nit),
+        "n_function_evaluations": int(res.nfev),
+        "scipy_stage1_seconds": float(t_stage1),
+        "optimistix_stage2_seconds": float(t_stage2),
+        "estimation_seconds": float(t_stage1 + t_stage2),
+        "final_max_grad": float(g_best),
+        "scipy_final_max_grad": float(g_scipy),
+        "gradient_kind": "max|grad| (analytical JAX gradient; scipy L-BFGS-B "
+                         "stall floor -- the BFGS-family analogue of CONOPT RGmax)",
+    }
+    return th_best, ll_best, g_best, which, diag
 
 
 def _slice_data_groups(data, g0, g1):
@@ -315,6 +335,7 @@ def main():
                          "estimate a pooling-relaxed baseline. Empty -> the "
                          "shared spec (default).")
     args = ap.parse_args()
+    _run_t0 = time.time()  # total walltime (load + estimate + Hessian + sandwich)
     # gender_split: CLI override OR (default) the spec's own gender_split block
     # (spec-driven, agnostic). The two must be consistent with the spec's params.
     cli_gs = {c.strip() for c in args.gender_split.split(",") if c.strip()}
@@ -375,7 +396,7 @@ def main():
     print("\n=== DELIVERABLE 1: real-data 47-param estimate ===")
     _ckpt = (args.out_csv.with_suffix(".scipy.csv")
              if args.out_csv is not None else None)
-    theta_hat, negLL, gnorm, which = _two_stage_optimize(
+    theta_hat, negLL, gnorm, which, opt_diag = _two_stage_optimize(
         joint, theta0, bnds, args.gtol, args.maxiter, pnames,
         checkpoint_csv=_ckpt)
 
@@ -405,7 +426,8 @@ def main():
     t0 = time.time()
     H = np.asarray(jax.jit(jax.hessian(joint))(jnp.asarray(theta_hat)))
     H = 0.5 * (H + H.T)
-    print(f"  jax.hessian {time.time()-t0:.1f}s")
+    t_hessian = time.time() - t0
+    print(f"  jax.hessian {t_hessian:.1f}s")
     verdict = jrt._hessian_verdict(spec, H)
     eig = verdict["eig"]
     pd_ok = verdict["pd_ok"]
@@ -427,8 +449,9 @@ def main():
     V_cluster, csum = _clustered_sandwich(spec, data_sm, data_sf, data_cou,
                                           theta_hat, Hinv,
                                           gender_split=gender_split or None)
+    t_sandwich = time.time() - t0
     se_clu = np.sqrt(np.maximum(np.diag(V_cluster), 0.0))
-    print(f"  sandwich {time.time()-t0:.1f}s  clusters={csum['n_clusters']} "
+    print(f"  sandwich {t_sandwich:.1f}s  clusters={csum['n_clusters']} "
           f"groups={csum['n_groups']} multi-group-clusters="
           f"{csum['n_multi_group_clusters']} (max {csum['max_groups_per_cluster']}/cluster)")
 
@@ -505,6 +528,14 @@ def main():
         "block_se": block_se,
         "beta_l0_m": bl0m,
         "params": rows,
+        # solver / timing diagnostics for the post-estimation report
+        "diagnostics": {
+            **opt_diag,
+            "hessian_seconds": float(t_hessian),
+            "sandwich_seconds": float(t_sandwich),
+            "post_estimation_seconds": float(t_hessian + t_sandwich),
+            "total_seconds": float(time.time() - _run_t0),
+        },
     }
     # Self-describing AGNOSTIC fields for the post-estimation report (so it needs
     # no hardcoded cluster name / spec param names). cluster_key is read off the

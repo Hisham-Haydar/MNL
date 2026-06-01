@@ -98,6 +98,17 @@ def main():
     ap.add_argument("--print-commands", action="store_true",
                     help="Print the ready-to-run regular post-estimation "
                          "command for each group.")
+    ap.add_argument("--joint-mode", action="store_true",
+                    help="Emit ONE estimation_results.json with group='joint' "
+                         "(instead of 4 per-group files). Run the pipeline ONCE "
+                         "with --mnl-base = a stem that has BOTH __singles and "
+                         "__couples parquets (e.g. fr_p3a_bpool_engine_ready) -> "
+                         "a SINGLE unified report covering all 4 groups' plots "
+                         "(like the JMP_pooled reference). This is the preferred "
+                         "mode.")
+    ap.add_argument("--joint-stem", default="fr_p3a_bpool_engine_ready",
+                    help="For --joint-mode: the --mnl-base stem (must have both "
+                         "__singles.parquet and __couples.parquet).")
     args = ap.parse_args()
 
     try:
@@ -173,13 +184,36 @@ def main():
     written = []
     ts = datetime.now(timezone.utc).isoformat()
     _ll = (-float(jb.get("negLL")) if jb.get("negLL") is not None else None)
-    for group_key, _short in _GROUPS:
-        stem = _stem_for(group_key, args.mnl_base_dir, args.base_stem, args.year_tag)
+    _diag = jb.get("diagnostics", {}) or {}  # solver/timing/gradient diagnostics
+
+    # joint-mode: a single 'joint' group whose --mnl-base stem carries BOTH
+    # __singles and __couples parquets -> one unified report covering all groups
+    # (the JMP_pooled reference shape). Otherwise the 4 per-group files.
+    if args.joint_mode:
+        _emit_list = [("joint", args.mnl_base_dir / args.joint_stem)]
+        _nhh_for = {"joint": total_nhh}
+    else:
+        _emit_list = [(gk, _stem_for(gk, args.mnl_base_dir, args.base_stem,
+                                     args.year_tag)) for gk, _ in _GROUPS]
+        _nhh_for = _grp_nhh
+
+    for group_key, stem in _emit_list:
         summary = {
             "joint_ll": _ll,
-            "n_obs_total": int(_grp_nhh.get(group_key, 0) or 0),
-            "n_groups_total": int(_grp_nhh.get(group_key, 0) or 0),
-            "total_walltime_seconds": None,
+            "n_obs_total": int(_nhh_for.get(group_key, 0) or 0),
+            "n_groups_total": int(_nhh_for.get(group_key, 0) or 0),
+            # the report's header "Estimation" time reads total_walltime_seconds;
+            # use the ESTIMATION wall (scipy+optimistix), not the whole-run total.
+            "total_walltime_seconds": _diag.get("estimation_seconds"),
+            "n_iterations": _diag.get("n_iterations"),
+            "full_run_seconds": _diag.get("total_seconds"),
+            "solver_timing": {k: _diag.get(k) for k in (
+                "scipy_stage1_seconds", "optimistix_stage2_seconds",
+                "estimation_seconds", "hessian_seconds", "sandwich_seconds",
+                "post_estimation_seconds", "total_seconds")},
+            "solver": _diag.get("solver"),
+            "final_max_grad": _diag.get("final_max_grad"),
+            "gradient_kind": _diag.get("gradient_kind"),
             "prior_correction_applied": True,
             "market_centering_applied": True,
             "source": "joint baseline re-emitted per group (step4_emit_results_json.py)",
@@ -194,7 +228,7 @@ def main():
                 "spec_config": str(args.spec),
                 "group": group_key,
                 "n_jobs": -1,
-                "opt_method": "L-BFGS-B+optimistix (JAX)",
+                "opt_method": _diag.get("solver", "L-BFGS-B+optimistix (JAX)"),
                 "analytical_gradient": True,
                 "strict_validation": True,
                 "solver_artifacts": {"saved": False, "solver_log": None,
@@ -205,13 +239,25 @@ def main():
             "results": {
                 group_key: {
                     "success": True,
-                    "message": "joint baseline (per-group re-emit)",
-                    "n_iterations": None,
-                    "n_function_evaluations": None,
+                    "message": _diag.get("solver", "joint baseline (re-emit)"),
+                    "n_iterations": _diag.get("n_iterations"),
+                    "n_function_evaluations": _diag.get("n_function_evaluations"),
                     "final_ll": (-float(jb.get("negLL"))
                                  if jb.get("negLL") is not None else None),
-                    "gradient_norm": jb.get("max_grad"),
-                    "walltime_seconds": None,
+                    "gradient_norm": _diag.get("final_max_grad", jb.get("max_grad")),
+                    "walltime_seconds": _diag.get("estimation_seconds"),
+                    # full timing + gradient breakdown (the report renders these)
+                    "timing": {
+                        "estimation_seconds": _diag.get("estimation_seconds"),
+                        "scipy_stage1_seconds": _diag.get("scipy_stage1_seconds"),
+                        "optimistix_stage2_seconds": _diag.get("optimistix_stage2_seconds"),
+                        "hessian_seconds": _diag.get("hessian_seconds"),
+                        "sandwich_seconds": _diag.get("sandwich_seconds"),
+                        "post_estimation_seconds": _diag.get("post_estimation_seconds"),
+                        "total_seconds": _diag.get("total_seconds"),
+                    },
+                    "gradient_kind": _diag.get("gradient_kind"),
+                    "chosen_optimizer": _diag.get("chosen_optimizer"),
                     "parameters": parameters,
                     "theta": [float(x) for x in theta],
                     "bounds": bounds_dict,

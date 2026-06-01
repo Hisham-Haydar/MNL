@@ -634,6 +634,23 @@ Clustered on **idorighh** (cluster_id == idorighh): 9657 clusters over 12445 cho
       "at_bound": false
     }
   ],
+  "diagnostics": {
+    "solver": "L-BFGS-B (scipy, box) -> optimistix BFGS polish (JAX)",
+    "solver_family": "bfgs",
+    "chosen_optimizer": "scipy",
+    "n_iterations": 2352,
+    "n_function_evaluations": 2570,
+    "scipy_stage1_seconds": 1363.7345538139343,
+    "optimistix_stage2_seconds": 100.0242178440094,
+    "estimation_seconds": 1463.7587716579437,
+    "final_max_grad": 32.6059938273413,
+    "scipy_final_max_grad": 32.6059938273413,
+    "gradient_kind": "max|grad| (analytical JAX gradient; scipy L-BFGS-B stall floor -- the BFGS-family analogue of CONOPT RGmax)",
+    "hessian_seconds": 62.733564615249634,
+    "sandwich_seconds": 99.28138613700867,
+    "post_estimation_seconds": 162.0149507522583,
+    "total_seconds": 1716.1665670871735
+  },
   "cluster_key": "cluster",
   "flat_directions": [
     "beta_l0_f",

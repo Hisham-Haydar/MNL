@@ -965,23 +965,24 @@ def build_diagnostics_bundle(
         if trace:
             solver_data["conopt_trace"] = trace
 
-    # When the solver is not CONOPT/GAMS, mark CONOPT-only fields as
-    # not-applicable so renderers can display the right message instead of
-    # silently omitting them. The CONOPT trace is also added to the
-    # not-applicable list for non-CONOPT solvers.
+    # AGNOSTIC SOLVER REPORTING: show only the stats relevant to the solver
+    # actually used. For a non-CONOPT solver (scipy / JAX BFGS family) we DO NOT
+    # list CONOPT-specific fields (RGmax, model_status, equations, ...) as
+    # "not applicable" — they are simply omitted, and the per-group convergence
+    # table (iters / nfev / gradient_norm / walltime) is the relevant view.
+    # Symmetrically, a CONOPT run shows RGmax etc. and not scipy-only fields.
+    # (Kept as an internal marker for any programmatic consumer, but NOT
+    # surfaced in the rendered report — renderers gate on this.)
     not_applicable_fields: List[str] = []
     if not is_conopt:
         for k in _CONOPT_ONLY_FIELDS:
             if k not in solver_data:
                 not_applicable_fields.append(k)
-        # Trace is CONOPT-only as well
         not_applicable_fields.append("conopt_trace")
     if not_applicable_fields:
+        # store for programmatic use, but DO NOT set not_applicable_note so the
+        # renderers omit the "Fields not applicable: ..." line entirely.
         solver_data["not_applicable_fields"] = not_applicable_fields
-        solver_data["not_applicable_note"] = (
-            f"Solver is '{solver_data.get('solver_name')}' "
-            f"(family={family}); CONOPT/GAMS-specific fields are not applicable."
-        )
 
     solver_section_available = (
         solver_data.get("solver_name") is not None
@@ -1966,15 +1967,9 @@ def render_conopt_trace_html(bundle: DiagnosticsBundle) -> str:
     d = s.data
     family = d.get("solver_family") or classify_solver_family(d.get("solver_name"))
     if family != SOLVER_FAMILY_CONOPT:
-        return (
-            "<section><details>"
-            "<summary><strong>🔧 CONOPT Technical Trace (appendix)</strong></summary>"
-            "<p style='margin-top:0.5em;'><em>Not applicable: solver is "
-            f"<code>{_html_esc(d.get('solver_name'))}</code> "
-            f"(family=<code>{_html_esc(family)}</code>). "
-            "CONOPT iteration-trace fields are CONOPT/GAMS-specific.</em></p>"
-            "</details></section>"
-        )
+        # AGNOSTIC: the CONOPT trace appendix is CONOPT-only. For a non-CONOPT
+        # solver (scipy / JAX) omit it entirely rather than render an N/A note.
+        return ""
     trace = d.get("conopt_trace") or {}
     if not trace:
         return (
@@ -2098,11 +2093,7 @@ def render_conopt_trace_markdown(bundle: DiagnosticsBundle) -> List[str]:
     d = s.data
     family = d.get("solver_family") or classify_solver_family(d.get("solver_name"))
     if family != SOLVER_FAMILY_CONOPT:
-        out.append(
-            f"_Not applicable: solver is `{d.get('solver_name')}` (family=`{family}`). "
-            "CONOPT iteration-trace fields are CONOPT/GAMS-specific._"
-        )
-        out.append("")
+        # AGNOSTIC: omit the CONOPT trace appendix entirely for non-CONOPT solvers.
         return out
     trace = d.get("conopt_trace") or {}
     if not trace:

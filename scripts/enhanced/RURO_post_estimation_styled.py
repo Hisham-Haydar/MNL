@@ -67,6 +67,9 @@ try:
         # Phase 2.1: CONOPT technical trace appendix renderer.
         render_conopt_trace_html,
         render_conopt_trace_markdown,
+        # solver-family classification (agnostic solver reporting)
+        classify_solver_family,
+        SOLVER_FAMILY_CONOPT,
         PROFILE_CHOICES,
         DEFAULT_PROFILE,
     )
@@ -8870,10 +8873,22 @@ def _build_enhanced_param_df(
 
 
 def _fmt_solver_diag_md(solver_diag: Dict[str, Any]) -> str:
-    """Render solver convergence diagnostics as Markdown (internal helper)."""
+    """Render solver convergence diagnostics as Markdown (internal helper).
+
+    AGNOSTIC: shows only the stats relevant to the solver used. CONOPT/GAMS
+    fields (GAMSPy version, GAMS listing block) are shown ONLY for CONOPT-family
+    solvers; a scipy / JAX run shows the per-group convergence (iters, nfev,
+    wall, gradient) and nothing CONOPT-specific.
+    """
+    _solver_name = solver_diag.get("solver") or solver_diag.get("solver_name")
+    _family = (solver_diag.get("solver_family")
+               or classify_solver_family(_solver_name))
+    _is_conopt = (_family == "conopt") if _family else (
+        bool(_solver_name) and "conopt" in str(_solver_name).lower())
     lines = []
-    lines.append(f"**GAMSPy version**: {solver_diag.get('gamspy_version', _DIAG_NA)}")
-    lines.append(f"**Solver**: {solver_diag.get('solver', _DIAG_NA)}")
+    if _is_conopt:
+        lines.append(f"**GAMSPy version**: {solver_diag.get('gamspy_version', _DIAG_NA)}")
+    lines.append(f"**Solver**: {_solver_name if _solver_name else _DIAG_NA}")
     lines.append("")
 
     groups = solver_diag.get("groups", [])
@@ -8892,6 +8907,11 @@ def _fmt_solver_diag_md(solver_diag: Dict[str, Any]) -> str:
                 f"{g.get('model_status_parsed', _DIAG_NA)} |"
             )
         lines.append("")
+
+    # GAMS listing diagnostics are CONOPT-only — omit for scipy/JAX solvers.
+    if not _is_conopt:
+        lines.append("")
+        return "\n".join(lines)
 
     listing = solver_diag.get("listing_diagnostics", {}) or {}
     note = listing.get("_note", "")

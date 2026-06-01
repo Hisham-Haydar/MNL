@@ -950,9 +950,14 @@ def plot_utility_contours_all_groups(parsed_params: ParsedParameters, output_dir
                 'theta_l': _get_param_value(params, 'theta_l', (suffix,)) if suffix else params.get('theta_l', 0.5),
                 'beta_cl': _get_param_value(params, 'beta_cl', (suffix,)) if suffix else params.get('beta_cl', 0.0),
             }))
-    for g in ['cou', 'couples']:
+    # include 'couples_male'/'couples_female' so a per-group joint re-emit
+    # (group key 'couples_male') generates the couples contours; the params
+    # block carries both _m and _f, so either key yields both contours. Use the
+    # canonical 'cou' label for the output filenames regardless of which key hit.
+    for g in ['cou', 'couples', 'couples_male', 'couples_female']:
         if g in parsed_params.params_by_group:
             params = parsed_params.get_all_params_for_group(g)
+            g = 'cou'  # canonical label for couples_m/couples_f contour filenames
             groups_to_plot.append((f'{g}_m', {
                 'beta_c': params.get('beta_c', 1.0),
                 'theta_c': params.get('theta_c', 0.5),
@@ -3143,7 +3148,11 @@ def plot_hours_distribution_comparison(
         if couples_path.exists():
             df_couples = pd.read_parquet(couples_path)
             params = None
-            for try_key in ['joint', 'cou', 'couples', 'm']:
+            # Include 'couples_male'/'couples_female' so a per-group joint
+            # re-emit (group key 'couples_male') resolves, same as the singles
+            # path includes 'singles_<gender>'.
+            for try_key in ['joint', 'cou', 'couples', 'couples_male',
+                            'couples_female', 'm']:
                 if try_key in parsed_params.params_by_group:
                     params = parsed_params.get_all_params_for_group(try_key)
                     break
@@ -3288,7 +3297,11 @@ def plot_wage_distribution_comparison(
         if couples_path.exists():
             df_couples = pd.read_parquet(couples_path)
             params = None
-            for try_key in ['joint', 'cou', 'couples', 'm']:
+            # Include 'couples_male'/'couples_female' so a per-group joint
+            # re-emit (group key 'couples_male') resolves, same as the singles
+            # path includes 'singles_<gender>'.
+            for try_key in ['joint', 'cou', 'couples', 'couples_male',
+                            'couples_female', 'm']:
                 if try_key in parsed_params.params_by_group:
                     params = parsed_params.get_all_params_for_group(try_key)
                     break
@@ -3456,7 +3469,11 @@ def plot_job_distribution_comparison(
         if couples_path.exists():
             df_couples = pd.read_parquet(couples_path)
             params = None
-            for try_key in ['joint', 'cou', 'couples', 'm']:
+            # Include 'couples_male'/'couples_female' so a per-group joint
+            # re-emit (group key 'couples_male') resolves, same as the singles
+            # path includes 'singles_<gender>'.
+            for try_key in ['joint', 'cou', 'couples', 'couples_male',
+                            'couples_female', 'm']:
                 if try_key in parsed_params.params_by_group:
                     params = parsed_params.get_all_params_for_group(try_key)
                     break
@@ -3593,7 +3610,11 @@ def plot_loc_distribution_comparison(
         if couples_path.exists():
             df_couples = pd.read_parquet(couples_path)
             params = None
-            for try_key in ['joint', 'cou', 'couples', 'm']:
+            # Include 'couples_male'/'couples_female' so a per-group joint
+            # re-emit (group key 'couples_male') resolves, same as the singles
+            # path includes 'singles_<gender>'.
+            for try_key in ['joint', 'cou', 'couples', 'couples_male',
+                            'couples_female', 'm']:
                 if try_key in parsed_params.params_by_group:
                     params = parsed_params.get_all_params_for_group(try_key)
                     break

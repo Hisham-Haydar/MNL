@@ -57,12 +57,16 @@ from jax_ll_probe import build_jax_singles_ll, build_jax_couples_ll  # noqa: E40
 
 
 def _build_joint(spec, dsm, dsf, dco, use_actual_choice):
+    gender_split = set(getattr(spec, "gender_split", []) or [])
     f_sm, _ = build_jax_singles_ll(dsm, spec, is_male=True,
-                                   use_actual_choice=use_actual_choice)
+                                   use_actual_choice=use_actual_choice,
+                                   gender_split=gender_split or None)
     f_sf, _ = build_jax_singles_ll(dsf, spec, is_male=False,
-                                   use_actual_choice=use_actual_choice)
+                                   use_actual_choice=use_actual_choice,
+                                   gender_split=gender_split or None)
     f_cou, _ = build_jax_couples_ll(dco, spec,
-                                    use_actual_choice=use_actual_choice)
+                                    use_actual_choice=use_actual_choice,
+                                    gender_split=gender_split or None)
 
     def joint(theta):
         return f_sm(theta) + f_sf(theta) + f_cou(theta)

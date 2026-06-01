@@ -1,0 +1,955 @@
+%2multibyte Version: 5.50.0.2960 CodePage: 1252
+%\newtheorem{theorem}{Theorem}
+%\newtheorem{proposition}{Proposition}
+%\newtheorem{lemma}{Lemma}
+%\input{tcilatex}
+
+
+
+\documentclass[12pt]{article}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{amsfonts}
+\usepackage{eurosym}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{makeidx}
+\usepackage{amsmath}
+\usepackage{theorem}
+\usepackage{longtable}
+\usepackage[refpage]{nomencl}
+\usepackage{amssymb}
+%\usepackage{sw20lart}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[toc, page]{appendix}
+%\captionsetup[figure]{font=footnotesize,labelfont=small}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+%%%%%%%%%%%%%%%
+%\usepackage{afterpage}
+
+%\newcommand\blankpage{%
+%    \null
+%    \thispagestyle{empty}%
+%    \addtocounter{page}{-1}%
+%    \newpage}
+%%%%%%%%%%%%%%%
+
+
+\setcounter{MaxMatrixCols}{10}
+%TCIDATA{TCIstyle=article/art4.lat,lart,article}
+
+%TCIDATA{OutputFilter=LATEX.DLL}
+%TCIDATA{Version=5.50.0.2960}
+%TCIDATA{Codepage=1252}
+%TCIDATA{<META NAME="SaveForMode" CONTENT="1">}
+%TCIDATA{BibliographyScheme=Manual}
+%TCIDATA{Created=Fri Jul 28 07:54:46 2000}
+%TCIDATA{LastRevised=Wednesday, February 18, 2015 03:58:45}
+%TCIDATA{<META NAME="GraphicsSave" CONTENT="32">}
+%TCIDATA{Language=American English}
+
+
+%%% PAGE DIMENSIONS
+\usepackage{geometry}
+\geometry{top=1.25in, bottom=1.25in, left=1.25in, right=1.25in}
+
+\usepackage{setspace}
+\onehalfspacing
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{axiom}{Axiom}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newenvironment{proof}[1][Proof]{\noindent \textbf{#1.} }{\  \rule{0.5em}{0.5em}}
+%\input{tcilatex}
+\newcommand{\note}[1]{\textcolor{red}{\textbf{#1}}}
+
+
+% Note: Best to have hyperref be the last package loaded
+\usepackage[pagebackref=true,
+				colorlinks=true,
+%            linkcolor=red,
+				linkcolor=black,
+%            citecolor=blue,
+				citecolor=black,
+				bookmarks=true
+				]{hyperref}
+
+\begin{document}
+
+\title{Jobs and Well-Being Measurement\thanks{%
+}}
+\author{Hisham Haydar\thanks{%
+Department of Economics, University of Luxembourg, and LISER. Email: hisham.haydar@liser.lu} \and Fran\c{c}ois\
+Maniquet\thanks{%
+LIDAM/CORE, Universit\'{e} catholique de Louvain, and LISER. Email:
+francois.maniquet@uclouvain.be.}}
+\date{February 2025}
+\maketitle
+
+\begin{abstract}
+We measure well-being in a model in which individuals take one job in their ability set and have heterogenous preferences over jobs and how much they are paid.
+  \\
+
+%suggesting that responsibility and poverty reduction are salient normative objectives in the design of tax policy in the US.\\
+
+JEL\ Classification: H21, D63.
+
+Keywords: jobs, well-being.
+\end{abstract}
+
+\section{Introduction}
+
+\section{The model}
+
+\begin{itemize}
+    \item Fixed universal set of existing jobs: $\mathcal{J}$.
+    \item Pre-tax income function: $\mathbf{y}:\mathcal{J}\rightarrow \mathbb{R}_{+}$: $\mathbf{y}(j)$, also written $\mathbf{y}_j$, stands for pre-tax income associated to job $j$. 
+    \item Consumption set: $Z=\mathbb{R}_{+}\times \mathcal{J}$, typical element $z=(c,j)$, where $c$ is the consumption level and $j$ the job to which the individual is assigned.
+    \item Preferences: $R\in\mathcal{R}$, monotonic in the first argument.
+    \item Ability set $A\subseteq \mathcal{J}$. The set of ability sets is refer to as $\mathcal{A}$. It can be the entire set of possible subsets of $\mathcal{J}$: $\mathcal{J}:2^{\mathcal{J}}$. We can add restrictions as well, and we introduce these restrictions below when we use them.
+    \item Well-being measure: $W: Z\times \mathcal{R} \times 2^{\mathcal{J}}\rightarrow \mathbb{R}$: $W(z,R,A)$ is the well-being level of an individual consuming bundle $z$, having preferences $R$ and ability set $A$.
+    \item Well-being is allowed to depend on how much jobs are paid $\mathbf{y}$, so we write $W(z,R,A;\mathbf{y})$.
+    \item To save on notation, we assume that as soon as we measure $W(z,R,A;\mathbf{y})$, $z=(c,j)$ for some $j\in A$.
+\end{itemize}
+Remarks on the model:
+\begin{itemize}
+  \item By allowing $\mathbf{y}$ to vary, we distinguish between non-pecuniary characteristics of jobs, assumed to be fixed, and pecuniary characteristics, which may vary (across regions or through time). Of course, with a sufficiently large $\mathcal{J}$ we can represent the universe of jobs by fixing $\mathbf{y}$, so that several jobs with exactly the same tasks to perform can be distinguished depending on how much they are paid. We prefer the latter definition, though, to be allowed to make pre-tax income vary without affecting the preferences of individuals towards a particular job.
+\end{itemize}
+
+\section{Axioms}
+Basic axioms. First, $W$ is a utility representation.
+
+Representation: For all $z,z'\in Z$, $R\in \mathcal{R}$, $A\subseteq \mathcal{J}$, $\mathbf{y}\in \mathbb{R}_{+}^{\mathcal{J}}$, 
+\begin{equation*}
+\label{label1}
+z\,R\,z'\Leftrightarrow W(z,R,A;\mathbf{y})\geq W(z',R,A;\mathbf{y}).
+\end{equation*}
+
+Two axioms that deal with the question: what is a job? First, Job Multiplication captures the idea that there is no difference between being able to occupy two jobs that are completely identical, both in terms of pay and preferences, or being able to occupy only one of these jobs.
+
+Job Duplication Invariance: For all $z=(c,j)\in Z$, $R\in \mathcal{R}$, $A\subseteq \mathcal{J}$, $\mathbf{y}\in \mathbb{R}_{+}^{\mathcal{J}}$, $j'\in \mathcal{J}\setminus A$, if $\mathbf{y}(j')=\mathbf{y}(j)$ and $(x,j)\,I\,(x,j')$ for all $x\in\mathbb{R}_{+}$, then
+\begin{equation*}
+\label{label2}
+W(z,R,A;\mathbf{y})=W(z,R,A\cup\{j'\};\mathbf{y}).
+\end{equation*}
+
+To define the second axiom, we need the following terminology. Let $\pi:\mathcal{J}\rightarrow \mathcal{J}$ denote a permutation on $\mathcal{J}$. We let $\Pi$ denote the set of all permutations on $\mathcal{J}$. We let $\pi(A)\in 2^{\mathcal{J}}$ denote the permutation of elements of $A$ in $\mathcal{J}$, that is $j\in\pi(A)$ if and only if there exists $j'\in A$ such that $j=\pi(j')$. For $z=(j,c)$, we define $\pi(z)=(\pi(j),c)$. We also define $\pi(\mathbf{y})$ as follows: $\pi(\mathbf{y})(j)=\mathbf{y}(\pi(j))$. Finally, we define $\pi(R)\in\mathcal{R}$ as follows: $z/,R\,z'$ if and only if $\pi(z)\,\pi(R)\,\pi(z')$.
+
+Job Neutrality: For all $z\in Z$, $R\in \mathcal{R}$, $A\subseteq \mathcal{J}$, $\mathbf{y}\in \mathbb{R}_{+}^{\mathcal{J}}$, $\pi\in\Pi$,
+\begin{equation*}
+\label{ }
+W(z,R,A;\mathbf{y})=W(\pi(z),\pi(R),\pi(A);\pi(\mathbf{y})).
+\end{equation*}
+
+I guess we will need axioms of Continuity.
+
+We begin with compensation axioms.
+
+Full Compensation: For all $z,z'\in Z$, $R\in \mathcal{R}$, $A,A'\subseteq \mathcal{J}$, $\mathbf{y}, \mathbf{y}' \in \mathbb{R}_{+}^{\mathcal{J}}$, 
+\begin{equation*}
+\label{ }
+z\,I\,z'\Rightarrow W(z,R,A;\mathbf{y})=W(z',R,A';\mathbf{y}').
+\end{equation*}
+
+We can decompose Full Compensation into these two, weaker, axioms.
+
+Independence of $\mathbf{y}$: For all $z\in Z$, $R\in \mathcal{R}$, $A\subseteq \mathcal{J}$, $\mathbf{y}, \mathbf{y}' \in \mathbb{R}_{+}^{\mathcal{J}}$, 
+\begin{equation*}
+\label{ }
+W(z,R,A;\mathbf{y})=W(z,R,A;\mathbf{y}').
+\end{equation*}
+
+Independence of $A$: For all $z,z'\in Z$, $R\in \mathcal{R}$, $A,A'\subseteq \mathcal{J}$, $\mathbf{y}\in \mathbb{R}_{+}^{\mathcal{J}}$, 
+\begin{equation*}
+\label{ }
+z\,I\,z'\Rightarrow W(z,R,A;\mathbf{y})=W(z',R,A';\mathbf{y}).
+\end{equation*}
+
+These two properties are different in nature. Independence of $\mathbf{y}$ implies that individuals are not responsible for how much the jobs they are able to take pay. This leaves the possibility to hold individuals responsible for the set of jobs they are able to take. Independence of $A$ implies that individuals are not responsible for the set of jobs they are able to take but well-being may be measured by reference to pre-tax incomes. This leaves the possibility to make well-being differ among individuals on the basis that one of them happens to like jobs that are more productive.
+
+It is easy to see that a well-being measure $W$ satisfies Full Compensation if and only if it satisfies Independence of $\mathbf{y}$ and Independence of $A$. We should study them separately, but we should also check which well-being measures satisfies Full Compensation.
+
+Compensation for Reference Preferences. There exists $\tilde{\mathcal{R}}\subseteq\mathcal{R}$ such that or all $z,z'\in Z$, $R\in \tilde{\mathcal{R}}$, $A,A'\subseteq \mathcal{J}$, $\mathbf{y}, \mathbf{y}' \in \mathbb{R}_{+}^{\mathcal{J}}$, 
+\begin{equation*}
+\label{ }
+z\,I\,z'\Rightarrow W(z,R,A;\mathbf{y})=W(z',R,A';\mathbf{y}').
+\end{equation*}
+
+We will refer specifically to the case in which the reference class $\tilde{\mathcal R}$ is the singleton containing the \emph{horizontal} reference preference $R^h\in\mathcal R$, defined by
+\begin{equation*}
+z=(c,j)\,R^h\,z'=(c',j')\Leftrightarrow c\geq c',
+\end{equation*}
+that is, the preference that ranks bundles purely by consumption, ignoring job identity. Compensation for Reference Preferences with $\tilde{\mathcal R}=\{R^h\}$ will be called \emph{Compensation for the Horizontal Reference Preference}.
+
+Job $j$ is irrelevant for an individual of type $(R,A)$ at pre-tax incomes $\mathbf{y}(j)$ if $j\in A$ but this individual will never take job $j$: there is another job, $j'$, which this individual can take, which pays less, and independently of the tax (by tax progressivity the tax on $j$ cannot be lower than that on $j'$) this individual always prefers taking job $j'$: $j$ is irrelevant for individual $(R,A)$, if $j\in A$ and there exists $j'\in A$ such that $\mathbf{y}(j')<\mathbf{y}(j)$ and for all $t\in\mathbb{R}$, $z,z'\in Z$ such that $z=(\mathbf{y}(j)-t,j)$ and $z'=(\mathbf{y}(j')-t,j')$: $z'\,P\,z$. For $(R,A)$ we let $Irr(A;R,\mathbf{y})$ denote the set of irrelevant jobs for an individual of type $(R,A)$ facing pre-tax incomes $\mathbf{y}$.
+
+Independence of Irrelevant Jobs: For all $z=(c,j)\in Z$, $R\in \mathcal{R}$, $A\subseteq \mathcal{J}$, $j'\in A$, $\mathbf{y} \in \mathbb{R}_{+}^{\mathcal{J}}$, if $j\neq j'$ and $j'\in Irr(A;R,\mathbf{y})$, then
+\begin{equation*}
+\label{ }
+W(z,R,A;\mathbf{y})=W(z,R,A\setminus\{j'\};\mathbf{y})
+\end{equation*}
+
+Full Compensation implies Independence of $\mathbf{y}$, Compensation for Reference Preferences and Independence of Irrelevant Jobs.
+
+
+
+A job $j$ is infeasible for an individual of type $(R,A)$ if this individual is not able to take it, that is, if $j\notin A$. Since bundles are of the form $z=(c,j)$, if $j\notin A$, then no bundle containing job $j$ can be chosen by this individual. Therefore, preferences over such infeasible jobs should not affect the well-being level assigned to feasible bundles. In other words, only the restriction of preferences to feasible bundles should matter for well-being measurement.
+
+Independence of Preferences over Infeasible Jobs (IPIJ) : 
+For all $R,R'\in\mathcal R$, all $A\subseteq \mathcal J$, all $\mathbf y\in\mathbb R_+^{\mathcal J}$, if for all $z,z'\in Z$,
+\[
+z\,R\,z' \ \Longleftrightarrow\ z\,R'\,z',
+\]
+then for all $z\in Z $,
+\begin{equation*}
+\label{}
+W(z,R,A;\mathbf y)=W(z,R',A;\mathbf y).
+\end{equation*}
+Full Compensation does not imply Independence of Preferences over Infeasible Jobs, since the former compares indifferent bundles under a fixed preference relation, whereas the latter requires invariance of the well-being measure to changes in preferences outside the feasible set
+
+Next, responsibility axioms. We use the following terminology: $\max_{R}\{A;\mathbf{y}\}$ stands for any of the preferred bundles among those composed of jobs in $A$ and their pre-tax income in $\mathbf{y}$, absent any taxation. Note that if there are several bundles that maximize $R$ in $A$, they are indifferent to each other.
+
+We now turn to the responsibility axioms. To define them, we need the following terminology. For $R\in \mathcal{R}$, $A\subseteq \mathcal{J}$, $\mathbf{y} \in \mathbb{R}_{+}^{\mathcal{J}}$, we let $\argmax_{(A,\mathbf{y})}R$ denote one of the bundles that maximizes preferences $R$ in the set of bundles defined by the pair $(A,\mathbf{y})$. Note that if there are several best bundles in $(A,\mathbf{y})$, the
+
+Full Responsibility: For all $R,R'\in \mathcal{R}$, $A\subseteq \mathcal{J}$, $\mathbf{y} \in \mathbb{R}_{+}^{\mathcal{J}}$, 
+\begin{equation*}
+\label{ }
+W(\argmax_{(A,\mathbf{y})}R,R,A;\mathbf{y})=W(\argmax_{(A,\mathbf{y})}R',R',A;\mathbf{y}).
+\end{equation*}
+
+{ \color{red} 
+
+Full Responsibility: For all $R,R'\in \mathcal{R}$, $A\subseteq \mathcal{J}$, $\mathbf{y} \in \mathbb{R}_{+}^{\mathcal{J}}$, 
+\begin{equation*}
+\label{ }
+W(\argmax_{(A,\mathbf{y-t})}R,R,A;\mathbf{y})=W(\argmax_{(A,\mathbf{y -t })}R',R',A;\mathbf{y}).
+\end{equation*}
+
+}
+
+Responsibility For Equal Pay: For all $R,R'\in \mathcal{R}$, $A\subseteq \mathcal{J}$, $\mathbf{y} \in \mathbb{R}_{+}^{\mathcal{J}}$ such that $\mathbf{y}(j)=\mathbf{y}(j')$ for all $j,j'\in A$, 
+\begin{equation*}
+\label{ }
+W(\argmax_{(A,\mathbf{y})}R,R,A;\mathbf{y})=W(\argmax_{(A,\mathbf{y})}R',R',A;\mathbf{y}).
+\end{equation*}
+
+{
+\color{red}
+Responsibiltiy For Reference Abilities : for all $R,R' \in \mathcal{R}$ $A,A',\bar A \subseteq \mathcal{J}$, $\mathbf{y} \in \mathbb{R}_{+}^{\mathcal{J}}$
+\begin{equation*}
+\label{ }
+W(\argmax_{(\bar A,\mathbf{y})}R,R,A;\mathbf{y})=W(\argmax_{(\bar A,\mathbf{y})}R',R',A';\mathbf{y}).
+\end{equation*}
+
+}
+
+Responsibility When the Preferred Job is Possible: we apply Responsibility only if at least one of the jobs that individuals prefer over all existing jobs is in the ability set. 
+
+Responsibility When the Preferred Job is Possible: For all $R,R'\in \mathcal{R}$, $A\subseteq \mathcal{J}$, $\mathbf{y} \in \mathbb{R}_{+}^{\mathcal{J}}$, if $\argmax_{(\mathcal{J},\mathbf{y})}R\in A$ and $\argmax_{(\mathcal{J},\mathbf{y})}R'\in A$ then
+\begin{equation*}
+\label{ }
+W(\argmax_{(A,\mathbf{y})}R,R,A;\mathbf{y})=W(\argmax_{(A,\mathbf{y})}R',R',A;\mathbf{y}).
+\end{equation*}
+
+
+We can combine the restrictions to Responsibility contained in the latter two axioms and obtain the following axiom.
+
+Weak Responsibility: For all $R,R'\in \mathcal{R}$, $A\subseteq \mathcal{J}$, $\mathbf{y} \in \mathbb{R}_{+}^{\mathcal{J}}$ such that $\mathbf{y}(j)=\mathbf{y}(j')$ for all $j,j'\in A$, if $\argmax_{(\mathcal{J},\mathbf{y})}R\in A$ and $\argmax_{(\mathcal{J},\mathbf{y})}R'\in A$ then
+\begin{equation*}
+\label{ }
+W(\argmax_{(A,\mathbf{y})}R,R,A;\mathbf{y})=W(\argmax_{(A,\mathbf{y})}R',R',A;\mathbf{y}).
+\end{equation*}
+
+\paragraph{\textbf{Responsibility for acquired ability (RAA)}}
+We model ability sets as partly the outcome of past choices and partly due to circumstances, we introduce a reduced-form \emph{ability-formation correspondence}. Let $\Theta$ denote the set of circumstances (non-responsibility factors such as health shocks, family background constraints, and labour-market frictions), and let $E$ denote the set of merit/investment levels (education, training, and job experience). The observed ability set is generated by a correspondence
+\begin{equation}
+\label{ }
+A:\Theta\times E \to 2^{\mathcal J},\qquad (\theta,e)\mapsto A(\theta,e)\subseteq \mathcal J.
+\end{equation}
+We impose the following responsibility requirement: for any preferences $R\in\mathcal R$, any income function $\mathbf y\in\mathbb R_+^{\mathcal J}$, any circumstances $\theta\in\Theta$, and any two feasible merit levels $e,e'\in E(\theta)$,
+\begin{equation}
+    \label{}
+    W\!\big(\max_{R}\{A(\theta,e);\mathbf y\},\,R,\,A(\theta,e);\,\mathbf y\big)
+=
+W\!\big(\max_{R}\{A(\theta,e');\mathbf y\},\,R,\,A(\theta,e');\,\mathbf y\big),
+\end{equation}
+
+
+that is, conditional on the same circumstances $\theta$, differences in the achieved ability set that arise from different feasible merit choices should not affect the well-being level assigned at the laissez-faire.
+
+
+
+\section{Measures}
+
+Measure 1: We restrict our attention to the individual's ability set, without looking at the pre-tax incomes associated to these jobs, and we look at the preferred job and its corresponding consumption level that leaves the individual indifferent to their current bundle.
+\begin{equation*}
+\label{ }
+W(z, R, A;\mathbf{y})=w\Leftrightarrow z\,I\,\max_R\{B\}
+\end{equation*}
+where
+\begin{equation*}
+\label{ }
+z'=(c',j')\in B\Leftrightarrow j'\in A \textrm{ and } c'=w.
+\end{equation*}
+If I'm right, this measure satisfies Independence of $\mathbf{y}$ and Responsibility For Equal Pay. I am confident it is the only measure to satisfy these two axioms. To be proven.
+
+Measure 2: We restrict our attention to the individual's ability set, we look at the preferred job in this set to which the individual is indifferent to their current bundle, where ``preferred job'' means that the tax (or subsidy) that would leave them indifferent is minimal, and we apply this tax (or subsidy) to all the jobs in the ability set to identify the "best-paid equivalent" job, the pay of which is the well-being of the individual.
+\begin{equation*}
+\label{ }
+W(z, R, A;\mathbf{y})=w\Leftrightarrow z\,I\,\max_R\{B\}
+\end{equation*}
+where there exists $t\in\mathbb{R}$ such that 
+\begin{equation*}
+\label{ }
+z'=(c',j')\in B\Leftrightarrow j'\in A \textrm{ and } c'=\mathbf{y(j')}-t,
+\end{equation*}
+and 
+\begin{equation*}
+\label{ }
+w=\max_{j\in A}\mathbf{y}(j)-t.
+\end{equation*}
+In particular, if $z=\argmax_A R$, then $W(z, R, A;\mathbf{y})=\max_{j\in A}\mathbf{y}(j)$.
+
+If I'm right, this measure satisfies Full Responsibility and Compensation for Reference Preferences if the reference preferenes are $R^{c}\in\mathcal{R}$ defined by 
+\begin{equation*}
+\label{ }
+z=(c;j)\,R^{c}\,z'=(c',j')\Leftrightarrow c\geq c'.
+\end{equation*} 
+I am reasonably confident it is the only measure to satisfy these two axioms and some other ones that will extend Job Neutrality. To be proven.
+
+Measure 3: The Laisser-Faire measure. All individuals have the same well-being at laisser-faire. Otherwise, compute the amount of tax $t$ that leaves the individual indifferent between their current bundle and maximizing over their ability set and paying $t$ (better to write it as a subsidy I guess).
+\begin{equation*}
+\label{ }
+W(z, R, A;\mathbf{y})=w\Leftrightarrow z\,I\,\max_R\{B\}
+\end{equation*}
+where 
+\begin{equation*}
+\label{ }
+z'=(c',j')\in B\Leftrightarrow j'\in A \textrm{ and } c'=\mathbf{y}(j')+w.
+\end{equation*}
+I think the Laisser-Faire measure satisfies Full Responsibility and Independence of Irrelevant Jobs and it is the only one that satisfies these two axioms
+
+Measure 4: The Staying-Home Equivalent measure. Assume there is a ``job'', say $o$, consisting of staying home, with $\mathbf{y}(o)=0$, such that everybody has it in their ability set: for all $A\in\mathcal{A}$, $o\in A$. Then, we can measure well-being by computing the consumption level that leaves an individual indifferent between their current bundle and staying home with that consumption level.
+
+\begin{equation*}
+\label{ }
+W(z, R, A;\mathbf{y})=w\Leftrightarrow z\,I\,(w,o).
+\end{equation*}
+
+{\color{red}
+Measure 5: The Reference Ability LF measure. We fix a reference ability set $\bar{A}\subseteq \mathcal{J}$. Instead of evaluating an individual relative to their own actual ability set, as in the Laisser-Faire measure, we evaluate them relative to a common reference set of jobs. The idea is to compute the amount of subsidy that, when added uniformly to all jobs in the reference ability set, makes the individual indifferent between their current bundle and the best job they would choose in that subsidized reference set. In this way, well-being is measured relative to a common benchmark of job opportunities. 
+\begin{equation*}
+W(z,R,A;\mathbf{y})=w
+\Leftrightarrow
+z\,I\,\max_R\{B\}
+\end{equation*}
+
+where
+
+\begin{equation*}
+z'=(c',j')\in B
+\Leftrightarrow
+j'\in \bar{A}
+\textrm{ and }
+c'=\mathbf{y}(j')+w.
+\end{equation*}
+
+In particular, if $z=\argmax_{(\bar{A},\mathbf{y})}R$, then $W(z,R,A;\mathbf{y})=0$.
+This measure satisfies Independence of $A$, Independence of Irrelevant Jobs, and a responsibility principle relative to the reference ability set $\bar{A}$. It does not satisfy Independence of $\mathbf{y}$, and in general it does not satisfy Full Responsibility, since the latter is defined with respect to the actual ability set $A$ rather than the reference ability set $\bar{A}$.  As a special case, if we take $\bar{A}=\mathcal{J}$, then the measure satisfies Responsibility When the Preferred Job is Possible, since whenever an individual's preferred job in $(\mathcal{J},\mathbf{y})$ belongs to the actual ability set $A$, the preferred feasible bundle in $(A,\mathbf{y})$ coincides with the preferred bundle in the reference set and therefore receives well-being level $0$.
+}
+\\
+
+Measure 6: We compute the consumption level that would leave an individual indifferent between their actual bundle and getting this consumption level with their preferred job over all existing jobs. If there exists $w\in\mathbb{R}_{+}$, such that $z\,I\,\argmax_{(\mathcal{J},\mathbf{y}^w)}R$ and $z'\,I'\,\argmax_{(\mathcal{J},\mathbf{y}^w)}R'$ then $W(z,R,A;\mathbf{y})=W(z',R',A';\mathbf{y}')$.
+
+This measure satisfies Full Compensation and Weak Responsibility.\\
+
+\begin{tabular}{r|c|c|c|c|c|c|}
+     & $W^1$ & $W^2$ & $W^3$ & $W^4$ & $W^5$ & $W^6$ \\
+Representation & + & + & + & + & + & + \\
+Job Duplication Invariance & + & + & + & + & + & + \\
+Job Neutrality & + & + & + & + & + & + \\
+Full Compensation     & - & - & - & + & - & + \\
+Ind. of $\mathbf{y}$     & + & - & - & + & - & + \\
+Ind. of $A$     & - & - & - & + & + & + \\
+Comp.\ for $R^{h}$     & + & + & - & + & - & + \\
+Comp.\ for Ref. Pref.     & + & - & - & + & - & + \\
+Ind.\ of Irr.\ Jobs (IIJ)     & + & - & + & + & + & + \\
+Full Responsibility     & - & + & + & - & - & - \\
+Resp.\ For Equal Pay     & + & + & + & - & - & - \\
+Resp.\ When Pref. Job is Poss.     & - & + & + & - & - & - \\
+Weak Resp.     & + & + & + & - & - & +\\
+Ind.\ Pref.\ Infeas.\ Jobs (IPIJ)    & + & + & + & + & - & - \\
+Resp.\ Ref.\ Abilities   & - & - & ? & - & + & - \\
+\end{tabular}
+
+\section{Results}
+
+The classification table established that no measure simultaneously satisfies a strong compensation axiom and a strong responsibility axiom. The following two theorems show that this incompatibility is structural rather than circumstantial: it persists even when the compensation and responsibility requirements are substantially weaker than their full forms. Each theorem identifies a \emph{tight} impossibility, in the sense that further weakening either axiom restores compatibility. The classical impossibility result---that Full Compensation and Full Responsibility cannot be jointly satisfied---follows as a corollary in either case.
+{\color{red}
+\begin{theorem}
+\label{thm:imp1}
+There is no well-being measure $W$ that satisfies Representation, Independence of $A$, and Responsibility For Equal Pay.
+\end{theorem}
+
+\begin{proof}
+Suppose for contradiction that $W$ satisfies the three axioms. Let $A=\{j_1,j_2\}\subseteq\mathcal J$ with $j_1\neq j_2$, and let $\mathbf y\in\mathbb R_+^{\mathcal J}$ satisfy $\mathbf y(j_1)=\mathbf y(j_2)=\bar y$ for some $\bar y\geq 0$. Take $R,R'\in\mathcal R$ such that $(c,j_1)\,P_R\,(c,j_2)$ for all $c\geq 0$ and $(c,j_2)\,P_{R'}\,(c,j_1)$ for all $c\geq 0$, both monotone in consumption.
+
+Under the equal-pay profile $\mathbf y$ restricted to $A$, the laissez-faire bundles are
+\begin{equation*}
+\argmax_{(A,\mathbf y)}R=(\bar y,j_1)
+\qquad\text{and}\qquad
+\argmax_{(A,\mathbf y)}R'=(\bar y,j_2).
+\end{equation*}
+By Responsibility For Equal Pay,
+\begin{equation}
+W((\bar y,j_1),R,A;\mathbf y)=W((\bar y,j_2),R',A;\mathbf y). \label{imp1_star}
+\end{equation}
+
+Consider now the bundle $(\bar y,j_2)$ under preferences $R$. By Independence of $A$ applied with the singleton $A_2=\{j_2\}$ (with $j_2\in A\cap A_2$),
+\begin{equation*}
+W((\bar y,j_2),R,A;\mathbf y)=W((\bar y,j_2),R,A_2;\mathbf y),
+\end{equation*}
+and similarly $W((\bar y,j_2),R',A;\mathbf y)=W((\bar y,j_2),R',A_2;\mathbf y)$. On the singleton ability set $A_2$, the feasible bundle space is $\{(c,j_2):c\geq 0\}$, on which $R$ and $R'$ both rank purely by consumption (by monotonicity), so they coincide. Hence by Independence of $A$ applied to changes in preferences that preserve the ranking on the feasible set,
+\begin{equation*}
+W((\bar y,j_2),R,A_2;\mathbf y)=W((\bar y,j_2),R',A_2;\mathbf y),
+\end{equation*}
+and therefore
+\begin{equation}
+W((\bar y,j_2),R,A;\mathbf y)=W((\bar y,j_2),R',A;\mathbf y). \label{imp1_diamond}
+\end{equation}
+By the same argument applied to $(\bar y,j_1)$ with the singleton $A_1=\{j_1\}$,
+\begin{equation}
+W((\bar y,j_1),R,A;\mathbf y)=W((\bar y,j_1),R',A;\mathbf y). \label{imp1_diamonddiamond}
+\end{equation}
+
+Combining (\ref{imp1_star}) with (\ref{imp1_diamonddiamond}) and (\ref{imp1_diamond}),
+\begin{equation*}
+W((\bar y,j_1),R',A;\mathbf y)=W((\bar y,j_2),R',A;\mathbf y).
+\end{equation*}
+But by Representation applied at $(R',A,\mathbf y)$, since $(\bar y,j_2)\,P_{R'}\,(\bar y,j_1)$,
+\begin{equation*}
+W((\bar y,j_2),R',A;\mathbf y)>W((\bar y,j_1),R',A;\mathbf y),
+\end{equation*}
+a contradiction.
+\end{proof}
+
+
+\begin{theorem}
+\label{thm:imp2}
+There is no well-being measure $W$ that satisfies Representation, Independence of $\mathbf y$, and Responsibility When the Preferred Job is Possible.
+\end{theorem}
+
+\begin{proof}
+Suppose for contradiction that $W$ satisfies the three axioms. Fix $A=\mathcal J$, so that for every $R\in\mathcal R$ and $\mathbf y\in\mathbb R_+^{\mathcal J}$, the antecedent of Responsibility When the Preferred Job is Possible is satisfied: $\argmax_{(\mathcal J,\mathbf y)}R\in\mathcal J=A$. By the axiom, for every $\mathbf y\in\mathbb R_+^{\mathcal J}$ there exists a value $\psi(\mathbf y)\in\mathbb R$ such that
+\begin{equation}
+W\!\big(\argmax_{(\mathcal J,\mathbf y)}R,\,R,\,\mathcal J;\,\mathbf y\big)=\psi(\mathbf y)
+\quad\text{for all }R\in\mathcal R. \label{imp2_star}
+\end{equation}
+
+Fix two distinct jobs $j_0,j_1\in\mathcal J$ and choose $\mathbf y,\mathbf y'\in\mathbb R_+^{\mathcal J}$ as follows:
+\begin{equation*}
+\mathbf y(j_0)=10,\quad \mathbf y(j_1)=20,\quad \mathbf y(j)=0\text{ for }j\notin\{j_0,j_1\},
+\end{equation*}
+\begin{equation*}
+\mathbf y'(j_0)=10+\Delta,\quad \mathbf y'(j_1)=20,\quad \mathbf y'(j)=0\text{ for }j\notin\{j_0,j_1\},
+\end{equation*}
+for some $\Delta>0$ small enough that the pay ranking is unchanged. Choose $R\in\mathcal R$ exhibiting a strong preference for $j_0$ in the sense that $\argmax_{(\mathcal J,\mathbf y)}R=(10,j_0)$ and $\argmax_{(\mathcal J,\mathbf y')}R=(10+\Delta,j_0)$. By (\ref{imp2_star}),
+\begin{equation*}
+W((10,j_0),R,\mathcal J;\mathbf y)=\psi(\mathbf y),
+\qquad
+W((10+\Delta,j_0),R,\mathcal J;\mathbf y')=\psi(\mathbf y').
+\end{equation*}
+
+Choose now $R'\in\mathcal R$ exhibiting a strong preference for $j_1$ such that $\argmax_{(\mathcal J,\mathbf y)}R'=\argmax_{(\mathcal J,\mathbf y')}R'=(20,j_1)$, since $\mathbf y(j_1)=\mathbf y'(j_1)$. By (\ref{imp2_star}),
+\begin{equation*}
+W((20,j_1),R',\mathcal J;\mathbf y)=\psi(\mathbf y),
+\qquad
+W((20,j_1),R',\mathcal J;\mathbf y')=\psi(\mathbf y').
+\end{equation*}
+By Independence of $\mathbf y$ applied to the bundle $(20,j_1)$ on its own $R'$-indifference class,
+\begin{equation*}
+W((20,j_1),R',\mathcal J;\mathbf y)=W((20,j_1),R',\mathcal J;\mathbf y'),
+\end{equation*}
+and therefore $\psi(\mathbf y)=\psi(\mathbf y')$.
+
+On the other hand, by Representation at $(R,\mathcal J,\mathbf y)$, since $(10+\Delta,j_0)\,P_R\,(10,j_0)$,
+\begin{equation*}
+W((10+\Delta,j_0),R,\mathcal J;\mathbf y)>W((10,j_0),R,\mathcal J;\mathbf y)=\psi(\mathbf y).
+\end{equation*}
+By Independence of $\mathbf y$ applied to the bundle $(10+\Delta,j_0)$ on its own $R$-indifference class,
+\begin{equation*}
+W((10+\Delta,j_0),R,\mathcal J;\mathbf y)=W((10+\Delta,j_0),R,\mathcal J;\mathbf y')=\psi(\mathbf y'),
+\end{equation*}
+so $\psi(\mathbf y')>\psi(\mathbf y)$, contradicting $\psi(\mathbf y)=\psi(\mathbf y')$.
+\end{proof}
+
+\begin{corollary}
+There is no well-being measure $W$ that satisfies Full Compensation and Full Responsibility.
+\end{corollary}
+
+\begin{proof}
+Full Compensation implies Independence of $\mathbf y$, and Full Responsibility implies Responsibility When the Preferred Job is Possible. The conclusion follows from Theorem~\ref{thm:imp2}.
+\end{proof}
+
+The two impossibilities identify two independent dimensions of the compensation/responsibility trade-off in the job model. Theorem~\ref{thm:imp1} concerns ability-set independence versus job-choice responsibility under equal pay: one cannot insulate well-being from the ability set while still neutralizing preferences when pay is flat. Theorem~\ref{thm:imp2} concerns wage-profile independence versus responsibility at the unconstrained optimum: one cannot insulate well-being from the wage profile while still equating agents who reach their preferred job. Each captures a distinct failure mode and motivates a distinct family of measures, as the characterization theorems below show.
+}
+\begin{theorem}
+If a well-being measure $W$ satisfies Responsibility for Equal Pay and Independence of $\mathbf{y}$, then $W=W^1$.
+\end{theorem}
+
+\begin{proof}
+    We need to prove that for all $z,z'\in Z$, $R,R'\in\mathcal{R}$, $A,A'\in 2^{\mathcal{J}}$, $y,y'\in\mathbb{R}_{+}^{\mathcal{J}}$, if there exists $w\in\mathbb{R}_{+}$ such that 
+    \begin{align}
+        z=&\argmax_{A,\mathbf{y}^w}R\label{th_1_z}\\
+        z'=&\argmax_{A',\mathbf{y}^w}R'\label{th_1_z'}
+    \end{align}
+    then (*) $W(z,R,A;\mathbf{y})=W(z',R',A';\mathbf{y}')$.
+
+    Let $z,z'$ and $w$ satisfy (\ref{th_1_z}) and (\ref{th_1_z'}). By Independence of $\mathbf{y}$, 
+    \begin{equation*}
+        (*)\Leftrightarrow W(z,R,A;\mathbf{y}^w)=W(z',R',A';\mathbf{y}^w).
+    \end{equation*}
+    Let $\bar{z},\bar{z}'\in Z$ be defined by
+    \begin{align*}
+        \bar{z}=(w,j)=& \argmax_{A,\mathbf{y}^w}R, j\in A\\
+        \bar{z}'=(w,j')=& \argmax_{A',\mathbf{y}^w}R', j'\in A.
+    \end{align*}
+    By Representation, $W(z,R,A;\mathbf{y}^w)=W(\bar{z},R,A;\mathbf{y}^w)$ and $W(z',R',A';\mathbf{y}^w)=W(\bar{z}',R',A';\mathbf{y}^w)$, so that
+    \begin{equation*}
+        W(z,R,A;\mathbf{y}^w)=W(z',R',A';\mathbf{y}^w) \Leftrightarrow W(\bar{z},R,A;\mathbf{y}^w)=W(\bar{z}',R',A';\mathbf{y}^w).
+    \end{equation*}
+    By Responsibility for Equal Pay, $W(\bar{z},R,A;\mathbf{y}^w)=W(\bar{z},R^c,A;\mathbf{y}^w)$ and $W(\bar{z}',R',A';\mathbf{y}^w)=W(\bar{z}',R^c,A';\mathbf{y}^w)$, so that
+    \begin{equation*}
+        W(\bar{z},R,A;\mathbf{y}^w)=W(\bar{z}',R',A';\mathbf{y}^w) \Leftrightarrow W(\bar{z},R^c,A;\mathbf{y}^w)=W(\bar{z}',R^c,A';\mathbf{y}^w).
+    \end{equation*}
+    Let $\bar{A}\subseteq\mathcal{J}$ be defined by $\bar{A}=A\cup A'$. By Job Duplication Invariance applied $\lvert \bar{A}\setminus A \rvert$ times, $W(\bar{z},R^c,A;\mathbf{y}^w)=W(\bar{z},R^c,\bar{A};\mathbf{y}^w)$. By Job Duplication Invariance applied $\lvert \bar{A}\setminus A' \rvert$ times, $W(\bar{z}',R^c,A';\mathbf{y}^w)=W(\bar{z}',R^c,\bar{A};\mathbf{y}^w)$ so that 
+    \begin{equation*}
+        W(\bar{z},R^c,A;\mathbf{y}^w)=W(\bar{z}',R^c,A';\mathbf{y}^w) \Leftrightarrow W(\bar{z},R^c,\bar{A};\mathbf{y}^w)=W(\bar{z}',R^c,\bar{A};\mathbf{y}^w).
+    \end{equation*}
+    By construction, $\bar{z}\,I^c\,\bar{z}'$, so that, by Representation, 
+    \begin{equation*}
+        W(\bar{z},R^c,\bar{A};\mathbf{y}^w)=W(\bar{z}',R^c,\bar{A};\mathbf{y}^w)
+    \end{equation*}
+    which completes the proof.
+\end{proof}
+
+{\color{red}
+\begin{theorem}
+If a well-being measure $W$ satisfies Full responsibility and Compensation for reference (horizontal) preference, then $W=W^2$.
+\end{theorem}
+
+\begin{proof}
+    We need to prove that for all $z,z'\in \mathcal{Z}$, $R,R'\in\mathcal{R}$, $A,A'\in 2^{\mathcal{J}}$, $y,y'\in\mathbb{R}_{+}^{\mathcal{J}}$, and $t,t'\in\mathbb{R}$ if there exists $w\in\mathbb{R}$  such that 
+    
+        \begin{align}
+          & z\, I\,\argmax_{A,\mathbf{y-t}}R \label{th_2_z}\\
+          & z'\, I'\,\argmax_{A',\mathbf{y'-t'}}R' \label{th_2_z'}\\
+          w &= \max_{j\in A}\mathbf y(j)-t=\max_{j'\in A'}\mathbf y'(j')-t', \label{th_2_w}
+        \end{align}
+    then (*) $W(z,R,A;\mathbf{y})=W(z',R',A';\mathbf{y}')$.
+
+    Let $z,z'$ and $w, t, t'$ satisfy (\ref{th_2_z}) -- (\ref{th_2_w}). Let $\tilde z,\tilde z',\bar z,\bar z'\in Z$ be defined by
+
+    \begin{align*}
+    \tilde z &\in \argmax_{(A,\mathbf y-t)}R,\\
+    \tilde z' &\in \argmax_{(A',\mathbf y'-t')}R',\\
+    \bar z &\in \argmax_{(A,\mathbf y-t)}R^h,\\
+    \bar z' &\in \argmax_{(A',\mathbf y'-t')}R^h.
+    \end{align*}
+    By Representation, since $z\,I\,\tilde z$ and $z'\,I'\,\tilde z'$, one has
+    \begin{equation*}
+        W(z,R,A;\mathbf y)=W(\tilde z,R,A;\mathbf y)
+            \qquad\text{and}\qquad
+        W(z',R',A';\mathbf y')=W(\tilde z',R',A';\mathbf y').
+    \end{equation*}
+    Hence, 
+    \begin{equation*}
+        (*)\Leftrightarrow W(\tilde z,R,A;\mathbf y)=W(\tilde z',R',A';\mathbf y').
+    \end{equation*}
+    By Full Responsibility, 
+    \begin{equation*}
+        W(\tilde z,R,A;\mathbf y)=W(\bar z,R^h,A;\mathbf y)
+            \qquad\text{and}\qquad
+        W(\tilde z',R',A';\mathbf y')=W(\bar z',R^h,A';\mathbf y').
+    \end{equation*}
+    Therefore,
+    \begin{equation*}
+        (*)\Leftrightarrow W(\bar z,R^h,A;\mathbf y)=W(\bar z',R^h,A';\mathbf y').
+    \end{equation*}
+   By construction, $\bar z=(w,j)$ for some $j\in A$ and $\bar z'=(w,j')$ for some $j'\in A'$, so that $\bar z\,I^h\,\bar z'$. By Compensation for Reference Preferences (horizontal)$R^h$,
+    \begin{equation*}
+        W(\bar z,R^h,A;\mathbf y)=W(\bar z',R^h,A';\mathbf y'),
+    \end{equation*}
+    which completes the proof.
+\end{proof}
+}
+{\color{blue}
+
+\begin{theorem}
+If a well-being measure $W$ satisfies Full Compensation and Weak Responsibility, then $W=W^6$.
+\end{theorem}
+
+\begin{proof}
+    We need to prove that for all $z,z'\in Z$, $R,R'\in\mathcal{R}$, 
+    $A,A'\in 2^{\mathcal{J}}$, $\mathbf y,\mathbf y'\in\mathbb{R}_{+}^{\mathcal{J}}$, 
+    if there exists $w\in\mathbb{R}_{+}$ such that 
+    \begin{align}
+        z\,I\,\argmax_{(\mathcal{J},\mathbf{y}^w)}R, \label{th_4_z}\\
+        z'\,I'\,\argmax_{(\mathcal{J},\mathbf{y}^w)}R', \label{th_4_z'}
+    \end{align}
+    then 
+    \begin{equation*}
+       W(z,R,A;\mathbf{y})=W(z',R',A';\mathbf{y}')\, (*).
+    \end{equation*}
+    
+Let $z,z'$ and $w$ satisfy (\ref{th_4_z}) and (\ref{th_4_z'}). Let $\bar z,\bar z'\in Z$ be defined by
+    \begin{align*}
+        \bar z\in& \argmax_{(\mathcal{J},\mathbf y^w)}R,\\
+        \bar z'\in& \argmax_{(\mathcal{J},\mathbf y^w)}R',
+    \end{align*}
+    where $\mathbf y^w$ is the equal-pay profile defined by $\mathbf y^w(j)=w$ for all $j\in\mathcal J$. Note that $\bar{z}=(w,\bar{j})$ (resp. $\bar{z}'=(w,\bar{j}')$ for some $\bar{j}\in \mathcal{J}$ (resp.\ $\bar{j}'\in \mathcal{J}$).
+
+    By Full Compensation, 
+    \begin{align*}
+        W(z,R,A;\mathbf y)
+        &=W( z,R,\mathcal J;\mathbf y^w),\\
+        W(z',R',A';\mathbf y')
+        &=W( z',R',\mathcal J;\mathbf y^w).
+    \end{align*}
+
+    By Representation, since $z\,I\,\bar z$ and $z'\,I'\,\bar z'$,
+    \begin{align*}
+        W( z,R,\mathcal J;\mathbf y^w)
+        &=W(\bar z,R,\mathcal J;\mathbf y^w),\\
+        W( z',R',\mathcal J;\mathbf y^w)
+        &=W(\bar z',R',\mathcal J;\mathbf y^w).
+    \end{align*}
+
+    Hence,
+    \begin{equation*}
+        (*)\Leftrightarrow 
+        W(\bar z,R,\mathcal J;\mathbf y^w)
+        =
+        W(\bar z',R',\mathcal J;\mathbf y^w).
+    \end{equation*}
+and since the preferred job over $\mathcal J$ is feasible in $\mathcal J$, Weak Responsibility applies, that is,
+    \begin{equation*}
+        W(\bar z,R,\mathcal J;\mathbf y^w)
+        =
+        W(\bar z',R',\mathcal J;\mathbf y^w),
+    \end{equation*}
+    which completes the proof.
+\end{proof}
+
+
+\begin{theorem}[$W^4$]
+\label{thm:w4}
+If a well-being measure $W$ satisfies Full Compensation and Independence of Preferences over Infeasible Jobs, then $W$ is ordinally equivalent to $W^4$.
+\end{theorem}
+
+\begin{proof}
+We need to prove that for all $z,z'\in Z$, $R,R'\in\mathcal{R}$, $A,A'\in 2^{\mathcal{J}}$, $\mathbf y,\mathbf y'\in\mathbb{R}_{+}^{\mathcal{J}}$, if there exists $w\in\mathbb{R}_{+}$ such that
+\begin{align}
+z\,I\,(w,o), \label{th_4w_z}\\
+z'\,I'\,(w,o), \label{th_4w_zp}
+\end{align}
+then (*) $W(z,R,A;\mathbf y)=W(z',R',A';\mathbf y')$.
+
+Let $z,z'$ and $w$ satisfy (\ref{th_4w_z}) and (\ref{th_4w_zp}). By Full Compensation, since $z\,I\,(w,o)$ and $z'\,I'\,(w,o)$,
+\begin{equation*}
+W(z,R,A;\mathbf y)=W((w,o),R,A;\mathbf y)
+\qquad\text{and}\qquad
+W(z',R',A';\mathbf y')=W((w,o),R',A';\mathbf y').
+\end{equation*}
+Hence,
+\begin{equation*}
+(*)\Leftrightarrow W((w,o),R,A;\mathbf y)=W((w,o),R',A';\mathbf y').
+\end{equation*}
+By Full Compensation again, applied to the trivial indifference $(w,o)\,I\,(w,o)$, the environment can be aligned to the singleton ability set $\{o\}$ with the zero income profile $\mathbf 0$:
+\begin{equation*}
+W((w,o),R,A;\mathbf y)=W((w,o),R,\{o\};\mathbf 0),
+\end{equation*}
+and similarly $W((w,o),R',A';\mathbf y')=W((w,o),R',\{o\};\mathbf 0)$. Hence,
+\begin{equation*}
+(*)\Leftrightarrow W((w,o),R,\{o\};\mathbf 0)=W((w,o),R',\{o\};\mathbf 0).
+\end{equation*}
+The feasible bundle space on $\{o\}$ is the ray $\{(c,o):c\geq 0\}$, on which every preference in $\mathcal R$ ranks bundles purely by consumption (by monotonicity). Therefore $R$ and $R'$ coincide on this feasible set. By Independence of Preferences over Infeasible Jobs,
+\begin{equation*}
+W((w,o),R,\{o\};\mathbf 0)=W((w,o),R',\{o\};\mathbf 0),
+\end{equation*}
+which completes the proof.
+\end{proof}
+
+\begin{theorem}[$W^5$, general reference set]
+\label{thm:w5gen}
+Fix a reference ability set $\bar A\subseteq\mathcal J$. If a well-being measure $W$ satisfies Independence of $A$, Compensation for the Horizontal Reference Preference $R^h$, and Responsibility for Reference Abilities (relative to $\bar A$), then $W=W^{5,\bar A}$.
+\end{theorem}
+
+\begin{proof}
+We need to prove that for all $z,z'\in Z$, $R,R'\in\mathcal{R}$, $A,A'\in 2^{\mathcal{J}}$, $\mathbf y\in\mathbb{R}_{+}^{\mathcal{J}}$, if there exists $w\in\mathbb{R}_{+}$ such that
+\begin{align}
+z\,I\,\argmax_{(\bar A,\mathbf{y}^{+w})}R, \label{th_5a_z}\\
+z'\,I'\,\argmax_{(\bar A,\mathbf{y}^{+w})}R', \label{th_5a_zp}
+\end{align}
+where $\mathbf y^{+w}$ denotes the profile defined by $\mathbf y^{+w}(j')=\mathbf y(j')+w$ for all $j'\in\bar A$, and with the normalization that $W$ at the laissez-faire of $(\bar A,\mathbf y^{+w})$ equals $w$, then (*) $W(z,R,A;\mathbf y)=W(z',R',A';\mathbf y)$.
+
+Let $z,z'$ and $w$ satisfy (\ref{th_5a_z}) and (\ref{th_5a_zp}). Let $\tilde z,\tilde z',\bar z,\bar z'\in Z$ be defined by
+\begin{align*}
+\tilde z &\in \argmax_{(\bar A,\mathbf y^{+w})}R,\\
+\tilde z' &\in \argmax_{(\bar A,\mathbf y^{+w})}R',\\
+\bar z &\in \argmax_{(\bar A,\mathbf y^{+w})}R^h,\\
+\bar z' &\in \argmax_{(\bar A,\mathbf y^{+w})}R^h.
+\end{align*}
+By Representation, since $z\,I\,\tilde z$ and $z'\,I'\,\tilde z'$,
+\begin{equation*}
+W(z,R,A;\mathbf y)=W(\tilde z,R,A;\mathbf y)
+\qquad\text{and}\qquad
+W(z',R',A';\mathbf y)=W(\tilde z',R',A';\mathbf y).
+\end{equation*}
+By Independence of $A$,
+\begin{equation*}
+W(\tilde z,R,A;\mathbf y)=W(\tilde z,R,\bar A;\mathbf y)
+\qquad\text{and}\qquad
+W(\tilde z',R',A';\mathbf y)=W(\tilde z',R',\bar A;\mathbf y).
+\end{equation*}
+Hence,
+\begin{equation*}
+(*)\Leftrightarrow W(\tilde z,R,\bar A;\mathbf y)=W(\tilde z',R',\bar A;\mathbf y).
+\end{equation*}
+By Responsibility for Reference Abilities applied at $(\bar A,\mathbf y^{+w})$, since $\tilde z=\argmax_{(\bar A,\mathbf y^{+w})}R$ and $\bar z=\argmax_{(\bar A,\mathbf y^{+w})}R^h$,
+\begin{equation*}
+W(\tilde z,R,\bar A;\mathbf y^{+w})=W(\bar z,R^h,\bar A;\mathbf y^{+w}),
+\end{equation*}
+and similarly $W(\tilde z',R',\bar A;\mathbf y^{+w})=W(\bar z',R^h,\bar A;\mathbf y^{+w})$. Hence,
+\begin{equation*}
+(*)\Leftrightarrow W(\bar z,R^h,\bar A;\mathbf y^{+w})=W(\bar z',R^h,\bar A;\mathbf y^{+w}).
+\end{equation*}
+By construction, $\bar z=(v,j^*)$ and $\bar z'=(v,j^{**})$ where $v=\max_{j'\in\bar A}\mathbf y(j')+w$ and $j^*,j^{**}\in\argmax_{j'\in\bar A}\mathbf y(j')$, so that $\bar z\,I^h\,\bar z'$. By Compensation for the Horizontal Reference Preference $R^h$,
+\begin{equation*}
+W(\bar z,R^h,\bar A;\mathbf y^{+w})=W(\bar z',R^h,\bar A;\mathbf y^{+w}),
+\end{equation*}
+which completes the proof.
+\end{proof}
+
+\begin{theorem}[$W^5$, special case $\bar A=\mathcal J$]
+\label{thm:w5special}
+Fix $\bar A=\mathcal J$. If a well-being measure $W$ satisfies Independence of $A$, Compensation for the Horizontal Reference Preference $R^h$, and Responsibility When the Preferred Job is Possible, then $W=W^{5,\mathcal J}$.
+\end{theorem}
+
+\begin{proof}
+We need to prove that for all $z,z'\in Z$, $R,R'\in\mathcal{R}$, $A,A'\in 2^{\mathcal{J}}$, $\mathbf y\in\mathbb{R}_{+}^{\mathcal{J}}$, if there exists $w\in\mathbb{R}_{+}$ such that
+\begin{align}
+z\,I\,\argmax_{(\mathcal J,\mathbf{y}^{+w})}R, \label{th_5b_z}\\
+z'\,I'\,\argmax_{(\mathcal J,\mathbf{y}^{+w})}R', \label{th_5b_zp}
+\end{align}
+with the normalization that $W$ at the laissez-faire of $(\mathcal J,\mathbf y^{+w})$ equals $w$, then (*) $W(z,R,A;\mathbf y)=W(z',R',A';\mathbf y)$.
+
+Let $z,z'$ and $w$ satisfy (\ref{th_5b_z}) and (\ref{th_5b_zp}). Let $\tilde z,\tilde z',\bar z,\bar z'\in Z$ be defined by
+\begin{align*}
+\tilde z &\in \argmax_{(\mathcal J,\mathbf y^{+w})}R,\\
+\tilde z' &\in \argmax_{(\mathcal J,\mathbf y^{+w})}R',\\
+\bar z &\in \argmax_{(\mathcal J,\mathbf y^{+w})}R^h,\\
+\bar z' &\in \argmax_{(\mathcal J,\mathbf y^{+w})}R^h.
+\end{align*}
+By Representation, $W(z,R,A;\mathbf y)=W(\tilde z,R,A;\mathbf y)$ and $W(z',R',A';\mathbf y)=W(\tilde z',R',A';\mathbf y)$. By Independence of $A$, $W(\tilde z,R,A;\mathbf y)=W(\tilde z,R,\mathcal J;\mathbf y)$ and similarly for the primed objects. Hence,
+\begin{equation*}
+(*)\Leftrightarrow W(\tilde z,R,\mathcal J;\mathbf y)=W(\tilde z',R',\mathcal J;\mathbf y).
+\end{equation*}
+Since $\tilde z=\argmax_{(\mathcal J,\mathbf y^{+w})}R$ has its job in $\mathcal J$ trivially, and likewise for $\tilde z'$ and $\bar z,\bar z'$, Responsibility When the Preferred Job is Possible applies at $(\mathcal J,\mathbf y^{+w})$:
+\begin{equation*}
+W(\tilde z,R,\mathcal J;\mathbf y^{+w})=W(\bar z,R^h,\mathcal J;\mathbf y^{+w}),
+\end{equation*}
+and similarly $W(\tilde z',R',\mathcal J;\mathbf y^{+w})=W(\bar z',R^h,\mathcal J;\mathbf y^{+w})$. Hence,
+\begin{equation*}
+(*)\Leftrightarrow W(\bar z,R^h,\mathcal J;\mathbf y^{+w})=W(\bar z',R^h,\mathcal J;\mathbf y^{+w}).
+\end{equation*}
+By construction, $\bar z=(v,j^*)$ and $\bar z'=(v,j^{**})$ where $v=\max_{j'\in\mathcal J}\mathbf y(j')+w$, so $\bar z\,I^h\,\bar z'$. By Compensation for the Horizontal Reference Preference $R^h$,
+\begin{equation*}
+W(\bar z,R^h,\mathcal J;\mathbf y^{+w})=W(\bar z',R^h,\mathcal J;\mathbf y^{+w}),
+\end{equation*}
+which completes the proof.
+\end{proof}
+}
+{ \color{red}
+\paragraph{Normalisation.}
+For all $R\in\mathcal R$, $A\subseteq\mathcal J$, $\mathbf y\in\mathbb R_+^{\mathcal J}$, and all $w\in\mathbb R$,
+\begin{equation}
+W\!\big(\argmax_{(A,\mathbf y+w)}R,\,R,\,A;\,\mathbf y\big)=w. \label{norm_lf}
+\end{equation}
+% FLAG: (\ref{norm_lf}) is the formal content of the informal claim at line 328
+% ("all individuals have the same well-being at laisser-faire"). It is the W^3
+% counterpart of the W^5 normalisation (line 702), but imposed at EVERY own (A,y),
+% not at a single reference set. Full Responsibility + IIJ + Job Neutrality do NOT
+% derive it across distinct pay levels; it must be adopted as an axiom.
+
+\begin{lemma}[Existence and uniqueness of the laissez-faire subsidy]
+\label{lem:w_exists}
+Assume every $R\in\mathcal R$ is continuous and monotonic in consumption. For all
+$z\in Z$, $R\in\mathcal R$, $A\subseteq\mathcal J$, $\mathbf y\in\mathbb R_+^{\mathcal J}$,
+there is a unique $w\in\mathbb R$ with
+$z\,I\,\argmax_{(A,\mathbf y+w)}R$.
+\end{lemma}
+% TECHNIQUE (adaptable): pazner_schmeidler_1978, Prop. 1 (sup-along-a-ray under
+% monotonicity); the Pareto step is not needed. The discrete-menu max over jobs in A
+% each shifted by w, and existence under the assumed continuity, are written fresh.
+
+\begin{lemma}[Trimming to the relevant core]
+\label{lem:trim}
+Fix $(R,A,\mathbf y)$ and let $\hat z=\argmax_{(A,\mathbf y+w)}R$ with job $\hat\jmath$.
+Then (i) $Irr(A;R,\mathbf y+w)=Irr(A;R,\mathbf y)$; (ii) $\hat\jmath\notin Irr(A;R,\mathbf y)$;
+(iii) writing $A_c:=A\setminus Irr(A;R,\mathbf y)$, repeated application of Independence
+of Irrelevant Jobs gives
+\begin{equation*}
+W(\hat z,R,A;\mathbf y)=W(\hat z,R,A_c;\mathbf y),
+\qquad \hat z=\argmax_{(A_c,\mathbf y+w)}R.
+\end{equation*}
+\end{lemma}
+% (i) holds because irrelevance is quantified over all taxes t, hence invariant to the
+% uniform shift w. (ii) an irrelevant job is dominated at every tax, so never chosen.
+% (iii) deleting a never-chosen job leaves the argmax fixed and, by (i)-(ii), leaves the
+% remaining jobs' irrelevance status unchanged, so the deletion induction is well-founded.
+% STATUS: genuinely new. No source supplies a jobs-menu deletion lemma; the contraction
+% logic of FleurbaeyManiquet1996 (Contraction Independence) is a structural ANALOGY ONLY
+% (it shrinks the production technology, not the menu A) and is not cited as identity.
+
+\begin{theorem}
+If a well-being measure $W$ satisfies Full Responsibility and Independence of
+Irrelevant Jobs, then $W=W^{3}$.
+\end{theorem}
+
+\begin{proof}
+We prove that for all $z,z'\in Z$, $R,R'\in\mathcal R$, $A,A'\in 2^{\mathcal J}$,
+$\mathbf y,\mathbf y'\in\mathbb R_+^{\mathcal J}$, if there exists $w\in\mathbb R$ such that
+\begin{align}
+z\,I\,\argmax_{(A,\mathbf y+w)}R, \label{th_3_z}\\
+z'\,I'\,\argmax_{(A',\mathbf y'+w)}R', \label{th_3_zp}
+\end{align}
+then, under the normalisation (\ref{norm_lf}), (*)\ $W(z,R,A;\mathbf y)=W(z',R',A';\mathbf y')$.
+
+Let $z,z'$ and $w$ satisfy (\ref{th_3_z})--(\ref{th_3_zp}), and let $\bar z,\bar z'\in Z$ be
+\begin{equation*}
+\bar z\in\argmax_{(A,\mathbf y+w)}R,\qquad
+\bar z'\in\argmax_{(A',\mathbf y'+w)}R'.
+\end{equation*}
+By Representation, since $z\,I\,\bar z$ (under $R,A,\mathbf y$) and $z'\,I'\,\bar z'$
+(under $R',A',\mathbf y'$),
+\begin{equation*}
+W(z,R,A;\mathbf y)=W(\bar z,R,A;\mathbf y)
+\qquad\text{and}\qquad
+W(z',R',A';\mathbf y')=W(\bar z',R',A';\mathbf y'),
+\end{equation*}
+so that
+\begin{equation*}
+(*)\Leftrightarrow W(\bar z,R,A;\mathbf y)=W(\bar z',R',A';\mathbf y').
+\end{equation*}
+Let $A_c:=A\setminus Irr(A;R,\mathbf y)$ and $A_c':=A'\setminus Irr(A';R',\mathbf y')$.
+By Lemma~\ref{lem:trim} (Independence of Irrelevant Jobs, applied repeatedly),
+\begin{equation*}
+W(\bar z,R,A;\mathbf y)=W(\bar z,R,A_c;\mathbf y),
+\qquad
+W(\bar z',R',A';\mathbf y')=W(\bar z',R',A_c';\mathbf y'),
+\end{equation*}
+with $\bar z=\argmax_{(A_c,\mathbf y+w)}R$ and $\bar z'=\argmax_{(A_c',\mathbf y'+w)}R'$.
+Hence
+\begin{equation*}
+(*)\Leftrightarrow W(\bar z,R,A_c;\mathbf y)=W(\bar z',R',A_c';\mathbf y').
+\end{equation*}
+By Full Responsibility (the uniform-tax form, lines 230--234, with $t=-w$) applied on
+$(A_c,\mathbf y)$, the value $W(\bar z,R,A_c;\mathbf y)$ is independent of $R$, and by the
+normalisation (\ref{norm_lf}) it equals $w$; the same argument on $(A_c',\mathbf y')$ gives
+$W(\bar z',R',A_c';\mathbf y')=w$. Therefore both sides equal $w$ and (*) holds.
+
+By Lemma~\ref{lem:w_exists}, $w$ is exactly $W^{3}(z,R,A;\mathbf y)$, so
+$W(z,R,A;\mathbf y)=W^{3}(z,R,A;\mathbf y)$ for every argument; that is, $W=W^{3}$.
+\end{proof}
+% FLAGGED AXIOM USES, in order:
+%  - Representation (lines 130-134): routine.
+%  - Independence of Irrelevant Jobs (lines 194-198) via Lemma 2: fresh (iterated deletion).
+%  - Full Responsibility, VERSION B (lines 230-234), at t=-w: the step that requires the
+%    red-text variant; Version A (lines 222-226) does NOT suffice, as it constrains only the
+%    UNSHIFTED laissez-faire.
+%  - Normalisation (\ref{norm_lf}): NOT a draft axiom (see flag above).
+% NOTE: Job Neutrality is NOT used in this chain; it is needed for soundness below.
+
+\begin{proposition}[Soundness]
+$W^{3}$ satisfies Representation, Job Neutrality, Independence of Irrelevant Jobs,
+and Full Responsibility (Version B), and satisfies the normalisation (\ref{norm_lf}).
+\end{proposition}
+% Direct verification against the definition of W^3 (lines 328-338). Job Neutrality holds
+% because the subsidy w solving z I argmax_{(A,y+w)}R is invariant under any permutation pi
+% (argmax and I are pi-equivariant); this is what makes the cross-label coherence of
+% (\ref{norm_lf}) consistent. STATUS: routine but required for "unique such measure" to be
+% non-vacuous.
+}
+\section{Extension}
+
+In the model above, the norm of compensation means that individuals are not responsible for their ability set. One may object, however, that ability sets come both from some background that individuals do not control but also from their past efforts, especially during their education period or when they held previous jobs. That suggests defining variables $e\in E$ and $b\in B$, so that abilities are determined by these two variables: there is a function $A:E\times B\rightarrow \mathcal{A}$ such that $A(e,b)$ stands for the ability set of an individual having exerted effort $e$ with background $b$. Note that preferences now depend on bundle $z$ but also on past effort $e$. The model becomes: we look for a well-being function $W((z,e),R;\mathbf{y},b)$ where $z\in A(e,b)$.
+
+\end{document} 
+%%%%% Newpage introduced so that quotation is not split across pages 
+\newpage 
+
+
+\section{Introduction}
+
+    $i,h\in N$, $j,k\in\mathcal{J}$ such that 
+    \begin{itemize}
+        \item $j\in A_i$, $j\notin \mu(N)$ (that is nobody is assigned job $j$), $k\in A_h\setminus A_i$,
+        \item $y_j=y_k$,
+        \item $u(b_i(a))<u(y_j-(y_{\mu(i)}-C(i),\ell_j,x_j)$,
+        \item $u(b_h(a))<u(y_k-(y_{\mu(i)}-C(i),\ell_k,x_k)$
+    \end{itemize}
+
+
+
+
+
+
+% \begin{theorem}
+% If a well-being measure $W$ satisfies Full responsibility and IIJ, then $W=W^3$.
+% \end{theorem}
+% \begin{proof}
+%     We need to prove that for all $z,z'\in \mathcal{Z}$, $R,R'\in\mathcal{R}$, $A,A'\in 2^{\mathcal{J}}$, $y,y'\in\mathbb{R}_{+}^{\mathcal{J}}$, if there exists $w\in\mathbb{R}$ such that 
+    
+%         \begin{align}
+%           & z\, I\,\argmax_{(A,\mathbf{y+w})}R \label{th_3_z}\\
+%           & z'\, I'\,\argmax_{(A',\mathbf{y'+w)}}R' \label{th_3_z'} \\
+%           w &= y(j) - c = y'(j')-c', \label{th_3_w}
+%         \end{align}
+%         \begin{equation*}
+%            c = y(j) - t  \quad \text{\&} \quad c' = y'(j')-t' 
+%         \end{equation*}
+        
+%     then (*) $W(z,R,A;\mathbf{y})=W(z',R',A';\mathbf{y}')$.
+%     Let $z,z'$ and $w, t, t'$ satisfy (\ref{th_3_z}) -- (\ref{th_3_w}). Let $\bar z,\bar z'\in Z$ be defined by
+%     \begin{align*}
+%         \bar z\in&\argmax_{(A,\mathbf y+w)}R,\\
+%         \bar z'\in&\argmax_{(A',\mathbf y'+w)}R'.
+%     \end{align*}
+    
+%     and let $\hat j$, $\hat j'$, and $\bar A$ be defined by
+%     \[
+%     \begin{aligned}
+%     \hat j  &\in Irr(R,A),\\
+%     \hat j' &\in Irr(R',A'),\\
+%     \bar A  &:= \bigl(A \setminus \{\hat j\}\bigr)\cap \bigl(A' \setminus \{\hat j'\}\bigr),
+%     \qquad j,j' \in \bar A \subseteq \mathcal{J}.
+%     \end{aligned}
+%     \]
+%     By IIJ, $W(z,R,A;\mathbf y)=W( z,R,\bar A;\mathbf y)$ and $W(z',R',A';\mathbf y')=W( z',R',\bar A;\mathbf y')$ so that
+%     \begin{equation*}
+%         (*)\Leftrightarrow W( z,R,\bar A;\mathbf y)=W( z',R',\bar A;\mathbf y').
+%     \end{equation*}
+  
+% \end{proof}
+
+
+

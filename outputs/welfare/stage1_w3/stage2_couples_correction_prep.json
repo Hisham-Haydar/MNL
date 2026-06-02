@@ -1,0 +1,294 @@
+{
+  "increment": "stage2_couples_correction_prep_v1",
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "re_estimated": false,
+  "computed_v_dir": false,
+  "priced_any_redrawn_node": false,
+  "overwrote_build_parquet": false,
+  "euromod_console_log": "outputs\\welfare\\stage1_w3\\stage2_correction_prep_euromod_console.log",
+  "task1_singleton_residual": {
+    "n_singleton_nodes": 2700,
+    "n_fail": 444,
+    "residual_fail_rate": 0.16444444444444445,
+    "n_blocked_nodes": 0,
+    "blocked_samples": [],
+    "by_year": {
+      "2015": {
+        "n": 900,
+        "n_fail": 117,
+        "fail_rate": 0.13
+      },
+      "2016": {
+        "n": 900,
+        "n_fail": 134,
+        "fail_rate": 0.14888888888888888
+      },
+      "2017": {
+        "n": 900,
+        "n_fail": 193,
+        "fail_rate": 0.21444444444444444
+      }
+    },
+    "component_localisation": {
+      "ils_ben": 443,
+      "ils_tax": 1
+    },
+    "joint_dispy_abs_diff_distribution": {
+      "n": 2700,
+      "mean": 29.84051888908611,
+      "median": 0.0,
+      "max": 1722.2846463158594,
+      "quantiles": {
+        "0.0": 0.0,
+        "0.5": 0.0,
+        "0.9": 84.80448113051824,
+        "0.99": 526.4233123332838,
+        "1.0": 1722.2846463158594
+      }
+    },
+    "cross_decider": {
+      "n_fail_with_two_deciders": 444,
+      "n_gap_approximates_partner_benefit": 2,
+      "share": 0.0045045045045045045,
+      "samples": [
+        {
+          "failing_idperson": 430002,
+          "stored_minus_clean_on_failing": -233.5467634473373,
+          "partner_stored_ils_ben": 64.436667,
+          "partner_clean_ils_ben": 64.436667,
+          "gap_approximates_partner_stored_ils_ben": false,
+          "gap_approximates_partner_clean_ils_ben": false
+        },
+        {
+          "failing_idperson": 810002,
+          "stored_minus_clean_on_failing": 170.07916666666665,
+          "partner_stored_ils_ben": 23.045595931490404,
+          "partner_clean_ils_ben": 23.045595931490404,
+          "gap_approximates_partner_stored_ils_ben": false,
+          "gap_approximates_partner_clean_ils_ben": false
+        },
+        {
+          "failing_idperson": 940001,
+          "stored_minus_clean_on_failing": 66.31333333333339,
+          "partner_stored_ils_ben": 65.05,
+          "partner_clean_ils_ben": 65.05,
+          "gap_approximates_partner_stored_ils_ben": false,
+          "gap_approximates_partner_clean_ils_ben": false
+        },
+        {
+          "failing_idperson": 1020001,
+          "stored_minus_clean_on_failing": 16.939999999999998,
+          "partner_stored_ils_ben": 296.53,
+          "partner_clean_ils_ben": 296.53,
+          "gap_approximates_partner_stored_ils_ben": false,
+          "gap_approximates_partner_clean_ils_ben": false
+        },
+        {
+          "failing_idperson": 1290002,
+          "stored_minus_clean_on_failing": 30.370833333333323,
+          "partner_stored_ils_ben": 130.0,
+          "partner_clean_ils_ben": 130.0,
+          "gap_approximates_partner_stored_ils_ben": false,
+          "gap_approximates_partner_clean_ils_ben": false
+        }
+      ]
+    },
+    "per_drawjoint_batches": [
+      {
+        "year": 2015,
+        "draw_joint": 1,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2015,
+        "draw_joint": 100,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2015,
+        "draw_joint": 250,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2015,
+        "draw_joint": 450,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2015,
+        "draw_joint": 700,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2015,
+        "draw_joint": 899,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2016,
+        "draw_joint": 1,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2016,
+        "draw_joint": 100,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2016,
+        "draw_joint": 250,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2016,
+        "draw_joint": 450,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2016,
+        "draw_joint": 700,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2016,
+        "draw_joint": 899,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2017,
+        "draw_joint": 1,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2017,
+        "draw_joint": 100,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2017,
+        "draw_joint": 250,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2017,
+        "draw_joint": 450,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2017,
+        "draw_joint": 700,
+        "tudef": 0,
+        "n_blocked": 0
+      },
+      {
+        "year": 2017,
+        "draw_joint": 899,
+        "tudef": 0,
+        "n_blocked": 0
+      }
+    ],
+    "verdict": "non_negligible"
+  },
+  "task2_model_fit": {
+    "status": "ok",
+    "n_households": 7438,
+    "n_alts": 901,
+    "uniform_benchmark": 0.0011098779134295228,
+    "P_chosen": {
+      "mean": 3.059243919836467e-08,
+      "median": 7.676382465669126e-11,
+      "min": 4.019614246167943e-20,
+      "max": 5.216123714100247e-05,
+      "quantiles": {
+        "0.0": 4.019614246167943e-20,
+        "0.01": 5.125438550923067e-15,
+        "0.05": 6.49976605719724e-13,
+        "0.1": 3.0739942980030167e-12,
+        "0.25": 1.8623819935435578e-11,
+        "0.5": 7.676382465669126e-11,
+        "0.75": 2.8431531797796924e-10,
+        "0.9": 1.0320175743721126e-09,
+        "0.99": 6.63650921668188e-08,
+        "1.0": 5.216123714100247e-05
+      },
+      "share_below_uniform": 1.0
+    },
+    "chosen_rank": {
+      "mean": 900.8721430492068,
+      "median": 901.0,
+      "min": 710,
+      "max": 901,
+      "quantiles": {
+        "0.0": 710.0,
+        "0.01": 901.0,
+        "0.05": 901.0,
+        "0.1": 901.0,
+        "0.25": 901.0,
+        "0.5": 901.0,
+        "0.75": 901.0,
+        "0.9": 901.0,
+        "0.99": 901.0,
+        "1.0": 901.0
+      }
+    },
+    "chosen_percentile_rank": {
+      "mean": 0.0012517835191933801,
+      "median": 0.0011098779134295356,
+      "quantiles": {
+        "0.0": 0.0011098779134295356,
+        "0.01": 0.0011098779134295356,
+        "0.05": 0.0011098779134295356,
+        "0.1": 0.0011098779134295356,
+        "0.25": 0.0011098779134295356,
+        "0.5": 0.0011098779134295356,
+        "0.75": 0.0011098779134295356,
+        "0.9": 0.0011098779134295356,
+        "0.99": 0.0011098779134295356,
+        "1.0": 0.2130965593784684
+      }
+    },
+    "share_in_top": {
+      "0.01": 0.0,
+      "0.05": 0.0,
+      "0.1": 0.0,
+      "0.25": 0.0
+    },
+    "share_bottom_half": 1.0,
+    "interpretation": "P_chosen is read together with chosen_rank: near-zero absolute P_chosen with GOOD rank (chosen near the top of the 901-alt set) indicates GRID FINENESS (mass spread thinly over many near-equivalent alternatives); near-zero P_chosen with POOR rank indicates genuine MISFIT. Reported, not overclaimed."
+  },
+  "gate": {
+    "instrument_usable": true,
+    "singleton_residual_fail_rate": 0.16444444444444445,
+    "require_residual_negligible": true,
+    "negligible_threshold": 0.02,
+    "singleton_residual_negligible": false,
+    "residual_ok": false,
+    "residual_verdict": "non_negligible",
+    "mapping_unambiguous": true,
+    "tasks_arg": "all",
+    "gate_pass": false,
+    "gate_reason": "singleton residual fail rate 0.1644 exceeds the 'negligible' threshold 0.02 and is unresolved (verdict=non_negligible); a non-negligible unresolved residual would contaminate the same share of corrected draw_joint=0 values -> correction candidate NOT produced."
+  },
+  "task3_correction_candidate": null,
+  "task4_diagnostics": null,
+  "scope_statement": "Audit-only. No W^3 finding; no measure beyond W^3; nothing re-estimated; no V_i^dir; no redrawn node priced; no build/storage/engine-ready parquet written or overwritten. The Task-3 side artifact (if produced) is a NEW correction CANDIDATE, NOT authorised as estimator input until separately reviewed."
+}

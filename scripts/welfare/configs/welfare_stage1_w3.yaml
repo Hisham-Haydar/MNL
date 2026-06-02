@@ -179,6 +179,35 @@ welfare:
         # build prices in (read from chunk meta; structural, not a diagnostic constant).
         production_chunk_band: [0, 150]
 
+    # Stage-Two-H correction-prep. Bounds the singleton stored-target residual, screens
+    # couples model fit at theta_hat, and (gate-conditional) builds a draw_joint=0
+    # correction-candidate SIDE artifact. Audit-only; no parquet overwrite; no re-estimation.
+    correction_prep:
+      tol: 1.0e-6
+      components: ["ils_origy", "ils_ben", "ils_tax", "ils_sicdy"]
+      country_override: null
+      years: [2015, 2016, 2017]
+      # Task 1: singleton-residual prevalence bound
+      singleton_residual:
+        n_hh_per_year: 150                              # deterministic first-by-uid
+        draw_joint_samples: [1, 100, 250, 450, 700, 899] # spread of singleton draw_joint per HH (avoid one-node artifact)
+      # Task 2: couples model-fit thresholds (top-k% of the 901-alt set)
+      model_fit:
+        top_fractions: [0.01, 0.05, 0.10, 0.25]         # top 1/5/10/25%
+        uniform_benchmark_alts: 901                      # 1/901 reference
+      # Task 3 gate thresholds. The singleton residual must be NEGLIGIBLE to authorise a
+      # correction candidate: a non-negligible UNRESOLVED residual would contaminate the
+      # same share of corrected draw_joint=0 values, invalidating the candidate. Two-H
+      # measured 16.4% (non-negligible, unresolved, cross-decider hypothesis rejected) ->
+      # gate STOPS before Task 3 (reviewer decision, recorded 2026-06-03).
+      gate:
+        require_residual_negligible: true               # residual verdict must be 'negligible' (<2%) to pass
+        max_singleton_residual_fail_rate: 0.02          # numeric backstop for 'negligible'
+      # Task 3 correction candidate
+      correction_candidate:
+        side_artifact_name: "stage2_couples_drawjoint0_correction_candidate.parquet"
+        provenance_name: "stage2_couples_correction_prep.json"
+
   output:
     dir: "outputs/welfare/stage1_w3"
     provenance: "write_resolved_config_and_draw_scheme"

@@ -108,6 +108,22 @@ welfare:
       # country is DERIVED from the EUROMOD system code (FR_2015 -> FR); set this
       # only to override that derivation.
       country_override: null
+    # Stage-Two-D re-simulation feasibility probe: materially different from the
+    # Two-B reprice (precompute-long source + roster-complete household selection,
+    # NOT priced-row head(N) which can truncate a household roster). Existing nodes
+    # only; prices no redrawn node; writes no parquet.
+    resim:
+      n_hh: 5                                           # same scale as Two-B (first n HH by uid)
+      max_draws: 20                                     # bounded draws per HH; WHOLE roster kept per (hh,draw)
+      tol: 1.0e-6
+      components: ["ils_origy", "ils_ben", "ils_tax", "ils_sicdy"]
+      country_override: null                            # else derived from system code
+      # throughput projection targets (designed cross-check scope from JMP_welfare_spec_v5)
+      projection:
+        singles_male_hh: 2243
+        singles_female_hh: 2764
+        couples_flagged_hh: 1285
+        nodes_per_hh: [100, 300, 900]
 
   output:
     dir: "outputs/welfare/stage1_w3"

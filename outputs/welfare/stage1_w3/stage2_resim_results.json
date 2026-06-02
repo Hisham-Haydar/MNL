@@ -1,0 +1,330 @@
+{
+  "increment": "stage2_resim_feasibility_v1",
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "no_production_pricing": true,
+  "materially_different_from_two_b": "YES: input from precompute-long (build's EUROMOD input source) with roster-complete household selection, vs Two-B reading priced rows with head(N) that can truncate a household roster at a draw boundary.",
+  "assessment_unit_warning_evidence": {
+    "process_level_capture": true,
+    "tudef_partner_warning_lines": 48,
+    "distinct_assessment_units": [
+      "tu_bch_extra_fr",
+      "tu_bch_fr",
+      "tu_bchlg_fr",
+      "tu_bho_fr",
+      "tu_bsa00_fr",
+      "tu_bunmt_couple",
+      "tu_fiscalunit_fr",
+      "tu_household_fr"
+    ],
+    "sample_lines": [
+      "Warning: 9.7 TUDef_fr/DefTu (6D57C30E-2ABC-4143-AFE1-CE869747406F): more than one possible partner found for assessment unit 'tu_bsa00_fr', idperson: '2100020000'",
+      "Warning: 9.7 TUDef_fr/DefTu (6D57C30E-2ABC-4143-AFE1-CE869747406F): more than one possible partner found for assessment unit 'tu_bsa00_fr', idperson: '2300020000'",
+      "Warning: 9.7 TUDef_fr/DefTu (6D57C30E-2ABC-4143-AFE1-CE869747406F): more than one possible partner found for assessment unit 'tu_bsa00_fr', idperson: '600010000'"
+    ],
+    "euromod_stderr_log": "outputs\\welfare\\stage1_w3\\stage2_resim_euromod_console.log",
+    "interpretation_caveat": "OBSERVED signal, NOT a proven root cause: these warnings indicate EUROMOD could not uniquely resolve some tax/assessment units for the stamped multi-person rows; whether they fully explain the ils_ben (singles) and ils_origy (couples) parity gaps is not proven here."
+  },
+  "resim_grid": {
+    "all_cells_pass": false,
+    "cells": {
+      "2015__singles": {
+        "year": 2015,
+        "mode": "singles",
+        "country": "FR",
+        "system_code": "FR_2014",
+        "n_decider_rows_matched": 100,
+        "n_hh": 5,
+        "n_draws": 20,
+        "roster_complete": true,
+        "ils_dispy": {
+          "max_abs_diff": 512.0141666666667,
+          "median_abs_diff": 0.0,
+          "n_rows_above_tol": 17
+        },
+        "component_divergence": {
+          "ils_dispy": {
+            "n_above_tol": 17,
+            "max_abs": 512.0141666666667
+          },
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 17,
+            "max_abs": 512.0141666666667
+          },
+          "ils_tax": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "euromod_wall_seconds": 4.071,
+        "n_euromod_input_rows": 100,
+        "status": "FAIL",
+        "failure_localised_to": "ils_ben",
+        "still_benefit_localised": true
+      },
+      "2015__couples": {
+        "year": 2015,
+        "mode": "couples",
+        "country": "FR",
+        "system_code": "FR_2014",
+        "n_decider_rows_matched": 210,
+        "n_hh": 5,
+        "n_draws": 20,
+        "roster_complete": true,
+        "ils_dispy": {
+          "max_abs_diff": 2003.7433608388135,
+          "median_abs_diff": 0.0,
+          "n_rows_above_tol": 12
+        },
+        "component_divergence": {
+          "ils_dispy": {
+            "n_above_tol": 12,
+            "max_abs": 2003.7433608388135
+          },
+          "ils_origy": {
+            "n_above_tol": 10,
+            "max_abs": 3622.0255429229383
+          },
+          "ils_ben": {
+            "n_above_tol": 8,
+            "max_abs": 535.3102506111667
+          },
+          "ils_tax": {
+            "n_above_tol": 11,
+            "max_abs": 1139.7503943488755
+          },
+          "ils_sicdy": {
+            "n_above_tol": 10,
+            "max_abs": 478.5317877352494
+          }
+        },
+        "euromod_wall_seconds": 3.133,
+        "n_euromod_input_rows": 315,
+        "status": "FAIL",
+        "household_joint_dispy": {
+          "n_alternatives": 100,
+          "max_abs_diff": 2678.868705466777,
+          "n_above_tol": 7
+        },
+        "failure_localised_to": "ils_origy",
+        "still_benefit_localised": false
+      },
+      "2016__singles": {
+        "year": 2016,
+        "mode": "singles",
+        "country": "FR",
+        "system_code": "FR_2015",
+        "n_decider_rows_matched": 100,
+        "n_hh": 5,
+        "n_draws": 20,
+        "roster_complete": true,
+        "ils_dispy": {
+          "max_abs_diff": 601.7283095863764,
+          "median_abs_diff": 0.0,
+          "n_rows_above_tol": 11
+        },
+        "component_divergence": {
+          "ils_dispy": {
+            "n_above_tol": 11,
+            "max_abs": 601.7283095863764
+          },
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 11,
+            "max_abs": 601.7283095863766
+          },
+          "ils_tax": {
+            "n_above_tol": 1,
+            "max_abs": 0.33156666666667434
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "euromod_wall_seconds": 2.996,
+        "n_euromod_input_rows": 180,
+        "status": "FAIL",
+        "failure_localised_to": "ils_ben",
+        "still_benefit_localised": true
+      },
+      "2016__couples": {
+        "year": 2016,
+        "mode": "couples",
+        "country": "FR",
+        "system_code": "FR_2015",
+        "n_decider_rows_matched": 210,
+        "n_hh": 5,
+        "n_draws": 20,
+        "roster_complete": true,
+        "ils_dispy": {
+          "max_abs_diff": 2345.0045345812828,
+          "median_abs_diff": 0.0,
+          "n_rows_above_tol": 17
+        },
+        "component_divergence": {
+          "ils_dispy": {
+            "n_above_tol": 17,
+            "max_abs": 2345.0045345812828
+          },
+          "ils_origy": {
+            "n_above_tol": 10,
+            "max_abs": 4350.753015864768
+          },
+          "ils_ben": {
+            "n_above_tol": 12,
+            "max_abs": 463.08
+          },
+          "ils_tax": {
+            "n_above_tol": 16,
+            "max_abs": 1452.1372280862558
+          },
+          "ils_sicdy": {
+            "n_above_tol": 10,
+            "max_abs": 553.611253197229
+          }
+        },
+        "euromod_wall_seconds": 3.011,
+        "n_euromod_input_rows": 315,
+        "status": "FAIL",
+        "household_joint_dispy": {
+          "n_alternatives": 100,
+          "max_abs_diff": 3620.163499913486,
+          "n_above_tol": 12
+        },
+        "failure_localised_to": "ils_origy",
+        "still_benefit_localised": false
+      },
+      "2017__singles": {
+        "year": 2017,
+        "mode": "singles",
+        "country": "FR",
+        "system_code": "FR_2016",
+        "n_decider_rows_matched": 100,
+        "n_hh": 5,
+        "n_draws": 20,
+        "roster_complete": true,
+        "ils_dispy": {
+          "max_abs_diff": 676.4663955529003,
+          "median_abs_diff": 0.0,
+          "n_rows_above_tol": 15
+        },
+        "component_divergence": {
+          "ils_dispy": {
+            "n_above_tol": 15,
+            "max_abs": 676.4663955529003
+          },
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 15,
+            "max_abs": 676.4663955529002
+          },
+          "ils_tax": {
+            "n_above_tol": 4,
+            "max_abs": 0.15200416666667138
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "euromod_wall_seconds": 3.009,
+        "n_euromod_input_rows": 120,
+        "status": "FAIL",
+        "failure_localised_to": "ils_ben",
+        "still_benefit_localised": true
+      },
+      "2017__couples": {
+        "year": 2017,
+        "mode": "couples",
+        "country": "FR",
+        "system_code": "FR_2016",
+        "n_decider_rows_matched": 210,
+        "n_hh": 5,
+        "n_draws": 20,
+        "roster_complete": true,
+        "ils_dispy": {
+          "max_abs_diff": 2141.255514700742,
+          "median_abs_diff": 0.0,
+          "n_rows_above_tol": 19
+        },
+        "component_divergence": {
+          "ils_dispy": {
+            "n_above_tol": 19,
+            "max_abs": 2141.255514700742
+          },
+          "ils_origy": {
+            "n_above_tol": 10,
+            "max_abs": 3642.8411282939487
+          },
+          "ils_ben": {
+            "n_above_tol": 14,
+            "max_abs": 796.96
+          },
+          "ils_tax": {
+            "n_above_tol": 15,
+            "max_abs": 1027.3463612495993
+          },
+          "ils_sicdy": {
+            "n_above_tol": 10,
+            "max_abs": 474.2392523436072
+          }
+        },
+        "euromod_wall_seconds": 2.926,
+        "n_euromod_input_rows": 315,
+        "status": "FAIL",
+        "household_joint_dispy": {
+          "n_alternatives": 100,
+          "max_abs_diff": 2944.8533939690933,
+          "n_above_tol": 13
+        },
+        "failure_localised_to": "ils_origy",
+        "still_benefit_localised": false
+      }
+    }
+  },
+  "throughput": {
+    "measured_wall_seconds_total_probe": 19.146,
+    "measured_euromod_input_rows_total_probe": 1345,
+    "approx_seconds_per_input_row": 0.014235,
+    "designed_crosscheck_total_households": 6292,
+    "projection_note": "EUROMOD prices PERSON-rows (roster), not household-draws; production node pricing must run one full-roster household-draw per node. The per-input-row figure is a wall-time BASIS only; it does not account for EUROMOD batch overhead, model load, or process spin-up, so it is a LOWER bound on per-node cost. No tractability threshold is configured -> projection reported, tractability NOT declared.",
+    "projection_seconds": {
+      "100": {
+        "nodes_per_hh": 100,
+        "approx_euromod_input_rows": 909972,
+        "approx_seconds": 12953.4,
+        "approx_hours": 3.6
+      },
+      "300": {
+        "nodes_per_hh": 300,
+        "approx_euromod_input_rows": 2729916,
+        "approx_seconds": 38860.2,
+        "approx_hours": 10.79
+      },
+      "900": {
+        "nodes_per_hh": 900,
+        "approx_euromod_input_rows": 8189748,
+        "approx_seconds": 116580.6,
+        "approx_hours": 32.38
+      }
+    },
+    "avg_roster_rows_per_node": 1.446
+  }
+}

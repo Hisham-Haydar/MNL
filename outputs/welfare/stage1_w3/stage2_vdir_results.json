@@ -1,0 +1,183 @@
+{
+  "increment": "stage2_vdir_crosscheck_v1",
+  "spec": "joint_pooled_v1_bll0_tlmpin",
+  "config": "scripts/welfare/configs/welfare_stage1_w3.yaml",
+  "ess_threshold": 30.0,
+  "scope_note": "singles cross-check designed on FULL samples (85-90% below ESS threshold); couples on sub-threshold flagged subset.",
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "A_vdir_crosscheck": {
+    "singles_male": {
+      "designed_target": "full_sample",
+      "n_target_households": 2243,
+      "n_groups_total": 2243,
+      "n_below_ess_threshold": 1918
+    },
+    "singles_female": {
+      "designed_target": "full_sample",
+      "n_target_households": 2764,
+      "n_groups_total": 2764,
+      "n_below_ess_threshold": 2493
+    },
+    "couples": {
+      "designed_target": "sub_threshold_flagged",
+      "n_target_households": 1285,
+      "n_groups_total": 7438,
+      "n_below_ess_threshold": 1285
+    }
+  },
+  "A_euromod_on_nodes": {
+    "euromod_package_importable": true,
+    "required_input_schema_sample": [
+      "lcs",
+      "les",
+      "lfs",
+      "lhw",
+      "lhw_f",
+      "lindi",
+      "liwftmy",
+      "liwmy",
+      "liwmy_f",
+      "yivwg",
+      "yiy",
+      "yot",
+      "ypp",
+      "ypr",
+      "ypt",
+      "yse",
+      "yse_f",
+      "ysemy"
+    ],
+    "present_on_engine_ready": [
+      "lhw"
+    ],
+    "missing_from_engine_ready": [
+      "lcs",
+      "les",
+      "lfs",
+      "lhw_f",
+      "lindi",
+      "liwftmy",
+      "liwmy",
+      "liwmy_f",
+      "yivwg",
+      "yiy",
+      "yot",
+      "ypp",
+      "ypr",
+      "ypt",
+      "yse",
+      "yse_f",
+      "ysemy"
+    ],
+    "feasible_without_wholesale_rebuild": false,
+    "reason": "EUROMOD input schema is largely absent from the engine-ready parquet; building input records for redrawn nodes requires the raw microdata / priced long files (a wholesale rebuild), which the contract \u00a76 gate 1.iii forbids. Silent interpolation also forbidden. Redrawn-node consumption is therefore BLOCKED this increment."
+  },
+  "A_redraw_machinery": {
+    "status": "ok_locations_only_consumption_blocked",
+    "per_group": {
+      "singles_male": {
+        "households_probed": 3,
+        "nodes_drawn": 150,
+        "consumption_available_for_redrawn_nodes": false
+      },
+      "singles_female": {
+        "households_probed": 3,
+        "nodes_drawn": 150,
+        "consumption_available_for_redrawn_nodes": false
+      }
+    },
+    "note": "g_hat redraw draws (w,h,occ,emp) via the estimator's own functions; consumption at these nodes is BLOCKED (EUROMOD)."
+  },
+  "A_status": {
+    "vdir_values_computed": false,
+    "blocked_reason": "redrawn-node consumption c_is unavailable without a wholesale EUROMOD rebuild (input schema absent from engine-ready; contract \u00a76 gate 1.iii forbids wholesale rerun and silent interpolation).",
+    "blocked_households": {
+      "singles_male": 2243,
+      "singles_female": 2764,
+      "couples": 1285
+    },
+    "escalated_set": [],
+    "escalation_note": "escalation trigger is persistent |V_dir - V_IS| beyond tolerance; it CANNOT fire because V_dir is BLOCKED. No household escalated to V_dir-as-primary."
+  },
+  "B_multiplier_stability": {
+    "configured_multipliers": [
+      1,
+      2,
+      4
+    ],
+    "full_2x_4x_status": "BLOCKED",
+    "full_2x_4x_reason": "growing beyond the existing node count requires NEW nodes drawn from g_hat, whose consumption c_is needs EUROMOD-on-nodes (same blocker as A). This is welfare-integral node GROWTH, distinct from estimation-draw rebuilding; both are blocked by the missing c_is, not by the B-pool builder.",
+    "existing_node_subsample_probe": {
+      "singles_male": {
+        "0.25": {
+          "k": 25,
+          "max_drift": 2.487729717380541,
+          "median_drift": 0.2762637228320779
+        },
+        "0.5": {
+          "k": 50,
+          "max_drift": 1.363051470171719,
+          "median_drift": 0.15812165570769832
+        },
+        "0.75": {
+          "k": 76,
+          "max_drift": 1.2724208831710033,
+          "median_drift": 0.08690505102861135
+        },
+        "1.0": {
+          "k": 101,
+          "max_drift": 0.0,
+          "median_drift": 0.0
+        }
+      },
+      "singles_female": {
+        "0.25": {
+          "k": 25,
+          "max_drift": 1.8180767251471313,
+          "median_drift": 0.29630962717654485
+        },
+        "0.5": {
+          "k": 50,
+          "max_drift": 1.8466936792506,
+          "median_drift": 0.16561842291813633
+        },
+        "0.75": {
+          "k": 76,
+          "max_drift": 1.254876005958538,
+          "median_drift": 0.08910103360113064
+        },
+        "1.0": {
+          "k": 101,
+          "max_drift": 0.0,
+          "median_drift": 0.0
+        }
+      },
+      "couples": {
+        "0.25": {
+          "k": 225,
+          "max_drift": 1.5333668110969523,
+          "median_drift": 0.14895086130860058
+        },
+        "0.5": {
+          "k": 450,
+          "max_drift": 1.233015514478847,
+          "median_drift": 0.08771552345342126
+        },
+        "0.75": {
+          "k": 676,
+          "max_drift": 1.3127970278796575,
+          "median_drift": 0.04950936084383262
+        },
+        "1.0": {
+          "k": 901,
+          "max_drift": 0.0,
+          "median_drift": 0.0
+        }
+      }
+    },
+    "subsample_note": "a WEAKER stability probe that needs NO new consumption: subsample the EXISTING nodes at fractions and measure V_i^IS drift as node count grows toward the full set. Convergence here is necessary-not-sufficient for the full draw-growth gate, which stays BLOCKED."
+  }
+}

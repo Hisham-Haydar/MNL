@@ -1,0 +1,230 @@
+{
+  "increment": "stage2_vdir_crosscheck_v2",
+  "spec": "joint_pooled_v1_bll0_tlmpin",
+  "config": "scripts/welfare/configs/welfare_stage1_w3.yaml",
+  "ess_threshold": 30.0,
+  "scope_note": "singles cross-check designed on FULL samples (85-90% below ESS threshold); couples on sub-threshold flagged subset.",
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "A_vdir_crosscheck": {
+    "singles_male": {
+      "designed_target": "full_sample",
+      "n_target_households": 2243,
+      "n_groups_total": 2243,
+      "n_below_ess_threshold": 1918
+    },
+    "singles_female": {
+      "designed_target": "full_sample",
+      "n_target_households": 2764,
+      "n_groups_total": 2764,
+      "n_below_ess_threshold": 2493
+    },
+    "couples": {
+      "designed_target": "sub_threshold_flagged",
+      "n_target_households": 1285,
+      "n_groups_total": 7438,
+      "n_below_ess_threshold": 1285
+    }
+  },
+  "A_euromod_on_nodes": {
+    "euromod_package_importable": true,
+    "checked": "priced_long + precompute_long (storage-level templates)",
+    "per_file": {
+      "2015__singles": {
+        "priced_long_exists": true,
+        "precompute_long_exists": true,
+        "n_required_input": 122,
+        "n_present": 122,
+        "missing_input_vars": [],
+        "has_ils_dispy_stored": true,
+        "has_ils_dispy_real_stored": true,
+        "template_overwrite_feasible": true
+      },
+      "2015__couples": {
+        "priced_long_exists": true,
+        "precompute_long_exists": true,
+        "n_required_input": 122,
+        "n_present": 122,
+        "missing_input_vars": [],
+        "has_ils_dispy_stored": true,
+        "has_ils_dispy_real_stored": true,
+        "template_overwrite_feasible": true
+      },
+      "2016__singles": {
+        "priced_long_exists": true,
+        "precompute_long_exists": true,
+        "n_required_input": 124,
+        "n_present": 124,
+        "missing_input_vars": [],
+        "has_ils_dispy_stored": true,
+        "has_ils_dispy_real_stored": true,
+        "template_overwrite_feasible": true
+      },
+      "2016__couples": {
+        "priced_long_exists": true,
+        "precompute_long_exists": true,
+        "n_required_input": 124,
+        "n_present": 124,
+        "missing_input_vars": [],
+        "has_ils_dispy_stored": true,
+        "has_ils_dispy_real_stored": true,
+        "template_overwrite_feasible": true
+      },
+      "2017__singles": {
+        "priced_long_exists": true,
+        "precompute_long_exists": true,
+        "n_required_input": 128,
+        "n_present": 128,
+        "missing_input_vars": [],
+        "has_ils_dispy_stored": true,
+        "has_ils_dispy_real_stored": true,
+        "template_overwrite_feasible": true
+      },
+      "2017__couples": {
+        "priced_long_exists": true,
+        "precompute_long_exists": true,
+        "n_required_input": 128,
+        "n_present": 128,
+        "missing_input_vars": [],
+        "has_ils_dispy_stored": true,
+        "has_ils_dispy_real_stored": true,
+        "template_overwrite_feasible": true
+      }
+    },
+    "feasible_via_template_overwrite": true,
+    "v1_wholesale_rebuild_conclusion_holds": false,
+    "reason": "Redrawn-node EUROMOD input records can be built from the EXISTING priced-long household templates (full input schema + stored ils_dispy present) by overwriting only the decider choice variables and preserving non-decider roster variables. The v1 'wholesale rebuild' conclusion \u2014 drawn from the engine-ready parquet, which is the stripped estimation slice \u2014 is NARROWED: the storage-level templates make a BOUNDED node-pricing touch feasible. No re-deflation (phi reused from build); no silent interpolation; no full rebuild."
+  },
+  "A_redraw_machinery": {
+    "status": "ok_locations_only_consumption_pricing_separately_gated",
+    "per_group": {
+      "singles_male": {
+        "machinery": "BUILT",
+        "households_probed": 3,
+        "nodes_drawn": 150,
+        "consumption_priced": false
+      },
+      "singles_female": {
+        "machinery": "BUILT",
+        "households_probed": 3,
+        "nodes_drawn": 150,
+        "consumption_priced": false
+      },
+      "couples": {
+        "machinery": "BUILT",
+        "households_probed": 2,
+        "nodes_drawn_per_partner_summed": 120,
+        "consumption_priced": false,
+        "note": "joint two-partner node locations generated via the estimator channel structure (per-partner _male/_female covariates); joint EUROMOD pricing of both partners' overwritten choices shares the singles parity gate."
+      }
+    },
+    "note": "g_hat redraw draws (w,h,occ,emp) via the estimator's own functions for singles AND couples; consumption pricing at these nodes is the bounded EUROMOD touch, gated on the reprice parity check."
+  },
+  "A_euromod_parity": {
+    "status": "FAIL",
+    "n_rows": 100,
+    "n_hh": 5,
+    "year": 2016,
+    "mode": "singles",
+    "country": "FR",
+    "system_code": "FR_2015",
+    "id_stamped": true,
+    "max_abs_diff": 422.3499969566667,
+    "median_abs_diff": 0.0,
+    "n_rows_above_tol": 8,
+    "tol": 1e-06,
+    "note": "repriced EXISTING nodes (no choice overwrite) vs stored ils_dispy, with the build's _stamp_draw_ids applied. Validates the EUROMOD-overwrite path before any redrawn node is priced. Median 0 = path is fundamentally correct; a residual tail above tol means the reprice is NOT YET fully faithful to the build (additional chunk-runner preprocessing remains) -> node pricing stays BLOCKED, no redrawn node priced against an unvalidated path.",
+    "diagnosis": "two contributing causes identified: (1) missing draw-ID stamping [now applied: 21->8 bad rows, max 3163->422]; (2) a residual gap requiring the full chunk-runner preprocessing pipeline. Fixing (2) is the next increment's parity work, before any production node pricing."
+  },
+  "A_status": {
+    "vdir_values_computed": false,
+    "stop_reason": "Increment Two-A is a feasibility + parity smoke only. The bounded EUROMOD-on-nodes touch is FEASIBLE but parity NOT passed; per the increment scope, production V_dir is deferred to a separately-authorised run.",
+    "blocked_or_deferred_households": {
+      "singles_male": 2243,
+      "singles_female": 2764,
+      "couples": 1285
+    },
+    "escalated_set": [],
+    "escalation_note": "escalation trigger is persistent |V_dir - V_IS| beyond tolerance; no V_dir value is computed this increment, so it cannot fire. No household escalated."
+  },
+  "B_multiplier_stability": {
+    "configured_multipliers": [
+      1,
+      2,
+      4
+    ],
+    "full_2x_4x_status": "DEFERRED",
+    "full_2x_4x_reason": "growing beyond the existing node count requires NEW nodes drawn from g_hat, whose consumption c_is needs EUROMOD-on-nodes. Re-audit (A) shows this is FEASIBLE via the priced-long template-overwrite path (no wholesale rebuild), so the full 2x/4x growth is DEFERRED to a separately-authorised production run alongside V_dir \u2014 it is welfare-integral node GROWTH, distinct from estimation-draw rebuilding.",
+    "existing_node_subsample_probe": {
+      "singles_male": {
+        "0.25": {
+          "k": 25,
+          "max_drift": 2.487729717380541,
+          "median_drift": 0.2762637228320779
+        },
+        "0.5": {
+          "k": 50,
+          "max_drift": 1.363051470171719,
+          "median_drift": 0.15812165570769832
+        },
+        "0.75": {
+          "k": 76,
+          "max_drift": 1.2724208831710033,
+          "median_drift": 0.08690505102861135
+        },
+        "1.0": {
+          "k": 101,
+          "max_drift": 0.0,
+          "median_drift": 0.0
+        }
+      },
+      "singles_female": {
+        "0.25": {
+          "k": 25,
+          "max_drift": 1.8180767251471313,
+          "median_drift": 0.29630962717654485
+        },
+        "0.5": {
+          "k": 50,
+          "max_drift": 1.8466936792506,
+          "median_drift": 0.16561842291813633
+        },
+        "0.75": {
+          "k": 76,
+          "max_drift": 1.254876005958538,
+          "median_drift": 0.08910103360113064
+        },
+        "1.0": {
+          "k": 101,
+          "max_drift": 0.0,
+          "median_drift": 0.0
+        }
+      },
+      "couples": {
+        "0.25": {
+          "k": 225,
+          "max_drift": 1.5333668110969523,
+          "median_drift": 0.14895086130860058
+        },
+        "0.5": {
+          "k": 450,
+          "max_drift": 1.233015514478847,
+          "median_drift": 0.08771552345342126
+        },
+        "0.75": {
+          "k": 676,
+          "max_drift": 1.3127970278796575,
+          "median_drift": 0.04950936084383262
+        },
+        "1.0": {
+          "k": 901,
+          "max_drift": 0.0,
+          "median_drift": 0.0
+        }
+      }
+    },
+    "subsample_note": "a WEAKER stability probe that needs NO new consumption: subsample the EXISTING nodes at fractions and measure V_i^IS drift as node count grows toward the full set. Convergence here is necessary-not-sufficient for the full draw-growth gate, which stays BLOCKED."
+  }
+}

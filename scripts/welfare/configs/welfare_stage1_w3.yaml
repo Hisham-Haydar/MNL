@@ -81,6 +81,24 @@ welfare:
   smoke:
     n_hh_per_group: 25                               # small configured subset for the smoke pass
 
+  # Stage-Two Increment Two-A: V_i^dir EUROMOD-on-nodes re-audit + bounded smoke.
+  # All case-specific values (stems, years, modes) live HERE; welfare source reads
+  # them. System-year pairing, CPI/phi, and the EUROMOD raw-input schema are reused
+  # from the build module (scripts/bpool/run_bpool_euromod_chunk.py) so the welfare
+  # path matches the build EXACTLY rather than re-hardcoding them.
+  stage2:
+    priced_long_stem: "fr_p3a_bpool_priced"          # storage: {stem}__{year}__{mode}.parquet
+    precompute_long_stem: "fr_p3a_bpool_precompute"  # storage: {stem}__{year}__{mode}__long.parquet
+    years: [2015, 2016, 2017]                         # pooled cross-sections present at storage
+    modes: ["singles", "couples"]
+    build_module: "run_bpool_euromod_chunk"          # source of _SYSTEM_PAIRING / _CPI / _RAW_SCHEMA / EuromodRunner
+    euromod_on_nodes:
+      parity_tol: 1.0e-6                              # |repriced ils_dispy - stored ils_dispy| max abs (Gate-0 analogue)
+      smoke_n_hh: 5                                   # tiny subset for the parity + overwrite smoke
+      smoke_year: 2016                                # which cross-section the smoke uses
+      smoke_mode: "singles"                           # smoke validates singles path first
+      overwrite_choice_vars: ["lhw", "yivwg", "yem", "yem_hour"]  # decider choice vars (build overwrites these)
+
   output:
     dir: "outputs/welfare/stage1_w3"
     provenance: "write_resolved_config_and_draw_scheme"

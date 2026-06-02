@@ -98,6 +98,16 @@ welfare:
       smoke_year: 2016                                # which cross-section the smoke uses
       smoke_mode: "singles"                           # smoke validates singles path first
       overwrite_choice_vars: ["lhw", "yivwg", "yem", "yem_hour"]  # decider choice vars (build overwrites these)
+    # Stage-Two-B parity grid: deterministic tiny reprice over every production
+    # year x mode cell, comparing repriced ils_dispy (+ components) to stored.
+    parity_grid:
+      n_hh: 5                                         # households per cell (deterministic: first n by uid)
+      rows_per_hh: 20                                 # bounded rows per household
+      tol: 1.0e-6
+      decompose_components: ["ils_origy", "ils_ben", "ils_tax", "ils_sicdy"]  # localise any divergence
+      # country is DERIVED from the EUROMOD system code (FR_2015 -> FR); set this
+      # only to override that derivation.
+      country_override: null
 
   output:
     dir: "outputs/welfare/stage1_w3"

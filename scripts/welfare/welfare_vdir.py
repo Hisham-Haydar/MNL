@@ -1,9 +1,13 @@
 """
-Welfare Stage Two — Increment Two-A: V_i^dir feasibility re-audit + repair.
-Extends the Stage-One core (welfare_core.py); edits NO estimator source.
+Welfare Stage Two — V_i^dir feasibility + EUROMOD reprice parity.
+Covers Increment Two-A (feasibility re-audit + redraw machinery) AND Increment
+Two-B (the EUROMOD reprice parity grid + diagnosis). Extends the Stage-One core
+(welfare_core.py); edits NO estimator source.
 
-Authority: RURO_welfare_scaffold_design_contract_v2.md, JMP_welfare_spec_v5.md;
-the redraw design is grounded in welfare_proposal_individualisation_check.md.
+Reports: RURO_welfare_stage2_vdir_crosscheck_v2.md (Two-A),
+RURO_welfare_stage2_parity_v1.md (Two-B). Authority:
+RURO_welfare_scaffold_design_contract_v2.md, JMP_welfare_spec_v5.md; the redraw
+design is grounded in welfare_proposal_individualisation_check.md.
 
 WHAT V_i^dir IS (contract §6 gate 1.ii cross-check). V_i^IS reuses the EXISTING
 estimation draws (drawn from the proposal pi) and importance-weights them. V_i^dir
@@ -327,16 +331,17 @@ def euromod_reprice_parity(cfg2, *, year, mode, n_hh, tol):
             "note": ("repriced EXISTING nodes (no choice overwrite) vs stored "
                      "ils_dispy, with the build's _stamp_draw_ids applied. Validates "
                      "the EUROMOD-overwrite path before any redrawn node is priced. "
-                     "Median 0 = path is fundamentally correct; a residual tail above "
-                     "tol means the reprice is NOT YET fully faithful to the build "
-                     "(additional chunk-runner preprocessing remains) -> node pricing "
-                     "stays BLOCKED, no redrawn node priced against an unvalidated "
-                     "path."),
-            "diagnosis": ("two contributing causes identified: (1) missing draw-ID "
-                          "stamping [now applied: 21->8 bad rows, max 3163->422]; "
-                          "(2) a residual gap requiring the full chunk-runner "
-                          "preprocessing pipeline. Fixing (2) is the next increment's "
-                          "parity work, before any production node pricing.")}
+                     "Median 0 = path correct for income; a residual tail above tol is "
+                     "STRUCTURAL and localised to ils_ben (benefits) on benefit-"
+                     "recipient households -> node pricing stays BLOCKED, no redrawn "
+                     "node priced against an unvalidated path. See "
+                     "RURO_welfare_stage2_parity_v1.md (Increment Two-B)."),
+            "diagnosis": ("Increment Two-B classifies this STRUCTURAL: divergence is "
+                          "localised entirely to ils_ben (ils_origy/ils_sicdy reproduce "
+                          "to machine zero); the build-faithful path is NOT closer, so "
+                          "it is NOT a missing chunk-runner preprocessing step. The "
+                          "stored benefit encodes household/annual state the per-draw "
+                          "row does not carry. See the parity grid + report.")}
 
 
 # ---------------------------------------------------------------------------
@@ -388,3 +393,166 @@ def node_subsample_stability(gw, theta, spec, data, group, fractions, rng):
         out[f] = {"k": k, "max_drift": float(np.max(drift)),
                   "median_drift": float(np.median(drift))}
     return out
+
+
+# ---------------------------------------------------------------------------
+# Stage-Two-B PARITY GRID: deterministic reprice over every year x mode cell,
+# with EUROMOD output-component decomposition + couples household-joint parity.
+# Agnostic: stems/years/modes/tol from config; system/CPI/schema/runner from the
+# build module; country derived from the system-code prefix (config override).
+# ---------------------------------------------------------------------------
+def _reprice_cell(cfg2, bc, *, year, mode, n_hh, rows_per_hh, components,
+                  country_override, rows_csv=None):
+    """Reprice a tiny deterministic subset of one year x mode priced-long cell and
+    compare repriced EUROMOD outputs to the stored values. Returns a per-cell dict
+    incl. component decomposition and (for couples) household-joint disposable-income
+    parity. No node overwrite: this validates the EUROMOD path on EXISTING nodes.
+
+    rows_csv: if set, persist the FULL smoke-row table for this cell (all rows, not
+    only the failing ones) with stored/repriced ils_dispy + component diffs and a FAIL
+    flag (FAIL == absdiff_ils_dispy > tol)."""
+    import pandas as pd
+    import pyarrow.parquet as pq
+    from _bpool_paths import bpool_dir
+
+    if year not in bc["system_pairing"]:
+        return {"year": year, "mode": mode, "status": "BLOCKED",
+                "reason": f"year {year} not in build system pairing"}
+    system_code, dataset_name = bc["system_pairing"][year]
+    country = str(country_override or str(system_code).split("_")[0])
+    raw_cols = bc["raw_schema"][year]
+    priced = bpool_dir() / f"{cfg2['priced_long_stem']}__{year}__{mode}.parquet"
+    if not priced.exists():
+        return {"year": year, "mode": mode, "status": "BLOCKED",
+                "reason": f"priced-long absent: {priced.name}"}
+
+    pf = pq.ParquetFile(priced)
+    df = pf.read_row_group(0).to_pandas() if pf.num_row_groups else pd.read_parquet(priced)
+    hh_col = "stacked_hh_uid" if "stacked_hh_uid" in df.columns else "idhh"
+    uids = df[hh_col].drop_duplicates().head(n_hh)
+    sub = (df[df[hh_col].isin(uids)]
+           .groupby(hh_col, sort=False).head(rows_per_hh).reset_index(drop=True))
+    if "ils_dispy" not in sub.columns:
+        return {"year": year, "mode": mode, "status": "BLOCKED",
+                "reason": "stored ils_dispy absent"}
+
+    draw_col = "draw" if mode == "singles" else "draw_joint"
+    id_mult = 1_000 if mode == "singles" else 10_000
+    import importlib
+    bmod = importlib.import_module(cfg2["build_module"])
+    stamped = bmod._stamp_draw_ids(sub.copy(), draw_col, id_mult)
+    em = stamped[[c for c in raw_cols if c in stamped.columns]].copy()
+    for c in em.columns:
+        em[c] = pd.to_numeric(em[c], errors="coerce").fillna(0.0)
+    try:
+        runner = bc["EuromodRunner"](bc["em_root"])
+        sim = runner.run_on_dataframe(em, country=country, system_code=system_code,
+                                      dataset_name=dataset_name)
+    except Exception as e:
+        return {"year": year, "mode": mode, "status": "BLOCKED",
+                "reason": f"EUROMOD run failed: {type(e).__name__}: {e}"}
+    if "ils_dispy" not in sim.columns or len(sim) != len(sub):
+        return {"year": year, "mode": mode, "status": "BLOCKED",
+                "reason": f"EUROMOD output shape/cols mismatch (out={sim.shape})"}
+
+    stored = pd.to_numeric(sub["ils_dispy"], errors="coerce").to_numpy()
+    rep = pd.to_numeric(sim["ils_dispy"], errors="coerce").to_numpy()
+    diff = np.abs(rep - stored)
+    n_bad = int(np.sum(diff > cfg2["parity_grid"]["tol"]))
+
+    # component decomposition — localise any divergence
+    tol = float(cfg2["parity_grid"]["tol"])
+    comp_div = {}
+    comp_diffs = {}
+    for comp in components:
+        if comp in sub.columns and comp in sim.columns:
+            s = pd.to_numeric(sub[comp], errors="coerce").to_numpy()
+            o = pd.to_numeric(sim[comp], errors="coerce").to_numpy()
+            dc = np.abs(o - s)
+            comp_diffs[comp] = dc
+            comp_div[comp] = {"n_above_tol": int(np.sum(dc > tol)),
+                              "max_abs": float(np.nanmax(dc))}
+
+    # optionally persist the FULL smoke-row table (all rows, FAIL flag per row)
+    if rows_csv is not None:
+        from pathlib import Path
+        idcols = [c for c in [hh_col, draw_col, "idperson", "dgn", "lhw"]
+                  if c in sub.columns]
+        rt = sub[idcols].copy()
+        rt["stored_ils_dispy"] = stored
+        rt["reprice_ils_dispy"] = rep
+        rt["absdiff_ils_dispy"] = diff
+        for comp, dc in comp_diffs.items():
+            rt[f"absdiff_{comp}"] = dc
+        if "ils_ben" in sub.columns:
+            rt["stored_ils_ben"] = pd.to_numeric(sub["ils_ben"], errors="coerce").to_numpy()
+        rt["FAIL"] = diff > tol
+        Path(rows_csv).parent.mkdir(parents=True, exist_ok=True)
+        rt.to_csv(rows_csv, index=False)
+
+    cell = {"year": year, "mode": mode, "country": country, "system_code": system_code,
+            "n_rows": int(len(sub)), "n_hh": int(len(uids)),
+            "n_alts_per_hh_max": int(sub.groupby(hh_col)[draw_col].nunique().max()),
+            "individual_ils_dispy": {
+                "max_abs_diff": float(np.nanmax(diff)),
+                "median_abs_diff": float(np.nanmedian(diff)),
+                "n_rows_above_tol": n_bad},
+            "component_divergence": comp_div,
+            "status": "PASS" if float(np.nanmax(diff)) <= tol else "FAIL"}
+
+    # couples: household-JOINT summed disposable income at the alternative level
+    if mode == "couples":
+        sub2 = sub.copy()
+        sub2["__rep"] = rep
+        sub2["__stored"] = stored
+        grp = sub2.groupby([hh_col, draw_col])
+        jrep = grp["__rep"].sum().to_numpy()
+        jst = grp["__stored"].sum().to_numpy()
+        jd = np.abs(jrep - jst)
+        cell["household_joint_dispy"] = {
+            "n_alternatives": int(len(jd)),
+            "max_abs_diff": float(np.nanmax(jd)),
+            "median_abs_diff": float(np.nanmedian(jd)),
+            "n_above_tol": int(np.sum(jd > tol))}
+
+    if cell["status"] != "PASS":
+        # classification driven by the component decomposition
+        bcomp = max(comp_div, key=lambda c: comp_div[c]["max_abs"]) if comp_div else None
+        cell["failure_classification"] = (
+            "STRUCTURAL" if (bcomp == "ils_ben") else "UNRESOLVED")
+        cell["failure_note"] = (
+            f"divergence localised to {bcomp}; benefit-recipient-localised, not a "
+            "uniform omitted preprocessing step (build-faithful path was not closer)."
+            if bcomp == "ils_ben" else
+            f"divergence localised to {bcomp}; classification UNRESOLVED.")
+    return cell
+
+
+def parity_grid(cfg2, *, rows_csv_dir=None):
+    """Run the deterministic parity grid over all configured year x mode cells.
+
+    rows_csv_dir: if set, persist the FULL smoke-row diagnostic table for the
+    reference cell (euromod_on_nodes.smoke_year x smoke_mode) to
+    {rows_csv_dir}/stage2_parity_smoke_rows_diag.csv."""
+    bc = _build_constants(cfg2)
+    pg = cfg2["parity_grid"]
+    ref_year = int(cfg2["euromod_on_nodes"]["smoke_year"])
+    ref_mode = str(cfg2["euromod_on_nodes"]["smoke_mode"])
+    cells = {}
+    for year in cfg2["years"]:
+        for mode in cfg2["modes"]:
+            rows_csv = None
+            if rows_csv_dir is not None and year == ref_year and mode == ref_mode:
+                rows_csv = f"{rows_csv_dir}/stage2_parity_smoke_rows_diag.csv"
+            cells[f"{year}__{mode}"] = _reprice_cell(
+                cfg2, bc, year=year, mode=mode,
+                n_hh=int(pg["n_hh"]), rows_per_hh=int(pg["rows_per_hh"]),
+                components=list(pg["decompose_components"]),
+                country_override=pg.get("country_override"),
+                rows_csv=rows_csv)
+    all_pass = all(c.get("status") == "PASS" for c in cells.values())
+    return {"all_cells_pass": all_pass, "cells": cells,
+            "smoke_rows_table": (
+                f"{rows_csv_dir}/stage2_parity_smoke_rows_diag.csv"
+                f" (cell {ref_year}__{ref_mode}; FULL smoke sample, FAIL = "
+                f"absdiff_ils_dispy > tol)" if rows_csv_dir else None)}

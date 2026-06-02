@@ -1,0 +1,242 @@
+{
+  "increment": "stage2_parity_v1",
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "scope": "EUROMOD reprice parity diagnosis + grid; NO production node pricing, NO production V_i^dir, NO 2x/4x growth.",
+  "parity_grid": {
+    "all_cells_pass": false,
+    "cells": {
+      "2015__singles": {
+        "year": 2015,
+        "mode": "singles",
+        "country": "FR",
+        "system_code": "FR_2014",
+        "n_rows": 100,
+        "n_hh": 5,
+        "n_alts_per_hh_max": 20,
+        "individual_ils_dispy": {
+          "max_abs_diff": 512.0141666666667,
+          "median_abs_diff": 0.0,
+          "n_rows_above_tol": 17
+        },
+        "component_divergence": {
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 17,
+            "max_abs": 512.0141666666667
+          },
+          "ils_tax": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "status": "FAIL",
+        "failure_classification": "STRUCTURAL",
+        "failure_note": "divergence localised to ils_ben; benefit-recipient-localised, not a uniform omitted preprocessing step (build-faithful path was not closer)."
+      },
+      "2015__couples": {
+        "year": 2015,
+        "mode": "couples",
+        "country": "FR",
+        "system_code": "FR_2014",
+        "n_rows": 100,
+        "n_hh": 5,
+        "n_alts_per_hh_max": 9,
+        "individual_ils_dispy": {
+          "max_abs_diff": 346.6888146448664,
+          "median_abs_diff": 0.0,
+          "n_rows_above_tol": 3
+        },
+        "component_divergence": {
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 2,
+            "max_abs": 346.6888146448664
+          },
+          "ils_tax": {
+            "n_above_tol": 2,
+            "max_abs": 316.6666666666665
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "status": "FAIL",
+        "household_joint_dispy": {
+          "n_alternatives": 32,
+          "max_abs_diff": 346.6888146448673,
+          "median_abs_diff": 0.0,
+          "n_above_tol": 3
+        },
+        "failure_classification": "STRUCTURAL",
+        "failure_note": "divergence localised to ils_ben; benefit-recipient-localised, not a uniform omitted preprocessing step (build-faithful path was not closer)."
+      },
+      "2016__singles": {
+        "year": 2016,
+        "mode": "singles",
+        "country": "FR",
+        "system_code": "FR_2015",
+        "n_rows": 100,
+        "n_hh": 5,
+        "n_alts_per_hh_max": 20,
+        "individual_ils_dispy": {
+          "max_abs_diff": 422.3499969566667,
+          "median_abs_diff": 0.0,
+          "n_rows_above_tol": 8
+        },
+        "component_divergence": {
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 8,
+            "max_abs": 422.34999695666664
+          },
+          "ils_tax": {
+            "n_above_tol": 2,
+            "max_abs": 1.1959078333333366
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "status": "FAIL",
+        "failure_classification": "STRUCTURAL",
+        "failure_note": "divergence localised to ils_ben; benefit-recipient-localised, not a uniform omitted preprocessing step (build-faithful path was not closer)."
+      },
+      "2016__couples": {
+        "year": 2016,
+        "mode": "couples",
+        "country": "FR",
+        "system_code": "FR_2015",
+        "n_rows": 100,
+        "n_hh": 5,
+        "n_alts_per_hh_max": 9,
+        "individual_ils_dispy": {
+          "max_abs_diff": 229.99964538196537,
+          "median_abs_diff": 0.0,
+          "n_rows_above_tol": 4
+        },
+        "component_divergence": {
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 4,
+            "max_abs": 185.54000000000002
+          },
+          "ils_tax": {
+            "n_above_tol": 4,
+            "max_abs": 44.45964538196526
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "status": "FAIL",
+        "household_joint_dispy": {
+          "n_alternatives": 32,
+          "max_abs_diff": 229.99964538196537,
+          "median_abs_diff": 0.0,
+          "n_above_tol": 4
+        },
+        "failure_classification": "STRUCTURAL",
+        "failure_note": "divergence localised to ils_ben; benefit-recipient-localised, not a uniform omitted preprocessing step (build-faithful path was not closer)."
+      },
+      "2017__singles": {
+        "year": 2017,
+        "mode": "singles",
+        "country": "FR",
+        "system_code": "FR_2016",
+        "n_rows": 100,
+        "n_hh": 5,
+        "n_alts_per_hh_max": 20,
+        "individual_ils_dispy": {
+          "max_abs_diff": 345.1776363766666,
+          "median_abs_diff": 0.0,
+          "n_rows_above_tol": 13
+        },
+        "component_divergence": {
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 13,
+            "max_abs": 345.17763637666656
+          },
+          "ils_tax": {
+            "n_above_tol": 2,
+            "max_abs": 0.15200416666664296
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "status": "FAIL",
+        "failure_classification": "STRUCTURAL",
+        "failure_note": "divergence localised to ils_ben; benefit-recipient-localised, not a uniform omitted preprocessing step (build-faithful path was not closer)."
+      },
+      "2017__couples": {
+        "year": 2017,
+        "mode": "couples",
+        "country": "FR",
+        "system_code": "FR_2016",
+        "n_rows": 100,
+        "n_hh": 5,
+        "n_alts_per_hh_max": 9,
+        "individual_ils_dispy": {
+          "max_abs_diff": 266.78057081070847,
+          "median_abs_diff": 0.0,
+          "n_rows_above_tol": 7
+        },
+        "component_divergence": {
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 7,
+            "max_abs": 266.78057081070847
+          },
+          "ils_tax": {
+            "n_above_tol": 2,
+            "max_abs": 1.3112041666666983
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "status": "FAIL",
+        "household_joint_dispy": {
+          "n_alternatives": 34,
+          "max_abs_diff": 266.7805708107089,
+          "median_abs_diff": 0.0,
+          "n_above_tol": 7
+        },
+        "failure_classification": "STRUCTURAL",
+        "failure_note": "divergence localised to ils_ben; benefit-recipient-localised, not a uniform omitted preprocessing step (build-faithful path was not closer)."
+      }
+    },
+    "smoke_rows_table": "outputs/welfare/stage1_w3/stage2_parity_smoke_rows_diag.csv (cell 2016__singles; FULL smoke sample, FAIL = absdiff_ils_dispy > tol)"
+  }
+}

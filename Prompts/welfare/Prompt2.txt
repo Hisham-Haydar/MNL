@@ -1,0 +1,45 @@
+Read `docs/jmp_methodology/JMP_welfare_spec_v5.md` (now the frozen, authoritative
+welfare-object memo, superseding v4) and
+`docs/jmp_methodology/welfare_proposal_individualisation_check.md`. Then edit
+`docs/jmp_methodology/RURO_welfare_scaffold_design_contract_v1.md` into
+`RURO_welfare_scaffold_design_contract_v2.md`. Write only the markdown contract.
+Do not edit source code. Do not run estimation, welfare, decomposition, bootstrap,
+or data-rebuild scripts. Do not compute welfare or decomposition numbers. This
+contract does not authorise implementation.
+
+Apply exactly four edits; change nothing else, and preserve all section numbering:
+
+1. Header/version: bump to v2; update the supersession line to note it supersedes
+   v1 and translates the frozen `JMP_welfare_spec_v5.md` (not v4).
+
+2. Anchors block — the "Proposal/prior correction" bullet: append a sentence
+   recording that the proposal is partly individualised per
+   `welfare_proposal_individualisation_check.md` (wage and occupation condition on
+   x_i; hours and employment common; structural market block in g, not in π), so
+   `-log_prior` is a household-specific per-row column, not a common function of
+   (w,h). Do not change the traced V = u + log_h + log_w + log_market − log_prior
+   construction.
+
+3. §3.1 — after the existing inclusive-value formula and the three bullets, add a
+   paragraph: the primary welfare-integration estimator is importance sampling over
+   the existing estimation draws with the household-specific per-row prior
+   (V_i^IS), grounded in v5 §1.1 and the audit note; it is analytic in the
+   extreme-value shocks and invokes no Fréchet draws or simulated argmax; the
+   redraw-from-ĝ_i estimator V_i^dir is the retained validation cross-check,
+   escalated to primary only on a flagged subset per the §6 ESS gate.
+
+4. §6 — replace gate item 1 with the three-part welfare-integration gate from v5
+   §6: (i) per-household stability of V_i^IS as draws grow; (ii) an
+   effective-sample-size diagnostic, ESS_i = (Σ_s ω_is)² / Σ_s ω_is², with a
+   max-normalised-weight report, an executable threshold
+   (`core.integration.ess_threshold`) and a flagged-subset cross-check
+   (`core.integration.cross_check_on_flagged`), persistent disagreement being the
+   sole escalation trigger; (iii) a reference-coverage / EUROMOD gate, narrowed to
+   the reference packages of Ā/J/o only (integration nodes are not redrawn under
+   the primary scheme), at the build's 2016-real price basis and EUROMOD system
+   year, wholesale rerun and silent interpolation both forbidden. Keep gates 2 and
+   3 (inversion sanity, household-unit integrity) and the Shapley-exhaustiveness
+   forward requirement unchanged.
+
+Leave §2, §4, §5, §7, §8, §9 and the closing agnosticism paragraph unchanged.
+End with the save-as line `docs/jmp_methodology/RURO_welfare_scaffold_design_contract_v2.md`.

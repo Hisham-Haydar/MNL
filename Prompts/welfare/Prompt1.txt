@@ -1,0 +1,22 @@
+Read `docs/jmp_methodology/JMP_welfare_spec_v4.md` first. This is the frozen welfare-object memo and supersedes v1-v3.
+Also read:
+- `docs/jmp_methodology/JMP_welfare_scaffolding_design_memo_v2.md`
+- `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md`
+- `docs/jmp_methodology/The_draft_theorypaper.tex` only for the W1-W6 definitions/classification; do not reproduce proofs.
+Inspect the repo with read-only commands to ground the contract: locate the certified 47-param pooled estimate `joint_pooled_v1_bll0_tlmpin`, where `theta_hat` is stored, the JAX likelihood/engine entry points, the proposal/prior correction on the engine-ready parquets, and the YAML/config mechanism.
+Produce `docs/jmp_methodology/RURO_welfare_scaffold_design_contract_v1.md`.
+Write only this markdown contract. Do not edit source code. Do not run estimation, welfare, decomposition, bootstrap, or data-rebuild scripts. Do not compute welfare numbers or decomposition numbers. This contract does not authorise implementation.
+
+The contract must have these sections, in order:
+
+1. Purpose & document class — what the contract is (the spec the welfare module must meet; later used to audit the code) and is not. Anchor: the certified `theta_hat`, JAX backend, 901-alt resolution.
+2. Scope — in-scope: Exercise A welfare family only (the ex-ante inclusive-value core V_i, the six reference constructions W1-W6 as reference+inversion, the inequality I(Omega^k), welfare-side gates). Deferred to their own artifacts: Exercise B decomposition, gender-split robustness, stochastic dominance, intra-household equivalisation. State the welfare-vs-decomposition boundary explicitly.
+3. Computational contract — the ex-ante V_i with the mandatory -log pi(j) proposal/prior correction; each W^k as a declared reference + own-preference inversion; the household-unit construction (one Omega_i^k per couple, joint utility/budget, no splitting); the reference sets Abar / J / o defined in config.
+4. Config schema (YAML) — active measure set, references, reference preference, cluster unit, fixed params, block membership all config-driven; adding or removing a measure is a config change, not a code change. No hardcoded France/2016 constants.
+5. Build-order gate — W3 validated end-to-end first; then W5 plus the endpoints (W2, W4/W6) to observe the across-measure spread; the headline decided empirically only after. Define what "validated" requires at each step.
+6. Pre-computation validation gates (must pass before any welfare distribution is trusted) — proposal-correction simulation-consistency (welfare stable as the draw count grows); inversion sanity (reference recovers zero, monotonicity); household-unit integrity. Name the Shapley-exhaustiveness gate as a forward requirement for the decomposition contract, not implemented here.
+7. Decomposition-readiness — outputs (Omega_i^k, V_i, equalisation-ready block structure for access/ability/preference) must be structured so the downstream decomposition module can equalise a channel without refactoring. Expose the pinned-preference switch (pinned params held at their values vs swapped for the reference preference under preference-equalisation, per memo section 3a) as a config flag, with couples and singles opportunity shares kept separable — never pre-pooled.
+8. Inference hooks — cluster-robust bootstrap on `idorighh`; per-measure welfare uncertainty now; per-component CIs only as a downstream decomposition-interface requirement, not implemented here; no asymptotic SEs for headline claims; bootstrap cost scales with menu size.
+9. Forbidden items (beyond the execution/code/implementation bans already stated above) — no hardcoded France/2016 constants; occupation is never called sector or industry; the W1/W5 dual is corroborating interpretation, not a numerical reconciliation gate.
+
+Keep it country/year/spec-agnostic throughout. End with the save-as line: `docs/jmp_methodology/RURO_welfare_scaffold_design_contract_v1.md`.

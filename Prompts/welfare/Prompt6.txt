@@ -1,0 +1,43 @@
+STAGE TWO, INCREMENT TWO-B only. Diagnose and close the EUROMOD reprice parity gap
+identified in RURO_welfare_stage2_vdir_crosscheck_v2.md. Do NOT price production
+redrawn nodes, do NOT compute production V_i^dir, do NOT run the 2x/4x multiplier
+growth, do NOT promote W^3 to a finding, do NOT extend beyond W^3, do NOT commit
+automatically. Use .venv\Scripts\python.exe.
+
+The v2 parity smoke (2016 singles, 100 rows) gave median abs diff 0.0 but 8/100 rows
+above tol (max 422.35). This is a feasibility-gating defect, not yet understood.
+
+1. DIAGNOSE before repairing. Characterise the 8 failing rows BEFORE changing any
+   reprice logic:
+   - Are they few households repriced at many nodes, or many households at scattered
+     nodes? Report the household/node breakdown.
+   - Do the failing rows share a covariate or roster signature vs the 92 passing
+     rows — self-employment income (yse/yse_f), benefit components, non-trivial
+     lindi, dependants on the roster, multiple income sources, year-specific schema
+     fields? Report the distinguishing features.
+   - Classify the failure as UNIFORM (a preprocessing step omitted for all rows,
+     shrinkable by replicating it) or STRUCTURAL (a household type the
+     template-overwrite mishandles). State which, with evidence.
+
+2. REPAIR only what the diagnosis indicates. Replicate the specific chunk-runner
+   preprocessing the smoke omits (compare run_bpool_euromod_chunk.py /
+   assemble_bpool_priced.py against the reprice path step by step). Do not guess at
+   fixes ahead of the diagnosis.
+
+3. RE-RUN PARITY across the FULL year×mode grid the production run will touch, not
+   only 2016 singles: 2015/2016/2017 × singles/couples. The schema differs by year
+   (122/124/128 vars) and couples carry a joint two-decider overwrite untested for
+   parity. Report per-cell max abs diff, rows above tol, and PASS/FAIL. Parity must
+   pass to machine tolerance on EVERY cell the production run will touch, or that
+   cell stays BLOCKED.
+
+4. If parity passes on all cells, STOP and report. Do NOT proceed to production node
+   pricing or V_i^dir — that is a separate authorisation. If parity fails on any
+   cell, report the cell, the diagnosis, and hold it BLOCKED.
+
+Deliver: updated scripts/welfare/ source; a report
+docs/jmp_methodology/RURO_welfare_stage2_parity_v1.md with the failing-row
+diagnosis (uniform vs structural), the per-cell parity grid, and PASS/FAIL/BLOCKED
+per year×mode. Updated provenance JSON. State explicitly no W^3 welfare finding is
+produced and no measure beyond W^3 is touched. If anything is ambiguous against the
+repo, STOP and report rather than guessing.

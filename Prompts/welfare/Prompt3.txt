@@ -1,0 +1,63 @@
+Implement the welfare scaffold STRICTLY to the frozen specification in
+`docs/jmp_methodology/RURO_welfare_scaffold_design_contract_v2.md`. That contract
+is authoritative; `JMP_welfare_spec_v5.md` and
+`welfare_proposal_individualisation_check.md` are its cited grounds. This is a
+STAGE-ONE authorisation: build the machine and run the three welfare-side gates on
+W^3 only, and produce a gate report. It does NOT authorise reporting any welfare
+distribution or inequality as a result, does NOT extend to W^1/W^2/W^4/W^5/W^6 as
+reportable measures, does NOT touch Exercise B (decomposition), gender-split,
+stochastic dominance, or intra-household work, and does NOT run the bootstrap.
+
+Build (one machine, config-driven, per contract §3–§4):
+- The V_i^IS core (contract §3.1): importance sampling over the existing estimation
+  draws with the per-row `prior` column, reusing the SAME utility and
+  opportunity-density construction as the estimator (`build_jax_singles_ll` /
+  `build_jax_couples_ll`), so V_i at theta_hat is consistent with the likelihood by
+  construction, not a re-implementation. Apply the mandatory −log π(j) correction; a
+  V_i without it is rejected.
+- The reference + own-preference inversion machinery (§3.2) as a bracketing root
+  solve, parametrised by config; activate W^3 (laissez-faire) only for this stage.
+- The inequality module I(Omega^k) (§3.1/§4), measure- and index-agnostic; compute
+  I(Omega^3) for the gate.
+- The decomposition-readiness interface (§7): expose Omega_i^k, V_i, I(Omega^k), and
+  the config-read block structure; surface the pinned-preference held|swapped flag
+  (default held) and keep singles/couples opportunity shares separable
+  (`pool_opportunity_share: false`). Interfaces only — implement no decomposition.
+- Read all specification-identifying values from config; ZERO hardcoded
+  France/2016/P3a constants in source (the agnosticism test, §4/§9).
+
+Run the three welfare-side gates (contract §6), on W^3:
+- (1) Welfare-integration gate. (i) Per-household stability of V_i^IS across the
+  configured draw multipliers, against the declared tolerance. (ii) The ESS
+  diagnostic ESS_i = (Σ ω_is)² / Σ ω_is² computed ONCE across all households (it is
+  measure-independent), with the max-normalised-weight report; flag households below
+  `core.integration.ess_threshold`; on the flagged subset ONLY, compute V_i^dir and
+  report agreement. Do not escalate the redraw to primary in this stage — report the
+  flagged subset and the cross-check outcome for review. (iii) Reference-coverage
+  gate: confirm W^3's laissez-faire reference packages are covered by existing c_ij
+  (expected trivially satisfied, since the reference lies in the own choice set);
+  report any miss rather than approximating. Note for the report that the Ā/J/o
+  EUROMOD exposure is a stage-two concern (W^5/W^6), not triggered here.
+- (2) Inversion sanity on W^3: reference recovers zero welfare; monotonicity; the
+  bracketing solve converges for every household, non-convergence flagged per
+  household.
+- (3) Household-unit integrity: exactly one Omega_i per couple from joint
+  utility/joint budget; no per-capita split; type-conditional references for
+  singles_male / singles_female / couples.
+
+Deliver:
+- The welfare module source under `scripts/welfare/` (not executed beyond the gate
+  run; the bootstrap orchestration is external and NOT invoked here).
+- A gate report `docs/jmp_methodology/RURO_welfare_gate_report_W3_v1.md`: per-gate
+  PASS/FAIL with the evidence — the ESS distribution summary (min/median/quantiles,
+  count below threshold), the flagged-subset size and the V_i^dir cross-check
+  outcome, the per-household stability drift, inversion convergence and
+  monotonicity, and the household-unit checks. State explicitly that the W^3 welfare
+  distribution and I(Omega^3) computed in the course of gating are INTERNAL
+  validation artifacts, not reported as findings, pending stage-two authorisation.
+- The resolved config and draw-scheme provenance.
+
+Discipline: build to the contract, run the W^3 gates, write the gate report.
+Compute no welfare findings, extend to no other measure, run no bootstrap, touch no
+decomposition. If any contract instruction is ambiguous against the repo, stop and
+report the ambiguity rather than resolving it by guess.

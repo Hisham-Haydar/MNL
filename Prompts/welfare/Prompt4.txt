@@ -1,0 +1,61 @@
+STAGE TWO, INCREMENT ONE only. Build the V_i^dir redraw cross-check and the
+draw-multiplier stability inputs that Stage One reported BLOCKED. Do NOT promote
+W^3 to a welfare finding, do NOT extend to W^1/W^2/W^4/W^5/W^6, do NOT implement
+decomposition, bootstrap, gender-split, dominance, or intra-household work. Do not
+commit automatically. Authority: RURO_welfare_scaffold_design_contract_v2.md and
+JMP_welfare_spec_v5.md; the redraw design is grounded in
+welfare_proposal_individualisation_check.md. Use .venv\Scripts\python.exe.
+
+Read the Stage-One core (scripts/welfare/welfare_core.py, run_stage1_w3.py) and the
+production gate report. The blocked items to clear:
+
+A. V_i^dir redraw-from-g_hat cross-check.
+   - Implement V_i^dir: for a household, draw integration nodes from the ESTIMATED
+     individual opportunity density g_hat(.; x_i) — the same channel structure the
+     estimator/proposal uses (wage ~ lognormal at the household mean; occupation by
+     the gender×education stratum; hours from the D1 mixture; employment split) —
+     then integrate the extreme-value shocks ANALYTICALLY via the log-sum. NO
+     Frechet draws, NO simulated argmax: this is a welfare-integration estimator,
+     not a behavioural choice simulation.
+   - For W^3 the laissez-faire reference lies in the own set, so node consumption
+     c_is for drawn (w,h) at the household's x_f must be obtained. If a drawn node's
+     disposable income is not available from the existing build, this is the bounded
+     EUROMOD touch: evaluate it at the SAME 2016-real price basis and EUROMOD system
+     year as the build. Do NOT rebuild data wholesale; do NOT re-deflate (g_hat
+     wages are already 2016-real); do NOT silently interpolate — if EUROMOD-on-nodes
+     is infeasible this increment, report the affected households BLOCKED with the
+     exact count, do not approximate.
+   - Run V_i^dir on: the FULL singles_male and singles_female samples (justification:
+     85-90% of singles fall below the ESS threshold, so the flagged subset is nearly
+     the whole; a blanket singles cross-check is cleaner than a conditional one); and
+     on the sub-threshold flagged subset for couples (median couples ESS ~63, only
+     1285/7438 flagged). Report, per group, the distribution of |V_i^dir - V_i^IS|:
+     summary stats, the count exceeding a declared agreement tolerance, and whether
+     the disagreement concentrates on the low-ESS tail.
+   - Apply the contract's escalation rule: persistent disagreement beyond tolerance
+     on a household is the ONLY trigger to mark that household for V_i^dir-as-primary.
+     Report the escalated set; do not yet recompute any welfare distribution from it.
+
+B. Draw-multiplier stability (Gate 1 part i).
+   - Determine whether 2x/4x integration-node sets can be generated for the
+     stability check WITHOUT rebuilding the estimation data — i.e. by drawing
+     additional integration nodes from g_hat purely for the welfare integral (this
+     is the same redraw machinery as A, at higher node counts), NOT by re-running the
+     B-pool builder. If yes, compute V_i^IS (and V_i^dir where built) at the
+     configured multipliers and report per-household drift against tolerance. If the
+     stability check genuinely requires rebuilt estimation draws, keep it BLOCKED and
+     state precisely why, distinguishing it from the welfare-integral node growth.
+
+Deliver:
+   - Redraw source under scripts/welfare/ (extending the core; no estimator source
+     edited).
+   - A Stage-Two increment report
+     docs/jmp_methodology/RURO_welfare_stage2_vdir_crosscheck_v1.md: per-group
+     |V_i^dir - V_i^IS| distributions, the agreement-tolerance count, the escalated
+     set, the EUROMOD-on-nodes status (done / count BLOCKED), and the multiplier
+     stability result or its precise blockage.
+   - Resolved config and provenance.
+
+State explicitly that no W^3 welfare finding is produced and no measure beyond W^3
+is touched. If any contract instruction is ambiguous against the repo, STOP and
+report rather than resolving by guess.

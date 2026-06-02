@@ -1,0 +1,43 @@
+STAGE TWO, INCREMENT TWO-C only — READ-ONLY benefit-state recoverability inspection.
+Do NOT implement a reprice fix, do NOT price any node, do NOT compute V_i^dir, do NOT
+run 2x/4x growth, do NOT promote W^3, do NOT touch any measure beyond W^3, do NOT
+commit automatically. Use .venv\Scripts\python.exe for read-only inspection only.
+
+Context: RURO_welfare_stage2_parity_v1.md established that EUROMOD reprice parity fails
+on every year x mode cell, localised entirely to ils_ben (benefits) on benefit-recipient
+households, because the stored benefit value encodes household/annual state the per-draw
+row does not carry. The decision now is which of three routes is open, and that turns on
+ONE empirical question this inspection must answer.
+
+THE QUESTION: are the benefit-state inputs EUROMOD used at original build-pricing time
+recoverable per household (and per draw where relevant) from any persisted artifact,
+WITHOUT a wholesale rebuild?
+
+Inspect, read-only:
+1. The build pricing path (run_bpool_euromod_chunk.py, assemble_bpool_priced.py): identify
+   EXACTLY which input variables drive ils_ben in the FR EUROMOD system — the means-test
+   bases, prior-period/annual income inputs, eligibility/state fields, and any uprating or
+   household-context variables the benefit functions read. List them by name.
+2. For each such benefit-state variable, determine where it lives across the persisted
+   artifacts: the per-draw priced rows, the precompute-long files, any intermediate the
+   build wrote, and the raw EU-SILC annual records. For each variable report: present /
+   absent / derivable, and if present, at what grain (household-level constant vs per-draw
+   varying) and whether it is keyed so it can be joined back to a specific household and draw.
+3. Classify each benefit-state variable as one of: (a) INVARIANT to the labour-supply node
+   (household/annual context that does not change when (w,h) changes) and recoverable, so a
+   redrawn node could reuse the household's stored value; (b) NODE-DEPENDENT (must be
+   recomputed when (w,h) changes) and recoverable from the node plus stored state; or
+   (c) NOT RECOVERABLE without a wholesale rebuild.
+4. State the verdict: is benefit-state recovery FEASIBLE (routes via reusing invariant
+   state + recomputing node-dependent components), or NOT FEASIBLE without a rebuild. If
+   feasible, specify the minimal join/plumbing that would make a redrawn-node reprice
+   reproduce stored ils_ben on EXISTING nodes to machine tolerance (the parity test it must
+   later pass). Do not implement it.
+
+Deliver: a read-only report docs/jmp_methodology/RURO_welfare_stage2_benefit_state_recoverability_v1.md
+with the benefit-state variable inventory (name, role, where stored, grain, keyed?,
+class a/b/c), the feasibility verdict, and — if feasible — the minimal plumbing spec for a
+later increment. Updated provenance JSON if any inspection output is produced. No code that
+prices nodes or alters the reprice path. State explicitly that no W^3 welfare finding is
+produced and no measure beyond W^3 is touched. If anything is ambiguous against the repo,
+STOP and report rather than guessing.

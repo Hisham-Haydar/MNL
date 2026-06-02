@@ -1,0 +1,793 @@
+{
+  "increment": "stage2_benefit_state_recoverability_v1",
+  "read_only": true,
+  "no_euromod_run": true,
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "system_pairing": {
+    "2015": [
+      "FR_2014",
+      "FR_2015_a2"
+    ],
+    "2016": [
+      "FR_2015",
+      "FR_2016_a3"
+    ],
+    "2017": [
+      "FR_2016",
+      "FR_2017_a2"
+    ]
+  },
+  "cpi": {
+    "2015": 1.0031,
+    "2016": 1.0,
+    "2017": 0.9886
+  },
+  "files": {
+    "priced__2015__singles": {
+      "exists": true,
+      "n_cols": 565,
+      "ils_present": [
+        "ils_dispy",
+        "ils_origy",
+        "ils_ben",
+        "ils_pen",
+        "ils_benmt",
+        "ils_bennt",
+        "ils_sicdy",
+        "ils_earns",
+        "ils_bensim"
+      ],
+      "pen_input_present": [
+        "poa00",
+        "pdi00",
+        "psu"
+      ],
+      "benmt_s_present": [
+        "bchyc_s",
+        "bsuwd_s",
+        "bunmt_s",
+        "bchlg_s",
+        "bched_s",
+        "bchba_s",
+        "bsaoa_s",
+        "bdi_s",
+        "bsa00_s",
+        "bhotn_s",
+        "tinrf_s",
+        "bchot_s"
+      ],
+      "bennt_s_present": [
+        "bhl",
+        "bunct_s",
+        "bch00_s",
+        "bchcc_s",
+        "bchor_s"
+      ],
+      "keys_present": [
+        "stacked_hh_uid",
+        "draw",
+        "idperson",
+        "idhh",
+        "idhh_true",
+        "idperson_true",
+        "data_year",
+        "year_tag",
+        "ruro_decider",
+        "idorighh"
+      ],
+      "i_intermediate_count": 63,
+      "tu_taxunit_count": 11
+    },
+    "precompute__2015__singles": {
+      "exists": true,
+      "n_cols": 562,
+      "ils_present": [
+        "ils_dispy",
+        "ils_origy",
+        "ils_ben",
+        "ils_pen",
+        "ils_benmt",
+        "ils_bennt",
+        "ils_sicdy",
+        "ils_earns",
+        "ils_bensim"
+      ],
+      "pen_input_present": [
+        "poa00",
+        "pdi00",
+        "psu"
+      ],
+      "benmt_s_present": [
+        "bchyc_s",
+        "bsuwd_s",
+        "bunmt_s",
+        "bchlg_s",
+        "bched_s",
+        "bchba_s",
+        "bsaoa_s",
+        "bdi_s",
+        "bsa00_s",
+        "bhotn_s",
+        "tinrf_s",
+        "bchot_s"
+      ],
+      "bennt_s_present": [
+        "bhl",
+        "bunct_s",
+        "bch00_s",
+        "bchcc_s",
+        "bchor_s"
+      ],
+      "keys_present": [
+        "stacked_hh_uid",
+        "draw",
+        "idperson",
+        "idhh",
+        "data_year",
+        "year_tag",
+        "ruro_decider",
+        "idorighh"
+      ],
+      "i_intermediate_count": 63,
+      "tu_taxunit_count": 11
+    },
+    "priced__2015__couples": {
+      "exists": true,
+      "n_cols": 583,
+      "ils_present": [
+        "ils_dispy",
+        "ils_origy",
+        "ils_ben",
+        "ils_pen",
+        "ils_benmt",
+        "ils_bennt",
+        "ils_sicdy",
+        "ils_earns",
+        "ils_bensim"
+      ],
+      "pen_input_present": [
+        "poa00",
+        "pdi00",
+        "psu"
+      ],
+      "benmt_s_present": [
+        "bchyc_s",
+        "bsuwd_s",
+        "bunmt_s",
+        "bchlg_s",
+        "bched_s",
+        "bchba_s",
+        "bsaoa_s",
+        "bdi_s",
+        "bsa00_s",
+        "bhotn_s",
+        "tinrf_s",
+        "bchot_s"
+      ],
+      "bennt_s_present": [
+        "bhl",
+        "bunct_s",
+        "bch00_s",
+        "bchcc_s",
+        "bchor_s"
+      ],
+      "keys_present": [
+        "stacked_hh_uid",
+        "draw_joint",
+        "idperson",
+        "idhh",
+        "idhh_true",
+        "idperson_true",
+        "data_year",
+        "year_tag",
+        "ruro_decider",
+        "idorighh"
+      ],
+      "i_intermediate_count": 63,
+      "tu_taxunit_count": 11
+    },
+    "precompute__2015__couples": {
+      "exists": true,
+      "n_cols": 580,
+      "ils_present": [
+        "ils_dispy",
+        "ils_origy",
+        "ils_ben",
+        "ils_pen",
+        "ils_benmt",
+        "ils_bennt",
+        "ils_sicdy",
+        "ils_earns",
+        "ils_bensim"
+      ],
+      "pen_input_present": [
+        "poa00",
+        "pdi00",
+        "psu"
+      ],
+      "benmt_s_present": [
+        "bchyc_s",
+        "bsuwd_s",
+        "bunmt_s",
+        "bchlg_s",
+        "bched_s",
+        "bchba_s",
+        "bsaoa_s",
+        "bdi_s",
+        "bsa00_s",
+        "bhotn_s",
+        "tinrf_s",
+        "bchot_s"
+      ],
+      "bennt_s_present": [
+        "bhl",
+        "bunct_s",
+        "bch00_s",
+        "bchcc_s",
+        "bchor_s"
+      ],
+      "keys_present": [
+        "stacked_hh_uid",
+        "draw_joint",
+        "idperson",
+        "idhh",
+        "data_year",
+        "year_tag",
+        "ruro_decider",
+        "idorighh"
+      ],
+      "i_intermediate_count": 63,
+      "tu_taxunit_count": 11
+    },
+    "priced__2016__singles": {
+      "exists": true,
+      "n_cols": 569,
+      "ils_present": [
+        "ils_dispy",
+        "ils_origy",
+        "ils_ben",
+        "ils_pen",
+        "ils_benmt",
+        "ils_bennt",
+        "ils_sicdy",
+        "ils_earns",
+        "ils_bensim"
+      ],
+      "pen_input_present": [
+        "poa00",
+        "pdi00",
+        "psu"
+      ],
+      "benmt_s_present": [
+        "bchyc_s",
+        "bsuwd_s",
+        "bunmt_s",
+        "bchlg_s",
+        "bched_s",
+        "bchba_s",
+        "bsaoa_s",
+        "bdi_s",
+        "bsa00_s",
+        "bhotn_s",
+        "tinrf_s",
+        "bchot_s"
+      ],
+      "bennt_s_present": [
+        "bhl",
+        "bunct_s",
+        "bch00_s",
+        "bchcc_s",
+        "bchor_s"
+      ],
+      "keys_present": [
+        "stacked_hh_uid",
+        "draw",
+        "idperson",
+        "idhh",
+        "idhh_true",
+        "idperson_true",
+        "data_year",
+        "year_tag",
+        "ruro_decider",
+        "idorighh"
+      ],
+      "i_intermediate_count": 63,
+      "tu_taxunit_count": 11
+    },
+    "precompute__2016__singles": {
+      "exists": true,
+      "n_cols": 566,
+      "ils_present": [
+        "ils_dispy",
+        "ils_origy",
+        "ils_ben",
+        "ils_pen",
+        "ils_benmt",
+        "ils_bennt",
+        "ils_sicdy",
+        "ils_earns",
+        "ils_bensim"
+      ],
+      "pen_input_present": [
+        "poa00",
+        "pdi00",
+        "psu"
+      ],
+      "benmt_s_present": [
+        "bchyc_s",
+        "bsuwd_s",
+        "bunmt_s",
+        "bchlg_s",
+        "bched_s",
+        "bchba_s",
+        "bsaoa_s",
+        "bdi_s",
+        "bsa00_s",
+        "bhotn_s",
+        "tinrf_s",
+        "bchot_s"
+      ],
+      "bennt_s_present": [
+        "bhl",
+        "bunct_s",
+        "bch00_s",
+        "bchcc_s",
+        "bchor_s"
+      ],
+      "keys_present": [
+        "stacked_hh_uid",
+        "draw",
+        "idperson",
+        "idhh",
+        "data_year",
+        "year_tag",
+        "ruro_decider",
+        "idorighh"
+      ],
+      "i_intermediate_count": 63,
+      "tu_taxunit_count": 11
+    },
+    "priced__2016__couples": {
+      "exists": true,
+      "n_cols": 587,
+      "ils_present": [
+        "ils_dispy",
+        "ils_origy",
+        "ils_ben",
+        "ils_pen",
+        "ils_benmt",
+        "ils_bennt",
+        "ils_sicdy",
+        "ils_earns",
+        "ils_bensim"
+      ],
+      "pen_input_present": [
+        "poa00",
+        "pdi00",
+        "psu"
+      ],
+      "benmt_s_present": [
+        "bchyc_s",
+        "bsuwd_s",
+        "bunmt_s",
+        "bchlg_s",
+        "bched_s",
+        "bchba_s",
+        "bsaoa_s",
+        "bdi_s",
+        "bsa00_s",
+        "bhotn_s",
+        "tinrf_s",
+        "bchot_s"
+      ],
+      "bennt_s_present": [
+        "bhl",
+        "bunct_s",
+        "bch00_s",
+        "bchcc_s",
+        "bchor_s"
+      ],
+      "keys_present": [
+        "stacked_hh_uid",
+        "draw_joint",
+        "idperson",
+        "idhh",
+        "idhh_true",
+        "idperson_true",
+        "data_year",
+        "year_tag",
+        "ruro_decider",
+        "idorighh"
+      ],
+      "i_intermediate_count": 63,
+      "tu_taxunit_count": 11
+    },
+    "precompute__2016__couples": {
+      "exists": true,
+      "n_cols": 584,
+      "ils_present": [
+        "ils_dispy",
+        "ils_origy",
+        "ils_ben",
+        "ils_pen",
+        "ils_benmt",
+        "ils_bennt",
+        "ils_sicdy",
+        "ils_earns",
+        "ils_bensim"
+      ],
+      "pen_input_present": [
+        "poa00",
+        "pdi00",
+        "psu"
+      ],
+      "benmt_s_present": [
+        "bchyc_s",
+        "bsuwd_s",
+        "bunmt_s",
+        "bchlg_s",
+        "bched_s",
+        "bchba_s",
+        "bsaoa_s",
+        "bdi_s",
+        "bsa00_s",
+        "bhotn_s",
+        "tinrf_s",
+        "bchot_s"
+      ],
+      "bennt_s_present": [
+        "bhl",
+        "bunct_s",
+        "bch00_s",
+        "bchcc_s",
+        "bchor_s"
+      ],
+      "keys_present": [
+        "stacked_hh_uid",
+        "draw_joint",
+        "idperson",
+        "idhh",
+        "data_year",
+        "year_tag",
+        "ruro_decider",
+        "idorighh"
+      ],
+      "i_intermediate_count": 63,
+      "tu_taxunit_count": 11
+    },
+    "priced__2017__singles": {
+      "exists": true,
+      "n_cols": 578,
+      "ils_present": [
+        "ils_dispy",
+        "ils_origy",
+        "ils_ben",
+        "ils_pen",
+        "ils_benmt",
+        "ils_bennt",
+        "ils_sicdy",
+        "ils_earns",
+        "ils_bensim"
+      ],
+      "pen_input_present": [
+        "poa00",
+        "pdi00",
+        "psu"
+      ],
+      "benmt_s_present": [
+        "bchyc_s",
+        "bsuwd_s",
+        "bunmt_s",
+        "bchlg_s",
+        "bched_s",
+        "bchba_s",
+        "bsaoa_s",
+        "bdi_s",
+        "bsa00_s",
+        "bhotn_s",
+        "bsawk_s",
+        "bchot_s"
+      ],
+      "bennt_s_present": [
+        "bhl",
+        "bunct_s",
+        "bch00_s",
+        "bchcc_s",
+        "bchor_s"
+      ],
+      "keys_present": [
+        "stacked_hh_uid",
+        "draw",
+        "idperson",
+        "idhh",
+        "idhh_true",
+        "idperson_true",
+        "data_year",
+        "year_tag",
+        "ruro_decider",
+        "idorighh"
+      ],
+      "i_intermediate_count": 69,
+      "tu_taxunit_count": 11
+    },
+    "precompute__2017__singles": {
+      "exists": true,
+      "n_cols": 575,
+      "ils_present": [
+        "ils_dispy",
+        "ils_origy",
+        "ils_ben",
+        "ils_pen",
+        "ils_benmt",
+        "ils_bennt",
+        "ils_sicdy",
+        "ils_earns",
+        "ils_bensim"
+      ],
+      "pen_input_present": [
+        "poa00",
+        "pdi00",
+        "psu"
+      ],
+      "benmt_s_present": [
+        "bchyc_s",
+        "bsuwd_s",
+        "bunmt_s",
+        "bchlg_s",
+        "bched_s",
+        "bchba_s",
+        "bsaoa_s",
+        "bdi_s",
+        "bsa00_s",
+        "bhotn_s",
+        "bsawk_s",
+        "bchot_s"
+      ],
+      "bennt_s_present": [
+        "bhl",
+        "bunct_s",
+        "bch00_s",
+        "bchcc_s",
+        "bchor_s"
+      ],
+      "keys_present": [
+        "stacked_hh_uid",
+        "draw",
+        "idperson",
+        "idhh",
+        "data_year",
+        "year_tag",
+        "ruro_decider",
+        "idorighh"
+      ],
+      "i_intermediate_count": 69,
+      "tu_taxunit_count": 11
+    },
+    "priced__2017__couples": {
+      "exists": true,
+      "n_cols": 596,
+      "ils_present": [
+        "ils_dispy",
+        "ils_origy",
+        "ils_ben",
+        "ils_pen",
+        "ils_benmt",
+        "ils_bennt",
+        "ils_sicdy",
+        "ils_earns",
+        "ils_bensim"
+      ],
+      "pen_input_present": [
+        "poa00",
+        "pdi00",
+        "psu"
+      ],
+      "benmt_s_present": [
+        "bchyc_s",
+        "bsuwd_s",
+        "bunmt_s",
+        "bchlg_s",
+        "bched_s",
+        "bchba_s",
+        "bsaoa_s",
+        "bdi_s",
+        "bsa00_s",
+        "bhotn_s",
+        "bsawk_s",
+        "bchot_s"
+      ],
+      "bennt_s_present": [
+        "bhl",
+        "bunct_s",
+        "bch00_s",
+        "bchcc_s",
+        "bchor_s"
+      ],
+      "keys_present": [
+        "stacked_hh_uid",
+        "draw_joint",
+        "idperson",
+        "idhh",
+        "idhh_true",
+        "idperson_true",
+        "data_year",
+        "year_tag",
+        "ruro_decider",
+        "idorighh"
+      ],
+      "i_intermediate_count": 69,
+      "tu_taxunit_count": 11
+    },
+    "precompute__2017__couples": {
+      "exists": true,
+      "n_cols": 593,
+      "ils_present": [
+        "ils_dispy",
+        "ils_origy",
+        "ils_ben",
+        "ils_pen",
+        "ils_benmt",
+        "ils_bennt",
+        "ils_sicdy",
+        "ils_earns",
+        "ils_bensim"
+      ],
+      "pen_input_present": [
+        "poa00",
+        "pdi00",
+        "psu"
+      ],
+      "benmt_s_present": [
+        "bchyc_s",
+        "bsuwd_s",
+        "bunmt_s",
+        "bchlg_s",
+        "bched_s",
+        "bchba_s",
+        "bsaoa_s",
+        "bdi_s",
+        "bsa00_s",
+        "bhotn_s",
+        "bsawk_s",
+        "bchot_s"
+      ],
+      "bennt_s_present": [
+        "bhl",
+        "bunct_s",
+        "bch00_s",
+        "bchcc_s",
+        "bchor_s"
+      ],
+      "keys_present": [
+        "stacked_hh_uid",
+        "draw_joint",
+        "idperson",
+        "idhh",
+        "data_year",
+        "year_tag",
+        "ruro_decider",
+        "idorighh"
+      ],
+      "i_intermediate_count": 69,
+      "tu_taxunit_count": 11
+    },
+    "engine_ready__singles": {
+      "exists": true,
+      "n_cols": 166,
+      "ils_present": [
+        "ils_origy",
+        "ils_pen",
+        "ils_sicdy",
+        "ils_earns"
+      ],
+      "pen_input_present": [],
+      "benmt_s_present": [],
+      "bennt_s_present": [],
+      "keys_present": [
+        "stacked_hh_uid",
+        "draw",
+        "idperson",
+        "idhh",
+        "data_year",
+        "year_tag",
+        "ruro_decider",
+        "idorighh"
+      ],
+      "i_intermediate_count": 0,
+      "tu_taxunit_count": 0
+    },
+    "engine_ready__couples": {
+      "exists": true,
+      "n_cols": 120,
+      "ils_present": [],
+      "pen_input_present": [],
+      "benmt_s_present": [],
+      "bennt_s_present": [],
+      "keys_present": [
+        "stacked_hh_uid",
+        "draw_joint",
+        "idhh",
+        "data_year",
+        "year_tag",
+        "idorighh"
+      ],
+      "i_intermediate_count": 0,
+      "tu_taxunit_count": 0
+    }
+  },
+  "year_switch": {
+    "2015": {
+      "policy_system_code": "FR_2014",
+      "tinrf_s_present": true,
+      "bsawk_s_present": false,
+      "bsawk_input_present": true
+    },
+    "2016": {
+      "policy_system_code": "FR_2015",
+      "tinrf_s_present": true,
+      "bsawk_s_present": false,
+      "bsawk_input_present": true
+    },
+    "2017": {
+      "policy_system_code": "FR_2016",
+      "tinrf_s_present": false,
+      "bsawk_s_present": true,
+      "bsawk_input_present": true
+    }
+  },
+  "node_dependence": {
+    "reference_cell": "2016__singles",
+    "failing_households": [
+      200001495800,
+      200001496401,
+      200001502500,
+      200001504300
+    ],
+    "sim_benefits_varying_across_draws": {
+      "200001495800": [
+        "bched_s",
+        "bhotn_s",
+        "tinrf_s",
+        "bchot_s",
+        "bch00_s"
+      ],
+      "200001496401": [],
+      "200001502500": [
+        "bched_s",
+        "bhotn_s",
+        "tinrf_s",
+        "bchot_s",
+        "bch00_s"
+      ],
+      "200001504300": []
+    },
+    "note": "nonzero node-varying sim benefits for the failing HH are housing (bhotn_s), PPE refund (tinrf_s), child (bch00_s), education (bched_s), other family (bchot_s) -> NODE-DEPENDENT simulated outputs."
+  },
+  "reconstructibility": {
+    "ils_ben_eq_pen_plus_benmt_plus_bennt": {
+      "max_abs_gap": 724.3314336376666,
+      "n_rows_with_gap": 259,
+      "n_rows": 808,
+      "verdict": "ils_ben does NOT reconstruct from stored standardized subtotals (subtotals out of sync with the headline benefit)."
+    },
+    "dispy_identity_holds": 4.547473508864641e-13,
+    "i_bho_intermediates_stored": [
+      "i_bho_l_lt",
+      "i_bho_c",
+      "i_bho_l",
+      "i_bho_tf",
+      "i_bho_rentbase",
+      "i_bho_p0",
+      "i_bho_tp",
+      "i_bho_rl",
+      "i_bho_rate",
+      "i_bho_minrate",
+      "i_bho_r0",
+      "i_bho_pp"
+    ],
+    "note": "the housing-benefit intermediate state (i_bho_*) IS stored, but it was computed for the STORED draw's income and is itself node-dependent; it is not invariant household state reusable for a redrawn node."
+  }
+}

@@ -145,6 +145,26 @@ welfare:
           hh_uid: 200001483000                          # 2 adults (41,55) + 2 kids (4,7); Two-D ils_origy failure; TUDef partner ambiguity
           n_nodes: 6
 
+    # Stage-Two-F couples collision-exposure AUDIT. Quantifies how much of the stored
+    # couples baseline is collision-exposed (block (data_year, stacked_hh_uid,
+    # draw_joint) with >1 distinct (draw_male, draw_female)), screens likelihood
+    # relevance at theta_hat (no re-estimation), and runs a bounded clean-reprice
+    # magnitude check (Task 3, EUROMOD on existing nodes only). Audit-only; writes no
+    # parquet; prices no redrawn node; computes no V_i^dir.
+    couples_contamination_audit:
+      # likelihood-relevance probability-mass thresholds (share of households whose
+      # collision-exposed model probability mass at theta_hat exceeds each)
+      prob_mass_thresholds: [1.0e-6, 1.0e-4, 1.0e-3, 1.0e-2]
+      # Task 3 bounded clean-reprice sample (existing nodes only)
+      reprice_sample:
+        tol: 1.0e-6
+        n_hh_per_stratum: 8                              # deterministic, first-by-uid within stratum
+        max_exposed_nodes_per_hh: 4                      # bound EUROMOD work per HH
+        n_singleton_controls: 8                          # singleton-draw_joint control nodes (should pass clean)
+        years: [2015, 2016, 2017]
+        components: ["ils_origy", "ils_ben", "ils_tax", "ils_sicdy"]
+        country_override: null
+
   output:
     dir: "outputs/welfare/stage1_w3"
     provenance: "write_resolved_config_and_draw_scheme"

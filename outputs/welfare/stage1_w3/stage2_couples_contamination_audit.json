@@ -1,0 +1,141 @@
+{
+  "increment": "stage2_couples_contamination_audit_v1",
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "re_estimated": false,
+  "priced_any_node": false,
+  "computed_v_dir": false,
+  "wrote_parquet": false,
+  "collision_definition": {
+    "full_node_key": [
+      "data_year",
+      "stacked_hh_uid",
+      "draw_joint",
+      "draw_male",
+      "draw_female"
+    ],
+    "collision_block_key": [
+      "data_year",
+      "stacked_hh_uid",
+      "draw_joint"
+    ],
+    "rule": "a (data_year, stacked_hh_uid, draw_joint) block is a collision block iff it contains >1 distinct (draw_male, draw_female) pair; every alternative in such a block is collision-exposed.",
+    "build_provenance": "build_bpool_precompute.py gate G2: 'draw_joint=0 intentionally shared by chosen+first sim cell' \u2014 the collision is a known build convention."
+  },
+  "engine_ready_couples_path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\fr_p3a_bpool_engine_ready__couples.parquet",
+  "task1_prevalence": {
+    "by_year": {
+      "2015": {
+        "n_households": 2566,
+        "n_alternatives": 2311966,
+        "n_alternatives_exposed": 5132,
+        "share_alternatives_exposed": 0.0022197558268590455,
+        "n_collision_blocks": 2566,
+        "n_blocks_total": 2309400,
+        "n_households_with_collision": 2566,
+        "share_households_with_collision": 1.0,
+        "n_chosen_alternatives": 2566,
+        "n_chosen_exposed": 2566,
+        "share_chosen_exposed": 1.0,
+        "node_000_exposed_households": 2566,
+        "alts_per_draw_joint_block_distribution": {
+          "1": 2306834,
+          "2": 2566
+        }
+      },
+      "2016": {
+        "n_households": 2577,
+        "n_alternatives": 2321877,
+        "n_alternatives_exposed": 5154,
+        "share_alternatives_exposed": 0.0022197558268590455,
+        "n_collision_blocks": 2577,
+        "n_blocks_total": 2319300,
+        "n_households_with_collision": 2577,
+        "share_households_with_collision": 1.0,
+        "n_chosen_alternatives": 2577,
+        "n_chosen_exposed": 2577,
+        "share_chosen_exposed": 1.0,
+        "node_000_exposed_households": 2577,
+        "alts_per_draw_joint_block_distribution": {
+          "1": 2316723,
+          "2": 2577
+        }
+      },
+      "2017": {
+        "n_households": 2295,
+        "n_alternatives": 2067795,
+        "n_alternatives_exposed": 4590,
+        "share_alternatives_exposed": 0.0022197558268590455,
+        "n_collision_blocks": 2295,
+        "n_blocks_total": 2065500,
+        "n_households_with_collision": 2295,
+        "share_households_with_collision": 1.0,
+        "n_chosen_alternatives": 2295,
+        "n_chosen_exposed": 2295,
+        "share_chosen_exposed": 1.0,
+        "node_000_exposed_households": 2295,
+        "alts_per_draw_joint_block_distribution": {
+          "1": 2063205,
+          "2": 2295
+        }
+      }
+    },
+    "pooled": {
+      "n_households": 7438,
+      "n_alternatives": 6701638,
+      "n_alternatives_exposed": 14876,
+      "share_alternatives_exposed": 0.0022197558268590455,
+      "n_collision_blocks": 7438,
+      "n_blocks_total": 6694200,
+      "n_households_with_collision": 7438,
+      "share_households_with_collision": 1.0,
+      "n_chosen_alternatives": 7438,
+      "n_chosen_exposed": 7438,
+      "share_chosen_exposed": 1.0,
+      "node_000_exposed_households": 7438,
+      "alts_per_draw_joint_block_distribution": {
+        "1": 6686762,
+        "2": 7438
+      }
+    }
+  },
+  "task2_likelihood_relevance": {
+    "status": "ok",
+    "alignment_max_abs": 0.0,
+    "n_households": 7438,
+    "n_alts_per_hh": 901,
+    "exposed_mass": {
+      "mean": 0.0010450022363080783,
+      "median": 0.00015906972943257553,
+      "max": 0.12858711607580103,
+      "quantiles": {
+        "0.0": 1.5390333227840763e-08,
+        "0.5": 0.00015906972943257553,
+        "0.9": 0.0018480109633924784,
+        "0.99": 0.015708309015609444,
+        "0.999": 0.05378683441689167,
+        "1.0": 0.12858711607580103
+      }
+    },
+    "share_hh_above_threshold": {
+      "1e-06": 0.9979833288518419,
+      "0.0001": 0.5965313256251681,
+      "0.001": 0.17101371336380747,
+      "0.01": 0.018150040333422962
+    },
+    "n_hh_above_threshold": {
+      "1e-06": 7423,
+      "0.0001": 4437,
+      "0.001": 1272,
+      "0.01": 135
+    },
+    "chosen_alt_exposed": {
+      "n_households_with_chosen": 7438,
+      "n_chosen_exposed": 7438,
+      "share_chosen_exposed": 1.0
+    }
+  },
+  "scope_statement": "Audit-only. No W^3 welfare finding produced; no measure beyond W^3 touched; nothing re-estimated; no node priced; no V_i^dir computed; no storage/precompute/priced/chunk/engine-ready parquet written. Collision-exposed = potentially contaminated until a clean reprice (Task 3) confirms a nonzero stored-vs-clean difference."
+}

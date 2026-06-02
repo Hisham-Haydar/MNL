@@ -1,0 +1,758 @@
+{
+  "increment": "stage2_assessment_unit_diagnosis_v1",
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "no_production_pricing": true,
+  "diagnostic_only": true,
+  "node_key_correction": "Couples node key is (stacked_hh_uid, draw_joint, draw_male, draw_female); draw_joint ALONE (as Two-D used) packs multiple stacked alternatives with colliding idperson. Singles node key is (stacked_hh_uid, draw), already a clean roster.",
+  "year": 2016,
+  "tol": 1e-06,
+  "components": [
+    "ils_origy",
+    "ils_ben",
+    "ils_tax",
+    "ils_sicdy"
+  ],
+  "cases": {
+    "singles_benefit_recipient": {
+      "mode": "singles",
+      "hh_uid": 200001495800,
+      "year": 2016,
+      "system_code": "FR_2015",
+      "country": "FR",
+      "node_key": [
+        "stacked_hh_uid",
+        "draw"
+      ],
+      "n_nodes_requested": 6,
+      "n_nodes_selected": 6,
+      "first_node": {
+        "stacked_hh_uid": 200001495800,
+        "draw": 0
+      },
+      "roster_size_first_node": 3,
+      "distinct_idperson_first_node": 3,
+      "rung1": {
+        "status": "PASS",
+        "stamping": "none",
+        "n_decider_matched": 1,
+        "components": {
+          "ils_dispy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_tax": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "joint_dispy": null,
+        "tudef": {
+          "n_warning_lines": 0,
+          "distinct_units": [],
+          "sample": []
+        },
+        "localised_to": "ils_origy"
+      },
+      "rung2": {
+        "status": "PASS",
+        "stamping": "none_separate_calls",
+        "per_node": [
+          {
+            "node": {
+              "stacked_hh_uid": 200001495800,
+              "draw": 0
+            },
+            "status": "PASS",
+            "n_decider_matched": 1,
+            "components": {
+              "ils_dispy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_origy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_ben": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_tax": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_sicdy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              }
+            },
+            "joint_dispy": null,
+            "tudef": {
+              "n_warning_lines": 0,
+              "distinct_units": [],
+              "sample": []
+            },
+            "localised_to": "ils_origy"
+          },
+          {
+            "node": {
+              "stacked_hh_uid": 200001495800,
+              "draw": 1
+            },
+            "status": "PASS",
+            "n_decider_matched": 1,
+            "components": {
+              "ils_dispy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_origy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_ben": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_tax": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_sicdy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              }
+            },
+            "joint_dispy": null,
+            "tudef": {
+              "n_warning_lines": 0,
+              "distinct_units": [],
+              "sample": []
+            },
+            "localised_to": "ils_origy"
+          },
+          {
+            "node": {
+              "stacked_hh_uid": 200001495800,
+              "draw": 2
+            },
+            "status": "PASS",
+            "n_decider_matched": 1,
+            "components": {
+              "ils_dispy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_origy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_ben": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_tax": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_sicdy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              }
+            },
+            "joint_dispy": null,
+            "tudef": {
+              "n_warning_lines": 0,
+              "distinct_units": [],
+              "sample": []
+            },
+            "localised_to": "ils_origy"
+          },
+          {
+            "node": {
+              "stacked_hh_uid": 200001495800,
+              "draw": 3
+            },
+            "status": "PASS",
+            "n_decider_matched": 1,
+            "components": {
+              "ils_dispy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_origy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_ben": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_tax": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_sicdy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              }
+            },
+            "joint_dispy": null,
+            "tudef": {
+              "n_warning_lines": 0,
+              "distinct_units": [],
+              "sample": []
+            },
+            "localised_to": "ils_origy"
+          },
+          {
+            "node": {
+              "stacked_hh_uid": 200001495800,
+              "draw": 4
+            },
+            "status": "PASS",
+            "n_decider_matched": 1,
+            "components": {
+              "ils_dispy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_origy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_ben": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_tax": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_sicdy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              }
+            },
+            "joint_dispy": null,
+            "tudef": {
+              "n_warning_lines": 0,
+              "distinct_units": [],
+              "sample": []
+            },
+            "localised_to": "ils_origy"
+          },
+          {
+            "node": {
+              "stacked_hh_uid": 200001495800,
+              "draw": 5
+            },
+            "status": "PASS",
+            "n_decider_matched": 1,
+            "components": {
+              "ils_dispy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_origy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_ben": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_tax": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_sicdy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              }
+            },
+            "joint_dispy": null,
+            "tudef": {
+              "n_warning_lines": 0,
+              "distinct_units": [],
+              "sample": []
+            },
+            "localised_to": "ils_origy"
+          }
+        ],
+        "first_component_to_diverge": null
+      },
+      "rung3": {
+        "status": "PASS",
+        "stamping": "production_stamp_draw_ids_batched",
+        "n_decider_matched": 6,
+        "components": {
+          "ils_dispy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_tax": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "joint_dispy": null,
+        "tudef": {
+          "n_warning_lines": 0,
+          "distinct_units": [],
+          "sample": []
+        },
+        "localised_to": "ils_origy"
+      },
+      "case_verdict": "all_clean_pass: existing-node state is sufficient; even the production stamped batch reproduces parity for this case.",
+      "sources": {
+        "precompute_long": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\fr_p3a_bpool_precompute__2016__singles__long.parquet",
+        "priced_long": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\fr_p3a_bpool_priced__2016__singles.parquet"
+      },
+      "rung4": {
+        "status": "SKIPPED",
+        "reason": "only run when Rung1&2 PASS and Rung3 FAIL; observed r1=PASS r2=PASS r3=PASS"
+      },
+      "stamping_collision_evidence": {
+        "node_key": [
+          "stacked_hh_uid",
+          "draw"
+        ],
+        "stamp_on": "draw",
+        "id_mult": 1000,
+        "n_distinct_nodes_selected": 6,
+        "n_distinct_stamped_first_decider_ids": 6,
+        "stamping_collision_present": false,
+        "n_colliding_nodes": 0
+      }
+    },
+    "couples_partner_structure": {
+      "mode": "couples",
+      "hh_uid": 200001483000,
+      "year": 2016,
+      "system_code": "FR_2015",
+      "country": "FR",
+      "node_key": [
+        "stacked_hh_uid",
+        "draw_joint",
+        "draw_male",
+        "draw_female"
+      ],
+      "n_nodes_requested": 6,
+      "n_nodes_selected": 6,
+      "first_node": {
+        "stacked_hh_uid": 200001483000,
+        "draw_joint": 0,
+        "draw_male": 0,
+        "draw_female": 0
+      },
+      "roster_size_first_node": 4,
+      "distinct_idperson_first_node": 4,
+      "rung1": {
+        "status": "FAIL",
+        "stamping": "none",
+        "n_decider_matched": 2,
+        "components": {
+          "ils_dispy": {
+            "n_above_tol": 2,
+            "max_abs": 331.41460000000006
+          },
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 1,
+            "max_abs": 333.08
+          },
+          "ils_tax": {
+            "n_above_tol": 2,
+            "max_abs": 197.8811588280861
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "joint_dispy": {
+          "n_nodes": 1,
+          "max_abs": 133.5334411719141,
+          "n_above_tol": 1
+        },
+        "tudef": {
+          "n_warning_lines": 0,
+          "distinct_units": [],
+          "sample": []
+        },
+        "localised_to": "ils_ben"
+      },
+      "rung2": {
+        "status": "FAIL",
+        "stamping": "none_separate_calls",
+        "per_node": [
+          {
+            "node": {
+              "stacked_hh_uid": 200001483000,
+              "draw_joint": 0,
+              "draw_male": 0,
+              "draw_female": 0
+            },
+            "status": "FAIL",
+            "n_decider_matched": 2,
+            "components": {
+              "ils_dispy": {
+                "n_above_tol": 2,
+                "max_abs": 331.41460000000006
+              },
+              "ils_origy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_ben": {
+                "n_above_tol": 1,
+                "max_abs": 333.08
+              },
+              "ils_tax": {
+                "n_above_tol": 2,
+                "max_abs": 197.8811588280861
+              },
+              "ils_sicdy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              }
+            },
+            "joint_dispy": {
+              "n_nodes": 1,
+              "max_abs": 133.5334411719141,
+              "n_above_tol": 1
+            },
+            "tudef": {
+              "n_warning_lines": 0,
+              "distinct_units": [],
+              "sample": []
+            },
+            "localised_to": "ils_ben"
+          },
+          {
+            "node": {
+              "stacked_hh_uid": 200001483000,
+              "draw_joint": 0,
+              "draw_male": 1,
+              "draw_female": 1
+            },
+            "status": "FAIL",
+            "n_decider_matched": 2,
+            "components": {
+              "ils_dispy": {
+                "n_above_tol": 2,
+                "max_abs": 262.0496052290341
+              },
+              "ils_origy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_ben": {
+                "n_above_tol": 2,
+                "max_abs": 169.19
+              },
+              "ils_tax": {
+                "n_above_tol": 2,
+                "max_abs": 92.85960522903389
+              },
+              "ils_sicdy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              }
+            },
+            "joint_dispy": {
+              "n_nodes": 1,
+              "max_abs": 132.6996052290342,
+              "n_above_tol": 1
+            },
+            "tudef": {
+              "n_warning_lines": 0,
+              "distinct_units": [],
+              "sample": []
+            },
+            "localised_to": "ils_ben"
+          },
+          {
+            "node": {
+              "stacked_hh_uid": 200001483000,
+              "draw_joint": 1,
+              "draw_male": 1,
+              "draw_female": 2
+            },
+            "status": "PASS",
+            "n_decider_matched": 2,
+            "components": {
+              "ils_dispy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_origy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_ben": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_tax": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_sicdy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              }
+            },
+            "joint_dispy": {
+              "n_nodes": 1,
+              "max_abs": 0.0,
+              "n_above_tol": 0
+            },
+            "tudef": {
+              "n_warning_lines": 0,
+              "distinct_units": [],
+              "sample": []
+            },
+            "localised_to": "ils_origy"
+          },
+          {
+            "node": {
+              "stacked_hh_uid": 200001483000,
+              "draw_joint": 2,
+              "draw_male": 1,
+              "draw_female": 3
+            },
+            "status": "PASS",
+            "n_decider_matched": 2,
+            "components": {
+              "ils_dispy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_origy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_ben": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_tax": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_sicdy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              }
+            },
+            "joint_dispy": {
+              "n_nodes": 1,
+              "max_abs": 0.0,
+              "n_above_tol": 0
+            },
+            "tudef": {
+              "n_warning_lines": 0,
+              "distinct_units": [],
+              "sample": []
+            },
+            "localised_to": "ils_origy"
+          },
+          {
+            "node": {
+              "stacked_hh_uid": 200001483000,
+              "draw_joint": 3,
+              "draw_male": 1,
+              "draw_female": 4
+            },
+            "status": "PASS",
+            "n_decider_matched": 2,
+            "components": {
+              "ils_dispy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_origy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_ben": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_tax": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_sicdy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              }
+            },
+            "joint_dispy": {
+              "n_nodes": 1,
+              "max_abs": 0.0,
+              "n_above_tol": 0
+            },
+            "tudef": {
+              "n_warning_lines": 0,
+              "distinct_units": [],
+              "sample": []
+            },
+            "localised_to": "ils_origy"
+          },
+          {
+            "node": {
+              "stacked_hh_uid": 200001483000,
+              "draw_joint": 4,
+              "draw_male": 1,
+              "draw_female": 5
+            },
+            "status": "PASS",
+            "n_decider_matched": 2,
+            "components": {
+              "ils_dispy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_origy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_ben": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_tax": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              },
+              "ils_sicdy": {
+                "n_above_tol": 0,
+                "max_abs": 0.0
+              }
+            },
+            "joint_dispy": {
+              "n_nodes": 1,
+              "max_abs": 0.0,
+              "n_above_tol": 0
+            },
+            "tudef": {
+              "n_warning_lines": 0,
+              "distinct_units": [],
+              "sample": []
+            },
+            "localised_to": "ils_origy"
+          }
+        ],
+        "first_component_to_diverge": "ils_ben"
+      },
+      "rung3": {
+        "status": "PASS",
+        "stamping": "production_stamp_draw_ids_batched",
+        "n_decider_matched": 12,
+        "components": {
+          "ils_dispy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_tax": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "joint_dispy": {
+          "n_nodes": 6,
+          "max_abs": 0.0,
+          "n_above_tol": 0
+        },
+        "tudef": {
+          "n_warning_lines": 8,
+          "distinct_units": [
+            "tu_bch_extra_fr",
+            "tu_bch_fr",
+            "tu_bchlg_fr",
+            "tu_bho_fr",
+            "tu_bsa00_fr",
+            "tu_bunmt_couple",
+            "tu_fiscalunit_fr",
+            "tu_household_fr"
+          ],
+          "sample": [
+            "Warning: 9.7 TUDef_fr/DefTu (6D57C30E-2ABC-4143-AFE1-CE869747406F): more than one possible partner found for assessment unit 'tu_bsa00_fr', idperson: '1483000020000'",
+            "Warning: 9.4 TUDef_fr/DefTu (BE0C334C-96DB-4C2B-8DB2-8212A051A708): more than one possible partner found for assessment unit 'tu_bch_fr', idperson: '1483000020000'",
+            "Warning: 9.2 TUDef_fr/DefTu (DF20B728-D74B-4351-8634-E0AC42A47E19): more than one possible partner found for assessment unit 'tu_household_fr', idperson: '1483000020000'"
+          ]
+        },
+        "localised_to": "ils_origy"
+      },
+      "case_verdict": "clean_household_failure: a single clean household-draw with original IDs and zero TUDef warnings STILL fails parity -> not merely a multi-draw stamping artefact for this case.",
+      "sources": {
+        "precompute_long": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\fr_p3a_bpool_precompute__2016__couples__long.parquet",
+        "priced_long": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\fr_p3a_bpool_priced__2016__couples.parquet"
+      },
+      "rung4": {
+        "status": "SKIPPED",
+        "reason": "only run when Rung1&2 PASS and Rung3 FAIL; observed r1=FAIL r2=FAIL r3=PASS"
+      },
+      "stamping_collision_evidence": {
+        "node_key": [
+          "stacked_hh_uid",
+          "draw_joint",
+          "draw_male",
+          "draw_female"
+        ],
+        "stamp_on": "draw_joint",
+        "id_mult": 10000,
+        "n_distinct_nodes_selected": 6,
+        "n_distinct_stamped_first_decider_ids": 5,
+        "stamping_collision_present": true,
+        "n_colliding_nodes": 1
+      }
+    }
+  },
+  "scope_statement": "No W^3 welfare finding is produced and no measure beyond W^3 is touched. EUROMOD was run only on tiny EXISTING-node diagnostic subsets; NO PRODUCTION/REDRAWN node was priced, no V_i^dir computed, no 2x/4x growth run, no storage/precompute/priced/chunk parquet written. Any rung PASS does NOT unblock production: redrawn-node pricing still requires a separately authorised per-node EUROMOD path and a parity-passing batching/keying scheme."
+}

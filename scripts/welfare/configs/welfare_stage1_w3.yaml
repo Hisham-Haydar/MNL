@@ -124,6 +124,26 @@ welfare:
         singles_female_hh: 2764
         couples_flagged_hh: 1285
         nodes_per_hh: [100, 300, 900]
+    # Stage-Two-E assessment-unit / ID-stamping DIAGNOSTIC: isolates whether Two-D's
+    # existing-node parity failure is a stamping / batched-presentation artefact vs a
+    # clean-household failure. Runs a Rung 1-3 ladder (optional Rung 4) on two
+    # deterministic existing-node cases. Diagnostic only; prices no node; writes no
+    # parquet. Cases chosen from Two-D failing cells (singles ils_ben; couples
+    # ils_origy + TUDef-relevant partner structure).
+    assessment_unit_diag:
+      year: 2016                                        # cross-section the diagnostic uses
+      tol: 1.0e-6
+      components: ["ils_origy", "ils_ben", "ils_tax", "ils_sicdy"]
+      country_override: null                            # else derived from system code
+      cases:
+        singles_benefit_recipient:
+          mode: "singles"
+          hh_uid: 200001495800                          # 3-person roster (decider 51 + kids 11,18); ils_ben 392-1351 across draws
+          n_nodes: 6                                    # bounded existing draws for Rungs 2-3
+        couples_partner_structure:
+          mode: "couples"
+          hh_uid: 200001483000                          # 2 adults (41,55) + 2 kids (4,7); Two-D ils_origy failure; TUDef partner ambiguity
+          n_nodes: 6
 
   output:
     dir: "outputs/welfare/stage1_w3"

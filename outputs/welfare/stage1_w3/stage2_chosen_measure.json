@@ -1,0 +1,128 @@
+{
+  "increment": "stage2_couples_chosen_contamination_v1__task4_5",
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "re_estimated": false,
+  "priced_any_redrawn_node": false,
+  "computed_v_dir": false,
+  "wrote_parquet": false,
+  "chosen_node": {
+    "draw_joint": 0,
+    "draw_male": 0,
+    "draw_female": 0
+  },
+  "n_hh_per_year": 300,
+  "euromod_console_log": "outputs\\welfare\\stage1_w3\\stage2_chosen_measure_euromod_console.log",
+  "task4_chosen_contamination": {
+    "n_sampled_hh": 900,
+    "n_fail_clean_reprice": 685,
+    "share_fail_clean_reprice": 0.7611111111111111,
+    "income_contrib_machine_zero": {
+      "ils_origy_max_over_sample": 0.0,
+      "ils_sicdy_max_over_sample": 0.0
+    },
+    "joint_dispy_abs_diff_distribution": {
+      "n": 900,
+      "mean": 307.2154210716449,
+      "median": 195.97913686565244,
+      "max": 1526.383649831092,
+      "quantiles": {
+        "0.0": 0.0,
+        "0.5": 195.97913686565244,
+        "0.9": 806.7875384440822,
+        "0.99": 1136.388614999759,
+        "1.0": 1526.383649831092
+      }
+    },
+    "ils_ben_abs_diff_distribution": {
+      "n": 900,
+      "mean": 213.09509120728123,
+      "median": 130.12,
+      "max": 1148.675,
+      "quantiles": {
+        "0.0": 0.0,
+        "0.5": 130.12,
+        "0.9": 504.3640000000003,
+        "0.99": 825.5112,
+        "1.0": 1148.675
+      }
+    },
+    "share_above_material_thresholds_joint_dispy": {
+      "1.0": 0.7611111111111111,
+      "10.0": 0.7566666666666667,
+      "50.0": 0.7233333333333334,
+      "100.0": 0.6722222222222223,
+      "250.0": 0.4411111111111111
+    },
+    "n_above_material_thresholds_joint_dispy": {
+      "1.0": 685,
+      "10.0": 681,
+      "50.0": 651,
+      "100.0": 605,
+      "250.0": 397
+    },
+    "component_localisation_counts": {
+      "ils_ben": 528,
+      "ils_tax": 157
+    },
+    "material_thresholds_eur_per_month": [
+      1.0,
+      10.0,
+      50.0,
+      100.0,
+      250.0
+    ],
+    "tudef_max_over_sample": 0
+  },
+  "task5_influence_screen": {
+    "status": "ok",
+    "n_households_screened": 900,
+    "c_scale": 3936.008863193136,
+    "dV_chosen": {
+      "n": 900,
+      "median": 0.047573121448305944,
+      "mean": 0.06816391199878566,
+      "max": 1.246275059643394,
+      "quantiles": {
+        "0.5": 0.047573121448305944,
+        "0.9": 0.15331850802427213,
+        "0.99": 0.2656576395344862,
+        "1.0": 1.246275059643394
+      }
+    },
+    "dP_chosen": {
+      "n": 900,
+      "median": 1.7684865969825836e-12,
+      "mean": 1.4713822305214497e-08,
+      "max": 8.430521492924982e-06,
+      "quantiles": {
+        "0.5": 1.7684865969825836e-12,
+        "0.9": 5.174798220240263e-11,
+        "0.99": 4.862696669376665e-09,
+        "1.0": 8.430521492924982e-06
+      }
+    },
+    "d_ll_i": {
+      "n": 900,
+      "median": 0.04757312144674053,
+      "mean": 0.06816389728480125,
+      "max": 1.246273017940858,
+      "quantiles": {
+        "0.5": 0.04757312144674053,
+        "0.9": 0.15331850796109733,
+        "0.99": 0.2656576374286036,
+        "1.0": 1.246273017940858
+      }
+    },
+    "stored_P_chosen": {
+      "median": 8.013480412253972e-11,
+      "mean": 2.1530852570129815e-08,
+      "min": 8.816893741886224e-19,
+      "max": 1.0276605805101836e-05
+    },
+    "note": "first-order screen: only the chosen alt's consumption is replaced by its clean reprice; all other alternatives held fixed; theta_hat unchanged. NOT a re-estimation; NOT proof of parameter movement."
+  },
+  "scope_statement": "Audit-only. EUROMOD on existing chosen-node clean reprices only; no redrawn node priced, nothing re-estimated, no V_i^dir computed, no parquet written. Task 5 is a first-order screen, NOT a re-estimated likelihood and NOT proof of theta_hat movement."
+}

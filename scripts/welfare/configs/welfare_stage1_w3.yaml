@@ -164,6 +164,20 @@ welfare:
         years: [2015, 2016, 2017]
         components: ["ils_origy", "ils_ben", "ils_tax", "ils_sicdy"]
         country_override: null
+      # Stage-Two-G Task 1 singleton reconciliation. The deterministic diagnostic CASES
+      # (which household/year/node) are NOT hardcoded in source: they are DERIVED from
+      # prior provenance JSONs (Two-E assessment-unit diag PASS singleton + Two-F reprice
+      # singleton_control FAILs). Only the provenance paths, the Two-E case key, and the
+      # structural production draw-band live here.
+      task1_singleton_reconcile:
+        # provenance sources the cases are read from (relative to repo root)
+        two_e_diag_json: "outputs/welfare/stage1_w3/stage2_assessment_unit_diag.json"
+        two_f_reprice_json: "outputs/welfare/stage1_w3/stage2_couples_reprice.json"
+        two_e_case_key: "couples_partner_structure"      # which Two-E case carries the couples singleton ladder
+        two_f_fail_stratum: "singleton_control"          # which Two-F stratum's FAILs to diagnose
+        # production chunk-0 draw_joint band [lo, hi): the EUROMOD batch granularity the
+        # build prices in (read from chunk meta; structural, not a diagnostic constant).
+        production_chunk_band: [0, 150]
 
   output:
     dir: "outputs/welfare/stage1_w3"

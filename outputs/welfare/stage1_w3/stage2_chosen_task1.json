@@ -1,0 +1,306 @@
+{
+  "increment": "stage2_couples_chosen_contamination_v1__task1",
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "re_estimated": false,
+  "priced_any_redrawn_node": false,
+  "computed_v_dir": false,
+  "wrote_parquet": false,
+  "cases_source": {
+    "two_e_diag_json": "outputs/welfare/stage1_w3/stage2_assessment_unit_diag.json",
+    "two_f_reprice_json": "outputs/welfare/stage1_w3/stage2_couples_reprice.json",
+    "two_e_case_key": "couples_partner_structure",
+    "two_f_fail_stratum": "singleton_control",
+    "note": "diagnostic cases derived from prior provenance, not hardcoded"
+  },
+  "production_chunk_band": {
+    "chunk_draw_joint_band": [
+      0,
+      150
+    ],
+    "note": "from config (verified from chunk meta): the build prices this draw_joint band across ALL households in ONE EUROMOD batch, so draw_joint=0's collision pair shares the batch with later draw_joint values."
+  },
+  "two_e_pass_node": {
+    "draw_joint": 1,
+    "draw_male": 1,
+    "draw_female": 2
+  },
+  "euromod_console_log": "outputs\\welfare\\stage1_w3\\stage2_chosen_task1_euromod_console.log",
+  "diagnoses": [
+    {
+      "hh": 200001483000,
+      "year": 2016,
+      "node": {
+        "stacked_hh_uid": 200001483000,
+        "draw_joint": 1,
+        "draw_male": 1,
+        "draw_female": 2
+      },
+      "isolated_status": "PASS",
+      "isolated_tudef": 0,
+      "isolated_components": {
+        "ils_dispy": {
+          "n_above_tol": 0,
+          "max_abs": 0.0
+        },
+        "ils_origy": {
+          "n_above_tol": 0,
+          "max_abs": 0.0
+        },
+        "ils_ben": {
+          "n_above_tol": 0,
+          "max_abs": 0.0
+        },
+        "ils_tax": {
+          "n_above_tol": 0,
+          "max_abs": 0.0
+        },
+        "ils_sicdy": {
+          "n_above_tol": 0,
+          "max_abs": 0.0
+        }
+      },
+      "production_band_tudef": 8,
+      "collisionfree_band_tudef": 0,
+      "band": [
+        0,
+        150
+      ],
+      "band_n_draw_joint": 150,
+      "household_has_dj0_collision": true,
+      "dj0_distinct_alts": 2,
+      "deciders": [
+        {
+          "idperson_true": 148300001,
+          "component": "ils_ben",
+          "stored": 0.0,
+          "isolated_clean": 0.0,
+          "production_batch": 0.0,
+          "collisionfree_batch": 0.0,
+          "prod_reproduces_stored": true,
+          "clean_eq_collisionfree": true,
+          "clean_eq_stored": true
+        },
+        {
+          "idperson_true": 148300002,
+          "component": "ils_ben",
+          "stored": 130.0,
+          "isolated_clean": 130.0,
+          "production_batch": 130.0,
+          "collisionfree_batch": 130.0,
+          "prod_reproduces_stored": true,
+          "clean_eq_collisionfree": true,
+          "clean_eq_stored": true
+        }
+      ],
+      "label": "two_e_pass"
+    },
+    {
+      "hh": 200001487600,
+      "year": 2016,
+      "node": {
+        "stacked_hh_uid": 200001487600,
+        "draw_joint": 1,
+        "draw_male": 1,
+        "draw_female": 2
+      },
+      "isolated_status": "FAIL",
+      "isolated_tudef": 0,
+      "isolated_components": {
+        "ils_dispy": {
+          "n_above_tol": 1,
+          "max_abs": 92.30614999999989
+        },
+        "ils_origy": {
+          "n_above_tol": 0,
+          "max_abs": 0.0
+        },
+        "ils_ben": {
+          "n_above_tol": 1,
+          "max_abs": 92.77
+        },
+        "ils_tax": {
+          "n_above_tol": 1,
+          "max_abs": 0.46385000000000787
+        },
+        "ils_sicdy": {
+          "n_above_tol": 0,
+          "max_abs": 0.0
+        }
+      },
+      "production_band_tudef": 8,
+      "collisionfree_band_tudef": 0,
+      "band": [
+        0,
+        150
+      ],
+      "band_n_draw_joint": 150,
+      "household_has_dj0_collision": true,
+      "dj0_distinct_alts": 2,
+      "deciders": [
+        {
+          "idperson_true": 148760001,
+          "component": "ils_ben",
+          "stored": 362.83333,
+          "isolated_clean": 362.83333,
+          "production_batch": 362.83333,
+          "collisionfree_batch": 362.83333,
+          "prod_reproduces_stored": true,
+          "clean_eq_collisionfree": true,
+          "clean_eq_stored": true
+        },
+        {
+          "idperson_true": 148760002,
+          "component": "ils_ben",
+          "stored": 92.77,
+          "isolated_clean": 0.0,
+          "production_batch": 0.0,
+          "collisionfree_batch": 0.0,
+          "prod_reproduces_stored": false,
+          "clean_eq_collisionfree": true,
+          "clean_eq_stored": false
+        }
+      ],
+      "label": "two_f_fail"
+    },
+    {
+      "hh": 300001801900,
+      "year": 2017,
+      "node": {
+        "stacked_hh_uid": 300001801900,
+        "draw_joint": 1,
+        "draw_male": 1,
+        "draw_female": 2
+      },
+      "isolated_status": "FAIL",
+      "isolated_tudef": 0,
+      "isolated_components": {
+        "ils_dispy": {
+          "n_above_tol": 1,
+          "max_abs": 260.9296291666665
+        },
+        "ils_origy": {
+          "n_above_tol": 0,
+          "max_abs": 0.0
+        },
+        "ils_ben": {
+          "n_above_tol": 1,
+          "max_abs": 262.2408333333333
+        },
+        "ils_tax": {
+          "n_above_tol": 1,
+          "max_abs": 1.3112041666666983
+        },
+        "ils_sicdy": {
+          "n_above_tol": 0,
+          "max_abs": 0.0
+        }
+      },
+      "production_band_tudef": 8,
+      "collisionfree_band_tudef": 0,
+      "band": [
+        0,
+        150
+      ],
+      "band_n_draw_joint": 150,
+      "household_has_dj0_collision": true,
+      "dj0_distinct_alts": 2,
+      "deciders": [
+        {
+          "idperson_true": 180190001,
+          "component": "ils_ben",
+          "stored": 296.83,
+          "isolated_clean": 296.83,
+          "production_batch": 296.83,
+          "collisionfree_batch": 296.83,
+          "prod_reproduces_stored": true,
+          "clean_eq_collisionfree": true,
+          "clean_eq_stored": true
+        },
+        {
+          "idperson_true": 180190002,
+          "component": "ils_ben",
+          "stored": 432.8275033333333,
+          "isolated_clean": 170.58667,
+          "production_batch": 170.58667,
+          "collisionfree_batch": 170.58667,
+          "prod_reproduces_stored": false,
+          "clean_eq_collisionfree": true,
+          "clean_eq_stored": false
+        }
+      ],
+      "label": "two_f_fail"
+    },
+    {
+      "hh": 300001804500,
+      "year": 2017,
+      "node": {
+        "stacked_hh_uid": 300001804500,
+        "draw_joint": 1,
+        "draw_male": 1,
+        "draw_female": 2
+      },
+      "isolated_status": "FAIL",
+      "isolated_tudef": 0,
+      "isolated_components": {
+        "ils_dispy": {
+          "n_above_tol": 1,
+          "max_abs": 92.41642916666706
+        },
+        "ils_origy": {
+          "n_above_tol": 0,
+          "max_abs": 0.0
+        },
+        "ils_ben": {
+          "n_above_tol": 1,
+          "max_abs": 92.8808333333333
+        },
+        "ils_tax": {
+          "n_above_tol": 1,
+          "max_abs": 0.46440416666666806
+        },
+        "ils_sicdy": {
+          "n_above_tol": 0,
+          "max_abs": 0.0
+        }
+      },
+      "production_band_tudef": 8,
+      "collisionfree_band_tudef": 0,
+      "band": [
+        0,
+        150
+      ],
+      "band_n_draw_joint": 150,
+      "household_has_dj0_collision": true,
+      "dj0_distinct_alts": 2,
+      "deciders": [
+        {
+          "idperson_true": 180450001,
+          "component": "ils_ben",
+          "stored": 468.41666999999995,
+          "isolated_clean": 468.41666999999995,
+          "production_batch": 468.41666999999995,
+          "collisionfree_batch": 468.41666999999995,
+          "prod_reproduces_stored": true,
+          "clean_eq_collisionfree": true,
+          "clean_eq_stored": true
+        },
+        {
+          "idperson_true": 180450002,
+          "component": "ils_ben",
+          "stored": 313.1008333333333,
+          "isolated_clean": 220.22,
+          "production_batch": 220.22,
+          "collisionfree_batch": 220.22,
+          "prod_reproduces_stored": false,
+          "clean_eq_collisionfree": true,
+          "clean_eq_stored": false
+        }
+      ],
+      "label": "two_f_fail"
+    }
+  ],
+  "scope_statement": "Audit-only. EUROMOD on existing-node clean-reprice + diagnostic batches only; no redrawn node priced, nothing re-estimated, no V_i^dir, no parquet written."
+}

@@ -130,6 +130,10 @@ def main() -> None:
     ap.add_argument("--draw-lo",  type=int, required=True, help="inclusive lower bound of draw_joint range")
     ap.add_argument("--draw-hi",  type=int, required=True, help="exclusive upper bound of draw_joint range")
     ap.add_argument("--chunk-id", type=int, required=True, help="chunk index (for output filename)")
+    ap.add_argument("--staging-dir", default=None,
+                    help="if set, write the chunk parquet + meta HERE instead of the "
+                         "production chunks/ dir (never touches production). Used by the "
+                         "Two-N staging rebuild.")
     args = ap.parse_args()
 
     year, mode, draw_lo, draw_hi, chunk_id = args.year, args.mode, args.draw_lo, args.draw_hi, args.chunk_id
@@ -138,11 +142,12 @@ def main() -> None:
     system_code, dataset_name = _SYSTEM_PAIRING[year]
     phi         = _CPI[year]
 
+    out_dir     = Path(args.staging_dir) if args.staging_dir else _CHUNK_DIR
     long_path   = _BPOOL_DIR / f"fr_p3a_bpool_precompute__{year}__{mode}__long.parquet"
-    chunk_path  = _CHUNK_DIR / f"fr_p3a_bpool_priced__{year}__{mode}__c{chunk_id}.parquet"
-    meta_path   = _CHUNK_DIR / f"fr_p3a_bpool_priced__{year}__{mode}__c{chunk_id}.json"
+    chunk_path  = out_dir / f"fr_p3a_bpool_priced__{year}__{mode}__c{chunk_id}.parquet"
+    meta_path   = out_dir / f"fr_p3a_bpool_priced__{year}__{mode}__c{chunk_id}.json"
 
-    _CHUNK_DIR.mkdir(exist_ok=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"[chunk {chunk_id}] {year} {mode} draw_joint in [{draw_lo},{draw_hi})")
     print(f"[chunk {chunk_id}] Loading {long_path.name} (push-down filter [{draw_lo},{draw_hi})) ...")

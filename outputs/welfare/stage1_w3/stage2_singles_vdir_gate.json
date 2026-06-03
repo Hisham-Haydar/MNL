@@ -1,0 +1,282 @@
+{
+  "increment": "stage2_singles_vdir_gate_v1__task1",
+  "track": "singles_only",
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "re_estimated": false,
+  "computed_full_vdir_production": false,
+  "priced_couples": false,
+  "priced_redrawn_node": false,
+  "wrote_or_overwrote_parquet": false,
+  "euromod_console_log": "outputs\\welfare\\stage1_w3\\stage2_singles_vdir_gate_euromod_console.log",
+  "task1_existing_node_parity": {
+    "all_cells_pass": false,
+    "n_cells": 6,
+    "sample_rule": "first 30 households by stacked_hh_uid within each (year, sex) cell; first 20 existing draws per household (Two-E ladder used 6)",
+    "cells": {
+      "2015__singles_male": {
+        "year": 2015,
+        "sex": "singles_male",
+        "system_code": "FR_2014",
+        "country": "FR",
+        "n_hh": 30,
+        "n_nodes_matched": 600,
+        "n_euromod_input_rows": 1000,
+        "max_tudef": 0,
+        "component_parity": {
+          "ils_dispy": {
+            "n_above_tol": 124,
+            "max_abs": 678.4132836376667
+          },
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 124,
+            "max_abs": 678.4132836376667
+          },
+          "ils_tax": {
+            "n_above_tol": 26,
+            "max_abs": 0.33156666666667434
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "failing_components": [
+          "ils_ben",
+          "ils_tax"
+        ],
+        "status": "FAIL",
+        "euromod_wall_seconds": 4.332
+      },
+      "2015__singles_female": {
+        "year": 2015,
+        "sex": "singles_female",
+        "system_code": "FR_2014",
+        "country": "FR",
+        "n_hh": 30,
+        "n_nodes_matched": 600,
+        "n_euromod_input_rows": 1020,
+        "max_tudef": 0,
+        "component_parity": {
+          "ils_dispy": {
+            "n_above_tol": 125,
+            "max_abs": 678.4132836376667
+          },
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 125,
+            "max_abs": 678.4132836376667
+          },
+          "ils_tax": {
+            "n_above_tol": 22,
+            "max_abs": 0.33156666666667434
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "failing_components": [
+          "ils_ben",
+          "ils_tax"
+        ],
+        "status": "FAIL",
+        "euromod_wall_seconds": 3.128
+      },
+      "2016__singles_male": {
+        "year": 2016,
+        "sex": "singles_male",
+        "system_code": "FR_2015",
+        "country": "FR",
+        "n_hh": 30,
+        "n_nodes_matched": 600,
+        "n_euromod_input_rows": 1040,
+        "max_tudef": 0,
+        "component_parity": {
+          "ils_dispy": {
+            "n_above_tol": 98,
+            "max_abs": 672.8426375
+          },
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 98,
+            "max_abs": 672.8426375
+          },
+          "ils_tax": {
+            "n_above_tol": 19,
+            "max_abs": 0.33156666666667434
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "failing_components": [
+          "ils_ben",
+          "ils_tax"
+        ],
+        "status": "FAIL",
+        "euromod_wall_seconds": 3.073
+      },
+      "2016__singles_female": {
+        "year": 2016,
+        "sex": "singles_female",
+        "system_code": "FR_2015",
+        "country": "FR",
+        "n_hh": 30,
+        "n_nodes_matched": 600,
+        "n_euromod_input_rows": 1180,
+        "max_tudef": 0,
+        "component_parity": {
+          "ils_dispy": {
+            "n_above_tol": 131,
+            "max_abs": 666.5458333333333
+          },
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 131,
+            "max_abs": 666.5458333333332
+          },
+          "ils_tax": {
+            "n_above_tol": 25,
+            "max_abs": 0.33156666666667434
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "failing_components": [
+          "ils_ben",
+          "ils_tax"
+        ],
+        "status": "FAIL",
+        "euromod_wall_seconds": 3.115
+      },
+      "2017__singles_male": {
+        "year": 2017,
+        "sex": "singles_male",
+        "system_code": "FR_2016",
+        "country": "FR",
+        "n_hh": 30,
+        "n_nodes_matched": 600,
+        "n_euromod_input_rows": 980,
+        "max_tudef": 0,
+        "component_parity": {
+          "ils_dispy": {
+            "n_above_tol": 126,
+            "max_abs": 942.0162066033365
+          },
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 126,
+            "max_abs": 942.0162066033365
+          },
+          "ils_tax": {
+            "n_above_tol": 14,
+            "max_abs": 0.8468000000000302
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "failing_components": [
+          "ils_ben",
+          "ils_tax"
+        ],
+        "status": "FAIL",
+        "euromod_wall_seconds": 2.948
+      },
+      "2017__singles_female": {
+        "year": 2017,
+        "sex": "singles_female",
+        "system_code": "FR_2016",
+        "country": "FR",
+        "n_hh": 30,
+        "n_nodes_matched": 600,
+        "n_euromod_input_rows": 1180,
+        "max_tudef": 0,
+        "component_parity": {
+          "ils_dispy": {
+            "n_above_tol": 116,
+            "max_abs": 1237.268002561996
+          },
+          "ils_origy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          },
+          "ils_ben": {
+            "n_above_tol": 116,
+            "max_abs": 1237.268002561996
+          },
+          "ils_tax": {
+            "n_above_tol": 28,
+            "max_abs": 0.8468000000000302
+          },
+          "ils_sicdy": {
+            "n_above_tol": 0,
+            "max_abs": 0.0
+          }
+        },
+        "failing_components": [
+          "ils_ben",
+          "ils_tax"
+        ],
+        "status": "FAIL",
+        "euromod_wall_seconds": 3.25
+      }
+    }
+  },
+  "task2_vdir_smoke": {
+    "status": "SKIPPED",
+    "reason": "Task 1 existing-node parity gate FAILED; per the stop rule no redrawn node is priced and the V_i^dir smoke is not run."
+  },
+  "task3_projection": {
+    "basis_seconds_per_input_row": 0.0031009375,
+    "basis_note": "batched basis; LOWER BOUND \u2014 excludes per-call model load / process spin-up; moot while the gate fails",
+    "full_singles_households": 5007,
+    "rows_per_node_approx": 1,
+    "per_nodes_per_hh": {
+      "100": {
+        "nodes_per_hh": 100,
+        "approx_input_rows": 500700,
+        "approx_seconds": 1552.6,
+        "approx_hours": 0.43
+      },
+      "300": {
+        "nodes_per_hh": 300,
+        "approx_input_rows": 1502100,
+        "approx_seconds": 4657.9,
+        "approx_hours": 1.29
+      },
+      "900": {
+        "nodes_per_hh": 900,
+        "approx_input_rows": 4506300,
+        "approx_seconds": 13973.8,
+        "approx_hours": 3.88
+      }
+    }
+  },
+  "readiness": "NOT_READY",
+  "gate_pass": false,
+  "scope_statement": "SINGLES track only. No W^3 finding; nothing beyond W^3; no couples touched; nothing re-estimated; no full V_i^dir production run; no parquet written or overwritten."
+}

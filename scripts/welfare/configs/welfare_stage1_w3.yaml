@@ -208,6 +208,33 @@ welfare:
         side_artifact_name: "stage2_couples_drawjoint0_correction_candidate.parquet"
         provenance_name: "stage2_couples_correction_prep.json"
 
+    # Stage-Two-K SINGLES V_i^dir gate + smoke. SINGLES TRACK ONLY (does not touch
+    # couples, does not depend on the couples residual). Task 1 = existing-node parity
+    # gate at production scope; Task 2 = bounded V_i^dir smoke (gate-conditional);
+    # Task 3 = readiness report. No full production run; no parquet overwrite; no
+    # re-estimation. All case-specific values live here (config-driven).
+    singles_vdir_gate:
+      tol: 1.0e-6
+      components: ["ils_origy", "ils_ben", "ils_tax", "ils_sicdy"]
+      country_override: null
+      years: [2015, 2016, 2017]
+      sexes: ["singles_male", "singles_female"]          # dgn split: male=1, female=0
+      # Task 1 existing-node parity gate (deterministic, larger than the Two-E ladder)
+      parity_gate:
+        n_hh_per_cell: 30                                 # first-n by uid within each (year, sex) cell
+        nodes_per_hh: 20                                  # first-n existing draws per HH (Two-E ladder used 6)
+      # Task 2 V_i^dir bounded smoke (only if Task 1 PASSES)
+      vdir_smoke:
+        n_hh: 5                                           # tiny deterministic smoke subset
+        n_redrawn_nodes_per_hh: 20                        # redrawn nodes per HH for the analytic logsum
+        draw_seed: 20260603                               # deterministic redraw seed (provenance)
+      # Task 3 projected-cost nodes-per-household counts for the later full run
+      projection:
+        nodes_per_hh: [100, 300, 900]
+        # full singles scope (counts; the report states the selection rule)
+        singles_male_hh: 2243
+        singles_female_hh: 2764
+
   output:
     dir: "outputs/welfare/stage1_w3"
     provenance: "write_resolved_config_and_draw_scheme"

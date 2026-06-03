@@ -1,0 +1,380 @@
+{
+  "increment": "stage2_chunk_writeback_fix_validation_v1",
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "re_estimated": false,
+  "computed_v_dir": false,
+  "priced_redrawn_node": false,
+  "ran_full_production_rebuild": false,
+  "overwrote_production_parquet": false,
+  "patch": {
+    "file": "scripts/bpool/run_bpool_euromod_chunk.py",
+    "change": "write back EVERY simulated-output column from per-draw sim_df (cols not in _RAW_SCHEMA[year]) instead of only _EM_OUTPUT_COLS; headline cols are a subset -> unchanged."
+  },
+  "validation_temp_dir": "C:\\Users\\hisham\\AppData\\Local\\Temp\\44\\claude\\mnl_twoM_validation",
+  "euromod_console_log": "outputs\\welfare\\stage1_w3\\stage2_chunk_writeback_validation_euromod.log",
+  "cells": {
+    "singles_male_2017": {
+      "year": 2017,
+      "mode": "singles",
+      "dgn": 1.0,
+      "system_code": "FR_2016",
+      "dataset_name": "FR_2017_a2",
+      "n_hh": 120,
+      "n_rows": 2780,
+      "draw_band": [
+        0,
+        20
+      ],
+      "n_simulated_cols_written": 266,
+      "euromod_wall_seconds": 4.833,
+      "tudef": 0,
+      "temp_validation_path": "C:\\Users\\hisham\\AppData\\Local\\Temp\\44\\claude\\mnl_twoM_validation\\VALIDATION_singles_male_2017_0_20.parquet",
+      "n_headline_rows_compared": 2780,
+      "gateA1_patch_invariance": {
+        "ok": true,
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_tax": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          }
+        },
+        "note": "patched vs unpatched assembly on the SAME EUROMOD sim -> headline must be IDENTICAL; this is the decisive estimate-protecting gate and is scale-independent."
+      },
+      "gateA2_production_reproduction": {
+        "income_contrib_reproduce": true,
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 983.3928961376666,
+            "n_above_tol": 1040
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 984.1955003043332,
+            "n_above_tol": 1008
+          },
+          "ils_tax": {
+            "max_abs": 739.0973274200646,
+            "n_above_tol": 746
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 972.1822171216972,
+            "n_above_tol": 1040
+          }
+        },
+        "note": "patched headline vs STORED production at BOUNDED chunk scale. ils_origy/ils_sicdy reproduce; means-tested ils_ben/ils_dispy do NOT necessarily reproduce here because production priced at FULL chunk scale (Two-L population-context). Informational only; does NOT gate the patch -- A1 does."
+      },
+      "gateA_headline_invariance": {
+        "ok": true,
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_tax": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          }
+        }
+      },
+      "gateB_component_coherence": {
+        "ok": true,
+        "ils_ben_identity_max": 0.0,
+        "ils_ben_identity_violations": 0,
+        "ils_dispy_identity_max": 9.094947017729282e-13,
+        "ils_dispy_identity_violations": 0,
+        "share_hh_ils_benmt_varies_across_draws": 0.9222,
+        "share_hh_ils_ben_varies_across_draws": 0.9222,
+        "rebuilt_changes_stale_components": 1566
+      },
+      "status": "OK"
+    },
+    "singles_female_2017": {
+      "year": 2017,
+      "mode": "singles",
+      "dgn": 0.0,
+      "system_code": "FR_2016",
+      "dataset_name": "FR_2017_a2",
+      "n_hh": 120,
+      "n_rows": 3060,
+      "draw_band": [
+        0,
+        20
+      ],
+      "n_simulated_cols_written": 266,
+      "euromod_wall_seconds": 3.453,
+      "tudef": 0,
+      "temp_validation_path": "C:\\Users\\hisham\\AppData\\Local\\Temp\\44\\claude\\mnl_twoM_validation\\VALIDATION_singles_female_2017_0_20.parquet",
+      "n_headline_rows_compared": 3060,
+      "gateA1_patch_invariance": {
+        "ok": true,
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_tax": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          }
+        },
+        "note": "patched vs unpatched assembly on the SAME EUROMOD sim -> headline must be IDENTICAL; this is the decisive estimate-protecting gate and is scale-independent."
+      },
+      "gateA2_production_reproduction": {
+        "income_contrib_reproduce": true,
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 1072.0192620304788,
+            "n_above_tol": 954
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 1031.2458813833332,
+            "n_above_tol": 888
+          },
+          "ils_tax": {
+            "max_abs": 892.3155666666664,
+            "n_above_tol": 700
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 1059.7982424433312,
+            "n_above_tol": 954
+          }
+        },
+        "note": "patched headline vs STORED production at BOUNDED chunk scale. ils_origy/ils_sicdy reproduce; means-tested ils_ben/ils_dispy do NOT necessarily reproduce here because production priced at FULL chunk scale (Two-L population-context). Informational only; does NOT gate the patch -- A1 does."
+      },
+      "gateA_headline_invariance": {
+        "ok": true,
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_tax": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          }
+        }
+      },
+      "gateB_component_coherence": {
+        "ok": true,
+        "ils_ben_identity_max": 0.0,
+        "ils_ben_identity_violations": 0,
+        "ils_dispy_identity_max": 1.8189894035458565e-12,
+        "ils_dispy_identity_violations": 0,
+        "share_hh_ils_benmt_varies_across_draws": 0.9381,
+        "share_hh_ils_ben_varies_across_draws": 0.9381,
+        "rebuilt_changes_stale_components": 1435
+      },
+      "status": "OK"
+    },
+    "couples_2017": {
+      "year": 2017,
+      "mode": "couples",
+      "dgn": null,
+      "system_code": "FR_2016",
+      "dataset_name": "FR_2017_a2",
+      "n_hh": 120,
+      "n_rows": 8379,
+      "draw_band": [
+        0,
+        20
+      ],
+      "n_simulated_cols_written": 266,
+      "euromod_wall_seconds": 3.517,
+      "tudef": 909,
+      "temp_validation_path": "C:\\Users\\hisham\\AppData\\Local\\Temp\\44\\claude\\mnl_twoM_validation\\VALIDATION_couples_2017_0_20.parquet",
+      "n_headline_rows_compared": 8379,
+      "gateA1_patch_invariance": {
+        "ok": true,
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_tax": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          }
+        },
+        "note": "patched vs unpatched assembly on the SAME EUROMOD sim -> headline must be IDENTICAL; this is the decisive estimate-protecting gate and is scale-independent."
+      },
+      "gateA2_production_reproduction": {
+        "income_contrib_reproduce": true,
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 917.294598779549,
+            "n_above_tol": 576
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 917.2945987795491,
+            "n_above_tol": 576
+          },
+          "ils_tax": {
+            "max_abs": 1.992399999999975,
+            "n_above_tol": 371
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 906.8374403534622,
+            "n_above_tol": 576
+          }
+        },
+        "note": "patched headline vs STORED production at BOUNDED chunk scale. ils_origy/ils_sicdy reproduce; means-tested ils_ben/ils_dispy do NOT necessarily reproduce here because production priced at FULL chunk scale (Two-L population-context). Informational only; does NOT gate the patch -- A1 does."
+      },
+      "gateA_headline_invariance": {
+        "ok": true,
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_tax": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          }
+        }
+      },
+      "gateB_component_coherence": {
+        "ok": true,
+        "ils_ben_identity_max": 0.0,
+        "ils_ben_identity_violations": 0,
+        "ils_dispy_identity_max": 1.8189894035458565e-12,
+        "ils_dispy_identity_violations": 0,
+        "share_hh_ils_benmt_varies_across_draws": 0.8167,
+        "share_hh_ils_ben_varies_across_draws": 0.925,
+        "rebuilt_changes_stale_components": 1220
+      },
+      "status": "OK"
+    }
+  },
+  "singles_ready": true,
+  "couples_patch_valid": true,
+  "couples_fullscale_headline_confirmed": false,
+  "couples_status": "PATCH_VALID_FULLSCALE_HEADLINE_DEFERRED",
+  "overall_readiness": "READY for a separately authorised FULL-REBUILD VALIDATION (the patch is estimate-safe by A1 and fixes component staleness by B). NOT ready to trust or swap production couples output: full-scale stored-headline reproduction for couples is DEFERRED to a faithful full-production-couples-chunk run.",
+  "scope_statement": "Bounded validation only. No full production rebuild; nothing re-estimated; no V_i^dir; no redrawn welfare pricing; no W^3 finding; nothing beyond W^3; no production parquet overwritten (validation parquets written to a temp dir only)."
+}

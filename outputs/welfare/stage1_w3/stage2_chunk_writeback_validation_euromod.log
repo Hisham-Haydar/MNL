@@ -1,0 +1,54 @@
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:66: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df["ils_dispy_real"] = out_df["ils_dispy"] * phi
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:66: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df["ils_dispy_real"] = out_df["ils_dispy"] * phi
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:65: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df[c] = sim_df[c].values
+C:\Users\hisham\Repo\MNL\scripts\welfare\run_stage2_chunk_writeback_validation.py:66: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  out_df["ils_dispy_real"] = out_df["ils_dispy"] * phi

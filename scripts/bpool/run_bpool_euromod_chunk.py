@@ -187,9 +187,23 @@ def main() -> None:
     out_df["idhh_true"]     = chunk_df["idhh"].values
     out_df["idperson_true"] = chunk_df["idperson"].values
 
-    em_out_cols = [c for c in _EM_OUTPUT_COLS if c in sim_df.columns]
-    for c in em_out_cols:
+    # ---- Two-M write-back fix ----------------------------------------------------------
+    # PREVIOUSLY only the 5 headline columns (_EM_OUTPUT_COLS) were written back from the
+    # per-draw EUROMOD sim_df, leaving every other simulated output column (ils_benmt,
+    # ils_bennt, ils_pen, *_s, t*_s, ...) as a STALE precompute carry-over, constant across
+    # draws (diagnosed in Two-L). FIX: write back EVERY SIMULATED OUTPUT column EUROMOD
+    # produced for this draw, so each row's ils_*/*_s correspond to the scenario actually
+    # run. We overwrite the simulated-output columns only -- columns that are NOT raw EUROMOD
+    # INPUTS (those are echoed unchanged and left untouched) and are not keys/bookkeeping
+    # (stacked_hh_uid/draw*/ruro_decider/idhh_true/idperson_true are not in sim_df, so they
+    # are preserved automatically). The 5 headline columns are a subset of this set and so
+    # remain byte-identical to the previous behaviour (headline invariance, Two-M Gate A).
+    _raw_input_cols = set(_RAW_SCHEMA[year])
+    sim_output_cols = [c for c in sim_df.columns if c not in _raw_input_cols]
+    for c in sim_output_cols:
         out_df[c] = sim_df[c].values
+    em_out_cols = [c for c in _EM_OUTPUT_COLS if c in sim_df.columns]
+    # ------------------------------------------------------------------------------------
 
     out_df["ils_dispy_real"] = out_df["ils_dispy"] * phi
 
@@ -205,6 +219,7 @@ def main() -> None:
         "draw_lo": draw_lo, "draw_hi": draw_hi,
         "n_rows": len(out_df), "n_null_dispy": n_null,
         "em_output_cols": em_out_cols,
+        "n_simulated_output_cols_written": len(sim_output_cols),  # Two-M: all sim outputs
         "cpi_phi": phi,
         "output_path": str(chunk_path),
     }

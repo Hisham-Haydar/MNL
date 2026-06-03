@@ -1,3 +1,15 @@
+# RETRACTION NOTICE - 2026-06-03
+
+Two-I (`docs/jmp_methodology/RURO_welfare_stage2_twoH_validation_v1.md`) supersedes the
+model-fit interpretation in Section 2 of this report. The Section 2 claim that the
+`P_chosen < 1/901` and chosen-rank `901/901` diagnostics show severe couples model
+misfit is RETRACTED: Two-I showed that ranking was performed on the
+importance-sampling-corrected V, dominated by the `-log_prior` proposal correction, not on
+structural utility. On structural utility the chosen alternative is mid-pack
+(median rank 385/901), and the estimator V/likelihood equivalence holds to machine
+tolerance. The Two-H STOP remains valid for the other reason alone: the real,
+non-negligible, unresolved singleton stored-target residual of roughly 16 percent.
+
 # RURO Welfare — Stage Two, Increment Two-H: couples correction prep (residual bound, model fit, gate)
 
 **Date:** 2026-06-03

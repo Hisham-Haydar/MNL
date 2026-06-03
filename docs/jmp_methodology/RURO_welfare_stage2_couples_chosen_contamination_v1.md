@@ -1,3 +1,12 @@
+# Correction Notice - 2026-06-03
+
+Two-I (`docs/jmp_methodology/RURO_welfare_stage2_twoH_validation_v1.md`) supersedes the
+model-fit reading of near-zero `P_chosen` in Section 5. The near-zero probability / rank
+interpretation came from the importance-sampling-corrected V, dominated by the
+`-log_prior` proposal correction; it should not be cited as evidence of severe couples
+model misfit. The contamination measurement remains a first-order screen at fixed
+`theta_hat`, not a re-estimation.
+
 # RURO Welfare — Stage Two, Increment Two-G: couples clean-reprice instrument validation and chosen-alternative contamination
 
 **Date:** 2026-06-02

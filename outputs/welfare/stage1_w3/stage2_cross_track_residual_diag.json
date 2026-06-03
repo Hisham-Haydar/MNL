@@ -1,0 +1,190 @@
+{
+  "increment": "stage2_cross_track_residual_diag_v1",
+  "read_only": true,
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "re_estimated": false,
+  "computed_v_dir": false,
+  "priced_redrawn_node": false,
+  "produced_correction_candidate": false,
+  "wrote_or_overwrote_parquet": false,
+  "euromod_console_log": "outputs\\welfare\\stage1_w3\\stage2_cross_track_diag_euromod_console.log",
+  "build_writeback_evidence": {
+    "file": "scripts/bpool/run_bpool_euromod_chunk.py",
+    "lines": "186-194",
+    "finding": "out_df = chunk_df.copy(); then only _EM_OUTPUT_COLS = [ils_dispy, ils_origy, ils_ben, ils_tax, ils_sicdy] are overwritten from per-draw sim_df. All simulated component columns (ils_benmt, ils_bennt, ils_pen, *_s) remain stale precompute carry-over -> not draw-specific."
+  },
+  "t2a_identity_scan": {
+    "singles_2015": {
+      "n_decider": 168569,
+      "identity_violations": 99258,
+      "share": 0.5888,
+      "max_resid": 1609.29
+    },
+    "singles_2016": {
+      "n_decider": 169276,
+      "identity_violations": 99896,
+      "share": 0.5901,
+      "max_resid": 1754.27
+    },
+    "singles_2017": {
+      "n_decider": 167862,
+      "identity_violations": 97097,
+      "share": 0.5784,
+      "max_resid": 1677.78
+    },
+    "couples_2015": {
+      "n_decider": 4623932,
+      "identity_violations": 1844568,
+      "share": 0.3989,
+      "max_resid": 4424.58
+    },
+    "couples_2016": {
+      "n_decider": 4643754,
+      "identity_violations": 1854465,
+      "share": 0.3993,
+      "max_resid": 2546.39
+    },
+    "couples_2017": {
+      "n_decider": 4135590,
+      "identity_violations": 1304767,
+      "share": 0.3155,
+      "max_resid": 1723.06
+    }
+  },
+  "t2b_per_draw_staleness": {
+    "singles_2017": {
+      "n_hh": 1662,
+      "share_ils_ben_varies_across_draws": 0.9446,
+      "share_ils_dispy_varies_across_draws": 1.0,
+      "share_ils_benmt_constant_across_draws": 1.0,
+      "interpretation": "headline ils_ben/ils_dispy ARE draw-specific; the simulated component ils_benmt (and *_s) are CONSTANT across draws -> build wrote only the 5 EM_OUTPUT_COLS per draw, leaving components as stale precompute carry-over."
+    },
+    "couples_2017": {
+      "n_hh": 2295,
+      "share_ils_ben_varies_across_draws": 0.9773,
+      "share_ils_dispy_varies_across_draws": 1.0,
+      "share_ils_benmt_constant_across_draws": 0.4654,
+      "interpretation": "headline ils_ben/ils_dispy ARE draw-specific; the simulated component ils_benmt (and *_s) are CONSTANT across draws -> build wrote only the 5 EM_OUTPUT_COLS per draw, leaving components as stale precompute carry-over."
+    }
+  },
+  "t3_policy_vintage_singles_2017": {
+    "n_fail_tested": 4,
+    "nodes": [
+      {
+        "node": {
+          "stacked_hh_uid": 300001793700,
+          "draw": 8
+        },
+        "stored": 268.0,
+        "assigned_system": "FR_2016",
+        "dataset_held_fixed": "FR_2017_a2",
+        "under_system": {
+          "FR_2014": {
+            "clean": 241.14,
+            "matches_stored": false
+          },
+          "FR_2015": {
+            "clean": 244.85,
+            "matches_stored": false
+          },
+          "FR_2016": {
+            "clean": 180.13,
+            "matches_stored": false
+          }
+        },
+        "reproduces_under_any": false
+      },
+      {
+        "node": {
+          "stacked_hh_uid": 300001793700,
+          "draw": 14
+        },
+        "stored": 656.54,
+        "assigned_system": "FR_2016",
+        "dataset_held_fixed": "FR_2017_a2",
+        "under_system": {
+          "FR_2014": {
+            "clean": 632.14,
+            "matches_stored": false
+          },
+          "FR_2015": {
+            "clean": 646.73,
+            "matches_stored": false
+          },
+          "FR_2016": {
+            "clean": 311.36,
+            "matches_stored": false
+          }
+        },
+        "reproduces_under_any": false
+      },
+      {
+        "node": {
+          "stacked_hh_uid": 300001809101,
+          "draw": 1
+        },
+        "stored": 186.14,
+        "assigned_system": "FR_2016",
+        "dataset_held_fixed": "FR_2017_a2",
+        "under_system": {
+          "FR_2014": {
+            "clean": 119.08,
+            "matches_stored": false
+          },
+          "FR_2015": {
+            "clean": 134.4,
+            "matches_stored": false
+          },
+          "FR_2016": {
+            "clean": 0.0,
+            "matches_stored": false
+          }
+        },
+        "reproduces_under_any": false
+      },
+      {
+        "node": {
+          "stacked_hh_uid": 300001809101,
+          "draw": 6
+        },
+        "stored": 110.79,
+        "assigned_system": "FR_2016",
+        "dataset_held_fixed": "FR_2017_a2",
+        "under_system": {
+          "FR_2014": {
+            "clean": 26.57,
+            "matches_stored": false
+          },
+          "FR_2015": {
+            "clean": 42.06,
+            "matches_stored": false
+          },
+          "FR_2016": {
+            "clean": 0.0,
+            "matches_stored": false
+          }
+        },
+        "reproduces_under_any": false
+      }
+    ],
+    "any_reproduces_under_other_vintage": false
+  },
+  "t4_population_context_driver": {
+    "fail_uid": 300001809101,
+    "fail_draw": 1,
+    "stored_ils_ben": 186.14,
+    "by_n_households": {
+      "1": 0.0,
+      "2": 0.0,
+      "5": 0.0,
+      "20": 186.14,
+      "100": 186.14
+    },
+    "reproduces_at_min_households": 20,
+    "interpretation": "the stored value reproduces ONLY once a representative population shares the EUROMOD batch -> the means-tested benefit depends on population context; isolated/tiny-batch reprice is UNFAITHFUL, the stored headline value is VALID."
+  },
+  "scope_statement": "Read-only diagnosis. No W^3 finding; nothing beyond W^3; no V_i^dir; no redrawn node priced; nothing re-estimated; no correction candidate; no build/storage/engine-ready/priced/precompute/chunk parquet written or overwritten."
+}

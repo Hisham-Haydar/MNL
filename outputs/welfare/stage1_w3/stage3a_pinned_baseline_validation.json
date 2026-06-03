@@ -1,0 +1,460 @@
+{
+  "increment": "stage3a_pinned_baseline_validation_v1",
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "re_estimated": false,
+  "computed_v_dir": false,
+  "priced_redrawn_node": false,
+  "promoted_to_canonical": false,
+  "production_parquet_swapped_or_overwritten_or_moved_or_deleted": false,
+  "tol": 1e-06,
+  "task0_pinned_config_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\welfare\\stage1_w3\\stage3a_pinned_rebuild_config.json",
+  "task1_coverage": {
+    "staged_distinct_from_production": true,
+    "staging_path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\staging_twoN",
+    "production_root": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data",
+    "all_chunks_and_markers_present": true,
+    "all_staged_rows_match_manifest": true,
+    "n_chunks_expected": 21,
+    "n_chunks_present": 21,
+    "per_chunk": [
+      {
+        "year": 2015,
+        "mode": "singles",
+        "chunk_id": 0,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 243713,
+        "staged_rows": 243713,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2015,
+        "mode": "couples",
+        "chunk_id": 0,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1276554,
+        "staged_rows": 1276554,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2015,
+        "mode": "couples",
+        "chunk_id": 1,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1268100,
+        "staged_rows": 1268100,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2015,
+        "mode": "couples",
+        "chunk_id": 2,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1268100,
+        "staged_rows": 1268100,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2015,
+        "mode": "couples",
+        "chunk_id": 3,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1268100,
+        "staged_rows": 1268100,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2015,
+        "mode": "couples",
+        "chunk_id": 4,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1268100,
+        "staged_rows": 1268100,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2015,
+        "mode": "couples",
+        "chunk_id": 5,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1268100,
+        "staged_rows": 1268100,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2016,
+        "mode": "singles",
+        "chunk_id": 0,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 241895,
+        "staged_rows": 241895,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2016,
+        "mode": "couples",
+        "chunk_id": 0,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1280178,
+        "staged_rows": 1280178,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2016,
+        "mode": "couples",
+        "chunk_id": 1,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1271700,
+        "staged_rows": 1271700,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2016,
+        "mode": "couples",
+        "chunk_id": 2,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1271700,
+        "staged_rows": 1271700,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2016,
+        "mode": "couples",
+        "chunk_id": 3,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1271700,
+        "staged_rows": 1271700,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2016,
+        "mode": "couples",
+        "chunk_id": 4,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1271700,
+        "staged_rows": 1271700,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2016,
+        "mode": "couples",
+        "chunk_id": 5,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1271700,
+        "staged_rows": 1271700,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2017,
+        "mode": "singles",
+        "chunk_id": 0,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 238764,
+        "staged_rows": 238764,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2017,
+        "mode": "couples",
+        "chunk_id": 0,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1139446,
+        "staged_rows": 1139446,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2017,
+        "mode": "couples",
+        "chunk_id": 1,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1131900,
+        "staged_rows": 1131900,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2017,
+        "mode": "couples",
+        "chunk_id": 2,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1131900,
+        "staged_rows": 1131900,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2017,
+        "mode": "couples",
+        "chunk_id": 3,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1131900,
+        "staged_rows": 1131900,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2017,
+        "mode": "couples",
+        "chunk_id": 4,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1131900,
+        "staged_rows": 1131900,
+        "rows_match_manifest": true
+      },
+      {
+        "year": 2017,
+        "mode": "couples",
+        "chunk_id": 5,
+        "parquet_exists": true,
+        "marker_exists": true,
+        "stored_production_rows": 1131900,
+        "staged_rows": 1131900,
+        "rows_match_manifest": true
+      }
+    ],
+    "production_priced_files_readonly_snapshot": {
+      "fr_p3a_bpool_priced__2015__singles.parquet": {
+        "mtime_epoch": 1779691167.894755,
+        "size_bytes": 29397423
+      },
+      "fr_p3a_bpool_priced__2016__singles.parquet": {
+        "mtime_epoch": 1779691122.081736,
+        "size_bytes": 29363484
+      },
+      "fr_p3a_bpool_priced__2017__singles.parquet": {
+        "mtime_epoch": 1779660352.492866,
+        "size_bytes": 29209828
+      }
+    },
+    "production_parquet_touched": false,
+    "ok": true
+  },
+  "task2_determinism_gate": {
+    "scratch_dir": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\scratch_three_a_determinism",
+    "subset": [
+      {
+        "year": 2017,
+        "mode": "singles",
+        "chunk_id": 0,
+        "draw_lo": 0,
+        "draw_hi": 101,
+        "stored_production_rows": 238764,
+        "role": "singles"
+      },
+      {
+        "year": 2017,
+        "mode": "couples",
+        "chunk_id": 5,
+        "draw_lo": 750,
+        "draw_hi": 900,
+        "stored_production_rows": 1131900,
+        "role": "couples_benefit_heavy"
+      }
+    ],
+    "per_chunk": [
+      {
+        "year": 2017,
+        "mode": "singles",
+        "chunk_id": 0,
+        "draw_lo": 0,
+        "draw_hi": 101,
+        "stored_production_rows": 238764,
+        "role": "singles",
+        "status": "OK",
+        "comparison": {
+          "staged_rows": 238764,
+          "rerun_rows": 238764,
+          "rows_match": true,
+          "row_order_keys_identical": true,
+          "keys_checked": [
+            "stacked_hh_uid",
+            "draw",
+            "idperson_true"
+          ],
+          "headline_cols_checked": [
+            "ils_dispy",
+            "ils_origy",
+            "ils_ben",
+            "ils_tax",
+            "ils_sicdy",
+            "ils_dispy_real"
+          ],
+          "n_component_cols_checked": 133,
+          "headline_cols_above_tol": 0,
+          "headline_worst": {},
+          "component_cols_above_tol": 0,
+          "component_worst": {},
+          "ok": true
+        },
+        "ok": true
+      },
+      {
+        "year": 2017,
+        "mode": "couples",
+        "chunk_id": 5,
+        "draw_lo": 750,
+        "draw_hi": 900,
+        "stored_production_rows": 1131900,
+        "role": "couples_benefit_heavy",
+        "status": "OK",
+        "comparison": {
+          "staged_rows": 1131900,
+          "rerun_rows": 1131900,
+          "rows_match": true,
+          "row_order_keys_identical": true,
+          "keys_checked": [
+            "stacked_hh_uid",
+            "draw_joint",
+            "draw_male",
+            "draw_female",
+            "idperson_true"
+          ],
+          "headline_cols_checked": [
+            "ils_dispy",
+            "ils_origy",
+            "ils_ben",
+            "ils_tax",
+            "ils_sicdy",
+            "ils_dispy_real"
+          ],
+          "n_component_cols_checked": 133,
+          "headline_cols_above_tol": 0,
+          "headline_worst": {},
+          "component_cols_above_tol": 0,
+          "component_worst": {},
+          "ok": true
+        },
+        "ok": true
+      }
+    ],
+    "ok": true,
+    "note": "skip-determinism-run: comparing existing scratch outputs"
+  },
+  "task3_component_coherence_full": {
+    "per_cell": {
+      "2015__couples": {
+        "status": "OK",
+        "decider_rows": 4623932,
+        "ils_ben_identity_violations": 0,
+        "ils_ben_identity_max": 0.0,
+        "ils_dispy_identity_violations": 0,
+        "ils_dispy_identity_max": 3.637978807091713e-12,
+        "share_hh_ils_ben_varies": 0.9851,
+        "share_hh_ils_benmt_varies": 0.9701,
+        "ok": true
+      },
+      "2015__singles": {
+        "status": "OK",
+        "decider_rows": 168569,
+        "ils_ben_identity_violations": 0,
+        "ils_ben_identity_max": 0.0,
+        "ils_dispy_identity_violations": 0,
+        "ils_dispy_identity_max": 3.637978807091713e-12,
+        "share_hh_ils_ben_varies": 0.97,
+        "share_hh_ils_benmt_varies": 0.97,
+        "ok": true
+      },
+      "2016__couples": {
+        "status": "OK",
+        "decider_rows": 4643754,
+        "ils_ben_identity_violations": 0,
+        "ils_ben_identity_max": 0.0,
+        "ils_dispy_identity_violations": 0,
+        "ils_dispy_identity_max": 3.637978807091713e-12,
+        "share_hh_ils_ben_varies": 0.9856,
+        "share_hh_ils_benmt_varies": 0.9731,
+        "ok": true
+      },
+      "2016__singles": {
+        "status": "OK",
+        "decider_rows": 169276,
+        "ils_ben_identity_violations": 0,
+        "ils_ben_identity_max": 0.0,
+        "ils_dispy_identity_violations": 0,
+        "ils_dispy_identity_max": 7.275957614183426e-12,
+        "share_hh_ils_ben_varies": 0.9678,
+        "share_hh_ils_benmt_varies": 0.9678,
+        "ok": true
+      },
+      "2017__couples": {
+        "status": "OK",
+        "decider_rows": 4135590,
+        "ils_ben_identity_violations": 0,
+        "ils_ben_identity_max": 0.0,
+        "ils_dispy_identity_violations": 0,
+        "ils_dispy_identity_max": 3.637978807091713e-12,
+        "share_hh_ils_ben_varies": 0.9595,
+        "share_hh_ils_benmt_varies": 0.9369,
+        "ok": true
+      },
+      "2017__singles": {
+        "status": "OK",
+        "decider_rows": 167862,
+        "ils_ben_identity_violations": 0,
+        "ils_ben_identity_max": 0.0,
+        "ils_dispy_identity_violations": 0,
+        "ils_dispy_identity_max": 3.637978807091713e-12,
+        "share_hh_ils_ben_varies": 0.9446,
+        "share_hh_ils_benmt_varies": 0.944,
+        "ok": true
+      }
+    },
+    "ok": true
+  },
+  "task4_reestimation_criterion": {
+    "status": "PRE-REGISTERED (not run here)",
+    "certified_reference": {
+      "theta_hat_csv": "scripts\\bpool\\specs\\theta_hat_realdata_901_v1.csv",
+      "spec": "scripts\\bpool\\specs\\estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
+      "se_columns": [
+        "se_hessian",
+        "se_clustered"
+      ],
+      "cluster_key": "idorighh"
+    },
+    "criterion": [
+      "Re-estimate the certified spec (joint_pooled_v1_bll0_tlmpin, 47 free params, theta_l_m pinned -0.8, beta_ll fixed 0) on the REPRODUCIBLE rebuilt baseline, initialised from the certified theta_hat.",
+      "Compare every re-estimated parameter against the certified theta_hat parameter-by-parameter.",
+      "Judge each parameter's movement against its CLUSTERED standard error (se_clustered, cluster key idorighh): movement within ~the clustered-SE band is IMMATERIAL; movement well outside is MATERIAL.",
+      "Focus explicitly on the decomposition-relevant blocks: ability/wage (beta_w0, beta_w_educL, beta_w_educH, beta_w_pexp, beta_w_pexp2, sigma); opportunity/access (beta_E, beta_h_*, beta_E_gsur, beta_E_drg*, beta_E_y*, beta_E_drgur/drgmd, beta_occ_*); and preference (beta_l0_*, beta_l_age*, beta_l_nkids_*, theta_l_*, theta_c_singles).",
+      "Re-run the synthetic-recovery standard on the new reproducible baseline (PD Hessian at production scale + recovery within tolerance), as for the certified gate (RURO_jax_recovery_gate_tlmpin_901_v1).",
+      "No welfare promotion (V_i^dir, redrawn-node pricing, W^3 promotion, anything beyond W^3) until this estimate decision is settled."
+    ],
+    "decision_rule": "If all decomposition-relevant blocks are within clustered-SE tolerance AND the synthetic-recovery standard passes, the irreproducibility is immaterial and the certified estimate stands WITH A CAVEAT (memo Option A). Otherwise the reproducible baseline replaces the old one and its re-estimate becomes certified (memo Option B). This script does NOT run the re-estimation."
+  },
+  "task5_readiness": {
+    "validated_reproducible_candidate_baseline": true,
+    "requires": {
+      "task1_coverage_pass": true,
+      "task2_determinism_pass": true,
+      "task3_coherence_pass": true,
+      "task4_criterion_recorded": true,
+      "config_evidence_complete": true
+    },
+    "stop_reasons": [],
+    "baseline_is_canonical": false,
+    "production_swapped": false,
+    "controlled_reestimation": "SEPARATE AUTHORISATION REQUIRED",
+    "welfare_computation_authorised": false
+  },
+  "scope_statement": "Validates the Two-N staged rebuild as a reproducible CANDIDATE baseline only. No re-estimation, no V_i^dir, no redrawn pricing, no production swap, no promotion to canonical, nothing beyond W^3. Determinism re-run output went to a scratch dir, which is neither production nor the Two-N staging baseline."
+}

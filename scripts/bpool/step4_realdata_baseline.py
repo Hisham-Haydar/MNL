@@ -118,7 +118,8 @@ def _two_stage_optimize(joint, theta0, bnds, gtol, maxiter, pnames,
 
     # warm compile
     _ = fun(theta0); _ = grad(theta0)
-    print(f"  warm-start negLL = {fun(theta0):.6f}", flush=True)
+    _start_negLL = fun(theta0)
+    print(f"  warm-start negLL = {_start_negLL:.6f}", flush=True)
 
     t0 = time.time()
     _it = {"k": 0}
@@ -191,6 +192,7 @@ def _two_stage_optimize(joint, theta0, bnds, gtol, maxiter, pnames,
         "solver": "L-BFGS-B (scipy, box) -> optimistix BFGS polish (JAX)",
         "solver_family": "bfgs",
         "chosen_optimizer": which,
+        "start_negLL": float(_start_negLL),  # warm-start negLL at theta0 (e.g. certified theta)
         "n_iterations": int(res.nit),
         "n_function_evaluations": int(res.nfev),
         "scipy_stage1_seconds": float(t_stage1),
@@ -327,6 +329,10 @@ def main():
     ap.add_argument("--maxiter", type=int, default=3000)
     ap.add_argument("--out-csv", type=Path, default=None)
     ap.add_argument("--report", type=Path, default=None)
+    ap.add_argument("--out-json", type=Path, default=None,
+                    help="if set, dump the full result dict R (negLL, convergence, Hessian, "
+                         "clustered SEs, per-param table, diagnostics) as JSON for downstream "
+                         "machine-readable consumption. Additive; does not change estimation.")
     ap.add_argument("--gender-split", default="",
                     help="Comma list of hours-shifter base coefs to relax "
                          "male-vs-female (coef -> coef_m/coef_f), e.g. "
@@ -565,6 +571,12 @@ def main():
     if args.report:
         _write_report(args.report, R)
         print(f"  [report] {args.report}")
+
+    if args.out_json:
+        args.out_json.parent.mkdir(parents=True, exist_ok=True)
+        with open(args.out_json, "w") as f:
+            json.dump(R, f, indent=2, default=float)
+        print(f"  [json] {args.out_json}")
 
     print("\n" + "=" * 72)
     print("STEP 4 BASELINE — SUMMARY")

@@ -1,0 +1,275 @@
+{
+  "increment": "stage3b1_engine_ready_parity_v1",
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "re_estimated": false,
+  "ran_synthetic_recovery": false,
+  "computed_v_dir": false,
+  "priced_redrawn_node": false,
+  "promoted_w3": false,
+  "promoted_to_canonical": false,
+  "production_parquet_swapped_or_overwritten_or_moved_or_deleted": false,
+  "staged_stem": "fr_p3a_bpool_engine_ready_staged_threeB1",
+  "certified_stem": "fr_p3a_bpool_engine_ready",
+  "staging_priced_dir": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\staging_threeB1_priced",
+  "pinned_config": "outputs\\welfare\\stage1_w3\\stage3a_pinned_rebuild_config.json",
+  "certified_theta_hat": "scripts\\bpool\\specs\\theta_hat_realdata_901_v1.csv",
+  "tol": 1e-06,
+  "build_info": null,
+  "task2_structure_gates": {
+    "singles": {
+      "mode": "singles",
+      "rows_cert": 505707,
+      "rows_staged": 505707,
+      "rows_match": true,
+      "hh_cert": 5007,
+      "hh_staged": 5007,
+      "hh_match": true,
+      "alts_per_hh_modal": 101,
+      "alts_per_hh_uniform": true,
+      "alts_per_hh_expected": 101,
+      "one_chosen_per_set": true,
+      "row_order_keys_identical": true,
+      "keys_checked": [
+        "stacked_hh_uid",
+        "draw",
+        "is_chosen"
+      ],
+      "cluster_id_identical": true,
+      "cluster_key": "idorighh(->cluster_id)",
+      "draw_identical": true,
+      "chosen_indicator_identical": true,
+      "ok": true
+    },
+    "couples": {
+      "mode": "couples",
+      "rows_cert": 6701638,
+      "rows_staged": 6701638,
+      "rows_match": true,
+      "hh_cert": 7438,
+      "hh_staged": 7438,
+      "hh_match": true,
+      "alts_per_hh_modal": 901,
+      "alts_per_hh_uniform": true,
+      "alts_per_hh_expected": 901,
+      "one_chosen_per_set": true,
+      "row_order_keys_identical": true,
+      "keys_checked": [
+        "stacked_hh_uid",
+        "draw_joint",
+        "is_chosen_joint"
+      ],
+      "cluster_id_identical": true,
+      "cluster_key": "idorighh(->cluster_id)",
+      "draw_identical": true,
+      "chosen_indicator_identical": true,
+      "ok": true
+    },
+    "ok": true
+  },
+  "task3_blast_radius": {
+    "singles": {
+      "mode": "singles",
+      "n_rows": 505707,
+      "raw_consumption": {
+        "n_changed": 14276,
+        "share_changed": 0.02823,
+        "max_abs": 360.50744202101146,
+        "median_abs_over_changed": 41.94095009245723,
+        "q_over_changed": {
+          "0.5": 41.94095009245723,
+          "0.9": 78.19826000000057,
+          "0.99": 185.18459812999936,
+          "1.0": 360.50744202101146
+        },
+        "definition": "abs(staged.consumption - cert.consumption) > tol; consumption = ils_dispy_real (singles) / joint ils_dispy_real (couples), floored."
+      },
+      "choice_sets_touched_by_raw_change": {
+        "n_touched": 1152,
+        "share_touched": 0.230078
+      },
+      "c_scale": {
+        "cert": 2036.4900125769086,
+        "staged": 2034.988978049439,
+        "abs_diff": 1.5010345274695283,
+        "pct_change": -0.07370694273968806
+      },
+      "c_norm_denominator_channel": {
+        "rows_raw_unchanged": 491431,
+        "predicted_rule": "staged.c_norm = cert.c_norm * (c_scale_cert / c_scale_staged) on raw-unchanged rows (numerator identical, denominator global)",
+        "denominator_ratio_cert_over_staged": 1.0007376130994616,
+        "max_abs_residual_vs_prediction": 7.105427357601002e-15,
+        "max_rel_residual_vs_prediction": 4.778974010761654e-16,
+        "n_rows_resid_above_1e-9_rel": 0,
+        "no_change_control_pass": true,
+        "interpretation": "if 0, every raw-unchanged row differs ONLY through the global c_scale denominator (intended). Nonzero => an unintended row-level change beyond the c_scale channel -> STOP."
+      },
+      "c_norm_total": {
+        "n_changed": 504399,
+        "share_changed": 0.997414,
+        "max_abs": 0.1777167288804502,
+        "note": "includes the global c_scale renormalisation on ALL rows; NOT a row-level data-change count."
+      },
+      "raw_by_chosen": {
+        "chosen_n_changed": 166,
+        "chosen_share_changed": 0.033154,
+        "nonchosen_n_changed": 14110,
+        "nonchosen_share_changed": 0.028181
+      },
+      "raw_by_year": {
+        "2015": {
+          "n_changed": 3519,
+          "share_changed": 0.020876
+        },
+        "2016": {
+          "n_changed": 3460,
+          "share_changed": 0.02044
+        },
+        "2017": {
+          "n_changed": 7297,
+          "share_changed": 0.04347
+        }
+      },
+      "raw_by_benefit_recipient": {
+        "note": "ils_ben not carried on engine-ready; benefit status not separable here"
+      },
+      "no_change_control_pass": true
+    },
+    "couples": {
+      "mode": "couples",
+      "n_rows": 6701638,
+      "raw_consumption": {
+        "n_changed": 763526,
+        "share_changed": 0.113931,
+        "max_abs": 1163.6790817575002,
+        "median_abs_over_changed": 63.99672441999974,
+        "q_over_changed": {
+          "0.5": 63.99672441999974,
+          "0.9": 169.22877083333242,
+          "0.99": 259.9805451000002,
+          "1.0": 1163.6790817575002
+        },
+        "definition": "abs(staged.consumption - cert.consumption) > tol; consumption = ils_dispy_real (singles) / joint ils_dispy_real (couples), floored."
+      },
+      "choice_sets_touched_by_raw_change": {
+        "n_touched": 4726,
+        "share_touched": 0.635386
+      },
+      "c_scale": {
+        "cert": 3936.0088631931367,
+        "staged": 3927.094381127339,
+        "abs_diff": 8.914482065797529,
+        "pct_change": -0.22648531483655104
+      },
+      "c_norm_denominator_channel": {
+        "rows_raw_unchanged": 5938112,
+        "predicted_rule": "staged.c_norm = cert.c_norm * (c_scale_cert / c_scale_staged) on raw-unchanged rows (numerator identical, denominator global)",
+        "denominator_ratio_cert_over_staged": 1.0022699943522209,
+        "max_abs_residual_vs_prediction": 8.881784197001252e-16,
+        "max_rel_residual_vs_prediction": 5.737601893080506e-16,
+        "n_rows_resid_above_1e-9_rel": 0,
+        "no_change_control_pass": true,
+        "interpretation": "if 0, every raw-unchanged row differs ONLY through the global c_scale denominator (intended). Nonzero => an unintended row-level change beyond the c_scale channel -> STOP."
+      },
+      "c_norm_total": {
+        "n_changed": 6699770,
+        "share_changed": 0.999721,
+        "max_abs": 0.29363351287718265,
+        "note": "includes the global c_scale renormalisation on ALL rows; NOT a row-level data-change count."
+      },
+      "raw_by_chosen": {
+        "chosen_n_changed": 781,
+        "chosen_share_changed": 0.105001,
+        "nonchosen_n_changed": 762745,
+        "nonchosen_share_changed": 0.113941
+      },
+      "raw_by_year": {
+        "2015": {
+          "n_changed": 201959,
+          "share_changed": 0.087354
+        },
+        "2016": {
+          "n_changed": 215097,
+          "share_changed": 0.092639
+        },
+        "2017": {
+          "n_changed": 346470,
+          "share_changed": 0.167555
+        }
+      },
+      "raw_by_benefit_recipient": {
+        "note": "ils_ben not carried on engine-ready; benefit status not separable here"
+      },
+      "no_change_control_pass": true
+    },
+    "ok": true
+  },
+  "task4_likelihood_parity": {
+    "theta_source": "scripts\\bpool\\specs\\theta_hat_realdata_901_v1.csv",
+    "regime_A_certified": {
+      "joint_negLL": 238504.6360973987,
+      "singles_male_negLL": 28489.042816294535,
+      "singles_female_negLL": 35411.86351549324,
+      "couples_negLL": 174603.72976561091,
+      "n_sm": 2243,
+      "n_sf": 2764,
+      "n_cou": 7438
+    },
+    "regime_B_staged_native_cscale": {
+      "joint_negLL": 238502.86693396728,
+      "singles_male_negLL": 28489.16628200126,
+      "singles_female_negLL": 35411.8309608204,
+      "couples_negLL": 174601.8696911456,
+      "n_sm": 2243,
+      "n_sf": 2764,
+      "n_cou": 7438
+    },
+    "regime_C_staged_fixed_cert_cscale": {
+      "joint_negLL": 238502.86671693774,
+      "singles_male_negLL": 28489.166498494567,
+      "singles_female_negLL": 35411.830527297556,
+      "couples_negLL": 174601.8696911456,
+      "n_sm": 2243,
+      "n_sf": 2764,
+      "n_cou": 7438
+    },
+    "delta_total_BminusA": {
+      "joint_negLL": -1.7691634314251132,
+      "singles_male_negLL": 0.12346570672525559,
+      "singles_female_negLL": -0.03255467284179758,
+      "couples_negLL": -1.8600744653085712
+    },
+    "delta_rawconsumption_CminusA": {
+      "joint_negLL": -1.7693804609589279,
+      "singles_male_negLL": 0.123682200031908,
+      "singles_female_negLL": -0.03298819568590261,
+      "couples_negLL": -1.8600744653085712
+    },
+    "delta_cscale_channel_BminusC": {
+      "joint_negLL": 0.00021702953381463885,
+      "singles_male_negLL": -0.00021649330665240996,
+      "singles_female_negLL": 0.0004335228441050276,
+      "couples_negLL": 0.0
+    },
+    "computable_with_certified_machinery": true,
+    "note": "negLL at certified theta_hat on each regime; no optimisation. Total (B-A) = raw-consumption (C-A) + c_scale channel (B-C). The raw channel localises to groups whose consumption changed; the c_scale channel is the common renormalisation."
+  },
+  "task5_readiness": {
+    "ready_for_threeB2": true,
+    "requires": {
+      "structure_row_order_pass": true,
+      "no_unintended_field_changes": true,
+      "no_change_control_pass": true,
+      "staged_LL_computable_at_certified_theta": true,
+      "blast_radius_quantified": true
+    },
+    "stop_reasons": [],
+    "baseline_is_canonical": false,
+    "production_swapped": false,
+    "controlled_reestimation": "SEPARATE AUTHORISATION REQUIRED (Three-B2)",
+    "welfare_computation_authorised": false
+  },
+  "scope_statement": "Assembles staged engine-ready and runs pre-estimation parity gates only. No re-estimation, no synthetic recovery, no V_i^dir, no redrawn pricing, no W^3 promotion, no production swap, no promotion to canonical. Staged engine-ready uses a distinct stem; certified files untouched."
+}

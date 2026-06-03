@@ -1,0 +1,54 @@
+STAGE TWO, INCREMENT TWO-D only — bounded per-node EUROMOD re-simulation FEASIBILITY
+probe. This decides whether the per-node re-simulation route (the only route the
+benefit-state inspection found honest) can pass the existing-node parity gate and at
+what throughput. Do NOT run the production cross-check, do NOT price redrawn nodes, do
+NOT compute V_i^dir, do NOT run 2x/4x growth, do NOT promote W^3, do NOT touch any
+measure beyond W^3, do NOT commit automatically. Use .venv\Scripts\python.exe.
+
+Context: RURO_welfare_stage2_benefit_state_recoverability_v1.md established that ils_ben
+is node-dependent and not reconstructible from stored parts, so the only honest path to a
+priceable redrawn node is a per-node EUROMOD re-simulation that joins the invariant
+household state (class A: pensions, tax-unit structure, income/contributions), overwrites
+the node-dependent labour variables, and re-simulates all *_s benefits and taxes. Before
+committing to that route at production scale, two unknowns must be measured.
+
+Build, bounded and read-mostly (no production scale):
+1. Stand up a per-node re-simulation path that, for a household, joins its class-A
+   invariant state from the priced-long template, sets the node labour variables to the
+   household's OBSERVED (existing-node) values, and re-simulates ils_ben and all *_s
+   components through the build's EuromodRunner with the build's system pairing, CPI, and
+   schema (reused from the build module, not re-hardcoded). This is the EXISTING-NODE
+   parity configuration: observed node in, stored consumption expected out.
+
+2. PARITY PROBE (the gate that currently fails). On a tiny deterministic subset — the same
+   5 households x <=20 rows per cell as Two-B, across all 6 year x mode cells — run the
+   re-simulation path on EXISTING nodes (no node overwrite to counterfactual values) and
+   compare repriced ils_dispy AND the component decomposition (ils_origy, ils_ben, ils_tax,
+   ils_sicdy) against stored, to machine tolerance. Report per-cell max abs diff, rows above
+   tol, and whether ils_ben now reproduces (the term that failed Two-B). The question: does
+   joining the full class-A invariant state and re-simulating CLOSE the benefit gap that the
+   template-overwrite path could not? PASS only if ils_ben reproduces to tolerance on all
+   cells.
+
+3. THROUGHPUT PROBE. Measure wall-time per EUROMOD evaluation on this path (mean and tail
+   over the probe rows), and from it project the cost of the designed production cross-check:
+   full singles samples (2243 + 2764) plus flagged couples (1285), at a configurable nodes-
+   per-household count (report the projection for 100, 300, and 900 nodes/household). State
+   whether the projected cost is tractable on the available hardware, with the per-evaluation
+   time as the basis.
+
+Deliver: bounded re-simulation source under scripts/welfare/ (clearly marked feasibility-
+only, not the production cross-check); a report
+docs/jmp_methodology/RURO_welfare_stage2_resim_feasibility_v1.md with the per-cell
+existing-node parity grid (component-decomposed, ils_ben emphasised), PASS/FAIL per cell,
+the per-evaluation throughput, and the production-cost projection at 100/300/900
+nodes/household; provenance JSON. Config-driven, no hardcoded case constants.
+
+STOP RULES. If existing-node parity PASSES on all cells, STOP and report — the route is
+open and production is a separate authorisation. If parity FAILS even with full class-A
+state joined, STOP and report exactly which component still diverges and on which
+households — this would mean even re-simulation cannot reproduce the build, which is a
+more serious finding requiring its own diagnosis. Either way, no production cross-check,
+no redrawn-node pricing. State explicitly that no W^3 welfare finding is produced and no
+measure beyond W^3 is touched. If anything is ambiguous against the repo, STOP and report
+rather than guessing.

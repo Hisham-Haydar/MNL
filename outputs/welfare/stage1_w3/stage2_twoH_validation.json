@@ -1,0 +1,154 @@
+{
+  "increment": "stage2_twoH_validation_v1",
+  "read_only": true,
+  "no_welfare_finding": true,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "re_estimated": false,
+  "computed_v_dir": false,
+  "priced_any_redrawn_node": false,
+  "wrote_or_overwrote_parquet": false,
+  "euromod_console_log": "outputs\\welfare\\stage1_w3\\stage2_twoH_validation_euromod_console.log",
+  "task1_modelfit_validation": {
+    "alignment_consumption_vs_cnorm_max_abs": 0.0,
+    "chosen_marker_is_column0_share": 1.0,
+    "exactly_one_chosen_per_hh": true,
+    "decisive_equivalence": {
+      "certified_estimator_negll": 174603.72976561091,
+      "welfare_grid_negll": 174603.72976561094,
+      "max_abs_negll_diff": 2.9103830456733704e-11,
+      "gate0_max_abs": 0.0,
+      "agree_to_machine_tol": true
+    },
+    "sign_orientation": {
+      "corr_V_softmax_min": 0.2883215610768084,
+      "corr_V_softmax_median": 0.5150010911678364,
+      "all_positive": true
+    },
+    "rank_IS_V_as_twoH": {
+      "median": 901,
+      "mean": 900.8721430492068,
+      "min": 710,
+      "max": 901,
+      "share_bottom_half": 1.0,
+      "share_top_25pct": 0.0,
+      "share_top_10pct": 0.0,
+      "share_top_1pct": 0.0,
+      "P_chosen_median": 7.676382465669126e-11,
+      "uniform_1_over_nalts": 0.0011098779134295228
+    },
+    "rank_structural_minus_logprior": {
+      "median": 385,
+      "mean": 420.88706641570315,
+      "min": 1,
+      "max": 901,
+      "share_bottom_half": 0.405216456036569,
+      "share_top_25pct": 0.24401720892713094,
+      "share_top_10pct": 0.05418123151384781,
+      "share_top_1pct": 0.006991126646948105,
+      "P_chosen_median": 9.65623445433566e-06
+    },
+    "is_term_decomposition": {
+      "median_chosen_to_rowmax_IS_gap_nats": 20.57953511519075,
+      "median_logprior_contribution_nats": -14.764935895475856,
+      "note": "the chosen row carries log_prior=0 (observed, prior=1) while the 900 simulated cells carry -log_prior>0 in V; this IS de-biasing term, not structural utility, pushes the chosen row to the bottom of the IS-V ordering. Removing it lifts the chosen rank from last to mid-pack."
+    }
+  },
+  "task2_residual_validation": {
+    "by_year": {
+      "2015": {
+        "n": 240,
+        "fail": 23,
+        "rate": 0.0958
+      },
+      "2016": {
+        "n": 240,
+        "fail": 30,
+        "rate": 0.125
+      },
+      "2017": {
+        "n": 240,
+        "fail": 54,
+        "rate": 0.225
+      }
+    },
+    "by_draw_joint": {
+      "1": {
+        "n": 120,
+        "fail": 21
+      },
+      "100": {
+        "n": 120,
+        "fail": 15
+      },
+      "250": {
+        "n": 120,
+        "fail": 12
+      },
+      "450": {
+        "n": 120,
+        "fail": 21
+      },
+      "700": {
+        "n": 120,
+        "fail": 17
+      },
+      "899": {
+        "n": 120,
+        "fail": 21
+      }
+    },
+    "decider_sex_of_failing": {
+      "male_fail": 60,
+      "female_fail": 47
+    },
+    "all_failures_collision_free": true,
+    "paired_isolated_vs_batch": {
+      "2015": {
+        "n": 40,
+        "isolated_fail": 5,
+        "batch_fail": 5,
+        "both_fail": 5,
+        "batch_only_fail": 0,
+        "isolated_only_fail": 0,
+        "isolated_rate": 0.125,
+        "batch_rate": 0.125
+      },
+      "2016": {
+        "n": 40,
+        "isolated_fail": 7,
+        "batch_fail": 8,
+        "both_fail": 7,
+        "batch_only_fail": 1,
+        "isolated_only_fail": 0,
+        "isolated_rate": 0.175,
+        "batch_rate": 0.2
+      },
+      "2017": {
+        "n": 40,
+        "isolated_fail": 9,
+        "batch_fail": 8,
+        "both_fail": 8,
+        "batch_only_fail": 0,
+        "isolated_only_fail": 1,
+        "isolated_rate": 0.225,
+        "batch_rate": 0.2
+      }
+    },
+    "paired_summary": {
+      "n": 120,
+      "isolated_fail": 21,
+      "isolated_rate": 0.175,
+      "batch_only_fail": 1,
+      "batch_only_rate": 0.008333333333333333
+    }
+  },
+  "verdicts": {
+    "modelfit_equivalence_holds": true,
+    "rank901_is_IS_weighting_artifact": true,
+    "singleton_residual_reproduces_independently": true,
+    "dense_batch_instrument_clean_at_scale": true
+  },
+  "scope_statement": "READ-ONLY validation. No W^3 finding; nothing beyond W^3; nothing re-estimated; no V_i^dir; no redrawn node priced; no parquet written or overwritten."
+}

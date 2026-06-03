@@ -1,0 +1,63 @@
+STAGE TWO, INCREMENT TWO-H only — bound the unexplained singleton stored-target
+reproducibility gap across the full couples baseline, characterise the couples model
+fit, and PRODUCE (to a side artefact only) the collision-free corrected couples chosen
+consumption that a separately-authorised re-estimation would consume. Do NOT re-estimate,
+do NOT overwrite or rewrite any engine-ready / priced / precompute / chunk parquet, do
+NOT compute V_i^dir, do NOT run 2x/4x growth, do NOT promote W^3, do NOT touch any
+measure beyond W^3, do NOT commit automatically. Use .venv\Scripts\python.exe. EUROMOD
+may be run only on bounded clean-reprice subsets of EXISTING couples nodes.
+
+Context: Two-G measured the draw_joint=0 chosen-alternative contamination (76% of
+couples, joint-disposable median ~EUR196/mo) and screened its first-order likelihood
+influence (|d ll_i| median ~0.048 nats; chosen probability P_chosen ~1e-10 so the
+denominator channel is negligible and the contamination enters the score near-undamped).
+Verdict: POTENTIALLY MATERIAL. Two open items block a clean dispositive re-estimation:
+(a) a stored-target reproducibility gap on 3/24 Two-F singleton controls that NO faithful
+reprice reproduces (mechanism unresolved, NOT the collision, NOT an instrument defect),
+whose full-sample prevalence is unmeasured; (b) the couples model assigns near-zero
+absolute probability to the observed chosen alternative, which must be characterised
+before a re-estimation result can be interpreted.
+
+TASK 1 — Bound the singleton residual prevalence (bounded EUROMOD).
+   On a large deterministic sample of GENUINELY collision-free couples nodes (singleton
+   draw_joint, both deciders), clean-reprice and compare to stored ils_dispy and
+   components. Report the share of collision-free nodes whose stored value the clean
+   path CANNOT reproduce to tolerance (this is the residual prevalence, distinct from
+   the draw_joint=0 collision). Stratify by whether the residual decider's stored value
+   approximates a cross-decider quantity (e.g. partner's child benefit), to test the
+   candidate cross-attribution mechanism named in Two-G. Report the residual as a share
+   of all couples consumptions, with the per-component localisation. Do NOT attempt a
+   repair of the residual; bound it and characterise it.
+
+TASK 2 — Characterise the couples model fit (read-only, reuse welfare V machinery).
+   At theta_hat, for all couples, report the distribution of P_chosen relative to the
+   uniform benchmark 1/901, the rank of the observed chosen alternative within its own
+   901-alternative choice set (is the observed alternative typically high- or low-
+   probability among its neighbours?), and the share of households whose chosen
+   alternative is in the top decile of its own choice set. State whether the near-zero
+   absolute P_chosen reflects grid fineness (relative fit acceptable) or genuine misfit
+   (observed alternative systematically low-ranked). This conditions how a re-estimation
+   result must be read.
+
+TASK 3 — Produce the corrected chosen consumption to a SIDE ARTEFACT (no overwrite).
+   Using the collision-free reprice path (Two-G-validated == isolated clean), reprice
+   the chosen alternative (0,0,0) and the first sim cell sharing draw_joint=0 for ALL
+   couples, and write the corrected household-joint consumption to a NEW side file
+   clearly named as a correction candidate (e.g. outputs/.../couples_chosen_corrected_
+   consumption.parquet) that does NOT replace any build parquet. Report coverage (all
+   couples priced?), the corrected-vs-stored distribution at full-sample scale, and an
+   explicit parity check that the collision-free path reproduces stored consumption on
+   the UNAFFECTED alternatives of the same households (so the correction touches only
+   the contaminated chosen/first-cell nodes, nothing else). If any couple cannot be
+   cleanly repriced, report it BLOCKED with a count; do not fabricate.
+
+Deliver: source under scripts/welfare/ (Two-H, measurement + side-artefact production
+only); a report docs/jmp_methodology/RURO_welfare_stage2_couples_correction_prep_v1.md
+with the residual prevalence bound + cross-attribution test, the couples fit
+characterisation, and the corrected-consumption coverage + distribution + unaffected-node
+parity; provenance JSON; the side-artefact corrected-consumption file (NOT a build
+parquet). Config-driven, no hardcoded case constants. State explicitly no W^3 welfare
+finding is produced, no measure beyond W^3 is touched, nothing was re-estimated, and no
+build parquet was written or overwritten. STOP after producing the correction candidate
+and the diagnostics — the controlled re-estimation is a SEPARATE authorisation. If
+anything is ambiguous against the repo, STOP and report rather than guessing.

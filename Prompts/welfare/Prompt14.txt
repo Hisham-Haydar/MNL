@@ -1,0 +1,74 @@
+STAGE TWO, INCREMENT TWO-I only — READ-ONLY validation of the Two-H stop result.
+
+Do NOT re-estimate. Do NOT produce a correction candidate. Do NOT overwrite or rewrite
+any engine-ready / priced / precompute / chunk parquet. Do NOT price redrawn nodes.
+Do NOT compute V_i^dir. Do NOT run 2x/4x growth. Do NOT promote W^3. Do NOT touch any
+measure beyond W^3. Do NOT commit automatically. Use .venv\Scripts\python.exe.
+
+Context:
+Two-H stopped after Tasks 1–2 because:
+(a) the collision-free singleton couples residual is non-negligible: 444/2700 = 16.4%,
+localised almost entirely to ils_ben, mechanism unresolved;
+(b) the couples model-fit diagnostic is severe: P_chosen < 1/901 for 100% of couples and
+chosen rank median = 901/901.
+
+Before any correction, side artifact, or controlled re-estimation is authorised, validate
+that Two-H’s two stop findings are not diagnostic artifacts.
+
+TASK 1 — Validate the couples model-fit diagnostic.
+Verify that the chosen-rank result is computed on the exact same V grid and row ordering
+used by the certified couples likelihood at theta_hat.
+
+Report:
+- whether engine-ready row 0 per household is exactly the observed chosen alternative;
+- whether `is_chosen_joint` selects the same row as the estimator’s observed-choice
+  convention;
+- whether `use_actual_choice=False` / column-0 likelihood and the explicit
+  `is_chosen_joint` likelihood give the same per-household V_obs and LL contribution;
+- whether the V sign/orientation is correct: higher V must imply higher softmax
+  probability;
+- the distribution of chosen rank recomputed under the production likelihood convention.
+
+DECISIVE EQUIVALENCE CHECK:
+For a small deterministic set of couples, compute observed-choice `V_obs` and household
+log-sum both:
+(i) through the certified estimator likelihood path at theta_hat; and
+(ii) through the welfare-machinery V grid used for the chosen-rank computation.
+
+Report max abs `|V_obs(i) - V_obs(ii)|` and max abs `|logsum(i) - logsum(ii)|`.
+
+The rank-901 result is trustworthy ONLY if both agree to machine tolerance. If either
+diverges, the divergence is the artifact: report its magnitude, identify whether it comes
+from row order / chosen marker / sign convention / another convention, and STOP.
+
+If the rank-last result survives all checks, state it as a real couples fit problem.
+If it fails any check, diagnose the artifact and stop.
+
+TASK 2 — Validate the singleton residual measurement.
+Audit the 16.4% singleton residual without attempting repair.
+
+Report:
+- whether sampled singleton nodes are genuinely collision-free under the full couples
+  node key `(stacked_hh_uid, draw_joint, draw_male, draw_female)`;
+- whether stored and clean-reprice rows are matched on the exact same household, draw,
+  decider, year, and system pairing;
+- whether failures cluster by year, household type, benefit component, draw_joint,
+  batch, or decider sex;
+- whether the residual persists under the exact same parity comparison used in Two-E
+  for passing singleton nodes.
+
+Do not propose a correction unless the residual is first reproduced and classified.
+
+Deliver:
+- report `docs/jmp_methodology/RURO_welfare_stage2_twoH_validation_v1.md`;
+- optional read-only provenance JSON under `outputs/welfare/stage1_w3/`.
+
+The report must conclude with one of:
+1. TWO-H VALIDATED: residual is real and model-fit problem is real;
+2. MODEL-FIT DIAGNOSTIC ARTIFACT: explain the artifact and stop;
+3. RESIDUAL DIAGNOSTIC ARTIFACT: explain the artifact and stop;
+4. AMBIGUOUS: state exactly what remains unresolved.
+
+State explicitly that no W^3 welfare finding is produced, no measure beyond W^3 is
+touched, nothing was re-estimated, no V_i^dir was computed, no redrawn node was priced,
+and no build parquet was written or overwritten.

@@ -1,0 +1,60 @@
+STAGE TWO, INCREMENT TWO-E only — bounded diagnostic isolating the EUROMOD
+assessment-unit (TUDef) artefact from the Two-C structural benefit-state question.
+Do NOT price redrawn nodes, do NOT compute V_i^dir, do NOT run 2x/4x growth, do NOT
+promote W^3, do NOT touch any measure beyond W^3, do NOT implement decomposition,
+bootstrap, gender-split, dominance, or intra-household work, do NOT commit
+automatically, do NOT write or overwrite any storage/precompute/priced/chunk parquet.
+Use .venv\Scripts\python.exe. EUROMOD may be run only on tiny existing-node subsets.
+
+Context (read first): RURO_welfare_stage2_resim_feasibility_v1.md and the persisted
+log outputs/welfare/stage1_w3/stage2_resim_euromod_console.log. The Two-D probe failed
+existing-node parity on all six cells AND emitted 48 TUDef "more than one possible
+partner found for assessment unit" warnings across 8 tax units. Two findings are
+entangled and must be separated: (i) Two-C's structural claim that ils_ben is
+node-dependent and not reconstructible; (ii) a stamping artefact in which per-draw
+_stamp_draw_ids corrupts EUROMOD's assessment-unit resolution for multi-person
+households. Under Two-D, couples ils_origy diverged (up to ~4350) where it was
+machine-zero under Two-B — an income aggregation that can only move if EUROMOD assigns
+persons to the wrong units, which the TUDef warnings report. The parity gate is
+therefore currently measuring a stamping artefact, not the structural question.
+
+Task — run a LADDER of minimal existing-node parity configurations, each removing one
+source of identifier ambiguity, and report at which rung parity is recovered and
+whether TUDef warnings vanish:
+
+  Rung 1 — SINGLE household, SINGLE draw, UNSTAMPED. Take one benefit-recipient
+    household (a singles decider with at least one dependent child, so child/housing
+    benefit units are exercised) at one existing draw, with its ORIGINAL unmodified
+    idhh/idperson (no _stamp_draw_ids applied at all). Run EUROMOD. Report: TUDef
+    warning count, and per-component parity (ils_dispy, ils_origy, ils_ben, ils_tax,
+    ils_sicdy) against the stored priced value for that exact household-draw.
+
+  Rung 2 — SINGLE household, MULTIPLE draws, UNSTAMPED-PER-DRAW but draw-disambiguated
+    by a scheme that PRESERVES within-household roster relationships (e.g. a household
+    block offset that keeps partner/parent/child links resolvable, rather than a flat
+    per-person stamp). Report the same diagnostics. The question: can multiple draws of
+    one household coexist in one EUROMOD run WITHOUT inducing partner ambiguity?
+
+  Rung 3 — the Two-D stamping (current _stamp_draw_ids) on the SAME single household,
+    to confirm it reproduces the TUDef warnings and the parity failure in isolation.
+
+Then state the verdict precisely:
+  - If Rung 1 PASSES (parity to tolerance, zero TUDef warnings): the Two-D failure is
+    the STAMPING ARTEFACT, not the Two-C structural state. The benefit-state inputs ARE
+    sufficient; the route to a parity-passing path is a roster-preserving draw-keying
+    scheme. Two-C's "not reconstructible" verdict is then narrowed to "not
+    reconstructible UNDER THE CURRENT STAMPING", and the design space reopens.
+  - If Rung 1 FAILS on ils_ben even unstamped and warning-free: the Two-C structural
+    verdict STANDS on the strongest evidence — a single clean household with no
+    identifier ambiguity still cannot reproduce stored benefits — and the route
+    decision moves to certify-and-caveat.
+  - Report which rung first recovers parity and zero warnings, if any.
+
+Deliver: diagnostic-only source under scripts/welfare/ (clearly marked Two-E
+diagnostic, not a production path); a report
+docs/jmp_methodology/RURO_welfare_stage2_assessment_unit_diagnosis_v1.md with the
+three-rung ladder, per-rung TUDef counts and per-component parity, and the verdict
+(stamping artefact vs structural). Provenance JSON. Config-driven, no hardcoded case
+constants. State explicitly no W^3 welfare finding is produced and no measure beyond
+W^3 is touched. If anything is ambiguous against the repo, STOP and report rather
+than guessing.

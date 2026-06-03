@@ -1,0 +1,74 @@
+STAGE TWO, INCREMENT TWO-K only — SINGLES V_i^dir gate + smoke only.
+
+This is the SINGLES track only. It does NOT touch couples, does NOT depend on the
+couples residual, and does NOT re-estimate.
+
+Do NOT run the full-sample singles V_i^dir production cross-check. Do NOT price couples
+nodes. Do NOT promote W^3 to a finding. Do NOT extend to W^1/W^2/W^4/W^5/W^6. Do NOT
+implement decomposition. Do NOT overwrite any build/storage/engine-ready/priced/
+precompute/chunk parquet. Do NOT commit automatically. Use .venv\Scripts\python.exe.
+
+Context:
+Two-I showed that the Two-H couples model-fit scare was an IS-ranking artifact and is
+retracted. The remaining couples issue is the real ~16% singleton residual, which is
+separate from singles.
+
+Two-E established that the SINGLES presentation is collision-free: the singles node key
+`(stacked_hh_uid, draw)` makes the stamp unique, and singles benefit state reproduced
+cleanly in the bounded ladder. The singles importance-sampling welfare integral is thin
+(median ESS ~20 of 101; 85–90% below threshold 30), so the `V_i^dir` redraw cross-check
+remains a precondition for certifying any singles welfare distribution.
+
+TASK 1 — Existing-node parity gate at production scope.
+Before pricing any redrawn singles node, confirm that the singles clean-reprice path
+reproduces stored `ils_dispy` and each component (`ils_origy`, `ils_ben`, `ils_tax`,
+`ils_sicdy`) to machine tolerance on EXISTING singles nodes.
+
+Run this across all singles year cells (2015/2016/2017) and both singles_male and
+singles_female, using a deterministic sample larger than the Two-E ladder. State the
+sample size and selection rule.
+
+Report the per-cell parity grid. PASS requires every sampled cell to reproduce to
+tolerance, including `ils_ben`. If any cell fails, STOP and report. Do not price redrawn
+nodes against an unvalidated path.
+
+TASK 2 — Bounded V_i^dir smoke only.
+Only if Task 1 PASSES: on a small deterministic singles subset, draw nodes from
+`g_hat` using the estimated opportunity-density channel structure consistent with the
+estimator/proposal: employment, occupation, hours, wage.
+
+For those redrawn nodes:
+- build EUROMOD input records from the validated singles template path;
+- price only this small smoke subset;
+- integrate the extreme-value shocks analytically via log-sum;
+- compute `|V_i^dir - V_i^IS|` for the smoke households.
+
+No Frechet draws. No simulated argmax. No full-sample run.
+
+If redrawn-node EUROMOD input construction is infeasible or ambiguous for any subgroup,
+STOP and report the exact blocker; do not approximate or interpolate.
+
+TASK 3 — Readiness report, then STOP.
+Do NOT run the full singles production cross-check in this increment.
+
+Report:
+- Task 1 per-cell existing-node parity PASS/FAIL;
+- Task 2 smoke `|V_i^dir - V_i^IS|` distribution;
+- blocked households/nodes, if any;
+- EUROMOD timing from the smoke;
+- projected cost of the later full singles run for full singles_male + singles_female
+  at configured nodes-per-household counts;
+- a clear readiness statement: READY / NOT READY for a separately authorised full
+  singles `V_i^dir` production run.
+
+Deliver:
+- source under `scripts/welfare/`, clearly marked Two-K singles gate+smoke only;
+- report `docs/jmp_methodology/RURO_welfare_stage2_singles_vdir_gate_v1.md`;
+- provenance JSON under `outputs/welfare/stage1_w3/`.
+
+Config-driven, no hardcoded case constants. State explicitly that no W^3 welfare finding
+is produced, no measure beyond W^3 is touched, couples were not touched, nothing was
+re-estimated, no full production `V_i^dir` run was executed, and no build parquet was
+written or overwritten.
+
+If anything is ambiguous against the repo, STOP and report rather than guessing.

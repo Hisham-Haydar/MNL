@@ -1,0 +1,118 @@
+STAGE TWO, INCREMENT TWO-L only — diagnose the cross-track stored-target `ils_ben`
+residual now validated in both couples and singles.
+
+Do NOT re-estimate. Do NOT compute `V_i^dir`. Do NOT price redrawn nodes. Do NOT promote
+W^3. Do NOT touch any measure beyond W^3. Do NOT produce a correction candidate. Do NOT
+overwrite or rewrite any build / storage / engine-ready / priced / precompute / chunk
+parquet. Do NOT commit automatically. Use `.venv\Scripts\python.exe`.
+
+Context:
+Two-I validated the couples singleton stored-target residual as real. Two-K extended the
+same signature to singles at production scope: all 2015/2016/2017 × singles_male/female
+cells fail existing-node clean-reprice parity on `ils_ben`, with income/contributions
+machine-zero, 0 TUDef, identical inputs on checked failures, and isolated confirmation.
+This is now the critical blocker for any redrawn-node welfare pricing.
+
+The residual is cross-track: singles and couples show the same `ils_ben`-localised,
+inputs-identical, output-different, collision-independent signature. Its prevalence rises
+by data year. Treat this as a single shared benefit-pricing reproducibility problem unless
+the evidence proves otherwise.
+
+TASK 1 — Build a cross-track FAIL/PASS sample.
+Construct deterministic samples of existing nodes:
+- singles FAIL nodes from Two-K and matched singles PASS controls;
+- couples singleton FAIL nodes from Two-H/Two-I and matched couples PASS controls.
+
+For each node, record:
+- full node key;
+- track: singles_male / singles_female / couples;
+- data year and EUROMOD system pairing;
+- stored vs clean components: `ils_dispy`, `ils_ben`, `ils_tax`, `ils_origy`, `ils_sicdy`;
+- roster structure;
+- benefit inputs;
+- relevant intermediate and output benefit variables.
+
+Match controls by year, household type, draw position, benefit-recipient status, and
+decider sex where applicable.
+
+TASK 2 — Localise the benefit component.
+Decompose the `ils_ben` gap as finely as persisted outputs allow.
+
+Identify whether the gap is concentrated in:
+- housing benefits;
+- child/family benefits;
+- social assistance;
+- activity allowance / PPE;
+- unemployment;
+- disability;
+- pension-related components;
+- another component;
+- or not identifiable from persisted outputs.
+
+If the exact component cannot be identified from persisted outputs, state that explicitly.
+
+TASK 3 — Test shared mechanisms, with the year-gradient hypothesis first.
+Compare FAIL vs PASS across singles and couples for:
+- benefit component;
+- year/system pairing;
+- benefit-recipient state;
+- household roster/dependants;
+- housing variables;
+- annual/lagged income variables;
+- row order / chunk context;
+- benefit input fields present in precompute vs priced;
+- persisted intermediate variables that differ.
+
+LEAD HYPOTHESIS — year gradient:
+The residual prevalence rises monotonically by data year. Test directly whether failing
+nodes concentrate in benefit components whose EUROMOD policy parameters or rules differ
+across the `FR_2014` / `FR_2015` / `FR_2016` systems used to price the three data years.
+
+For a deterministic set of failing nodes, compare the stored `ils_ben` against clean
+reprices under the OTHER available policy systems. If a failing node’s stored value
+reproduces under a DIFFERENT policy system than its assigned one, classify the residual
+as a system-pairing / policy-vintage mismatch, not a state-reconstruction gap.
+
+Report explicitly whether the stored value is reproducible under ANY available policy
+system.
+
+TASK 4 — Test the full-chunk-context hypothesis, falsifiably.
+On tiny bounded samples only, test whether a residual-failing node reproduces when run in
+a context closer to the original production chunk rather than isolated/bounded batches.
+Do not write parquet.
+
+This test is falsifiable:
+- CONFIRMED only if a residual-failing node that fails in isolation reproduces the stored
+  value in faithful full-production-chunk context, AND a matched PASS node still
+  reproduces in the same context.
+- REJECTED if the failing node still fails in full-production-chunk context.
+- AMBIGUOUS only if faithful full-production-chunk replay is infeasible; if so, state
+  exactly what prevents it.
+
+TASK 5 — Verdict.
+Classify the residual as one of:
+
+A. IDENTIFIED AND REPAIRABLE with bounded plumbing;
+B. IDENTIFIED BUT REQUIRES BUILD-LEVEL / FULL-CHUNK REPRICING;
+C. NOT IDENTIFIED BUT LOW-IMPACT;
+D. NOT IDENTIFIED AND BLOCKING ALL REDRAWN-NODE WELFARE PRICING;
+E. AMBIGUOUS — specify exactly what evidence is missing.
+
+Deliver:
+- report:
+  `docs/jmp_methodology/RURO_welfare_stage2_cross_track_benefit_residual_diagnosis_v1.md`
+- provenance JSON under:
+  `outputs/welfare/stage1_w3/`
+- diagnostic-only source under `scripts/welfare/` if needed.
+
+State explicitly:
+- no W^3 welfare finding is produced;
+- no measure beyond W^3 is touched;
+- no `V_i^dir` is computed;
+- no redrawn node is priced;
+- nothing is re-estimated;
+- no correction candidate is produced;
+- no build / storage / engine-ready / priced / precompute / chunk parquet is written or
+  overwritten.
+
+If anything is ambiguous against the repo, STOP and report rather than guessing.

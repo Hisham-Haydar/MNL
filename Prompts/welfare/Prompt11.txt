@@ -1,0 +1,50 @@
+STAGE TWO, INCREMENT TWO-F only — READ-ONLY audit of stored couples baseline
+contamination from the draw_joint stamping collision identified in
+RURO_welfare_stage2_assessment_unit_diagnosis_v1.md. Do NOT re-estimate, do NOT price
+redrawn nodes, do NOT compute V_i^dir, do NOT run 2x/4x growth, do NOT promote W^3, do
+NOT touch any measure beyond W^3, do NOT implement decomposition, do NOT commit
+automatically, do NOT write or overwrite any storage/precompute/priced/chunk/engine-
+ready parquet. Use .venv\Scripts\python.exe. EUROMOD may be run only on a tiny clean-
+reprice sample of affected couples nodes for the magnitude check.
+
+Context: Two-E established that the production _stamp_draw_ids keys couples on
+draw_joint alone, so two distinct labour-supply alternatives sharing a draw_joint
+collapse to the same stamped idperson, EUROMOD prices them against a merged assessment
+unit, and the STORED couples value for such nodes is contaminated. This was shown for
+one household. This increment quantifies the contamination across the FULL couples
+sample and assesses whether it could matter for the certified estimate. It is read-only
+and answers three questions.
+
+1. PREVALENCE (read-only, no EUROMOD). For each couples year cell, across ALL
+   households and ALL stored alternatives, count: how many distinct (stacked_hh_uid,
+   draw_joint) blocks pack more than one (draw_male, draw_female) alternative; what
+   fraction of all stored couples alternatives sit in such collision blocks; and the
+   distribution of alternatives-per-draw_joint. Report per year and pooled. State the
+   exact count and share of contaminated alternatives in the production couples data.
+
+2. CHOICE-PROBABILITY WEIGHT (read-only, no EUROMOD). For the contaminated
+   alternatives, compute their model-implied choice probabilities at theta_hat (reuse
+   the welfare core's existing V and within-household lse machinery — do NOT re-
+   estimate). Report the distribution of total per-household probability mass sitting
+   on contaminated alternatives, and the share of households with more than a trivial
+   (configurable threshold) mass on contaminated alternatives. This bounds how much the
+   contamination could plausibly influence the likelihood.
+
+3. MAGNITUDE (bounded EUROMOD, clean reprice). On a deterministic sample of
+   contaminated nodes across the year cells, reprice each affected alternative as a
+   CLEAN isolated household using the correct full node key (stamp on the full tuple so
+   no two alternatives share a stamped idperson), and compare the clean consumption to
+   the stored (contaminated) consumption. Report the distribution of |clean c_ij -
+   stored c_ij| on affected alternatives. Do NOT write the corrected values anywhere;
+   this is a magnitude measurement only.
+
+Deliver: read-only audit source under scripts/welfare/ (clearly Two-F, audit only); a
+report docs/jmp_methodology/RURO_welfare_stage2_couples_contamination_audit_v1.md with
+the prevalence counts/shares per year and pooled, the choice-probability-weight
+distribution, the clean-vs-stored consumption magnitude distribution, and an explicit
+assessment of whether the contamination is plausibly material to theta_hat (with the
+reasoning, not a verdict beyond what the evidence supports). Provenance JSON. Config-
+driven, no hardcoded case constants. State explicitly no W^3 welfare finding is
+produced, no measure beyond W^3 is touched, nothing was re-estimated, and no parquet
+was written. If anything is ambiguous against the repo, STOP and report rather than
+guessing.

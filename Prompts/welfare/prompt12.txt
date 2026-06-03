@@ -1,0 +1,64 @@
+STAGE TWO, INCREMENT TWO-G only — (i) validate the couples clean-reprice path to a
+machine-tolerance parity PASS on collision-free nodes, then (ii) measure the CHOSEN-
+alternative contamination specifically. Do NOT re-estimate, do NOT rewrite or overwrite
+the engine-ready / priced / precompute / chunk couples parquet, do NOT price redrawn
+nodes, do NOT compute V_i^dir, do NOT run 2x/4x growth, do NOT promote W^3, do NOT
+touch any measure beyond W^3, do NOT commit automatically. Use .venv\Scripts\python.exe.
+EUROMOD may be run only on bounded clean-reprice subsets of EXISTING couples nodes.
+
+Context: Two-F found the draw_joint=0 collision (build gate G2: draw_joint=0 packs the
+chosen alternative + the first sim cell) contaminates the stored couples consumption;
+exposure is household-universal and ALWAYS includes the chosen alternative (7438/7438).
+The chosen alternative enters the likelihood numerator with unit weight, so its
+contamination does not cancel and can bias theta_hat. BUT the Two-F magnitude is
+confounded: 3/24 singleton CONTROL nodes (no collision, zero TUDef) also failed the
+clean reprice, contradicting Two-E where singleton-draw_joint couples nodes repriced to
+machine ZERO. The magnitude cannot be cleanly attributed until this is resolved.
+
+TASK 1 — Resolve the reprice-path baseline discrepancy (the Gate-0 analogue).
+   - Reconcile Two-F against Two-E: NAME exactly what differs between the Two-E ladder
+     reprice (which passed singleton couples nodes to machine zero) and the Two-F
+     reprice path (which failed 3/24 collision-free controls) — input source, row
+     selection, schema, stamping, join keys, system pairing, CPI handling, or roster
+     assembly. Do not change the path until the difference is named.
+   - Achieve a clean path: on a deterministic set of GENUINELY collision-free couples
+     nodes (singleton draw_joint, both chosen-type and non-chosen-type), the clean
+     reprice must reproduce the stored ils_dispy AND every component (ils_origy,
+     ils_ben, ils_tax, ils_sicdy) to machine tolerance. Report the per-component parity
+     grid. PASS requires every collision-free control node to reproduce to tolerance;
+     if any still fails, STOP and report the residual — a path that cannot reproduce
+     the build on collision-free nodes cannot measure contamination on collision nodes.
+
+TASK 2 — Confirm the chosen-alternative consumption source.
+   - Verify directly that the engine-ready couples chosen-alternative consumption is
+     the EUROMOD-priced (collided) ils_dispy_real and not an independent observed-income
+     value. State the evidence (the row/key trace).
+
+TASK 3 — Measure chosen-alternative contamination (only if Task 1 PASSES).
+   - On a large deterministic sample of couples households (state the size; aim for
+     enough for a stable distribution, e.g. several hundred), clean-reprice the CHOSEN
+     alternative under a collision-free full-node-key stamping (so the chosen alt is
+     priced as an isolated household, never sharing a stamped idperson with the first
+     sim cell), and compare to the stored chosen-alternative consumption.
+   - Report the distribution of |clean c_chosen - stored c_chosen|: summary stats,
+     share of households with error above a configurable material threshold, and the
+     joint-disposable analogue for the couple. This is the direct measurement of the
+     bias the chosen channel would carry into the likelihood.
+
+TASK 4 — Bound the potential theta_hat influence WITHOUT re-estimating.
+   - Using the welfare core's existing V machinery at theta_hat, for the sampled
+     households compute the change in the chosen alternative's V and in the chosen
+     choice probability P_{i,chosen} implied by replacing stored c_chosen with clean
+     c_chosen. Report the distribution of |Delta V_chosen| and |Delta P_chosen| as a
+     first-order screen of how much the corrected chosen consumption would move each
+     household's likelihood contribution. Do NOT re-estimate; this is a screen, not a
+     re-fit.
+
+Deliver: source under scripts/welfare/ (Two-G, audit/measurement only); a report
+docs/jmp_methodology/RURO_welfare_stage2_couples_chosen_contamination_v1.md with the
+Two-E/Two-F reconciliation, the collision-free parity PASS grid, the chosen-source
+confirmation, the chosen-alternative contamination distribution, and the first-order
+theta_hat-influence screen. Provenance JSON. Config-driven, no hardcoded case constants.
+State explicitly no W^3 welfare finding is produced, no measure beyond W^3 is touched,
+nothing was re-estimated, and no parquet was written. If anything is ambiguous against
+the repo, STOP and report rather than guessing.

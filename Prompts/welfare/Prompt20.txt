@@ -1,0 +1,127 @@
+STAGE THREE, INCREMENT THREE-A only — pin and validate the reproducible staged baseline
+with a non-bypassable determinism gate.
+
+Do NOT re-estimate. Do NOT compute `V_i^dir`. Do NOT price redrawn welfare nodes. Do NOT
+promote any staged baseline to canonical. Do NOT swap, overwrite, move, or delete any
+production parquet. Do NOT touch any measure beyond W^3. Do NOT commit automatically. Use
+`.venv\Scripts\python.exe`.
+
+Context:
+Two-N already produced a full staged rebuild under the patched all-component write-back
+worker. Two-N stopped because headline parity against the old stored production failed,
+which means the old stored headline is not reproducible from current inputs/current
+EUROMOD execution. The staged rebuild is internally coherent, but it is not canonical and
+must not be used for re-estimation until its own reproducibility is pinned and validated.
+
+This increment validates the staged rebuild as a reproducible candidate baseline only.
+It does not re-estimate and does not promote.
+
+TASK 0 — Pin the rebuild configuration from evidence, not assumptions.
+Create or update a pinned rebuild configuration/provenance block that records, from the
+actual build code and Two-N provenance:
+- EUROMOD model/version information available in the repo/runtime;
+- system pairing by data year;
+- dataset names by data year;
+- CPI factors `phi_y`;
+- per-year input schemas;
+- staging path used by Two-N;
+- production chunk manifest: year, mode, chunk_id, draw_lo/draw_hi, row counts;
+- estimation base year;
+- assessment-unit / tax-unit configuration evidence where available.
+
+Do not hardcode France/year constants in source. If exact EUROMOD model version or
+assessment-unit definitions cannot be recovered from repo/runtime evidence, record
+`NOT ESTABLISHED FROM REPO EVIDENCE` rather than guessing.
+
+TASK 1 — Validate the existing Two-N staged baseline coverage.
+Read the Two-N staging directory and provenance. Confirm:
+- all expected chunks exist;
+- all completion metadata exist or can be reconstructed;
+- row counts match the production chunk manifest;
+- no production parquet was touched;
+- staged data are distinct from production paths.
+
+If the Two-N staging baseline is incomplete or ambiguous, STOP and report.
+
+TASK 2 — Determinism gate.
+Re-run a deterministic subset of production chunks using the pinned configuration and the
+patched all-component write-back worker to a separate scratch/staging-determinism location.
+
+The subset must include:
+- at least one singles chunk;
+- at least one couples chunk;
+- at least one benefit-heavy / previously headline-divergent chunk if identifiable.
+
+Compare the second-run output against the existing Two-N staged output on:
+- `ils_dispy`;
+- `ils_origy`;
+- `ils_ben`;
+- `ils_tax`;
+- `ils_sicdy`;
+- `ils_dispy_real`;
+- all available `ils_*` and `*_s` simulated component columns;
+- row keys and row order.
+
+PASS requires exact or machine-tolerance equality. Report max abs differences and row
+counts per checked chunk. If any checked chunk does not reproduce, STOP and report. A
+baseline that does not reproduce itself cannot be used as a controlled re-estimation
+foundation.
+
+TASK 3 — Component-coherence gate on the full Two-N staged baseline.
+On the full staged baseline, verify:
+- `ils_ben = ils_pen + ils_benmt + ils_bennt` where components exist;
+- `ils_dispy = ils_origy - ils_tax - ils_sicdy + ils_ben`;
+- simulated `ils_*` / `*_s` columns are draw-specific where headline values vary;
+- stale component carry-over is gone.
+
+Report violation counts per year × mode cell.
+
+TASK 4 — Pre-register the later re-estimation verdict criterion.
+Write the later controlled re-estimation criterion into config/provenance before any
+re-estimation is run.
+
+The criterion must state:
+- compare the re-estimated parameters against certified `theta_hat`;
+- compare parameter movement against clustered standard errors;
+- focus explicitly on decomposition-relevant blocks: ability/wage, opportunity/access,
+  and preference blocks;
+- re-run the synthetic-recovery standard on the new reproducible baseline;
+- no welfare promotion until the estimate decision is settled.
+
+Do not run the re-estimation here.
+
+TASK 5 — Readiness statement.
+Report whether the Two-N staged baseline is a VALIDATED REPRODUCIBLE CANDIDATE baseline.
+
+READY requires:
+- Task 1 coverage PASS;
+- Task 2 determinism PASS;
+- Task 3 component coherence PASS;
+- Task 4 criterion recorded.
+
+State explicitly:
+- the baseline is not canonical;
+- production is not swapped;
+- controlled re-estimation is a separate authorisation;
+- no welfare computation is authorised.
+
+Deliver:
+- pinned rebuild config/provenance block;
+- validation source under `scripts/welfare/` or `scripts/bpool/`;
+- report:
+  `docs/jmp_methodology/RURO_rebuild_stage1_pinned_baseline_validation_v1.md`
+- provenance JSON under `outputs/welfare/stage1_w3/` or `outputs/rebuild/`;
+- scratch determinism output path, clearly not production and not canonical.
+
+Config-driven, country/year/specification-agnostic, no hardcoded constants.
+
+State explicitly:
+- no re-estimation;
+- no `V_i^dir`;
+- no redrawn pricing;
+- no production swap;
+- no promotion to canonical;
+- nothing beyond W^3.
+
+If the determinism gate fails, or if pinned configuration evidence is missing, STOP and
+report rather than guessing.

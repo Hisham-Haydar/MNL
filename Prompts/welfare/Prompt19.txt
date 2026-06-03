@@ -1,0 +1,121 @@
+STAGE TWO, INCREMENT TWO-O only — decision memo for the failed Two-N headline parity gate
+and the corrected-baseline / controlled re-estimation decision.
+
+Do NOT swap staging into production. Do NOT re-estimate. Do NOT compute `V_i^dir`.
+Do NOT price redrawn nodes. Do NOT promote W^3. Do NOT touch any measure beyond W^3.
+Do NOT overwrite production parquet. Do NOT commit automatically.
+
+Read:
+- `docs/jmp_methodology/RURO_welfare_stage2_full_rebuild_validation_v1.md`
+- `outputs/welfare/stage1_w3/stage2_full_rebuild_staging.json`
+- `outputs/welfare/stage1_w3/stage2_full_rebuild_validation.json`
+- `docs/jmp_methodology/RURO_welfare_stage2_cross_track_benefit_residual_diagnosis_v1.md`
+- `docs/jmp_methodology/RURO_welfare_stage2_chunk_writeback_fix_validation_v1.md`
+- the certified baseline estimate docs/specs, including the 47-param certified baseline
+  `joint_pooled_v1_bll0_tlmpin`.
+
+Produce:
+`docs/jmp_methodology/RURO_welfare_stage2_baseline_provenance_decision_memo_v1.md`
+
+The memo is a supervisor-facing decision document. It must not authorise execution. It
+must convert the Two-N finding into a clear decision record.
+
+Sections, in this order:
+
+1. Purpose and document class.
+   State that this is a decision memo, not an implementation contract and not an
+   authorisation to rebuild, swap, re-estimate, or compute welfare.
+
+2. What Two-N proved.
+   State clearly:
+   - full staging rebuild completed;
+   - no production parquet was swapped, overwritten, moved, or deleted;
+   - component coherence was fixed by the all-simulated-output write-back;
+   - full-scale headline parity failed;
+   - stored production `ils_ben` / `ils_dispy` is not reproducible from current inputs and
+     current EUROMOD execution;
+   - the staged coherent rebuild would change `ils_dispy_real` on benefit-recipient rows;
+   - therefore no production swap is allowed.
+
+3. What explanations were tested and rejected.
+   Explain why the evidence rejects:
+   - a year/system-only explanation;
+   - CPI/uprating / real-wage deflation as the cause;
+   - missing household roster members;
+   - stamping/chunking differences;
+   - nondeterminism;
+   - silent drift between `.pre_wage_deflation.bak` and current on-disk files.
+
+4. Consequence for the certified estimate.
+   State:
+   - the certified estimate was fit on the old stored `ils_dispy_real` / `c_norm`;
+   - the coherent staged rebuild changes that estimator input on benefit-recipient rows;
+   - a naive swap would invalidate the certified estimate;
+   - redrawn-node welfare pricing cannot be certified against an unreproducible old
+     EUROMOD target;
+   - the component-staleness fix is correct but cannot be shipped by swapping staged
+     data without addressing the estimate.
+
+5. Decision options.
+   Present three options:
+
+   A. Freeze the old certified estimate and defer/caveat welfare requiring redrawn-node
+      pricing.
+      State what this preserves and what it cannot support.
+
+   B. Treat the coherent staged rebuild as the corrected reproducible baseline and run a
+      separately authorised controlled re-estimation / recovery gate.
+      State what this would require and what it would settle.
+
+   C. Attempt to recover the exact old EUROMOD execution environment.
+      State that this is worth only a bounded forensic attempt if cheap; Two-N already
+      found the `.pre_wage_deflation.bak` trail byte-identical to current files, so C
+      should not delay the A/B path unless new evidence appears.
+
+6. Common dispositive test beneath A and B.
+   Add this explicitly:
+   Options A and B share a common dispositive test — a controlled re-estimation on the
+   reproducible rebuilt baseline, compared against the certified estimate
+   parameter-by-parameter, against its cluster-robust standard errors and the synthetic-
+   recovery standard. Under A, this test establishes whether the irreproducibility is
+   immaterial and licenses a caveat; under B, it is the re-estimation step. The recommended
+   sequence is therefore to regenerate the baseline under a pinned EUROMOD execution with
+   all-component write-back, then run the controlled re-estimation, and let the result
+   decide whether the old baseline stands with a caveat or is replaced.
+
+7. Recommendation.
+   Give a decisive recommendation for supervisor discussion.
+   The recommendation should not pre-authorise execution. It should recommend the next
+   decision to be authorised and explain why.
+
+8. Outline of the next technical contract if the controlled re-estimation path is chosen.
+   Do not write the full contract. Outline only.
+   It must mention:
+   - pinned EUROMOD execution;
+   - all simulated-output write-back;
+   - full staging rebuild;
+   - full-scale determinism / reproducibility gate;
+   - controlled re-estimation starting from the certified `theta_hat`;
+   - comparison against clustered SEs and synthetic-recovery standard;
+   - no welfare promotion until the estimate decision is settled.
+
+   Also reference the two-deflation architecture:
+   - EUROMOD inputs must remain nominal and system-year consistent;
+   - data year remains one year ahead of the EUROMOD system as specified by the build;
+   - estimation-facing real-wage deflation is separate from post-EUROMOD CPI conversion;
+   - counterfactual wages must be expressed in the draw’s nominal frame before pricing and
+     returned to real terms via the configured `phi_y`;
+   - system pairing, CPI factors, schemas, base year, and assessment-unit definitions must
+     be config-driven, not hardcoded.
+
+9. Explicit non-execution statement.
+   State explicitly:
+   - no W^3 welfare finding is produced;
+   - no `V_i^dir` is computed;
+   - no redrawn node is priced;
+   - nothing is re-estimated;
+   - no production parquet is swapped, overwritten, moved, or deleted;
+   - this memo does not authorise implementation.
+
+End with the save-as line:
+`docs/jmp_methodology/RURO_welfare_stage2_baseline_provenance_decision_memo_v1.md`

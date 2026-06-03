@@ -1,0 +1,153 @@
+STAGE TWO, INCREMENT TWO-N only — full production rebuild under the patched chunk worker,
+to a REQUIRED STAGING directory, per-chunk resilient and resumable, gated on full-scale
+validation.
+
+Do NOT swap, overwrite, move, or delete any existing production parquet. Do NOT
+re-estimate. Do NOT compute V_i^dir. Do NOT price redrawn welfare nodes. Do NOT promote
+W^3. Do NOT touch any measure beyond W^3. Do NOT commit automatically. Use
+`.venv\Scripts\python.exe`.
+
+Context:
+Two-M patched `scripts/bpool/run_bpool_euromod_chunk.py` to write back ALL simulated
+output columns per draw, proved via Gate A1 that the five headline columns are
+byte-identical patched vs unpatched, and confirmed component coherence at bounded scale.
+
+Full scale is required to settle:
+1. exact full-scale headline parity vs stored production for means-tested benefits;
+2. couples population-context confirmation;
+3. full-scale component coherence across every production chunk.
+
+Scale:
+~22.5M EUROMOD rows across ~20 production chunks:
+- singles cells;
+- couples chunks, roughly 1.1M rows per chunk.
+This is a long background rebuild. Build it to be safe, resumable, and auditable.
+
+TASK 0 — Staging mechanism: production-write impossible on this path.
+Parameterise the chunk output directory as a REQUIRED argument of the rebuild driver.
+
+The rebuild driver must refuse to run if the resolved output path:
+- is the production `chunks/` directory;
+- is inside the production `chunks/` directory;
+- would overwrite any existing production parquet.
+
+No production default may be reachable through this rebuild entry point.
+
+Use a clearly named staging directory, e.g. a dated `rebuild_v2/` sibling of `chunks/`.
+Report the exact resolved staging path.
+
+TASK 1 — Rebuild to staging: per-chunk, resilient, resumable.
+Run the patched worker across all production chunks for all year × mode cells, using the
+same production chunk definitions:
+- same year/mode cells;
+- same chunk IDs;
+- same draw_lo/draw_hi bands;
+- same population/chunk granularity;
+- same system pairing;
+- same CPI.
+
+Each chunk must write:
+- one staging parquet;
+- one completion marker / metadata JSON.
+
+Each completion marker must record:
+- year;
+- mode;
+- chunk_id;
+- draw_lo/draw_hi;
+- row count;
+- EUROMOD wall seconds;
+- TUDef count;
+- output path;
+- component-coherence self-check on that chunk.
+
+Before running a chunk, skip it if a valid staging parquet + completion marker already
+exist. This makes the rebuild resumable.
+
+If a chunk aborts or times out:
+- record it as BLOCKED with exact counts and error;
+- STOP launching further chunks;
+- report which chunks completed;
+- do not discard completed staging chunks;
+- do not fabricate or interpolate the failed chunk.
+
+TASK 2 — Inline per-chunk headline parity: fail-fast.
+As each staging chunk completes, compare a deterministic sample of its decider-row
+headline columns against the existing stored production headline values.
+
+Columns:
+- `ils_dispy`;
+- `ils_origy`;
+- `ils_ben`;
+- `ils_tax`;
+- `ils_sicdy`;
+- `ils_dispy_real`.
+
+If the first completed couples chunk’s sampled headline does not reproduce stored
+production to tolerance, STOP and report. That would mean either the rebuild is not
+faithful to production or the couples population-context interpretation is wrong.
+
+Continue only if inline parity is not systematically failing.
+
+TASK 3 — End-of-run full-scale headline parity gate.
+Once all chunks complete, compare rebuilt staging headline values against existing stored
+production on ALL decider rows, per year × mode cell.
+
+Also report all-row parity separately.
+
+PASS requires machine-tolerance parity on decider rows for:
+- `ils_dispy`;
+- `ils_origy`;
+- `ils_ben`;
+- `ils_tax`;
+- `ils_sicdy`;
+- `ils_dispy_real`.
+
+Report couples explicitly. This is the full-scale confirmation of the couples
+population-context claim.
+
+If couples headline parity fails at full scale, STOP and report. Do not recommend swap.
+
+TASK 4 — Full-scale component-coherence gate.
+On rebuilt staging data, verify:
+- `ils_ben = ils_pen + ils_benmt + ils_bennt` where components exist;
+- `ils_dispy = ils_origy - ils_tax - ils_sicdy + ils_ben`;
+- simulated `ils_*` / `*_s` columns are draw-specific where headline values vary;
+- stale component carry-over is gone.
+
+Report violation counts per year × mode cell.
+
+TASK 5 — Readiness for production swap, but do NOT swap.
+Readiness requires:
+- Task 1 complete chunk coverage;
+- Task 2 inline parity not systematically failing;
+- Task 3 full-scale headline parity PASS for singles and couples;
+- Task 4 component coherence PASS.
+
+Report:
+- singles_ready;
+- couples_ready;
+- overall_ready_for_separate_swap_authorisation.
+
+The actual swap of staging into production is a SEPARATE supervisor-level authorisation.
+Do not perform it.
+
+Deliver:
+- parameterised rebuild driver under `scripts/bpool/` or `scripts/welfare/`;
+- report:
+  `docs/jmp_methodology/RURO_welfare_stage2_full_rebuild_validation_v1.md`
+- provenance JSON under:
+  `outputs/welfare/stage1_w3/`
+- staging directory path.
+
+Config-driven, no hardcoded case constants.
+
+State explicitly:
+- no W^3 welfare finding;
+- no measure beyond W^3;
+- no V_i^dir;
+- no redrawn pricing;
+- no re-estimation;
+- no production parquet swapped, overwritten, moved, or deleted.
+
+If anything is ambiguous against the repo, STOP and report rather than guessing.

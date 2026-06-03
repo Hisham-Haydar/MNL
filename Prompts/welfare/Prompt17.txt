@@ -1,0 +1,105 @@
+STAGE TWO, INCREMENT TWO-M only — build-level EUROMOD chunk write-back fix and bounded
+validation.
+
+Do NOT run a full production rebuild. Do NOT re-estimate. Do NOT compute `V_i^dir`.
+Do NOT price redrawn welfare nodes. Do NOT promote W^3. Do NOT touch any measure beyond
+W^3. Do NOT commit automatically. Use `.venv\Scripts\python.exe`.
+
+Context:
+Two-L identified the cross-track `ils_ben` residual as Verdict B:
+(1) benefit repricing must be done at production/population chunk scale, not isolated;
+(2) `scripts/bpool/run_bpool_euromod_chunk.py` currently overwrites only the five headline
+EUROMOD outputs, leaving simulated component columns stale across draws.
+
+The certified estimate is fit on the existing stored headline consumption
+(`ils_dispy_real` / `c_norm`). Therefore this patch must update stale simulated component
+columns without changing the five headline columns relative to the existing production
+stored values.
+
+TASK 1 — Patch write-back logic.
+In `scripts/bpool/run_bpool_euromod_chunk.py`, after each EUROMOD run, overwrite every
+simulated output column present in `sim_df` into `out_df`, not only `_EM_OUTPUT_COLS`.
+
+Preserve:
+- `idhh_true`;
+- `idperson_true`;
+- `ils_dispy_real`;
+- CPI handling;
+- metadata;
+- row order;
+- all existing keys.
+
+Do not change estimation code or welfare code.
+
+TASK 2 — Bounded validation only.
+Run tiny deterministic rebuild/validation chunks only, at production-like
+population/chunk scale. Include both singles and couples validation chunks.
+
+Do not overwrite production parquets. Write outputs only to a clearly marked temporary /
+validation location.
+
+Validation gates:
+
+A. HEADLINE INVARIANCE — estimate-protecting gate.
+The rebuilt headline columns must equal the existing stored production values to machine
+tolerance on every validated row:
+- `ils_dispy`;
+- `ils_origy`;
+- `ils_ben`;
+- `ils_tax`;
+- `ils_sicdy`;
+- `ils_dispy_real`.
+
+The patch must change only previously stale simulated component columns. If any headline
+column moves, STOP: the patch has altered an estimator input and is not valid.
+
+B. COMPONENT COHERENCE.
+After the patch, validate that simulated component columns are draw-specific and internally
+coherent:
+- `ils_ben = ils_pen + ils_benmt + ils_bennt` where those components exist;
+- `ils_dispy = ils_origy - ils_tax - ils_sicdy + ils_ben`;
+- relevant `ils_*` / `*_s` columns vary across draws when the headline varies;
+- no stale precompute carry-over remains for simulated output columns.
+
+C. COUPLES POPULATION-CONTEXT CONFIRMATION.
+Two-L confirmed the population-context mechanism exactly for singles but only indicated it
+for couples. The bounded validation must reproduce stored couples headline
+`ils_dispy` / `ils_ben` to tolerance on a faithful couples population-scale chunk.
+
+If the couples chunk cannot be run to completion within the validation budget, report
+`COUPLES NOT CONFIRMED` explicitly and do NOT declare the patch ready for couples.
+Readiness must be split:
+- singles_ready: true/false;
+- couples_ready: true/false.
+
+D. ROW / WARNING STABILITY.
+Validate:
+- no row-count mismatch;
+- row keys and ordering remain stable;
+- no new TUDef or EUROMOD warning regression;
+- validation output is written only to temporary/validation paths.
+
+TASK 3 — Report readiness.
+Produce:
+`docs/jmp_methodology/RURO_welfare_stage2_chunk_writeback_fix_validation_v1.md`
+
+Include:
+- exact code change;
+- validation chunk scope;
+- headline invariance results;
+- component coherence results;
+- singles readiness;
+- couples readiness;
+- whether patched output is READY / NOT READY for a separately authorised full production
+  rebuild.
+
+State explicitly:
+- no W^3 welfare finding;
+- no measure beyond W^3;
+- no `V_i^dir`;
+- no redrawn welfare pricing;
+- no re-estimation;
+- no full production rebuild;
+- no production parquet overwritten.
+
+If anything is ambiguous, STOP and report rather than guessing.

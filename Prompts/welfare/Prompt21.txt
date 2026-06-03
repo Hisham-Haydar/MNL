@@ -1,0 +1,122 @@
+
+STAGE THREE, INCREMENT THREE-B1 only — assemble the validated reproducible staged
+baseline into engine-ready estimation objects and run pre-estimation parity gates.
+
+Do NOT re-estimate. Do NOT compute `V_i^dir`. Do NOT price redrawn welfare nodes. Do NOT
+promote W^3. Do NOT touch any measure beyond W^3. Do NOT swap, overwrite, move, or
+delete any production parquet. Do NOT promote the staged baseline to canonical. Do NOT
+commit automatically. Use `.venv\Scripts\python.exe`.
+
+Context:
+Three-A validated the Two-N staged rebuild as a reproducible candidate baseline:
+determinism gate PASS, full component coherence PASS, pinned config recorded. The next
+scientific test is controlled re-estimation, but before any re-estimation is interpretable,
+the staged rebuilt data must be assembled into engine-ready estimation objects through the
+same construction path as the certified baseline and pass parity/structure gates.
+
+TASK 1 — Build engine-ready objects from staged baseline to a staging-only location.
+Using the same engine-ready construction path as the certified estimate, assemble singles
+and couples engine-ready objects from the validated staged rebuild.
+
+Preserve:
+- same spec and draw resolution;
+- same row ordering convention;
+- same choice indicators;
+- same cluster key `idorighh`;
+- same `c_scale` construction rule;
+- same real-wage / nominal-EUROMOD two-deflation discipline;
+- same system pairing and CPI from the pinned Three-A config.
+
+Write only to a staging/validation path. Do NOT overwrite certified engine-ready files.
+
+TASK 2 — Structure and row-order gates.
+Compare staged engine-ready vs certified engine-ready:
+- row counts;
+- household counts;
+- alternatives per household: singles 101, couples 901;
+- one chosen row per choice set;
+- row ordering;
+- key alignment;
+- cluster key alignment;
+- draw keys and choice indicators.
+
+PASS requires exact structural alignment except for intended value changes from the staged
+rebuild.
+
+TASK 3 — Consumption blast-radius gate.
+Compare staged vs certified engine-ready consumption:
+- `consumption`;
+- `c_norm`;
+- `c_scale`;
+- any stored `ils_dispy_real`-derived fields.
+
+Report:
+- number/share of rows changed;
+- number/share of choice sets touched;
+- max/median/quantiles of differences;
+- breakdown by year, mode, chosen vs nonchosen, and benefit-recipient status where
+  available.
+
+This is descriptive only; do not interpret parameter movement here.
+
+TASK 4 — Likelihood parity on unchanged fields.
+At certified `theta_hat`, run the certified JAX likelihood machinery on:
+- certified engine-ready data;
+- staged engine-ready data.
+
+Report:
+- certified-data LL reproduced from existing record;
+- staged-data LL at certified `theta_hat`;
+- ΔLL total and by group;
+- whether differences are localised to rows whose consumption changed.
+
+Also run a “no-change control” if feasible: verify that groups/rows with unchanged
+consumption produce identical V contributions.
+
+TASK 5 — Readiness for controlled re-estimation.
+Declare READY for Three-B2 only if:
+- structure/row-order gates pass;
+- no unintended field changes are detected;
+- the staged likelihood at certified `theta_hat` is computable with the certified JAX
+  machinery;
+- blast radius is fully quantified.
+
+Deliver:
+- staged engine-ready files in a staging-only path;
+- report:
+  `docs/jmp_methodology/RURO_rebuild_stage2_engine_ready_parity_v1.md`
+- provenance JSON;
+- no re-fitted theta.
+
+State explicitly:
+- no re-estimation;
+- no synthetic recovery;
+- no `V_i^dir`;
+- no redrawn pricing;
+- no W^3 promotion;
+- no production swap;
+- no promotion to canonical.
+
+If any structure/row-order/likelihood gate fails, STOP and report rather than proceeding.
+
+ADDENDUM to Three-B1, if not already covered:
+
+When running the blast-radius and likelihood no-change controls, distinguish raw
+consumption changes from global `c_scale` effects.
+
+Because `c_scale = mean(consumption)` may differ between the certified and staged
+engine-ready builds, `c_norm` can change for rows whose raw `consumption` / `ils_dispy_real`
+did not change. Do not classify that alone as an unintended row-level data change.
+
+Report separately:
+1. raw `consumption` / `ils_dispy_real` blast radius;
+2. `c_scale` old vs new and percent change;
+3. `c_norm` blast radius induced only by the changed denominator;
+4. likelihood/V differences under:
+   - native certified `c_scale`;
+   - native staged `c_scale`;
+   - if feasible, a diagnostic fixed-`c_scale` comparison to isolate row-level consumption
+     changes from global scaling.
+
+The no-change control should pass after accounting for the `c_scale` channel. If unchanged
+raw-consumption rows differ for any other reason, STOP and report.

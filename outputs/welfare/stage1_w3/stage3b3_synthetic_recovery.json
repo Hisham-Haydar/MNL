@@ -1,0 +1,334 @@
+{
+  "increment": "stage3b3_synthetic_recovery_v1",
+  "no_v_dir": true,
+  "priced_redrawn_node": false,
+  "promoted_w3": false,
+  "promoted_to_canonical": false,
+  "production_parquet_swapped_or_overwritten_or_moved_or_deleted": false,
+  "overwrote_certified_or_rebuilt_theta": false,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "staged_stem": "fr_p3a_bpool_engine_ready_staged_threeB1",
+  "recovered_theta_csv": "scripts\\bpool\\specs\\theta_recovered_staged_synth_901_v1.csv",
+  "gate_returncode": 0,
+  "task0_preregistered_standard": {
+    "mirrored_certified_gate": "docs\\France_case\\P3a\\execution_logs\\Bpool\\RURO_jax_recovery_gate_tlmpin_901_v1.md",
+    "dgp_theta_source": "scripts\\bpool\\specs\\theta_star_joint_v1.csv",
+    "fit_spec": "scripts\\bpool\\specs\\estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
+    "draw_spec": "scripts\\bpool\\specs\\estimation_spec_joint_pooled_v1_bll0.yaml",
+    "draw_spec_rationale": "fit spec pins theta_l_m (fixed_params); the numpy DGP engine cannot resolve fixed_params, so the synthetic draw uses the un-pinned sibling bll0 spec (48 free params = 47 fit-free + theta_l_m), with theta_l_m inserted at its pinned value -0.8. DGP identical; only the FIT pins. This is the certified gate's own convention (jax_recovery_gate.py _full_theta).",
+    "staged_engine_ready_stem": "fr_p3a_bpool_engine_ready_staged_threeB1",
+    "seed": 20260530,
+    "years": "2015,2016,2017",
+    "n_hh": 0,
+    "resolution": {
+      "couples_alts": 901,
+      "singles_alts": 101
+    },
+    "tighten_leisure_bounds": false,
+    "thresholds_diagnostic": {
+      "check2": 0.05,
+      "check3": 0.1,
+      "check4": 1e-06
+    },
+    "load_bearing_verdict": "CHECK 5: PD Hessian at the synthetic MLE, with NO new bound/pathology relative to the certified 901 gate. Checks 2/3/4 are DIAGNOSTIC (the certified gate's own Checks 2/3/4 mechanically FAILED and were interpreted as flat-but-curved singles-leisure precision caveats, not identification failures).",
+    "certified_reference": {
+      "report": "docs\\France_case\\P3a\\execution_logs\\Bpool\\RURO_jax_recovery_gate_tlmpin_901_v1.md",
+      "n_params": 47,
+      "couples_alts": 901,
+      "n_hh": {
+        "sm": 2243,
+        "sf": 2764,
+        "cou": 7438
+      },
+      "seed": 20260530,
+      "check2": {
+        "max_err": 0.2891086743837079,
+        "worst": "beta_E_drgn3",
+        "thresh": 0.05,
+        "passed": false,
+        "role": "diagnostic"
+      },
+      "check3": {
+        "thresh": 0.1,
+        "passed": false,
+        "role": "diagnostic",
+        "blocks": {
+          "sm_leisure": 0.40736207025780613,
+          "sf_leisure": 0.43884297916580434,
+          "theta_c_singles": 0.033005475977220707,
+          "m_leisure": 0.0790186050717799,
+          "f_leisure": 0.14369806543062216
+        }
+      },
+      "check4": {
+        "max_diff": 5.030648460396803e-05,
+        "thresh": 1e-06,
+        "passed": false,
+        "role": "diagnostic"
+      },
+      "check5": {
+        "pd": true,
+        "min_eig": 1.7060615915361825,
+        "verdict": "SEPARATELY IDENTIFIED",
+        "passed": true,
+        "role": "LOAD_BEARING"
+      },
+      "warm_bound_binding": [],
+      "beta_l0_m": {
+        "interior": true,
+        "value_note": "+0.0191 interior at 901"
+      }
+    },
+    "criteria_frozen_before_run": true
+  },
+  "task1_2_staged_recovery": {
+    "check1_dgp": {
+      "passed": true
+    },
+    "check2_shared": {
+      "max_err": 0.28267952444218636,
+      "worst": "beta_E_drgn3",
+      "thresh": 0.05,
+      "passed": false,
+      "ll": 55371.500558078566,
+      "max_grad": 0.0021127950595101197
+    },
+    "warm_converged": true,
+    "warm_bound_binding": [],
+    "beta_l0_m": {
+      "value": 0.01927934032943282,
+      "floor": 1e-06,
+      "at_floor": false,
+      "status": "interior"
+    },
+    "check3_blocks": {
+      "blocks": {
+        "sm_leisure": {
+          "n": 4,
+          "max_err": 0.45189932138941236,
+          "worst": "theta_l_sm",
+          "passed": false
+        },
+        "sf_leisure": {
+          "n": 5,
+          "max_err": 0.4428504378402764,
+          "worst": "theta_l_sf",
+          "passed": false
+        },
+        "theta_c_singles": {
+          "n": 1,
+          "max_err": 0.034691511353288414,
+          "worst": "theta_c_singles",
+          "passed": true
+        },
+        "m_leisure": {
+          "n": 6,
+          "max_err": 0.07674340756752569,
+          "worst": "beta_l_age2_m",
+          "passed": true
+        },
+        "f_leisure": {
+          "n": 8,
+          "max_err": 0.14367814823954042,
+          "worst": "beta_l_age_f",
+          "passed": false
+        },
+        "beta_ll": {
+          "n": 0,
+          "max_err": null,
+          "passed": true
+        }
+      },
+      "thresh": 0.1,
+      "passed": false
+    },
+    "check4_two_start": {
+      "max_diff": 0.00016849856618939008,
+      "thresh": 1e-06,
+      "passed": false,
+      "ll_warm": 55371.500558078566,
+      "ll_cold": 55371.500558064545,
+      "disagreed": [
+        [
+          "theta_l_sm",
+          0.00016849856618939008
+        ],
+        [
+          "beta_l_age_sm",
+          4.014513479461135e-05
+        ],
+        [
+          "beta_l0_sm",
+          3.8767199192907276e-05
+        ],
+        [
+          "beta_l0_f",
+          3.45052515517974e-05
+        ],
+        [
+          "theta_l_sf",
+          2.689294052182767e-05
+        ],
+        [
+          "beta_l_nkids_sf",
+          2.2060984396998773e-05
+        ],
+        [
+          "beta_E_drgn3",
+          1.8496279452384634e-05
+        ],
+        [
+          "beta_E_drgn5",
+          1.7338467696026427e-05
+        ],
+        [
+          "beta_E_drgn7",
+          1.6698627017391887e-05
+        ],
+        [
+          "beta_E_drgn4",
+          1.625189031295715e-05
+        ],
+        [
+          "beta_E_drgn6",
+          1.572987038672702e-05
+        ],
+        [
+          "beta_E",
+          1.5547962213480204e-05
+        ],
+        [
+          "beta_E_drgn8",
+          1.550899755764501e-05
+        ],
+        [
+          "beta_E_drgn2",
+          1.4896022775039153e-05
+        ],
+        [
+          "beta_l_age2_sm",
+          1.133079455984537e-05
+        ]
+      ]
+    },
+    "check5_hessian": {
+      "pd": true,
+      "min_eig": 1.7710950164825383,
+      "n_nonpos": 0,
+      "verdict": "SEPARATELY IDENTIFIED",
+      "passed": true
+    },
+    "check6_contamination": {
+      "beta_e_dgp": {
+        "sm": -1.94,
+        "sf": -1.0,
+        "cou": -0.71
+      },
+      "beta_e_pwavg": -1.2166666666666666,
+      "beta_e_contaminated": -0.5642936997428811,
+      "beta_e_clean": -1.0750153265269096,
+      "inside_range": false,
+      "pref_displacement": {
+        "sm_leisure": 1.3203665454194655,
+        "sf_leisure": 0.9921212907100565,
+        "theta_c_singles": 0.251677183976355,
+        "m_leisure": 0.13110181115741076,
+        "f_leisure": 0.19621714596472928
+      }
+    }
+  },
+  "task3_comparison_vs_certified": {
+    "check5_load_bearing": {
+      "staged_pd": true,
+      "staged_min_eig": 1.7710950164825383,
+      "certified_min_eig": 1.7060615915361825,
+      "certified_pd": true,
+      "both_pd": true,
+      "min_eig_vs_certified": "same_sign_PD",
+      "verdict": "SEPARATELY IDENTIFIED"
+    },
+    "bound_pattern": {
+      "staged_bound_binding": [],
+      "certified_bound_binding": [],
+      "new_binding_directions_vs_certified": [],
+      "introduces_new_pathology": false,
+      "beta_l0_m": {
+        "value": 0.01927934032943282,
+        "floor": 1e-06,
+        "at_floor": false,
+        "status": "interior"
+      }
+    },
+    "check2_diagnostic": {
+      "staged_max_err": 0.28267952444218636,
+      "staged_worst": "beta_E_drgn3",
+      "certified_max_err": 0.2891086743837079,
+      "threshold": 0.05,
+      "staged_pass": false,
+      "certified_pass": false,
+      "direction": "improved_vs_certified",
+      "role": "diagnostic (flat-but-curved; FAIL allowed if same interpretation)"
+    },
+    "check3_diagnostic": {
+      "threshold": 0.1,
+      "blocks": {
+        "sm_leisure": {
+          "staged_max_err": 0.45189932138941236,
+          "certified_max_err": 0.40736207025780613,
+          "staged_pass": false,
+          "direction": "worse_than_certified"
+        },
+        "sf_leisure": {
+          "staged_max_err": 0.4428504378402764,
+          "certified_max_err": 0.43884297916580434,
+          "staged_pass": false,
+          "direction": "worse_than_certified"
+        },
+        "theta_c_singles": {
+          "staged_max_err": 0.034691511353288414,
+          "certified_max_err": 0.033005475977220707,
+          "staged_pass": true,
+          "direction": "worse_than_certified"
+        },
+        "m_leisure": {
+          "staged_max_err": 0.07674340756752569,
+          "certified_max_err": 0.0790186050717799,
+          "staged_pass": true,
+          "direction": "improved_vs_certified"
+        },
+        "f_leisure": {
+          "staged_max_err": 0.14367814823954042,
+          "certified_max_err": 0.14369806543062216,
+          "staged_pass": false,
+          "direction": "improved_vs_certified"
+        }
+      },
+      "role": "diagnostic (singles-leisure flat directions; FAIL expected, same as certified)",
+      "pinned_block_m_leisure_holds": true
+    },
+    "check4_diagnostic": {
+      "staged_max_diff": 0.00016849856618939008,
+      "certified_max_diff": 5.030648460396803e-05,
+      "threshold": 1e-06,
+      "staged_pass": false,
+      "certified_pass": false,
+      "two_start_same_basin": true,
+      "role": "diagnostic (tolerance-level two-start disagreement in flat directions)"
+    },
+    "new_decomposition_relevant_failure": {
+      "new_failures": [],
+      "any_new_pathology": false
+    }
+  },
+  "task4_two_o_verdict": {
+    "two_o_verdict": "OPTION A CONFIRMED",
+    "reason": "Three-B2 REAL-DATA IMMATERIAL and Three-B3 matches the certified synthetic gate's load-bearing standard (Check 5 PD at 901 min_eig=1.7710950164825383, no new identification pathology). The certified estimate stands with the baseline irreproducibility documented as immaterial; the staged reproducible baseline is the instrument establishing that result.",
+    "threeB2_real_data_verdict": "REAL-DATA IMMATERIAL",
+    "is_final": true,
+    "note": "Promotion to canonical, production swap, welfare pricing, and V_i^dir remain SEPARATE authorisations.",
+    "warm_converged_caveat": null
+  },
+  "scope_statement": "Synthetic-recovery gate on the staged reproducible baseline, mirroring the certified 901 gate (Check-5-load-bearing). No V_i^dir, no redrawn pricing, no W^3 promotion, no production swap, no promotion to canonical; certified and rebuilt theta CSVs NOT overwritten (recovered synthetic theta written to a new versioned diagnostic CSV). Nothing beyond W^3."
+}

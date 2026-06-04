@@ -1,0 +1,258 @@
+# JAX synthetic recovery gate — joint_pooled_v1_bll0_tlmpin
+
+**Params:** 47  **Couples alts:** 901  **HH:** sm=2243 sf=2764 cou=7438
+
+> Synthetic recovery on the validated JAX backend (use_actual_choice=True). Same 6 checks / thresholds / G3b verdict as the CONOPT gate; JAX optimizer + exact jax.hessian instead of CONOPT.
+
+| Check | Result | Detail |
+|---|---|---|
+| 1 Synthetic DGP | PASS | one chosen alt/HH |
+| 2 Shared recovery | FAIL | max\|err\|=0.2827 (beta_E_drgn3), thr=0.05 |
+| 3 Group-specific | FAIL | thr=0.1 |
+| 4 Two-start | FAIL | max\|warm-cold\|=1.685e-04, thr=1e-06 |
+| 5 Hessian PD | PASS | min_eig=1.771e+00; SEPARATELY IDENTIFIED |
+| 6 Contamination | DONE | see JSON |
+
+**Checks 1-5: NOT all pass.**
+
+### Check 3 blocks
+
+| Block | max\|err\| | PASS |
+|---|---|---|
+| sm_leisure | 0.4519 | FAIL |
+| sf_leisure | 0.4429 | FAIL |
+| theta_c_singles | 0.0347 | PASS |
+| m_leisure | 0.0767 | PASS |
+| f_leisure | 0.1437 | FAIL |
+| beta_ll |  | PASS |
+
+### beta_l0_m (couples-male leisure intercept)
+
+`beta_l0_m = +0.01928` — **interior** (floor=1e-06). theta_l_m is pinned, so beta_l0_m at its floor is acceptable (weakly-identified intercept).
+
+### Certification verdict
+
+- Check 5 PD @ MLE: **PASS** (min_eig=1.771e+00)
+- Interior MLE (no bound binds): **YES** (binding: none)
+- Relaxed params recover: **YES**
+
+>> **gsplit baseline CERTIFIED at 901** — Check 5 PD and the relaxed gender-split params recover on synthetic data.
+
+### Full JSON
+
+```json
+{
+  "spec": "joint_pooled_v1_bll0_tlmpin",
+  "n_params": 47,
+  "n_hh": {
+    "sm": 2243,
+    "sf": 2764,
+    "cou": 7438
+  },
+  "couples_alts": 901,
+  "check1": {
+    "passed": true
+  },
+  "check2": {
+    "max_err": 0.28267952444218636,
+    "worst": "beta_E_drgn3",
+    "thresh": 0.05,
+    "passed": false,
+    "ll": 55371.500558078566,
+    "max_grad": 0.0021127950595101197,
+    "theta_hat": [
+      0.22620860790881145,
+      0.20550637724352372,
+      0.058328508200660587,
+      -0.37036654541946556,
+      0.39647908500326534,
+      -0.010860327712860473,
+      0.11541185621199287,
+      0.4958841568152909,
+      -0.36634717599388494,
+      -0.07287643881211471,
+      0.01927934032943282,
+      -0.06841598051619092,
+      -0.05801287546753499,
+      1.7120735813363404,
+      -0.3665601117365228,
+      0.2068199563098987,
+      0.4566886269838347,
+      -0.7262998229590242,
+      -1.0750153265269096,
+      -1.3162542104073869,
+      -0.6921658872822593,
+      1.002515589926893,
+      -1.5549467286528817,
+      -1.7873224382123514,
+      0.029261916336615564,
+      0.5592748756148432,
+      0.770179804428939,
+      0.2909483516159773,
+      0.1983681918796574,
+      0.11578826131948741,
+      0.04815079856140853,
+      0.06758450028045683,
+      -0.09125885318510678,
+      -0.17929272615072347,
+      -0.6810590667990525,
+      -1.521807546895421,
+      -2.31083491090872,
+      0.16949939893520252,
+      0.06604367521568659,
+      -0.44058951841411576,
+      0.8185109961277873,
+      2.2016542824144523,
+      -0.02130036839885681,
+      0.3441137972945129,
+      0.2835048684409256,
+      -0.055065332090091984,
+      0.4179759645266635
+    ]
+  },
+  "warm_converged": true,
+  "warm_bound_binding": [],
+  "beta_l0_m": {
+    "value": 0.01927934032943282,
+    "floor": 1e-06,
+    "at_floor": false,
+    "status": "interior"
+  },
+  "check3": {
+    "blocks": {
+      "sm_leisure": {
+        "n": 4,
+        "max_err": 0.45189932138941236,
+        "worst": "theta_l_sm",
+        "passed": false
+      },
+      "sf_leisure": {
+        "n": 5,
+        "max_err": 0.4428504378402764,
+        "worst": "theta_l_sf",
+        "passed": false
+      },
+      "theta_c_singles": {
+        "n": 1,
+        "max_err": 0.034691511353288414,
+        "worst": "theta_c_singles",
+        "passed": true
+      },
+      "m_leisure": {
+        "n": 6,
+        "max_err": 0.07674340756752569,
+        "worst": "beta_l_age2_m",
+        "passed": true
+      },
+      "f_leisure": {
+        "n": 8,
+        "max_err": 0.14367814823954042,
+        "worst": "beta_l_age_f",
+        "passed": false
+      },
+      "beta_ll": {
+        "n": 0,
+        "max_err": null,
+        "passed": true
+      }
+    },
+    "thresh": 0.1,
+    "passed": false
+  },
+  "check4": {
+    "max_diff": 0.00016849856618939008,
+    "thresh": 1e-06,
+    "passed": false,
+    "ll_warm": 55371.500558078566,
+    "ll_cold": 55371.500558064545,
+    "disagreed": [
+      [
+        "theta_l_sm",
+        0.00016849856618939008
+      ],
+      [
+        "beta_l_age_sm",
+        4.014513479461135e-05
+      ],
+      [
+        "beta_l0_sm",
+        3.8767199192907276e-05
+      ],
+      [
+        "beta_l0_f",
+        3.45052515517974e-05
+      ],
+      [
+        "theta_l_sf",
+        2.689294052182767e-05
+      ],
+      [
+        "beta_l_nkids_sf",
+        2.2060984396998773e-05
+      ],
+      [
+        "beta_E_drgn3",
+        1.8496279452384634e-05
+      ],
+      [
+        "beta_E_drgn5",
+        1.7338467696026427e-05
+      ],
+      [
+        "beta_E_drgn7",
+        1.6698627017391887e-05
+      ],
+      [
+        "beta_E_drgn4",
+        1.625189031295715e-05
+      ],
+      [
+        "beta_E_drgn6",
+        1.572987038672702e-05
+      ],
+      [
+        "beta_E",
+        1.5547962213480204e-05
+      ],
+      [
+        "beta_E_drgn8",
+        1.550899755764501e-05
+      ],
+      [
+        "beta_E_drgn2",
+        1.4896022775039153e-05
+      ],
+      [
+        "beta_l_age2_sm",
+        1.133079455984537e-05
+      ]
+    ]
+  },
+  "check5": {
+    "pd": true,
+    "min_eig": 1.7710950164825383,
+    "n_nonpos": 0,
+    "verdict": "SEPARATELY IDENTIFIED",
+    "passed": true
+  },
+  "check6": {
+    "beta_e_dgp": {
+      "sm": -1.94,
+      "sf": -1.0,
+      "cou": -0.71
+    },
+    "beta_e_pwavg": -1.2166666666666666,
+    "beta_e_contaminated": -0.5642936997428811,
+    "beta_e_clean": -1.0750153265269096,
+    "inside_range": false,
+    "pref_displacement": {
+      "sm_leisure": 1.3203665454194655,
+      "sf_leisure": 0.9921212907100565,
+      "theta_c_singles": 0.251677183976355,
+      "m_leisure": 0.13110181115741076,
+      "f_leisure": 0.19621714596472928
+    }
+  },
+  "all_checks_1_5_pass": false
+}
+```

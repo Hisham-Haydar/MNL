@@ -155,6 +155,13 @@ def main():
     ap.add_argument("--gtol", type=float, default=1e-6)
     ap.add_argument("--maxiter", type=int, default=3000)
     ap.add_argument("--report", type=Path, default=None)
+    ap.add_argument("--out-json", type=Path, default=None,
+                    help="if set, dump the full result dict R (all checks + theta_hat + "
+                         "diagnostics) as JSON for downstream machine-readable consumption. "
+                         "Additive; does not change the gate.")
+    ap.add_argument("--out-theta-csv", type=Path, default=None,
+                    help="if set, write the recovered (warm) theta_hat as a "
+                         "parameter,value CSV (diagnostic; does not change the gate).")
     args = ap.parse_args()
 
     try:
@@ -460,6 +467,22 @@ def main():
     if args.report:
         _write_report(args.report, R)
         print(f"\n[report] {args.report}")
+
+    if args.out_json:
+        import json as _json
+        args.out_json.parent.mkdir(parents=True, exist_ok=True)
+        args.out_json.write_text(_json.dumps(R, indent=2, default=float), encoding="utf-8")
+        print(f"[json] {args.out_json}")
+
+    if args.out_theta_csv:
+        import csv as _csv
+        args.out_theta_csv.parent.mkdir(parents=True, exist_ok=True)
+        with open(args.out_theta_csv, "w", newline="", encoding="utf-8") as _f:
+            _w = _csv.writer(_f)
+            _w.writerow(["parameter", "value"])
+            for _n, _v in zip(pnames, R["check2"]["theta_hat"]):
+                _w.writerow([_n, _v])
+        print(f"[theta-csv] {args.out_theta_csv}")
 
 
 def _write_report(path, R):

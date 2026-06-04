@@ -1,0 +1,125 @@
+{
+  "increment": "stage4a_baseline_policy_v1",
+  "no_production_swap": true,
+  "no_canonical_promotion": true,
+  "no_v_dir": true,
+  "priced_redrawn_node": false,
+  "promoted_w3": false,
+  "re_estimated": false,
+  "production_parquet_swapped_or_overwritten_or_moved_or_deleted": false,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "two_o_verdict_carried": "OPTION A CONFIRMED",
+  "two_o_is_final": true,
+  "task1_baseline_policy": {
+    "estimation_canonical_theta_hat": "scripts/bpool/specs/theta_hat_realdata_901_v1.csv",
+    "certified_engine_ready_stem": "fr_p3a_bpool_engine_ready",
+    "certified_production_not_swapped": true,
+    "staged_role": "welfare_pricing_reference_candidate_only",
+    "production_swap_authorised": false,
+    "promote_staged_to_canonical": false,
+    "swap_is_supervisor_level_separate_authorisation": true
+  },
+  "task2_welfare_pricing_config": {
+    "config_path": "scripts\\welfare\\configs\\welfare_stage1_w3.yaml",
+    "config_block": "welfare.stage4",
+    "staged_engine_ready_stem": "fr_p3a_bpool_engine_ready_staged_threeB1",
+    "staged_priced_dir_name": "staging_threeB1_priced",
+    "staged_chunk_dir_name": "staging_twoN",
+    "population_batch_required": true,
+    "no_double_deflation": true,
+    "pinned_euromod": {
+      "build_module": "run_bpool_euromod_chunk",
+      "pinned_config_json": "outputs/welfare/stage1_w3/stage3a_pinned_rebuild_config.json",
+      "system_pairing_source": "build_module._SYSTEM_PAIRING",
+      "cpi_phi_source": "build_module._CPI",
+      "raw_schema_source": "build_module._RAW_SCHEMA"
+    }
+  },
+  "task3_readiness_gate": {
+    "staged_engine_ready": {
+      "singles": {
+        "path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\fr_p3a_bpool_engine_ready_staged_threeB1__singles.parquet",
+        "exists": true,
+        "rows": 505707,
+        "modal_alts_per_hh": 101,
+        "alts_uniform": true,
+        "expected_alts": 101,
+        "n_hh": 5007
+      },
+      "couples": {
+        "path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\fr_p3a_bpool_engine_ready_staged_threeB1__couples.parquet",
+        "exists": true,
+        "rows": 6701638,
+        "modal_alts_per_hh": 901,
+        "alts_uniform": true,
+        "expected_alts": 901,
+        "n_hh": 7438
+      },
+      "mnlmeta_exists": true
+    },
+    "staged_priced_dir": {
+      "path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\staging_threeB1_priced",
+      "exists": true,
+      "n_priced_parquet": 6
+    },
+    "staged_chunk_dir": {
+      "path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\staging_twoN",
+      "exists": true,
+      "n_chunk_parquet": 21,
+      "n_done_markers": 21
+    },
+    "provenance_cross_reference": {
+      "three_b1_present": true,
+      "three_a_present": true,
+      "staged_stem_matches_three_b1": true,
+      "singles_rows_match_b1": true,
+      "singles_alts_match_b1": true,
+      "couples_rows_match_b1": true,
+      "couples_alts_match_b1": true,
+      "three_a_determinism_ok": true,
+      "three_a_coherence_ok": true,
+      "three_a_candidate": true
+    },
+    "pinned_references": {
+      "pinned_config_present": true,
+      "build_module_constants_resolvable": true,
+      "system_pairing": {
+        "2015": {
+          "system": "FR_2014",
+          "dataset": "FR_2015_a2"
+        },
+        "2016": {
+          "system": "FR_2015",
+          "dataset": "FR_2016_a3"
+        },
+        "2017": {
+          "system": "FR_2016",
+          "dataset": "FR_2017_a2"
+        }
+      },
+      "cpi_phi": {
+        "2015": 1.0031,
+        "2016": 1.0,
+        "2017": 0.9886
+      }
+    },
+    "baseline_policy_invariants": {
+      "estimation_canonical_is_certified_theta_hat": true,
+      "production_swap_authorised": false,
+      "promote_staged_to_canonical": false,
+      "two_o_verdict": "OPTION_A_CONFIRMED"
+    },
+    "readiness_summary": {
+      "staged_engine_ready_ok": true,
+      "staged_paths_ok": true,
+      "provenance_xref_ok": true,
+      "pinned_refs_ok": true,
+      "baseline_policy_ok": true,
+      "overall_ready_for_population_faithful_existing_node_parity": true
+    }
+  },
+  "overall_ready_for_population_faithful_existing_node_parity": true,
+  "scope_statement": "Declares the post-Two-O baseline policy and prepares the welfare-pricing config; runs a metadata/path readiness gate ONLY. No production swap, no canonical promotion, no re-estimation, no V_i^dir, no redrawn pricing, no W^3 promotion, nothing beyond W^3. Prices nothing and writes no parquet."
+}

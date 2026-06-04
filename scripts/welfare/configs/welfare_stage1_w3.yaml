@@ -235,6 +235,69 @@ welfare:
         singles_male_hh: 2243
         singles_female_hh: 2764
 
+  # ==========================================================================
+  # STAGE FOUR — Increment Four-A: post-Two-O baseline policy + welfare-pricing
+  # config preparation. NO pricing, NO swap, NO canonical promotion happens by
+  # virtue of this block existing — it only POINTS welfare pricing at the
+  # validated staged reproducible baseline (the Two-O Option-A instrument) and
+  # records the pinned references. The ESTIMATION canonical is unchanged
+  # (welfare.baseline.theta_hat_path above remains theta_hat_realdata_901_v1.csv).
+  # ==========================================================================
+  stage4:
+    # --- post-Two-O baseline policy (declarative; enforced by the welfare source) ---
+    baseline_policy:
+      two_o_verdict: "OPTION_A_CONFIRMED"               # Three-B2 IMMATERIAL + Three-B3 Check-5 PD
+      estimation_canonical_theta_hat:
+        "scripts/bpool/specs/theta_hat_realdata_901_v1.csv"   # UNCHANGED canonical for estimation
+      certified_engine_ready_stem: "fr_p3a_bpool_engine_ready"  # certified production; NOT swapped here
+      production_swap_authorised: false                 # supervisor-level SEPARATE authorisation
+      promote_staged_to_canonical: false                # never in this increment
+    # --- welfare-pricing reference: the validated staged reproducible baseline ---
+    welfare_pricing_reference:
+      role: "welfare_pricing_reference_candidate_only"  # NOT canonical production
+      staged_engine_ready_stem: "fr_p3a_bpool_engine_ready_staged_threeB1"
+      staged_couples_stem: "fr_p3a_bpool_engine_ready_staged_threeB1"
+      # staged priced/chunk locations (outside the repo; storage-root relative is resolved
+      # at runtime via _bpool_paths.bpool_dir()). Recorded as storage-relative names.
+      staged_priced_dir_name: "staging_threeB1_priced"  # assembled staged priced long files
+      staged_chunk_dir_name: "staging_twoN"             # Two-N per-chunk staged parquet + markers
+      resolution_guard:
+        singles_alts: 101
+        couples_alts: 901                               # MUST match at load or abort
+      provenance_refs:
+        three_a_pinned_config: "outputs/welfare/stage1_w3/stage3a_pinned_rebuild_config.json"
+        three_a_validation: "outputs/welfare/stage1_w3/stage3a_pinned_baseline_validation.json"
+        three_b1_parity: "outputs/welfare/stage1_w3/stage3b1_engine_ready_parity.json"
+        three_b3_verdict: "outputs/welfare/stage1_w3/stage3b3_synthetic_recovery.json"
+    # --- pinned EUROMOD references (reused from the build module + Three-A pinned config;
+    #     NOT re-hardcoded here so the welfare path matches the build EXACTLY) ---
+    pinned_euromod:
+      build_module: "run_bpool_euromod_chunk"           # _SYSTEM_PAIRING / _CPI / _RAW_SCHEMA / EuromodRunner
+      pinned_config_json: "outputs/welfare/stage1_w3/stage3a_pinned_rebuild_config.json"
+      system_pairing_source: "build_module._SYSTEM_PAIRING"   # 2015->FR_2014, 2016->FR_2015, 2017->FR_2016
+      cpi_phi_source: "build_module._CPI"               # 2015:1.0031, 2016:1.0, 2017:0.9886
+      raw_schema_source: "build_module._RAW_SCHEMA"     # per-year EUROMOD input schema (122/124/128 cols)
+    # --- pricing discipline carried from Two-L / Two-N / the two-deflation architecture ---
+    pricing_discipline:
+      population_batch_required: true                   # Two-L/Two-N: means-tested benefits need the
+                                                        # representative population in the EUROMOD batch;
+                                                        # isolated/bounded per-node batches are UNFAITHFUL
+      population_batch_note: "Price at production-chunk (population) scale, not isolated per-node batches."
+      no_double_deflation: true                         # EUROMOD inputs NOMINAL upstream; 2016-real
+                                                        # deflation is estimator-facing only; post-EUROMOD
+                                                        # CPI phi_y applied once (ils_dispy_real = ils_dispy*phi)
+      no_double_deflation_note: >-
+        Keep EUROMOD earnings nominal + system-year consistent; counterfactual wages expressed in the
+        draw's nominal frame before pricing and returned to real via phi_y. Estimation-facing real-wage
+        deflation is SEPARATE from post-EUROMOD CPI conversion.
+    # --- Four-A scope guards (the welfare source asserts these are all false/absent) ---
+    scope_guards:
+      prices_redrawn_node: false
+      computes_v_dir: false
+      promotes_w3: false
+      swaps_production: false
+      re_estimates: false
+
   output:
     dir: "outputs/welfare/stage1_w3"
     provenance: "write_resolved_config_and_draw_scheme"

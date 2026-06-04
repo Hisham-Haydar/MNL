@@ -1,0 +1,420 @@
+{
+  "increment": "stage4b_population_parity_gate_v1",
+  "priced_redrawn_node": false,
+  "computed_v_dir": false,
+  "promoted_w3": false,
+  "re_estimated": false,
+  "promoted_to_canonical": false,
+  "production_parquet_swapped_or_overwritten_or_moved_or_deleted": false,
+  "overwrote_certified_baseline": false,
+  "measures_touched": [
+    "W3_only"
+  ],
+  "config_block": "welfare.stage4",
+  "staged_reference": {
+    "stem": "fr_p3a_bpool_engine_ready_staged_threeB1",
+    "staged_chunk_dir": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\staging_twoN",
+    "staged_priced_dir": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\staging_threeB1_priced"
+  },
+  "scratch_dir": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\scratch_four_b_parity",
+  "tol": 1e-06,
+  "production_chunk_definitions": {
+    "singles": {
+      "chunk_id": 0,
+      "draw_lo": 0,
+      "draw_hi": 101
+    },
+    "couples": {
+      "chunk_id": 0,
+      "draw_lo": 0,
+      "draw_hi": 150
+    }
+  },
+  "coverage": {
+    "chunks_per_cell_tested": "one full production chunk per year x mode (singles c0 [0,101); couples c0 [0,150))",
+    "couples_chunks_not_all_tested": "couples have 6 chunks/year; Four-B tests c0 only",
+    "rationale": "acceptable as a gate/smoke: Three-A established full-chunk determinism at production scale (full chunk re-run reproduces staging to 0.0); Four-B confirms the c0 band for every year. The V_i^dir runner MUST reuse the full-chunk population-batch construction and must NOT optimise down to draw sub-bands or isolated nodes."
+  },
+  "task1_2_parity_grid": [
+    {
+      "year": 2015,
+      "mode": "singles",
+      "status": "OK",
+      "chunk_id": 0,
+      "band": [
+        0,
+        101
+      ],
+      "scratch_chunk": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\scratch_four_b_parity\\fr_p3a_bpool_priced__2015__singles__c90.parquet",
+      "staged_reference_chunk": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\staging_twoN\\fr_p3a_bpool_priced__2015__singles__c0.parquet",
+      "wall_seconds": null,
+      "n_rows_repriced": 243713,
+      "n_rows_compared": 243713,
+      "n_hh_in_batch": 1669,
+      "full_staged_chunk_hh": 1669,
+      "population_faithful": true,
+      "keys": [
+        "stacked_hh_uid",
+        "draw",
+        "idperson_true"
+      ],
+      "headline_parity": {
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_tax": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          }
+        },
+        "worst": {},
+        "ok": true
+      },
+      "component_parity": {
+        "n_components": 139,
+        "per_column_failures": {},
+        "ok": true
+      },
+      "cell_pass": true
+    },
+    {
+      "year": 2015,
+      "mode": "couples",
+      "status": "OK",
+      "chunk_id": 0,
+      "band": [
+        0,
+        150
+      ],
+      "scratch_chunk": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\scratch_four_b_parity\\fr_p3a_bpool_priced__2015__couples__c90.parquet",
+      "staged_reference_chunk": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\staging_twoN\\fr_p3a_bpool_priced__2015__couples__c0.parquet",
+      "wall_seconds": null,
+      "n_rows_repriced": 1276554,
+      "n_rows_compared": 1276554,
+      "n_hh_in_batch": 2566,
+      "full_staged_chunk_hh": 2566,
+      "population_faithful": true,
+      "keys": [
+        "stacked_hh_uid",
+        "draw_joint",
+        "draw_male",
+        "draw_female",
+        "idperson_true"
+      ],
+      "headline_parity": {
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_tax": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          }
+        },
+        "worst": {},
+        "ok": true
+      },
+      "component_parity": {
+        "n_components": 139,
+        "per_column_failures": {},
+        "ok": true
+      },
+      "cell_pass": true
+    },
+    {
+      "year": 2016,
+      "mode": "singles",
+      "status": "OK",
+      "chunk_id": 0,
+      "band": [
+        0,
+        101
+      ],
+      "scratch_chunk": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\scratch_four_b_parity\\fr_p3a_bpool_priced__2016__singles__c90.parquet",
+      "staged_reference_chunk": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\staging_twoN\\fr_p3a_bpool_priced__2016__singles__c0.parquet",
+      "wall_seconds": null,
+      "n_rows_repriced": 241895,
+      "n_rows_compared": 241895,
+      "n_hh_in_batch": 1676,
+      "full_staged_chunk_hh": 1676,
+      "population_faithful": true,
+      "keys": [
+        "stacked_hh_uid",
+        "draw",
+        "idperson_true"
+      ],
+      "headline_parity": {
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_tax": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          }
+        },
+        "worst": {},
+        "ok": true
+      },
+      "component_parity": {
+        "n_components": 141,
+        "per_column_failures": {},
+        "ok": true
+      },
+      "cell_pass": true
+    },
+    {
+      "year": 2016,
+      "mode": "couples",
+      "status": "OK",
+      "chunk_id": 0,
+      "band": [
+        0,
+        150
+      ],
+      "scratch_chunk": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\scratch_four_b_parity\\fr_p3a_bpool_priced__2016__couples__c90.parquet",
+      "staged_reference_chunk": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\staging_twoN\\fr_p3a_bpool_priced__2016__couples__c0.parquet",
+      "wall_seconds": null,
+      "n_rows_repriced": 1280178,
+      "n_rows_compared": 1280178,
+      "n_hh_in_batch": 2577,
+      "full_staged_chunk_hh": 2577,
+      "population_faithful": true,
+      "keys": [
+        "stacked_hh_uid",
+        "draw_joint",
+        "draw_male",
+        "draw_female",
+        "idperson_true"
+      ],
+      "headline_parity": {
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_tax": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          }
+        },
+        "worst": {},
+        "ok": true
+      },
+      "component_parity": {
+        "n_components": 141,
+        "per_column_failures": {},
+        "ok": true
+      },
+      "cell_pass": true
+    },
+    {
+      "year": 2017,
+      "mode": "singles",
+      "status": "OK",
+      "chunk_id": 0,
+      "band": [
+        0,
+        101
+      ],
+      "scratch_chunk": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\scratch_four_b_parity\\fr_p3a_bpool_priced__2017__singles__c90.parquet",
+      "staged_reference_chunk": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\staging_twoN\\fr_p3a_bpool_priced__2017__singles__c0.parquet",
+      "wall_seconds": null,
+      "n_rows_repriced": 238764,
+      "n_rows_compared": 238764,
+      "n_hh_in_batch": 1662,
+      "full_staged_chunk_hh": 1662,
+      "population_faithful": true,
+      "keys": [
+        "stacked_hh_uid",
+        "draw",
+        "idperson_true"
+      ],
+      "headline_parity": {
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_tax": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          }
+        },
+        "worst": {},
+        "ok": true
+      },
+      "component_parity": {
+        "n_components": 133,
+        "per_column_failures": {},
+        "ok": true
+      },
+      "cell_pass": true
+    },
+    {
+      "year": 2017,
+      "mode": "couples",
+      "status": "OK",
+      "chunk_id": 0,
+      "band": [
+        0,
+        150
+      ],
+      "scratch_chunk": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\scratch_four_b_parity\\fr_p3a_bpool_priced__2017__couples__c90.parquet",
+      "staged_reference_chunk": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\new_data\\staging_twoN\\fr_p3a_bpool_priced__2017__couples__c0.parquet",
+      "wall_seconds": null,
+      "n_rows_repriced": 1139446,
+      "n_rows_compared": 1139446,
+      "n_hh_in_batch": 2295,
+      "full_staged_chunk_hh": 2295,
+      "population_faithful": true,
+      "keys": [
+        "stacked_hh_uid",
+        "draw_joint",
+        "draw_male",
+        "draw_female",
+        "idperson_true"
+      ],
+      "headline_parity": {
+        "per_column": {
+          "ils_dispy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_origy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_ben": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_tax": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_sicdy": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          },
+          "ils_dispy_real": {
+            "max_abs": 0.0,
+            "n_above_tol": 0
+          }
+        },
+        "worst": {},
+        "ok": true
+      },
+      "component_parity": {
+        "n_components": 133,
+        "per_column_failures": {},
+        "ok": true
+      },
+      "cell_pass": true
+    }
+  ],
+  "all_cells_pass": true,
+  "stopped_on_failure": false,
+  "task3_readiness": {
+    "population_faithful_and_ready_for_singles_vdir_gate": true,
+    "all_tested_cells_pass": true,
+    "carried_forward_vdir_constraints": {
+      "use_staged_reproducible_reference_not_production_canonical": true,
+      "staged_engine_ready_stem": "fr_p3a_bpool_engine_ready_staged_threeB1",
+      "price_counterfactual_nodes_in_representative_population_batches": true,
+      "counterfactual_wages_nominal_frame_before_euromod": true,
+      "return_disposable_income_to_real_via_phi_y_after_euromod": true,
+      "no_double_deflation": true,
+      "no_silent_interpolation": true,
+      "reuse_full_chunk_population_batch_construction": true,
+      "do_not_optimise_to_sub_bands_or_isolated_nodes": true,
+      "full_chunk_construction_note": "The V_i^dir runner MUST reprice within the complete production chunk batch (the full chunk band the staged reference was priced in), NOT a draw sub-band or isolated node. Four-B's method correction showed a sub-band is a DIFFERENT EUROMOD batch and breaks means-tested-benefit (ils_benmt/bsa) parity while income and contributions still reproduce."
+    },
+    "note": "READY licenses ONLY the singles V_i^dir gate-and-smoke as a SEPARATE authorisation; this increment prices no redrawn node and computes no V_i^dir."
+  },
+  "scope_statement": "Population-faithful existing-node parity gate against the staged welfare-pricing reference. Reprice output to a scratch dir only. No redrawn pricing, no V_i^dir, no W^3 promotion, no re-estimation, no production swap, no canonical promotion, no production overwrite. Nothing beyond W^3."
+}

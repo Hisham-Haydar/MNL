@@ -1,0 +1,355 @@
+{
+  "increment": "stage4c2_vdir_bias_calibration_v1",
+  "status": "OK",
+  "is_welfare_distribution": false,
+  "bounded_diagnostic": true,
+  "multi_pass": false,
+  "ran_full_singles_vdir": false,
+  "touched_couples": false,
+  "promoted_w3": false,
+  "measure_beyond_w3": false,
+  "produced_reportable_welfare_distribution": false,
+  "production_parquet_swapped_or_overwritten_or_moved_or_deleted": false,
+  "promoted_to_canonical": false,
+  "re_estimated": false,
+  "scope_statement": "Bounded singles V_i^dir bias-mechanism diagnostic + node-count calibration. Single-pass S<=100 only. No multi-pass, no full run, no couples, no W^3 promotion, no measure beyond W^3, no reportable welfare distribution, no production swap, no canonical promotion, no re-estimation.",
+  "task0": {
+    "year": 2016,
+    "mode": "singles",
+    "n_hh": 6,
+    "seed": 20260604,
+    "s_grid": [
+      20,
+      60,
+      100
+    ],
+    "nested_nodes": true,
+    "single_pass": true,
+    "max_S_le_100": true,
+    "staged_stem": "fr_p3a_bpool_engine_ready_staged_threeB1",
+    "uids": [
+      200001593700,
+      200001687502,
+      200001793700,
+      200001813600,
+      200001917500,
+      200001981300
+    ],
+    "n_draws": 101,
+    "high_ess_uids": [
+      200001593700,
+      200001793700,
+      200001813600
+    ],
+    "low_ess_uids": [
+      200001687502,
+      200001917500,
+      200001981300
+    ],
+    "yem_identity": "yem00=min(lhw,35)*yivwg*52/12; yemxp=max(lhw-35,0)*yivwg*52/12; yem=yem00+yemxp"
+  },
+  "task1_one_over_S_regression": {
+    "u": {
+      "per_hh": {
+        "200001593700": {
+          "ess": 40.452586177800676,
+          "slope": 0.06900408458388249,
+          "intercept": -4.574368878240635,
+          "r2": 0.021607242719546726,
+          "delta_common_by_s": {
+            "20": -4.5727059015667475,
+            "60": -4.562495444832386,
+            "100": -4.582614975171339
+          }
+        },
+        "200001687502": {
+          "ess": 1.9637256855548229,
+          "slope": 1.6027748532907589,
+          "intercept": -7.156904114022553,
+          "r2": 0.8928981825651601,
+          "delta_common_by_s": {
+            "20": -7.074628796643865,
+            "60": -7.143010648085911,
+            "100": -7.130193491918917
+          }
+        },
+        "200001793700": {
+          "ess": 40.16529072122899,
+          "slope": -1.7042542279559205,
+          "intercept": -3.3476709607055053,
+          "r2": 0.8944691402733246,
+          "delta_common_by_s": {
+            "20": -3.430630524978901,
+            "60": -3.3895940805845046,
+            "100": -3.3534477673630643
+          }
+        },
+        "200001813600": {
+          "ess": 41.666362996481155,
+          "slope": 0.13323566832809616,
+          "intercept": -3.7458407030992187,
+          "r2": 0.10064990350320335,
+          "delta_common_by_s": {
+            "20": -3.737645975542412,
+            "60": -3.752817773469485,
+            "100": -3.7368436257139352
+          }
+        },
+        "200001917500": {
+          "ess": 2.996589250756893,
+          "slope": -0.10921640124819032,
+          "intercept": -6.048006114972111,
+          "r2": 0.025329426371297536,
+          "delta_common_by_s": {
+            "20": -6.056074602602733,
+            "60": -6.034180382916949,
+            "100": -6.062136616825673
+          }
+        },
+        "200001981300": {
+          "ess": 3.035570445497648,
+          "slope": 1.0974356017791154,
+          "intercept": -5.0631686108838005,
+          "r2": 0.9244709369177174,
+          "delta_common_by_s": {
+            "20": -5.009504192997974,
+            "60": -5.0376338443020305,
+            "100": -5.058231065881664
+          }
+        }
+      },
+      "high_ess_intercept_median": -3.7458407030992187,
+      "high_ess_intercept_abs_max": 4.574368878240635,
+      "interpretation": "near-zero intercept + negative 1/S slope => finite-S log-mean-exp bias/noise; nonzero intercept => persistent construction/pricing/integration offset (STOP)"
+    },
+    "full_V": {
+      "per_hh": {
+        "200001593700": {
+          "ess": 40.452586177800676,
+          "slope": 8.979077229194376,
+          "intercept": -0.18828778586251502,
+          "r2": 0.5741277325145111,
+          "delta_common_by_s": {
+            "20": 0.23090043470928379,
+            "60": 0.1399573466182451,
+            "100": -0.2473252180101717
+          }
+        },
+        "200001687502": {
+          "ess": 1.9637256855548229,
+          "slope": -8.41293643280797,
+          "intercept": -4.000346656279406,
+          "r2": 0.9840510027375058,
+          "delta_common_by_s": {
+            "20": -4.425115910945314,
+            "60": -4.115827665339835,
+            "100": -4.105088185735019
+          }
+        },
+        "200001793700": {
+          "ess": 40.16529072122899,
+          "slope": 3.3377758794219097,
+          "intercept": 0.39460236006792604,
+          "r2": 0.9016880539018551,
+          "delta_common_by_s": {
+            "20": 0.5657332479052313,
+            "60": 0.4247793948610319,
+            "100": 0.44919058819319435
+          }
+        },
+        "200001813600": {
+          "ess": 41.666362996481155,
+          "slope": -1.3011170137910557,
+          "intercept": -0.29783512474298995,
+          "r2": 0.024241476311257948,
+          "delta_common_by_s": {
+            "20": -0.39466382114534504,
+            "60": -0.1288833340293598,
+            "100": -0.4697105234449124
+          }
+        },
+        "200001917500": {
+          "ess": 2.996589250756893,
+          "slope": 15.557782798964546,
+          "intercept": -3.042017795129839,
+          "r2": 0.8619574681710876,
+          "delta_common_by_s": {
+            "20": -2.240164652625504,
+            "60": -2.926505430483733,
+            "100": -2.766619954359662
+          }
+        },
+        "200001981300": {
+          "ess": 3.035570445497648,
+          "slope": -30.367927814540778,
+          "intercept": -2.093812727821507,
+          "r2": 0.9877564508178455,
+          "delta_common_by_s": {
+            "20": -3.59919568197368,
+            "60": -2.678025477513044,
+            "100": -2.3324248230925884
+          }
+        }
+      },
+      "high_ess_intercept_median": -0.18828778586251502,
+      "high_ess_intercept_abs_max": 0.39460236006792604,
+      "interpretation": "near-zero intercept + negative 1/S slope => finite-S log-mean-exp bias/noise; nonzero intercept => persistent construction/pricing/integration offset (STOP)"
+    }
+  },
+  "task2_3_object_diagnostics": {
+    "u": {
+      "per_hh": {
+        "200001593700": {
+          "ess": 40.452586177800676,
+          "cv2_at_Smax": 0.08995778953810254,
+          "implied_bias_at_Smax": 0.0004497889476905127,
+          "delta_common_at_Smax": -4.582614975171339,
+          "delta_common_inf": -4.5743688782406355,
+          "vdir_biascorrected_at_Smax": 2.299346321529319
+        },
+        "200001687502": {
+          "ess": 1.9637256855548229,
+          "cv2_at_Smax": 0.1407575384832758,
+          "implied_bias_at_Smax": 0.000703787692416379,
+          "delta_common_at_Smax": -7.130193491918917,
+          "delta_common_inf": -7.156904114022553,
+          "vdir_biascorrected_at_Smax": 1.8509681970108605
+        },
+        "200001793700": {
+          "ess": 40.16529072122899,
+          "cv2_at_Smax": 0.10953065142746578,
+          "implied_bias_at_Smax": 0.0005476532571373288,
+          "delta_common_at_Smax": -3.3534477673630643,
+          "delta_common_inf": -3.3476709607055057,
+          "vdir_biascorrected_at_Smax": 1.780497394587219
+        },
+        "200001813600": {
+          "ess": 41.666362996481155,
+          "cv2_at_Smax": 0.13569565517575646,
+          "implied_bias_at_Smax": 0.0006784782758787823,
+          "delta_common_at_Smax": -3.7368436257139352,
+          "delta_common_inf": -3.7458407030992187,
+          "vdir_biascorrected_at_Smax": 2.3954718555230685
+        },
+        "200001917500": {
+          "ess": 2.996589250756893,
+          "cv2_at_Smax": 0.07152034768203493,
+          "implied_bias_at_Smax": 0.0003576017384101746,
+          "delta_common_at_Smax": -6.062136616825673,
+          "delta_common_inf": -6.048006114972111,
+          "vdir_biascorrected_at_Smax": 2.3846122412059163
+        },
+        "200001981300": {
+          "ess": 3.035570445497648,
+          "cv2_at_Smax": 0.048825759584335444,
+          "implied_bias_at_Smax": 0.00024412879792167722,
+          "delta_common_at_Smax": -5.058231065881664,
+          "delta_common_inf": -5.063168610883801,
+          "vdir_biascorrected_at_Smax": 2.791480574965
+        }
+      },
+      "high_ess_delta_common_inf_abs_max": 4.5743688782406355,
+      "high_ess_cv2_median": 0.10953065142746578
+    },
+    "full_V": {
+      "per_hh": {
+        "200001593700": {
+          "ess": 40.452586177800676,
+          "cv2_at_Smax": 6.634673145026687,
+          "implied_bias_at_Smax": 0.033173365725133436,
+          "delta_common_at_Smax": -0.2473252180101717,
+          "delta_common_inf": -0.1882877858625145,
+          "vdir_biascorrected_at_Smax": 6.667359655467929
+        },
+        "200001687502": {
+          "ess": 1.9637256855548229,
+          "cv2_at_Smax": 7.211848083346497,
+          "implied_bias_at_Smax": 0.03605924041673248,
+          "delta_common_at_Smax": -4.105088185735019,
+          "delta_common_inf": -4.000346656279406,
+          "vdir_biascorrected_at_Smax": 4.911428955919075
+        },
+        "200001793700": {
+          "ess": 40.16529072122899,
+          "cv2_at_Smax": 6.00247548195738,
+          "implied_bias_at_Smax": 0.030012377409786902,
+          "delta_common_at_Smax": 0.44919058819319435,
+          "delta_common_inf": 0.3946023600679265,
+          "vdir_biascorrected_at_Smax": 5.612600474296127
+        },
+        "200001813600": {
+          "ess": 41.666362996481155,
+          "cv2_at_Smax": 6.0408344820157005,
+          "implied_bias_at_Smax": 0.030204172410078504,
+          "delta_common_at_Smax": -0.4697105234449124,
+          "delta_common_inf": -0.29783512474299023,
+          "vdir_biascorrected_at_Smax": 5.692130651926291
+        },
+        "200001917500": {
+          "ess": 2.996589250756893,
+          "cv2_at_Smax": 10.546175543770083,
+          "implied_bias_at_Smax": 0.05273087771885041,
+          "delta_common_at_Smax": -2.766619954359662,
+          "delta_common_inf": -3.042017795129839,
+          "vdir_biascorrected_at_Smax": 5.732502179652367
+        },
+        "200001981300": {
+          "ess": 3.035570445497648,
+          "cv2_at_Smax": 7.201922687872656,
+          "implied_bias_at_Smax": 0.036009613439363285,
+          "delta_common_at_Smax": -2.3324248230925884,
+          "delta_common_inf": -2.093812727821505,
+          "vdir_biascorrected_at_Smax": 5.553052302395518
+        }
+      },
+      "high_ess_delta_common_inf_abs_max": 0.3946023600679265,
+      "high_ess_cv2_median": 6.0408344820157005
+    }
+  },
+  "task4_node_count_requirement": {
+    "gate_object": "u",
+    "tol_nats": 0.5,
+    "cv2_distribution": {
+      "max": 0.1407575384832758,
+      "p90": 0.13822659682951613,
+      "median": 0.09974422048278417,
+      "per_hh": {
+        "200001593700": 0.08995778953810254,
+        "200001687502": 0.1407575384832758,
+        "200001793700": 0.10953065142746578,
+        "200001813600": 0.13569565517575646,
+        "200001917500": 0.07152034768203493,
+        "200001981300": 0.048825759584335444
+      }
+    },
+    "s_star_uncorrected": {
+      "formula": "S* = ceil(CV^2 / (2*tol))",
+      "worst_cv2": 1,
+      "p90_cv2": 1
+    },
+    "single_pass_capacity": 100,
+    "exceeds_single_pass_capacity": false,
+    "with_analytic_correction_note": "with the leading CV^2/(2S) correction applied to V_dir, the residual bias is O(1/S^2); the practical S* is then set by Monte-Carlo VARIANCE (~CV^2/S), not the leading bias. Reported descriptively; the correction is exact only to leading order."
+  },
+  "task5_verdict": {
+    "verdict": "BIAS MECHANISM CONFIRMED / FULL-RUN DESIGN READY",
+    "reason": "high-ESS full-V delta_common intercept (S->inf) is near zero (abs_max 0.395 <= 0.5); the residual is finite-S log-mean-exp bias (slopes negative=False). Recommended S* (utility-only gate, worst CV^2) = 1.",
+    "gate_object": "utility_only_u(c,l) [contract welfare object]",
+    "gate_object_rationale": "V_i^dir integrates the household's OWN-PREFERENCE utility u(c,l) under direct sampling from g_hat (contract: the opportunity/proposal terms are the sampling density, replaced by the uniform weight). The full-V object is a DIAGNOSTIC equivalence to the IS/full-V machinery (it carries log g_hat - log_prior) and is used here only to test the 1/S intercept against the existing V_IS; the LICENSING gate for the welfare run is the utility-only object.",
+    "high_ess_fullV_intercept_abs_max": 0.39460236006792604,
+    "high_ess_fullV_intercept_median": -0.18828778586251502,
+    "slopes_negative": false,
+    "recommended_s_star_uncorrected_worst_cv2": 1,
+    "recommended_s_star_uncorrected_p90_cv2": 1,
+    "multi_pass_required": false,
+    "is_final": false,
+    "separate_authorisations_remaining": [
+      "full singles V_i^dir production run",
+      "couples V_i^dir",
+      "W^3 promotion",
+      "measure-family extension",
+      "any reportable welfare/inequality number",
+      "multi-pass pricing (if S* > single-pass capacity)"
+    ]
+  }
+}

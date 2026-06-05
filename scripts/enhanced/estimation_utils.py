@@ -1546,7 +1546,7 @@ if HAS_NUMBA:
             log_x2 = log_x * log_x
             log_x3 = log_x2 * log_x
             # Third-order Taylor expansion for better accuracy
-            return 0.5 * log_x2 * (1.0 + theta * log_x / 3.0 + theta * theta * log_x2 / 12.0)
+            return 0.5 * log_x2 * (1.0 + 2.0 * theta * log_x / 3.0 + theta * theta * log_x2 / 4.0 + theta ** 3 * log_x3 / 15.0)
         else:
             x_theta = np.power(x, theta)
             numerator = x_theta * (theta * log_x - 1.0) + 1.0
@@ -1575,7 +1575,7 @@ else:
         if abs(theta) < 0.05:
             log_x2 = log_x * log_x
             log_x3 = log_x2 * log_x
-            return 0.5 * log_x2 * (1.0 + theta * log_x / 3.0 + theta * theta * log_x2 / 12.0)
+            return 0.5 * log_x2 * (1.0 + 2.0 * theta * log_x / 3.0 + theta * theta * log_x2 / 4.0 + theta ** 3 * log_x3 / 15.0)
         else:
             x_theta = np.power(x, theta)
             numerator = x_theta * (theta * log_x - 1.0) + 1.0

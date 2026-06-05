@@ -1,0 +1,664 @@
+{
+  "increment": "stage5a_postestimation_descriptives_v1",
+  "generated_utc": "2026-06-04T21:26:04.675855+00:00",
+  "inputs": {
+    "theta_hat_path": "scripts/bpool/specs/theta_hat_realdata_901_v1.csv",
+    "spec_yaml_path": "scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
+    "engine_ready_stem": "fr_p3a_bpool_engine_ready",
+    "couples_stem": "fr_p3a_bpool_engine_ready",
+    "years": [],
+    "n_hh": 0
+  },
+  "deliverables": {
+    "opportunity_parquet": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\opportunity_diagnostics_certified_v1.parquet",
+    "html": "C:\\Users\\hisham\\Repo\\MNL\\docs\\jmp_methodology\\RURO_postestimation_descriptives_v1.html",
+    "figures": [
+      "C:\\Users\\hisham\\Repo\\MNL\\outputs\\figures\\stage5a_task1_se_asymmetry.png",
+      "C:\\Users\\hisham\\Repo\\MNL\\outputs\\figures\\stage5a_task2_opportunity_effcount.png",
+      "C:\\Users\\hisham\\Repo\\MNL\\outputs\\figures\\stage5a_task3_attractiveness_vs_opportunity.png",
+      "C:\\Users\\hisham\\Repo\\MNL\\outputs\\figures\\stage5a_task4_heterogeneity_region.png",
+      "C:\\Users\\hisham\\Repo\\MNL\\outputs\\figures\\stage5a_task5_loc4_wage_densities.png",
+      "C:\\Users\\hisham\\Repo\\MNL\\outputs\\figures\\stage5a_task5_hours_offsets.png",
+      "C:\\Users\\hisham\\Repo\\MNL\\outputs\\figures\\stage5a_task6_ess.png"
+    ]
+  },
+  "task1_estimate_table": {
+    "n_params": 47,
+    "n_significant_total": 29,
+    "block_summary": {
+      "couples_leisure": {
+        "role": "preference",
+        "n_free": 8,
+        "n_significant": 3,
+        "median_se_clustered": 0.39427699826963897,
+        "iqr_se_clustered": 0.6827920034749182,
+        "max_se_clustered": 2.505339082023552
+      },
+      "market_hours_opp": {
+        "role": "opportunity/access",
+        "n_free": 17,
+        "n_significant": 9,
+        "median_se_clustered": 0.1242959045242641,
+        "iqr_se_clustered": 0.09381584157462851,
+        "max_se_clustered": 0.1892549418433498
+      },
+      "occupation_opp": {
+        "role": "opportunity/access",
+        "n_free": 6,
+        "n_significant": 5,
+        "median_se_clustered": 0.0470254381737329,
+        "iqr_se_clustered": 0.014399862869620673,
+        "max_se_clustered": 0.0700307667072053
+      },
+      "other": {
+        "role": "other",
+        "n_free": 0,
+        "n_significant": 0,
+        "median_se_clustered": null,
+        "iqr_se_clustered": null,
+        "max_se_clustered": null
+      },
+      "singles_leisure": {
+        "role": "preference",
+        "n_free": 10,
+        "n_significant": 6,
+        "median_se_clustered": 0.3874447744601781,
+        "iqr_se_clustered": 0.4814778056651205,
+        "max_se_clustered": 1.155108348336803
+      },
+      "wage_opp": {
+        "role": "ability/wage",
+        "n_free": 6,
+        "n_significant": 6,
+        "median_se_clustered": 0.012421005664438399,
+        "iqr_se_clustered": 0.004564755469294749,
+        "max_se_clustered": 0.0279550296329183
+      }
+    }
+  },
+  "task2_3_opportunity_attractiveness": {
+    "singles_male": {
+      "n_hh": 2243,
+      "support": 101,
+      "opportunity_summary": {
+        "entropy": {
+          "median": 2.549157766553228,
+          "mean": 2.5329672949961095,
+          "p10": 2.207198130702751,
+          "p90": 2.8312571488796245
+        },
+        "eff_count": {
+          "median": 12.796321752631512,
+          "mean": 12.969772700396211,
+          "p10": 9.090211096614315,
+          "p90": 16.966777248231928
+        },
+        "ess_count": {
+          "median": 10.866736754617598,
+          "mean": 11.062342086144747,
+          "p10": 7.357983380261167,
+          "p90": 15.096425350053954
+        },
+        "max_w": {
+          "median": 0.09610249651315819,
+          "mean": 0.10393806208832608,
+          "p10": 0.06878011749044984,
+          "p90": 0.14551797278203424
+        }
+      },
+      "attractiveness_summary": {
+        "entropy": {
+          "median": 3.6576784203138493,
+          "mean": 3.5878048117991224,
+          "p10": 3.1750810183658027,
+          "p90": 3.9241415544075466
+        },
+        "eff_count": {
+          "median": 38.77122781226578,
+          "mean": 37.89516243387996,
+          "p10": 23.928758636378124,
+          "p90": 50.609613817645496
+        },
+        "ess_count": {
+          "median": 20.26275333612068,
+          "mean": 20.42981095957693,
+          "p10": 8.916886896741527,
+          "p90": 31.79004859414731
+        },
+        "max_w": {
+          "median": 0.13869126924850142,
+          "mean": 0.16838920847688077,
+          "p10": 0.08616617895288094,
+          "p90": 0.2908292137761983
+        }
+      },
+      "att_over_opp_eff_ratio": {
+        "median": 2.9807141070503222,
+        "p10": 1.717713630504857,
+        "p90": 4.657153001166856
+      }
+    },
+    "singles_female": {
+      "n_hh": 2764,
+      "support": 101,
+      "opportunity_summary": {
+        "entropy": {
+          "median": 2.6339266521686415,
+          "mean": 2.6110300961473967,
+          "p10": 2.2789483294336614,
+          "p90": 2.9119254847495113
+        },
+        "eff_count": {
+          "median": 13.928354898566983,
+          "mean": 14.04814294087525,
+          "p10": 9.766404323859168,
+          "p90": 18.39217850856003
+        },
+        "ess_count": {
+          "median": 11.403697093427485,
+          "mean": 11.464972835883247,
+          "p10": 7.5612341525199955,
+          "p90": 15.477696298099971
+        },
+        "max_w": {
+          "median": 0.09372920079376752,
+          "mean": 0.10181835996212538,
+          "p10": 0.06776467696428125,
+          "p90": 0.14447849401152327
+        }
+      },
+      "attractiveness_summary": {
+        "entropy": {
+          "median": 3.6009339592151033,
+          "mean": 3.5192466970828193,
+          "p10": 3.070308185431109,
+          "p90": 3.8705166835448455
+        },
+        "eff_count": {
+          "median": 36.63243191984679,
+          "mean": 35.62052395605953,
+          "p10": 21.54861424167937,
+          "p90": 47.96716357564881
+        },
+        "ess_count": {
+          "median": 18.843496569923534,
+          "mean": 18.921986464315818,
+          "p10": 8.128221476425585,
+          "p90": 29.808880963353843
+        },
+        "max_w": {
+          "median": 0.14692464246828152,
+          "mean": 0.17724795667056234,
+          "p10": 0.08558000376554362,
+          "p90": 0.30308490990466613
+        }
+      },
+      "att_over_opp_eff_ratio": {
+        "median": 2.5938129544325155,
+        "p10": 1.4092762607636962,
+        "p90": 4.189913727543535
+      }
+    },
+    "couples": {
+      "n_hh": 7438,
+      "support": 901,
+      "opportunity_summary": {
+        "entropy": {
+          "median": 2.8719877879081555,
+          "mean": 2.9026103021923095,
+          "p10": 2.057692334250192,
+          "p90": 3.740229093378611
+        },
+        "eff_count": {
+          "median": 17.672111719520533,
+          "mean": 24.16960950778039,
+          "p10": 7.827885253865849,
+          "p90": 42.107638214799636
+        },
+        "ess_count": {
+          "median": 11.319354794277702,
+          "mean": 15.866968188091937,
+          "p10": 4.337485928191031,
+          "p90": 30.57477749340959
+        },
+        "max_w": {
+          "median": 0.10226999669756554,
+          "mean": 0.14342003515879187,
+          "p10": 0.041474488718858483,
+          "p90": 0.2873333262782323
+        }
+      },
+      "attractiveness_summary": {
+        "entropy": {
+          "median": 5.119778154976656,
+          "mean": 5.031376299142627,
+          "p10": 4.3176383568653,
+          "p90": 5.6057000458612745
+        },
+        "eff_count": {
+          "median": 167.29825171924665,
+          "mean": 171.8860320250684,
+          "p10": 75.01126919306765,
+          "p90": 271.97225251890654
+        },
+        "ess_count": {
+          "median": 63.15641928165443,
+          "mean": 71.10460370479937,
+          "p10": 22.194533936201196,
+          "p90": 130.90920064291637
+        },
+        "max_w": {
+          "median": 0.06452210835160821,
+          "mean": 0.08092909590736908,
+          "p10": 0.029636852970552973,
+          "p90": 0.14981211194548136
+        }
+      },
+      "att_over_opp_eff_ratio": {
+        "median": 9.066205088865493,
+        "p10": 2.563879925228415,
+        "p90": 24.62147496097626
+      }
+    }
+  },
+  "task4_heterogeneity": {
+    "crosstabs": {
+      "singles_male": {
+        "region": {
+          "opp_eff_count_median": {
+            "1": 12.963123343765542,
+            "2": 12.292847832810331,
+            "3": 12.381517302156134,
+            "4": 12.739429380835734,
+            "5": 13.39458764259081,
+            "6": 12.937073591674341,
+            "7": 12.816075907390752,
+            "8": 12.35487843250073
+          },
+          "att_eff_count_median": {
+            "1": 35.90852831825309,
+            "2": 39.837901747176055,
+            "3": 39.42290734798377,
+            "4": 40.51949321612507,
+            "5": 38.42562452792343,
+            "6": 38.74908294476512,
+            "7": 38.425373786097666,
+            "8": 39.92765386284278
+          },
+          "n": {
+            "1": 328,
+            "2": 399,
+            "3": 147,
+            "4": 194,
+            "5": 410,
+            "6": 284,
+            "7": 257,
+            "8": 224
+          }
+        },
+        "educ3": {
+          "opp_eff_count_median": {
+            "0.0": 11.162045664899733,
+            "1.0": 12.705103435765928,
+            "2.0": 13.583659387135363
+          },
+          "att_eff_count_median": {
+            "0.0": 41.68560339540754,
+            "1.0": 39.86628881648391,
+            "2.0": 36.05263215770699
+          },
+          "n": {
+            "0.0": 380,
+            "1.0": 1009,
+            "2.0": 854
+          }
+        },
+        "gsur_bin": {
+          "opp_eff_count_median": {
+            "low": 13.610775374820731,
+            "mid": 12.916931126568848,
+            "high": 11.85792311664553
+          },
+          "att_eff_count_median": {
+            "low": 36.17526622987988,
+            "mid": 39.157796909110296,
+            "high": 41.376713169740405
+          },
+          "n": {
+            "low": 797,
+            "mid": 721,
+            "high": 725
+          }
+        },
+        "drgur": {
+          "opp_eff_count_median": {
+            "0.0": 12.964252844951002,
+            "1.0": 12.591384467282294
+          },
+          "att_eff_count_median": {
+            "0.0": 38.77677638296914,
+            "1.0": 38.77122781226578
+          },
+          "n": {
+            "0.0": 1120,
+            "1.0": 1123
+          }
+        },
+        "drgmd": {
+          "opp_eff_count_median": {
+            "0.0": 12.982908824366033,
+            "1.0": 11.979117263344644
+          },
+          "att_eff_count_median": {
+            "0.0": 38.425373786097666,
+            "1.0": 40.22918702770458
+          },
+          "n": {
+            "0.0": 1779,
+            "1.0": 464
+          }
+        }
+      },
+      "singles_female": {
+        "region": {
+          "opp_eff_count_median": {
+            "1": 13.548158983913895,
+            "2": 13.907521361665566,
+            "3": 12.88785854831475,
+            "4": 14.906246218762089,
+            "5": 14.427185857249393,
+            "6": 14.607807242108855,
+            "7": 14.475691319809961,
+            "8": 12.509514682305442
+          },
+          "att_eff_count_median": {
+            "1": 36.15944725631161,
+            "2": 36.967920984895244,
+            "3": 37.678209699144915,
+            "4": 36.169737173087434,
+            "5": 37.1180701473041,
+            "6": 36.205144132588764,
+            "7": 36.41150934357297,
+            "8": 36.39204555235697
+          },
+          "n": {
+            "1": 493,
+            "2": 413,
+            "3": 234,
+            "4": 236,
+            "5": 465,
+            "6": 292,
+            "7": 330,
+            "8": 301
+          }
+        },
+        "educ3": {
+          "opp_eff_count_median": {
+            "0.0": 11.521579767726482,
+            "1.0": 13.195604035628355,
+            "2.0": 15.445417581149778
+          },
+          "att_eff_count_median": {
+            "0.0": 33.10574017199144,
+            "1.0": 39.36075047805979,
+            "2.0": 34.01327510842983
+          },
+          "n": {
+            "0.0": 397,
+            "1.0": 1203,
+            "2.0": 1164
+          }
+        },
+        "gsur_bin": {
+          "opp_eff_count_median": {
+            "low": 15.863099838218924,
+            "mid": 13.79296520369329,
+            "high": 12.163636272550265
+          },
+          "att_eff_count_median": {
+            "low": 34.260769652643035,
+            "mid": 37.31700900683409,
+            "high": 37.85237243699786
+          },
+          "n": {
+            "low": 924,
+            "mid": 927,
+            "high": 913
+          }
+        },
+        "drgur": {
+          "opp_eff_count_median": {
+            "0.0": 14.355996171221186,
+            "1.0": 13.717512917446605
+          },
+          "att_eff_count_median": {
+            "0.0": 36.75333380246717,
+            "1.0": 36.58998843863915
+          },
+          "n": {
+            "0.0": 1196,
+            "1.0": 1568
+          }
+        },
+        "drgmd": {
+          "opp_eff_count_median": {
+            "0.0": 14.134749279461523,
+            "1.0": 13.058436385586724
+          },
+          "att_eff_count_median": {
+            "0.0": 36.572994531826254,
+            "1.0": 37.09450502258821
+          },
+          "n": {
+            "0.0": 2189,
+            "1.0": 575
+          }
+        }
+      },
+      "couples": {
+        "region": {
+          "opp_eff_count_median": {
+            "1": 16.969425857423637,
+            "2": 18.5979943373938,
+            "3": 15.048814666358025,
+            "4": 16.97953213036035,
+            "5": 19.21193932697929,
+            "6": 19.327959145828753,
+            "7": 18.36560905037748,
+            "8": 14.133910124953967
+          },
+          "att_eff_count_median": {
+            "1": 168.9287058629856,
+            "2": 164.60506758163095,
+            "3": 174.55011853687415,
+            "4": 172.6695828688771,
+            "5": 165.94503648800625,
+            "6": 167.40010870725627,
+            "7": 161.2112909787839,
+            "8": 170.41977382519428
+          },
+          "n": {
+            "1": 1097,
+            "2": 1349,
+            "3": 560,
+            "4": 663,
+            "5": 1349,
+            "6": 828,
+            "7": 887,
+            "8": 705
+          }
+        },
+        "educ3_male": {
+          "opp_eff_count_median": {
+            "0.0": 14.70060748635871,
+            "1.0": 16.727862883507267,
+            "2.0": 19.988154304833465
+          },
+          "att_eff_count_median": {
+            "0.0": 179.5424993661608,
+            "1.0": 172.69794513110926,
+            "2.0": 156.22417677885082
+          },
+          "n": {
+            "0.0": 1110,
+            "1.0": 3448,
+            "2.0": 2880
+          }
+        },
+        "educ3_female": {
+          "opp_eff_count_median": {
+            "0.0": 13.86248626368569,
+            "1.0": 15.95314015229058,
+            "2.0": 20.274381443777745
+          },
+          "att_eff_count_median": {
+            "0.0": 168.3400250864629,
+            "1.0": 180.37824831717748,
+            "2.0": 156.66066793558124
+          },
+          "n": {
+            "0.0": 897,
+            "1.0": 2999,
+            "2.0": 3542
+          }
+        },
+        "drgur": {
+          "opp_eff_count_median": {
+            "0.0": 18.94652866992289,
+            "1.0": 16.12564575152533
+          },
+          "att_eff_count_median": {
+            "0.0": 165.803740784478,
+            "1.0": 169.0964612158707
+          },
+          "n": {
+            "0.0": 4404,
+            "1.0": 3034
+          }
+        },
+        "drgmd": {
+          "opp_eff_count_median": {
+            "0.0": 18.404732223283006,
+            "1.0": 14.48574356878581
+          },
+          "att_eff_count_median": {
+            "0.0": 165.78208288900618,
+            "1.0": 174.39490933700455
+          },
+          "n": {
+            "0.0": 6056,
+            "1.0": 1382
+          }
+        }
+      }
+    }
+  },
+  "task5_wage_hours_loc4": {
+    "one_density_with_occupation_mean_shifts": true,
+    "n_sigma": 1,
+    "sigma": 0.3898254999925787,
+    "explanation": "wage_opportunity declares a SINGLE log-normal with one sigma; occupation (beta_occ_2/3/4) enters the market/occupation opportunity block as a MEAN shifter, not as a separate variance. The certified spec implements ONE log-wage density whose mean is shifted by LOC4; it is NOT four distinct densities.",
+    "occupation_mean_shifts_male_block": {
+      "1": 0.0,
+      "2": -1.5916485115155634,
+      "3": -2.294101394919219,
+      "4": 0.2906431544805711
+    },
+    "mean_shifters": [
+      [
+        "intercept",
+        "beta_w0"
+      ],
+      [
+        "educL",
+        "beta_w_educL"
+      ],
+      [
+        "educH",
+        "beta_w_educH"
+      ],
+      [
+        "pexp_years",
+        "beta_w_pexp"
+      ],
+      [
+        "pexp_years2",
+        "beta_w_pexp2"
+      ]
+    ],
+    "hours_band_offsets": {
+      "beta_E (any work)": -0.75265301737783,
+      "beta_h_pt1": -1.4332708022989755,
+      "beta_h_pt2": -0.1036954463718583,
+      "beta_h_ft": 1.0413227078263705,
+      "beta_h_lh": -1.2184848074097656
+    },
+    "occupation_support_summary": {
+      "singles_male": {
+        "working_share_over_support": 0.8993833400281624,
+        "loc4_share": {
+          "-2": 5.738424934780594e-05,
+          "-1": 0.10061665997183758,
+          "1": 0.3737612726943671,
+          "2": 0.08643833620990275,
+          "3": 0.04595154120851229,
+          "4": 0.3931748056660325
+        }
+      },
+      "singles_female": {
+        "working_share_over_support": 0.8993387399521429,
+        "loc4_share": {
+          "-2": 2.865699015632388e-05,
+          "-1": 0.10066126004785718,
+          "1": 0.1943731999828058,
+          "2": 0.17477898296341934,
+          "3": 0.1203951798942557,
+          "4": 0.40976272012150566
+        }
+      },
+      "couples": {
+        "working_share_over_support": 0.9002229007296425
+      }
+    }
+  },
+  "task6_ess": {
+    "singles_male": {
+      "n_hh": 2243,
+      "ess_median": 20.262753336120685,
+      "ess_p10": 8.916886896741515,
+      "ess_p90": 31.790048594147304,
+      "ess_min": 1.7325633019002264,
+      "share_below_30": 0.85510477039679
+    },
+    "singles_female": {
+      "n_hh": 2764,
+      "ess_median": 18.843496569923524,
+      "ess_p10": 8.128221476425576,
+      "ess_p90": 29.808880963353836,
+      "ess_min": 1.581962271778433,
+      "share_below_30": 0.9019536903039074
+    },
+    "couples": {
+      "n_hh": 7438,
+      "ess_median": 63.15641928165423,
+      "ess_p10": 22.194533936201182,
+      "ess_p90": 130.909200642916,
+      "ess_min": 1.7948746682758618,
+      "share_below_30": 0.1727614950255445
+    }
+  },
+  "absent_variables": [
+    "couples:gsur"
+  ],
+  "scope": {
+    "read_only": true,
+    "re_estimated": false,
+    "computed_v_dir": false,
+    "computed_welfare": false,
+    "promoted_w3": false,
+    "priced_node": false,
+    "spec_changed": false,
+    "production_swapped": false
+  },
+  "g_block_construction": "g_block = V_full - u + log_prior = log_h + log_w + log_market; EXCLUDES utility u and -log_prior (opportunity density only)."
+}

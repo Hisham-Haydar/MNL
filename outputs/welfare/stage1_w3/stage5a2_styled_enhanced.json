@@ -1,0 +1,66 @@
+{
+  "increment": "stage5a2_styled_enhanced_v1",
+  "purpose": "Complete the canonical styled post-estimation reporting layer (base + enhanced cluster-SE) for the CERTIFIED baseline, read-only.",
+  "report_classification": "canonical styled post-estimation report, base + enhanced (cluster-SE) layer; NOT the full general-reporting enhancement (CONOPT solver/listing/RGmax require a GAMS run that does not exist for the JAX-backend certified baseline)",
+  "inputs": {
+    "spec": "scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
+    "theta_hat": "scripts/bpool/specs/theta_hat_realdata_901_v1.csv",
+    "baseline_doc": "docs/France_case/P3a/execution_logs/Bpool/RURO_realdata_2016_2017_joint_901_v1.md",
+    "engine_ready_stem": "fr_p3a_bpool_engine_ready",
+    "n_free_params": 47
+  },
+  "produced": {
+    "certified_results_json": "EUROMOD-STORAGE/outputs/post_estimation/realdata_joint_901_tlmpin_certified/joint/estimation_results.json",
+    "cluster_robust_se_artifact": "EUROMOD-STORAGE/outputs/post_estimation/realdata_joint_901_tlmpin_certified/joint/certified_cluster_robust_se.json",
+    "base_styled_html": "EUROMOD-STORAGE/.../joint/estimation_spec_joint_pooled_v1_bll0_tlmpin/joint_post_estimation_report_20260604_233838.html",
+    "enhanced_styled_html": "EUROMOD-STORAGE/.../joint/estimation_spec_joint_pooled_v1_bll0_tlmpin/joint_enhanced_post_estimation_report_20260605_111854.html",
+    "extended_diagnostics_md": "EUROMOD-STORAGE/.../joint_enhanced_extended_diagnostics.md",
+    "extended_diagnostics_json": "EUROMOD-STORAGE/.../joint_enhanced_extended_diagnostics.json",
+    "repo_memo": "docs/jmp_methodology/RURO_certified_styled_report_pointer_v1.md",
+    "repo_assembler": "scripts/diagnostics/run_stage5a2_cluster_se_artifact.py"
+  },
+  "cluster_se_artifact_summary": {
+    "n_free": 47,
+    "n_displayed": 48,
+    "pinned_params": ["theta_l_m"],
+    "pinned_params_note": "theta_l_m (-0.8) is appended as a NON-FREE row (free_mask=False, NaN SE) so the styled inference table marks it outside the identified block; beta_ll is removed from the spec entirely. The free-block diagnostics + PE6/T3/T4/T5 apply only to the 47-param identified block.",
+    "PE6_condition_number": 1294561.527158389,
+    "PE6_near_singular": false,
+    "PE6_min_eig": 0.4587910453370293,
+    "PE6_hessian_shape_free": [47, 47],
+    "T3_n_clusters": 9657,
+    "T3_cluster_col": "idorighh",
+    "T4_se_positivity_passed": true,
+    "T4_n_nonpositive": 0,
+    "T4_evaluated_on": "free block only",
+    "T5_clu_over_hess_median": 1.2337164178865185,
+    "T5_clu_over_hess_max": 2.08,
+    "sandwich_recomputed": false,
+    "note": "assembled from the EXISTING certified theta/SE vectors + the certified Hessian/cluster facts parsed from the baseline doc embedded JSON; the certified clustered SEs are taken as-is."
+  },
+  "enhanced_sections_populated": {
+    "inference_table_with_robust_se": true,
+    "hessian_diagnostics": true,
+    "data_diagnostics_T3_T4_T5": true,
+    "reproducibility_metadata": true
+  },
+  "artifacts_unavailable_reported_not_fabricated": {
+    "gams_conopt_solver_log": "unavailable (JAX backend, no CONOPT run)",
+    "gams_listing_file_rgmax_rtol_ftol": "unavailable (no GAMS listing)",
+    "python_gradient_diagnostics": "not run (would recompute the likelihood gradient; this increment is read-only on the estimate; certified stationarity evidence = recovery-gate max|grad| + PD Hessian)",
+    "comparison_run": "not used (no second run)"
+  },
+  "scope": {
+    "read_only": true,
+    "re_estimated": false,
+    "sandwich_recomputed": false,
+    "computed_v_dir": false,
+    "computed_welfare": false,
+    "promoted_w3": false,
+    "priced_node": false,
+    "spec_changed": false,
+    "production_swapped": false,
+    "canonical_promoted": false
+  },
+  "scope_statement": "Post-estimation reporting only. Read-only. No re-estimation, no sandwich recompute, no welfare pricing, no V_i^dir, no W^3 promotion, no production/staged-pricing changes, no spec change, no canonical promotion. CONOPT solver artifacts reported as unavailable (JAX backend), not fabricated."
+}

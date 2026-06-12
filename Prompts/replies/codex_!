@@ -1,0 +1,68 @@
+Stop the run if it has not passed preflight. Do **not use this prompt as-is**.
+
+**Blocking Issues**
+
+1. **Task 3(b) uses the wrong object.**  
+`delta_common` is only valid for the **full-V diagnostic**:
+
+```text
+delta_common = V_dir_fullV - (V_i_IS - log(101))
+```
+
+Utility-only `V_i^dir` has no `V_i^IS` counterpart. Its gate is based on `CV²`, implied finite-S bias, and self-convergence.
+
+2. **The approved Four-C2 pricing method is not scalable to 5,007 households.**  
+The existing helper runs one complete population batch per target household. At roughly 241,895 rows × 5,007 targets, this implies about **1.21 billion EUROMOD input rows**. That is not a bounded production run.
+
+Running one jointly-redrawn full population batch per year would be scalable, but it changes the validated Four-C2 target-only population context. It requires a separate parity/design gate before production.
+
+3. **RNG is not pre-registered.**  
+Freeze:
+
+```text
+S = 100
+base_seed = 20260604
+per-HH seed = base_seed + (uid % 1_000_000)
+bit generator = PCG64
+```
+
+This makes processing order, checkpointing, and retries reproducible.
+
+4. **Output schemas are ambiguous.**  
+Explicitly store staged and certified values separately:
+
+```text
+V_i_IS_staged, ESS_staged, max_weight_staged
+V_i_IS_certified, ESS_certified, max_weight_certified
+V_i_IS_delta_staged_minus_certified
+```
+
+Apply the same rule to couples.
+
+5. **A production runner/checkpoint contract is missing.**  
+Require atomic checkpoints, resumability, completed-cell manifests, hashes, and no overwrite of completed outputs.
+
+**Corrected Immediate Scope**
+
+Run only:
+
+- Full singles staged/certified `V_i^IS`.
+- Full couples staged/certified `V_i^IS`.
+- Candidate-anchor verification.
+- Selected-household `V_i^dir` anchor re-mint using the already validated Four-C2 target-only method.
+- A read-only/preflight design and bounded parity gate for scalable all-household `V_i^dir` batching.
+
+Replace Task 3(b) with:
+
+```text
+(b1) Full-V diagnostic:
+delta_common = V_dir_fullV - (V_i_IS_staged - log(101)).
+Report high-ESS (ESS_staged >= 30) distribution. This is the only
+like-for-like V_i^IS comparison.
+
+(b2) Utility-only contract object:
+Report CV², implied finite-S bias CV²/(2S), and bias-corrected V_i^dir.
+Do not compare utility-only V_i^dir to V_i^IS.
+```
+
+Do not authorize full 5,007-household `V_i^dir` until the scalable population-batch design reproduces selected Four-C2 anchors within a pre-registered tolerance.

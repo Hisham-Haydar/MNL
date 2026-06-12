@@ -1,68 +1,97 @@
-Stop the run if it has not passed preflight. Do **not use this prompt as-is**.
+Codex's review is good — four of the five are correct and one of them catches a real conflation *I introduced*. Adjudication point by point, then the corrected prompt.
 
-**Blocking Issues**
+**1. Gate 3(b) object — Codex is right, and the error is mine.** Four-C2's whole point was object selection: `delta_common` is the **full-V** like-for-like comparison, and its formula checks out exactly against the stored anchors (UID 200001593700: full-V(S=20) 4.8998 − (11.4966 − log 101) = −1.9817 ✓ the stored value). The utility-only contract object has no stored V_i^IS counterpart; its gate is CV²-based (implied finite-S bias CV²/2S + self-convergence). My Task 2 drew the distinction correctly, then my gate 3(b) collapsed it — which is precisely the Four-C confound resurfacing, and a mislabeled gate produces wrong verdicts. Adopt (b1)/(b2) as written, with pre-registered numbers: (b1) high-ESS (ESS_staged ≥ 30) median |delta_common| ≤ 0.5 nats at production S; (b2) implied bias CV²/(2S) ≤ 1e-3 nats (Four-C2 found ≈5e-4).
 
-1. **Task 3(b) uses the wrong object.**  
-`delta_common` is only valid for the **full-V diagnostic**:
+**2. Scalability — right, and it's the house's own scale-conjecture principle applied to me.** The validated Four-C method is one full population batch *per target*; at 5,007 targets that's ~1.2B input rows — not a bounded run. Joint substitution (all households' redrawn bands in one batch per year×mode) is the scalable geometry, but it changes the validated pricing context, and the Two-L/Four-B record shows means-tested components are sensitive to batch *row composition* — so it needs its own dispositive parity gate before production. One design refinement that strengthens the gate: **pin S = 101**, not "≈100". Same single-pass design, negligible bias difference (CV²_util/202 ≈ 5e-4), but the redrawn band then has *identical row count* to the existing 101-draw band, so the joint batch is geometrically identical to the Four-B-validated production batches — removing one confound from the parity test for free. And note the upside: if parity passes, full singles V_dir costs ~**6 batch runs total** instead of 5,007 — the gate isn't a delay, it's the key.
 
-```text
-delta_common = V_dir_fullV - (V_i_IS - log(101))
+**3, 4, 5 — accept all three as written.** RNG block frozen (the Four-C2 scheme verbatim: base_seed 20260604, per-HH `base + uid % 1_000_000`, PCG64, draw ordering employment→occupation→hours→Halton-wage with pinned Halton config); explicit dual-stem column schema; atomic-checkpoint runner contract.
+
+**Critical-path impact: almost none.** F4's sole input is V_i^IS — it never touches V_dir. So F4 launches on Task-1 READY regardless of how the parity gate goes. V_dir's job is to certify the integrator by the **Day-9 checkpoint**: parity-pass → full V_dir cheap (F3-B); parity-fail → pre-registered fallback = stratified target-only subsample cross-check (~40 HH/group across ESS strata, validated method) + ESS-stratified caveat on the headline. The conference answer survives every branch.
+
+**For the session currently running:** stop Task 2 if it's grinding per-target batches. Tasks 1 and 5 outputs (the IS computations) are salvageable if complete — keep them, but verify they carry the dual-stem schema below; if not, re-emit storage, the logsums are cheap.
+
+Here is **F3-R** (revised, supersedes F3 — Claude Code · Sonnet · thinking on · MNL repo):
+
+```
+FAST-LANE F3-R (supersedes F3): V_i^IS PRODUCTION + ANCHOR RE-MINT + JOINT-BATCH
+PARITY GATE. Bounded run. No edits to engines/specs/data. No Omega, no Gini, no
+measures, no decomposition, no promotion. FULL-POPULATION V_i^dir IS NOT IN SCOPE
+(it is F3-B, separately authorized on the Task-4 parity verdict).
+
+FROZEN RNG / DESIGN BLOCK (pre-registered, record verbatim in all artifacts):
+  S = 101 (single-pass; row-count-identical to the existing 101-draw band)
+  base_seed = 20260604
+  per-HH seed = base_seed + (uid % 1_000_000)
+  bit generator = numpy PCG64
+  draw ordering = employment -> occupation -> hours -> Halton-wage
+  Halton config = identical to run_stage4c2 (pin and record the harvested sub-seed)
+Theta = certified theta_hat_realdata_901_v1.csv; spec = joint_pooled_v1_bll0_tlmpin.
+Record theta-vector hash + spec-file hash in every output.
+
+RUNNER CONTRACT (all tasks): atomic checkpoints (write tmp + rename), per-cell
+completion manifest with row counts + content hashes, resumable (skip completed
+cells), never overwrite a completed output.
+
+TASK 1 - Singles V_i^IS, dual stem. All 5,007 singles at certified theta.
+Columns: uid, group, year_tag, V_i_IS_staged, ESS_staged, max_weight_staged,
+V_i_IS_certified, ESS_certified, max_weight_certified,
+V_i_IS_delta_staged_minus_certified.
+Gate: per-group likelihood contributions on the CERTIFIED stem reproduce
+singles_male 28489.042816294535 and singles_female 35411.86351549324 to <= 1e-6.
+
+TASK 2 - Couples V_i^IS, dual stem, IS-ONLY capture. All 7,438 couples, same
+schema. Gate: certified-stem aggregate reproduces 174603.72976561091 to machine
+zero. NO couples redraw, NO couples vdir, NO couples measures.
+
+TASK 3 - Anchor verification + re-mint (VALIDATED TARGET-ONLY METHOD ONLY).
+(a) Verify: recomputed V_i^IS for UID 200001593700 on the staged stem equals
+    11.496632024594227 to <= 1e-9. Report if not; do not proceed to (b) on fail.
+(b) Re-mint durable anchors for UID 200001593700 plus one additional high-ESS
+    HH per group (record selection rule), using the Four-C target-only
+    substitution method (one full population batch per anchor HH - bounded at
+    ~3-4 batches total). FREEZE to outputs/welfare/fastlane_anchors_v1/:
+    redrawn node table; population-batch identity (stem, band, HH set,
+    n_population_rows, n_population_hh); priced-node outputs (ils_dispy,
+    ils_dispy_real, full component set incl. ils_benmt, bsa00_s); V_i^IS;
+    utility-only V_i^dir + CV2 + bias-corrected value; full-V diagnostic;
+    delta_common = V_dir_fullV - (V_i_IS_staged - log(101)); ESS + max_weight;
+    the frozen RNG block; theta/spec hashes; EUROMOD pricing reference
+    (pairing, CPI phi, schema). Time one batch end-to-end and report runtime.
+
+TASK 4 - JOINT-BATCH PARITY GATE (the dispositive test for scalable V_dir).
+Construct, for ONE year x mode cell (2016 singles), the production-geometry
+joint batch: EVERY household's existing draw band replaced by its own S=101
+redrawn nodes (frozen RNG block), batch HH set and row structure identical to
+the production chunk. Price it once via the build EUROMOD path. PASS criterion
+(pre-registered): for each Task-3 anchor HH in that cell, every redrawn-node row's
+priced outputs match the Task-3 target-only pricing on ALL components - headline
+ils_dispy AND the means-tested columns (ils_benmt, bsa00_s) - to <= EUR 0.01.
+ANY divergence on a means-tested column = FAIL (the Two-L signature). Report a
+per-column max-abs-diff table. Verdict: JOINT BATCHING LICENSED / NOT LICENSED.
+
+TASK 5 - Gates and readouts.
+(a) ESS distributions per group, dual stem (median/p10/p90).
+(b1) For Task-3 anchor HHs: delta_common as defined above, high-ESS framing
+     (ESS_staged >= 30); pre-registered expectation at S=101: |delta_common|
+     well below the S=20/60 smoke values, median <= 0.5 nats.
+(b2) Utility-only contract object for anchors: CV2, implied finite-S bias
+     CV2/(2S) <= 1e-3 nats, bias-corrected V_i^dir. Do NOT compare utility-only
+     V_dir to V_i^IS.
+(c) Runtime per batch + projected cost of F3-B (full singles V_dir, ~6 joint
+    batches) so authorization is informed.
+
+OUTPUT
+outputs/welfare/fastlane/singles_ViIS_dualstem_v1.parquet
+outputs/welfare/fastlane/couples_ViIS_dualstem_v1.parquet
+outputs/welfare/fastlane_anchors_v1/  (frozen set + manifest)
+docs/jmp_methodology/RURO_welfare_F3R_production_report_v1.md
+Report ends with: Task-1/2 gate verdicts, anchor inventory, Task-4 verdict
+(LICENSED / NOT LICENSED), b1/b2 readouts, runtimes, and TWO explicit lines:
+"READY FOR F4: yes/no" (depends ONLY on Tasks 1+3a) and
+"F3-B AUTHORIZATION INPUT: licensed/not-licensed + projected cost".
+Do not commit. Report paths.
 ```
 
-Utility-only `V_i^dir` has no `V_i^IS` counterpart. Its gate is based on `CV²`, implied finite-S bias, and self-convergence.
+**F3-B** (pre-defined, fire only on `LICENSED`): full singles V_dir at S=101 via joint batches, all year×mode cells, gates (b1)/(b2) at population scale, append `V_dir_util, V_dir_fullV, delta_common, cv2` columns to the singles parquet. If `NOT LICENSED`: the stratified target-only subsample instead, sized from Task-3's measured batch runtime.
 
-2. **The approved Four-C2 pricing method is not scalable to 5,007 households.**  
-The existing helper runs one complete population batch per target household. At roughly 241,895 rows × 5,007 targets, this implies about **1.21 billion EUROMOD input rows**. That is not a bounded production run.
-
-Running one jointly-redrawn full population batch per year would be scalable, but it changes the validated Four-C2 target-only population context. It requires a separate parity/design gate before production.
-
-3. **RNG is not pre-registered.**  
-Freeze:
-
-```text
-S = 100
-base_seed = 20260604
-per-HH seed = base_seed + (uid % 1_000_000)
-bit generator = PCG64
-```
-
-This makes processing order, checkpointing, and retries reproducible.
-
-4. **Output schemas are ambiguous.**  
-Explicitly store staged and certified values separately:
-
-```text
-V_i_IS_staged, ESS_staged, max_weight_staged
-V_i_IS_certified, ESS_certified, max_weight_certified
-V_i_IS_delta_staged_minus_certified
-```
-
-Apply the same rule to couples.
-
-5. **A production runner/checkpoint contract is missing.**  
-Require atomic checkpoints, resumability, completed-cell manifests, hashes, and no overwrite of completed outputs.
-
-**Corrected Immediate Scope**
-
-Run only:
-
-- Full singles staged/certified `V_i^IS`.
-- Full couples staged/certified `V_i^IS`.
-- Candidate-anchor verification.
-- Selected-household `V_i^dir` anchor re-mint using the already validated Four-C2 target-only method.
-- A read-only/preflight design and bounded parity gate for scalable all-household `V_i^dir` batching.
-
-Replace Task 3(b) with:
-
-```text
-(b1) Full-V diagnostic:
-delta_common = V_dir_fullV - (V_i_IS_staged - log(101)).
-Report high-ESS (ESS_staged >= 30) distribution. This is the only
-like-for-like V_i^IS comparison.
-
-(b2) Utility-only contract object:
-Report CV², implied finite-S bias CV²/(2S), and bias-corrected V_i^dir.
-Do not compare utility-only V_i^dir to V_i^IS.
-```
-
-Do not authorize full 5,007-household `V_i^dir` until the scalable population-batch design reproduces selected Four-C2 anchors within a pre-registered tolerance.
+Tracker position unchanged: F4 still fires on F3-R's "READY FOR F4: yes" — likely tomorrow — and the V_dir branch resolves in parallel before Day 9. Two process notes: this is exactly why your double-check habit earns its keep, and Codex's review was the cheap kind of catch — before the compute, not after. Paste F3-R's report when it lands.

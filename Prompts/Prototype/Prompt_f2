@@ -1,0 +1,72 @@
+FAST-LANE F3: FULL SINGLES V_i PRODUCTION + ANCHOR MINT + COUPLES V_i^IS CAPTURE.
+Bounded production run. No edits to engines/specs/data. No Omega, no Gini, no
+measures, no decomposition, no promotion. Versioned outputs only; nothing into
+production or staged dirs; scratch is allowed but FROZEN anchor outputs go to a
+durable directory (below), not scratch.
+
+CONTEXT
+Certified theta-hat (joint_pooled_v1_bll0_tlmpin, theta_hat_realdata_901_v1.csv)
+is the only parameter vector. Reportable-welfare stem (supervisor default):
+staged reproducible reference fr_p3a_bpool_engine_ready_staged_threeB1 (the
+declared welfare-pricing reference). The Stage-4 config block in
+scripts/welfare/configs/welfare_stage1_w3.yaml carries the staged stem/dirs and
+pinned EUROMOD refs. Carried-forward constraints (binding): full-chunk
+population-batch pricing only, NEVER sub-bands or isolated nodes (Four-B /
+Two-L means-tested signature); redraw rows canonicalized before pricing;
+counterfactual wage nominal before EUROMOD, real via phi_y after (no double
+deflation); authoritative yem identity yem00+yemxp; cluster identity
+source_idorighh preserved in outputs.
+
+TASK 1 — Full singles V_i^IS per household (PRIMARY integrator).
+For ALL 5,007 singles (singles_male + singles_female), compute V_i^IS over the
+existing 101 draws at certified theta-hat on the STAGED stem. Store per-HH:
+uid, group, year_tag, V_i_IS, ESS, max_weight. ALSO compute V_i^IS on the
+CERTIFIED stem (fr_p3a_bpool_engine_ready) for the same households and store
+the per-HH delta (staged minus certified) — this is the stem-choice provenance
+exhibit, cheap logsums, no pricing. Sanity gate: summing the implied per-group
+likelihood contributions on the certified stem must reproduce the Gate-0 parity
+negLLs (singles_male 28489.042816294535, singles_female 35411.86351549324) to
+<= 1e-6.
+
+TASK 2 — Full singles V_i^dir production at S~100 (CROSS-CHECK integrator).
+Per the Four-C2 approved design: single-pass S~100 redrawn nodes per household
+from g-hat (redraw_nodes_singles), canonicalization applied, population-faithful
+pricing through the full production-chunk batch per year x mode (the Four-B
+construction), phi_y after. Compute BOTH the contract utility-only V_i^dir and
+the full-V diagnostic with its V_i^IS counterpart (like-for-like delta_common).
+Store per-HH: uid, S_effective, V_dir_util, V_dir_fullV, delta_common, cv2.
+
+TASK 3 — Gates (pre-registered, read before deciding anything).
+(a) ESS distribution per group (report median/p10/p90; expect singles thin
+    ~20/101 — that is WHY the dir cross-check exists, not a failure).
+(b) Like-for-like |delta_common| on the utility-only gate object: report the
+    distribution; PASS criterion = high-ESS subset median <= 0.5 nats. If FAIL:
+    STOP, report, do not proceed to anchors-as-oracles (still freeze artifacts).
+(c) Per-group runtime/throughput so F4/F5 sizing is known.
+
+TASK 4 — ANCHOR MINT (durable, replacing the deleted scratch artifacts).
+For UID 200001593700 plus at least one more high-ESS HH per group, FREEZE to
+outputs/welfare/fastlane_anchors_v1/ (durable, git-trackable manifest):
+the redrawn node table; the population-batch pricing input identity (stem, band,
+HH set, n_population_rows, n_population_hh); priced-node outputs (ils_dispy,
+ils_dispy_real); V_i^IS and V_i^dir scalars (utility-only + full-V + ESS +
+max_w + delta_common); seeds + RNG bit-generator + Halton config; theta-vector
+hash + spec-file hash (currently absent from all welfare artifacts — add them);
+EUROMOD pricing reference (pairing, CPI phi, schema versions). Verify the
+existing candidate anchor: recomputed V_i^IS for 200001593700 must equal
+11.496632024594227 to <= 1e-9 on the staged stem; report if not.
+
+TASK 5 — Couples V_i^IS per-HH capture (secondary, cheap, IS-ONLY).
+Re-run the implemented couples V_i^IS extractor over all 7,438 couples at
+certified theta-hat with PER-HOUSEHOLD storage (uid, V_i_IS, ESS, max_weight).
+Aggregate gate: must reproduce couples Gate-0 negLL 174603.72976561091 to
+machine zero on the certified stem. NO couples V_dir, NO couples redraw pricing,
+NO couples measures — capture only.
+
+OUTPUT
+outputs/welfare/fastlane/singles_Vi_production_v1.parquet
+outputs/welfare/fastlane/couples_ViIS_capture_v1.parquet
+outputs/welfare/fastlane_anchors_v1/ (frozen anchor set + manifest)
+docs/jmp_methodology/RURO_welfare_singles_Vi_production_report_v1.md
+The report ends with: gate verdicts, anchor-mint inventory, runtime, and an
+explicit READY/NOT-READY statement for F4 (measures). Do not commit. Report paths.

@@ -1,0 +1,40 @@
+{
+  "gate_b_pass": false,
+  "gate_b_results": {
+    "primary": {
+      "uid": 200001593700,
+      "n_rows": 100,
+      "max_abs_diff": 4.547473508864641e-13,
+      "pass": false,
+      "nonzero_diff_cols": [
+        "yem"
+      ]
+    },
+    "top_ess_sm_2016": {
+      "uid": 200003504101,
+      "n_rows": 100,
+      "max_abs_diff": 9.094947017729282e-13,
+      "pass": false,
+      "nonzero_diff_cols": [
+        "yem"
+      ]
+    },
+    "top_ess_sf_2016": {
+      "uid": 200003672000,
+      "n_rows": 100,
+      "max_abs_diff": 4.547473508864641e-13,
+      "pass": false,
+      "nonzero_diff_cols": [
+        "yem"
+      ]
+    }
+  },
+  "gate_a_pass": null,
+  "gate_a_result": null,
+  "gate_c_pass": null,
+  "gate_c_results": null,
+  "first_divergent_component": null,
+  "verdict": "CONSTRUCTION_MISMATCH",
+  "batch_context_dependence": "unresolved",
+  "joint_batching_licensed": "unresolved"
+}

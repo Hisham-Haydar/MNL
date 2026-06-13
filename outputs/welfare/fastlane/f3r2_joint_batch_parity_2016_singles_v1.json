@@ -1,0 +1,115 @@
+{
+  "verdict": "NOT_LICENSED",
+  "overall_max_abs_diff": 309.76203141716087,
+  "tol": 1e-06,
+  "n_hh_joint_batch": 1676,
+  "n_hh_blocked": 0,
+  "year": 2016,
+  "year_tag": 2,
+  "n_nodes_per_hh": 100,
+  "base_seed": 20260604,
+  "euromod_system": "FR_2015",
+  "euromod_dataset": "FR_2016_a3",
+  "redraw_elapsed_s": 18.7,
+  "euromod_elapsed_s": 34.5,
+  "anchor_parity": {
+    "primary": {
+      "uid": 200001593700,
+      "n_common_draws": 100,
+      "max_abs_diff_overall": 127.27496556292272,
+      "pass": false,
+      "col_diffs": {
+        "ils_dispy": {
+          "max_abs_diff": 127.27496556292272,
+          "pass": false
+        },
+        "ils_origy": {
+          "max_abs_diff": 0.0,
+          "pass": true
+        },
+        "ils_ben": {
+          "max_abs_diff": 127.2749655629226,
+          "pass": false
+        },
+        "ils_tax": {
+          "max_abs_diff": 0.0,
+          "pass": true
+        },
+        "ils_sicdy": {
+          "max_abs_diff": 0.0,
+          "pass": true
+        },
+        "ils_dispy_real": {
+          "max_abs_diff": 127.27496556292272,
+          "pass": false
+        }
+      }
+    },
+    "top_ess_sm_2016": {
+      "uid": 200003504101,
+      "n_common_draws": 100,
+      "max_abs_diff_overall": 158.75786227934714,
+      "pass": false,
+      "col_diffs": {
+        "ils_dispy": {
+          "max_abs_diff": 158.75786227934714,
+          "pass": false
+        },
+        "ils_origy": {
+          "max_abs_diff": 0.0,
+          "pass": true
+        },
+        "ils_ben": {
+          "max_abs_diff": 158.75786227934714,
+          "pass": false
+        },
+        "ils_tax": {
+          "max_abs_diff": 0.0,
+          "pass": true
+        },
+        "ils_sicdy": {
+          "max_abs_diff": 0.0,
+          "pass": true
+        },
+        "ils_dispy_real": {
+          "max_abs_diff": 158.75786227934714,
+          "pass": false
+        }
+      }
+    },
+    "top_ess_sf_2016": {
+      "uid": 200003672000,
+      "n_common_draws": 100,
+      "max_abs_diff_overall": 309.76203141716087,
+      "pass": false,
+      "col_diffs": {
+        "ils_dispy": {
+          "max_abs_diff": 309.7620314171608,
+          "pass": false
+        },
+        "ils_origy": {
+          "max_abs_diff": 0.0,
+          "pass": true
+        },
+        "ils_ben": {
+          "max_abs_diff": 309.76203141716087,
+          "pass": false
+        },
+        "ils_tax": {
+          "max_abs_diff": 0.0,
+          "pass": true
+        },
+        "ils_sicdy": {
+          "max_abs_diff": 0.0,
+          "pass": true
+        },
+        "ils_dispy_real": {
+          "max_abs_diff": 309.7620314171608,
+          "pass": false
+        }
+      }
+    }
+  },
+  "task3_elapsed_s": 54.1,
+  "task3_status": "DONE"
+}

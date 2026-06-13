@@ -1,0 +1,218 @@
+{
+  "f3_artifact": "fastlane_anchors_v1",
+  "version": "v1",
+  "generated": "2026-06-12/13",
+  "spec": "joint_pooled_v1_bll0_tlmpin",
+  "spec_hash": "492bcfa9c766bfcb",
+  "theta_hash": "1dd94e9cf1f35464",
+  "theta_source": "scripts/bpool/specs/theta_hat_realdata_901_v1.csv",
+  "spec_source": "scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
+  "certified_stem": "fr_p3a_bpool_engine_ready",
+  "staged_stem": "fr_p3a_bpool_engine_ready_staged_threeB1",
+
+  "gate3b_verdict": {
+    "status": "FAIL",
+    "criterion": "high-ESS subset median |delta_common| <= 0.5 nats (F3 pre-registered)",
+    "n100_high_ess_median_abs_delta": 0.7319804266785854,
+    "n100_high_ess_abs_max_delta": 1.7936795788139106,
+    "n100_n_hh": 30,
+    "n100_n_nodes": 100,
+    "n100_high_ess_n": 15,
+    "n100_low_ess_n": 15,
+    "gate_file": "outputs/welfare/fastlane/f3_task2_gate3b_30hh_100nodes.json",
+    "stop_reasons": ["high-ESS like-for-like |delta| too large (1.7936795788139106) > 0.5 nats"],
+    "interpretation": "Full singles V_i^dir production NOT authorized at S=100. V_i^IS is the primary integrator and is fully produced (gate-0 certified). The cross-check non-convergence reflects slow MC convergence of the full-V logmean at S=100; utility-only V_dir converges faster. Remedy: S >> 100 or tighter node proposal distribution."
+  },
+
+  "delta_common_scaling": {
+    "n20_high_ess_abs_max": 2.4117,
+    "n20_high_ess_n": 3,
+    "n60_high_ess_median_abs_delta": 1.1916,
+    "n60_high_ess_abs_max": 1.9681,
+    "n60_high_ess_n": 3,
+    "n100_high_ess_median_abs_delta": 0.7320,
+    "n100_high_ess_abs_max": 1.7937,
+    "n100_high_ess_n": 15,
+    "mc_convergence_note": "High-ESS median |delta_common|: n60=1.19 nats, n100=0.73 nats. Improvement ~0.77x for 1.67x nodes, slower than 1/sqrt(n). Projection to pass (0.5 nats): requires S >> 100 or tighter proposal."
+  },
+
+  "pricing_provenance": {
+    "year": 2016,
+    "year_tag": 2,
+    "staged_stem": "fr_p3a_bpool_engine_ready_staged_threeB1",
+    "draw_band": [0, 101],
+    "full_production_chunk_band": [0, 101],
+    "n_nodes_per_hh": 100,
+    "seed": 20260604,
+    "euromod_system": "FR_2015",
+    "euromod_dataset": "FR_2016_a3",
+    "cpi_phi_y": 1.0,
+    "cpi_source": "build_module._CPI[2016]=1.0000",
+    "c_scale": 2034.988978049439,
+    "l_scale": 10.0,
+    "pricing_mode": "population-faithful: full chunk band preserved; only target HH decider rows overwritten at draw slots [1..n_nodes]",
+    "authoritative_yem_identity": "yem = yem00 + yemxp (no double deflation; nominal before EUROMOD, real via phi_y after)"
+  },
+
+  "anchors": {
+    "primary": {
+      "uid": 200001593700,
+      "group": "singles_female",
+      "year_tag": 2,
+      "calendar_year": 2016,
+
+      "V_i_IS_staged": 11.496632024594227,
+      "V_i_IS_staged_verified": true,
+      "V_i_IS_staged_target": 11.496632024594227,
+      "V_i_IS_staged_abs_diff": 0.0,
+      "V_i_IS_staged_tol_1e9": true,
+      "V_i_IS_certified": 11.495894268235581,
+      "delta_staged_minus_cert": 0.0007377625866463,
+      "ESS": 40.452586177800676,
+      "max_weight": 0.06736301317123719,
+
+      "V_i_dir_n100": {
+        "n_nodes": 100,
+        "V_i_dir_util": 2.324218175260567,
+        "V_i_dir_fullV": 6.568814181239663,
+        "V_i_IS_logmean_basis": 6.881511507752967,
+        "delta_common": -0.3126973265133044,
+        "abs_delta_common": 0.3126973265133044,
+        "anchor_individually_passes_05_threshold": true,
+        "gate_population_verdict": "FAIL (population-level gate fails; anchor individually passes |delta|=0.313 < 0.5)"
+      },
+      "V_i_dir_n60": {
+        "n_nodes": 60,
+        "V_i_dir_util": 2.333468890508914,
+        "V_i_dir_fullV": 5.689877088854546,
+        "delta_common": -1.1916344188984214
+      },
+      "V_i_dir_n20": {
+        "n_nodes": 20,
+        "V_i_dir_util": 2.236098528111568,
+        "V_i_dir_fullV": 4.899766610436251,
+        "delta_common": -1.981744897316716
+      },
+      "gate3b_flag": "BELOW_GATE",
+      "oracle_status": "IS-oracle (V_i^IS frozen as primary welfare value; V_i^dir diagnostic only at all tested S<=100)"
+    },
+
+    "supplementary_singles_male": [
+      {
+        "uid": 100000489400,
+        "group": "singles_male",
+        "year_tag": 1,
+        "calendar_year": 2015,
+        "V_i_IS_staged": 9.856896571457312,
+        "ESS": 48.862586094545755,
+        "max_weight": 0.047508,
+        "V_i_dir": null,
+        "dir_source": "not in n100 gate check sample (uid outside year-2016 precompute pool)",
+        "oracle_status": "IS-only oracle",
+        "gate3b_flag": "NOT_RUN"
+      },
+      {
+        "uid": 300004150400,
+        "group": "singles_male",
+        "year_tag": 3,
+        "calendar_year": 2017,
+        "V_i_IS_staged": 9.646551853261219,
+        "ESS": 47.027993,
+        "max_weight": 0.041277,
+        "V_i_dir": null,
+        "oracle_status": "IS-only oracle",
+        "gate3b_flag": "NOT_RUN"
+      }
+    ],
+
+    "supplementary_singles_female": [
+      {
+        "uid": 100001347200,
+        "group": "singles_female",
+        "year_tag": 1,
+        "calendar_year": 2015,
+        "V_i_IS_staged": 10.838344601001,
+        "ESS": 45.736683872704894,
+        "max_weight": 0.054419,
+        "V_i_dir": null,
+        "oracle_status": "IS-only oracle",
+        "gate3b_flag": "NOT_RUN"
+      },
+      {
+        "uid": 100000233400,
+        "group": "singles_female",
+        "year_tag": 1,
+        "calendar_year": 2015,
+        "V_i_IS_staged": 11.175233204,
+        "ESS": 42.889,
+        "max_weight": 0.057986,
+        "V_i_dir": null,
+        "oracle_status": "IS-only oracle",
+        "gate3b_flag": "NOT_RUN"
+      }
+    ],
+
+    "supplementary_couples": [
+      {
+        "uid": 100001066400,
+        "group": "couples",
+        "year_tag": 1,
+        "calendar_year": 2015,
+        "V_i_IS_staged": 21.163349520,
+        "V_i_IS_certified": 21.163349520,
+        "ESS": 307.031,
+        "max_weight": 0.010987,
+        "V_i_dir": null,
+        "oracle_status": "IS-only oracle",
+        "gate3b_flag": "NOT_RUN"
+      }
+    ]
+  },
+
+  "production_outputs": {
+    "singles_Vi_production_v1": {
+      "path": "outputs/welfare/fastlane/singles_Vi_production_v1.parquet",
+      "n_rows": 5007,
+      "groups": ["singles_male", "singles_female"],
+      "gate0_certified": true,
+      "schema": ["uid", "group", "year_tag", "V_i_IS", "ESS", "max_weight", "V_i_IS_certified", "delta_staged_minus_cert", "S_effective", "V_dir_util", "V_dir_fullV", "delta_common", "cv2"],
+      "note": "Task-2 columns (S_effective, V_dir_util, V_dir_fullV, delta_common, cv2) are NaN: gate 3b STOP prevents full V_i^dir production"
+    },
+    "couples_ViIS_capture_v1": {
+      "path": "outputs/welfare/fastlane/couples_ViIS_capture_v1.parquet",
+      "n_rows": 7438,
+      "gate0_certified": true,
+      "schema": ["uid", "year_tag", "V_i_IS", "ESS", "max_weight"]
+    },
+    "gate_check": {
+      "path": "outputs/welfare/fastlane/f3_task2_gate3b_30hh_100nodes.json",
+      "n_hh": 30,
+      "n_nodes": 100,
+      "verdict": "FAIL"
+    },
+    "tasks15_summary": {
+      "path": "outputs/welfare/fastlane/f3_tasks1_5_summary.json"
+    }
+  },
+
+  "negLL_anchors": {
+    "singles_male": {
+      "pre_registered": 28489.042816294535,
+      "welfare_logsum": 28489.042816294535,
+      "max_abs": 0.0,
+      "status": "PASS"
+    },
+    "singles_female": {
+      "pre_registered": 35411.86351549324,
+      "welfare_logsum": 35411.86351549324,
+      "max_abs": 0.0,
+      "status": "PASS"
+    },
+    "couples": {
+      "pre_registered": 174603.72976561091,
+      "welfare_logsum": 174603.72976561091,
+      "max_abs": 0.0,
+      "status": "PASS"
+    }
+  }
+}

@@ -1,0 +1,205 @@
+{
+  "f3r2b_artifact": "f3r2b_diagnosis_v1",
+  "yem_fix": "APPLIED: yem00=reg_h*w*wpm; yemxp=ot_h*w*wpm; yem=yem00+yemxp (matches T2 exactly)",
+  "f4_readiness": "YES",
+  "gate3b_verdict": "FAIL",
+  "gate3b_median": 0.7319804266785854,
+  "utility_only_b2_gate": "fail",
+  "gate_b_pass": true,
+  "gate_b_results": {
+    "primary": {
+      "uid": 200001593700,
+      "n_rows": 100,
+      "max_abs_diff": 0.0,
+      "pass": true,
+      "nonzero_diff_cols": []
+    },
+    "top_ess_sm_2016": {
+      "uid": 200003504101,
+      "n_rows": 100,
+      "max_abs_diff": 0.0,
+      "pass": true,
+      "nonzero_diff_cols": []
+    },
+    "top_ess_sf_2016": {
+      "uid": 200003672000,
+      "n_rows": 100,
+      "max_abs_diff": 0.0,
+      "pass": true,
+      "nonzero_diff_cols": []
+    }
+  },
+  "gate_a_pass": true,
+  "gate_a_result": {
+    "pass": true,
+    "max_abs_diff": 0.0,
+    "n_divergent_cols": 0,
+    "divergent_cols_sample": [],
+    "elapsed_s": 35.9
+  },
+  "gate_c_pass": false,
+  "gate_c_results": {
+    "primary": {
+      "uid": 200001593700,
+      "n_draws": 100,
+      "max_abs_diff": 402957932.56816876,
+      "pass": false,
+      "n_divergent_cols": 12,
+      "top_divergent": [
+        [
+          "i_bsa00_cumpers_nw",
+          402957932.568169
+        ],
+        [
+          "i_bsa00_cumpers_w",
+          166383958.043899
+        ],
+        [
+          "bsa00_s",
+          127.274966
+        ],
+        [
+          "ils_benmt",
+          127.274966
+        ],
+        [
+          "ils_ben",
+          127.274966
+        ],
+        [
+          "ils_dispy",
+          127.274966
+        ],
+        [
+          "ils_b1_bsa",
+          127.274966
+        ],
+        [
+          "ils_b2_bsaho",
+          127.274966
+        ],
+        [
+          "ils_udb_bsa",
+          127.274966
+        ],
+        [
+          "ils_udb_yds",
+          127.274966
+        ]
+      ]
+    },
+    "top_ess_sm_2016": {
+      "uid": 200003504101,
+      "n_draws": 100,
+      "max_abs_diff": 396805375.52166885,
+      "pass": false,
+      "n_divergent_cols": 12,
+      "top_divergent": [
+        [
+          "i_bsa00_cumpers_nw",
+          396805375.521669
+        ],
+        [
+          "i_bsa00_cumpers_w",
+          163920096.631999
+        ],
+        [
+          "bsa00_s",
+          158.757862
+        ],
+        [
+          "ils_benmt",
+          158.757862
+        ],
+        [
+          "ils_ben",
+          158.757862
+        ],
+        [
+          "ils_dispy",
+          158.757862
+        ],
+        [
+          "ils_b1_bsa",
+          158.757862
+        ],
+        [
+          "ils_b2_bsaho",
+          158.757862
+        ],
+        [
+          "ils_udb_bsa",
+          158.757862
+        ],
+        [
+          "ils_udb_yds",
+          158.757862
+        ]
+      ]
+    },
+    "top_ess_sf_2016": {
+      "uid": 200003672000,
+      "n_draws": 100,
+      "max_abs_diff": 411082084.7877665,
+      "pass": false,
+      "n_divergent_cols": 12,
+      "top_divergent": [
+        [
+          "i_bsa00_cumpers_nw",
+          411082084.787767
+        ],
+        [
+          "i_bsa00_cumpers_w",
+          169671521.8189
+        ],
+        [
+          "bsa00_s",
+          309.762031
+        ],
+        [
+          "ils_benmt",
+          309.762031
+        ],
+        [
+          "ils_ben",
+          309.762031
+        ],
+        [
+          "ils_dispy",
+          309.762031
+        ],
+        [
+          "ils_b1_bsa",
+          309.762031
+        ],
+        [
+          "ils_b2_bsaho",
+          309.762031
+        ],
+        [
+          "ils_udb_bsa",
+          309.762031
+        ],
+        [
+          "ils_udb_yds",
+          309.762031
+        ]
+      ]
+    }
+  },
+  "verdict": "NOT_LICENSED",
+  "batch_context_dependence": "proven",
+  "joint_batching_licensed": "not licensed",
+  "n_hh_joint_batch": 1676,
+  "n_hh_blocked": 0,
+  "year": 2016,
+  "year_tag": 2,
+  "n_nodes_per_hh": 100,
+  "base_seed": 20260604,
+  "euromod_system": "FR_2015",
+  "euromod_dataset": "FR_2016_a3",
+  "redraw_elapsed_s": 19.0,
+  "gate_a_elapsed_s": 35.9,
+  "euromod_joint_elapsed_s": 32.8,
+  "total_elapsed_s": 89.9
+}

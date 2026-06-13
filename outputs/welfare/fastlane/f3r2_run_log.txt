@@ -1,0 +1,162 @@
+C:\Users\hisham\Repo\MNL\.venv\Lib\site-packages\jax\_src\interpreters\mlir.py:1194: UserWarning: A large amount of constants were captured during lowering (2.68GB total). If this is intentional, disable this warning by setting JAX_CAPTURED_CONSTANTS_WARN_BYTES=-1. To obtain a report of where these constants were encountered, set JAX_CAPTURED_CONSTANTS_REPORT_FRAMES=-1.
+  warnings.warn(message)
+C:\Users\hisham\Repo\MNL\.venv\Lib\site-packages\jax\_src\interpreters\mlir.py:1194: UserWarning: A large amount of constants were captured during lowering (2.68GB total). If this is intentional, disable this warning by setting JAX_CAPTURED_CONSTANTS_WARN_BYTES=-1. To obtain a report of where these constants were encountered, set JAX_CAPTURED_CONSTANTS_REPORT_FRAMES=-1.
+  warnings.warn(message)
+cert_stem=fr_p3a_bpool_engine_ready  staged_stem=fr_p3a_bpool_engine_ready_staged_threeB1  staged_cpl=fr_p3a_bpool_engine_ready_staged_threeB1
+spec_hash=492bcfa9c766bfcb  theta_hash=1dd94e9cf1f35464
+
+=== TASK 0: Audit F3 inputs ===
+  hash(spec_yaml) = 492bcfa9c766bfcb…
+  hash(theta_csv) = c72e92b16170a7dd…
+  hash(f3_singles_parquet) = b53d66a7b35b73f8…
+  hash(f3_couples_parquet) = c68623dc10c41ca7…
+  hash(f3_summary_json) = dc760d24a1ea3b87…
+  hash(v1_manifest_json) = 0fe19ddcf4786148…
+  hash(staged_singles_pq) = 10648fdbb9d787c6…
+  hash(cert_singles_pq)   = 95070faf2735578f…
+  n_singles=5007 (expect 5007: True)
+  n_couples=7438 (expect 7438: True)
+  Anchor 200001593700: V_i^IS_staged=11.496632024594227  diff=0.00e+00  ok=True
+  Gate-0 sm diff=0.00e+00  sf diff=0.00e+00  cou diff=0.00e+00  all_ok=True
+  Gate-3b: verdict=unknown  high_ess_median=None
+  Task-0: PASS
+
+=== TASK 1: Emit dual-stem V_i^IS parquets ===
+  Loading staged objects: fr_p3a_bpool_engine_ready_staged_threeB1
+  Loading certified objects: fr_p3a_bpool_engine_ready
+  compute_group_welfare [staged]...
+  V_obs [staged]: singles_male...
+  V_obs [staged]: singles_female...
+  V_obs [staged]: couples...
+  compute_group_welfare [certified]...
+  V_obs [certified]: singles_male...
+  V_obs [certified]: singles_female...
+  V_obs [certified]: couples...
+  singles: 5007 rows  couples: 7438 rows
+  Wrote: C:\Users\hisham\Repo\MNL\outputs\welfare\fastlane\singles_ViIS_dualstem_v1.parquet
+  Wrote: C:\Users\hisham\Repo\MNL\outputs\welfare\fastlane\couples_ViIS_dualstem_v1.parquet
+  Task-1 elapsed: 93.6s  status: DONE
+
+=== TASK 2: Price 3 anchors ===
+  Loading 2016 singles band (year_tag=2) from fr_p3a_bpool_engine_ready_staged_threeB1...
+  Band size: 169276 rows, 1676 HHs
+  Anchors selected: [(200001593700, 'primary'), (200003504101, 'top_ess_sm_2016'), (200003672000, 'top_ess_sf_2016')]
+  Pricing anchor 200001593700 (primary, singles_female)...
+Warning: Variable(s) dec, dms, les, bsuwd, bsaoa, poa, ypr, bunmt, lindi, bun, bunct, bfa, bch00, bchlg, bched, bchyc, bchot, bsa, bsa00, bsaot, pdi, pdi00, bdi, bho, bhotn, bhoot, yse, yiy, ypp, yot, ypt, yempv, bed, bhl, afc, kfb, tis, tad, xhcmomi, xhcrt, xhcot, xmp, xpp, yds, ydses_o, psu, xhc, lunmy, bunmy, liwmy, liwwh, poamy, yemmy, lfs, ysemy, drg01 not found in user-provided lists (zero is used as default)
+Warning: 9.1.3 TUDef_fr/DefTu/DepChildCond/isdisabled (189E3C52-E5B4-4A68-A557-FBFFE64F72E9): variables ddi & ddilv both missing - IsDisabled query will always return 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 431390001005: parts of yem do not sum up 3366,6667319999997 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 216500001043: parts of yem do not sum up 1854,1665999999998 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 241730001014: parts of yem do not sum up 1938,3333666666665 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 331420001035: parts of yem do not sum up 2245,8332953333334 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 324830001100: parts of yem do not sum up 742,4999919999999 <> 0
+Warning: 9.1.3 TUDef_fr/DefTu/DepChildCond/isdisabled (189E3C52-E5B4-4A68-A557-FBFFE64F72E9): variables ddi & ddilv both missing - IsDisabled query will always return 0
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Simulation for system FR_2015 with dataset FR_2016_a3 finished.
+    OK: 100 nodes priced in 35.4s
+  Pricing anchor 200003504101 (top_ess_sm_2016, singles_male)...
+Warning: Variable(s) dec, dms, les, bsuwd, bsaoa, poa, ypr, bunmt, lindi, bun, bunct, bfa, bch00, bchlg, bched, bchyc, bchot, bsa, bsa00, bsaot, pdi, pdi00, bdi, bho, bhotn, bhoot, yse, yiy, ypp, yot, ypt, yempv, bed, bhl, afc, kfb, tis, tad, xhcmomi, xhcrt, xhcot, xmp, xpp, yds, ydses_o, psu, xhc, lunmy, bunmy, liwmy, liwwh, poamy, yemmy, lfs, ysemy, drg01 not found in user-provided lists (zero is used as default)
+Warning: 9.1.3 TUDef_fr/DefTu/DepChildCond/isdisabled (189E3C52-E5B4-4A68-A557-FBFFE64F72E9): variables ddi & ddilv both missing - IsDisabled query will always return 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 174760001054: parts of yem do not sum up 1085,8333719999998 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 165190001036: parts of yem do not sum up 3366,6668099999997 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 192380001090: parts of yem do not sum up 2336,6667306666664 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 186180101072: parts of yem do not sum up 2433,6364 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 159790001018: parts of yem do not sum up 2445,833312 <> 0
+Warning: 9.1.3 TUDef_fr/DefTu/DepChildCond/isdisabled (189E3C52-E5B4-4A68-A557-FBFFE64F72E9): variables ddi & ddilv both missing - IsDisabled query will always return 0
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Simulation for system FR_2015 with dataset FR_2016_a3 finished.
+    OK: 100 nodes priced in 31.9s
+  Pricing anchor 200003672000 (top_ess_sf_2016, singles_female)...
+Warning: Variable(s) dec, dms, les, bsuwd, bsaoa, poa, ypr, bunmt, lindi, bun, bunct, bfa, bch00, bchlg, bched, bchyc, bchot, bsa, bsa00, bsaot, pdi, pdi00, bdi, bho, bhotn, bhoot, yse, yiy, ypp, yot, ypt, yempv, bed, bhl, afc, kfb, tis, tad, xhcmomi, xhcrt, xhcot, xmp, xpp, yds, ydses_o, psu, xhc, lunmy, bunmy, liwmy, liwwh, poamy, yemmy, lfs, ysemy, drg01 not found in user-provided lists (zero is used as default)
+Warning: 9.1.3 TUDef_fr/DefTu/DepChildCond/isdisabled (189E3C52-E5B4-4A68-A557-FBFFE64F72E9): variables ddi & ddilv both missing - IsDisabled query will always return 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 159790001018: parts of yem do not sum up 2445,833312 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 165190001036: parts of yem do not sum up 3366,6668099999997 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 149580001000: parts of yem do not sum up 1693,3333083333332 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 186180101072: parts of yem do not sum up 2433,6364 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 192380001090: parts of yem do not sum up 2336,6667306666664 <> 0
+Warning: 9.1.3 TUDef_fr/DefTu/DepChildCond/isdisabled (189E3C52-E5B4-4A68-A557-FBFFE64F72E9): variables ddi & ddilv both missing - IsDisabled query will always return 0
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Simulation for system FR_2015 with dataset FR_2016_a3 finished.
+    OK: 100 nodes priced in 30.6s
+  Task-2 elapsed: 98.8s  status: DONE
+
+=== TASK 3: Joint-batch parity gate ===
+  Loading 2016 singles band from fr_p3a_bpool_engine_ready_staged_threeB1...
+  Band: 169276 rows, 1676 HHs, draw range [0,100]
+  Precomputing per-HH hh_row dicts and draw-slot index maps...
+  Redrawing nodes for 1676 HHs (frozen RNG)...
+    200/1676 HHs redrawn...
+    400/1676 HHs redrawn...
+    600/1676 HHs redrawn...
+    800/1676 HHs redrawn...
+    1000/1676 HHs redrawn...
+    1200/1676 HHs redrawn...
+    1400/1676 HHs redrawn...
+    1600/1676 HHs redrawn...
+  Redraw done: 1676 HHs modified, 0 blocked, elapsed 18.7s
+  Running EUROMOD on joint batch (169276 rows)...
+Warning: Variable(s) dec, dms, les, bsuwd, bsaoa, poa, ypr, bunmt, lindi, bun, bunct, bfa, bch00, bchlg, bched, bchyc, bchot, bsa, bsa00, bsaot, pdi, pdi00, bdi, bho, bhotn, bhoot, yse, yiy, ypp, yot, ypt, yempv, bed, bhl, afc, kfb, tis, tad, xhcmomi, xhcrt, xhcot, xmp, xpp, yds, ydses_o, psu, xhc, lunmy, bunmy, liwmy, liwwh, poamy, yemmy, lfs, ysemy, drg01 not found in user-provided lists (zero is used as default)
+Warning: 9.1.3 TUDef_fr/DefTu/DepChildCond/isdisabled (189E3C52-E5B4-4A68-A557-FBFFE64F72E9): variables ddi & ddilv both missing - IsDisabled query will always return 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 149580001000: parts of yem do not sum up 1693,3333083333332 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 324880001000: parts of yem do not sum up 2385,7143049999995 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 233870002000: parts of yem do not sum up 2590,000053333333 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 192790001000: parts of yem do not sum up 2670,0000556666664 <> 0
+Warning: 2.2 uprate_fr/Uprate (92d7000e-3a98-4649-89bd-509268b906d2): idperson 361030001000: parts of yem do not sum up 4792,499985 <> 0
+Warning: 9.1.3 TUDef_fr/DefTu/DepChildCond/isdisabled (189E3C52-E5B4-4A68-A557-FBFFE64F72E9): variables ddi & ddilv both missing - IsDisabled query will always return 0
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 19.6.2 tscee_fr/ArithOp/Formula (C35868EA-3C52-486E-B6A1-FAC60B4B9CA1): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Warning: 31.4.3 tintcee_fr/BenCalc/Comp_perTU (C4CC05A4-DA5E-4C54-8C23-6BD0D7926C69): Division by zero detected. The return value of this formula will be 0.
+Simulation for system FR_2015 with dataset FR_2016_a3 finished.
+  Joint-batch EUROMOD: 169276 rows, elapsed 34.5s
+  Anchor primary (uid=200001593700): max_abs=1.27e+02  pass=False
+  Anchor top_ess_sm_2016 (uid=200003504101): max_abs=1.59e+02  pass=False
+  Anchor top_ess_sf_2016 (uid=200003672000): max_abs=3.10e+02  pass=False
+  Task-3 verdict: NOT_LICENSED  overall_max_abs=3.10e+02  elapsed: 54.1s
+
+=== TASK 4: Five decision lines ===
+  1. V_obs_staged + negll_contribution_staged produced: True
+  2. Anchor pricing: {'primary': 'OK', 'top_ess_sm_2016': 'OK', 'top_ess_sf_2016': 'OK'}
+  3. Joint-batch parity: NOT_LICENSED  max_abs=309.76203141716087
+  4. F4 authorized: False -- F4 NOT authorized pending parity resolution.
+  5. Omega(W^3) ready: False -- Omega(W^3) NOT authorized until joint-batch parity resolves.
+
+Manifest: C:\Users\hisham\Repo\MNL\outputs\welfare\fastlane\f3r2_reconciliation_manifest_v1.json
+Parity gate: C:\Users\hisham\Repo\MNL\outputs\welfare\fastlane\f3r2_joint_batch_parity_2016_singles_v1.json
+Report: C:\Users\hisham\Repo\MNL\docs\jmp_methodology\RURO_welfare_F3R2_reconciliation_joint_parity_v1.md
+
+F3-R2 COMPLETE in 247.2s
+  Joint-batch verdict: NOT_LICENSED
+  Omega(W^3) ready: False

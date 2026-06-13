@@ -1,0 +1,302 @@
+{
+  "f3r2_artifact": "f3r2_reconciliation_manifest_v1",
+  "spec_hash": "492bcfa9c766bfcb",
+  "theta_hash": "1dd94e9cf1f35464",
+  "cert_stem": "fr_p3a_bpool_engine_ready",
+  "staged_stem": "fr_p3a_bpool_engine_ready_staged_threeB1",
+  "task0_audit": {
+    "hash_spec_yaml": "492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211",
+    "hash_theta_csv": "c72e92b16170a7dd2dc8ec0b76dc3f522a1fc6d6182a5eba8f8cad34cef76269",
+    "hash_f3_singles_parquet": "b53d66a7b35b73f8a33ec73239e3a28982bcdadbce60f8e3f8086d855db3304b",
+    "hash_f3_couples_parquet": "c68623dc10c41ca78098221c097e742bfd1a9b622ab6be1a6c739637a76b7b00",
+    "hash_f3_summary_json": "dc760d24a1ea3b8765178d85b5e2edb7351f0d868aa3620a83915a7d6b8bdb04",
+    "hash_v1_manifest_json": "0fe19ddcf478614844566f6942f510f083f51c2c32b21c90e08e325955562368",
+    "hash_staged_singles_pq": "10648fdbb9d787c6cd56dfcb9539809b50b8145464be92e0767ebec262c59dbd",
+    "hash_cert_singles_pq": "95070faf2735578fe8248d188199b953be1f3642d7f41b4751cd636bdbc3477b",
+    "n_singles": 5007,
+    "n_couples": 7438,
+    "anchor_uid": 200001593700,
+    "anchor_vis_stored": 11.496632024594227,
+    "anchor_vis_diff": 0.0,
+    "anchor_vis_ok": true,
+    "gate0_sm_diff": 0.0,
+    "gate0_sf_diff": 0.0,
+    "gate0_cou_diff": 0.0,
+    "gate0_all_ok": true,
+    "gate3b_verdict": "unknown",
+    "gate3b_high_ess_median": null,
+    "task0_status": "PASS"
+  },
+  "task1_dualstem": {
+    "n_singles": 5007,
+    "n_couples": 7438,
+    "singles_negll_staged_sum": 63900.99724282167,
+    "couples_negll_staged_sum": 174601.8696911456,
+    "delta_staged_minus_cert_singles_median": 0.0007361068630054035,
+    "task1_elapsed_s": 93.6,
+    "task1_status": "DONE"
+  },
+  "task2_anchors": {
+    "anchors": {
+      "primary": {
+        "status": "OK",
+        "uid": 200001593700,
+        "group": "singles_female",
+        "year_tag": 2,
+        "seed": 20854304,
+        "n_nodes_priced": 100,
+        "em_output_summary": {
+          "ils_dispy": {
+            "mean": 1349.3440714347507,
+            "std": 823.3724262804926,
+            "min": 0.0,
+            "max": 3924.4858669520836
+          },
+          "ils_origy": {
+            "mean": 1460.7940333000658,
+            "std": 1188.604919656822,
+            "min": 0.0,
+            "max": 5324.6960908725705
+          },
+          "ils_ben": {
+            "mean": 102.9424748837951,
+            "std": 169.3535319191372,
+            "min": 0.0,
+            "max": 526.5841666666666
+          },
+          "ils_tax": {
+            "mean": 203.43648149935999,
+            "std": 282.73900066503495,
+            "min": 0.0,
+            "max": 1360.275003238942
+          },
+          "ils_sicdy": {
+            "mean": 10.955955249750494,
+            "std": 8.914536897426165,
+            "min": 0.0,
+            "max": 39.93522068154428
+          }
+        },
+        "priced_parquet": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\welfare\\fastlane_anchors_v2\\anchor_primary_uid200001593700_priced_nodes_v1.parquet",
+        "elapsed_s": 35.4
+      },
+      "top_ess_sm_2016": {
+        "status": "OK",
+        "uid": 200003504101,
+        "group": "singles_male",
+        "year_tag": 2,
+        "seed": 20764705,
+        "n_nodes_priced": 100,
+        "em_output_summary": {
+          "ils_dispy": {
+            "mean": 1728.6557584920072,
+            "std": 948.1515935080376,
+            "min": 0.0,
+            "max": 4911.471505599095
+          },
+          "ils_origy": {
+            "mean": 2001.4178633854972,
+            "std": 1375.2583470388142,
+            "min": 0.0,
+            "max": 6784.875582735957
+          },
+          "ils_ben": {
+            "mean": 62.68247096493106,
+            "std": 149.90747265314747,
+            "min": 0.0,
+            "max": 526.5841666666666
+          },
+          "ils_tax": {
+            "mean": 320.43394188303006,
+            "std": 357.3794072259979,
+            "min": 0.0,
+            "max": 1822.517510266343
+          },
+          "ils_sicdy": {
+            "mean": 15.010633975391231,
+            "std": 10.314437602791108,
+            "min": 0.0,
+            "max": 50.88656687051968
+          }
+        },
+        "priced_parquet": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\welfare\\fastlane_anchors_v2\\anchor_top_ess_sm_2016_uid200003504101_priced_nodes_v1.parquet",
+        "elapsed_s": 31.9
+      },
+      "top_ess_sf_2016": {
+        "status": "OK",
+        "uid": 200003672000,
+        "group": "singles_female",
+        "year_tag": 2,
+        "seed": 20932604,
+        "n_nodes_priced": 100,
+        "em_output_summary": {
+          "ils_dispy": {
+            "mean": 1443.6499583088462,
+            "std": 681.9771071052945,
+            "min": 0.0,
+            "max": 4030.1015147715166
+          },
+          "ils_origy": {
+            "mean": 1599.6981413154242,
+            "std": 959.4022816079938,
+            "min": 0.0,
+            "max": 5485.151921983093
+          },
+          "ils_ben": {
+            "mean": 59.95504254859929,
+            "std": 112.21932698859686,
+            "min": 0.0,
+            "max": 526.5841666666666
+          },
+          "ils_tax": {
+            "mean": 204.00548949531168,
+            "std": 227.08325204960758,
+            "min": 0.0,
+            "max": 1413.9117677967038
+          },
+          "ils_sicdy": {
+            "mean": 11.997736059865677,
+            "std": 7.195517112059953,
+            "min": 0.0,
+            "max": 41.1386394148732
+          }
+        },
+        "priced_parquet": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\welfare\\fastlane_anchors_v2\\anchor_top_ess_sf_2016_uid200003672000_priced_nodes_v1.parquet",
+        "elapsed_s": 30.6
+      }
+    },
+    "task2_elapsed_s": 98.8,
+    "task2_status": "DONE"
+  },
+  "task3_parity": {
+    "verdict": "NOT_LICENSED",
+    "overall_max_abs_diff": 309.76203141716087,
+    "tol": 1e-06,
+    "n_hh_joint_batch": 1676,
+    "n_hh_blocked": 0,
+    "year": 2016,
+    "year_tag": 2,
+    "n_nodes_per_hh": 100,
+    "base_seed": 20260604,
+    "euromod_system": "FR_2015",
+    "euromod_dataset": "FR_2016_a3",
+    "redraw_elapsed_s": 18.7,
+    "euromod_elapsed_s": 34.5,
+    "anchor_parity": {
+      "primary": {
+        "uid": 200001593700,
+        "n_common_draws": 100,
+        "max_abs_diff_overall": 127.27496556292272,
+        "pass": false,
+        "col_diffs": {
+          "ils_dispy": {
+            "max_abs_diff": 127.27496556292272,
+            "pass": false
+          },
+          "ils_origy": {
+            "max_abs_diff": 0.0,
+            "pass": true
+          },
+          "ils_ben": {
+            "max_abs_diff": 127.2749655629226,
+            "pass": false
+          },
+          "ils_tax": {
+            "max_abs_diff": 0.0,
+            "pass": true
+          },
+          "ils_sicdy": {
+            "max_abs_diff": 0.0,
+            "pass": true
+          },
+          "ils_dispy_real": {
+            "max_abs_diff": 127.27496556292272,
+            "pass": false
+          }
+        }
+      },
+      "top_ess_sm_2016": {
+        "uid": 200003504101,
+        "n_common_draws": 100,
+        "max_abs_diff_overall": 158.75786227934714,
+        "pass": false,
+        "col_diffs": {
+          "ils_dispy": {
+            "max_abs_diff": 158.75786227934714,
+            "pass": false
+          },
+          "ils_origy": {
+            "max_abs_diff": 0.0,
+            "pass": true
+          },
+          "ils_ben": {
+            "max_abs_diff": 158.75786227934714,
+            "pass": false
+          },
+          "ils_tax": {
+            "max_abs_diff": 0.0,
+            "pass": true
+          },
+          "ils_sicdy": {
+            "max_abs_diff": 0.0,
+            "pass": true
+          },
+          "ils_dispy_real": {
+            "max_abs_diff": 158.75786227934714,
+            "pass": false
+          }
+        }
+      },
+      "top_ess_sf_2016": {
+        "uid": 200003672000,
+        "n_common_draws": 100,
+        "max_abs_diff_overall": 309.76203141716087,
+        "pass": false,
+        "col_diffs": {
+          "ils_dispy": {
+            "max_abs_diff": 309.7620314171608,
+            "pass": false
+          },
+          "ils_origy": {
+            "max_abs_diff": 0.0,
+            "pass": true
+          },
+          "ils_ben": {
+            "max_abs_diff": 309.76203141716087,
+            "pass": false
+          },
+          "ils_tax": {
+            "max_abs_diff": 0.0,
+            "pass": true
+          },
+          "ils_sicdy": {
+            "max_abs_diff": 0.0,
+            "pass": true
+          },
+          "ils_dispy_real": {
+            "max_abs_diff": 309.7620314171608,
+            "pass": false
+          }
+        }
+      }
+    },
+    "task3_elapsed_s": 54.1,
+    "task3_status": "DONE"
+  },
+  "task4_decisions": {
+    "line1_vobs_negll_produced": true,
+    "line2_anchor_status": {
+      "primary": "OK",
+      "top_ess_sm_2016": "OK",
+      "top_ess_sf_2016": "OK"
+    },
+    "line3_joint_batch_verdict": "NOT_LICENSED",
+    "line3_overall_max_abs": 309.76203141716087,
+    "line4_gate3b_verdict_frozen": "unknown",
+    "line4_f4_authorized": false,
+    "line4_note": "F4 NOT authorized pending parity resolution.",
+    "line5_omega_ready": false,
+    "line5_note": "Omega(W^3) NOT authorized until joint-batch parity resolves."
+  },
+  "total_elapsed_s": 247.2
+}

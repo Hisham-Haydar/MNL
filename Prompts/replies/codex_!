@@ -1,175 +1,675 @@
-Simple state of play — the revision touched F3's *outputs*, so F4 needs three small patches to point at them. Here's the canonical set:
+Do **not** run F4 as-is. F3-R2B authorizes F4, but the prompt still has blocking ambiguities:
 
-| Prompt | Status | Fire when |
+- The measure-mapping memo is marked **pre-registration**, not signed.
+- W6’s exact universal hours grid is not defined by the certified spec.
+- W4’s home-node selector is null in the current config.
+- The implementation must explicitly distinguish normalized engine consumption from equivalent income reported in real-2016 EUR.
+- W4/W6 require a utility-only evaluator; the existing welfare extractor returns full corrected `V`.
+- Provenance hashes must be checked against the F3-R2 manifest, not the parquet metadata.
 
-|---|---|---|
+Use this bounded F4-A prompt now:
 
-| F3 (original) | **Dead** — superseded | never (stop it if still grinding; salvage IS outputs only if they match the dual-stem schema) |
+```text
+FAST-LANE F4-A: SINGLES MEASURE CORE + W3/W4/W1 + W6 DESIGN AUDIT.
 
-| **F3-R** | **Live** — the one to run now | now |
-
-| **F3-B** | Pre-defined, conditional | only on F3-R Task-4 verdict `LICENSED` (V_dir branch; parallel, not on F4's path) |
-
-| F4 (as pasted) | **Stale in 3 places** — superseded by F4-R below | never |
-
-| **F4-R** | **Live** — the measures prompt | F3-R report line `READY FOR F4: yes` |
-
-What changed in F4 → F4-R: the precondition now points at F3-R's actual file (`singles_ViIS_dualstem_v1.parquet`, column `V_i_IS_staged`) instead of the old filename; the Task-1 consistency gate names that column; and the provenance block records the consumed parquet's content hash so the F3-R↔F4 tie is verifiable. **Nothing substantive changed** — F4 only ever consumes V_i^IS, so the Codex revision (which was all about V_dir gates and pricing scalability) doesn't touch the measures logic.
-
-**F4-R** (supersedes F4 — Claude Code · Opus · high · thinking on · MNL repo):
-
-```
-
-FAST-LANE F4-R (supersedes F4): MEASURE-FAMILY REFERENCE SETS + EQUIVALENT-INCOME
-
-INVERSION (SINGLES). Governing contract: JMP_measure_mapping_memo_v1 (signed).
-
-Bounded build + run. NO inequality statistics of any kind (no Gini, no variance,
-
-no percentile spreads of Omega - F5 computes those as its own gated increment).
-
-No decomposition, no couples measures, no promotion, no edits to estimation
-
-engines/specs/data.
+No inequality statistics, decomposition, V_dir, EUROMOD pricing, promotion, or
+edits to engines/specs/data. Do not compute W6 until its exact universal grid is
+explicitly ratified. Do not commit.
 
 PRECONDITION
-
-The F3-R report ends "READY FOR F4: yes". Consume
-
-outputs/welfare/fastlane/singles_ViIS_dualstem_v1.parquet as the SOLE V_actual
-
-source: V_actual = the V_i_IS_staged column (staged stem, certified theta-hat).
-
-Verify the parquet's recorded theta-hash + spec-hash against
-
-theta_hat_realdata_901_v1.csv and the certified spec, and record the parquet's
-
-content hash for provenance, before anything else; STOP on mismatch.
-
-CONTEXT
-
-Conventions locked in the contract: stem = fr_p3a_bpool_engine_ready_staged_threeB1
-
-at certified theta-hat; unit = household, singles only; Omega units = real-2016 EUR
-
-consumption levels (W4/W1/W6) or shift (W3, ~0); utility is u(c,l) only - occupation
-
-and wage never enter preferences, so every reference side below is consumption-direct
-
-and needs NO wage draw, NO occupation assignment, NO EUROMOD pricing.
-
-The implemented, Stage-1-validated solver welfare_core.w3_inversion (zero-recovery
-
-phi0=0.0, monotone, bracketed, converged for all HH) is the pattern: EXTEND it,
-
-do not rebuild it.
-
-TASK 0 - SOLVER EXTENSION + SYNTHETIC UNIT TESTS.
-
-Add transform modes alongside the existing shift(w) [c_j + w]:
-
-  replace(w): consumption := w at designated nodes;
-
-  single_node(w): reference = one node (home) at consumption w.
-
-Bracket per contract: w in [DCM_MIN_POSITIVE=1.0, 50 x max observed c_j], one
-
-expand-and-retry, per-HH convergence flag. Synthetic unit tests with closed-form
-
-known solutions for all three modes (construct toy utilities where w* is analytic).
-
-Record from the data and STATE in the report: the consumption unit (monthly vs
-
-annual real-2016 EUR) and exactly where c_scale enters, so u(w, .) uses the
-
-identical scaling as the estimation-side index. w is expressed in those same units.
-
-TASK 1 - W3 RE-VALIDATION ON THE CONFERENCE STEM (validation only, never reported).
-
-Smoke 25 HH/group, then all 5,007 singles. Gates:
-
- (i) consistency identity: at w=0 the solver's reference-side inclusive value must
-
-     equal the stored V_i_IS_staged per household to <= 1e-9 (same extractor
-
-     conventions - this ties F3-R and F4-R together falsifiably);
-
- (ii) Omega ~ 0: |Omega_W3| <= 1e-8 for all converged HH (Stage-1 achieved ~3e-10);
-
- (iii) non-convergent < 0.5% per group.
-
-STOP on any failure; report, do not proceed to real measures.
-
-TASK 2 - W4 STAYING-HOME EQUIVALENT (first real measure).
-
-V_ref(w) = u(w, l_home) with the household's own preference covariates and group
-
-parameters; solve u(w, l_home) = V_actual. Implement BOTH the numerical solve and
-
-the ANALYTIC inversion of the consumption term (Box-Cox algebra); agreement <= 1e-8
-
-per household is the gate. Report bracket failures by DIRECTION: below-floor
-
-(w* would be < 1.0 - economically meaningful, count and list separately) vs
-
-above-cap. Production over all singles.
-
-TASK 3 - W1 EQUAL-PAY OVER THE OWN SET.
-
-B(w) = own latent set (same draws, same log g-hat - log pi weights as V_actual)
-
-with consumption REPLACED by w at ALL nodes including home:
-
-V_ref(w) = logsumexp_j [ u(w, l_j) + log g_j - log pi_j ]. Unit test first
-
-(kappa-recovery): synthetically set all c_j := kappa for one household, the solver
-
-must return w* = kappa to <= 1e-8. Then production over all singles. Also compute
-
-the pre-registered sensitivity variant (replacement at working nodes only, home
-
-keeps actual non-employment consumption) into a SEPARATE column - appendix only,
-
-never a headline.
-
-TASK 4 - W6 EQUAL-PAY OVER THE UNIVERSAL GRID.
-
-Read the canonical hours bands from the certified estimation spec and RECORD the
-
-grid (band values + home node) in the report BEFORE any Omega_W6 is computed.
-
-J = {home} + {one node per canonical hours band}, identical for every household;
-
-V_ref(w) = logsumexp_{j in J} u(w, l_j) with UNIFORM weights (no g-hat, no pi),
-
-own preference covariates. Gates: kappa test on J; duplicate-household invariance
-
-(clone a household: identical preference covariates + identical V_actual must yield
-
-bit-identical w*). Production over all singles.
-
-TASK 5 - OUTPUTS + PROVENANCE.
-
-outputs/welfare/fastlane/singles_measures_omega_v1.parquet with per-HH columns:
-
-uid, group, year_tag, V_actual, Omega_W3, Omega_W4, Omega_W1, Omega_W1_workonly,
-
-Omega_W6, per-measure convergence flags + bracket info. Provenance block: theta
-
-hash, spec hash, stem, c_scale, consumed F3-R parquet content hash, solver
-
-version/commit, recorded W6 grid.
-
-Report: docs/jmp_methodology/RURO_welfare_singles_measures_report_v1.md - per-gate
-
-verdicts, the W6 grid, units statement, non-convergence counts, and an Omega sanity
-
-readout LIMITED to min/median/max per measure per group (no dispersion or
-
-inequality statistics). End with explicit READY/NOT-READY for F5. Do not commit.
-
-Report paths.
-
+F3-R2B reports READY FOR F4: YES. Joint batching is NOT LICENSED but is irrelevant
+because F4-A consumes V_i^IS only.
+
+Consume:
+- outputs/welfare/fastlane/singles_ViIS_dualstem_v1.parquet
+- staged engine-ready stem fr_p3a_bpool_engine_ready_staged_threeB1
+- outputs/welfare/fastlane/f3r2_reconciliation_manifest_v1.json
+- certified theta_hat_realdata_901_v1.csv
+- certified joint_pooled_v1_bll0_tlmpin spec
+
+Verify:
+- singles parquet has exactly 5,007 unique non-null household keys;
+- staged-stem household keys match exactly;
+- recomputed theta/spec hashes match the F3-R2 manifest;
+- record the consumed parquet SHA256;
+- Gate-0 certified singles negLL totals reproduce exactly.
+
+TASK 0 — Contract and design audit
+1. Record that JMP_measure_mapping_memo_v1.md remains pre-registration unless an
+   explicit signed/ratified artifact is found.
+2. Document units:
+   engine consumption = c_norm = consumption_eur / c_scale;
+   solver/output equivalent income = real-2016 EUR;
+   internally convert w_eur to w_eur / c_scale.
+3. Audit W4 home states. For each household, require all working==0 alternatives
+   to have an identical model-relevant utility state. If unique, select the lowest
+   draw deterministically. If not unique, STOP W4 and report.
+4. Audit candidate W6 hours sources/ranges. Do not invent representative points.
+   Report the unresolved choices, including treatment of the BG support band.
+
+TASK 1 — Generic equivalent-income machinery
+Implement a utility-only evaluator for singles. Gate it against
+estimation_engine.compute_likelihood_singles(..., return_components=True) on staged
+actual rows: max absolute utility difference <= 1e-9.
+
+Implement a monotone equivalent-income solver supporting:
+- shift: c_j + w;
+- replace: c_j = w for every reference node;
+- single_node: utility at one reference node with c = w.
+
+The public solver takes and returns real-2016 EUR and normalizes internally.
+Do not silently clip consumption. Enforce valid-domain bounds and report
+below-floor, above-cap, and non-convergence separately.
+
+Add synthetic analytic tests. For each kappa-recovery test, recompute the synthetic
+target from the same transformed reference at the known kappa.
+
+TASK 2 — W3 revalidation
+Use externally stored V_i_IS_staged as the target.
+
+Gate:
+- reference value at w=0 equals V_i_IS_staged to <=1e-9;
+- |Omega_W3| <=1e-8 for converged households;
+- non-convergence <0.5% per group.
+
+TASK 3 — W4 staying-home equivalent income
+Use the Task-0 deterministic home node and the utility-only evaluator.
+
+Compute numerical and analytic Box-Cox inversion results. Compare them to <=1e-8
+only where both are feasible and converged. Report below-floor, above-cap, and
+non-convergence rates separately. Require non-convergence <0.5% per group.
+
+TASK 4 — W1 equal-pay own opportunity set
+Use the household's full own opportunity set and full corrected V. Replace
+consumption at every node by the same candidate w while preserving the household's
+opportunity weights/correction terms.
+
+Also compute the pre-registered working-only sensitivity result separately.
+Run the corrected synthetic kappa-recovery gate.
+
+TASK 5 — W6 design decision only
+Do not compute W6. Produce a short decision table listing:
+- candidate source for each hours point;
+- exact proposed value;
+- rationale;
+- whether BG is included;
+- unresolved governance decision.
+
+TASK 6 — Outputs
+Write atomically and version outputs. Never overwrite completed artifacts.
+
+Produce:
+- outputs/welfare/fastlane/singles_measures_F4A_v1.parquet
+  containing W3, W4, W1, W1 working-only sensitivity, solver statuses, and W6
+  fields null with status BLOCKED_PENDING_GRID_RATIFICATION;
+- outputs/welfare/fastlane/F4A_manifest_v1.json;
+- docs/jmp_methodology/RURO_welfare_F4A_measure_core_report_v1.md.
+
+The report must include all gates, provenance hashes, unit/scaling rules,
+home-node audit, W6 design audit, and explicit final lines:
+
+READY FOR F5: NO — W6 grid remains unratified.
+REQUIRED NEXT INPUT: explicit ratification of the W6 universal hours grid.
+
+Do not commit. Report paths.
 ```
 
-Firing logic, so there's no ambiguity while you juggle sessions: **F3-R now**. When its report lands, the `READY FOR F4: yes` line is mechanical (it depends only on the Task-1 negLL gate and the Task-3a anchor verification), so you may fire **F4-R immediately** on that line and paste the report here in parallel — my review adds value on the b1/b2 and parity sides, which gate **F3-B**, not F4-R. If Task 4 says `LICENSED`, F3-B runs alongside F4-R without blocking anything; if `NOT LICENSED`, the stratified target-only fallback does the same job by Day 9.
+For a one-pass full F4, first ratify an exact W6 grid. A possible candidate is `{0, 19.5, 29.5, 35, 38.5, 57.25}` with BG excluded, but that is a new design decision and should not be silently inferred.
+Results
+Preconditions (all PASS) — consumed singles_ViIS_dualstem_v1.parquet (sha256 495de8f5…); 5,007 unique non-null HH keys ✓; spec_hash 492bcfa9c766bfcb / theta_hash 1dd94e9cf1f35464 match the F3-R2 manifest; all input file hashes match; Gate-0 welfare/engine logsum-negLL parity max|Δ| = 0.00e+00; staged singles negLL reproduced (engine 63900.99724 vs manifest, |Δ|=1.5e-11).
+
+Task 0 — Memo is pre-registration (unratified), sign-off checklist unchecked, no ratification artifact found. Units documented (c_norm = eur/c_scale; c_scale=2034.99; beta_c fixed=1.0; theta_c=+0.00758). W4 home audit passes (0 zero-home, 0 non-unique-leisure HHs → deterministic lowest-draw selection). W6 source audit recorded without inventing representative points.
+
+Task 1 — Utility-only evaluator matches engine u to 4e-16 / 1.8e-15 (≤1e-9). Monotone solver (shift/replace/single_node) with synthetic κ-recovery ~1e-10 across all modes.
+
+Task 2 — W3 PASS: ref value at w=0 ≡ V_i^IS_staged (3.6e-15 ≤ 1e-9); |Ω³|≤3e-10 ≤ 1e-8; 0 non-convergence.
+
+Task 3 — W4 PASS: numerical vs exact analytic Box-Cox inversion ≤1e-8 (normalized units); below-floor/above-cap/non-convergence reported separately; 0 genuine non-convergence.
+
+Task 4 — W1 PASS: equal-pay ~1621/1742 EUR/mo; working-only sensitivity computed separately; zero-recovery κ-gate ~3e-10.
+
+Task 5 — W6: design table only; BLOCKED_PENDING_GRID_RATIFICATION.
+
+Task 6 — Three atomic, version-guarded outputs written: singles_measures_F4A_v1.parquet (5,007 rows), F4A_manifest_v1.json, RURO_welfare_F4A_measure_core_report_v1.md.
+
+One substantive finding flagged for F5 (not resolved, contract unchanged): W4 home-equivalent Ω is very large (~4.5–5.6M EUR median). This is structurally correct under the locked memo definition — the single home reference carries no opportunity-density term while V_i^IS does, so the entire opportunity-set scale (incl. the −log π IS correction) is monetized through near-log consumption utility. Whether the W4 target should net out that scale is a definitional question surfaced for ratification.
+
+Final lines:
+
+
+READY FOR F5: NO — W6 grid remains unratified.
+REQUIRED NEXT INPUT: explicit ratification of the W6 universal hours grid.
+Paths:
+
+scripts/welfare/fastlane/run_f4a_singles_measure_core.py
+outputs/welfare/fastlane/singles_measures_F4A_v1.parquet
+outputs/welfare/fastlane/F4A_manifest_v1.json
+docs/jmp_methodology/RURO_welfare_F4A_measure_core_report_v1.md
+
+F4A produced valuable validated machinery, but **do not proceed to F5 or merely ratify W6 yet**.
+
+Two additional blockers surfaced:
+
+1. **W4 target normalization is unresolved.** Existing welfare diagnostics explicitly compare against `V_i^IS - log(101)`. Raw `V_i^IS` is a log-sum, so it contains draw-count scale. W4 uses a one-node reference where that scale cannot cancel. W6 would have the same cardinality problem.
+2. **W4 does not currently pass the memo’s bracket contract.** There are `184/5,007` above-cap households. The pre-registration says out-of-bracket households are flagged and requires `<0.5%`; F4A instead accepted analytic values beyond the cap.
+
+Preserve F4A outputs as diagnostic checkpoints. W3 and W1 are valid because their own-set scale cancels. Run this next:
+
+```text
+FAST-LANE F4-B: INCLUSIVE-VALUE NORMALIZATION + W4/W6 CONTRACT DECISION MEMO.
+
+READ-ONLY diagnostic. Do not overwrite F4A artifacts. No F5, inequality,
+decomposition, EUROMOD, estimation, engine/spec/data edits, or commit. Scratch
+calculations plus one decision memo only.
+
+CONTEXT
+F4A validated the utility evaluator and equivalent-income solver. W3 and W1 pass.
+However, W4 produced multi-million-euro medians because its one-node reference was
+compared with raw V_i^IS = log SUM over 101 importance-sampling draws. Existing
+V_dir diagnostics use V_i^IS - log(101) for like-for-like comparison. W6 also
+compares sets with different cardinalities and therefore requires an explicit
+normalization contract.
+
+TASK 1 — Trace the implemented normalization
+Read and cite exact file:line evidence for:
+- how V_i^IS is constructed;
+- whether the importance-sampling estimator mathematically requires 1/S;
+- why the likelihood is unchanged by omitting -log(S);
+- where existing Four-C/F3 diagnostics use V_i^IS - log(n_draws).
+
+State clearly whether raw V_i^IS is:
+(a) a likelihood-compatible unnormalized log-sum; and whether
+(b) V_i^IS - log(S) is the cardinality-invariant welfare-level object.
+
+TASK 2 — Cardinality-invariance diagnostic
+Demonstrate algebraically and numerically:
+
+- Duplicating every node in an unnormalized reference shifts logsumexp by log(2).
+- A normalized equal-weight reference,
+  logsumexp(values) - log(number_of_nodes),
+  is invariant to exact node duplication.
+- W3 and W1 equivalent incomes are unchanged when -log(101) is subtracted from
+  both actual and own-set reference sides.
+
+Gate: W3 and W1 omega differences between raw-sum and normalized formulations
+must be <=1e-8 EUR.
+
+TASK 3 — W4 normalization sensitivity
+Recompute W4 diagnostically under both conventions:
+
+A. Current F4A:
+   target = raw V_i^IS;
+   reference = one-node utility.
+
+B. Cardinality-normalized candidate:
+   target = V_i^IS - log(101);
+   reference = one-node utility.
+
+For each group report:
+- median, p10, p90, min, max W4;
+- below-floor count;
+- above-initial-cap count;
+- count remaining outside the memo’s bracket after its single authorized
+  expand-and-retry;
+- numerical-vs-analytic agreement.
+
+Do not select A or B in code. This is a decision exhibit.
+
+TASK 4 — W4 bracket-contract audit
+Compare F4A behavior against the pre-registration memo verbatim.
+
+Explicitly determine whether the 184 F4A above-cap households should have been
+classified as flagged/non-convergent under the memo rather than accepted through
+unbounded analytic inversion. Report the resulting failure rate and whether the
+memo’s <0.5% gate passes under A and B.
+
+TASK 5 — W6 normalization contract
+Without choosing hours points, formalize both candidate reference conventions:
+
+A. Raw deterministic-set sum:
+   V_ref = log SUM over J.
+
+B. Uniform-probability reference:
+   V_ref = log SUM over J - log(|J|).
+
+State which convention is cardinality-invariant and which interpretation is
+consistent with the memo phrase “uniform weights.” Explain how the choice affects
+comparability with normalized actual V_i^IS.
+
+Do not compute production W6.
+
+TASK 6 — Ratification recommendation
+Provide a precise recommended contract covering:
+
+1. actual-side welfare target:
+   raw V_i^IS OR V_i^IS - log(S);
+2. deterministic reference normalization:
+   raw sum OR uniform log-mean;
+3. W4 treatment beyond the memo’s bracket:
+   flag/exclude OR accept analytic extrapolation;
+4. exact W6 grid still requiring separate ratification.
+
+Separate mathematical recommendation from governance status. The measure-mapping
+memo remains unratified until explicitly approved.
+
+OUTPUT
+Write only:
+docs/jmp_methodology/RURO_welfare_F4B_normalization_contract_decision_v1.md
+
+End with:
+
+W3 STATUS: valid/invalid
+W1 STATUS: valid/invalid
+W4 STATUS: BLOCKED PENDING NORMALIZATION RATIFICATION
+W6 STATUS: BLOCKED PENDING NORMALIZATION + GRID RATIFICATION
+READY FOR F5: NO
+REQUIRED NEXT INPUT: explicit ratification of Tasks 6.1–6.4
+
+Do not commit. Report the path.
+```
+
+The likely mathematically coherent contract is:
+
+- actual target: `V_i^IS - log(S)`;
+- W6 uniform reference: `logsumexp(u) - log(|J|)`;
+- W4 single node unchanged;
+- W3/W1 unchanged numerically.
+
+That should be ratified only after F4-B shows the distribution and bracket consequences.
+
+
+Findings
+Task 1 — Normalization traced. V_i^IS is a raw log Σ_j exp(V_j) over 101 IS draws (estimation_engine.py:380 → estimation_utils.py:1618-1628, no 1/S). It's the conditional-logit denominator — likelihood-compatible but carrying +log S of draw-count scale. The likelihood ignores −log S because it's a θ-independent constant (the choice-prob denominator must be the sum). The cardinality-invariant welfare level is V_i^IS − log S, already the basis of every existing diagnostic (stage4c:779, stage4c2:137/212, f3r2a:323).
+
+Task 2 — Cardinality invariance proven. Node duplication shifts the log-sum by exactly log2 = 0.6931471806; the log-mean is invariant (−1.8e-15). W3/W1 omega differ by 0.0 / ≤1.7e-10 EUR between raw and normalized formulations (≤1e-8 gate PASS) — both sides carry the same 101-draw scale, which cancels. W3 and W1 are valid.
+
+Task 3/4 — The decisive exhibit. Under A (raw V_i^IS), 100% of households overflow the memo's initial bracket, and 184 (4.95%/2.64%) stay outside after the one authorized expand → FAILS the <0.5% gate (F4A's analytic-extrapolation acceptance was a contract deviation). Under B (V_i^IS − log101), W4 medians drop ~84× (4.5M→54k, 5.6M→67k EUR) and 0% fall outside the bracket → PASSES.
+
+Task 5 — W6 contract. Cardinality-invariance and the memo's literal "uniform weights" (prob 1/|J|) both require the uniform log-mean logsumexp_j(u_j) − log|J|; raw-sum reimports the W4 pathology at grid level.
+
+Task 6 — Recommendation (math, not approval). Target V_i^IS − log S; reference uniform log-mean; W4-beyond-bracket = flag/exclude (moot under B); exact W6 grid still needs separate ratification. I also flagged the deeper residual: even normalized, W4 (~30× actual consumption) retains the opportunity-density the home node lacks — the memo's intended "full-compensation," but a separate measure-definition question if magnitudes are judged unacceptable.
+
+Status lines:
+
+
+W3 STATUS: valid
+W1 STATUS: valid
+W4 STATUS: BLOCKED PENDING NORMALIZATION RATIFICATION
+W6 STATUS: BLOCKED PENDING NORMALIZATION + GRID RATIFICATION
+READY FOR F5: NO
+REQUIRED NEXT INPUT: explicit ratification of Tasks 6.1–6.4
+Path: docs/jmp_methodology/RURO_welfare_F4B_normalization_contract_decision_v1.md
+
+The diagnostic confirms your anticipated contract (target V_i^IS − log S, W6 uniform log-mean, W4 single node unchanged, W3/W1 numerically unchanged) is the mathematically coherent one — and shows it's the only convention under which W4 satisfies the pre-registered bracket gate.
+
+
+The normalization question is resolved decisively. Ratify the coherent contract and complete F4 before F5.
+
+Use this ratification:
+
+```text
+RATIFICATION — F4 welfare-measure contract
+
+1. Actual-side welfare target:
+   V_actual = V_i^IS - log(S), where S is the household’s actual draw count.
+
+2. Deterministic reference sets:
+   Use uniform-probability normalization:
+   V_ref = logsumexp_j(u_j) - log(|J|).
+   A one-node W4 reference is unchanged because log(1)=0.
+
+3. W4 bracket treatment:
+   Follow the pre-registered bracket contract. After one authorized expansion,
+   unresolved households are flagged/excluded; analytic extrapolation beyond the
+   authorized bracket is not accepted as convergence.
+
+4. W6 universal grid:
+   J = {0, 20, 30, 35, 39, 48} weekly hours.
+   These are the canonical D1 focal states: home, PT1, PT2, F35, FT, and LH.
+   BG is excluded because it is continuous proposal support, not a canonical
+   preference/reference state. TOTAL_LEISURE_HOURS = 80.
+
+5. W4 interpretation:
+   W4 remains the full-compensation staying-home endpoint. Its large magnitude
+   is retained and explicitly caveated; normalization resolves the artificial
+   draw-count scale but does not remove genuine opportunity-set compensation.
+```
+
+Then run:
+
+```text
+FAST-LANE F4-C: RATIFY NORMALIZATION, COMPLETE W4/W6, AND FREEZE SINGLES MEASURES.
+
+No estimation, EUROMOD, V_dir, inequality statistics, decomposition, promotion,
+engine/spec/data edits, or commit. Preserve F4A/F4B as immutable diagnostic
+artifacts. Write new versioned outputs only.
+
+RATIFIED CONTRACT
+- Actual target: V_actual = V_i^IS_staged - log(S_i).
+- Own-set references W3/W1: subtract log(S_i) from the reference inclusive value.
+  Their omega values must remain unchanged versus F4A.
+- Deterministic references: uniform log-mean
+  logsumexp(values) - log(number_of_nodes).
+- W4 single-node reference: u(w, leisure_home), unchanged because log(1)=0.
+- W4 bracket: [1 EUR, 50 × max observed consumption], expand once; remaining
+  failures flagged/excluded. No analytic extrapolation accepted as convergence.
+- W6 universal weekly-hours grid: {0,20,30,35,39,48}.
+- W6 node meanings: home, PT1, PT2, F35, FT, LH.
+- BG excluded: proposal-support component, not canonical reference state.
+- TOTAL_LEISURE_HOURS = 80.
+- W6 leisure = 80 - hours.
+- W6 uses utility-only u(c,l), equal consumption w at every node, uniform
+  probability 1/6, and no opportunity-density or prior terms.
+
+TASK 0 — Provenance and immutable-input checks
+Verify hashes and row counts for:
+- singles_ViIS_dualstem_v1.parquet;
+- singles_measures_F4A_v1.parquet;
+- F4A_manifest_v1.json;
+- F4B normalization decision memo;
+- staged stem, theta, and spec.
+
+Require exactly 5,007 unique household keys and record S_i. Confirm S_i=101 for
+all households; otherwise use each household’s actual S_i and report variation.
+
+TASK 1 — Freeze the ratified contract
+Create a versioned ratification/provenance block recording the complete contract
+above. Do not rewrite F4B or the original pre-registration memo.
+
+TASK 2 — W3/W1 normalized-regression gate
+Recompute W3 and W1 using normalized actual and reference values.
+
+Gates:
+- W3 omega difference versus F4A <=1e-8 EUR;
+- W1 primary and working-only differences versus F4A <=1e-8 EUR;
+- W3 |omega| <=1e-8;
+- zero genuine non-convergence.
+
+STOP on regression.
+
+TASK 3 — Final W4
+Recompute W4 against V_i^IS_staged - log(S_i).
+
+Compute numerical and analytic values, but classify convergence solely under the
+ratified bracket-and-one-expansion contract.
+
+Gates:
+- numerical versus analytic <=1e-8 normalized units where bracket-converged;
+- remaining outside-bracket rate <0.5% per group;
+- genuine non-convergence <0.5% per group.
+
+Report median/p10/p90/min/max and ratios to actual household consumption.
+Label the consumption time unit only after verifying it from the source contract.
+Carry the explicit full-compensation magnitude caveat.
+
+TASK 4 — W6 universal-grid measure
+Construct the same six-node grid for every household:
+hours = [0,20,30,35,39,48]
+leisure = [80,60,50,45,41,32].
+
+Use each household’s preference parameters/demographics, utility-only u, equal
+consumption w at all nodes, and:
+V_ref_W6(w) = logsumexp_j(u_j(w)) - log(6).
+
+Solve against V_i^IS_staged - log(S_i).
+
+Gates:
+- grid exactly identical across households;
+- no opportunity-density/prior terms enter;
+- synthetic same-kappa recovery <=1e-8 EUR;
+- exact node-duplication invariance <=1e-10 nats;
+- cross-household invariance for identical preferences and identical target
+  <=1e-8 EUR;
+- remaining outside-bracket and genuine non-convergence each <0.5% per group.
+
+TASK 5 — Final F4 outputs
+Write atomically:
+
+- outputs/welfare/fastlane/singles_measures_F4C_v1.parquet
+- outputs/welfare/fastlane/F4C_manifest_v1.json
+- docs/jmp_methodology/RURO_welfare_F4C_final_singles_measures_report_v1.md
+
+The parquet must include V_actual_normalized, S_i, finalized W3/W1/W4/W6 values,
+solver status, bracket status, and W1 working-only sensitivity.
+
+The report must explicitly distinguish:
+- raw V_i^IS used for likelihood compatibility;
+- normalized V_i^IS - log(S_i) used for welfare-level comparisons;
+- W4’s retained full-compensation interpretation and magnitude caveat.
+
+End with:
+
+W3 STATUS: valid/invalid
+W1 STATUS: valid/invalid
+W4 STATUS: valid/invalid
+W6 STATUS: valid/invalid
+READY FOR F5: yes/no
+
+READY FOR F5 is YES only if all four measure gates pass.
+
+Do not commit. Report paths.
+```
+
+This closes the normalization defect without changing the valid W3/W1 results and gives W6 a reproducible, economically interpretable grid.
+
+Results
+Task 0 — Provenance: 5,007 unique HH keys ✓; S_i = 101 uniform across all households ✓; spec/theta hashes match the manifest; all consumed-input sha256 recorded (F4A parquet, dualstem V_iIS, F4B memo, staged stem, theta, spec).
+
+Task 1 — Contract frozen into the manifest's ratified_contract block (verbatim).
+
+Task 2 — W3/W1 regression vs F4A: Δω = 0.0 / ≤1.7e-10 EUR (≤1e-8); |W3 ω| ≤ 2.9e-10; 0 genuine non-convergence. Subtracting log(S) from both actual and own-set reference leaves the root unchanged → W3/W1 are numerically identical to F4A, as required. PASS.
+
+Task 3 — Final W4 (target V_i^IS − log 101): median 53.7k (m) / 67.0k (f) EUR/month (~27× / 34× actual consumption); 0 outside-bracket, 0 non-convergence; num-vs-analytic ≤ 6.4e-12 (normalized). Convergence classified solely by the bracket+one-expansion contract — no analytic extrapolation accepted. PASS.
+
+Task 4 — W6 universal grid {0,20,30,35,39,48}h (home/PT1/PT2/F35/FT/LH; leisure = 80−hours; utility-only; uniform 1/6; no opp/prior; BG excluded): median 59.0k (m) / 86.1k (f) EUR; 0 outside-bracket, 0 non-convergence. Invariance gates: synthetic-κ ~1e-10, node-duplication invariance ≤ 1.8e-15 nats (≤1e-10), cross-household invariance = 0.0, β_l-coeff recovery spread ~5e-15. Grid identical across all households. PASS. (W6 > W4 because home is the max-leisure/max-utility node, so the 6-node log-mean sits below home-alone, requiring more compensation.)
+
+Caveat retained: W4/W6 large magnitudes are the genuine full-compensation content — log S normalization removed the artificial draw-count scale (~84×) but not the opportunity-set compensation (the finite reference lacks the log ĝ − log π density that V_actual carries). The consumption unit was verified as monthly real-2016 EUR (52/12 earnings convention; c_scale ≈ 2035 ≈ mean monthly disposable income).
+
+Final status:
+
+
+W3 STATUS: valid
+W1 STATUS: valid
+W4 STATUS: valid
+W6 STATUS: valid
+READY FOR F5: yes
+Frozen outputs:
+
+outputs/welfare/fastlane/singles_measures_F4C_v1.parquet (5,007 rows, 22 cols: V_actual_normalized, S_i, finalized W3/W1/W4/W6 + W1 working-only, solver/bracket status; sha256 dd163e2e…)
+outputs/welfare/fastlane/F4C_manifest_v1.json
+docs/jmp_methodology/RURO_welfare_F4C_final_singles_measures_report_v1.md
+The normalization defect is closed without altering the valid W3/W1 results, and W6 now has a reproducible, economically interpretable, cardinality-invariant grid. The singles measure core is frozen and ready for F
+
+
+
+Reply by codex on next tep : 
+
+F4C is clean. The normalization defect is closed, all measure gates pass, and F5 is authorized.
+
+One required F5 rule: use the staged parquet’s positive, complete EU-SILC household weight `dwt`. Do **not** use `welfare_core.gini`, which is unweighted and internal-validation-only.
+
+Use this prompt:
+
+```text
+FAST-LANE F5: SINGLES MEASURE-FAMILY INEQUALITY POINT ESTIMATES.
+
+Compute the first singles measure-family inequality point estimates from frozen
+F4C outputs. No decomposition, estimation, bootstrap re-estimation, EUROMOD,
+V_dir, promotion, engine/spec/data edits, or commit. Preserve all F3/F4 artifacts
+unchanged. Write new versioned outputs only.
+
+IMPORTANT SCOPE
+This run produces validated POINT ESTIMATES. The conference roadmap requires
+cluster-bootstrap confidence intervals before final reportable claims. No
+bootstrap run is authorized here.
+
+FROZEN INPUTS
+- outputs/welfare/fastlane/singles_measures_F4C_v1.parquet
+- outputs/welfare/fastlane/F4C_manifest_v1.json
+- staged engine-ready singles parquet:
+  fr_p3a_bpool_engine_ready_staged_threeB1__singles.parquet
+- docs/jmp_methodology/RURO_welfare_F4C_final_singles_measures_report_v1.md
+
+MEASURE CONTRACT
+- Headline measures: W1, W4, W6.
+- W3 remains a validation artifact; do not report its Gini as a headline.
+- W1 working-only is appendix sensitivity only.
+- Primary index: survey-weighted Gini.
+- Secondary sensitivity indices: weighted CV², Theil L, Atkinson ε=1, and
+  Atkinson ε=2.
+- Household survey weight: staged-parquet `dwt`.
+- Household cluster key for future inference: `idorighh`.
+
+TASK 0 — Provenance and household-weight join
+Verify every frozen F4C input hash against F4C_manifest_v1.json.
+
+From the staged singles parquet:
+- select chosen rows only (`is_chosen == 1`);
+- join to F4C one-to-one using `uid == idhh`;
+- carry `dwt`, `idorighh`, `year_tag`, and `dgn`.
+
+Gates:
+- exactly 5,007 joined households;
+- no missing/extra/duplicate keys;
+- `dwt` is finite, strictly positive, and constant across all 101 alternatives
+  within each `uid`;
+- `idorighh`, `year_tag`, and `dgn` are constant within each `uid`;
+- F4C group agrees exactly with staged `dgn`;
+- report household count, sum of `dwt`, and unique `idorighh` count overall,
+  by group, and by year.
+
+STOP on any failure.
+
+TASK 1 — Implement and validate weighted inequality primitives
+Implement locally in the new F5 fast-lane script. Do not modify
+`welfare_core.gini`.
+
+Required functions:
+- weighted Gini using the standard weighted order-statistic formula;
+- weighted mean and quantiles;
+- weighted CV²;
+- weighted Theil L;
+- weighted Atkinson ε=1;
+- weighted Atkinson ε=2.
+
+Validation gates:
+- weighted Gini matches an O(n²) weighted-MAD oracle on small synthetic arrays
+  to <=1e-12;
+- integer-weight replication gives the same Gini to <=1e-12;
+- all indices are invariant to multiplying every survey weight by a positive
+  constant to <=1e-12;
+- Gini, CV², Theil L, and Atkinson indices are invariant to multiplying every
+  welfare value by a positive constant to <=1e-12;
+- equal welfare values produce zero for every inequality index;
+- invalid/non-positive welfare values fail clearly for indices that require
+  positive support.
+
+TASK 2 — Primary survey-weighted Gini results
+Compute survey-weighted Gini for W1, W4, and W6 under these scopes:
+
+1. `singles_all` — pooled singles headline;
+2. `singles_male`;
+3. `singles_female`.
+
+Also compute unweighted Gini as a clearly labeled sensitivity, never as the
+headline.
+
+For each scope and measure report:
+- n households;
+- sum of survey weights;
+- weighted mean, p10, median, p90;
+- weighted Gini;
+- unweighted Gini;
+- absolute weighted-minus-unweighted Gini difference.
+
+Gate:
+- all headline welfare values are finite, positive, and converged;
+- all weighted Ginis are finite and in [0,1].
+
+TASK 3 — Across-measure normative-sensitivity result
+For each scope, over the headline set `{W1, W4, W6}`, report:
+
+- minimum weighted Gini and its measure;
+- maximum weighted Gini and its measure;
+- bracket `[min, max]`;
+- absolute spread `max - min`.
+
+This is the pre-registered across-measure normative-sensitivity result.
+
+Do not interpret this spread as a decomposition or opportunity share.
+
+TASK 4 — Secondary inequality-index sensitivities
+For W1, W4, and W6, compute survey-weighted:
+
+- CV²;
+- Theil L;
+- Atkinson ε=1;
+- Atkinson ε=2.
+
+Report by `singles_all`, `singles_male`, and `singles_female`.
+
+Also compute W1-working-only weighted Gini as appendix sensitivity.
+
+W3 validation readout only:
+- report max absolute W3 omega and confirm it remains <=1e-8;
+- do not compute or headline W3 inequality.
+
+TASK 5 — Stability and tail diagnostics
+Because W4/W6 are full-compensation measures with large levels, report:
+
+- weighted p99 and maximum;
+- weighted top-1% welfare share;
+- Gini after winsorizing at weighted p99, labeled sensitivity only;
+- rank correlations among W1, W4, and W6.
+
+Do not alter or replace the primary unwinsorized results.
+
+TASK 6 — Inference-readiness audit
+No bootstrap run.
+
+Record:
+- future bootstrap cluster key = `idorighh`;
+- number of unique clusters overall and by group;
+- number of clusters spanning multiple pooled-year observations;
+- required external operation: cluster-bootstrap re-estimation producing a new
+  theta vector per replicate, followed by F4C measure recomputation;
+- required replicate count from the scaffold contract: 200.
+
+State explicitly that fixed-theta household resampling alone is not the
+pre-registered inference procedure and cannot produce final headline CIs.
+
+TASK 7 — Atomic outputs
+Write:
+
+- outputs/welfare/fastlane/singles_measure_family_F5_v1.parquet
+  One row per scope × measure, carrying weighted distribution summaries,
+  primary Gini, unweighted sensitivity, secondary indices, tail diagnostics,
+  convergence counts, and provenance identifiers.
+
+- outputs/welfare/fastlane/singles_measure_family_F5_households_v1.parquet
+  F4C household measures plus `dwt`, `idorighh`, `year_tag`, and `dgn`.
+
+- outputs/welfare/fastlane/F5_manifest_v1.json
+
+- docs/jmp_methodology/RURO_welfare_singles_measure_family_F5_report_v1.md
+
+The report must clearly separate:
+- headline weighted Ginis;
+- across-measure Gini bracket/spread;
+- unweighted and secondary-index sensitivities;
+- tail diagnostics;
+- inference status.
+
+End with exactly:
+
+F5 POINT-ESTIMATE STATUS: valid/invalid
+ACROSS-MEASURE SPREAD STATUS: valid/invalid
+READY FOR F6 DESIGN MEMO: yes/no
+CONFERENCE-REPORTABLE WITH CI: NO — cluster-bootstrap re-estimation pending
+
+`READY FOR F6 DESIGN MEMO` is YES only if all weighted-index and provenance gates
+pass. Do not commit. Report paths.
+```
+
+F5 can now produce the first valid inequality point estimate. It should not be labeled conference-final until the external 200-replicate cluster-bootstrap re-estimation exists.
+

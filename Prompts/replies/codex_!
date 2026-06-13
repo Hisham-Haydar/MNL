@@ -1,3 +1,8 @@
+Do not rerun F3 or use F3-R as written. The old F3 produced valid IS outputs and a valid **full-V diagnostic failure**. The next run should reconcile schemas, complete durable anchors, and test joint-batch parity only.
+
+Use this prompt:
+
+```text
 FAST-LANE F3-R2: POST-F3 RECONCILIATION + DURABLE ANCHOR COMPLETION +
 JOINT-BATCH PARITY GATE.
 
@@ -285,3 +290,6 @@ FULL SINGLES V_i^dir AT S=100 AUTHORIZED: no
 
 Do not modify or delete existing F3 artifacts.
 Do not commit. Report all created paths.
+```
+
+This prompt preserves the successful old-F3 work. It also prevents a joint-batch parity pass from incorrectly overriding the already-failed S=100 full-V convergence gate.

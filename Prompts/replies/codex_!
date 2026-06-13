@@ -1,462 +1,175 @@
-Do not rerun F3 or use F3-R as written. The old F3 produced valid IS outputs and a valid **full-V diagnostic failure**. The next run should reconcile schemas, complete durable anchors, and test joint-batch parity only.
+Simple state of play — the revision touched F3's *outputs*, so F4 needs three small patches to point at them. Here's the canonical set:
 
-Use this prompt:
+| Prompt | Status | Fire when |
 
-```text
-FAST-LANE F3-R2: POST-F3 RECONCILIATION + DURABLE ANCHOR COMPLETION +
-JOINT-BATCH PARITY GATE.
+|---|---|---|
 
-Platform: Claude Code, Sonnet, thinking ON.
+| F3 (original) | **Dead** — superseded | never (stop it if still grinding; salvage IS outputs only if they match the dual-stem schema) |
 
-This supersedes F3-R. The original F3 run is complete and its artifacts are
-immutable inputs. Do not rerun, overwrite, reseed, retune, or reinterpret its
-30-household S=100 diagnostic sample.
+| **F3-R** | **Live** — the one to run now | now |
 
-No edits to engines, specs, data, existing welfare scripts, or existing F3
-artifacts. Authorize exactly one new uncommitted orchestration runner:
+| **F3-B** | Pre-defined, conditional | only on F3-R Task-4 verdict `LICENSED` (V_dir branch; parallel, not on F4's path) |
 
-  scripts/welfare/fastlane/run_f3r2_reconcile_joint_parity.py
+| F4 (as pasted) | **Stale in 3 places** — superseded by F4-R below | never |
 
-The runner may reuse existing helpers and the existing EUROMOD build path.
-No Omega, Gini, measures, decomposition, promotion, or full-population V_i^dir.
-Do not commit.
+| **F4-R** | **Live** — the measures prompt | F3-R report line `READY FOR F4: yes` |
 
-FROZEN EXISTING F3 EVIDENCE
+What changed in F4 → F4-R: the precondition now points at F3-R's actual file (`singles_ViIS_dualstem_v1.parquet`, column `V_i_IS_staged`) instead of the old filename; the Task-1 consistency gate names that column; and the provenance block records the consumed parquet's content hash so the F3-R↔F4 tie is verifiable. **Nothing substantive changed** — F4 only ever consumes V_i^IS, so the Codex revision (which was all about V_dir gates and pricing scalability) doesn't touch the measures logic.
 
-Treat these as valid immutable inputs:
+**F4-R** (supersedes F4 — Claude Code · Opus · high · thinking on · MNL repo):
 
-- outputs/welfare/fastlane/singles_Vi_production_v1.parquet
-  - 5,007 singles
-  - certified Gate-0 exact for singles_male and singles_female
-- outputs/welfare/fastlane/couples_ViIS_capture_v1.parquet
-  - 7,438 couples
-  - certified Gate-0 exact
-- outputs/welfare/fastlane/f3_task2_gate3b_30hh_100nodes.json
-  - S=100 target-only population-faithful diagnostic
-  - high-ESS median |delta_common| =
-    0.7319804266785854 > 0.5: FAIL
-- outputs/welfare/fastlane_anchors_v1/manifest.json
-  - candidate UID 200001593700 V_i^IS staged =
-    11.496632024594227 exactly
-
-Interpret the frozen Gate-3b result correctly:
-
-- delta_common is the FULL-V diagnostic comparison:
-    V_dir_fullV - (V_i_IS_staged - log(101))
-- The failure is valid and remains binding.
-- It does NOT mean utility-only V_i^dir failed.
-- Utility-only V_i^dir has no V_i^IS counterpart and is assessed separately
-  using CV2 and CV2/(2S).
-- Full singles V_i^dir at S=100 remains NOT AUTHORIZED regardless of the
-  joint-batch parity verdict.
-
-FROZEN RNG / REDRAW CONTRACT
-
-  S = 100
-  preserve chosen draw 0
-  overwrite simulated draws 1..100 only
-  total band remains 101 rows per household
-  base_seed = 20260604
-  per-HH seed = base_seed + (uid % 1_000_000)
-  bit generator = numpy PCG64
-  draw order = employment -> occupation -> hours -> Halton-wage
-  Halton configuration = exactly the run_stage4c2 configuration
-  record each harvested wage/Halton sub-seed
-
-Theta and spec:
-
-  theta = scripts/bpool/specs/theta_hat_realdata_901_v1.csv
-  spec = joint_pooled_v1_bll0_tlmpin
-
-Record full SHA256 hashes for theta, spec, runner, and every durable output.
-
-RUNNER CONTRACT
-
-- Atomic writes only: write temporary file, validate, then rename.
-- Never overwrite any existing completed F3 artifact.
-- New outputs use the paths specified below.
-- Per-task completion manifest with row counts and content hashes.
-- Resumable: skip a task only after validating its output hash and contract.
-- Any failed gate is reported without retries, reseeding, or threshold changes.
-- Scratch outputs must remain outside production/staged directories.
-
-TASK 0 - AUDIT AND FREEZE EXISTING F3 INPUTS
-
-Verify and record hashes, schemas, row counts, and key uniqueness for all frozen
-F3 inputs listed above.
-
-Confirm the frozen facts:
-
-- singles rows = 5,007
-- couples rows = 7,438
-- certified Gate-0:
-    singles_male   = 28489.042816294535
-    singles_female = 35411.86351549324
-    couples        = 174603.72976561091
-- UID 200001593700 staged V_i^IS =
-    11.496632024594227
-- frozen full-V S=100 diagnostic remains FAIL:
-    high-ESS median |delta_common| =
-    0.7319804266785854 > 0.5
-
-STOP if any immutable artifact differs from these facts.
-
-TASK 1 - RE-EMIT SELF-AUDITING DUAL-STEM V_i^IS OUTPUTS
-
-The existing F3 outputs are valid but do not contain the full dual-stem,
-self-auditing schema. Recompute the cheap logsum quantities and emit NEW files.
-Do not modify the old files.
-
-For every singles and couples household, store:
-
-  uid, group, year_tag,
-
-  V_i_IS_staged,
-  ESS_staged,
-  max_weight_staged,
-  V_obs_staged,
-  negll_contribution_staged,
-
-  V_i_IS_certified,
-  ESS_certified,
-  max_weight_certified,
-  V_obs_certified,
-  negll_contribution_certified,
-
-  V_i_IS_delta_staged_minus_certified
-
-Use the established welfare Gate-0/index machinery; do not reimplement the
-index formula.
-
-Require exact staged/certified household-key equality before joining.
-No inner-join row loss is allowed.
-
-Gates:
-
-- certified negLL sums reproduce:
-    singles_male   28489.042816294535
-    singles_female 35411.86351549324
-    couples        174603.72976561091
-  each to <= 1e-6
-- row counts remain singles=5,007 and couples=7,438
-- UID 200001593700 staged V_i^IS remains equal to
-  11.496632024594227 to <= 1e-9
-
-TASK 2 - COMPLETE DURABLE ANCHOR SET USING VALIDATED TARGET-ONLY PRICING
-
-Create a NEW durable anchor directory. Do not modify fastlane_anchors_v1.
-
-Select exactly three 2016 singles anchors using this frozen rule:
-
-1. Primary: UID 200001593700.
-2. Highest ESS_staged 2016 singles_male.
-3. Highest ESS_staged 2016 singles_female excluding UID 200001593700.
-
-Record the selected UIDs before any pricing.
-
-For each anchor:
-
-- generate exactly S=100 nodes using the frozen RNG contract
-- preserve draw 0; overwrite draws 1..100
-- apply redraw canonicalization before pricing
-- price using the validated target-only method:
-  one full 2016 singles population batch per target
-- preserve the authoritative FR earnings identity
-- nominal wage before EUROMOD; apply phi_y only after EUROMOD
-- preserve source_idorighh and all population-batch identities
-
-Freeze per anchor:
-
-- redrawn node table
-- target-only priced-node table
-- all shared Four-B comparison columns:
-  headline columns plus every shared `ils_*` and `*_s` component
-- population-batch identity:
-  stem, year, mode, draw band, HH set, row count, HH count, input hash
-- V_i_IS staged/certified, ESS, max_weight
-- utility-only V_i^dir
-- CV2
-- implied finite-S bias = CV2/(2*S)
-- bias-corrected utility-only V_i^dir
-- full-V diagnostic
-- delta_common =
-    V_dir_fullV - (V_i_IS_staged - log(101))
-- RNG, Halton, theta/spec, runner, EUROMOD, CPI, and schema provenance
-- end-to-end runtime
-
-Anchor readouts:
-
-- Full-V b1: report delta_common, but do not use it to overturn the frozen
-  population-level S=100 failure.
-- Utility-only b2: report whether CV2/(2*S) <= 1e-3 for each anchor.
-- Do not compare utility-only V_i^dir directly with V_i^IS.
-
-STOP before pricing if the primary V_i^IS verification fails.
-
-TASK 3 - 2016 SINGLES JOINT-BATCH PARITY GATE
-
-This task tests only whether joint substitution preserves the validated
-target-only pricing context. It does not authorize full V_i^dir at S=100.
-
-Construct one full 2016 singles joint batch:
-
-- include every household in the production chunk
-- preserve draw 0 for every household
-- replace draws 1..100 for every household with its own frozen-RNG nodes
-- apply redraw canonicalization before pricing
-- preserve the original full-batch row count, HH set, and stable key set
-- price exactly once through the existing EUROMOD build path
-
-Before pricing, require:
-
-- same number of rows as the original full 2016 singles band
-- same household set
-- same stable keys
-- exactly one preserved draw-0 row per household
-- exactly 100 redrawn simulated slots per household
-
-Compare each Task-2 anchor between:
-
-- validated target-only priced output
-- joint-batch priced output
-
-Use the established Four-B comparison contract:
-
-- key = (stacked_hh_uid, draw, idperson_true)
-- compare all headline columns
-- compare every shared `ils_*` and `*_s` component
-- require no missing or extra keys
-- require max absolute difference <= 1e-6 for every compared column
-
-Any divergence, including any means-tested component divergence, is FAIL.
-Do not use EUR 0.01: several compared fields are not monetary.
-
-Verdict:
-
-  JOINT BATCHING LICENSED
-or
-  JOINT BATCHING NOT LICENSED
-
-Report per-column max-absolute differences, failures, row counts, and runtime.
-
-TASK 4 - DECISION READOUT
-
-State these conclusions separately:
-
-1. READY FOR F4:
-   yes only if Task-0/Task-1 audit and primary-anchor verification pass.
-   This does not depend on joint-batch parity or V_i^dir.
-
-2. FROZEN FULL-V S=100 DIAGNOSTIC:
-   FAIL remains binding because high-ESS median |delta_common| =
-   0.7319804266785854 > 0.5.
-
-3. UTILITY-ONLY B2:
-   report anchor CV2/(2*S) results separately.
-   B2 does not overturn the frozen full-V failure.
-
-4. JOINT-BATCH METHOD:
-   licensed/not licensed based only on Task 3.
-
-5. FULL SINGLES V_i^dir AT S=100:
-   NOT AUTHORIZED regardless of Task-3 verdict.
-
-6. NEXT V_i^dir BRANCH, recommendation only:
-   - if joint batching is licensed: propose a separately pre-registered
-     higher-accuracy/multi-pass design
-   - if not licensed: retain validated target-only pricing for future bounded,
-     stratified diagnostics
-   Do not execute either branch.
-
-Also report measured target-only and joint-batch runtime. The projected cost of
-one full singles joint-batch pass is THREE batches total, one per year.
-
-OUTPUTS - NEW FILES ONLY
-
-outputs/welfare/fastlane/singles_ViIS_dualstem_v1.parquet
-outputs/welfare/fastlane/couples_ViIS_dualstem_v1.parquet
-outputs/welfare/fastlane/f3r2_reconciliation_manifest_v1.json
-outputs/welfare/fastlane/f3r2_joint_batch_parity_2016_singles_v1.json
-outputs/welfare/fastlane_anchors_v2/
-docs/jmp_methodology/RURO_welfare_F3R2_reconciliation_joint_parity_v1.md
-
-The report must end with exactly these explicit lines:
-
-READY FOR F4: yes/no
-FROZEN FULL-V S=100 GATE: fail
-UTILITY-ONLY B2 ANCHOR GATE: pass/fail/mixed
-JOINT BATCHING METHOD: licensed/not licensed
-FULL SINGLES V_i^dir AT S=100 AUTHORIZED: no
-
-Do not modify or delete existing F3 artifacts.
-Do not commit. Report all created paths.
 ```
 
-This prompt preserves the successful old-F3 work. It also prevents a joint-batch parity pass from incorrectly overriding the already-failed S=100 full-V convergence gate.
+FAST-LANE F4-R (supersedes F4): MEASURE-FAMILY REFERENCE SETS + EQUIVALENT-INCOME
 
+INVERSION (SINGLES). Governing contract: JMP_measure_mapping_memo_v1 (signed).
 
-F3-R2 complete. All outputs written in 247s. The key findings:
+Bounded build + run. NO inequality statistics of any kind (no Gini, no variance,
 
-Task 0 (Audit): PASS — all F3 input hashes frozen, 5007/7438 row counts confirmed, anchor 200001593700 V_i^IS diff=0.00e+00, Gate-0 verified to machine zero.
+no percentile spreads of Omega - F5 computes those as its own gated increment).
 
-Task 1 (Dual-stem parquets): DONE — singles_ViIS_dualstem_v1.parquet (5007 rows), couples_ViIS_dualstem_v1.parquet (7438 rows), each with V_obs_staged, negll_contribution_staged, and certified counterparts. Anchor V_obs_staged=4.4888, negll_staged=7.0078 (sum = V_i^IS = 11.4966 ✓).
+No decomposition, no couples measures, no promotion, no edits to estimation
 
-Task 2 (Anchors): All 3 priced via frozen RNG + target-only — fastlane_anchors_v2/ holds 100-node priced parquets for UID 200001593700 (primary sf), 200003504101 (top-ESS 2016 sm), 200003672000 (top-ESS 2016 sf).
+engines/specs/data.
 
-Task 3 (Joint-batch parity): NOT LICENSED
+PRECONDITION
 
-The column breakdown is diagnostic:
+The F3-R report ends "READY FOR F4: yes". Consume
 
-Column	Diff
-ils_origy	0.00 (HH-independent)
-ils_tax	0.00 (HH-independent)
-ils_sicdy	0.00 (HH-independent)
-ils_ben	127–310 euros (batch-dependent)
-ils_dispy	inherits ils_ben diff
-The French EUROMOD ils_ben component is sensitive to other HHs' incomes in the same batch call. Taxes, contributions, and original income are all HH-independent. The mechanism is likely a population-aggregated benefit threshold or uprating factor within the French system.
+outputs/welfare/fastlane/singles_ViIS_dualstem_v1.parquet as the SOLE V_actual
 
-Task 4 decisions:
+source: V_actual = the V_i_IS_staged column (staged stem, certified theta-hat).
 
-V_obs + negll produced: YES
-Anchor pricing: OK (all 3)
-Joint-batch parity: NOT LICENSED (max_abs=309.76 euros, tol=1e-6)
-F4 authorized: NO — pending batch-dependency resolution
-Ω(W^3) ready: NO — same gate
+Verify the parquet's recorded theta-hash + spec-hash against
 
+theta_hat_realdata_901_v1.csv and the certified spec, and record the parquet's
 
+content hash for provenance, before anything else; STOP on mismatch.
 
+CONTEXT
 
+Conventions locked in the contract: stem = fr_p3a_bpool_engine_ready_staged_threeB1
 
+at certified theta-hat; unit = household, singles only; Omega units = real-2016 EUR
 
-Do **not** accept F3-R2 as complete. The valid conclusions are:
+consumption levels (W4/W1/W6) or shift (W3, ~0); utility is u(c,l) only - occupation
 
-- **F4 READY: YES.** Tasks 0/1 and primary-anchor verification passed. Joint parity was explicitly not an F4 dependency.
-- **Full V_i^dir at S=100: NOT AUTHORIZED.**
-- **Joint batching: provisionally NOT LICENSED**, but the causal claim about batch-dependent benefits is not yet dispositively proven.
+and wage never enter preferences, so every reference side below is consumption-direct
 
-Verified dual-stem outputs are valid: exact row counts, no duplicate/null keys, and certified negLL sums reproduce all three anchors exactly.
+and needs NO wage draw, NO occupation assignment, NO EUROMOD pricing.
 
-F3-R2 defects:
+The implemented, Stage-1-validated solver welfare_core.w3_inversion (zero-recovery
 
-1. It incorrectly parsed frozen Gate-3b as `unknown`.
-2. It incorrectly made F4 depend on joint-batch parity.
-3. Anchor v2 contains only headline priced outputs, not redrawn nodes, full components, CV²/B2, hashes, or population-batch manifests.
-4. Parity compared only six headline fields, not Four-B’s complete simulated-output set.
-5. It did not prove anchor EUROMOD input rows were identical between target-only and joint runs. Therefore “population-aggregated benefit threshold” remains a hypothesis.
+phi0=0.0, monotone, bracketed, converged for all HH) is the pattern: EXTEND it,
 
-Use this repair prompt:
+do not rebuild it.
 
-```text
-FAST-LANE F3-R2A: REPAIR F3-R2 EVIDENCE + DISPOSITIVE JOINT-BATCH DIAGNOSIS.
+TASK 0 - SOLVER EXTENSION + SYNTHETIC UNIT TESTS.
 
-Platform: Claude Code, Sonnet, thinking ON.
+Add transform modes alongside the existing shift(w) [c_j + w]:
 
-Read-only toward all existing F3/F3-R2 artifacts. Do not overwrite them.
-No estimation, measures, Omega, decomposition, promotion, or commits.
-Authorize one new uncommitted runner only:
+  replace(w): consumption := w at designated nodes;
 
-  scripts/welfare/fastlane/run_f3r2a_repair_diagnosis.py
+  single_node(w): reference = one node (home) at consumption w.
 
-FROZEN DECISIONS
+Bracket per contract: w in [DCM_MIN_POSITIVE=1.0, 50 x max observed c_j], one
 
-- F4 READY = YES because dual-stem V_i^IS production, certified Gate-0, and
-  primary-anchor verification passed. Joint parity is NOT an F4 dependency.
-- Frozen full-V S=100 gate = FAIL:
-  high-ESS median |delta_common| =
-  0.7319804266785854 > 0.5.
-- Full singles V_i^dir at S=100 remains NOT AUTHORIZED.
-- Existing joint-batch result is PROVISIONALLY NOT LICENSED pending the
-  dispositive diagnosis below.
+expand-and-retry, per-HH convergence flag. Synthetic unit tests with closed-form
 
-TASK 1 - Repair metadata/report only
+known solutions for all three modes (construct toy utilities where w* is analytic).
 
-Read the frozen Gate-3b value from:
-  task4_vdir_vs_vis.high_ess_delta_common_median
-and/or fastlane_anchors_v1/manifest.json.
+Record from the data and STATE in the report: the consumption unit (monthly vs
 
-Record:
-  verdict=FAIL
-  median_abs_delta=0.7319804266785854
+annual real-2016 EUR) and exactly where c_scale enters, so u(w, .) uses the
 
-Correct F4 readiness to YES. Remove any claim that F4 or Omega readiness depends
-on joint-batch parity. Omega readiness is OUT OF SCOPE for this repair.
+identical scaling as the estimation-side index. w is expressed in those same units.
 
-TASK 2 - Complete durable anchor evidence
+TASK 1 - W3 RE-VALIDATION ON THE CONFERENCE STEM (validation only, never reported).
 
-For the three already-selected 2016 anchors, deterministically regenerate and
-freeze NEW v3 artifacts:
+Smoke 25 HH/group, then all 5,007 singles. Gates:
 
-- exact redrawn-node tables
-- frozen RNG/Halton sub-seeds
-- population-batch identities and input hashes
-- target-only EUROMOD input rows after ID stamping
-- target-only priced outputs containing EVERY simulated EUROMOD output column,
-  defined exactly as:
-    sim_output_cols = columns in sim not present in raw EUROMOD input schema
-  plus ils_dispy_real
-- V_i_IS, ESS, max_weight
-- utility-only V_i^dir, CV2, CV2/(2*S), bias-corrected V_i^dir
-- full-V diagnostic and delta_common
-- full provenance and content hashes
+ (i) consistency identity: at w=0 the solver's reference-side inclusive value must
 
-Use S=100, preserve draw 0, overwrite draws 1..100.
+     equal the stored V_i_IS_staged per household to <= 1e-9 (same extractor
 
-TASK 3 - Dispositive joint-batch diagnosis
+     conventions - this ties F3-R and F4-R together falsifiably);
 
-Build the 2016 joint batch using the EXACT frozen Task-2 node tables. Do not
-redraw them independently.
+ (ii) Omega ~ 0: |Omega_W3| <= 1e-8 for all converged HH (Stage-1 achieved ~3e-10);
 
-Before EUROMOD, prove for every anchor and draw:
+ (iii) non-convergent < 0.5% per group.
 
-- stamped target-only and joint-batch EUROMOD input rows are byte-identical on
-  every raw input column
-- stable keys match exactly
-- no missing/extra rows
-- draw 0 preserved
-- total row count and HH set unchanged
+STOP on any failure; report, do not proceed to real measures.
 
-Run one joint-batch EUROMOD call and capture EVERY simulated output column using
-the same full-output rule as Task 2.
+TASK 2 - W4 STAYING-HOME EQUIVALENT (first real measure).
 
-Also repeat the primary-anchor target-only run once with identical input to test
-EUROMOD determinism.
+V_ref(w) = u(w, l_home) with the household's own preference covariates and group
 
-GATES
+parameters; solve u(w, l_home) = V_actual. Implement BOTH the numerical solve and
 
-A. Target-only repeat must match all outputs to <=1e-6.
-B. Anchor input rows must be byte-identical between target-only and joint batch.
-C. Compare every shared simulated-output column plus ils_dispy_real by:
-   (stacked_hh_uid, draw, idperson_true), tolerance <=1e-6.
+the ANALYTIC inversion of the consumption term (Box-Cox algebra); agreement <= 1e-8
 
-Interpretation:
+per household is the gate. Report bracket failures by DIRECTION: below-floor
 
-- If A and B pass but C fails: batch-context dependence is PROVEN and joint
-  batching is NOT LICENSED. Report the exact first divergent components; do not
-  speculate about the policy mechanism without source evidence.
-- If B fails: the prior result was a construction mismatch; report and STOP.
-- If A fails: EUROMOD reproducibility is unresolved; report and STOP.
-- If A/B/C pass: joint batching is LICENSED, but full V_i^dir at S=100 remains
-  unauthorized because the frozen full-V convergence gate failed.
+(w* would be < 1.0 - economically meaningful, count and list separately) vs
 
-TASK 4 - Final corrected report
+above-cap. Production over all singles.
 
-Write NEW outputs only:
+TASK 3 - W1 EQUAL-PAY OVER THE OWN SET.
 
-outputs/welfare/fastlane/f3r2a_repair_manifest_v1.json
-outputs/welfare/fastlane/f3r2a_joint_batch_diagnosis_v1.json
-outputs/welfare/fastlane_anchors_v3/
-docs/jmp_methodology/RURO_welfare_F3R2A_repair_diagnosis_v1.md
+B(w) = own latent set (same draws, same log g-hat - log pi weights as V_actual)
 
-End with exactly:
+with consumption REPLACED by w at ALL nodes including home:
 
-READY FOR F4: yes
-FROZEN FULL-V S=100 GATE: fail
-UTILITY-ONLY B2 ANCHOR GATE: pass/fail/mixed
-JOINT BATCHING METHOD: licensed/not licensed/unresolved
-BATCH-CONTEXT DEPENDENCE: proven/not proven/unresolved
-FULL SINGLES V_i^dir AT S=100 AUTHORIZED: no
+V_ref(w) = logsumexp_j [ u(w, l_j) + log g_j - log pi_j ]. Unit test first
 
-Do not modify existing artifacts. Do not commit. Report created paths.
+(kappa-recovery): synthetically set all c_j := kappa for one household, the solver
+
+must return w* = kappa to <= 1e-8. Then production over all singles. Also compute
+
+the pre-registered sensitivity variant (replacement at working nodes only, home
+
+keeps actual non-employment consumption) into a SEPARATE column - appendix only,
+
+never a headline.
+
+TASK 4 - W6 EQUAL-PAY OVER THE UNIVERSAL GRID.
+
+Read the canonical hours bands from the certified estimation spec and RECORD the
+
+grid (band values + home node) in the report BEFORE any Omega_W6 is computed.
+
+J = {home} + {one node per canonical hours band}, identical for every household;
+
+V_ref(w) = logsumexp_{j in J} u(w, l_j) with UNIFORM weights (no g-hat, no pi),
+
+own preference covariates. Gates: kappa test on J; duplicate-household invariance
+
+(clone a household: identical preference covariates + identical V_actual must yield
+
+bit-identical w*). Production over all singles.
+
+TASK 5 - OUTPUTS + PROVENANCE.
+
+outputs/welfare/fastlane/singles_measures_omega_v1.parquet with per-HH columns:
+
+uid, group, year_tag, V_actual, Omega_W3, Omega_W4, Omega_W1, Omega_W1_workonly,
+
+Omega_W6, per-measure convergence flags + bracket info. Provenance block: theta
+
+hash, spec hash, stem, c_scale, consumed F3-R parquet content hash, solver
+
+version/commit, recorded W6 grid.
+
+Report: docs/jmp_methodology/RURO_welfare_singles_measures_report_v1.md - per-gate
+
+verdicts, the W6 grid, units statement, non-convergence counts, and an Omega sanity
+
+readout LIMITED to min/median/max per measure per group (no dispersion or
+
+inequality statistics). End with explicit READY/NOT-READY for F5. Do not commit.
+
+Report paths.
+
 ```
 
-F4 can proceed in parallel now; F3-R2A repairs the V_i^dir/joint-batching evidence branch.
+Firing logic, so there's no ambiguity while you juggle sessions: **F3-R now**. When its report lands, the `READY FOR F4: yes` line is mechanical (it depends only on the Task-1 negLL gate and the Task-3a anchor verification), so you may fire **F4-R immediately** on that line and paste the report here in parallel — my review adds value on the b1/b2 and parity sides, which gate **F3-B**, not F4-R. If Task 4 says `LICENSED`, F3-B runs alongside F4-R without blocking anything; if `NOT LICENSED`, the stratified target-only fallback does the same job by Day 9.

@@ -137,3 +137,22 @@ Germany or any second-country welfare; country/year ranking framing; regional-co
 
 ---
 *Save as: roadmap memo → project workspace as `JMP_results_campaign_roadmap_v1.md`. Supersedes the open fork from two sessions ago (Path A vs V_i^dir-first) by running both as parallel lanes with the conference lane primary.*
+
+---
+
+## Addendum (2026-06-13) — primary evaluation scope reconciliation + inference contract
+
+Recorded in `RURO_welfare_F5_primary_scope_ratification_v1.md`. This roadmap "supersedes nothing"
+(status line above); the France **2015–2017** framing is the **narrative/empirical-setting** frame
+and does **not** amend decisions-memo §13. Reconciled with that §13 and the operator ratification:
+
+- **Primary welfare evaluation scope = the 2016 singles cross-section** (`year_tag == 2`, n = 1,676),
+  at the pooled `theta_hat` (decisions-memo §13 option (b)). The 2015–2017 narrative population is
+  served by **reporting the pooled and per-year distributions as sensitivities**; the headline
+  numbers are 2016. Primary Ginis W1 = 0.173, W4 = 0.329, W6 = 0.337; bracket [0.173, 0.337], the
+  X–Y across-measure sensitivity is computed on this 2016 scope.
+- **Cluster-robust CIs (the "cluster-robust CI'd" requirement above):** cluster bootstrap over the
+  **full certified joint estimation sample, 9,657 `idorighh`**, **re-estimating `theta` per
+  replicate** (B = 200), then recomputing F4C measures on the 2016 singles scope. Fixed-`theta`
+  household resampling is **not** the pre-registered inference. Point estimates exist (F5); CIs are
+  pending this re-estimation bootstrap.

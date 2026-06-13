@@ -125,3 +125,21 @@ convention. Both are post-conference robustness; slots stay `null` in config.
 - [ ] Couples stretch = IS-only per-HH capture in F3, measures only if Day-9 checkpoint is green — confirm
 
 *Save as: `JMP_measure_mapping_memo_v1.md` (project). Successor of roadmap §2; supersedes nothing.*
+
+---
+
+## Addendum (2026-06-13) — primary evaluation scope + inference contract
+
+Recorded in `RURO_welfare_F5_primary_scope_ratification_v1.md`. The §1 population (2,243 m + 2,764 f
+= 5,007 singles) describes the **pooled 2015–2017 household-year output set**. Following the operator
+ratification of the F5 primary cross-section (and decisions-memo §13 option (b)):
+
+- **Primary welfare evaluation scope = the 2016 singles cross-section** (`year_tag == 2`, n = 1,676
+  households), at the pooled `theta_hat`. The pooled 5,007 set and the separate 2015/2017 years are
+  **sensitivities**.
+- The W1/W4/W6 measure contracts (§3) and the ratified normalization (F4-C) are unchanged; only the
+  reported headline **scope** is fixed to 2016.
+- **Inference (pre-registered):** cluster bootstrap over the **full joint estimation sample, 9,657
+  `idorighh`**, re-estimating `theta` per replicate (B = 200), then recomputing measures on the 2016
+  singles scope. The 3,902 singles welfare-output `idorighh` are descriptive, not the resampling
+  unit; fixed-`theta` resampling is insufficient.

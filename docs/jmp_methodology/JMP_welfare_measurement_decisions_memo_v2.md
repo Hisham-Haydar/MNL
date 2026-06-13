@@ -1332,3 +1332,24 @@ is intellectually adjacent but operationally separate. The JMP
 implements the equivalent-income object that the theory paper
 articulates, but does not reproduce the theory paper's axiomatic
 results.
+
+---
+
+## Addendum (2026-06-13) — F5 primary-scope ratification + inference cluster contract
+
+Recorded in `RURO_welfare_F5_primary_scope_ratification_v1.md`; this addendum keeps §13 and §21
+consistent with the operator sign-off. No prior text is rescinded.
+
+- **§13 confirmed, primary instantiated.** The certified baseline `joint_pooled_v1_bll0_tlmpin` is a
+  pooled specification, so §13 option **(b)** governs: the **primary singles welfare distribution is
+  the 2016 cross-section** (`year_tag == 2`, n = 1,676), evaluated at the pooled `theta_hat`. Pooled
+  2015–2017 (option (a)) and the separate 2015/2017 single years are **sensitivities only**. Primary
+  survey-weighted Ginis: W1 = 0.173, W4 = 0.329, W6 = 0.337; across-measure bracket [0.173, 0.337],
+  spread 0.164.
+- **§21 inference clarified (resampling unit).** The bootstrap re-estimation of §21 (B = 200) resamples
+  `idorighh` clusters from the **full certified JOINT estimation sample (singles + couples), 9,657
+  `idorighh` clusters** — this is the resampling unit. The 3,902 `idorighh` of the pooled singles
+  welfare-output set are descriptive, **not** the resampling unit. Each replicate re-estimates
+  `theta` on the resampled joint estimation sample, then recomputes the F4C measures on the ratified
+  2016 singles evaluation scope, then the weighted inequality indices; 95% CIs are the 2.5/97.5
+  percentiles. Fixed-`theta` household resampling alone is insufficient.

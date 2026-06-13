@@ -293,3 +293,32 @@ Do not commit. Report all created paths.
 ```
 
 This prompt preserves the successful old-F3 work. It also prevents a joint-batch parity pass from incorrectly overriding the already-failed S=100 full-V convergence gate.
+
+
+F3-R2 complete. All outputs written in 247s. The key findings:
+
+Task 0 (Audit): PASS — all F3 input hashes frozen, 5007/7438 row counts confirmed, anchor 200001593700 V_i^IS diff=0.00e+00, Gate-0 verified to machine zero.
+
+Task 1 (Dual-stem parquets): DONE — singles_ViIS_dualstem_v1.parquet (5007 rows), couples_ViIS_dualstem_v1.parquet (7438 rows), each with V_obs_staged, negll_contribution_staged, and certified counterparts. Anchor V_obs_staged=4.4888, negll_staged=7.0078 (sum = V_i^IS = 11.4966 ✓).
+
+Task 2 (Anchors): All 3 priced via frozen RNG + target-only — fastlane_anchors_v2/ holds 100-node priced parquets for UID 200001593700 (primary sf), 200003504101 (top-ESS 2016 sm), 200003672000 (top-ESS 2016 sf).
+
+Task 3 (Joint-batch parity): NOT LICENSED
+
+The column breakdown is diagnostic:
+
+Column	Diff
+ils_origy	0.00 (HH-independent)
+ils_tax	0.00 (HH-independent)
+ils_sicdy	0.00 (HH-independent)
+ils_ben	127–310 euros (batch-dependent)
+ils_dispy	inherits ils_ben diff
+The French EUROMOD ils_ben component is sensitive to other HHs' incomes in the same batch call. Taxes, contributions, and original income are all HH-independent. The mechanism is likely a population-aggregated benefit threshold or uprating factor within the French system.
+
+Task 4 decisions:
+
+V_obs + negll produced: YES
+Anchor pricing: OK (all 3)
+Joint-batch parity: NOT LICENSED (max_abs=309.76 euros, tol=1e-6)
+F4 authorized: NO — pending batch-dependency resolution
+Ω(W^3) ready: NO — same gate

@@ -1,0 +1,226 @@
+{
+  "f4c_artifact": "F4C_manifest_v1",
+  "spec_hash": "492bcfa9c766bfcb",
+  "theta_hash": "1dd94e9cf1f35464",
+  "staged_stem": "fr_p3a_bpool_engine_ready_staged_threeB1",
+  "c_scale": 2034.988978049439,
+  "l_scale": 10.0,
+  "consumption_time_unit": "monthly real-2016 EUR (FR EUROMOD ils_dispy; build earnings use WEEKS_PER_MONTH=52/12 => monthly; c_scale\u22482035 \u2248 mean monthly disposable income)",
+  "theta_c_singles": 0.0075809783211004,
+  "theta_l": {
+    "singles_male": -1.8616120265204583,
+    "singles_female": -1.349085275197915
+  },
+  "ratified_contract": {
+    "ratification_id": "RATIFICATION \u2014 F4 welfare-measure contract (2026-06-13)",
+    "1_actual_target": "V_actual_i = V_i^IS_staged - log(S_i); S_i = household actual draw count",
+    "2_deterministic_reference_normalization": "uniform log-mean: logsumexp(values) - log(|J|)",
+    "2_w4_single_node": "u(w, leisure_home) unchanged because log(1)=0",
+    "3_w4_bracket": "[1 EUR, 50 x max observed c]; expand once; remaining flagged/excluded; analytic extrapolation beyond authorized bracket NOT accepted as convergence",
+    "4_w6_grid_hours": [
+      0.0,
+      20.0,
+      30.0,
+      35.0,
+      39.0,
+      48.0
+    ],
+    "4_w6_node_labels": [
+      "home",
+      "PT1",
+      "PT2",
+      "F35",
+      "FT",
+      "LH"
+    ],
+    "4_w6_bg_excluded": "BG is continuous proposal support, not a canonical preference/reference state",
+    "4_total_leisure_hours": 80.0,
+    "5_w4_interpretation": "full-compensation staying-home endpoint; large magnitude retained and caveated; normalization removes artificial draw-count scale only, NOT genuine opportunity-set compensation",
+    "governance": "measure-mapping memo ratified for normalization+W6 grid per operator sign-off; W2/W5 remain deferred; no promotion/F5 implied by this freeze beyond the gates."
+  },
+  "task0_provenance": {
+    "spec_hash": "492bcfa9c766bfcb",
+    "theta_hash": "1dd94e9cf1f35464",
+    "spec_hash_match_manifest": true,
+    "theta_hash_match_manifest": true,
+    "consumed": {
+      "singles_ViIS_dualstem_v1.parquet": "495de8f5904f97792c870329c45c3db0275265d0eb2fc189c68f8cfae078df9f",
+      "singles_measures_F4A_v1.parquet": "ddfbd867871b69ddcb708862503826c56e7b122e062012f72e1c066272c5782f",
+      "F4A_manifest_v1.json": "93d448b3b4d26430e500681b0357b3b178149ebea855915ed68224958cb42a12",
+      "F4B_decision_memo": "6a74bbc0c98a7838c18afb75f7a8f5d7b7e08b75ae636d50956df669a3fa2b0d",
+      "staged_singles_parquet": "10648fdbb9d787c6cd56dfcb9539809b50b8145464be92e0767ebec262c59dbd",
+      "theta_csv": "c72e92b16170a7dd2dc8ec0b76dc3f522a1fc6d6182a5eba8f8cad34cef76269",
+      "spec_yaml": "492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211"
+    },
+    "n_unique_hh_keys": 5007,
+    "S_i_by_group": {
+      "singles_male": 101,
+      "singles_female": 101
+    },
+    "S_i_uniform_101": true,
+    "n_keys_ok": true
+  },
+  "task2_w3_w1_regression": {
+    "singles_male": {
+      "W3_max_domega_vs_F4A": 0.0,
+      "W1_max_domega_vs_F4A": 0.0,
+      "W1wo_max_domega_vs_F4A": 0.0,
+      "W3_abs_max": 2.926283329786077e-10,
+      "W3_genuine_nonconv": 0,
+      "W1_genuine_nonconv": 0,
+      "W1_below_floor": 0,
+      "W1_above_cap": 0
+    },
+    "singles_female": {
+      "W3_max_domega_vs_F4A": 1.096100842313696e-10,
+      "W1_max_domega_vs_F4A": 1.687112671788782e-10,
+      "W1wo_max_domega_vs_F4A": 1.6916601452976465e-10,
+      "W3_abs_max": 1.491477121913721e-10,
+      "W3_genuine_nonconv": 0,
+      "W1_genuine_nonconv": 0,
+      "W1_below_floor": 0,
+      "W1_above_cap": 0
+    }
+  },
+  "task2_pass": true,
+  "task3_w4": {
+    "singles_male": {
+      "n_hh": 2243,
+      "num_vs_analytic_max_norm": 4.862582776627234e-12,
+      "num_vs_analytic_le_1e8": true,
+      "n_below_floor": 0,
+      "n_outside_bracket_after_expand": 0,
+      "outside_frac": 0.0,
+      "outside_lt_0p5pct": 1.0,
+      "n_genuine_nonconv": 0,
+      "nonconv_lt_0p5pct": true,
+      "median_eur": 53680.03676609055,
+      "p10_eur": 24654.583517601877,
+      "p90_eur": 119588.06356336863,
+      "min_eur": 3820.4798416406443,
+      "max_eur": 689379.6942278711,
+      "median_ratio_to_actual_c": 26.751770999099776
+    },
+    "singles_female": {
+      "n_hh": 2764,
+      "num_vs_analytic_max_norm": 6.407167893908827e-12,
+      "num_vs_analytic_le_1e8": true,
+      "n_below_floor": 0,
+      "n_outside_bracket_after_expand": 0,
+      "outside_frac": 0.0,
+      "outside_lt_0p5pct": 1.0,
+      "n_genuine_nonconv": 0,
+      "nonconv_lt_0p5pct": true,
+      "median_eur": 67009.81962266043,
+      "p10_eur": 32930.1231948379,
+      "p90_eur": 122587.4727618234,
+      "min_eur": 5046.17108643613,
+      "max_eur": 964992.0958166086,
+      "median_ratio_to_actual_c": 34.07251238352451
+    }
+  },
+  "task3_pass": true,
+  "task4_w6": {
+    "singles_male": {
+      "n_hh": 2243,
+      "grid_hours": [
+        0.0,
+        20.0,
+        30.0,
+        35.0,
+        39.0,
+        48.0
+      ],
+      "grid_leisure": [
+        80.0,
+        60.0,
+        50.0,
+        45.0,
+        41.0,
+        32.0
+      ],
+      "n_below_floor": 0,
+      "n_outside_bracket_after_expand": 0,
+      "outside_frac": 0.0,
+      "outside_lt_0p5pct": 1.0,
+      "n_genuine_nonconv": 0,
+      "nonconv_lt_0p5pct": true,
+      "median_eur": 58965.067672274876,
+      "p10_eur": 27163.505797328064,
+      "p90_eur": 130859.29121654989,
+      "min_eur": 4341.102708903475,
+      "max_eur": 761823.5533713547,
+      "median_ratio_to_actual_c": 29.481290002209196,
+      "beta_l_coeff_recovery_spread": 2.220446049250313e-15,
+      "synthetic_kappa_max_err": 3.240074875066057e-10,
+      "duplication_invariance_max_nats": 8.881784197001252e-16,
+      "cross_hh_invariance_diff_eur": 0.0
+    },
+    "singles_female": {
+      "n_hh": 2764,
+      "grid_hours": [
+        0.0,
+        20.0,
+        30.0,
+        35.0,
+        39.0,
+        48.0
+      ],
+      "grid_leisure": [
+        80.0,
+        60.0,
+        50.0,
+        45.0,
+        41.0,
+        32.0
+      ],
+      "n_below_floor": 0,
+      "n_outside_bracket_after_expand": 0,
+      "outside_frac": 0.0,
+      "outside_lt_0p5pct": 1.0,
+      "n_genuine_nonconv": 0,
+      "nonconv_lt_0p5pct": true,
+      "median_eur": 86098.02224112189,
+      "p10_eur": 42477.14875758836,
+      "p90_eur": 160721.8450180743,
+      "min_eur": 6879.342291041244,
+      "max_eur": 1368234.9693463189,
+      "median_ratio_to_actual_c": 44.011062407344085,
+      "beta_l_coeff_recovery_spread": 5.329070518200751e-15,
+      "synthetic_kappa_max_err": 8.390088623855263e-11,
+      "duplication_invariance_max_nats": 1.7763568394002505e-15,
+      "cross_hh_invariance_diff_eur": 0.0
+    }
+  },
+  "task4_pass": true,
+  "w6_grid_hours": [
+    0.0,
+    20.0,
+    30.0,
+    35.0,
+    39.0,
+    48.0
+  ],
+  "w6_grid_leisure": [
+    80.0,
+    60.0,
+    50.0,
+    45.0,
+    41.0,
+    32.0
+  ],
+  "w6_node_labels": [
+    "home",
+    "PT1",
+    "PT2",
+    "F35",
+    "FT",
+    "LH"
+  ],
+  "output_parquet": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\welfare\\fastlane\\singles_measures_F4C_v1.parquet",
+  "output_parquet_sha256": "dd163e2ec87b43ca97a5613bd0983fd6de720889d7e34ed0f048b9d71e827a4b",
+  "n_rows": 5007,
+  "all_measure_gates_pass": true,
+  "ready_for_f5": true,
+  "total_elapsed_s": 13.5
+}

@@ -1,0 +1,357 @@
+{
+  "f4a_artifact": "F4A_manifest_v1",
+  "spec_hash": "492bcfa9c766bfcb",
+  "theta_hash": "1dd94e9cf1f35464",
+  "staged_stem": "fr_p3a_bpool_engine_ready_staged_threeB1",
+  "cert_stem": "fr_p3a_bpool_engine_ready",
+  "c_scale": 2034.988978049439,
+  "l_scale": 10.0,
+  "beta_c_fixed": 1.0,
+  "theta_c_singles": 0.0075809783211004,
+  "preconditions": {
+    "consumed_singles_viis_parquet": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\welfare\\fastlane\\singles_ViIS_dualstem_v1.parquet",
+    "consumed_singles_viis_sha256": "495de8f5904f97792c870329c45c3db0275265d0eb2fc189c68f8cfae078df9f",
+    "n_unique_nonnull_hh_keys": 5007,
+    "n_keys_ok": true,
+    "spec_hash_recomputed": "492bcfa9c766bfcb",
+    "spec_hash_manifest": "492bcfa9c766bfcb",
+    "spec_hash_match": true,
+    "theta_hash_recomputed": "1dd94e9cf1f35464",
+    "theta_hash_manifest": "1dd94e9cf1f35464",
+    "theta_hash_match": true,
+    "manifest_file_hash_spec_yaml": "492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211",
+    "recomputed_file_hash_spec_yaml": "492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211",
+    "manifest_file_hash_theta_csv": "c72e92b16170a7dd2dc8ec0b76dc3f522a1fc6d6182a5eba8f8cad34cef76269",
+    "recomputed_file_hash_theta_csv": "c72e92b16170a7dd2dc8ec0b76dc3f522a1fc6d6182a5eba8f8cad34cef76269",
+    "manifest_file_hash_staged_singles_pq": "10648fdbb9d787c6cd56dfcb9539809b50b8145464be92e0767ebec262c59dbd",
+    "recomputed_file_hash_staged_singles_pq": "10648fdbb9d787c6cd56dfcb9539809b50b8145464be92e0767ebec262c59dbd",
+    "gate0_logsum_parity_max_abs": 0.0,
+    "gate0_parity_per_group": {
+      "singles_male": {
+        "max_abs": 0.0,
+        "estimator_negll": 28489.16628200126
+      },
+      "singles_female": {
+        "max_abs": 0.0,
+        "estimator_negll": 35411.8309608204
+      }
+    },
+    "engine_singles_negll_sum": 63900.99724282166,
+    "staged_negll_sum_parquet": 63900.99724282167,
+    "staged_negll_sum_manifest": 63900.99724282167,
+    "staged_negll_reproduce_diff": 1.4551915228366852e-11,
+    "all_file_hashes_match": true,
+    "PRECONDITIONS_PASS": true
+  },
+  "task0_contract_design_audit": {
+    "memo": {
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\docs\\jmp_methodology\\JMP_measure_mapping_memo_v1.md",
+      "status_line_pre_registration": true,
+      "signoff_checklist_unchecked_count": 5,
+      "explicit_ratification_artifact_found": false,
+      "verdict": "PRE-REGISTRATION (UNRATIFIED): no signed/ratified artifact found; memo header says pre-registration and the sign-off checklist is unchecked."
+    },
+    "units": {
+      "engine_consumption": "c_norm = consumption_eur / c_scale (dimensionless)",
+      "c_scale": 2034.988978049439,
+      "l_scale": 10.0,
+      "solver_io": "real-2016 EUR (public); internally w_norm = w_eur / c_scale",
+      "wage_convention": "w_eur converted to w_eur / c_scale before Box-Cox (not used on reference side; occupation/wage enter u only via consumption)",
+      "beta_c_fixed": 1.0,
+      "theta_c_singles": 0.0075809783211004,
+      "consumption_floor_eur": 1.0,
+      "omega_units": "2016-real EUR (W1/W4 = consumption level; W3 = shift ~0)"
+    },
+    "w4_home_state_audit": {
+      "singles_male": {
+        "n_hh": 2243,
+        "n_hh_zero_home_nodes": 0,
+        "n_hh_nonunique_home_leisure": 0,
+        "home_node_selection": "lowest-draw working==0 alternative (deterministic)",
+        "unique_home_state": true
+      },
+      "singles_female": {
+        "n_hh": 2764,
+        "n_hh_zero_home_nodes": 0,
+        "n_hh_nonunique_home_leisure": 0,
+        "home_node_selection": "lowest-draw working==0 alternative (deterministic)",
+        "unique_home_state": true
+      },
+      "STOP_W4": false
+    },
+    "w6_source_audit": {
+      "rule_locked": "J = {home node} U {one node per canonical hours band of the estimation spec}, all at consumption w, uniform weights (no g_hat, no pi).",
+      "estimation_focal_bands_hours": {
+        "F35_reference": [
+          33.5,
+          36.5
+        ],
+        "pt1": [
+          18.5,
+          21.5
+        ],
+        "pt2": [
+          29.5,
+          30.5
+        ],
+        "ft": [
+          37.5,
+          40.5
+        ],
+        "lh": [
+          44.5,
+          70.0
+        ],
+        "home": 0.0
+      },
+      "note_band_vs_reporting_bins": "estimation working_* indicators (precompute) differ slightly from the reporting hours_bins in the spec; the estimation bands are the model-relevant ones.",
+      "d1_proposal_mixture_modes": {
+        "PT1": "~20h band [17.5,21.5]",
+        "PT2": "~30h band [28.5,30.5]",
+        "F35": "~35h",
+        "FT": "~39h",
+        "LH": "~48h band [44.5,70]",
+        "BG": "background uniform over FULL support [5,70], weight 0.21 (proposal density only)"
+      },
+      "unresolved_governance_decisions": [
+        "Representative hours value WITHIN each band: each band is a RANGE; u depends on leisure = (TOTAL_LEISURE_HOURS - hours), so one hours point per band must be chosen (band midpoint? D1 modal hours? chosen-hours mean?). NOT invented here.",
+        "BG support band treatment: BG is a proposal-density background over [5,70], not a preference focal band. Include a J node for it? If so, at what representative hours (the band spans the whole support)? UNRESOLVED.",
+        "F35 reference band: opportunity reference (beta_h=0). In W6 opportunity betas do not enter (uniform weights), so include an F35 leisure node? Default yes, but confirm.",
+        "TOTAL_LEISURE_HOURS time endowment used to map hours->leisure for J nodes (80h here) must be ratified as the universal mapping constant."
+      ],
+      "blocked": true
+    }
+  },
+  "task1_utility_gate": {
+    "singles_male": {
+      "max_abs_u_diff_vs_engine": 4.440892098500626e-16,
+      "pass": true
+    },
+    "singles_female": {
+      "max_abs_u_diff_vs_engine": 1.7763568394002505e-15,
+      "pass": true
+    }
+  },
+  "task1_synthetic_kappa_gates": {
+    "singles_male": {
+      "replace_kappa1500": {
+        "mode": "replace",
+        "kappa_eur": 1500.0,
+        "n": 2243,
+        "n_converged": 2243,
+        "max_abs_recovery_err": 3.240074875066057e-10,
+        "median_abs_recovery_err": 5.525180313270539e-11
+      },
+      "single_node_kappa1500": {
+        "mode": "single_node",
+        "kappa_eur": 1500.0,
+        "n": 2243,
+        "n_converged": 2243,
+        "max_abs_recovery_err": 3.240074875066057e-10,
+        "median_abs_recovery_err": 5.525180313270539e-11
+      },
+      "shift_kappa200": {
+        "mode": "shift",
+        "kappa_eur": 200.0,
+        "n": 2243,
+        "n_converged": 2243,
+        "max_abs_recovery_err": 3.041122909053229e-10,
+        "median_abs_recovery_err": 5.644551492878236e-11
+      }
+    },
+    "singles_female": {
+      "replace_kappa1500": {
+        "mode": "replace",
+        "kappa_eur": 1500.0,
+        "n": 2764,
+        "n_converged": 2764,
+        "max_abs_recovery_err": 8.390088623855263e-11,
+        "median_abs_recovery_err": 1.864464138634503e-11
+      },
+      "single_node_kappa1500": {
+        "mode": "single_node",
+        "kappa_eur": 1500.0,
+        "n": 2764,
+        "n_converged": 2764,
+        "max_abs_recovery_err": 8.390088623855263e-11,
+        "median_abs_recovery_err": 1.864464138634503e-11
+      },
+      "shift_kappa200": {
+        "mode": "shift",
+        "kappa_eur": 200.0,
+        "n": 2764,
+        "n_converged": 2764,
+        "max_abs_recovery_err": 4.3706904762075283e-10,
+        "median_abs_recovery_err": 1.4722445484949276e-11
+      }
+    }
+  },
+  "task1_analytic_vs_numeric": {
+    "singles_male": {
+      "numeric_max_err": 3.240074875066057e-10,
+      "analytic_max_err": 6.59383658785373e-12,
+      "num_vs_analytic_max_abs": 3.1741365091875196e-10
+    },
+    "singles_female": {
+      "numeric_max_err": 8.390088623855263e-11,
+      "analytic_max_err": 6.59383658785373e-12,
+      "num_vs_analytic_max_abs": 7.73070496506989e-11
+    }
+  },
+  "task2_w3": {
+    "singles_male": {
+      "ref_at_w0_max_abs_vs_ViIS_staged": 3.552713678800501e-15,
+      "ref_at_w0_le_1e9": true,
+      "omega_abs_max_converged": 2.926283329786077e-10,
+      "omega_le_1e8": true,
+      "n_nonconverged": 0,
+      "nonconv_frac": 0.0,
+      "nonconv_lt_0p5pct": true,
+      "monotone_all": true
+    },
+    "singles_female": {
+      "ref_at_w0_max_abs_vs_ViIS_staged": 3.552713678800501e-15,
+      "ref_at_w0_le_1e9": true,
+      "omega_abs_max_converged": 1.491477121913721e-10,
+      "omega_le_1e8": true,
+      "n_nonconverged": 0,
+      "nonconv_frac": 0.0,
+      "nonconv_lt_0p5pct": true,
+      "monotone_all": true
+    }
+  },
+  "task2_w3_pass": true,
+  "task3_w4": {
+    "singles_male": {
+      "n_hh": 2243,
+      "num_vs_analytic_max_abs_norm": 1.8306193982596647e-10,
+      "num_vs_analytic_max_abs_eur": 3.725290298461914e-07,
+      "num_vs_analytic_le_1e8_norm": true,
+      "n_compared_in_bracket": 2132,
+      "n_below_floor": 0,
+      "n_above_cap": 111,
+      "above_cap_frac": 0.049487293802942485,
+      "n_genuine_nonconverged": 0,
+      "nonconv_frac": 0.0,
+      "nonconv_lt_0p5pct": true,
+      "n_analytic_infeasible": 0,
+      "omega_primary_median_eur": 4491540.019326141,
+      "omega_primary_is_analytic": true,
+      "above_cap_note": "home-equivalent income exceeds 50x max observed c; with near-log consumption utility (theta_c~0.0076) high-V households require very large compensating home consumption. Analytic value is exact/finite and is the primary W4 omega; numeric cross-check brackets in-domain."
+    },
+    "singles_female": {
+      "n_hh": 2764,
+      "num_vs_analytic_max_abs_norm": 4.686385659544742e-10,
+      "num_vs_analytic_max_abs_eur": 9.5367431640625e-07,
+      "num_vs_analytic_le_1e8_norm": true,
+      "n_compared_in_bracket": 2691,
+      "n_below_floor": 0,
+      "n_above_cap": 73,
+      "above_cap_frac": 0.026410998552821998,
+      "n_genuine_nonconverged": 0,
+      "nonconv_frac": 0.0,
+      "nonconv_lt_0p5pct": true,
+      "n_analytic_infeasible": 0,
+      "omega_primary_median_eur": 5566015.664206889,
+      "omega_primary_is_analytic": true,
+      "above_cap_note": "home-equivalent income exceeds 50x max observed c; with near-log consumption utility (theta_c~0.0076) high-V households require very large compensating home consumption. Analytic value is exact/finite and is the primary W4 omega; numeric cross-check brackets in-domain."
+    }
+  },
+  "task3_w4_pass": true,
+  "task4_w1": {
+    "singles_male": {
+      "n_hh": 2243,
+      "n_below_floor": 0,
+      "n_above_cap": 0,
+      "n_nonconverged": 0,
+      "nonconv_frac": 0.0,
+      "nonconv_lt_0p5pct": true,
+      "omega_median_eur": 1620.7653775599667,
+      "working_only_n_below_floor": 0,
+      "working_only_n_above_cap": 0,
+      "working_only_n_nonconverged": 0,
+      "working_only_nonconv_lt_0p5pct": true,
+      "working_only_omega_median_eur": 1716.6728875747513,
+      "synthetic_zero_recovery_kappa": {
+        "mode": "replace",
+        "kappa_eur": 1234.0,
+        "n": 2243,
+        "n_converged": 2243,
+        "max_abs_recovery_err": 3.0377123039215803e-10,
+        "median_abs_recovery_err": 5.502442945726216e-11
+      }
+    },
+    "singles_female": {
+      "n_hh": 2764,
+      "n_below_floor": 0,
+      "n_above_cap": 0,
+      "n_nonconverged": 0,
+      "nonconv_frac": 0.0,
+      "nonconv_lt_0p5pct": true,
+      "omega_median_eur": 1741.5959128511477,
+      "working_only_n_below_floor": 0,
+      "working_only_n_above_cap": 0,
+      "working_only_n_nonconverged": 0,
+      "working_only_nonconv_lt_0p5pct": true,
+      "working_only_omega_median_eur": 1803.5073443609217,
+      "synthetic_zero_recovery_kappa": {
+        "mode": "replace",
+        "kappa_eur": 1234.0,
+        "n": 2764,
+        "n_converged": 2764,
+        "max_abs_recovery_err": 2.842170943040401e-10,
+        "median_abs_recovery_err": 1.7053025658242404e-11
+      }
+    }
+  },
+  "task4_w1_pass": true,
+  "task5_w6_design": {
+    "rule_locked": "J = {home node} U {one node per canonical hours band of the estimation spec}, all at consumption w, uniform weights (no g_hat, no pi).",
+    "estimation_focal_bands_hours": {
+      "F35_reference": [
+        33.5,
+        36.5
+      ],
+      "pt1": [
+        18.5,
+        21.5
+      ],
+      "pt2": [
+        29.5,
+        30.5
+      ],
+      "ft": [
+        37.5,
+        40.5
+      ],
+      "lh": [
+        44.5,
+        70.0
+      ],
+      "home": 0.0
+    },
+    "note_band_vs_reporting_bins": "estimation working_* indicators (precompute) differ slightly from the reporting hours_bins in the spec; the estimation bands are the model-relevant ones.",
+    "d1_proposal_mixture_modes": {
+      "PT1": "~20h band [17.5,21.5]",
+      "PT2": "~30h band [28.5,30.5]",
+      "F35": "~35h",
+      "FT": "~39h",
+      "LH": "~48h band [44.5,70]",
+      "BG": "background uniform over FULL support [5,70], weight 0.21 (proposal density only)"
+    },
+    "unresolved_governance_decisions": [
+      "Representative hours value WITHIN each band: each band is a RANGE; u depends on leisure = (TOTAL_LEISURE_HOURS - hours), so one hours point per band must be chosen (band midpoint? D1 modal hours? chosen-hours mean?). NOT invented here.",
+      "BG support band treatment: BG is a proposal-density background over [5,70], not a preference focal band. Include a J node for it? If so, at what representative hours (the band spans the whole support)? UNRESOLVED.",
+      "F35 reference band: opportunity reference (beta_h=0). In W6 opportunity betas do not enter (uniform weights), so include an F35 leisure node? Default yes, but confirm.",
+      "TOTAL_LEISURE_HOURS time endowment used to map hours->leisure for J nodes (80h here) must be ratified as the universal mapping constant."
+    ],
+    "blocked": true
+  },
+  "output_parquet": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\welfare\\fastlane\\singles_measures_F4A_v1.parquet",
+  "output_parquet_sha256": "ddfbd867871b69ddcb708862503826c56e7b122e062012f72e1c066272c5782f",
+  "n_rows": 5007,
+  "gates_all_pass": true,
+  "ready_for_f5": false,
+  "ready_for_f5_reason": "W6 grid remains unratified",
+  "total_elapsed_s": 20.8
+}

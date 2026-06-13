@@ -322,3 +322,141 @@ Anchor pricing: OK (all 3)
 Joint-batch parity: NOT LICENSED (max_abs=309.76 euros, tol=1e-6)
 F4 authorized: NO — pending batch-dependency resolution
 Ω(W^3) ready: NO — same gate
+
+
+
+
+
+
+Do **not** accept F3-R2 as complete. The valid conclusions are:
+
+- **F4 READY: YES.** Tasks 0/1 and primary-anchor verification passed. Joint parity was explicitly not an F4 dependency.
+- **Full V_i^dir at S=100: NOT AUTHORIZED.**
+- **Joint batching: provisionally NOT LICENSED**, but the causal claim about batch-dependent benefits is not yet dispositively proven.
+
+Verified dual-stem outputs are valid: exact row counts, no duplicate/null keys, and certified negLL sums reproduce all three anchors exactly.
+
+F3-R2 defects:
+
+1. It incorrectly parsed frozen Gate-3b as `unknown`.
+2. It incorrectly made F4 depend on joint-batch parity.
+3. Anchor v2 contains only headline priced outputs, not redrawn nodes, full components, CV²/B2, hashes, or population-batch manifests.
+4. Parity compared only six headline fields, not Four-B’s complete simulated-output set.
+5. It did not prove anchor EUROMOD input rows were identical between target-only and joint runs. Therefore “population-aggregated benefit threshold” remains a hypothesis.
+
+Use this repair prompt:
+
+```text
+FAST-LANE F3-R2A: REPAIR F3-R2 EVIDENCE + DISPOSITIVE JOINT-BATCH DIAGNOSIS.
+
+Platform: Claude Code, Sonnet, thinking ON.
+
+Read-only toward all existing F3/F3-R2 artifacts. Do not overwrite them.
+No estimation, measures, Omega, decomposition, promotion, or commits.
+Authorize one new uncommitted runner only:
+
+  scripts/welfare/fastlane/run_f3r2a_repair_diagnosis.py
+
+FROZEN DECISIONS
+
+- F4 READY = YES because dual-stem V_i^IS production, certified Gate-0, and
+  primary-anchor verification passed. Joint parity is NOT an F4 dependency.
+- Frozen full-V S=100 gate = FAIL:
+  high-ESS median |delta_common| =
+  0.7319804266785854 > 0.5.
+- Full singles V_i^dir at S=100 remains NOT AUTHORIZED.
+- Existing joint-batch result is PROVISIONALLY NOT LICENSED pending the
+  dispositive diagnosis below.
+
+TASK 1 - Repair metadata/report only
+
+Read the frozen Gate-3b value from:
+  task4_vdir_vs_vis.high_ess_delta_common_median
+and/or fastlane_anchors_v1/manifest.json.
+
+Record:
+  verdict=FAIL
+  median_abs_delta=0.7319804266785854
+
+Correct F4 readiness to YES. Remove any claim that F4 or Omega readiness depends
+on joint-batch parity. Omega readiness is OUT OF SCOPE for this repair.
+
+TASK 2 - Complete durable anchor evidence
+
+For the three already-selected 2016 anchors, deterministically regenerate and
+freeze NEW v3 artifacts:
+
+- exact redrawn-node tables
+- frozen RNG/Halton sub-seeds
+- population-batch identities and input hashes
+- target-only EUROMOD input rows after ID stamping
+- target-only priced outputs containing EVERY simulated EUROMOD output column,
+  defined exactly as:
+    sim_output_cols = columns in sim not present in raw EUROMOD input schema
+  plus ils_dispy_real
+- V_i_IS, ESS, max_weight
+- utility-only V_i^dir, CV2, CV2/(2*S), bias-corrected V_i^dir
+- full-V diagnostic and delta_common
+- full provenance and content hashes
+
+Use S=100, preserve draw 0, overwrite draws 1..100.
+
+TASK 3 - Dispositive joint-batch diagnosis
+
+Build the 2016 joint batch using the EXACT frozen Task-2 node tables. Do not
+redraw them independently.
+
+Before EUROMOD, prove for every anchor and draw:
+
+- stamped target-only and joint-batch EUROMOD input rows are byte-identical on
+  every raw input column
+- stable keys match exactly
+- no missing/extra rows
+- draw 0 preserved
+- total row count and HH set unchanged
+
+Run one joint-batch EUROMOD call and capture EVERY simulated output column using
+the same full-output rule as Task 2.
+
+Also repeat the primary-anchor target-only run once with identical input to test
+EUROMOD determinism.
+
+GATES
+
+A. Target-only repeat must match all outputs to <=1e-6.
+B. Anchor input rows must be byte-identical between target-only and joint batch.
+C. Compare every shared simulated-output column plus ils_dispy_real by:
+   (stacked_hh_uid, draw, idperson_true), tolerance <=1e-6.
+
+Interpretation:
+
+- If A and B pass but C fails: batch-context dependence is PROVEN and joint
+  batching is NOT LICENSED. Report the exact first divergent components; do not
+  speculate about the policy mechanism without source evidence.
+- If B fails: the prior result was a construction mismatch; report and STOP.
+- If A fails: EUROMOD reproducibility is unresolved; report and STOP.
+- If A/B/C pass: joint batching is LICENSED, but full V_i^dir at S=100 remains
+  unauthorized because the frozen full-V convergence gate failed.
+
+TASK 4 - Final corrected report
+
+Write NEW outputs only:
+
+outputs/welfare/fastlane/f3r2a_repair_manifest_v1.json
+outputs/welfare/fastlane/f3r2a_joint_batch_diagnosis_v1.json
+outputs/welfare/fastlane_anchors_v3/
+docs/jmp_methodology/RURO_welfare_F3R2A_repair_diagnosis_v1.md
+
+End with exactly:
+
+READY FOR F4: yes
+FROZEN FULL-V S=100 GATE: fail
+UTILITY-ONLY B2 ANCHOR GATE: pass/fail/mixed
+JOINT BATCHING METHOD: licensed/not licensed/unresolved
+BATCH-CONTEXT DEPENDENCE: proven/not proven/unresolved
+FULL SINGLES V_i^dir AT S=100 AUTHORIZED: no
+
+Do not modify existing artifacts. Do not commit. Report created paths.
+```
+
+F4 can proceed in parallel now; F3-R2A repairs the V_i^dir/joint-batching evidence branch.

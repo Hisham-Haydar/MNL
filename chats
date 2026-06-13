@@ -1,0 +1,116 @@
+F6 DECOMPOSITION DESIGN MEMO (DESIGN ONLY — no code, no decomposition run, no
+estimation, no commit). Platform: Claude project chat is drafting this; the agent
+task here is to PRODUCE THE MEMO as a markdown file and VERIFY its claims against
+the named source files. Output one file:
+  docs/jmp_methodology/JMP_decomposition_design_memo_v1.md
+
+PURPOSE
+Pre-register the equalization scheme that turns the F5 welfare distributions into
+the opportunity/ability/preference decomposition answering the main question.
+This memo precedes and governs the F6-RUN implementation, exactly as
+JMP_measure_mapping_memo_v1 (F2) governed F4.
+
+VERIFY-AGAINST (cite file:line; do not trust prior prose):
+- docs/France_case/_shared/governance/JMP_ability_opportunity_cut_v1.md (the cut)
+- docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md §§14-18 (counterfactuals, index, rule)
+- scripts/welfare/welfare_core.py (_build_V_extractor / _build_V_extractor_couples / w3_inversion / compute_group_welfare)
+- scripts/bpool/jax_ll_probe.py (the V = u + log_h + log_w + log_market - log_prior construction; the named params per block)
+- scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml (exact parameter names + covariate variables per block)
+- docs/jmp_methodology/RURO_welfare_F5_primary_scope_ratification_v1.md (scope + inference contract)
+
+SECTION 1 — THE CUT, MAPPED TO NAMED PARAMETERS AND COVARIATES (verified).
+Produce the table: component -> spec block -> coefficient names -> covariate
+variables that feed it. Three components:
+  ACCESS (opportunity): hours block (beta_E, beta_h_pt1/pt2/ft/lh), market block
+    (beta_E_gsur, beta_E_drgn2..8, beta_E_drgur, beta_E_drgmd, beta_E_y2015/y2017),
+    occupation block (beta_occ_2/3/4_{m,f}).
+  ABILITY: wage block (beta_w0 anchor, beta_w_educL, beta_w_educH, beta_w_pexp,
+    beta_w_pexp2, sigma) — flag sigma with the residual-heterogeneity caveat and
+    the pre-registered access-only-excludes-sigma sensitivity.
+  PREFERENCE: leisure blocks, theta_l_*, theta_c_singles, beta_ll, beta_c numeraire.
+For each access/ability row, name the EXACT covariate array in the V-extractor
+(e.g. gsur, log_wage via mu, reg dummies, drgur/drgmd, occ dummies) that the
+equalization must overwrite. CRITICAL DISTINCTION (state it): equalization sets
+the COVARIATES feeding a block to reference values, NOT the coefficients; the
+wage/offered-wage distribution is equalized via the education/experience
+covariates (and the implied log_wage offered), never by zeroing beta_w_*.
+
+SECTION 2 — EQUALIZATION OPERATIONS (the mechanics F6-RUN implements).
+For each component define the counterfactual covariate vector precisely:
+  - ACCESS-equalized: set every access covariate to its type-conditional (sm/sf)
+    reference value: median gsur, modal region (reg1 reference, reg2..8 = 0),
+    modal urbanisation, year set to 2016, occupation offer covariates to the
+    type reference. State exactly which arrays in _build_V_extractor change.
+  - ABILITY-equalized: set education (educL/educH) and potential experience
+    (pexp, pexp2) covariates to type-conditional medians, which changes the
+    offered-wage mean mu and hence log_w; sigma handling per the caveat. State
+    whether log_wage itself is recomputed from the reference mu or the offered
+    distribution is shifted — pick the one faithful to the model and justify.
+  - PREFERENCE: per Section 3 decision.
+Each operation holds the OTHER blocks' covariates and theta_hat fixed; theta
+never changes (this is covariate equalization at fixed estimated parameters,
+matching decisions-memo §14 "structural parameter vector unchanged; only the
+covariate inputs are modified").
+
+SECTION 3 — RULE ON PREFERENCE + DECOMPOSITION DESIGN (the load-bearing choice).
+Present BOTH and RECOMMEND Design A:
+  DESIGN A (recommended): two equalizable factors {access, ability} + preference
+    as the NON-equalized residual (decisions-memo §16 "preference-neutralised",
+    NOT equalized). Shapley over {access, ability}; preference = total - (the
+    access+ability joint equalization). Opportunity share = bracket
+    [access-only Shapley share, access+ability joint share]; preference =
+    residual. NO reference-preference needed; the yardstick problem is avoided.
+  DESIGN B (robustness appendix only): full three-way Shapley over {access,
+    ability, preference} with a reference-preference assignment (pooled or
+    reference type) and a reference-type sensitivity. Flag the §16 warning that
+    this changes the welfare yardstick; report as robustness, never headline.
+Justify A as primary from §16 verbatim. State that the headline deliverable is
+the bracketed opportunity share with preference as residual.
+
+SECTION 4 — SHAPLEY-SHORROCKS CONSTRUCTION (verified arithmetic).
+For Design A: enumerate the 2! orderings over {access, ability}; the Shapley
+contribution of each factor = average marginal inequality reduction across
+orderings; preference = I(actual) - I(both-equalized). State the ordered-removal
+SECONDARY rule and that the access-ability interaction is reported as the
+|Shapley - ordered| diagnostic (decisions-memo §18-19). For Design B note the 3!
+=6 orderings. Index = survey-weighted Gini (the validated F5 primitives, weight
+dwt), primary measure W1; W4/W6 as robustness; on the ratified 2016 scope.
+
+SECTION 5 — REFERENCE-VALUE SPECIFICATION (pre-registered, type-conditional).
+Define the reference covariate values as type-conditional (sm/sf) MEDIANS per
+decisions-memo §8 (median gsur; modal region = reg1; modal urbanisation; 2016;
+median educ/experience). State the SENSITIVITY reference (best-available /
+maximal) as appendix. Record that the EXACT median/modal values are read from
+the 2016 data by F6-RUN and printed in its report BEFORE any decomposition number
+(the rule is pre-registered here; the values are not).
+
+SECTION 6 — INFERENCE (defer to the bootstrap; state the contract).
+Point decomposition first. CIs require the F6-BOOT cluster-bootstrap re-estimation
+(B=200, resample 9,657 joint idorighh clusters, re-estimate theta per replicate,
+recompute the WHOLE decomposition per replicate on 2016 singles). State that the
+decomposition — not just the Ginis — is recomputed inside each replicate. No
+bootstrap is run by this memo.
+
+SECTION 7 — WHAT F6-RUN MUST DELIVER (the gate list, build order).
+  0. Extend the V-extractor to accept covariate overrides; PARITY GATE: override
+     = actual covariates reproduces F5 V_actual / Ω to <=1e-9 per household
+     (falsifiable tie to F4C/F5). STOP on fail.
+  1. ACCESS-equalized Omega (W1 primary); sanity: inequality should fall if
+     access dispersion is real (report, do not assume direction).
+  2. ABILITY-equalized Omega; access+ability JOINT-equalized Omega.
+  3. Shapley {access, ability} + preference residual; ordered-removal diagnostic;
+     the [access-only, access+ability] opportunity bracket + preference residual.
+  4. Repeat for W4/W6 (robustness); the sigma-excluded sensitivity on the broad bound.
+  5. Per-HH counterfactual Omega parquet + decomposition table parquet, full
+     provenance (theta/spec hash, stem, reference values used, solver/extractor
+     version). READY/NOT-READY for F6-BOOT + F7.
+
+SECTION 8 — SIGN-OFF CHECKLIST (operator reply in chat):
+  - Design A (two-factor + preference residual) as primary, B as robustness — confirm/override
+  - W1 as decomposition headline, W4/W6 robustness — confirm
+  - Type-conditional median reference (best-available as sensitivity) — confirm
+  - Covariate-equalization (not coefficient-zeroing); ability via educ/experience covariates — confirm
+  - sigma in broad ability bound WITH the excluded-sigma sensitivity — confirm
+
+End with: REQUIRED NEXT INPUT = operator sign-off on Section 8, after which the
+F6-RUN prompt is written against this memo. Do not commit. Report the path.

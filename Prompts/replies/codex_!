@@ -1,138 +1,280 @@
-I have the files now, and reading the actual source changes the F6 design in two concrete ways that I could only flag speculatively before. Both are now verified against the code, not guessed. Here's what the source tells me, then the corrected memo prompt with the exact attach list.
+Do **not** run it as-is. It pre-ratifies several choices that the source does not support.
 
-**Verified finding 1 — the equalization mechanism the welfare layer already supports is *covariate substitution*, and the extractor closes over covariates as constants.** In `welfare_core.py`, `_build_V_extractor` captures `leisure`, `working`, `log_wage`, and the market/occupation covariate arrays as fixed `jnp` constants at build time; only `theta` and `consumption_arr` are call arguments (that's the W³ shift path). So equalizing access or ability means rebuilding V with *different covariate arrays* — which is a real (small) extension, exactly the "surface as a finding, don't silently do" item. The cut maps cleanly: the spec confirms `educL/educH/pexp_years/pexp_years2` feed only `wage_opportunity.mean_shifters` (→ ability via the offered-wage μ), and `gsur/reg2-8/drgur/drgmd/year_*` plus `loc4_*` feed `market_opportunity`/`occupation_opportunity` (→ access). The `welfare_stage1_w3.yaml` `blocks:` section *already encodes this exact partition* (preference/ability/access lists) — so F6 reads the block membership from config, doesn't reinvent it.
+**Blocking issues**
 
-**Verified finding 2 — the ability-equalization has a subtlety the wage block forces, and it is the single most important thing for F6 to get right.** Look at the `log_w` term: `resid = (log_wage − μ)/σ`, `log_w = −0.5 resid² − log σ − 0.5 log2π − log_wage`. The offered wage enters V through *two* channels — the density `log_w` (how probable this wage is, given education/experience) **and** consumption (the wage, post-EUROMOD, is what funds `c`). Equalizing education/experience covariates shifts μ, which changes `log_w` (the offer-density channel) — but `log_wage` itself and the consumption `c` are *data*, frozen on the actual side. So covariate-only ability equalization moves the *density* channel but not the realized-wage→consumption channel. That is a genuine design decision the memo must rule on explicitly and cannot paper over: does "equalize ability" mean (a) equalize only the wage-*offer density* (set μ to reference; cheap, no EUROMOD, internally consistent with W¹/W⁴/W⁶ which are all consumption-direct), or (b) also re-draw/re-price offered wages at reference productivity (which re-opens EUROMOD on counterfactual nodes — the expensive path you deprioritized everywhere else). **The whole consumption-direct architecture of your conference path implies (a).** The memo must state (a) as primary, name what it does and doesn't capture, and flag (b) as a post-conference extension — otherwise an agent will silently pick one.
+1. **Design A is not established as primary.**  
+   `JMP_welfare_measurement_decisions_memo_v2.md:819-855` specifies primary Shapley-Shorrocks and explicitly describes the three-way `3!` decomposition. Section 16 defines preference-neutralisation, but does not ratify two-factor Design A as primary.
 
-These two findings are *why* the memo is Opus-high-and-verify-against-source rather than a quick write-up: the ability channel is where a from-memory memo would have gone wrong.
+2. **The access operator is incomplete.**  
+   The proposed substitutions change market covariates, but cannot claim to equalize `log_h`. `log_h` uses alternative-state arrays such as `working_pt1` and `working_ft` at `welfare_core.py:194-202,253-256`. An hours-access operator remains undefined.
 
-Everything else from last turn holds and is now confirmed against the docs: **Design A** (two equalizable factors {access, ability} + preference as the non-equalized residual) is exactly what `JMP_welfare_measurement_decisions_memo_v2.md` §16 commits to ("preference-neutralised," explicitly *not* equalized — collapsing preferences is "alien to the JMP's preference-respecting design"); **W¹ is the decomposition headline** (noise-robust per the F4 cancellation finding); **reference = type-conditional medians** (§8); **[access-only, access+ability] bracket** is the deliverable; **σ in the broad ability bound with an excluded-σ sensitivity** (the ability-cut memo's explicit caveat). One reconciliation the memo must note: the ability-cut memo §5 describes a 3! Shapley, while decisions-memo §16/§18 describe two-way-with-residual — these resolve as A-primary (two-way + residual), full three-way as the robustness appendix.
+3. **The sigma operation is undefined.**  
+   `sigma` is one common parameter, not a household covariate. Fixed-theta covariate substitution cannot equalize residual productivity through sigma. Changing common sigma also does not eliminate household residual-wage differences.
 
-**Files to attach for the F6 memo session** (you've now made these visible — confirm all present):
+4. **Reference construction can generate invalid states.**  
+   Elementwise medians of `educL` and `educH` may not represent a coherent education category. Likewise, “modal region” cannot automatically mean `reg1`; the modal category must be computed and then one-hot encoded.
 
-The four load-bearing, which I've now read and which the prompt cites by `file:line`: `scripts/welfare/welfare_core.py`, `scripts/bpool/jax_ll_probe.py`, `scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml`, `scripts/bpool/specs/theta_hat_realdata_901_v1.csv`. The governance the memo aligns to: `docs/France_case/_shared/governance/JMP_ability_opportunity_cut_v1.md`, `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md`, `docs/jmp_methodology/JMP_measure_mapping_memo_v1.md`. The config that already encodes the block partition: `scripts/welfare/configs/welfare_stage1_w3.yaml`. The result chain: `RURO_welfare_F4C_final_singles_measures_report_v1.md`, `RURO_welfare_singles_measure_family_F5_report_v1.md`, `RURO_welfare_F5_primary_scope_ratification_v1.md`. **Do not attach** the EUROMOD microdata, the staged `.parquet` stems, or the large inventory CSVs — the memo reasons about parameters and covariates, never household rows.
+5. **Gender attribution is missing.**  
+   Type-conditional `sm`/`sf` references may preserve gender-based occupation-access differences that governance classifies as access. The applicability of legacy A1/A2/A3 rules to the current pooled spec must be audited.
 
-Here is the corrected F6 design-memo prompt (replaces the one from last turn; the two verified findings are now baked into Sections 2–3, and the citations point at the real lines):
+6. **W1 cannot silently become the sole decomposition headline.**  
+   The roadmap pre-registers W1/W4/W6 as headline measures. W1 can be the first implementation/gate, but making it primary requires ratification.
 
-```
-F6 DECOMPOSITION DESIGN MEMO (DESIGN ONLY — no code, no decomposition run, no
-estimation, no commit). Produce ONE markdown file and VERIFY every structural
-claim against the named source by file:line. Platform: Claude Code, Opus, high,
-thinking ON. Output:
-  docs/jmp_methodology/JMP_decomposition_design_memo_v1.md
+Also, do **not** launch F6-BOOT yet. It cannot recompute a decomposition whose counterfactual operators remain undefined.
+
+Use this corrected prompt:
+
+```text
+F6-DESIGN-R: DECOMPOSITION OPERATOR AND GOVERNANCE RECONCILIATION MEMO.
+
+DESIGN ONLY. No code, decomposition calculations, estimation, bootstrap,
+generated-artifact edits, or commits. Create exactly one markdown file:
+
+docs/jmp_methodology/JMP_decomposition_design_memo_v1.md
 
 PURPOSE
-Pre-register the equalization scheme that turns the F5 welfare distributions into
-the opportunity/ability/preference decomposition answering the main question. This
-memo precedes and governs the F6-RUN implementation, as F2 governed F4. It is the
-prose-design-before-code gate; F6-RUN code does not start until this is signed off.
 
-VERIFY-AGAINST (cite file:line; trust the code over prior prose):
-- scripts/welfare/welfare_core.py — _build_V_extractor (the covariates captured as
-  constants vs theta/consumption_arr as args), w3_inversion (the shift-mode solver),
-  compute_group_welfare, gate0_parity, the V = u+log_h+log_w+log_market-log_prior line.
-- scripts/bpool/jax_ll_probe.py — the same V construction in build_jax_singles_ll;
-  confirm exactly which named params/covariates enter each block.
-- scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml — wage_opportunity
-  mean_shifters (educL/educH/pexp_years/pexp_years2 -> mu; sigma=variance),
-  market_opportunity (gsur/reg2-8/drgur/drgmd/year_*), occupation_opportunity (loc4_*).
-- scripts/welfare/configs/welfare_stage1_w3.yaml — the blocks: preference/ability/access
-  lists ALREADY encode the cut; read block membership from here, do not reinvent it.
-- docs/France_case/_shared/governance/JMP_ability_opportunity_cut_v1.md — the normative cut.
-- docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md §§8,14-19 (reference,
-  counterfactuals, index, rule, interactions) — especially §16 (preference NEUTRALISED, not equalised).
-- docs/jmp_methodology/JMP_measure_mapping_memo_v1.md and
-  docs/jmp_methodology/RURO_welfare_F5_primary_scope_ratification_v1.md (scope + inference contract).
+Define and pre-register implementable access, ability, and preference
+counterfactual operators for the certified pooled specification. Surface every
+unresolved normative or implementation choice. Do not pre-ratify a design where
+the governing sources conflict.
 
-SECTION 1 — THE CUT, MAPPED TO NAMED PARAMS, COVARIATES, AND V-TERMS (verified).
-Table: component -> spec block -> coefficient names -> covariate arrays in
-_build_V_extractor -> which V term they enter (log_w via mu, log_market, log_h, u).
-  ACCESS: hours (beta_E, beta_h_pt1/pt2/ft/lh) + market (beta_E_gsur, beta_E_drgn2..8,
-    beta_E_drgur, beta_E_drgmd, beta_E_y2015/y2017) + occupation (beta_occ_2/3/4_{m,f}).
-  ABILITY: wage block (beta_w0 anchor, beta_w_educL/educH/pexp/pexp2, sigma).
-  PREFERENCE: leisure blocks, theta_l_*, theta_c_singles, beta_ll, beta_c numeraire.
-Confirm the welfare_stage1_w3.yaml blocks: lists match this exactly; cite the line.
+VERIFY AGAINST SOURCE WITH file:line CITATIONS
 
-SECTION 2 — EQUALIZATION MECHANISM (the load-bearing verified finding).
-State plainly, from the code: _build_V_extractor captures the covariate arrays
-(leisure, working, log_wage, market/occ covariates) as CONSTANTS; only theta and
-consumption_arr are call args. Therefore equalization = rebuilding V with reference
-covariate arrays, and F6-RUN needs a covariate-override extension of the extractor
-(a FINDING to surface, with a parity gate: override=actual reproduces F5 V_actual to
-<=1e-9). Define each operation as a covariate substitution at FIXED theta:
-  ACCESS-equalized: set gsur, reg dummies, drgur/drgmd, year, occ covariates to
-    type-conditional (sm/sf) reference (median/modal); recompute log_market, log_h,
-    log_w-occ-independent. Name every array changed.
-  ABILITY-equalized: set educL/educH/pexp_years/pexp_years2 to type-conditional
-    medians. CRITICAL RULING (state and justify): the offered wage enters V via TWO
-    channels — the offer DENSITY log_w (through mu) AND consumption (the realized wage
-    funds c, which is frozen EUROMOD data). Primary design = (a) equalize the wage-
-    OFFER-DENSITY channel only: set mu to reference via the education/experience
-    covariates, leaving realized consumption as data — consumption-direct, NO EUROMOD,
-    internally consistent with W1/W4/W6. Flag (b) re-pricing offered wages at reference
-    productivity (re-opens EUROMOD on counterfactual nodes) as a POST-CONFERENCE
-    extension, NOT the conference path. sigma: include in the broad ability bound WITH
-    the excluded-sigma sensitivity (ability-cut memo residual-heterogeneity caveat).
-  PREFERENCE: NOT equalized (Section 3).
-Each operation holds the other blocks' covariates and theta fixed (decisions-memo
-§14: "structural parameter vector unchanged; only the covariate inputs are modified").
+- scripts/welfare/welfare_core.py
+- scripts/bpool/jax_ll_probe.py
+- scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml
+- scripts/welfare/configs/welfare_stage1_w3.yaml
+- docs/France_case/_shared/governance/JMP_ability_opportunity_cut_v1.md
+- docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md
+- docs/jmp_methodology/JMP_measure_mapping_memo_v1.md
+- docs/jmp_methodology/RURO_welfare_F5_primary_scope_ratification_v1.md
+- docs/JMP_results_campaign_roadmap_v1.md
 
-SECTION 3 — DECOMPOSITION DESIGN (recommend A; reconcile the two source memos).
-DESIGN A (PRIMARY, per decisions-memo §16): two equalizable factors {access, ability}
-  + preference as the NON-equalized residual. Shapley over {access, ability};
-  preference = I(actual) - I(access+ability jointly equalized). Opportunity share =
-  bracket [access-only Shapley share, access+ability joint share]; preference =
-  residual. No reference-preference; the §16 yardstick problem is avoided.
-DESIGN B (ROBUSTNESS APPENDIX ONLY): full 3! Shapley over {access, ability, preference}
-  with a reference-preference (pooled or reference type) + reference-type sensitivity.
-  This is what the ability-cut memo §5 sketches; reconcile by stating A is primary
-  (it is what decisions-memo §16 commits to) and B is the robustness exposure, never
-  headline. Justify from §16 verbatim.
+RATIFIED INPUTS
 
-SECTION 4 — SHAPLEY ARITHMETIC + INDEX (verified).
-Design A: enumerate the 2! orderings over {access, ability}; each factor's Shapley
-contribution = mean marginal inequality reduction across orderings; preference =
-I(actual) - I(both-equalized). Secondary: ordered-removal; report the access-ability
-interaction as |Shapley - ordered| (decisions-memo §18-19). Index = survey-weighted
-Gini (the validated F5 primitives, weight dwt); primary measure W1; W4/W6 robustness;
-on the ratified 2016 singles scope (year_tag==2, n=1,676).
+- Evaluation scope: 2016 singles, year_tag == 2, n = 1,676.
+- Parameters: certified pooled theta-hat.
+- Weights: dwt.
+- Measures: W1, W4, and W6 are headline measures; W3 is validation-only.
+- Inference contract: B=200 replicates resampling the full joint estimation
+  sample's 9,657 idorighh clusters, re-estimating theta and recomputing the
+  finalized decomposition.
+- F3 joint-batch redraw pricing is NOT LICENSED.
+- Proposal correction terms are integration machinery, not substantive factors.
 
-SECTION 5 — REFERENCE VALUES (type-conditional, pre-registered).
-Type-conditional (sm/sf) reference: median gsur, modal region (reg1 ref, reg2-8=0),
-modal urbanisation, year=2016, median educL/educH/pexp/pexp2. Sensitivity =
-best-available/maximal (appendix). The RULE is pre-registered here; the exact
-median/modal VALUES are read from the 2016 data by F6-RUN and printed in its report
-BEFORE any decomposition number.
+SECTION 1 - CURRENT-SPEC FACTOR MAP
 
-SECTION 6 — INFERENCE (defer; state contract). Point decomposition first. CIs = the
-F6-BOOT cluster bootstrap (B=200, resample 9,657 joint idorighh, re-estimate theta per
-replicate, recompute the WHOLE decomposition per replicate on 2016 singles). The
-decomposition, not just the Ginis, is recomputed inside each replicate. No bootstrap
-run by this memo.
+Produce an exhaustive table containing:
 
-SECTION 7 — F6-RUN DELIVERABLES (gate list, build order).
-  0. Covariate-override extractor extension; PARITY GATE override=actual reproduces
-     F5 V_actual/Omega to <=1e-9 per HH (ties to F4C/F5). STOP on fail.
-  1. ACCESS-equalized Omega (W1); report inequality change (no assumed direction).
-  2. ABILITY-equalized Omega (offer-density channel, design (a)); access+ability JOINT.
-  3. Shapley {access,ability} + preference residual; ordered-removal diagnostic; the
-     [access-only, access+ability] opportunity bracket + preference residual.
-  4. W4/W6 robustness; excluded-sigma sensitivity on the broad bound.
-  5. Per-HH counterfactual Omega parquet + decomposition-table parquet; full provenance
-     (theta/spec hash, stem, reference values, extractor/solver version). READY/NOT-READY
-     for F6-BOOT + F7.
+- coefficient;
+- source covariate or alternative-state array;
+- V term entered: u, log_h, log_w, log_market, or log_prior;
+- proposed factor: access, ability, preference, fixed structural term, or
+  integration machinery;
+- whether variation is household-level, alternative-level, group-level, or
+  common;
+- whether a valid equalization operator currently exists.
 
-SECTION 8 — SIGN-OFF CHECKLIST (operator reply in chat):
-  - Design A (two-factor {access,ability} + preference residual) primary, B robustness — confirm/override
-  - W1 decomposition headline, W4/W6 robustness — confirm
-  - Ability = wage-OFFER-DENSITY channel only (design (a), consumption-direct), (b) deferred — confirm
-  - Type-conditional median reference (best-available sensitivity) — confirm
-  - sigma in broad ability bound WITH excluded-sigma sensitivity — confirm
+Read block membership from welfare_stage1_w3.yaml, but state explicitly that its
+blocks are classification/decomposition-readiness metadata, not an operational
+equalization algorithm.
 
-End with: REQUIRED NEXT INPUT = operator sign-off on Section 8, after which F6-RUN is
-written against this memo. Do not commit. Report the path.
+Identify legacy governance terms that do not exist in the current certified
+pooled specification, including any obsolete gender-on-arrival or gender-on-wage
+rules.
+
+SECTION 2 - EXTRACTOR EXTENSION FINDING
+
+Verify that _build_V_extractor captures covariate and alternative-state arrays
+as constants while accepting only theta and consumption_arr at call time.
+
+Specify the smallest required F6-RUN extension: a validated covariate/state
+override interface.
+
+Required future parity gate:
+
+override=actual must reproduce every household's frozen F4C/F5 actual welfare
+and aggregate inequality to <= 1e-9.
+
+Do not implement it here.
+
+SECTION 3 - ACCESS OPERATOR FEASIBILITY
+
+Treat the access block as separate subchannels:
+
+1. Household market covariates:
+   gsur, region, urbanisation, and year indicators.
+
+2. Occupation alternative-state attributes:
+   loc4 and loc4_*.
+
+3. Hours alternative-state attributes:
+   working and working_pt1/pt2/ft/lh.
+
+For each subchannel state:
+
+- what varies across households;
+- what would be replaced;
+- whether replacement preserves valid categorical/state structure;
+- whether it changes job identity or only density weights;
+- whether fixed existing nodes are sufficient;
+- whether redraws, common grids, or pricing would be required.
+
+Do not claim access equalization recomputes or equalizes log_h unless a valid
+operator for working/hour-band arrays is defined.
+
+Do not treat elementwise replacement of loc4 dummies as automatically equivalent
+to a common occupation-offer distribution.
+
+Conclude whether a complete access operator is currently implementable. If only
+the household-market subchannel is implementable, label it explicitly as a
+partial-access counterfactual, not the full access contribution.
+
+SECTION 4 - ABILITY OPERATOR FEASIBILITY
+
+Separate three distinct ability concepts:
+
+A. Wage-offer-density mean channel:
+   replace coherent education and potential-experience covariates, changing mu
+   while holding observed log_wage and consumption fixed.
+
+B. Realized-wage/consumption channel:
+   counterfactually change wages and reprice consumption through EUROMOD.
+
+C. Residual-productivity/sigma channel.
+
+For A, state explicitly that it equalizes only the wage-offer-density channel.
+It does not equalize realized wages, consumption, or complete productivity.
+
+For B, identify whether it requires unlicensed redraw/repricing machinery and
+therefore must be deferred.
+
+For C, state explicitly:
+
+- sigma is one common parameter, not a household covariate;
+- fixed-theta covariate substitution cannot equalize sigma;
+- changing common sigma does not itself remove household residual-wage
+  differences.
+
+Propose candidate residual-productivity operators only as design alternatives.
+Do not select one without operator ratification.
+
+Conclude whether the broad access+ability bound is implementable now or blocked
+on a residual-productivity ruling.
+
+SECTION 5 - REFERENCE-STATE CONTRACT
+
+Define candidate reference rules without computing values.
+
+Required rules:
+
+- Reference population and weights.
+- Household-type and gender treatment.
+- Coherent categorical assignment:
+  use one modal education category and one-hot encode it; do not independently
+  median educL and educH.
+- Region:
+  compute the modal region and encode it coherently; do not assume reg1 unless
+  the computed mode or an explicit ratification selects it.
+- Urbanisation, occupation, and year:
+  define coherent categorical references.
+- Potential experience and continuous covariates:
+  define weighted-median rules.
+- Gender-access treatment:
+  state whether references preserve or equalize gender-segmented occupation
+  access and reconcile this with current governance.
+
+List every rule requiring operator ratification.
+
+SECTION 6 - DECOMPOSITION-GOVERNANCE RECONCILIATION
+
+Document the conflict rather than resolving it silently:
+
+- The decisions memo defines preference-neutralised welfare as the residual
+  after access and ability equalization.
+- The same memo also specifies primary Shapley-Shorrocks and describes a
+  three-way 3! decomposition.
+- Equalizing preferences to a common reference is explicitly rejected by the
+  preference-respecting design.
+
+Present implementable alternatives:
+
+Design A:
+two-factor Shapley over access and ability, with
+I(both-equalized) reported as the preference residual.
+
+Design B:
+full three-way Shapley requiring a separately ratified and implementable
+preference intervention.
+
+For each design provide exact equations and accounting identities. Do not label
+either design primary until operator sign-off.
+
+The accounting identity for Design A must be:
+
+I(actual)
+  = Shapley_access + Shapley_ability + I(both_equalized)
+
+Report the opportunity bracket as:
+
+- lower: access contribution;
+- upper: access + ability contribution.
+
+SECTION 7 - MEASURE CONTRACT
+
+Preserve the pre-registered headline family W1/W4/W6.
+
+W1 may be recommended as the first implementation and parity gate, but must not
+be silently promoted to the sole headline decomposition measure.
+
+Explain how W4 and W6 pre-compensate opportunity dimensions and how that affects
+interpretation of their decomposition results.
+
+SECTION 8 - GATED IMPLEMENTATION PLAN
+
+Design, but do not execute:
+
+- F6-A: override interface and actual-value parity.
+- F6-B: bounded tests for each independently valid counterfactual subchannel.
+- F6-C: ratified primary 2016 point decomposition.
+- F6-D: W1/W4/W6 and reference-rule sensitivities.
+- F6-E: B=200 full-joint-cluster bootstrap re-estimation.
+
+Mandatory gates:
+
+- override=actual parity <= 1e-9;
+- coherent categorical reference states;
+- proposal correction unchanged;
+- no unlicensed joint-batch pricing;
+- deterministic counterfactual outputs;
+- exact Shapley/accounting closure;
+- partial operators never labeled as full access or full ability;
+- bootstrap not started until all operators and the decomposition design are
+  ratified.
+
+SECTION 9 - REQUIRED OPERATOR SIGN-OFF
+
+End with an explicit checklist covering:
+
+- full-access operator, especially hours and occupation;
+- density-only versus realized-wage ability treatment;
+- residual-productivity/sigma operator;
+- gender-access reference rule;
+- Design A versus Design B;
+- reference-state rules;
+- W1/W4/W6 reporting hierarchy.
+
+REQUIRED FINAL LINES
+
+F6 DESIGN STATUS: COMPLETE / INCOMPLETE
+FULL ACCESS OPERATOR: DEFINED / PARTIAL / BLOCKED
+FULL ABILITY OPERATOR: DEFINED / PARTIAL / BLOCKED
+F6 IMPLEMENTATION AUTHORIZED: NO
+F6-BOOT AUTHORIZED: NO
+REQUIRED NEXT INPUT: operator sign-off on the unresolved checklist
+
+Do not commit. Report the created path and the unresolved decisions.
 ```
 
-**What to do with the reply:** paste the memo. I'll check three things against the source I've now read — Section 1's param/covariate/V-term mapping against `jax_ll_probe.py` and the YAML `blocks:`, Section 2's ability ruling (that it commits to design (a), offer-density-only, and names what that does *not* capture), and Section 3's A-vs-B reconciliation — then write **F6-RUN**. That run produces the opportunity bracket X–Y and the preference residual Z: your headline.
-
-Two flags, same as last turn but now sharper. The **ability ruling in Section 2 is the genuinely consequential modeling choice** — design (a) is right for the conference (consumption-direct, matches your whole architecture) but it equalizes the *offer-density* channel only, so the memo must be explicit that the realized-wage→consumption channel of ability is held at actual; that's defensible and standard but must be stated, not buried, or a referee will find it. And **F6-BOOT (200-replicate re-estimation) remains the binding 15-day risk** — independent of this memo, embarrassingly parallel, should be launching now while you review; Section 6 just records its contract. Want me to finalize the F6-BOOT prompt alongside so both run in parallel?
+This version lets the memo determine what F6 can defensibly compute instead of forcing a likely partial-access, density-only result to be labeled the full decomposition.

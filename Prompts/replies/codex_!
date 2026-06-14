@@ -1,97 +1,138 @@
-Codex's review is good — four of the five are correct and one of them catches a real conflation *I introduced*. Adjudication point by point, then the corrected prompt.
+I have the files now, and reading the actual source changes the F6 design in two concrete ways that I could only flag speculatively before. Both are now verified against the code, not guessed. Here's what the source tells me, then the corrected memo prompt with the exact attach list.
 
-**1. Gate 3(b) object — Codex is right, and the error is mine.** Four-C2's whole point was object selection: `delta_common` is the **full-V** like-for-like comparison, and its formula checks out exactly against the stored anchors (UID 200001593700: full-V(S=20) 4.8998 − (11.4966 − log 101) = −1.9817 ✓ the stored value). The utility-only contract object has no stored V_i^IS counterpart; its gate is CV²-based (implied finite-S bias CV²/2S + self-convergence). My Task 2 drew the distinction correctly, then my gate 3(b) collapsed it — which is precisely the Four-C confound resurfacing, and a mislabeled gate produces wrong verdicts. Adopt (b1)/(b2) as written, with pre-registered numbers: (b1) high-ESS (ESS_staged ≥ 30) median |delta_common| ≤ 0.5 nats at production S; (b2) implied bias CV²/(2S) ≤ 1e-3 nats (Four-C2 found ≈5e-4).
+**Verified finding 1 — the equalization mechanism the welfare layer already supports is *covariate substitution*, and the extractor closes over covariates as constants.** In `welfare_core.py`, `_build_V_extractor` captures `leisure`, `working`, `log_wage`, and the market/occupation covariate arrays as fixed `jnp` constants at build time; only `theta` and `consumption_arr` are call arguments (that's the W³ shift path). So equalizing access or ability means rebuilding V with *different covariate arrays* — which is a real (small) extension, exactly the "surface as a finding, don't silently do" item. The cut maps cleanly: the spec confirms `educL/educH/pexp_years/pexp_years2` feed only `wage_opportunity.mean_shifters` (→ ability via the offered-wage μ), and `gsur/reg2-8/drgur/drgmd/year_*` plus `loc4_*` feed `market_opportunity`/`occupation_opportunity` (→ access). The `welfare_stage1_w3.yaml` `blocks:` section *already encodes this exact partition* (preference/ability/access lists) — so F6 reads the block membership from config, doesn't reinvent it.
 
-**2. Scalability — right, and it's the house's own scale-conjecture principle applied to me.** The validated Four-C method is one full population batch *per target*; at 5,007 targets that's ~1.2B input rows — not a bounded run. Joint substitution (all households' redrawn bands in one batch per year×mode) is the scalable geometry, but it changes the validated pricing context, and the Two-L/Four-B record shows means-tested components are sensitive to batch *row composition* — so it needs its own dispositive parity gate before production. One design refinement that strengthens the gate: **pin S = 101**, not "≈100". Same single-pass design, negligible bias difference (CV²_util/202 ≈ 5e-4), but the redrawn band then has *identical row count* to the existing 101-draw band, so the joint batch is geometrically identical to the Four-B-validated production batches — removing one confound from the parity test for free. And note the upside: if parity passes, full singles V_dir costs ~**6 batch runs total** instead of 5,007 — the gate isn't a delay, it's the key.
+**Verified finding 2 — the ability-equalization has a subtlety the wage block forces, and it is the single most important thing for F6 to get right.** Look at the `log_w` term: `resid = (log_wage − μ)/σ`, `log_w = −0.5 resid² − log σ − 0.5 log2π − log_wage`. The offered wage enters V through *two* channels — the density `log_w` (how probable this wage is, given education/experience) **and** consumption (the wage, post-EUROMOD, is what funds `c`). Equalizing education/experience covariates shifts μ, which changes `log_w` (the offer-density channel) — but `log_wage` itself and the consumption `c` are *data*, frozen on the actual side. So covariate-only ability equalization moves the *density* channel but not the realized-wage→consumption channel. That is a genuine design decision the memo must rule on explicitly and cannot paper over: does "equalize ability" mean (a) equalize only the wage-*offer density* (set μ to reference; cheap, no EUROMOD, internally consistent with W¹/W⁴/W⁶ which are all consumption-direct), or (b) also re-draw/re-price offered wages at reference productivity (which re-opens EUROMOD on counterfactual nodes — the expensive path you deprioritized everywhere else). **The whole consumption-direct architecture of your conference path implies (a).** The memo must state (a) as primary, name what it does and doesn't capture, and flag (b) as a post-conference extension — otherwise an agent will silently pick one.
 
-**3, 4, 5 — accept all three as written.** RNG block frozen (the Four-C2 scheme verbatim: base_seed 20260604, per-HH `base + uid % 1_000_000`, PCG64, draw ordering employment→occupation→hours→Halton-wage with pinned Halton config); explicit dual-stem column schema; atomic-checkpoint runner contract.
+These two findings are *why* the memo is Opus-high-and-verify-against-source rather than a quick write-up: the ability channel is where a from-memory memo would have gone wrong.
 
-**Critical-path impact: almost none.** F4's sole input is V_i^IS — it never touches V_dir. So F4 launches on Task-1 READY regardless of how the parity gate goes. V_dir's job is to certify the integrator by the **Day-9 checkpoint**: parity-pass → full V_dir cheap (F3-B); parity-fail → pre-registered fallback = stratified target-only subsample cross-check (~40 HH/group across ESS strata, validated method) + ESS-stratified caveat on the headline. The conference answer survives every branch.
+Everything else from last turn holds and is now confirmed against the docs: **Design A** (two equalizable factors {access, ability} + preference as the non-equalized residual) is exactly what `JMP_welfare_measurement_decisions_memo_v2.md` §16 commits to ("preference-neutralised," explicitly *not* equalized — collapsing preferences is "alien to the JMP's preference-respecting design"); **W¹ is the decomposition headline** (noise-robust per the F4 cancellation finding); **reference = type-conditional medians** (§8); **[access-only, access+ability] bracket** is the deliverable; **σ in the broad ability bound with an excluded-σ sensitivity** (the ability-cut memo's explicit caveat). One reconciliation the memo must note: the ability-cut memo §5 describes a 3! Shapley, while decisions-memo §16/§18 describe two-way-with-residual — these resolve as A-primary (two-way + residual), full three-way as the robustness appendix.
 
-**For the session currently running:** stop Task 2 if it's grinding per-target batches. Tasks 1 and 5 outputs (the IS computations) are salvageable if complete — keep them, but verify they carry the dual-stem schema below; if not, re-emit storage, the logsums are cheap.
+**Files to attach for the F6 memo session** (you've now made these visible — confirm all present):
 
-Here is **F3-R** (revised, supersedes F3 — Claude Code · Sonnet · thinking on · MNL repo):
+The four load-bearing, which I've now read and which the prompt cites by `file:line`: `scripts/welfare/welfare_core.py`, `scripts/bpool/jax_ll_probe.py`, `scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml`, `scripts/bpool/specs/theta_hat_realdata_901_v1.csv`. The governance the memo aligns to: `docs/France_case/_shared/governance/JMP_ability_opportunity_cut_v1.md`, `docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md`, `docs/jmp_methodology/JMP_measure_mapping_memo_v1.md`. The config that already encodes the block partition: `scripts/welfare/configs/welfare_stage1_w3.yaml`. The result chain: `RURO_welfare_F4C_final_singles_measures_report_v1.md`, `RURO_welfare_singles_measure_family_F5_report_v1.md`, `RURO_welfare_F5_primary_scope_ratification_v1.md`. **Do not attach** the EUROMOD microdata, the staged `.parquet` stems, or the large inventory CSVs — the memo reasons about parameters and covariates, never household rows.
+
+Here is the corrected F6 design-memo prompt (replaces the one from last turn; the two verified findings are now baked into Sections 2–3, and the citations point at the real lines):
 
 ```
-FAST-LANE F3-R (supersedes F3): V_i^IS PRODUCTION + ANCHOR RE-MINT + JOINT-BATCH
-PARITY GATE. Bounded run. No edits to engines/specs/data. No Omega, no Gini, no
-measures, no decomposition, no promotion. FULL-POPULATION V_i^dir IS NOT IN SCOPE
-(it is F3-B, separately authorized on the Task-4 parity verdict).
+F6 DECOMPOSITION DESIGN MEMO (DESIGN ONLY — no code, no decomposition run, no
+estimation, no commit). Produce ONE markdown file and VERIFY every structural
+claim against the named source by file:line. Platform: Claude Code, Opus, high,
+thinking ON. Output:
+  docs/jmp_methodology/JMP_decomposition_design_memo_v1.md
 
-FROZEN RNG / DESIGN BLOCK (pre-registered, record verbatim in all artifacts):
-  S = 101 (single-pass; row-count-identical to the existing 101-draw band)
-  base_seed = 20260604
-  per-HH seed = base_seed + (uid % 1_000_000)
-  bit generator = numpy PCG64
-  draw ordering = employment -> occupation -> hours -> Halton-wage
-  Halton config = identical to run_stage4c2 (pin and record the harvested sub-seed)
-Theta = certified theta_hat_realdata_901_v1.csv; spec = joint_pooled_v1_bll0_tlmpin.
-Record theta-vector hash + spec-file hash in every output.
+PURPOSE
+Pre-register the equalization scheme that turns the F5 welfare distributions into
+the opportunity/ability/preference decomposition answering the main question. This
+memo precedes and governs the F6-RUN implementation, as F2 governed F4. It is the
+prose-design-before-code gate; F6-RUN code does not start until this is signed off.
 
-RUNNER CONTRACT (all tasks): atomic checkpoints (write tmp + rename), per-cell
-completion manifest with row counts + content hashes, resumable (skip completed
-cells), never overwrite a completed output.
+VERIFY-AGAINST (cite file:line; trust the code over prior prose):
+- scripts/welfare/welfare_core.py — _build_V_extractor (the covariates captured as
+  constants vs theta/consumption_arr as args), w3_inversion (the shift-mode solver),
+  compute_group_welfare, gate0_parity, the V = u+log_h+log_w+log_market-log_prior line.
+- scripts/bpool/jax_ll_probe.py — the same V construction in build_jax_singles_ll;
+  confirm exactly which named params/covariates enter each block.
+- scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml — wage_opportunity
+  mean_shifters (educL/educH/pexp_years/pexp_years2 -> mu; sigma=variance),
+  market_opportunity (gsur/reg2-8/drgur/drgmd/year_*), occupation_opportunity (loc4_*).
+- scripts/welfare/configs/welfare_stage1_w3.yaml — the blocks: preference/ability/access
+  lists ALREADY encode the cut; read block membership from here, do not reinvent it.
+- docs/France_case/_shared/governance/JMP_ability_opportunity_cut_v1.md — the normative cut.
+- docs/jmp_methodology/JMP_welfare_measurement_decisions_memo_v2.md §§8,14-19 (reference,
+  counterfactuals, index, rule, interactions) — especially §16 (preference NEUTRALISED, not equalised).
+- docs/jmp_methodology/JMP_measure_mapping_memo_v1.md and
+  docs/jmp_methodology/RURO_welfare_F5_primary_scope_ratification_v1.md (scope + inference contract).
 
-TASK 1 - Singles V_i^IS, dual stem. All 5,007 singles at certified theta.
-Columns: uid, group, year_tag, V_i_IS_staged, ESS_staged, max_weight_staged,
-V_i_IS_certified, ESS_certified, max_weight_certified,
-V_i_IS_delta_staged_minus_certified.
-Gate: per-group likelihood contributions on the CERTIFIED stem reproduce
-singles_male 28489.042816294535 and singles_female 35411.86351549324 to <= 1e-6.
+SECTION 1 — THE CUT, MAPPED TO NAMED PARAMS, COVARIATES, AND V-TERMS (verified).
+Table: component -> spec block -> coefficient names -> covariate arrays in
+_build_V_extractor -> which V term they enter (log_w via mu, log_market, log_h, u).
+  ACCESS: hours (beta_E, beta_h_pt1/pt2/ft/lh) + market (beta_E_gsur, beta_E_drgn2..8,
+    beta_E_drgur, beta_E_drgmd, beta_E_y2015/y2017) + occupation (beta_occ_2/3/4_{m,f}).
+  ABILITY: wage block (beta_w0 anchor, beta_w_educL/educH/pexp/pexp2, sigma).
+  PREFERENCE: leisure blocks, theta_l_*, theta_c_singles, beta_ll, beta_c numeraire.
+Confirm the welfare_stage1_w3.yaml blocks: lists match this exactly; cite the line.
 
-TASK 2 - Couples V_i^IS, dual stem, IS-ONLY capture. All 7,438 couples, same
-schema. Gate: certified-stem aggregate reproduces 174603.72976561091 to machine
-zero. NO couples redraw, NO couples vdir, NO couples measures.
+SECTION 2 — EQUALIZATION MECHANISM (the load-bearing verified finding).
+State plainly, from the code: _build_V_extractor captures the covariate arrays
+(leisure, working, log_wage, market/occ covariates) as CONSTANTS; only theta and
+consumption_arr are call args. Therefore equalization = rebuilding V with reference
+covariate arrays, and F6-RUN needs a covariate-override extension of the extractor
+(a FINDING to surface, with a parity gate: override=actual reproduces F5 V_actual to
+<=1e-9). Define each operation as a covariate substitution at FIXED theta:
+  ACCESS-equalized: set gsur, reg dummies, drgur/drgmd, year, occ covariates to
+    type-conditional (sm/sf) reference (median/modal); recompute log_market, log_h,
+    log_w-occ-independent. Name every array changed.
+  ABILITY-equalized: set educL/educH/pexp_years/pexp_years2 to type-conditional
+    medians. CRITICAL RULING (state and justify): the offered wage enters V via TWO
+    channels — the offer DENSITY log_w (through mu) AND consumption (the realized wage
+    funds c, which is frozen EUROMOD data). Primary design = (a) equalize the wage-
+    OFFER-DENSITY channel only: set mu to reference via the education/experience
+    covariates, leaving realized consumption as data — consumption-direct, NO EUROMOD,
+    internally consistent with W1/W4/W6. Flag (b) re-pricing offered wages at reference
+    productivity (re-opens EUROMOD on counterfactual nodes) as a POST-CONFERENCE
+    extension, NOT the conference path. sigma: include in the broad ability bound WITH
+    the excluded-sigma sensitivity (ability-cut memo residual-heterogeneity caveat).
+  PREFERENCE: NOT equalized (Section 3).
+Each operation holds the other blocks' covariates and theta fixed (decisions-memo
+§14: "structural parameter vector unchanged; only the covariate inputs are modified").
 
-TASK 3 - Anchor verification + re-mint (VALIDATED TARGET-ONLY METHOD ONLY).
-(a) Verify: recomputed V_i^IS for UID 200001593700 on the staged stem equals
-    11.496632024594227 to <= 1e-9. Report if not; do not proceed to (b) on fail.
-(b) Re-mint durable anchors for UID 200001593700 plus one additional high-ESS
-    HH per group (record selection rule), using the Four-C target-only
-    substitution method (one full population batch per anchor HH - bounded at
-    ~3-4 batches total). FREEZE to outputs/welfare/fastlane_anchors_v1/:
-    redrawn node table; population-batch identity (stem, band, HH set,
-    n_population_rows, n_population_hh); priced-node outputs (ils_dispy,
-    ils_dispy_real, full component set incl. ils_benmt, bsa00_s); V_i^IS;
-    utility-only V_i^dir + CV2 + bias-corrected value; full-V diagnostic;
-    delta_common = V_dir_fullV - (V_i_IS_staged - log(101)); ESS + max_weight;
-    the frozen RNG block; theta/spec hashes; EUROMOD pricing reference
-    (pairing, CPI phi, schema). Time one batch end-to-end and report runtime.
+SECTION 3 — DECOMPOSITION DESIGN (recommend A; reconcile the two source memos).
+DESIGN A (PRIMARY, per decisions-memo §16): two equalizable factors {access, ability}
+  + preference as the NON-equalized residual. Shapley over {access, ability};
+  preference = I(actual) - I(access+ability jointly equalized). Opportunity share =
+  bracket [access-only Shapley share, access+ability joint share]; preference =
+  residual. No reference-preference; the §16 yardstick problem is avoided.
+DESIGN B (ROBUSTNESS APPENDIX ONLY): full 3! Shapley over {access, ability, preference}
+  with a reference-preference (pooled or reference type) + reference-type sensitivity.
+  This is what the ability-cut memo §5 sketches; reconcile by stating A is primary
+  (it is what decisions-memo §16 commits to) and B is the robustness exposure, never
+  headline. Justify from §16 verbatim.
 
-TASK 4 - JOINT-BATCH PARITY GATE (the dispositive test for scalable V_dir).
-Construct, for ONE year x mode cell (2016 singles), the production-geometry
-joint batch: EVERY household's existing draw band replaced by its own S=101
-redrawn nodes (frozen RNG block), batch HH set and row structure identical to
-the production chunk. Price it once via the build EUROMOD path. PASS criterion
-(pre-registered): for each Task-3 anchor HH in that cell, every redrawn-node row's
-priced outputs match the Task-3 target-only pricing on ALL components - headline
-ils_dispy AND the means-tested columns (ils_benmt, bsa00_s) - to <= EUR 0.01.
-ANY divergence on a means-tested column = FAIL (the Two-L signature). Report a
-per-column max-abs-diff table. Verdict: JOINT BATCHING LICENSED / NOT LICENSED.
+SECTION 4 — SHAPLEY ARITHMETIC + INDEX (verified).
+Design A: enumerate the 2! orderings over {access, ability}; each factor's Shapley
+contribution = mean marginal inequality reduction across orderings; preference =
+I(actual) - I(both-equalized). Secondary: ordered-removal; report the access-ability
+interaction as |Shapley - ordered| (decisions-memo §18-19). Index = survey-weighted
+Gini (the validated F5 primitives, weight dwt); primary measure W1; W4/W6 robustness;
+on the ratified 2016 singles scope (year_tag==2, n=1,676).
 
-TASK 5 - Gates and readouts.
-(a) ESS distributions per group, dual stem (median/p10/p90).
-(b1) For Task-3 anchor HHs: delta_common as defined above, high-ESS framing
-     (ESS_staged >= 30); pre-registered expectation at S=101: |delta_common|
-     well below the S=20/60 smoke values, median <= 0.5 nats.
-(b2) Utility-only contract object for anchors: CV2, implied finite-S bias
-     CV2/(2S) <= 1e-3 nats, bias-corrected V_i^dir. Do NOT compare utility-only
-     V_dir to V_i^IS.
-(c) Runtime per batch + projected cost of F3-B (full singles V_dir, ~6 joint
-    batches) so authorization is informed.
+SECTION 5 — REFERENCE VALUES (type-conditional, pre-registered).
+Type-conditional (sm/sf) reference: median gsur, modal region (reg1 ref, reg2-8=0),
+modal urbanisation, year=2016, median educL/educH/pexp/pexp2. Sensitivity =
+best-available/maximal (appendix). The RULE is pre-registered here; the exact
+median/modal VALUES are read from the 2016 data by F6-RUN and printed in its report
+BEFORE any decomposition number.
 
-OUTPUT
-outputs/welfare/fastlane/singles_ViIS_dualstem_v1.parquet
-outputs/welfare/fastlane/couples_ViIS_dualstem_v1.parquet
-outputs/welfare/fastlane_anchors_v1/  (frozen set + manifest)
-docs/jmp_methodology/RURO_welfare_F3R_production_report_v1.md
-Report ends with: Task-1/2 gate verdicts, anchor inventory, Task-4 verdict
-(LICENSED / NOT LICENSED), b1/b2 readouts, runtimes, and TWO explicit lines:
-"READY FOR F4: yes/no" (depends ONLY on Tasks 1+3a) and
-"F3-B AUTHORIZATION INPUT: licensed/not-licensed + projected cost".
-Do not commit. Report paths.
+SECTION 6 — INFERENCE (defer; state contract). Point decomposition first. CIs = the
+F6-BOOT cluster bootstrap (B=200, resample 9,657 joint idorighh, re-estimate theta per
+replicate, recompute the WHOLE decomposition per replicate on 2016 singles). The
+decomposition, not just the Ginis, is recomputed inside each replicate. No bootstrap
+run by this memo.
+
+SECTION 7 — F6-RUN DELIVERABLES (gate list, build order).
+  0. Covariate-override extractor extension; PARITY GATE override=actual reproduces
+     F5 V_actual/Omega to <=1e-9 per HH (ties to F4C/F5). STOP on fail.
+  1. ACCESS-equalized Omega (W1); report inequality change (no assumed direction).
+  2. ABILITY-equalized Omega (offer-density channel, design (a)); access+ability JOINT.
+  3. Shapley {access,ability} + preference residual; ordered-removal diagnostic; the
+     [access-only, access+ability] opportunity bracket + preference residual.
+  4. W4/W6 robustness; excluded-sigma sensitivity on the broad bound.
+  5. Per-HH counterfactual Omega parquet + decomposition-table parquet; full provenance
+     (theta/spec hash, stem, reference values, extractor/solver version). READY/NOT-READY
+     for F6-BOOT + F7.
+
+SECTION 8 — SIGN-OFF CHECKLIST (operator reply in chat):
+  - Design A (two-factor {access,ability} + preference residual) primary, B robustness — confirm/override
+  - W1 decomposition headline, W4/W6 robustness — confirm
+  - Ability = wage-OFFER-DENSITY channel only (design (a), consumption-direct), (b) deferred — confirm
+  - Type-conditional median reference (best-available sensitivity) — confirm
+  - sigma in broad ability bound WITH excluded-sigma sensitivity — confirm
+
+End with: REQUIRED NEXT INPUT = operator sign-off on Section 8, after which F6-RUN is
+written against this memo. Do not commit. Report the path.
 ```
 
-**F3-B** (pre-defined, fire only on `LICENSED`): full singles V_dir at S=101 via joint batches, all year×mode cells, gates (b1)/(b2) at population scale, append `V_dir_util, V_dir_fullV, delta_common, cv2` columns to the singles parquet. If `NOT LICENSED`: the stratified target-only subsample instead, sized from Task-3's measured batch runtime.
+**What to do with the reply:** paste the memo. I'll check three things against the source I've now read — Section 1's param/covariate/V-term mapping against `jax_ll_probe.py` and the YAML `blocks:`, Section 2's ability ruling (that it commits to design (a), offer-density-only, and names what that does *not* capture), and Section 3's A-vs-B reconciliation — then write **F6-RUN**. That run produces the opportunity bracket X–Y and the preference residual Z: your headline.
 
-Tracker position unchanged: F4 still fires on F3-R's "READY FOR F4: yes" — likely tomorrow — and the V_dir branch resolves in parallel before Day 9. Two process notes: this is exactly why your double-check habit earns its keep, and Codex's review was the cheap kind of catch — before the compute, not after. Paste F3-R's report when it lands.
+Two flags, same as last turn but now sharper. The **ability ruling in Section 2 is the genuinely consequential modeling choice** — design (a) is right for the conference (consumption-direct, matches your whole architecture) but it equalizes the *offer-density* channel only, so the memo must be explicit that the realized-wage→consumption channel of ability is held at actual; that's defensible and standard but must be stated, not buried, or a referee will find it. And **F6-BOOT (200-replicate re-estimation) remains the binding 15-day risk** — independent of this memo, embarrassingly parallel, should be launching now while you review; Section 6 just records its contract. Want me to finalize the F6-BOOT prompt alongside so both run in parallel?

@@ -1,35 +1,87 @@
-D-BEN complete. Read-only forensic; no system edits, no commit.
+F6-PRICE-B: FAITHFUL PER-TARGET (BATCH-B / target-only) COUNTERFACTUAL PRICING
+HARNESS — SINGLES ONLY. Build + preflight-gate + (gated) full parallel run.
+No decomposition, no inequality, no estimation, no EUROMOD SYSTEM edits, no
+promotion, no commit. New uncommitted runner + priced outputs + report.
 
-Outputs (paths)
-Parquet: outputs/welfare/fastlane/diag_dben_program_attribution_v1.parquet — 9,600 rows (3 anchors × 100 draws × 32 columns: 17 programs + 5 aggregates + 10 accumulators), each with target-only/joint values, diff, within-draw-variation flag, batch-sensitivity flag, classification.
-Report: docs/jmp_methodology/RURO_welfare_DBEN_benefit_program_diagnosis_v1.md
-Script scripts/welfare/fastlane/run_dben_program_attribution.py + summary JSON (both uncommitted).
-What it found
-Task 0 — reproduced exactly. Contrast = target-only (batch-A, full 169k-row band, only the target HH counterfactual) vs joint-batch (batch-B, all 1,676 HHs counterfactual). ils_ben diff = 127.275 / 158.758 / 309.762 EUR — micro-EUR match to F3-R2/F3-R2B.
+PURPOSE
+Price F6 counterfactual job menus through EUROMOD using the CERTIFIED target-only
+geometry that D-BEN proved faithful (each target household's counterfactual nodes
+substituted into the FULL real 2016 singles population; all OTHER households held
+at their actual stored state — this is batch-A, the production method, which
+eliminates the RSA cross-household leakage by construction). Parallelize across
+32 cores. This produces the priced consumption (ils_dispy_real) at every
+counterfactual node that F6-RUN's access operator needs; it does NOT compute the
+decomposition.
 
-Task 1 — bsa00_s (RSA) carries 100 %. Every other ils_benmt program is flat to 0.000. Closure exact (Σ programs − ils_benmt ≤ 1.4e-14). ils_bennt and ils_pen do not move. The wobble is concentrated at exactly one node per household (an RSA-eligibility margin).
+SCOPE (hard limits)
+- SINGLES ONLY (singles_male + singles_female), 2016 cross-section (year_tag==2,
+  n=1,676) — the ratified primary scope. NO couples (901-alt pricing is out of
+  scope here; couples are the staged stretch goal).
+- Stem: fr_p3a_bpool_engine_ready_staged_threeB1 at certified theta-hat.
+- EUROMOD: FR_2015 / FR_2016_a3, via the build module (run_bpool_euromod_chunk:
+  _SYSTEM_PAIRING / _CPI / _RAW_SCHEMA / EuromodRunner / _stamp_draw_ids). Reuse
+  these EXACTLY; hardcode no system/CPI/schema constant.
+- Carried constraints (binding): full-population batch per target (NOT sub-bands,
+  NOT isolated nodes); counterfactual wage nominal before EUROMOD, real via phi_y
+  after (no double deflation); authoritative yem identity yem=yem00+yemxp; cluster
+  identity source_idorighh preserved.
 
-Task 2 — sole mover is INCOME-DRIVEN. RSA varies with the draw's earnings (std ≈ 171 EUR). No DEMOGRAPHIC-ARTIFACT program — family lines (PAJE/CF/AF/ARS/AAH) are structurally zero for these single, childless anchors. Control: PPE (tinrf_s) is income-driven yet batch-robust (diff 0.000), proving the leak is RSA-implementation-specific, not generic.
+FROZEN RNG (record verbatim; same scheme as F3-R/F4):
+  S = 101 counterfactual nodes per household (row-count identical to the staged band)
+  base_seed = 20260604 ; per-HH seed = base_seed + (uid % 1_000_000) ; PCG64
+  draw ordering employment -> occupation -> hours -> Halton-wage; pin + record the
+  Halton sub-seed.
+  Theta-hash + spec-hash recorded in every output.
 
-Task 3 — 100 % CROSS-household. The anchor's own inputs are byte-identical between A and B (Gate B); the only difference is the other 1,675 HHs; the conduit is the whole-batch population counters i_bsa00_cumpers_nw/w (~10⁸-scale, impossible for one HH). The within-household RSA response is real and preserved — not the wobble source.
+WHICH COUNTERFACTUAL THIS PRICES (read from the F6 design memo; do NOT invent the
+operator here): this harness prices the ACCESS-equalized counterfactual node menus
+and the ACTUAL (self) menus. The reference-covariate values defining "access-
+equalized" are an INPUT to this harness (passed as a covariate-override spec); if
+that spec is not yet ratified, run ONLY the self/actual menus for the preflight
+identity gate and STOP before the equalized run, reporting that the equalized
+covariate spec is required.
 
-Task 4 / final verdicts:
+TASK 0 — PREFLIGHT GATE (5 HH per group, before any full run). The load-bearing step.
+For 5 singles_male + 5 singles_female (record selection: first-by-uid + the 3
+D-BEN anchors if in 2016):
+  (a) CANONICALIZATION: apply the app-layer post-draw canonicalization to redrawn
+      nodes (the DE canonicalize_post_draws analogue) BEFORE pricing. Confirm no
+      non-employment row carries positive wage / stale hours / stale yem. Report
+      the canonicalization touched-row count. If the canonicalization function is
+      absent for this path, STOP and report (do not price uncanonicalized nodes).
+  (b) IDENTITY GATE: build the "self" counterfactual = redraw with the override
+      set to the household's OWN actual covariates, price target-only in the full
+      2016 population, and confirm repriced ils_dispy reproduces the STORED
+      ils_dispy for that household's existing nodes to <= 0.01 EUR. This is the
+      override=actual parity the F6 design memo requires, now at the pricing layer.
+  (c) RSA-LEAKAGE CONTROL: confirm target-only pricing reproduces the household's
+      RSA (bsa00_s) with NO cross-household wobble (the D-BEN fix working: since
+      others are held at actual, i_bsa00_cumpers_nw/w match the stored population).
+  Report per-HH: canonicalization rows, identity max_abs (<=0.01 gate), RSA match.
+  GATE: all 10 HH pass (a)+(b)+(c). STOP and report if any fail — do NOT launch
+  the full run on an unvalidated pricing path.
 
-Freeze-legal: none. Freeze-illegal: bsa00_s (RSA) + downstream sums.
-PRIMARY DRIVER OF THE WOBBLE: income-driven (RSA), via cross-household accumulator leakage — not demographic-artifact, not mixed.
-RECOMMENDED PATH: B (per-household isolated / target-only — already the certified production method; fixes by construction; cost = 1,676 EUROMOD runs). A only fixes the baseline, not per-node counterfactuals. C rejected (freeze-legal list empty; RSA is income-driven). Measure-and-tolerate rejected — the wobble is 13.6–38.0 % of ils_dispy at the affected node.
+TASK 1 — FULL PARALLEL RUN (only if Task 0 passes; only for menus whose covariate-
+override spec is ratified). Price all 1,676 singles' counterfactual menus, one
+target-only full-population EUROMOD pass per household, parallelized across 32
+cores. Runner contract: atomic per-HH output (tmp+rename); per-HH manifest row
+(uid, group, seed, n_nodes, n_canonicalized, identity_self_max_abs if computed,
+runtime, theta/spec hash, output hash); fully resumable (skip completed by hash);
+no retry/reseed on failure — record and continue. Checkpoint dir OUTSIDE
+production/staged. Report wall-time + per-core throughput.
 
-All three issues fixed and committed.
-
-Fixes applied
-Wording corrected — the report now states the parquet is 9,600 rows × 17 columns (300 nodes × 32 tracked variables in the program row dimension), not "32 columns." The old reply's "32" was the variable count, now disambiguated in writing.
-
-Extra artifacts — kept as documented provenance. I retained the script and summary JSON but added an explicit "Retained provenance (a deliberate scope addition beyond the literal 'one + one')" block to the report, noting they're kept for reproducibility and can be removed if strict scope is required. The decision is now on the record rather than silent.
-
-Self-describing flags added. The parquet now carries is_benmt_program / is_aggregate / is_accumulator per row (script updated + regenerated). Verified: bsa00_s→program, i_bsa00_cumpers_nw→accumulator, ils_ben→aggregate. Downstream code can filter is_benmt_program so the conduit/aggregate rows classified INCOME-DRIVEN aren't misread as benefits.
-
-Re-ran end-to-end — results reproduced to the micro-EUR (127.275 / 158.758 / 309.762; closure ≤1.4e-14; ils_bennt/ils_pen flat).
-
-Commit
-Branch diag/dben-program-attribution (branched off main per the default-branch guardrail rather than committing to main directly), commit e546e38, 4 files.
-Scientific conclusion unchanged: PRIMARY DRIVER = RSA, income-driven, through cross-household accumulator leakage; freeze option C invalid; target-only (B) is the defensible path.
+TASK 2 — OUTPUT + INTEGRITY.
+Per-HH priced counterfactual nodes -> outputs/welfare/fastlane/f6_priced_cf/
+  {group}/{uid}.parquet  (node: working, loc4, hours, wage_nominal, ils_dispy,
+   ils_dispy_real via phi_y, bsa00_s, + the canonicalization flags)
+Aggregate manifest -> outputs/welfare/fastlane/f6_price_b_manifest_v1.json
+Report -> docs/jmp_methodology/RURO_welfare_F6PRICEB_pricing_report_v1.md
+  with: Task-0 gate verdicts (all 10 HH), full-run wall-time + throughput,
+  n households priced / failed, RSA-leakage confirmation at scale (spot-check a
+  sample: target-only RSA has no cross-household drift), and explicit lines:
+   PREFLIGHT GATE: pass/fail
+   CANONICALIZATION APPLIED: yes/no
+   IDENTITY (override=actual) <=0.01 EUR: pass/fail
+   FULL RUN COMPLETE: n/1676
+   READY FOR F6-RUN ACCESS OPERATOR: yes/no
+Do not commit. Report paths.

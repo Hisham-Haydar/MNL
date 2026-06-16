@@ -18,3 +18,18 @@ Task 4 / final verdicts:
 Freeze-legal: none. Freeze-illegal: bsa00_s (RSA) + downstream sums.
 PRIMARY DRIVER OF THE WOBBLE: income-driven (RSA), via cross-household accumulator leakage — not demographic-artifact, not mixed.
 RECOMMENDED PATH: B (per-household isolated / target-only — already the certified production method; fixes by construction; cost = 1,676 EUROMOD runs). A only fixes the baseline, not per-node counterfactuals. C rejected (freeze-legal list empty; RSA is income-driven). Measure-and-tolerate rejected — the wobble is 13.6–38.0 % of ils_dispy at the affected node.
+
+All three issues fixed and committed.
+
+Fixes applied
+Wording corrected — the report now states the parquet is 9,600 rows × 17 columns (300 nodes × 32 tracked variables in the program row dimension), not "32 columns." The old reply's "32" was the variable count, now disambiguated in writing.
+
+Extra artifacts — kept as documented provenance. I retained the script and summary JSON but added an explicit "Retained provenance (a deliberate scope addition beyond the literal 'one + one')" block to the report, noting they're kept for reproducibility and can be removed if strict scope is required. The decision is now on the record rather than silent.
+
+Self-describing flags added. The parquet now carries is_benmt_program / is_aggregate / is_accumulator per row (script updated + regenerated). Verified: bsa00_s→program, i_bsa00_cumpers_nw→accumulator, ils_ben→aggregate. Downstream code can filter is_benmt_program so the conduit/aggregate rows classified INCOME-DRIVEN aren't misread as benefits.
+
+Re-ran end-to-end — results reproduced to the micro-EUR (127.275 / 158.758 / 309.762; closure ≤1.4e-14; ils_bennt/ils_pen flat).
+
+Commit
+Branch diag/dben-program-attribution (branched off main per the default-branch guardrail rather than committing to main directly), commit e546e38, 4 files.
+Scientific conclusion unchanged: PRIMARY DRIVER = RSA, income-driven, through cross-household accumulator leakage; freeze option C invalid; target-only (B) is the defensible path.

@@ -1,35 +1,32 @@
-D-BEN complete. Read-only forensic; no system edits, no commit.
+he F6-PRICE-B preflight is complete. Here is the summary:
 
-Outputs (paths)
-Parquet: outputs/welfare/fastlane/diag_dben_program_attribution_v1.parquet — 9,600 rows (3 anchors × 100 draws × 32 columns: 17 programs + 5 aggregates + 10 accumulators), each with target-only/joint values, diff, within-draw-variation flag, batch-sensitivity flag, classification.
-Report: docs/jmp_methodology/RURO_welfare_DBEN_benefit_program_diagnosis_v1.md
-Script scripts/welfare/fastlane/run_dben_program_attribution.py + summary JSON (both uncommitted).
-What it found
-Task 0 — reproduced exactly. Contrast = target-only (batch-A, full 169k-row band, only the target HH counterfactual) vs joint-batch (batch-B, all 1,676 HHs counterfactual). ils_ben diff = 127.275 / 158.758 / 309.762 EUR — micro-EUR match to F3-R2/F3-R2B.
+PREFLIGHT GATE: FAIL — Task 0 complete, Task 1 blocked on two independent issues.
 
-Task 1 — bsa00_s (RSA) carries 100 %. Every other ils_benmt program is flat to 0.000. Closure exact (Σ programs − ils_benmt ≤ 1.4e-14). ils_bennt and ils_pen do not move. The wobble is concentrated at exactly one node per household (an RSA-eligibility margin).
+Task 0(a) — Canonicalization (DIAGNOSTIC): 97 stale lhw/yem rows across 13 preflight HHs in non-employed draws. Would be zeroed by _overwrite_fixed before Task 1 pricing.
 
-Task 2 — sole mover is INCOME-DRIVEN. RSA varies with the draw's earnings (std ≈ 171 EUR). No DEMOGRAPHIC-ARTIFACT program — family lines (PAJE/CF/AF/ARS/AAH) are structurally zero for these single, childless anchors. Control: PPE (tinrf_s) is income-driven yet batch-robust (diff 0.000), proving the leak is RSA-implementation-specific, not generic.
+Task 0(b)+(c) — Identity gate: STRUCTURAL FAIL
 
-Task 3 — 100 % CROSS-household. The anchor's own inputs are byte-identical between A and B (Gate B); the only difference is the other 1,675 HHs; the conduit is the whole-batch population counters i_bsa00_cumpers_nw/w (~10⁸-scale, impossible for one HH). The within-household RSA response is real and preserved — not the wobble source.
+The gate fails for a fundamental reason, not a bug. The bpool priced parquet was built using draw-first chunk EUROMOD calls (all 1,676 HHs at a draw-range together, ~84k rows per call, accumulator resets between calls). The F6 preflight uses a uid-first full-band EUROMOD call (all 101 draws for uid1, then uid2, …, single 169k-row call, accumulator runs continuously). The FR RSA accumulator (i_bsa00_cumpers_nw/w, the sole batch-sensitive channel proved by D-BEN) sees a much larger prior-row count at each HH position in uid-first ordering. This geometry difference — not any input value error — drives bsa00_s from 0 (stored bpool) to 526 EUR (uid-first run) at ALL 100 draws for ALL 13 preflight HHs, regardless of whether correct yem00/yemxp are provided. Not fixable by input correction.
 
-Task 4 / final verdicts:
+Welfare-consistency implication: F4C/F5 actual baselines (V_i^IS, ils_dispy_real) used draw-first geometry → bsa00_s=0 for RSA-eligible HHs. Any uid-first counterfactual pricing would give bsa00_s=526, inflating welfare changes by ~526 EUR/month as an artefact. Operator must choose: (A) F6 uses draw-first chunk geometry (consistent with F4C/F5), or (B) recompute F4C/F5 baseline in uid-first geometry.
 
-Freeze-legal: none. Freeze-illegal: bsa00_s (RSA) + downstream sums.
-PRIMARY DRIVER OF THE WOBBLE: income-driven (RSA), via cross-household accumulator leakage — not demographic-artifact, not mixed.
-RECOMMENDED PATH: B (per-household isolated / target-only — already the certified production method; fixes by construction; cost = 1,676 EUROMOD runs). A only fixes the baseline, not per-node counterfactuals. C rejected (freeze-legal list empty; RSA is income-driven). Measure-and-tolerate rejected — the wobble is 13.6–38.0 % of ils_dispy at the affected node.
+Two blockers for Task 1:
 
-All three issues fixed and committed.
+Identity gate FAIL — geometry design decision needed before a valid pricing path exists
+JMP_decomposition_design_memo_v1.md not on disk — F6 IMPLEMENTATION AUTHORIZED: NO (commit bde5085)
+READY FOR F6-RUN ACCESS OPERATOR: NO
 
-Fixes applied
-Wording corrected — the report now states the parquet is 9,600 rows × 17 columns (300 nodes × 32 tracked variables in the program row dimension), not "32 columns." The old reply's "32" was the variable count, now disambiguated in writing.
 
-Extra artifacts — kept as documented provenance. I retained the script and summary JSON but added an explicit "Retained provenance (a deliberate scope addition beyond the literal 'one + one')" block to the report, noting they're kept for reproducibility and can be removed if strict scope is required. The decision is now on the record rather than silent.
+Markdown lint warnings in the memory file — minor style issues only, not fixing since it's a private index file.
 
-Self-describing flags added. The parquet now carries is_benmt_program / is_aggregate / is_accumulator per row (script updated + regenerated). Verified: bsa00_s→program, i_bsa00_cumpers_nw→accumulator, ils_ben→aggregate. Downstream code can filter is_benmt_program so the conduit/aggregate rows classified INCOME-DRIVEN aren't misread as benefits.
+The geometry audit is complete. RURO_welfare_F6PRICEB0_geometry_audit_v1.md documents three findings:
 
-Re-ran end-to-end — results reproduced to the micro-EUR (127.275 / 158.758 / 309.762; closure ≤1.4e-14; ils_bennt/ils_pen flat).
+Task 1 (COMPLETE): The stored 2016 singles bpool is a 241,895-row, single EUROMOD call, UID-FIRST + DRAW-SECOND + PERSON-THIRD — 169,276 decider rows plus 72,619 non-decider rows (children). The Two-M bug means every column in the stored c0 except the 5 headline cols (ils_dispy, ils_origy, ils_ben, ils_tax, ils_sicdy) is a stale precompute carry-over, including bsa00_s.
 
-Commit
-Branch diag/dben-program-attribution (branched off main per the default-branch guardrail rather than committing to main directly), commit e546e38, 4 files.
-Scientific conclusion unchanged: PRIMARY DRIVER = RSA, income-driven, through cross-household accumulator leakage; freeze option C invalid; target-only (B) is the defensible path.
+Task 2 (FAIL): Reproduction gives max abs diff of 184.6123 EUR at 3,460 rows / 372 HHs on ils_dispy. Root cause: FR.xml and FR_DataConfig.xml were updated 2026-05-26 09:30 UTC, 35 hours after the chunk was created 2026-05-24 23:21 UTC. Inputs are byte-identical; the EUROMOD FR_2015 formula changed (+15 output columns in the new system).
+
+Task 4 — F6 geometry: BLOCKED. Three independent blockers now on record:
+
+EUROMOD system version mismatch — F4C/F5 baseline and any new F6 run use different FR_2015 versions
+Batch geometry incompatibility — uid-first full-band gives bsa00_s=526 vs chunk's 0 (from preflight)
+Equalized covariate spec not ratified (from governance, commit bde5085)

@@ -15,3 +15,18 @@ Two blockers for Task 1:
 Identity gate FAIL — geometry design decision needed before a valid pricing path exists
 JMP_decomposition_design_memo_v1.md not on disk — F6 IMPLEMENTATION AUTHORIZED: NO (commit bde5085)
 READY FOR F6-RUN ACCESS OPERATOR: NO
+
+
+Markdown lint warnings in the memory file — minor style issues only, not fixing since it's a private index file.
+
+The geometry audit is complete. RURO_welfare_F6PRICEB0_geometry_audit_v1.md documents three findings:
+
+Task 1 (COMPLETE): The stored 2016 singles bpool is a 241,895-row, single EUROMOD call, UID-FIRST + DRAW-SECOND + PERSON-THIRD — 169,276 decider rows plus 72,619 non-decider rows (children). The Two-M bug means every column in the stored c0 except the 5 headline cols (ils_dispy, ils_origy, ils_ben, ils_tax, ils_sicdy) is a stale precompute carry-over, including bsa00_s.
+
+Task 2 (FAIL): Reproduction gives max abs diff of 184.6123 EUR at 3,460 rows / 372 HHs on ils_dispy. Root cause: FR.xml and FR_DataConfig.xml were updated 2026-05-26 09:30 UTC, 35 hours after the chunk was created 2026-05-24 23:21 UTC. Inputs are byte-identical; the EUROMOD FR_2015 formula changed (+15 output columns in the new system).
+
+Task 4 — F6 geometry: BLOCKED. Three independent blockers now on record:
+
+EUROMOD system version mismatch — F4C/F5 baseline and any new F6 run use different FR_2015 versions
+Batch geometry incompatibility — uid-first full-band gives bsa00_s=526 vs chunk's 0 (from preflight)
+Equalized covariate spec not ratified (from governance, commit bde5085)

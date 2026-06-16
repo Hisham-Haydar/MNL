@@ -1,98 +1,20 @@
-DIAGNOSTIC D-BEN: PROGRAM-LEVEL DECOMPOSITION OF THE TWO-L / F3 BENEFIT WOBBLE.
-Read-only forensic. No welfare, no decomposition, no V_i, no estimation, no
-EUROMOD SYSTEM edits, no fix applied, no promotion, no commit. ONE report + one
-diagnostic parquet. Purpose: attribute the F3 joint-batch ils_ben divergence
-(observed EUR 127-310 on means-tested benefits) to SPECIFIC ils_benmt programs
-and classify each moving program as INCOME-DRIVEN (real response to the draw's
-earnings) vs DEMOGRAPHIC (should not vary with decider hours -> batch artifact).
+D-BEN complete. Read-only forensic; no system edits, no commit.
 
-CONTEXT (verify, do not assume)
-The F3 joint-batch parity gate found: ils_origy / ils_tax / ils_sicdy reproduce
-to 0.00 across batch composition; ils_ben diverged EUR 127-310; divergence was
-confined to benefit-receiving counterfactual nodes. This diagnostic opens the
-ils_ben aggregate to the program level. ils_benmt is a SUM of ~15 programs
-(bchyc_s PAJE, bsuwd_s AV, bunmt_s ASS, bchlg_s CF, bched_s ARS, bchba_s PN,
-bsaoa_s ASPA, bdi_s AAH, bchlp_s API, bsa00_s RSA, bhotn_s AL-housing, tinrf_s
-PPE, bchot_s, bsaot, bhoot, bed, ...). ils_bennt and ils_pen are separate sums.
-The decider choice vars that change per draw are lhw, yivwg, and the rebuilt
-yem00/yemxp/yem; everything else (incl. all household demographics: children,
-ages, disability flags) is replicated UNCHANGED across the 101 draws.
+Outputs (paths)
+Parquet: outputs/welfare/fastlane/diag_dben_program_attribution_v1.parquet — 9,600 rows (3 anchors × 100 draws × 32 columns: 17 programs + 5 aggregates + 10 accumulators), each with target-only/joint values, diff, within-draw-variation flag, batch-sensitivity flag, classification.
+Report: docs/jmp_methodology/RURO_welfare_DBEN_benefit_program_diagnosis_v1.md
+Script scripts/welfare/fastlane/run_dben_program_attribution.py + summary JSON (both uncommitted).
+What it found
+Task 0 — reproduced exactly. Contrast = target-only (batch-A, full 169k-row band, only the target HH counterfactual) vs joint-batch (batch-B, all 1,676 HHs counterfactual). ils_ben diff = 127.275 / 158.758 / 309.762 EUR — micro-EUR match to F3-R2/F3-R2B.
 
-TASK 0 — REPRODUCE THE FAILING CONTRAST EXACTLY.
-Re-run the SAME comparison F3 ran that produced the EUR 127-310: the production-
-geometry batch vs the alternative-composition batch (state precisely which two
-batch constructions are being compared, citing the F3 runner / config). Confirm
-you reproduce the ils_ben divergence magnitude on the SAME households/draws F3
-flagged. If you cannot reproduce it, STOP and report why (the diagnostic is
-meaningless on a contrast that doesn't reproduce). Pull the per-program EUROMOD
-outputs (every ils_benmt component listed above, plus ils_bennt and ils_pen
-totals) for BOTH batch constructions, same households, same draws.
+Task 1 — bsa00_s (RSA) carries 100 %. Every other ils_benmt program is flat to 0.000. Closure exact (Σ programs − ils_benmt ≤ 1.4e-14). ils_bennt and ils_pen do not move. The wobble is concentrated at exactly one node per household (an RSA-eligibility margin).
 
-TASK 1 — PER-PROGRAM ATTRIBUTION OF THE DIVERGENCE.
-For each ils_benmt program column present in the EUROMOD output, compute across
-the flagged nodes: max abs diff, median abs diff, n_nodes_above_tol (tol 1e-6),
-and the program's share of the total ils_ben divergence. Produce a ranked table:
-which programs carry the EUR 127-310, in order. Confirm the per-program diffs
-sum to the ils_ben aggregate diff (closure check). Also confirm ils_bennt and
-ils_pen do NOT move (expected; report if they do).
+Task 2 — sole mover is INCOME-DRIVEN. RSA varies with the draw's earnings (std ≈ 171 EUR). No DEMOGRAPHIC-ARTIFACT program — family lines (PAJE/CF/AF/ARS/AAH) are structurally zero for these single, childless anchors. Control: PPE (tinrf_s) is income-driven yet batch-robust (diff 0.000), proving the leak is RSA-implementation-specific, not generic.
 
-TASK 2 — CLASSIFY EACH MOVING PROGRAM (the branch-point).
-For every program with nonzero divergence, classify it as:
-  INCOME-DRIVEN (real): eligibility/amount depends on the household's earnings,
-    so it legitimately responds to the draw's lhw/yivwg/yem. Expected members:
-    bsa00_s (RSA), bhotn_s/bhoot (housing), bunmt_s (ASS), tinrf_s (PPE), and
-    any income-tested family/disability line (bdi_s AAH, bched_s ARS if income-
-    tested). State the basis for each call (does its amount track earnings in the
-    EUROMOD FR rules / does it move WITH the draw's earnings across draws within
-    a single faithful run?).
-  DEMOGRAPHIC (artifact-suspect): amount is set by household composition
-    (children count/age, disability), NOT decider hours. Expected: bch00-type
-    family lines, bchyc_s PAJE, bchlg_s CF, bchba_s PN. For these, the per-draw
-    value SHOULD be identical across the 101 draws (demographics fixed); if such
-    a program is MOVING across batch composition, that is a BATCH ARTIFACT, not
-    economic response.
-  Decision evidence to compute per program: (a) within a SINGLE faithful run,
-    does the program vary across the 101 draws? (varies => income-linked; constant
-    => demographic). (b) across the TWO batch constructions at FIXED draw, does it
-    move? (moves => batch-sensitive). The cross of these two is the classifier:
-       varies-across-draws + batch-sensitive  -> INCOME-DRIVEN (real; do NOT freeze)
-       constant-across-draws + batch-sensitive -> DEMOGRAPHIC ARTIFACT (freeze candidate)
-       constant + not-batch-sensitive          -> inert (no action)
+Task 3 — 100 % CROSS-household. The anchor's own inputs are byte-identical between A and B (Gate B); the only difference is the other 1,675 HHs; the conduit is the whole-batch population counters i_bsa00_cumpers_nw/w (~10⁸-scale, impossible for one HH). The within-household RSA response is real and preserved — not the wobble source.
 
-TASK 3 — WITHIN- vs CROSS-HOUSEHOLD DEPENDENCE (precision the fix depends on).
-State explicitly, per moving program, whether its batch sensitivity is:
-  - WITHIN-household legitimate (depends on this household's own members — e.g. a
-    child triggering a family benefit): REAL, must be preserved by any fix; or
-  - CROSS-household leakage (this household's program shifts because OTHER
-    households' composition in the batch changed): the Two-L pathology, the only
-    thing a fix should target.
-Do not conflate them. A fix that touches within-household eligibility would break
-the model; a fix must target only cross-household batch normalisation.
+Task 4 / final verdicts:
 
-TASK 4 — FIX-OPTION READOUT (analysis only; implement nothing).
-Given Tasks 1-3, state which of the operator's three options each finding supports:
-  A (faithful full pre-filtration population run): supported if divergence is
-    income-driven and a single faithful population reproduces production ils_ben.
-  B (per-household isolated full run): the validated gold standard; note cost.
-  C (freeze specific programs to data-level in a new EUROMOD system): legal ONLY
-    for programs classified DEMOGRAPHIC ARTIFACT + CROSS-household; ILLEGAL for any
-    INCOME-DRIVEN program (freezing those deletes the means-tested response to the
-    counterfactual wage — the consumption-floor mechanism). List, by name, which
-    programs are freeze-legal and which are freeze-illegal.
-Also report, for magnitude context (NOT a welfare computation): the EUR 127-310
-divergence as a fraction of the affected nodes' ils_dispy, so the operator can
-see whether the wobble is even large relative to disposable income.
-
-OUTPUT
-outputs/welfare/fastlane/diag_dben_program_attribution_v1.parquet
-  (per node x program: stored/batch-A/batch-B values, diffs, within-draw variation
-   flag, batch-sensitivity flag, classification)
-docs/jmp_methodology/RURO_welfare_DBEN_benefit_program_diagnosis_v1.md
-The report ends with:
- - the ranked per-program contribution to the EUR 127-310,
- - each moving program classified INCOME-DRIVEN / DEMOGRAPHIC-ARTIFACT / inert,
- - WITHIN vs CROSS household dependence per moving program,
- - the freeze-legal vs freeze-illegal program lists,
- - an explicit line: PRIMARY DRIVER OF THE WOBBLE: income-driven / demographic-artifact / mixed,
- - and: RECOMMENDED PATH: A / B / C-partial(list programs) / measure-and-tolerate
-Do not commit. Report paths.
+Freeze-legal: none. Freeze-illegal: bsa00_s (RSA) + downstream sums.
+PRIMARY DRIVER OF THE WOBBLE: income-driven (RSA), via cross-household accumulator leakage — not demographic-artifact, not mixed.
+RECOMMENDED PATH: B (per-household isolated / target-only — already the certified production method; fixes by construction; cost = 1,676 EUROMOD runs). A only fixes the baseline, not per-node counterfactuals. C rejected (freeze-legal list empty; RSA is income-driven). Measure-and-tolerate rejected — the wobble is 13.6–38.0 % of ils_dispy at the affected node.

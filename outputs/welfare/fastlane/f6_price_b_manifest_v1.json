@@ -1,0 +1,299 @@
+{
+  "artifact": "f6_price_b_manifest_v1",
+  "script": "scripts/welfare/fastlane/run_f6_price_b_preflight.py",
+  "governance": {
+    "spec_ratified": false,
+    "design_memo_path": "docs\\jmp_methodology\\JMP_decomposition_design_memo_v1.md",
+    "design_memo_exists": false,
+    "f6_authorized": false,
+    "stop_reason": "equalized covariate spec NOT ratified: JMP_decomposition_design_memo_v1.md not on disk; F6 IMPLEMENTATION AUTHORIZED: NO (commit bde5085)"
+  },
+  "preflight": {
+    "n_hh": 13,
+    "sm_uids": [
+      200001495800,
+      200001496401,
+      200001498400,
+      200001502500,
+      200001516900
+    ],
+    "sf_uids": [
+      200001504300,
+      200001526601,
+      200001527000,
+      200001531200,
+      200001533500
+    ],
+    "dben_anchor_uids": [
+      200001593700,
+      200003504101,
+      200003672000
+    ]
+  },
+  "task_0a_canonicalization": {
+    "total_non_employed_draws": 124,
+    "total_stale_lhw": 97,
+    "total_stale_yem": 97,
+    "per_hh": [
+      {
+        "uid": 200001495800,
+        "group": "sm",
+        "n_dec_draws": 100,
+        "n_non_employed": 10,
+        "stale_lhw": 10,
+        "stale_yem": 10
+      },
+      {
+        "uid": 200001496401,
+        "group": "sm",
+        "n_dec_draws": 100,
+        "n_non_employed": 8,
+        "stale_lhw": 8,
+        "stale_yem": 8
+      },
+      {
+        "uid": 200001498400,
+        "group": "sm",
+        "n_dec_draws": 100,
+        "n_non_employed": 10,
+        "stale_lhw": 10,
+        "stale_yem": 10
+      },
+      {
+        "uid": 200001502500,
+        "group": "sm",
+        "n_dec_draws": 100,
+        "n_non_employed": 8,
+        "stale_lhw": 8,
+        "stale_yem": 8
+      },
+      {
+        "uid": 200001516900,
+        "group": "sm",
+        "n_dec_draws": 100,
+        "n_non_employed": 8,
+        "stale_lhw": 8,
+        "stale_yem": 8
+      },
+      {
+        "uid": 200001504300,
+        "group": "sf",
+        "n_dec_draws": 100,
+        "n_non_employed": 5,
+        "stale_lhw": 5,
+        "stale_yem": 5
+      },
+      {
+        "uid": 200001526601,
+        "group": "sf",
+        "n_dec_draws": 100,
+        "n_non_employed": 9,
+        "stale_lhw": 9,
+        "stale_yem": 9
+      },
+      {
+        "uid": 200001527000,
+        "group": "sf",
+        "n_dec_draws": 100,
+        "n_non_employed": 12,
+        "stale_lhw": 12,
+        "stale_yem": 12
+      },
+      {
+        "uid": 200001531200,
+        "group": "sf",
+        "n_dec_draws": 100,
+        "n_non_employed": 13,
+        "stale_lhw": 0,
+        "stale_yem": 0
+      },
+      {
+        "uid": 200001533500,
+        "group": "sf",
+        "n_dec_draws": 100,
+        "n_non_employed": 9,
+        "stale_lhw": 9,
+        "stale_yem": 9
+      },
+      {
+        "uid": 200001593700,
+        "group": "sm",
+        "n_dec_draws": 100,
+        "n_non_employed": 14,
+        "stale_lhw": 0,
+        "stale_yem": 0
+      },
+      {
+        "uid": 200003504101,
+        "group": "sf",
+        "n_dec_draws": 100,
+        "n_non_employed": 11,
+        "stale_lhw": 11,
+        "stale_yem": 11
+      },
+      {
+        "uid": 200003672000,
+        "group": "sm",
+        "n_dec_draws": 100,
+        "n_non_employed": 7,
+        "stale_lhw": 7,
+        "stale_yem": 7
+      }
+    ]
+  },
+  "task_0b_identity_gate": {
+    "tol_eur": 0.01,
+    "euromod_system": "FR_2015",
+    "euromod_dataset": "FR_2016_a3",
+    "band_rows": 169276,
+    "euromod_elapsed_s": 34.8,
+    "method": "one full-band uid-first pass (169,276 rows); all 1,676 HHs x 101 decider draws overwritten with correct bpool priced input values (lhw, yem, yem00, yemxp, yivwg, yem_hour, working)",
+    "geometry_finding": "STRUCTURAL: uid-first full-band ordering differs from bpool draw-first chunk ordering; FR RSA accumulator (i_bsa00_cumpers_nw/w) is accumulated cumulatively over the whole file in row order, so the different orderings produce different accumulator states at each HH row; bsa00_s = 526 EUR at ALL 100 draws for ALL 13 preflight HHs in uid-first run vs bsa00_s = 0 in stored bpool (draw-first chunks); gate FAILS by design; not a fixable input error",
+    "overall_pass": false,
+    "per_hh": [
+      {
+        "uid": 200001495800,
+        "group": "sm",
+        "n_draws": 100,
+        "max_dispy_absdiff_eur": 944.1696165281668,
+        "n_fail_tol_0_01_eur": 100,
+        "max_bsa00_absdiff_eur": 526.5841666666666,
+        "pass_identity": false,
+        "pass_rsa_leakage": false
+      },
+      {
+        "uid": 200001496401,
+        "group": "sm",
+        "n_draws": 100,
+        "max_dispy_absdiff_eur": 413.9309401975206,
+        "n_fail_tol_0_01_eur": 100,
+        "max_bsa00_absdiff_eur": 526.5841666666666,
+        "pass_identity": false,
+        "pass_rsa_leakage": false
+      },
+      {
+        "uid": 200001498400,
+        "group": "sm",
+        "n_draws": 100,
+        "max_dispy_absdiff_eur": 720.3625,
+        "n_fail_tol_0_01_eur": 100,
+        "max_bsa00_absdiff_eur": 526.5841666666666,
+        "pass_identity": false,
+        "pass_rsa_leakage": false
+      },
+      {
+        "uid": 200001502500,
+        "group": "sm",
+        "n_draws": 100,
+        "max_dispy_absdiff_eur": 725.9252500002266,
+        "n_fail_tol_0_01_eur": 100,
+        "max_bsa00_absdiff_eur": 526.5841666666666,
+        "pass_identity": false,
+        "pass_rsa_leakage": false
+      },
+      {
+        "uid": 200001516900,
+        "group": "sm",
+        "n_draws": 100,
+        "max_dispy_absdiff_eur": 294.8824999977335,
+        "n_fail_tol_0_01_eur": 100,
+        "max_bsa00_absdiff_eur": 526.5841666666666,
+        "pass_identity": false,
+        "pass_rsa_leakage": false
+      },
+      {
+        "uid": 200001504300,
+        "group": "sf",
+        "n_draws": 100,
+        "max_dispy_absdiff_eur": 546.1837537611382,
+        "n_fail_tol_0_01_eur": 100,
+        "max_bsa00_absdiff_eur": 526.5841666666666,
+        "pass_identity": false,
+        "pass_rsa_leakage": false
+      },
+      {
+        "uid": 200001526601,
+        "group": "sf",
+        "n_draws": 100,
+        "max_dispy_absdiff_eur": 650.29985,
+        "n_fail_tol_0_01_eur": 100,
+        "max_bsa00_absdiff_eur": 526.5841666666666,
+        "pass_identity": false,
+        "pass_rsa_leakage": false
+      },
+      {
+        "uid": 200001527000,
+        "group": "sf",
+        "n_draws": 100,
+        "max_dispy_absdiff_eur": 559.4216730650242,
+        "n_fail_tol_0_01_eur": 100,
+        "max_bsa00_absdiff_eur": 526.5841666666666,
+        "pass_identity": false,
+        "pass_rsa_leakage": false
+      },
+      {
+        "uid": 200001531200,
+        "group": "sf",
+        "n_draws": 100,
+        "max_dispy_absdiff_eur": 1626.3382564767376,
+        "n_fail_tol_0_01_eur": 100,
+        "max_bsa00_absdiff_eur": 526.5841666666666,
+        "pass_identity": false,
+        "pass_rsa_leakage": false
+      },
+      {
+        "uid": 200001533500,
+        "group": "sf",
+        "n_draws": 100,
+        "max_dispy_absdiff_eur": 313.13529824582565,
+        "n_fail_tol_0_01_eur": 100,
+        "max_bsa00_absdiff_eur": 526.5841666666666,
+        "pass_identity": false,
+        "pass_rsa_leakage": false
+      },
+      {
+        "uid": 200001593700,
+        "group": "sm",
+        "n_draws": 100,
+        "max_dispy_absdiff_eur": 920.2028752885625,
+        "n_fail_tol_0_01_eur": 100,
+        "max_bsa00_absdiff_eur": 526.5841666666666,
+        "pass_identity": false,
+        "pass_rsa_leakage": false
+      },
+      {
+        "uid": 200003504101,
+        "group": "sf",
+        "n_draws": 100,
+        "max_dispy_absdiff_eur": 748.4278250323296,
+        "n_fail_tol_0_01_eur": 100,
+        "max_bsa00_absdiff_eur": 526.5841666666666,
+        "pass_identity": false,
+        "pass_rsa_leakage": false
+      },
+      {
+        "uid": 200003672000,
+        "group": "sm",
+        "n_draws": 100,
+        "max_dispy_absdiff_eur": 606.7981808236809,
+        "n_fail_tol_0_01_eur": 100,
+        "max_bsa00_absdiff_eur": 526.5841666666666,
+        "pass_identity": false,
+        "pass_rsa_leakage": false
+      }
+    ]
+  },
+  "task_0c_rsa_leakage": {
+    "tol_eur": 1e-06,
+    "overall_pass": false,
+    "geometry_finding": "bsa00_s = 526 EUR observed at all 100 draws for all 13 preflight HHs in uid-first run; stored bpool = 0; difference is structural (batch-ordering geometry, not a fixable input issue)"
+  },
+  "preflight_gate": "FAIL",
+  "task_1_authorized": false,
+  "task_1_blocked_reason": "identity gate FAIL: structural batch-geometry incompatibility (uid-first full-band vs draw-first chunk; bsa00_s=526 vs 0 at all 100 draws for all 13 preflight HHs); equalized covariate spec not ratified (JMP_decomposition_design_memo_v1.md not on disk; F6 IMPLEMENTATION AUTHORIZED: NO, commit bde5085)",
+  "base_seed": 20260604,
+  "year": 2016,
+  "year_tag": 2,
+  "n_nodes_planned": 101,
+  "total_elapsed_s": 36.0
+}

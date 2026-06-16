@@ -1,87 +1,17 @@
-F6-PRICE-B: FAITHFUL PER-TARGET (BATCH-B / target-only) COUNTERFACTUAL PRICING
-HARNESS — SINGLES ONLY. Build + preflight-gate + (gated) full parallel run.
-No decomposition, no inequality, no estimation, no EUROMOD SYSTEM edits, no
-promotion, no commit. New uncommitted runner + priced outputs + report.
+he F6-PRICE-B preflight is complete. Here is the summary:
 
-PURPOSE
-Price F6 counterfactual job menus through EUROMOD using the CERTIFIED target-only
-geometry that D-BEN proved faithful (each target household's counterfactual nodes
-substituted into the FULL real 2016 singles population; all OTHER households held
-at their actual stored state — this is batch-A, the production method, which
-eliminates the RSA cross-household leakage by construction). Parallelize across
-32 cores. This produces the priced consumption (ils_dispy_real) at every
-counterfactual node that F6-RUN's access operator needs; it does NOT compute the
-decomposition.
+PREFLIGHT GATE: FAIL — Task 0 complete, Task 1 blocked on two independent issues.
 
-SCOPE (hard limits)
-- SINGLES ONLY (singles_male + singles_female), 2016 cross-section (year_tag==2,
-  n=1,676) — the ratified primary scope. NO couples (901-alt pricing is out of
-  scope here; couples are the staged stretch goal).
-- Stem: fr_p3a_bpool_engine_ready_staged_threeB1 at certified theta-hat.
-- EUROMOD: FR_2015 / FR_2016_a3, via the build module (run_bpool_euromod_chunk:
-  _SYSTEM_PAIRING / _CPI / _RAW_SCHEMA / EuromodRunner / _stamp_draw_ids). Reuse
-  these EXACTLY; hardcode no system/CPI/schema constant.
-- Carried constraints (binding): full-population batch per target (NOT sub-bands,
-  NOT isolated nodes); counterfactual wage nominal before EUROMOD, real via phi_y
-  after (no double deflation); authoritative yem identity yem=yem00+yemxp; cluster
-  identity source_idorighh preserved.
+Task 0(a) — Canonicalization (DIAGNOSTIC): 97 stale lhw/yem rows across 13 preflight HHs in non-employed draws. Would be zeroed by _overwrite_fixed before Task 1 pricing.
 
-FROZEN RNG (record verbatim; same scheme as F3-R/F4):
-  S = 101 counterfactual nodes per household (row-count identical to the staged band)
-  base_seed = 20260604 ; per-HH seed = base_seed + (uid % 1_000_000) ; PCG64
-  draw ordering employment -> occupation -> hours -> Halton-wage; pin + record the
-  Halton sub-seed.
-  Theta-hash + spec-hash recorded in every output.
+Task 0(b)+(c) — Identity gate: STRUCTURAL FAIL
 
-WHICH COUNTERFACTUAL THIS PRICES (read from the F6 design memo; do NOT invent the
-operator here): this harness prices the ACCESS-equalized counterfactual node menus
-and the ACTUAL (self) menus. The reference-covariate values defining "access-
-equalized" are an INPUT to this harness (passed as a covariate-override spec); if
-that spec is not yet ratified, run ONLY the self/actual menus for the preflight
-identity gate and STOP before the equalized run, reporting that the equalized
-covariate spec is required.
+The gate fails for a fundamental reason, not a bug. The bpool priced parquet was built using draw-first chunk EUROMOD calls (all 1,676 HHs at a draw-range together, ~84k rows per call, accumulator resets between calls). The F6 preflight uses a uid-first full-band EUROMOD call (all 101 draws for uid1, then uid2, …, single 169k-row call, accumulator runs continuously). The FR RSA accumulator (i_bsa00_cumpers_nw/w, the sole batch-sensitive channel proved by D-BEN) sees a much larger prior-row count at each HH position in uid-first ordering. This geometry difference — not any input value error — drives bsa00_s from 0 (stored bpool) to 526 EUR (uid-first run) at ALL 100 draws for ALL 13 preflight HHs, regardless of whether correct yem00/yemxp are provided. Not fixable by input correction.
 
-TASK 0 — PREFLIGHT GATE (5 HH per group, before any full run). The load-bearing step.
-For 5 singles_male + 5 singles_female (record selection: first-by-uid + the 3
-D-BEN anchors if in 2016):
-  (a) CANONICALIZATION: apply the app-layer post-draw canonicalization to redrawn
-      nodes (the DE canonicalize_post_draws analogue) BEFORE pricing. Confirm no
-      non-employment row carries positive wage / stale hours / stale yem. Report
-      the canonicalization touched-row count. If the canonicalization function is
-      absent for this path, STOP and report (do not price uncanonicalized nodes).
-  (b) IDENTITY GATE: build the "self" counterfactual = redraw with the override
-      set to the household's OWN actual covariates, price target-only in the full
-      2016 population, and confirm repriced ils_dispy reproduces the STORED
-      ils_dispy for that household's existing nodes to <= 0.01 EUR. This is the
-      override=actual parity the F6 design memo requires, now at the pricing layer.
-  (c) RSA-LEAKAGE CONTROL: confirm target-only pricing reproduces the household's
-      RSA (bsa00_s) with NO cross-household wobble (the D-BEN fix working: since
-      others are held at actual, i_bsa00_cumpers_nw/w match the stored population).
-  Report per-HH: canonicalization rows, identity max_abs (<=0.01 gate), RSA match.
-  GATE: all 10 HH pass (a)+(b)+(c). STOP and report if any fail — do NOT launch
-  the full run on an unvalidated pricing path.
+Welfare-consistency implication: F4C/F5 actual baselines (V_i^IS, ils_dispy_real) used draw-first geometry → bsa00_s=0 for RSA-eligible HHs. Any uid-first counterfactual pricing would give bsa00_s=526, inflating welfare changes by ~526 EUR/month as an artefact. Operator must choose: (A) F6 uses draw-first chunk geometry (consistent with F4C/F5), or (B) recompute F4C/F5 baseline in uid-first geometry.
 
-TASK 1 — FULL PARALLEL RUN (only if Task 0 passes; only for menus whose covariate-
-override spec is ratified). Price all 1,676 singles' counterfactual menus, one
-target-only full-population EUROMOD pass per household, parallelized across 32
-cores. Runner contract: atomic per-HH output (tmp+rename); per-HH manifest row
-(uid, group, seed, n_nodes, n_canonicalized, identity_self_max_abs if computed,
-runtime, theta/spec hash, output hash); fully resumable (skip completed by hash);
-no retry/reseed on failure — record and continue. Checkpoint dir OUTSIDE
-production/staged. Report wall-time + per-core throughput.
+Two blockers for Task 1:
 
-TASK 2 — OUTPUT + INTEGRITY.
-Per-HH priced counterfactual nodes -> outputs/welfare/fastlane/f6_priced_cf/
-  {group}/{uid}.parquet  (node: working, loc4, hours, wage_nominal, ils_dispy,
-   ils_dispy_real via phi_y, bsa00_s, + the canonicalization flags)
-Aggregate manifest -> outputs/welfare/fastlane/f6_price_b_manifest_v1.json
-Report -> docs/jmp_methodology/RURO_welfare_F6PRICEB_pricing_report_v1.md
-  with: Task-0 gate verdicts (all 10 HH), full-run wall-time + throughput,
-  n households priced / failed, RSA-leakage confirmation at scale (spot-check a
-  sample: target-only RSA has no cross-household drift), and explicit lines:
-   PREFLIGHT GATE: pass/fail
-   CANONICALIZATION APPLIED: yes/no
-   IDENTITY (override=actual) <=0.01 EUR: pass/fail
-   FULL RUN COMPLETE: n/1676
-   READY FOR F6-RUN ACCESS OPERATOR: yes/no
-Do not commit. Report paths.
+Identity gate FAIL — geometry design decision needed before a valid pricing path exists
+JMP_decomposition_design_memo_v1.md not on disk — F6 IMPLEMENTATION AUTHORIZED: NO (commit bde5085)
+READY FOR F6-RUN ACCESS OPERATOR: NO

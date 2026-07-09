@@ -1,0 +1,18 @@
+{
+  "negll_warm": 4220.523815720094,
+  "negll_fit": 3793.253434406332,
+  "n_hh": 1555,
+  "engine_ready": "fr_singles_engine_ready_v5.parquet",
+  "pinned": [
+    "beta_l0_m",
+    "beta_l_age_m",
+    "beta_l_age2_m",
+    "beta_l0_f",
+    "beta_l_age_f",
+    "beta_l_age2_f",
+    "beta_l_nkids_f",
+    "theta_l_f",
+    "beta_E_y2015",
+    "beta_E_y2017"
+  ]
+}

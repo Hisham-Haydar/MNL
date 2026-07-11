@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RURO Post-Estimation Analysis</title>
+    <style>
+    :root {
+      --primary-color: #2c3e50;
+      --success-color: #27ae60;
+      --warning-color: #e74c3c;
+      --bg-light: #f8f9fa;
+      --sm-color: #1f77b4;
+      --sf-color: #ff7f0e;
+      --cm-color: #2ca02c;
+      --cf-color: #d62728;
+      --bound-hit-color: #ffcccc;
+      --bounded-row-color: #fff3cd;
+      --not-estimated-color: #f8d7da;
+      --pval-marginal: #d4edda;
+      --pval-weak: #fff3cd;
+      --pval-insig: #f8d7da;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0; padding: 2em; max-width: 1600px; margin: 0 auto;
+      line-height: 1.6; color: #333;
+    }
+    h1 { color: var(--primary-color); border-bottom: 3px solid var(--primary-color); padding-bottom: 0.5em; }
+    h2 { color: var(--primary-color); margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 0.3em; }
+    h3 { color: var(--primary-color); }
+    .table { border-collapse: collapse; margin-bottom: 1.5em; width: 100%; }
+    .table th, .table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    .table th { background-color: var(--bg-light); font-weight: 600; }
+    .table-striped tbody tr:nth-child(odd) { background-color: #f9f9f9; }
+    .table-sm th, .table-sm td { padding: 5px 8px; font-size: 0.9em; }
+    section { margin-bottom: 2.5em; padding: 1.5em; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    figure { margin: 1em 0; text-align: center; }
+    figcaption { font-weight: bold; margin-bottom: 0.5em; color: var(--primary-color); }
+    img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; }
+    .four-col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5em; }
+    .stats-box { background: var(--bg-light); padding: 1em; border-radius: 4px; border-left: 4px solid var(--primary-color); }
+    .time-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1em; border-radius: 8px; margin: 1em 0; }
+    .time-box h4 { margin: 0 0 0.5em 0; }
+    .time-box .time-value { font-size: 1.5em; font-weight: bold; }
+    .param-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1em; }
+    .param-group { background: var(--bg-light); padding: 1em; border-radius: 4px; }
+    .contour-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5em; }
+    .header-info { background: var(--bg-light); padding: 1em; border-radius: 4px; margin-bottom: 2em; }
+    .group-legend { display: flex; gap: 2em; margin: 1em 0; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 0.5em; }
+    .legend-color { width: 20px; height: 4px; border-radius: 2px; }
+    .param-table .bounded-param { background-color: var(--bounded-row-color) !important; }
+    .param-table .bound-hit { background-color: var(--bound-hit-color) !important; font-weight: bold; }
+    .param-table .degenerate-se-row { background-color: #fff3cd !important; }
+    .param-table .degenerate-se-cell { background-color: #ffe69c !important; font-weight: 600; }
+    .param-table .pval-marginal { background-color: var(--pval-marginal); }
+    .param-table .pval-weak { background-color: var(--pval-weak); }
+    .param-table .pval-insig { background-color: var(--pval-insig); }
+    .warning-cell { background-color: #ffcccc !important; font-weight: bold; }
+    .warning-row { background-color: #fff3cd !important; }
+    .color-legend { display: flex; flex-wrap: wrap; gap: 1em; margin: 1em 0; padding: 0.5em; background: #f0f0f0; border-radius: 4px; }
+    .color-legend-item { display: flex; align-items: center; gap: 0.5em; font-size: 0.85em; }
+    .color-box { width: 16px; height: 16px; border: 1px solid #999; border-radius: 2px; }
+    .spec-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5em; margin-top: 1.5em; }
+    .spec-card { background: white; padding: 1.5em; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-top: 4px solid; }
+    .spec-section { margin-bottom: 1.5em; }
+    .spec-section h4 { margin: 0 0 0.75em 0; font-size: 1.1em; color: #333; border-bottom: 2px solid #eee; padding-bottom: 0.5em; }
+    .math-block { background: #f8f9fa; padding: 1em; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.95em; line-height: 1.6; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+    .math-block.symbolic { background: #e8f4f8; border-left: 3px solid #3498db; }
+    .math-block.numerical { background: #fef5e7; border-left: 3px solid #f39c12; }
+    @media (max-width: 768px) { .two-col, .four-col, .contour-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <h1>📊 RURO Post-Estimation Analysis</h1>
+
+    <div class="header-info">
+        <p><strong>Generated:</strong> 2026-07-11 11:41:08</p>
+        <p><strong>Total Parameters:</strong> 47 | <strong>Groups:</strong> joint</p>
+        <p><strong>Estimation Results Source:</strong> <code>outputs\trial_singles2016\estimation_results_trial_singles2016.json</code></p>
+        
+        <div class="stats-box" style="margin-top: 1em;">
+            <h4 style="margin-top:0;">Estimation Configuration</h4>
+            <table class="table table-sm" style="width:auto; margin-bottom:0;">
+                <tr><th>Specification</th><td>joint_pooled_v1_bll0_tlmpin</td></tr><tr><th>Specification File</th><td><code>scripts\bpool\specs\estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml</code></td></tr><tr><th>Model Family</th><td>regular</td></tr><tr><th>Opportunity Centering</th><td>Enabled</td></tr>
+            </table>
+        </div>
+        
+        <div class="group-legend">
+            <div class="legend-item"><div class="legend-color" style="background:var(--sm-color)"></div>Single Males</div>
+            <div class="legend-item"><div class="legend-color" style="background:var(--sf-color)"></div>Single Females</div>
+            <div class="legend-item"><div class="legend-color" style="background:var(--cm-color)"></div>Males in Couples</div>
+            <div class="legend-item"><div class="legend-color" style="background:var(--cf-color)"></div>Females in Couples</div>
+        </div>
+    </div>
+
+    
+    <div class="time-box">
+      <h4>⏱️ Elapsed Time</h4>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1em; text-align: center;">
+        <div>
+          <div style="font-size: 0.9em; opacity: 0.8;">Estimation</div>
+          <div class="time-value">N/A</div>
+        </div>
+        <div>
+          <div style="font-size: 0.9em; opacity: 0.8;">Post-Estimation</div>
+          <div class="time-value">9.8s</div>
+        </div>
+        <div>
+          <div style="font-size: 0.9em; opacity: 0.8;">Total</div>
+          <div class="time-value">N/A</div>
+        </div>
+        <div>
+          <div style="font-size: 0.9em; opacity: 0.8;">Iterations</div>
+          <div class="time-value">N/A</div>
+        </div>
+      </div>
+    </div>
+    
+
+    <section><h2>⚙️ Solver &amp; Convergence Diagnostics (from DiagnosticsBundle)</h2><table class="table" style="width:auto;"><tbody><tr><th>Solver</th><td>notebook trial (warm-&gt;fit) <span style='font-size:0.85em;color:#666;'>(family: other)</span></td></tr><tr><th>Objective (log-likelihood)</th><td>-3793.2534</td></tr><tr><th>Wall time (s)</th><td>—</td></tr><tr><td colspan='2'><strong>Per-group convergence:</strong></td></tr></tbody></table><table class='table table-sm'><thead><tr><th>group</th><th>success</th><th>message</th><th>iters</th><th>nfev</th><th>grad_norm</th><th>wall(s)</th></tr></thead><tbody><tr><td>joint</td><td>True</td><td>notebook trial fit (singles-only; couples+year params pinned at certified)</td><td>—</td><td>—</td><td>—</td><td>—</td></tr></tbody></table><table class='table' style='width:auto;'><tbody></tbody></table></section>
+
+    
+
+    
+<section>
+  <h2>📈 A. Core Likelihood and Sample Statistics</h2>
+  <table class="table" style="width:auto;"><tr><th>Log-likelihood</th><td>-3793.2534</td></tr><tr><th>Observations (rows)</th><td>1555</td></tr><tr><th>Choice sets / groups</th><td>1555</td></tr><tr><th>Alternatives per choice set</th><td>1.00</td></tr><tr><th>Free parameters</th><td>47</td></tr><tr><th>Fixed parameters</th><td>0</td></tr><tr><th>AIC</th><td>7680.5069</td></tr><tr><th>BIC</th><td>7931.9207</td></tr><tr><th>AIC / n_obs</th><td>4.939233</td></tr></table>
+</section>
+
+<section>
+  <h2>📈 B. Null-Model and Pseudo-R² Diagnostics</h2>
+  <table class="table" style="width:auto;"><tr><th>ll_null (uniform)</th><td>-7161.0396</td></tr><tr><th>ll_null (prior-corrected)</th><td>-8473.1288</td></tr><tr><th>ρ² (uniform)</th><td>0.4703</td></tr><tr><th>ρ² (prior-corrected)</th><td>0.5523</td></tr><tr><th>Adj. ρ² (uniform)</th><td>0.4637</td></tr><tr><th>Adj. ρ² (prior-corrected)</th><td>0.5468</td></tr></table>
+  <p style="margin-top:0.5em;"><em>ρ² values use McFadden's formulation 1 - LL/LL0. For sampled-alternative / job-choice models the prior-corrected null is the right comparison; the uniform null is kept for legacy comparability.</em></p>
+</section>
+
+<section>
+  <h2>📈 C. Bound and Fixed-Parameter Diagnostics</h2>
+  <table class="table" style="width:auto;"><tr><th>Parameters (total)</th><td>47</td></tr><tr><th>Free parameters</th><td>47</td></tr><tr><th>Fixed parameters</th><td>0</td></tr><tr><th>Parameters with bounds</th><td>0</td></tr><tr><th>At lower bound</th><td>0</td></tr><tr><th>At upper bound</th><td>0</td></tr></table>
+  
+</section>
+
+<section>
+  <h2>📈 D. Economic Sanity Diagnostics</h2>
+  <p><em>These are not model-fit statistics. They check whether estimated preferences are economically sensible.</em></p>
+  <table class="table" style="width:auto;"><tr><th>negative_muc_count</th><td>0.0000e+00</td></tr><tr><th>negative_muc_pct</th><td>0.0000e+00</td></tr><tr><th>negative_mul_count</th><td>0.0000e+00</td></tr><tr><th>negative_mul_pct</th><td>0.0000e+00</td></tr></table>
+</section>
+
+    <section>
+        <details>
+          <summary><strong>📈 Legacy combined fit-statistics dump (technical appendix)</strong></summary>
+          <p style="margin-top:0.5em;"><em>This is the legacy "kitchen-sink" table preserved for backward compatibility. The four reorganized sections above (A–D) are the canonical view. This table mixes core fit, null-model, bound and economic-sanity values; prefer the sections above for adoption decisions.</em></p>
+          <table class="table" style="width:auto;">
+            <tr><th>log_likelihood</th><td>-3793.2534</td></tr><tr><th>n_observations</th><td>1555.0000</td></tr><tr><th>n_groups</th><td>1555.0000</td></tr><tr><th>n_parameters</th><td>47.0000</td></tr><tr><th>AIC</th><td>7680.5069</td></tr><tr><th>BIC</th><td>7931.9207</td></tr><tr><th>ll_null</th><td>-7161.0396</td></tr><tr><th>ll_null_uniform</th><td>-7161.0396</td></tr><tr><th>ll_null_prior_corrected</th><td>-8473.1288</td></tr><tr><th>n_obs_long</th><td>1.5550e+05</td></tr><tr><th>rho_squared_uniform</th><td>0.4703</td></tr><tr><th>rho_squared_adj_uniform</th><td>0.4637</td></tr><tr><th>rho_squared_prior_corrected</th><td>0.5523</td></tr><tr><th>rho_squared_adj_prior_corrected</th><td>0.5468</td></tr><tr><th>rho_squared</th><td>0.5523</td></tr><tr><th>rho_squared_adj</th><td>0.5468</td></tr><tr><th>AIC_per_obs</th><td>4.9392</td></tr><tr><th>n_negative_muc_total</th><td>0.0000e+00</td></tr><tr><th>n_negative_mul_total</th><td>0.0000e+00</td></tr><tr><th>pct_negative_muc_total</th><td>0.0000e+00</td></tr><tr><th>pct_negative_mul_total</th><td>0.0000e+00</td></tr><tr><th>n_bounded_params</th><td>0</td></tr><tr><th>n_hit_lower_bound</th><td>0</td></tr><tr><th>n_hit_upper_bound</th><td>0</td></tr>
+          </table>
+          
+    <div class="stats-box" style="margin-top:1.5em; border-left-color: var(--success-color);">
+      <h4 style="margin-top:0;">📝 Understanding Bounded Parameters</h4>
+      <ul style="margin-bottom:0; line-height:1.8;">
+        <li><strong>n_bounded_params (0)</strong>: Parameters with constraints defined.</li>
+        <li><strong>n_hit_lower_bound (0)</strong>: Parameters at lower bound. <span style="color:var(--success-color);">✓ Good!</span></li>
+        <li><strong>n_hit_upper_bound (0)</strong>: Parameters at upper bound. <span style="color:var(--success-color);">✓ Good!</span></li>
+      </ul>
+    </div>
+    
+        </details>
+    </section>
+
+    <section><h2>🔍 Identification &amp; Hessian Diagnostics</h2><p><em>Not available: Hessian diagnostics not present in results JSON or cluster-SE JSON.</em></p></section>
+
+    
+    
+
+    <section>
+        <h2>📐 Model Specification</h2>
+        <p>Utility and opportunity functions for each demographic group, shown in both symbolic and numerical form.</p>
+        
+
+        
+    <section>
+        <h2>📐 Model Index</h2>
+        <div class="stats-box">
+            <div class="math-block symbolic">
+                V<sub>ij</sub> = U<sub>ij</sub> &nbsp;+&nbsp; O<sup>E</sup><sub>ij</sub> + O<sup>H</sup><sub>ij</sub> &nbsp;+&nbsp; O<sup>W</sup><sub>ij</sub> &nbsp;+&nbsp; O<sup>Occ</sup><sub>ij</sub> &nbsp;+&nbsp; &minus; log&nbsp;prior<sub>ij</sub>
+            </div>
+            <div class="math-block symbolic" style="margin-top: 0.6em;">
+                P<sub>ij</sub> = exp(V<sub>ij</sub>) / &Sigma;<sub>k&isin;C<sub>i</sub></sub> exp(V<sub>ik</sub>)
+            </div>
+            <p style="margin: 0.6em 0 0 0; font-size: 0.9em;">
+                U is the utility of consumption and leisure; the O<sup>·</sup> terms
+                are opportunity-density contributions (employment/hours, wage,
+                occupation); <code>log&nbsp;prior</code> rescales each alternative
+                to the data-generating measure. The terms displayed reflect the
+                opportunity blocks declared in the active YAML specification.
+            </p>
+        </div>
+    </section>
+    
+    <section>
+        <h2>⏰ Employment and Hours Opportunity Parameters</h2>
+        <p>Working-gated employment and hours intercepts. Combines
+        <code>hours_opportunity.shifters</code> (base employment intercept and
+        PT/FT focal-point indicators) with
+        <code>market_opportunity.shifters</code> (working-gated residual market
+        access terms like gsur, education).</p>
+        <div class="stats-box">
+            <h4 style="margin-top:0;">Symbolic form</h4>
+            <div class="math-block symbolic">
+                O<sup>E</sup> + O<sup>H</sup> =<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;beta_E * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_h_pt1 * working_pt1<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_h_pt2 * working_pt2<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_h_ft * working_ft<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_h_lh * working_lh<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_E_gsur * gsur * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_E_drgn2 * reg2 * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_E_drgn3 * reg3 * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_E_drgn4 * reg4 * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_E_drgn5 * reg5 * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_E_drgn6 * reg6 * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_E_drgn7 * reg7 * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_E_drgn8 * reg8 * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_E_y2015 * year_2015_indicator * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_E_y2017 * year_2017_indicator * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_E_drgur * drgur * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_E_drgmd * drgmd * working
+            </div>
+            <h4 style="margin-top:1em;">Numerical form (by group)</h4>
+            <div class="math-block numerical"><div style='margin-top: 0.4em;'><strong>Joint (All Groups):</strong> -1.7286 * working &nbsp;+&nbsp; -0.1636 * working_pt1 &nbsp;+&nbsp; 0.1805 * working_pt2 &nbsp;+&nbsp; 1.3589 * working_ft &nbsp;+&nbsp; -0.8988 * working_lh &nbsp;+&nbsp; -1.0490 * gsur * working &nbsp;+&nbsp; -0.3224 * reg2 * working &nbsp;+&nbsp; -0.1967 * reg3 * working &nbsp;+&nbsp; -0.8331 * reg4 * working &nbsp;+&nbsp; -0.4062 * reg5 * working &nbsp;+&nbsp; -0.5846 * reg6 * working &nbsp;+&nbsp; -0.4151 * reg7 * working &nbsp;+&nbsp; -0.4418 * reg8 * working &nbsp;+&nbsp; -0.2546 * year_2015_indicator * working &nbsp;+&nbsp; -0.0695 * year_2017_indicator * working &nbsp;+&nbsp; 0.0035 * drgur * working &nbsp;+&nbsp; 0.0358 * drgmd * working</div></div>
+        </div>
+    </section>
+    
+    <section>
+        <h2>💰 Wage Opportunity / Mincer Parameters</h2>
+        <p>Log-normal wage opportunity:
+        <code>log(wage) = μ<sub>w</sub>(X) + ε</code>,
+        <code>ε ~ N(0, σ²)</code>. The mean μ<sub>w</sub> is built from
+        <code>wage_opportunity.mean_shifters</code>.</p>
+        <div class="stats-box">
+            <h4 style="margin-top:0;">Symbolic form</h4>
+            <div class="math-block symbolic">
+                μ<sub>w</sub> =<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;beta_w0<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_w_educL · educL<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_w_educH · educH<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_w_pexp · pexp_years<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_w_pexp2 · pexp_years2
+                <br><br>
+                log(wage) = μ<sub>w</sub> + ε,&nbsp;&nbsp; ε ~ N(0, sigma²)
+            </div>
+            <h4 style="margin-top:1em;">Numerical form (by group)</h4>
+            <div class="math-block numerical"><div style='margin-top: 0.4em;'><strong>Joint (All Groups):</strong> μ<sub>w</sub> = 2.1368 &nbsp;+&nbsp; 0.0183 * educL &nbsp;+&nbsp; 0.3237 * educH &nbsp;+&nbsp; 0.2278 * pexp_years &nbsp;+&nbsp; -0.0118 * pexp_years2<br><span style='font-family: monospace;'>sigma = 0.4197</span></div></div>
+        </div>
+    </section>
+    
+    <section>
+        <h2>🧭 Occupation Opportunity Parameters</h2>
+        <p>Working-gated occupation shifters. Each <code>applies_to</code>
+        group has its own coefficient set on the non-reference categories of
+        <code>loc4</code>. Reference category: <code>loc4 = 1</code>.</p>
+        
+        <div class="stats-box" style="margin-top: 0.6em;">
+            <h4 style="margin-top:0;">male &nbsp;(<code>applies_to = male</code>)</h4>
+            <div class="math-block symbolic">
+                O<sup>Occ</sup><sub>male</sub> =<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;beta_occ_2_m * loc4_2 * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_occ_3_m * loc4_3 * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_occ_4_m * loc4_4 * working
+            </div>
+            <div class="math-block numerical" style="margin-top: 0.5em;">
+                -1.5916 * loc4_2 * working &nbsp;+&nbsp; -2.2941 * loc4_3 * working &nbsp;+&nbsp; 0.2906 * loc4_4 * working
+            </div>
+        </div>
+        
+        <div class="stats-box" style="margin-top: 0.6em;">
+            <h4 style="margin-top:0;">female &nbsp;(<code>applies_to = female</code>)</h4>
+            <div class="math-block symbolic">
+                O<sup>Occ</sup><sub>female</sub> =<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;beta_occ_2_f * loc4_2 * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_occ_3_f * loc4_3 * working<br>&nbsp;&nbsp;&nbsp;&nbsp;+ beta_occ_4_f * loc4_4 * working
+            </div>
+            <div class="math-block numerical" style="margin-top: 0.5em;">
+                -0.0476 * loc4_2 * working &nbsp;+&nbsp; -0.4729 * loc4_3 * working &nbsp;+&nbsp; 0.7718 * loc4_4 * working
+            </div>
+        </div>
+        
+    </section>
+    
+    </section>
+
+    <section>
+        <h2>📈 Curvature-Based Heuristics (Structural Elasticity Approximations)</h2>
+        <div class="stats-box" style="margin-bottom: 1.5em; border-left-color: #3498db;">
+            <h4 style="margin-top:0;">⚠️ Interpretation Note</h4>
+            <p style="margin-bottom:0;">
+                These are <strong>not</strong> true labor supply elasticities. They are heuristic approximations
+                derived from the curvature parameters (θ) of the Box-Cox utility function. The Hicksian approximation
+                is (1 - θ_l), which measures the curvature of preferences. For rigorous elasticity estimates,
+                use simulation-based methods that account for the full discrete choice structure and budget constraints.
+            </p>
+        </div>
+
+        <h3>📊 Labor Supply Elasticities</h3>
+        <table class="dataframe table table-striped">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Group</th>
+      <th>Hicksian (compensated)</th>
+      <th>Marshallian (uncompensated)</th>
+      <th>Participation (extensive)</th>
+      <th>Intensive (conditional)</th>
+      <th>θ_l</th>
+      <th>θ_c</th>
+      <th>β_l (at median X)</th>
+      <th>β_c</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Single Males</td>
+      <td>3.394</td>
+      <td>3.294</td>
+      <td>1.018</td>
+      <td>2.376</td>
+      <td>-2.394</td>
+      <td>-0.077</td>
+      <td>4.798</td>
+      <td>1.000</td>
+    </tr>
+    <tr>
+      <td>Single Females</td>
+      <td>3.113</td>
+      <td>3.013</td>
+      <td>0.934</td>
+      <td>2.179</td>
+      <td>-2.113</td>
+      <td>-0.077</td>
+      <td>8.131</td>
+      <td>1.000</td>
+    </tr>
+    <tr>
+      <td>Males in Couples</td>
+      <td>0.500</td>
+      <td>0.400</td>
+      <td>0.150</td>
+      <td>0.350</td>
+      <td>0.500</td>
+      <td>-0.077</td>
+      <td>0.000</td>
+      <td>1.000</td>
+    </tr>
+    <tr>
+      <td>Females in Couples</td>
+      <td>3.132</td>
+      <td>3.032</td>
+      <td>0.940</td>
+      <td>2.192</td>
+      <td>-2.132</td>
+      <td>-0.077</td>
+      <td>10.052</td>
+      <td>1.000</td>
+    </tr>
+  </tbody>
+</table>
+    </section>
+
+    <section>
+        <h2>🎯 Fit Diagnostics</h2>
+        <h3>Observed vs Predicted</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr><th>Group</th><th>Obs. Participation</th><th>Pred. Participation</th><th>Obs. Mean Hours</th><th>Pred. Mean Hours</th></tr>
+            </thead>
+            <tbody>
+        <tr>
+            <td>Single Males</td>
+            <td>86.1%</td>
+            <td>92.2%</td>
+            <td>39.4</td>
+            <td>36.1</td>
+        </tr>
+        
+        <tr>
+            <td>Single Females</td>
+            <td>87.2%</td>
+            <td>87.4%</td>
+            <td>36.3</td>
+            <td>35.5</td>
+        </tr>
+        </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>⚠️ Marginal Utility Diagnostics</h2>
+        <p>Analysis at chosen alternatives. Negative values indicate potential specification issues.</p>
+
+        <h3>Negative MUC/MUL Summary</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr><th>Group</th><th>N Individuals</th><th>% Neg MUC</th><th>% Neg MUL</th><th>MUC Mean</th><th>MUL Mean</th></tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Single Males</td>
+                <td>841</td>
+                <td >0.00%</td>
+                <td >0.00%</td>
+                <td>0.0248</td>
+                <td>3.0854e-05</td>
+            </tr>
+            
+            <tr>
+                <td>Single Females</td>
+                <td>714</td>
+                <td >0.00%</td>
+                <td >0.00%</td>
+                <td>0.0302</td>
+                <td>1.8137e-04</td>
+            </tr>
+            </tbody>        <h3>MUC Behavior Analysis</h3>
+        <p>For well-behaved utility: MUC &gt; 0 (β_c &gt; 0) and diminishing (θ_c &lt; 1)</p>
+        
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Group</th><th>β_c</th><th>θ_c</th>
+                    <th>MUC Positive?</th><th>MUC Diminishing?</th><th>Well-Behaved?</th>
+                    <th>MUC at Median C</th><th>C where MUC=1</th><th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+            <tr >
+                <td>Single Males</td>
+                <td>1.0000</td>
+                <td>0.5000</td>
+                <td>✓</td>
+                <td>✓</td>
+                <td>✓</td>
+                <td>1.0000</td>
+                <td>1.0000</td>
+                <td style="font-size:0.85em;"></td>
+            </tr>
+            
+            <tr >
+                <td>Single Females</td>
+                <td>1.0000</td>
+                <td>0.5000</td>
+                <td>✓</td>
+                <td>✓</td>
+                <td>✓</td>
+                <td>1.0000</td>
+                <td>1.0000</td>
+                <td style="font-size:0.85em;"></td>
+            </tr>
+            
+            <tr >
+                <td>Males in Couples</td>
+                <td>1.0000</td>
+                <td>0.0000</td>
+                <td>✓</td>
+                <td>✓</td>
+                <td>✓</td>
+                <td>1.0000</td>
+                <td>1.0000</td>
+                <td style="font-size:0.85em;"></td>
+            </tr>
+            
+            <tr >
+                <td>Females in Couples</td>
+                <td>1.0000</td>
+                <td>0.0000</td>
+                <td>✓</td>
+                <td>✓</td>
+                <td>✓</td>
+                <td>1.0000</td>
+                <td>1.0000</td>
+                <td style="font-size:0.85em;"></td>
+            </tr>
+            </tbody>        </table>
+        
+        
+        
+            <h3>📊 Choice Probability Diagnostics</h3>
+            <div class="two-col">
+            
+                <div class="stats-box">
+                    <h4>Probability Sum Sanity Check</h4>
+                    <table class="table table-sm">
+                        <tr><td>Max |Σp - 1|</td><td>0.000000</td></tr>
+                        <tr><td>Mean |Σp - 1|</td><td>0.000000</td></tr>
+                        <tr><td>% HH off by &gt;0.01</td><td>0.00%</td></tr>
+                        <tr><td>% HH off by &gt;0.001</td><td>0.00%</td></tr>
+                    </table>
+                </div>
+                
+                <div class="stats-box">
+                    <h4>P(chosen) Distribution</h4>
+                    <table class="table table-sm">
+                        <tr><td>Min</td><td>0.0000</td></tr>
+                        <tr><td>10th percentile</td><td>0.0074</td></tr>
+                        <tr><td>25th percentile</td><td>0.0368</td></tr>
+                        <tr><td>Median</td><td>0.1016</td></tr>
+                        <tr><td>Mean</td><td>0.1400</td></tr>
+                        <tr><td>75th percentile</td><td>0.1862</td></tr>
+                        <tr><td>90th percentile</td><td>0.3624</td></tr>
+                        <tr><td>Max</td><td>0.8319</td></tr>                    </table>
+                </div>
+                </div>
+
+        <section><h2>📊 Probability &amp; Fit Diagnostics (from DiagnosticsBundle)</h2><h3>Probability-sum sanity check</h3><table class="table table-sm" style="width:auto;"><tr><th>max_error</th><td>4.440892e-16</td></tr><tr><th>mean_error</th><td>1.033114e-16</td></tr><tr><th>pct_off_by_0.01</th><td>0.000000</td></tr><tr><th>pct_off_by_0.001</th><td>0.000000</td></tr></table><h3>P(chosen) distribution</h3><table class="table table-sm" style="width:auto;"><tr><th>min</th><td>5.655277e-09</td></tr><tr><th>max</th><td>0.831857</td></tr><tr><th>mean</th><td>0.139967</td></tr><tr><th>median</th><td>0.101598</td></tr><tr><th>q10</th><td>0.007416</td></tr><tr><th>q25</th><td>0.036837</td></tr><tr><th>q75</th><td>0.186215</td></tr><tr><th>q90</th><td>0.362418</td></tr></table><h3>Worst-fit households (top 10)</h3><table class="table table-sm"><thead><tr><th>#</th><th>idhh</th><th>group</th><th>p_chosen</th><th>ll_i</th></tr></thead><tbody><tr><td>1</td><td>3600001</td><td>sf</td><td>5.655277e-09</td><td>-18.9907</td></tr><tr><td>2</td><td>1918802</td><td>sf</td><td>5.535051e-08</td><td>-16.7096</td></tr><tr><td>3</td><td>3457500</td><td>sm</td><td>1.066498e-07</td><td>-16.0537</td></tr><tr><td>4</td><td>3408700</td><td>sm</td><td>2.231630e-05</td><td>-10.7102</td></tr><tr><td>5</td><td>2191400</td><td>sm</td><td>4.190094e-05</td><td>-10.0802</td></tr><tr><td>6</td><td>3382800</td><td>sm</td><td>6.431675e-05</td><td>-9.6517</td></tr><tr><td>7</td><td>3317202</td><td>sf</td><td>6.936255e-05</td><td>-9.5762</td></tr><tr><td>8</td><td>4288000</td><td>sm</td><td>7.233865e-05</td><td>-9.5342</td></tr><tr><td>9</td><td>3864601</td><td>sm</td><td>8.087879e-05</td><td>-9.4226</td></tr><tr><td>10</td><td>3090000</td><td>sf</td><td>8.484373e-05</td><td>-9.3747</td></tr></tbody></table></section>
+
+        
+    </section>
+
+    <section>
+        <h2>🗺️ Utility Contours & Plots</h2>
+        <h3>Marginal Utility Comparison</h3><div class="two-col"><figure><figcaption>Marginal Utility of Consumption</figcaption><img src="muc_comparison.png" alt="muc_comparison" style="max-width:100%;"></figure><figure><figcaption>Marginal Utility of Leisure</figcaption><img src="mul_comparison.png" alt="mul_comparison" style="max-width:100%;"></figure></div><h3>📊 Marginal Utility Distributions by Group</h3><div class="contour-grid"><div class="contour-item"><h4>Single Males - MUC & MUL Distributions</h4><img src="sm_mu.png" alt="sm_mu" style="max-width:100%;"></div><div class="contour-item"><h4>Single Females - MUC & MUL Distributions</h4><img src="sf_mu.png" alt="sf_mu" style="max-width:100%;"></div><div class="contour-item"><h4>Males in Couples - MUC & MUL Distributions</h4><img src="cou_m_mu.png" alt="cou_m_mu" style="max-width:100%;"></div><div class="contour-item"><h4>Females in Couples - MUC & MUL Distributions</h4><img src="cou_f_mu.png" alt="cou_f_mu" style="max-width:100%;"></div></div><h3>Utility Indifference Curves by Group</h3><div class="contour-grid"><div class="contour-item"><h4>Single Males</h4><img src="sm_contours.png" alt="sm_contours" style="max-width:100%;"></div><div class="contour-item"><h4>Single Females</h4><img src="sf_contours.png" alt="sf_contours" style="max-width:100%;"></div><div class="contour-item"><h4>Males in Couples</h4><img src="cou_m_contours.png" alt="cou_m_contours" style="max-width:100%;"></div><div class="contour-item"><h4>Females in Couples</h4><img src="cou_f_contours.png" alt="cou_f_contours" style="max-width:100%;"></div></div><div class="two-col"><figure><figcaption>Participation</figcaption><img src="fit_participation.png" alt="participation" style="max-width:100%;"></figure><figure><figcaption>Mean Hours</figcaption><img src="fit_mean_hours.png" alt="mean_hours" style="max-width:100%;"></figure></div><h3>?? Hours Distribution: Observed vs Predicted</h3><div class="contour-grid"><div class="plot-box"><img src="hours_distribution_total.png" alt="Hours Distribution (Total)"></div><div class="plot-box"><img src="hours_distribution_singles_male.png" alt="Hours Distribution (Singles Male)"></div><div class="plot-box"><img src="hours_distribution_singles_female.png" alt="Hours Distribution (Singles Female)"></div></div><h3>?? Wage Distribution: Observed vs Predicted (Working Only)</h3><div class="contour-grid"><div class="plot-box"><img src="wage_distribution_total.png" alt="Wage Distribution (Total)"></div><div class="plot-box"><img src="wage_distribution_singles_male.png" alt="Wage Distribution (Singles Male)"></div><div class="plot-box"><img src="wage_distribution_singles_female.png" alt="Wage Distribution (Singles Female)"></div></div>
+    </section>
+
+    
+    <section>
+        <h2>Group-Specific Parameters</h2>
+        <div class="param-groups">
+            <div class="param-group">
+                <h4>Single Males</h4>
+                <table class="table table-sm"><tr><td>beta_E</td><td>-1.7286</td></tr><tr><td>beta_E_drgmd</td><td>0.0358</td></tr><tr><td>beta_E_drgn2</td><td>-0.3224</td></tr><tr><td>beta_E_drgn3</td><td>-0.1967</td></tr><tr><td>beta_E_drgn4</td><td>-0.8331</td></tr><tr><td>beta_E_drgn5</td><td>-0.4062</td></tr><tr><td>beta_E_drgn6</td><td>-0.5846</td></tr><tr><td>beta_E_drgn7</td><td>-0.4151</td></tr><tr><td>beta_E_drgn8</td><td>-0.4418</td></tr><tr><td>beta_E_drgur</td><td>0.0035</td></tr><tr><td>beta_E_gsur</td><td>-1.0490</td></tr><tr><td>beta_E_y2015</td><td>-0.2546</td></tr><tr><td>beta_E_y2017</td><td>-0.0695</td></tr><tr><td>beta_h_ft</td><td>1.3589</td></tr><tr><td>beta_h_lh</td><td>-0.8988</td></tr><tr><td>beta_h_pt1</td><td>-0.1636</td></tr><tr><td>beta_h_pt2</td><td>0.1805</td></tr><tr><td>beta_l0</td><td>4.7980</td></tr><tr><td>beta_l_age</td><td>0.3715</td></tr><tr><td>beta_l_age2</td><td>1.0000</td></tr><tr><td>beta_w0</td><td>2.1368</td></tr><tr><td>beta_w_educH</td><td>0.3237</td></tr><tr><td>beta_w_educL</td><td>0.0183</td></tr><tr><td>beta_w_pexp</td><td>0.2278</td></tr><tr><td>beta_w_pexp2</td><td>-0.0118</td></tr><tr><td>sigma</td><td>0.4197</td></tr><tr><td>theta_c_singles</td><td>-0.0771</td></tr><tr><td>theta_l</td><td>-2.3942</td></tr></table>
+            </div>
+            
+            <div class="param-group">
+                <h4>Single Females</h4>
+                <table class="table table-sm"><tr><td>beta_E</td><td>-1.7286</td></tr><tr><td>beta_E_drgmd</td><td>0.0358</td></tr><tr><td>beta_E_drgn2</td><td>-0.3224</td></tr><tr><td>beta_E_drgn3</td><td>-0.1967</td></tr><tr><td>beta_E_drgn4</td><td>-0.8331</td></tr><tr><td>beta_E_drgn5</td><td>-0.4062</td></tr><tr><td>beta_E_drgn6</td><td>-0.5846</td></tr><tr><td>beta_E_drgn7</td><td>-0.4151</td></tr><tr><td>beta_E_drgn8</td><td>-0.4418</td></tr><tr><td>beta_E_drgur</td><td>0.0035</td></tr><tr><td>beta_E_gsur</td><td>-1.0490</td></tr><tr><td>beta_E_y2015</td><td>-0.2546</td></tr><tr><td>beta_E_y2017</td><td>-0.0695</td></tr><tr><td>beta_h_ft</td><td>1.3589</td></tr><tr><td>beta_h_lh</td><td>-0.8988</td></tr><tr><td>beta_h_pt1</td><td>-0.1636</td></tr><tr><td>beta_h_pt2</td><td>0.1805</td></tr><tr><td>beta_l0</td><td>8.1310</td></tr><tr><td>beta_l_age</td><td>-0.9262</td></tr><tr><td>beta_l_age2</td><td>1.0000</td></tr><tr><td>beta_l_nkids</td><td>1.4036</td></tr><tr><td>beta_w0</td><td>2.1368</td></tr><tr><td>beta_w_educH</td><td>0.3237</td></tr><tr><td>beta_w_educL</td><td>0.0183</td></tr><tr><td>beta_w_pexp</td><td>0.2278</td></tr><tr><td>beta_w_pexp2</td><td>-0.0118</td></tr><tr><td>sigma</td><td>0.4197</td></tr><tr><td>theta_c_singles</td><td>-0.0771</td></tr><tr><td>theta_l</td><td>-2.1126</td></tr></table>
+            </div>
+            
+            <div class="param-group">
+                <h4>Males in Couples</h4>
+                <table class="table table-sm"><tr><td>beta_E</td><td>-1.7286</td></tr><tr><td>beta_E_drgmd</td><td>0.0358</td></tr><tr><td>beta_E_drgn2</td><td>-0.3224</td></tr><tr><td>beta_E_drgn3</td><td>-0.1967</td></tr><tr><td>beta_E_drgn4</td><td>-0.8331</td></tr><tr><td>beta_E_drgn5</td><td>-0.4062</td></tr><tr><td>beta_E_drgn6</td><td>-0.5846</td></tr><tr><td>beta_E_drgn7</td><td>-0.4151</td></tr><tr><td>beta_E_drgn8</td><td>-0.4418</td></tr><tr><td>beta_E_drgur</td><td>0.0035</td></tr><tr><td>beta_E_gsur</td><td>-1.0490</td></tr><tr><td>beta_E_y2015</td><td>-0.2546</td></tr><tr><td>beta_E_y2017</td><td>-0.0695</td></tr><tr><td>beta_h_ft</td><td>1.3589</td></tr><tr><td>beta_h_lh</td><td>-0.8988</td></tr><tr><td>beta_h_pt1</td><td>-0.1636</td></tr><tr><td>beta_h_pt2</td><td>0.1805</td></tr><tr><td>beta_l0</td><td>0.0000</td></tr><tr><td>beta_l_age</td><td>-0.0672</td></tr><tr><td>beta_l_age2</td><td>0.0878</td></tr><tr><td>beta_occ_2</td><td>-1.5916</td></tr><tr><td>beta_occ_3</td><td>-2.2941</td></tr><tr><td>beta_occ_4</td><td>0.2906</td></tr><tr><td>beta_w0</td><td>2.1368</td></tr><tr><td>beta_w_educH</td><td>0.3237</td></tr><tr><td>beta_w_educL</td><td>0.0183</td></tr><tr><td>beta_w_pexp</td><td>0.2278</td></tr><tr><td>beta_w_pexp2</td><td>-0.0118</td></tr><tr><td>sigma</td><td>0.4197</td></tr><tr><td>theta_c_singles</td><td>-0.0771</td></tr></table>
+            </div>
+            
+            <div class="param-group">
+                <h4>Females in Couples</h4>
+                <table class="table table-sm"><tr><td>beta_E</td><td>-1.7286</td></tr><tr><td>beta_E_drgmd</td><td>0.0358</td></tr><tr><td>beta_E_drgn2</td><td>-0.3224</td></tr><tr><td>beta_E_drgn3</td><td>-0.1967</td></tr><tr><td>beta_E_drgn4</td><td>-0.8331</td></tr><tr><td>beta_E_drgn5</td><td>-0.4062</td></tr><tr><td>beta_E_drgn6</td><td>-0.5846</td></tr><tr><td>beta_E_drgn7</td><td>-0.4151</td></tr><tr><td>beta_E_drgn8</td><td>-0.4418</td></tr><tr><td>beta_E_drgur</td><td>0.0035</td></tr><tr><td>beta_E_gsur</td><td>-1.0490</td></tr><tr><td>beta_E_y2015</td><td>-0.2546</td></tr><tr><td>beta_E_y2017</td><td>-0.0695</td></tr><tr><td>beta_h_ft</td><td>1.3589</td></tr><tr><td>beta_h_lh</td><td>-0.8988</td></tr><tr><td>beta_h_pt1</td><td>-0.1636</td></tr><tr><td>beta_h_pt2</td><td>0.1805</td></tr><tr><td>beta_l0</td><td>10.0522</td></tr><tr><td>beta_l_age</td><td>-1.7803</td></tr><tr><td>beta_l_age2</td><td>1.0000</td></tr><tr><td>beta_l_nkids</td><td>0.5857</td></tr><tr><td>beta_occ_2</td><td>-0.0476</td></tr><tr><td>beta_occ_3</td><td>-0.4729</td></tr><tr><td>beta_occ_4</td><td>0.7718</td></tr><tr><td>beta_w0</td><td>2.1368</td></tr><tr><td>beta_w_educH</td><td>0.3237</td></tr><tr><td>beta_w_educL</td><td>0.0183</td></tr><tr><td>beta_w_pexp</td><td>0.2278</td></tr><tr><td>beta_w_pexp2</td><td>-0.0118</td></tr><tr><td>sigma</td><td>0.4197</td></tr><tr><td>theta_c_singles</td><td>-0.0771</td></tr><tr><td>theta_l</td><td>-2.1317</td></tr></table>
+            </div>
+            </div>
+    </section>
+    
+
+    <section><h2>📋 Parameter Estimates (by block — from DiagnosticsBundle)</h2><p><strong>Primary SE: Hessian (classical)</strong> <em>(supply --cluster-se-json for cluster-robust SE)</em></p><p style='font-size:0.9em;color:#555;'><em>Primary SE is robust/cluster when cluster SEs are supplied by --cluster-se-json or embedded in results JSON; otherwise the Hessian (classical) SE is primary.</em></p><h3>Block: preference (18 params)</h3><table class="table table-sm"><thead><tr><th>parameter</th><th>estimate</th><th>se_hessian</th><th>t_hessian</th><th>se_robust</th><th>t_robust</th><th>p_robust</th><th>fixed</th><th>at_lower</th><th>at_upper</th><th>primary_se</th></tr></thead><tbody><tr><td>joint.beta_l0_sf</td><td>8.131043</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_l_age_sf</td><td>-0.926186</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.theta_l_sf</td><td>-2.112586</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_l_age2_sm</td><td>1.000000</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.theta_l_sm</td><td>-2.394220</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_l_nkids_sf</td><td>1.403648</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_l_age_sm</td><td>0.371503</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_l0_sm</td><td>4.797967</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.theta_c_singles</td><td>-0.077066</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_l_age2_sf</td><td>1.000000</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_l_age_f</td><td>-1.780253</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_l0_f</td><td>10.052237</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_l_age2_m</td><td>0.087750</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_l_age_m</td><td>-0.067237</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_l0_m</td><td>1.000000e-06</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_l_age2_f</td><td>1.000000</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_l_nkids_f</td><td>0.585720</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.theta_l_f</td><td>-2.131739</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr></tbody></table><h3>Block: employment_hours_opportunity (16 params)</h3><table class="table table-sm"><thead><tr><th>parameter</th><th>estimate</th><th>se_hessian</th><th>t_hessian</th><th>se_robust</th><th>t_robust</th><th>p_robust</th><th>fixed</th><th>at_lower</th><th>at_upper</th><th>primary_se</th></tr></thead><tbody><tr><td>joint.beta_h_pt1</td><td>-0.163627</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_E_drgn4</td><td>-0.833082</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_E_drgmd</td><td>0.035828</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_E_drgn6</td><td>-0.584638</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_E_drgur</td><td>0.003493</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_h_lh</td><td>-0.898762</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_h_ft</td><td>1.358901</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_h_pt2</td><td>0.180457</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_E_drgn5</td><td>-0.406234</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_E_gsur</td><td>-1.049013</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_E_drgn2</td><td>-0.322390</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_E_drgn7</td><td>-0.415141</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_E_drgn3</td><td>-0.196739</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_E_drgn8</td><td>-0.441751</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_E_y2015</td><td>-0.254606</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_E_y2017</td><td>-0.069471</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr></tbody></table><h3>Block: wage_opportunity (6 params)</h3><table class="table table-sm"><thead><tr><th>parameter</th><th>estimate</th><th>se_hessian</th><th>t_hessian</th><th>se_robust</th><th>t_robust</th><th>p_robust</th><th>fixed</th><th>at_lower</th><th>at_upper</th><th>primary_se</th></tr></thead><tbody><tr><td>joint.beta_w_pexp</td><td>0.227842</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_w_educL</td><td>0.018288</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_w_pexp2</td><td>-0.011783</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_w0</td><td>2.136759</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.sigma</td><td>0.419664</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_w_educH</td><td>0.323747</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr></tbody></table><h3>Block: occupation_opportunity (6 params)</h3><table class="table table-sm"><thead><tr><th>parameter</th><th>estimate</th><th>se_hessian</th><th>t_hessian</th><th>se_robust</th><th>t_robust</th><th>p_robust</th><th>fixed</th><th>at_lower</th><th>at_upper</th><th>primary_se</th></tr></thead><tbody><tr><td>joint.beta_occ_2_f</td><td>-0.047581</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_occ_4_m</td><td>0.290643</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_occ_3_m</td><td>-2.294101</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_occ_2_m</td><td>-1.591649</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_occ_3_f</td><td>-0.472919</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr><tr><td>joint.beta_occ_4_f</td><td>0.771794</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr></tbody></table><h3>Block: other (1 params)</h3><table class="table table-sm"><thead><tr><th>parameter</th><th>estimate</th><th>se_hessian</th><th>t_hessian</th><th>se_robust</th><th>t_robust</th><th>p_robust</th><th>fixed</th><th>at_lower</th><th>at_upper</th><th>primary_se</th></tr></thead><tbody><tr><td>joint.beta_E</td><td>-1.728606</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td>none</td></tr></tbody></table></section>
+
+    <section>
+        <h2>📋 Parameter Estimates by Category (legacy view)</h2>
+        <p><em>Significance: *** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05. The
+        bundle-driven block view above is the canonical Phase-2 source.</em></p>
+        
+    <div class="color-legend">
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--bounded-row-color);"></div>Bounded (has constraints)</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--bound-hit-color);"></div>⚠️ Hit bound</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: #ffe69c;"></div>Warning: degenerate SE (near zero)</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-marginal);"></div>p ∈ [0.05, 0.1)</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-weak);"></div>p ∈ [0.1, 0.25)</div>
+      <div class="color-legend-item"><div class="color-box" style="background-color: var(--pval-insig);"></div>p ≥ 0.25</div>
+    </div>
+    
+        
+        <h3>🎯 Preference Parameters (Utility Function)</h3>
+        <p><em>Parameters determining the utility from consumption (β_c, θ_c) and leisure (β_l*, θ_l) by demographic group.</em></p>
+        <div style="max-height:400px; overflow-y:auto;">
+            <table class="table table-striped table-sm param-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Estimate</th>
+                        <th>Std Error</th>
+                        <th>t-value</th>
+                        <th>p-value</th>
+                        <th>Lower Bound</th>
+                        <th>Upper Bound</th>
+                        <th>Initial Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+            <tr >
+                <td>joint.beta_l0_sf</td>
+                <td>8.1310</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>3.7285</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_l_age_sf</td>
+                <td>-0.9262</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>0.4986</td>
+            </tr>
+            
+            <tr >
+                <td>joint.theta_l_sf</td>
+                <td>-2.1126</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-1.3491</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_l_age2_sm</td>
+                <td>1.0000</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>0.3819</td>
+            </tr>
+            
+            <tr >
+                <td>joint.theta_l_sm</td>
+                <td>-2.3942</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-1.8616</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_l_nkids_sf</td>
+                <td>1.4036</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>1.7395</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_l_age_sm</td>
+                <td>0.3715</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>0.6775</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_l0_sm</td>
+                <td>4.7980</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>4.5487</td>
+            </tr>
+            
+            <tr >
+                <td>joint.theta_c_singles</td>
+                <td>-0.0771</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>0.0076</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_l_age2_sf</td>
+                <td>1.0000</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>1.0000</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_l_age_f</td>
+                <td>-1.7803</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_l0_f</td>
+                <td>10.0522</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_l_age2_m</td>
+                <td>0.0878</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_l_age_m</td>
+                <td>-0.0672</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_l0_m</td>
+                <td>0.0000</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_l_age2_f</td>
+                <td>1.0000</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_l_nkids_f</td>
+                <td>0.5857</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            
+            <tr >
+                <td>joint.theta_l_f</td>
+                <td>-2.1317</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+        
+        <h3>⏰ Employment and Hours Opportunity Parameters</h3>
+        <p><em>Working-gated employment intercept and hours focal-point indicators, plus residual market-access shifters (gsur, education) declared in <code>market_opportunity.shifters</code>.</em></p>
+        <div style="max-height:400px; overflow-y:auto;">
+            <table class="table table-striped table-sm param-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Estimate</th>
+                        <th>Std Error</th>
+                        <th>t-value</th>
+                        <th>p-value</th>
+                        <th>Lower Bound</th>
+                        <th>Upper Bound</th>
+                        <th>Initial Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+            <tr >
+                <td>joint.beta_h_pt1</td>
+                <td>-0.1636</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-1.4333</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_E</td>
+                <td>-1.7286</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-0.7527</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_E_drgn4</td>
+                <td>-0.8331</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-0.0169</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_E_drgmd</td>
+                <td>0.0358</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-0.6675</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_E_drgn6</td>
+                <td>-0.5846</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-0.0485</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_E_drgur</td>
+                <td>0.0035</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-0.5305</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_h_lh</td>
+                <td>-0.8988</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-1.2185</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_h_ft</td>
+                <td>1.3589</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>1.0413</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_h_pt2</td>
+                <td>0.1805</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-0.1037</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_E_drgn5</td>
+                <td>-0.4062</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-0.1402</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_E_gsur</td>
+                <td>-1.0490</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-1.3062</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_E_drgn2</td>
+                <td>-0.3224</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-0.0750</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_E_drgn7</td>
+                <td>-0.4151</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-0.1752</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_E_drgn3</td>
+                <td>-0.1967</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>0.0313</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_E_drgn8</td>
+                <td>-0.4418</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-0.3657</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_E_y2015</td>
+                <td>-0.2546</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_E_y2017</td>
+                <td>-0.0695</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+        
+        <h3>💰 Wage Opportunity / Mincer Parameters</h3>
+        <p><em>Log-normal wage opportunity: μ<sub>w</sub>(X) intercept, education, experience, and residual standard deviation σ.</em></p>
+        <div style="max-height:400px; overflow-y:auto;">
+            <table class="table table-striped table-sm param-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Estimate</th>
+                        <th>Std Error</th>
+                        <th>t-value</th>
+                        <th>p-value</th>
+                        <th>Lower Bound</th>
+                        <th>Upper Bound</th>
+                        <th>Initial Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+            <tr >
+                <td>joint.beta_w_pexp</td>
+                <td>0.2278</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>0.3828</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_w_educL</td>
+                <td>0.0183</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-0.0608</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_w_pexp2</td>
+                <td>-0.0118</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>-0.0822</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_w0</td>
+                <td>2.1368</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>2.1968</td>
+            </tr>
+            
+            <tr >
+                <td>joint.sigma</td>
+                <td>0.4197</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>0.3898</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_w_educH</td>
+                <td>0.3237</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>0.3382</td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+        
+        <h3>🧭 Occupation Opportunity Parameters</h3>
+        <p><em>Working-gated occupation shifters declared in <code>occupation_opportunity.shifters</code>; routed by <code>applies_to</code> group (sm/sf/cm/cf). Reference category is the YAML's <code>occupation_opportunity.reference</code>.</em></p>
+        <div style="max-height:400px; overflow-y:auto;">
+            <table class="table table-striped table-sm param-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Estimate</th>
+                        <th>Std Error</th>
+                        <th>t-value</th>
+                        <th>p-value</th>
+                        <th>Lower Bound</th>
+                        <th>Upper Bound</th>
+                        <th>Initial Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+            <tr >
+                <td>joint.beta_occ_2_f</td>
+                <td>-0.0476</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_occ_4_m</td>
+                <td>0.2906</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_occ_3_m</td>
+                <td>-2.2941</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_occ_2_m</td>
+                <td>-1.5916</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_occ_3_f</td>
+                <td>-0.4729</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            
+            <tr >
+                <td>joint.beta_occ_4_f</td>
+                <td>0.7718</td>
+                <td >N/A</td>
+                <td>N/A</td>
+                <td >N/A </td>
+                <td>—</td>
+                <td>—</td>
+                <td>N/A</td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+        
+    </section>
+
+    <footer>
+        <p>Generated by Enhanced RURO Post-Estimation (Styled) | 2026-07-11 11:41:08</p>
+    </footer>
+</body>
+</html>

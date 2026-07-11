@@ -1,6 +1,6 @@
 {
-  "negll_warm": 4220.523815720094,
-  "negll_fit": 3793.253434406332,
+  "negll_warm": 4220.523816,
+  "negll_fit": 4106.604220022093,
   "n_hh": 1555,
   "engine_ready": "fr_singles_engine_ready_v5.parquet",
   "pinned": [
@@ -14,5 +14,11 @@
     "theta_l_f",
     "beta_E_y2015",
     "beta_E_y2017"
-  ]
+  ],
+  "theta_csv": "theta_trial_singles_2016_v3_final.csv",
+  "at_bound": [
+    "beta_l_age2_sm",
+    "beta_l_age2_sf"
+  ],
+  "age2_bound_decision": "kept certified 1.0: widening to 3.0 ran both params to the new bound for a 2.28-nat gain -> near-flat direction, bound retained"
 }

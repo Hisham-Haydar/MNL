@@ -1,6 +1,6 @@
 # RURO Low-Token Post-Estimation Summary
 
-Generated: 2026-07-11T12:31:33
+Generated: 2026-07-12T12:39:08
 
 ## Purpose
 
@@ -12,7 +12,7 @@ Figures and large HTML output are intentionally omitted.
 | item | path_or_value |
 | --- | --- |
 | estimation_results_json | outputs\trial_singles2016\estimation_results_trial_singles2016.json |
-| html_report | outputs\trial_singles2016\trial_singles2016_post_estimation_report_20260711_123130.html |
+| html_report | outputs\trial_singles2016\trial_singles2016_post_estimation_report_20260712_123905.html |
 | post_output_dir | outputs\trial_singles2016 |
 | params_csv | outputs\trial_singles2016\trial_singles2016_params.csv |
 | elasticities_csv | outputs\trial_singles2016\trial_singles2016_elasticities.csv |
@@ -36,7 +36,7 @@ Figures and large HTML output are intentionally omitted.
 
 | field | value |
 | --- | --- |
-| git_sha | aee0a15aad66 |
+| git_sha | 0e31d4974682 |
 | git_branch | main |
 | git_dirty | 1 |
 

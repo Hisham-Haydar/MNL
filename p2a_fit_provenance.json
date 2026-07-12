@@ -1,0 +1,25 @@
+{
+  "negll_fit": 19071.656158180616,
+  "n_hh": 1555,
+  "n_alts": 101,
+  "engine_ready": "fr_singles_engine_ready_p2a_bpool.parquet",
+  "theta_csv": "theta_p2a_singles_2016_v1.csv",
+  "pinned": [
+    "beta_l0_m",
+    "beta_l_age_m",
+    "beta_l_age2_m",
+    "beta_l0_f",
+    "beta_l_age_f",
+    "beta_l_age2_f",
+    "beta_l_nkids_f",
+    "theta_l_f",
+    "beta_E_y2015",
+    "beta_E_y2017"
+  ],
+  "at_bound": [
+    "beta_l_age2_sm",
+    "beta_l_age2_sf"
+  ],
+  "band_convention": "bpool (11342/7391/7541 rows reflagged vs assembled; negLL 19071.6562 vs 19130.4360)",
+  "draws_design": "certified B-pool (D1 hours mixture, W1 occ-conditional wages, empirical occ, pi0=0.10, seed 2026)"
+}

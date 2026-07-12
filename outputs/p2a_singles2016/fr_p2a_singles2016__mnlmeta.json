@@ -1,19 +1,6 @@
 {
  "source": "P2a bpool draws (101 alts/HH)",
- "produced_by": "notebooks/fr_data_walkthrough.ipynb trial adapter (cell 22b)",
- "design": "singles-only trial (100 alts/HH; no couples file)",
- "normalization_method": "mirrors harmonise_bpool_engine_ready.py (TOTAL_LEISURE_HOURS=80; c_scale=mean(consumption); l_scale=min positive chosen leisure)",
- "consumption_source": {
-  "singles": "ils_dispy_takeup (trial)"
- },
- "wage_price_basis": {
-  "estimator_columns": [
-   "wage"
-  ],
-  "basis": "2016-real"
- },
- "prior_convention": "prior = clip(exp(clip(log_prior,-700,700)),1e-16,None)",
- "squared_regressor_scaling": "pexp_years/20 + age_norm/10, squares recomputed",
+ "produced_by": "fr_singles_pipeline_v1.ipynb",
  "n_draws": {
   "singles": 101
  },
@@ -28,13 +15,9 @@
   "singles": 157055,
   "total": 157055
  },
- "year_indicators": {
-  "year_2015_indicator": "1[year_tag==1]",
-  "year_2017_indicator": "1[year_tag==3]",
-  "note": "single 2016 wave; both 0"
- },
  "cluster_key": {
   "cluster_id_col": "cluster_id",
   "source_col": "idorighh"
- }
+ },
+ "prior_convention": "prior=clip(exp(clip(log_prior,-700,700)),1e-16,None)"
 }

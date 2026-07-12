@@ -1,6 +1,6 @@
 {
   "solver_name": "notebook P2a (warm->fit)",
-  "objective_ll": -19071.656158180616,
+  "objective_ll": -19071.656158180504,
   "wall_time_seconds": null,
   "per_group": [
     {
@@ -10,7 +10,7 @@
       "n_iterations": null,
       "n_function_evaluations": null,
       "gradient_norm_results_json": null,
-      "final_ll": -19071.656158180616,
+      "final_ll": -19071.656158180504,
       "walltime_seconds": null
     }
   ],

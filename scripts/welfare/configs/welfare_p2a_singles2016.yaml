@@ -1,0 +1,51 @@
+# P3-1 welfare config — NEW P2a singles-2016 baseline.
+# Copy-adapted from welfare_stage1_w3.yaml (structure) but repointed at the P2a artifacts.
+# Read by scripts/welfare/run_p2a_singles_welfare.py ONLY. Edits no existing config.
+#
+# Provenance of every value is cited in the runner. The staged data + canonical theta CSV
+# are produced by scripts/welfare/stage_p2a_singles_welfare.py.
+
+welfare_p2a:
+  baseline:
+    # SAME spec YAML as the certified baseline (P2a reused it; estimation_results…json:8).
+    spec_yaml_path: "scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml"
+    # canonical parameter,value CSV emitted by staging from results.joint.parameters.
+    theta_hat_path: "scripts/welfare/configs/theta_hat_p2a_singles2016_v1.csv"
+    # staged engine-ready stem under bpool_dir() (see stage_p2a_singles_welfare.py).
+    engine_ready_stem: "fr_p2a_singles2016_welfare"
+    # singles-only: NO couples stem (runner uses the singles-only code path; see staging note).
+    couples_stem: null
+    source_results_json: "outputs/p2a_singles2016/estimation_results_p2a_singles2016.json"
+
+  normalization:
+    # S_i = alternatives per household = 101 (draw 0 actual + 100 counterfactual).
+    # welfare level = V_i^IS - log(S_i)  (mirrors run_f4c_final_singles_measures.py:196-199).
+    S_i: 101
+    total_leisure_hours: 80.0      # run_f4c_final_singles_measures.py:46
+
+  measures:
+    active: ["W1", "W3", "W4", "W6"]
+    # W6 universal weekly-hours grid (run_f4c_final_singles_measures.py:47-49); leisure = 80 - hours.
+    w6_hours:   [0.0, 20.0, 30.0, 35.0, 39.0, 48.0]
+    w6_labels:  ["home", "PT1", "PT2", "F35", "FT", "LH"]
+    dcm_floor_eur: 1.0             # run_f4a_singles_measure_core.py:56
+    cap_mult: 50.0                 # run_f4a_singles_measure_core.py:57
+
+  weighting:
+    weight_col: "dwt"              # survey weight (run_f5_singles_measure_family.py Primary index)
+    cluster_col: "idorighh"        # fr_p2a_singles2016__mnlmeta.json:38
+    inequality_indices: ["gini", "cv2", "theil_l", "atkinson_0p5", "atkinson_1", "atkinson_2"]
+    headline_measures: ["W1", "W4", "W6"]   # run_f5_singles_measure_family.py:47
+
+  verification:
+    expect_n_hh: 1555
+    w3_zero_recovery_tol_eur: 1.0e-2   # |W3 omega| ~ 0 identity (V_target == engine lse exactly)
+
+  output:
+    # storage-root relative: <storage>/outputs/welfare/p2a_singles2016/
+    storage_subdir: "outputs/welfare/p2a_singles2016"
+    viis_parquet: "singles_ViIS_p2a_v1.parquet"
+    measures_parquet: "singles_measures_p2a_v1.parquet"
+    inequality_json: "inequality_p2a_v1.json"
+    manifest_json: "run_manifest_p2a_v1.json"
+    report_md: "docs/jmp_methodology/RURO_welfare_P2a_singles_Vi_and_measures_report_v1.md"

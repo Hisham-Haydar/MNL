@@ -7,7 +7,7 @@
     "opt_method": "notebook P2a (warm->fit)",
     "analytical_gradient": false,
     "command_line": "notebooks/fr_data_walkthrough.ipynb - P2a adapter",
-    "timestamp": "2026-07-12T11:55:15.173721+00:00"
+    "timestamp": "2026-07-12T12:31:18.311498+00:00"
   },
   "data_metadata": {
     "n_observations": 1555,
@@ -28,7 +28,7 @@
     "unavailable_reason": "",
     "data": {
       "solver_name": "notebook P2a (warm->fit)",
-      "objective_ll": -19071.656158180616,
+      "objective_ll": -19071.656158180504,
       "wall_time_seconds": null,
       "per_group": [
         {
@@ -38,7 +38,7 @@
           "n_iterations": null,
           "n_function_evaluations": null,
           "gradient_norm_results_json": null,
-          "final_ll": -19071.656158180616,
+          "final_ll": -19071.656158180504,
           "walltime_seconds": null
         }
       ],
@@ -60,15 +60,15 @@
     "available": true,
     "unavailable_reason": "",
     "data": {
-      "log_likelihood": -19071.656158180616,
+      "log_likelihood": -19071.656158180504,
       "n_observations": 1555,
       "n_groups": 1555,
       "n_alts_per_set": 1.0,
       "n_free_parameters": 47,
       "n_fixed_parameters": 0,
-      "AIC": 38237.31231636123,
-      "BIC": 38488.72616511806,
-      "AIC_per_obs": 24.589911457467032
+      "AIC": 38237.31231636101,
+      "BIC": 38488.726165117834,
+      "AIC_per_obs": 24.589911457466886
     }
   },
   "null_model_fit": {
@@ -77,10 +77,10 @@
     "data": {
       "ll_null_uniform": -7176.512403688159,
       "ll_null_prior_corrected": -22191.949292287136,
-      "rho_squared_uniform": -1.657510373476021,
-      "rho_squared_prior_corrected": 0.14060473431195997,
-      "rho_squared_adj_uniform": -1.6640595156437188,
-      "rho_squared_adj_prior_corrected": 0.13848684915545706,
+      "rho_squared_uniform": -1.6575103734760055,
+      "rho_squared_prior_corrected": 0.14060473431196496,
+      "rho_squared_adj_uniform": -1.6640595156437032,
+      "rho_squared_adj_prior_corrected": 0.13848684915546206,
       "note": "\u03c1\u00b2 values use McFadden's formulation 1 - LL/LL0. For sampled-alternative / job-choice models the prior-corrected null is the right comparison; the uniform null is kept for legacy comparability."
     }
   },
@@ -117,7 +117,7 @@
         {
           "parameter": "joint.beta_l0_sm",
           "block": "preference",
-          "estimate": 4.673666189742887,
+          "estimate": 4.673678004312863,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -131,7 +131,7 @@
         {
           "parameter": "joint.beta_l_age_sm",
           "block": "preference",
-          "estimate": 0.5778449299537604,
+          "estimate": 0.5778397599114109,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -159,7 +159,7 @@
         {
           "parameter": "joint.theta_l_sm",
           "block": "preference",
-          "estimate": -2.305835343113182,
+          "estimate": -2.305836898880668,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -173,7 +173,7 @@
         {
           "parameter": "joint.beta_l0_sf",
           "block": "preference",
-          "estimate": 7.838974918831463,
+          "estimate": 7.838988132809018,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -187,7 +187,7 @@
         {
           "parameter": "joint.beta_l_age_sf",
           "block": "preference",
-          "estimate": -0.7040510515092545,
+          "estimate": -0.7040569159293198,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -215,7 +215,7 @@
         {
           "parameter": "joint.beta_l_nkids_sf",
           "block": "preference",
-          "estimate": 1.83653212178056,
+          "estimate": 1.836517951111032,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -229,7 +229,7 @@
         {
           "parameter": "joint.theta_l_sf",
           "block": "preference",
-          "estimate": -1.9979593589450355,
+          "estimate": -1.9979599116306608,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -243,7 +243,7 @@
         {
           "parameter": "joint.theta_c_singles",
           "block": "preference",
-          "estimate": 0.0943262711223,
+          "estimate": 0.0943262717981926,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -257,7 +257,7 @@
         {
           "parameter": "joint.beta_l0_m",
           "block": "preference",
-          "estimate": 1e-06,
+          "estimate": 9.999999974752427e-07,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -271,7 +271,7 @@
         {
           "parameter": "joint.beta_l_age_m",
           "block": "preference",
-          "estimate": -0.067236897452355,
+          "estimate": -0.0672369003295898,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -285,7 +285,7 @@
         {
           "parameter": "joint.beta_l_age2_m",
           "block": "preference",
-          "estimate": 0.0877504891847849,
+          "estimate": 0.0877504870295524,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -299,7 +299,7 @@
         {
           "parameter": "joint.beta_l0_f",
           "block": "preference",
-          "estimate": 10.052237044896549,
+          "estimate": 10.052237510681152,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -313,7 +313,7 @@
         {
           "parameter": "joint.beta_l_age_f",
           "block": "preference",
-          "estimate": -1.780253386288037,
+          "estimate": -1.7802534103393557,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -341,7 +341,7 @@
         {
           "parameter": "joint.beta_l_nkids_f",
           "block": "preference",
-          "estimate": 0.5857198501055841,
+          "estimate": 0.5857198238372803,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -355,7 +355,7 @@
         {
           "parameter": "joint.theta_l_f",
           "block": "preference",
-          "estimate": -2.131739110508045,
+          "estimate": -2.1317391395568848,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -369,7 +369,7 @@
         {
           "parameter": "joint.beta_E",
           "block": "other",
-          "estimate": -4.313626626641255,
+          "estimate": -4.313626489498226,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -383,7 +383,7 @@
         {
           "parameter": "joint.beta_h_pt1",
           "block": "employment_hours_opportunity",
-          "estimate": -1.279248546961431,
+          "estimate": -1.2792498514363826,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -397,7 +397,7 @@
         {
           "parameter": "joint.beta_h_pt2",
           "block": "employment_hours_opportunity",
-          "estimate": -0.9767922027495208,
+          "estimate": -0.9767927594045346,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -411,7 +411,7 @@
         {
           "parameter": "joint.beta_h_ft",
           "block": "employment_hours_opportunity",
-          "estimate": 0.889063752869026,
+          "estimate": 0.8890639184111716,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -425,7 +425,7 @@
         {
           "parameter": "joint.beta_h_lh",
           "block": "employment_hours_opportunity",
-          "estimate": -1.4512015597752,
+          "estimate": -1.4512016066648388,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -439,7 +439,7 @@
         {
           "parameter": "joint.beta_E_gsur",
           "block": "employment_hours_opportunity",
-          "estimate": -1.306190335762088,
+          "estimate": -1.3061903715133667,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -453,7 +453,7 @@
         {
           "parameter": "joint.beta_E_drgn2",
           "block": "employment_hours_opportunity",
-          "estimate": -0.075028607972602,
+          "estimate": -0.0750286057591438,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -467,7 +467,7 @@
         {
           "parameter": "joint.beta_E_drgn3",
           "block": "employment_hours_opportunity",
-          "estimate": 0.031313770382988,
+          "estimate": 0.031313769519329,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -481,7 +481,7 @@
         {
           "parameter": "joint.beta_E_drgn4",
           "block": "employment_hours_opportunity",
-          "estimate": -0.0168585564606559,
+          "estimate": -0.0168585572391748,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -495,7 +495,7 @@
         {
           "parameter": "joint.beta_E_drgn5",
           "block": "employment_hours_opportunity",
-          "estimate": -0.1402066979956915,
+          "estimate": -0.1402066946029663,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -509,7 +509,7 @@
         {
           "parameter": "joint.beta_E_drgn6",
           "block": "employment_hours_opportunity",
-          "estimate": -0.0484589776197602,
+          "estimate": -0.0484589785337448,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -523,7 +523,7 @@
         {
           "parameter": "joint.beta_E_drgn7",
           "block": "employment_hours_opportunity",
-          "estimate": -0.1751526570287388,
+          "estimate": -0.1751526594161987,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -537,7 +537,7 @@
         {
           "parameter": "joint.beta_E_drgn8",
           "block": "employment_hours_opportunity",
-          "estimate": -0.3656941546069446,
+          "estimate": -0.3656941652297973,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -551,7 +551,7 @@
         {
           "parameter": "joint.beta_E_y2015",
           "block": "employment_hours_opportunity",
-          "estimate": -0.2546064112385174,
+          "estimate": -0.2546064257621765,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -565,7 +565,7 @@
         {
           "parameter": "joint.beta_E_y2017",
           "block": "employment_hours_opportunity",
-          "estimate": -0.0694711073761977,
+          "estimate": -0.0694711059331893,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -579,7 +579,7 @@
         {
           "parameter": "joint.beta_E_drgur",
           "block": "employment_hours_opportunity",
-          "estimate": -0.530487815363722,
+          "estimate": -0.5304878354072571,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -593,7 +593,7 @@
         {
           "parameter": "joint.beta_E_drgmd",
           "block": "employment_hours_opportunity",
-          "estimate": -0.6675446983120384,
+          "estimate": -0.6675447225570679,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -607,7 +607,7 @@
         {
           "parameter": "joint.beta_occ_2_m",
           "block": "occupation_opportunity",
-          "estimate": -1.3076794753864938,
+          "estimate": -1.3076786379478742,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -621,7 +621,7 @@
         {
           "parameter": "joint.beta_occ_3_m",
           "block": "occupation_opportunity",
-          "estimate": -1.8929901108362324,
+          "estimate": -1.8929893385979504,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -635,7 +635,7 @@
         {
           "parameter": "joint.beta_occ_4_m",
           "block": "occupation_opportunity",
-          "estimate": 0.2547699715454891,
+          "estimate": 0.2547699487356606,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -649,7 +649,7 @@
         {
           "parameter": "joint.beta_occ_2_f",
           "block": "occupation_opportunity",
-          "estimate": -0.0584023293677103,
+          "estimate": -0.0584032733872129,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -663,7 +663,7 @@
         {
           "parameter": "joint.beta_occ_3_f",
           "block": "occupation_opportunity",
-          "estimate": -0.4383094696772179,
+          "estimate": -0.4383103367912919,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -677,7 +677,7 @@
         {
           "parameter": "joint.beta_occ_4_f",
           "block": "occupation_opportunity",
-          "estimate": 0.8817957569037632,
+          "estimate": 0.8817949768763639,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -691,7 +691,7 @@
         {
           "parameter": "joint.beta_w0",
           "block": "wage_opportunity",
-          "estimate": 2.139855088743592,
+          "estimate": 2.1398550364927718,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -705,7 +705,7 @@
         {
           "parameter": "joint.beta_w_educL",
           "block": "wage_opportunity",
-          "estimate": 0.0096569453128631,
+          "estimate": 0.009657013682411,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -719,7 +719,7 @@
         {
           "parameter": "joint.beta_w_educH",
           "block": "wage_opportunity",
-          "estimate": 0.3491721112427779,
+          "estimate": 0.3491721860169334,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -733,7 +733,7 @@
         {
           "parameter": "joint.beta_w_pexp",
           "block": "wage_opportunity",
-          "estimate": 0.2371440125048787,
+          "estimate": 0.2371439938052499,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -747,7 +747,7 @@
         {
           "parameter": "joint.beta_w_pexp2",
           "block": "wage_opportunity",
-          "estimate": -0.0119846317806787,
+          "estimate": -0.0119846261198831,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -761,7 +761,7 @@
         {
           "parameter": "joint.sigma",
           "block": "wage_opportunity",
-          "estimate": 0.4135199735096618,
+          "estimate": 0.4135199906628216,
           "se_hessian": null,
           "t_hessian": null,
           "se_robust": null,
@@ -797,81 +797,81 @@
     "unavailable_reason": "",
     "data": {
       "prob_sum_errors": {
-        "max_error": 5.551115123125783e-16,
-        "mean_error": 9.909900695689501e-17,
+        "max_error": 4.440892098500626e-16,
+        "mean_error": 9.938459487319729e-17,
         "pct_off_by_0.01": 0.0,
         "pct_off_by_0.001": 0.0
       },
       "p_chosen_dist": {
-        "min": 6.628238036122961e-13,
-        "max": 0.003908525242808781,
-        "mean": 0.00011364433952896809,
-        "median": 2.3189013484632903e-06,
-        "q10": 4.1884877722757544e-07,
-        "q25": 9.504643929248038e-07,
-        "q75": 5.893355886578705e-06,
-        "q90": 0.000398327209039651
+        "min": 6.628242427188214e-13,
+        "max": 0.003908525132599258,
+        "mean": 0.00011364432888830218,
+        "median": 2.3189014749714278e-06,
+        "q10": 4.188485547894429e-07,
+        "q25": 9.50464267941452e-07,
+        "q75": 5.893356437627363e-06,
+        "q90": 0.0003983271771124077
       },
       "worst_fit_households_top10": [
         {
-          "ll_i": -28.042267196285152,
+          "ll_i": -28.04226653380686,
           "idhh": 3600001,
           "group": "sf",
-          "p_chosen": 6.628238036122961e-13
+          "p_chosen": 6.628242427188214e-13
         },
         {
-          "ll_i": -26.690450300551714,
+          "ll_i": -26.690451126407602,
           "idhh": 1918802,
           "group": "sf",
-          "p_chosen": 2.5614431122262563e-12
+          "p_chosen": 2.5614409968442456e-12
         },
         {
-          "ll_i": -25.285650800357637,
+          "ll_i": -25.28564961203012,
           "idhh": 3457500,
           "group": "sm",
-          "p_chosen": 1.0437137046360053e-11
+          "p_chosen": 1.0437149449104576e-11
         },
         {
-          "ll_i": -23.70146092922531,
+          "ll_i": -23.701460778315138,
           "idhh": 3545200,
           "group": "sf",
-          "p_chosen": 5.08845930264172e-11
+          "p_chosen": 5.088460070542037e-11
         },
         {
-          "ll_i": -23.13213850032891,
+          "ll_i": -23.1321380820271,
           "idhh": 3090000,
           "group": "sf",
-          "p_chosen": 8.991660373666669e-11
+          "p_chosen": 8.991664134895245e-11
         },
         {
-          "ll_i": -21.49364462261645,
+          "ll_i": -21.49364384214605,
           "idhh": 2644900,
           "group": "sf",
-          "p_chosen": 4.628377188079466e-10
+          "p_chosen": 4.62838080039228e-10
         },
         {
-          "ll_i": -21.287844393597176,
+          "ll_i": -21.287845520522495,
           "idhh": 3202200,
           "group": "sm",
-          "p_chosen": 5.685997288429537e-10
+          "p_chosen": 5.685990880738838e-10
         },
         {
-          "ll_i": -21.08528911293471,
+          "ll_i": -21.085288598752328,
           "idhh": 2191400,
           "group": "sm",
-          "p_chosen": 6.962661613701368e-10
+          "p_chosen": 6.962665193780206e-10
         },
         {
-          "ll_i": -20.513904584985273,
+          "ll_i": -20.51390292502728,
           "idhh": 3382800,
           "group": "sm",
-          "p_chosen": 1.232890302131526e-09
+          "p_chosen": 1.2328923486793327e-09
         },
         {
-          "ll_i": -20.483913901061253,
+          "ll_i": -20.483913502301558,
           "idhh": 3604200,
           "group": "sm",
-          "p_chosen": 1.2704255662625203e-09
+          "p_chosen": 1.2704260728571333e-09
         }
       ]
     }

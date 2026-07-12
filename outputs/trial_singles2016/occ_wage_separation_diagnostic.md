@@ -25,6 +25,6 @@ eta^2(log wage ~ loc4) = **0.128**
 IQR by loc4: 1: [2.35,2.74], 2: [2.30,2.76], 3: [2.36,2.80], 4: [2.65,3.12]
 
 ## Verdict (rule: eta2>~0.10-0.15 => conditional; <0.05 => keep unconditional)
-DECISION: <fill after reading eta2, per pre-committed rule>
+DECISION: SEPARATED (eta^2 F=0.213, M=0.128; both >= the 0.10-0.15 threshold) -> occupation-conditional wage draws ADOPTED for the next rebuild (P2), per the pre-committed rule in JMP_conditional_wage_on_occupation_decision_note_v1. Accepted-wage selection caveat flagged per note §4.
 
 Caveat (per note §4): accepted-wage selection, flagged not fixed.

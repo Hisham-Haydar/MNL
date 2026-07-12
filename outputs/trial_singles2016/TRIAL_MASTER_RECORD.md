@@ -13,6 +13,14 @@ Sample: 1,555 single households (20-60), FR_2016_a3, priced FR_2015. negLL warm 
 - SEs: see trial_se_clustered.csv (sandwich, analytic scores, cluster=idorighh; single-wave ~HC-robust).
 ## Artifacts
 theta_trial_singles_2016_v3_final.csv | trial_fit_provenance.json | fr_singles_engine_ready_v5.parquet |
-outputs/trial_singles2016/ (results JSON, report HTML, *_llm_summary_*.md, trial_se_clustered.csv, occ_wage_separation_diagnostic.md)
+outputs/trial_singles2016/ (results JSON, inline report (HTML discarded by design), *_llm_summary_*.md, trial_se_clustered.csv, occ_wage_separation_diagnostic.md)
 ## Open for P2
 Draws rebuild: peaked hours proposal (certified log_q_H atoms) + occupation-sampled dimension (+ conditional wages per Box-24 verdict); pooled 2015-17; couples; year effects unpin; LR pooling tests.
+
+## Post-closure addenda
+- Box-24 verdict: SEPARATED (eta^2 F=0.213, M=0.128) -> occupation-conditional wage draws adopted for P2.
+- SE gates: T1 3.1e-13; H_free min eig 0.1246 (PD on identified block); T5 ratio med 1.115 / max 2.887.
+- Interpretive notes: theta_c_singles weakly identified (t=-1.11, robust/Hessian ratio 2.89;
+  indistinguishable from log utility -- pooling expected to tighten). beta_E_drgur/drgmd
+  collapsed to ~0 from certified -0.53/-0.67: urbanization opportunity effect not found in
+  singles-2016 alone (gsur strongly present instead, t=-4.15). Both are P2 hypotheses.

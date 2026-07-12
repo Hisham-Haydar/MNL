@@ -1,0 +1,29 @@
+{
+  "solver_name": "notebook P2a (warm->fit)",
+  "objective_ll": -19071.656158180616,
+  "wall_time_seconds": null,
+  "per_group": [
+    {
+      "group": "joint",
+      "success": true,
+      "message": "P2a fit (singles-only; certified draw design; occ block free; bpool bands)",
+      "n_iterations": null,
+      "n_function_evaluations": null,
+      "gradient_norm_results_json": null,
+      "final_ll": -19071.656158180616,
+      "walltime_seconds": null
+    }
+  ],
+  "solver_family": "other",
+  "not_applicable_fields": [
+    "rgmax",
+    "model_status",
+    "equations",
+    "variables",
+    "nonzeros",
+    "max_infeasibility",
+    "generation_time_s",
+    "solve_time_s",
+    "conopt_trace"
+  ]
+}

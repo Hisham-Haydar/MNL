@@ -7,7 +7,7 @@
     "opt_method": "notebook trial (warm->fit)",
     "analytical_gradient": false,
     "command_line": "notebooks/fr_data_walkthrough.ipynb - trial adapter (cell 22b)",
-    "timestamp": "2026-07-11T10:31:18.387764+00:00"
+    "timestamp": "2026-07-12T10:38:54.385587+00:00"
   },
   "data_metadata": {
     "n_observations": 1555,

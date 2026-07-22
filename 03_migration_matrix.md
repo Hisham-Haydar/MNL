@@ -1,5 +1,7 @@
 # 03 — `dclaborsupply` Migration Matrix
 
+> **Historical snapshot — not live project state (annotated 2026-07-22).** Point-in-time migration-planning snapshot retained for reference only. For current state see `JMP_project_state_v1.md` (Job_Market_paper) and the sole certified baseline `joint_pooled_v1_bll0_tlmpin` (negLL 238504.6360973987). Do not treat this as current status.
+
 **Status:** DRAFT v1 for review → freeze after sign-off.
 **Document class:** Ordered, gated migration plan. Converts `01_repo_inventory.md` classifications into per-file actions with pre-registered validation gates. No code.
 **Grounded against:** `01_repo_inventory.md`, `02_package_architecture_memo.md` §K/§L.

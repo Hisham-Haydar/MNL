@@ -1,5 +1,7 @@
 # MNL Repository — Architectural Inventory (v3)
 
+> **Historical snapshot — not live project state (annotated 2026-07-22).** Point-in-time inventory retained for reference only. For current state see `JMP_project_state_v1.md` (Job_Market_paper) and the sole certified baseline `joint_pooled_v1_bll0_tlmpin` (negLL 238504.6360973987). Do not treat paths or classifications here as current.
+
 **Survey date:** 2026-06-05  
 **Method:** Read-only; paths verified via `find`, line counts via `wc -l` on `C:\Users\hisham\Repo\MNL`.  
 **Note on repo compliance:** The original prompt said output-only / do not modify the repo. This file was subsequently requested as a repo-resident artefact; it is tracked as `?? 01_repo_inventory.md` (untracked) and can be deleted without affecting any production file.  

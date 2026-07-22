@@ -2,7 +2,13 @@
 
 This file identifies the estimation outputs that are currently meaningful for interpretation and comparison. The goal is to avoid browsing many timestamped output folders to guess which run matters.
 
-## Current Baseline Runs
+> **Certified baseline (updated 2026-07-22).** The **sole certified baseline** is `joint_pooled_v1_bll0_tlmpin` — 47-param, France 2015–2017 pooled, **JAX**, singles 101 / couples 901, **negLL 238504.6360973987**, synthetic-recovery certified, real-data Hessian positive definite, clustered on `idorighh`. Provenance: `docs/France_case/P3a/execution_logs/Bpool/RURO_realdata_2016_2017_joint_901_v1.md`; spec `scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml`; theta `scripts/bpool/specs/theta_hat_realdata_901_v1.csv`.
+>
+> **The GAMSPy job-choice and continuous-RURO runs listed below are LEGACY / provenance**, superseded by the certified JAX baseline. They are retained for history and comparison only and must **not** be read as the active baseline. This registry predates the certified baseline and has not otherwise been rewritten.
+>
+> The FR-2016 singles **P2a** track (`outputs/p2a_singles2016/`) is a **separate provisional** track, not the certified pooled baseline; its region-live result (negLL ~19053.4655) is awaiting a production rebuild (see `dclaborsupply-monorepo/docs/validation/FR_P2a_region_live_promotion_readiness_v1.md`).
+
+## Current Baseline Runs (LEGACY — see certified-baseline banner above)
 
 ### 1. Job-Choice RURO: Current Pruned Candidate
 

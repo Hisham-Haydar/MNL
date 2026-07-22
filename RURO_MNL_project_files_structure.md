@@ -1,4 +1,6 @@
 ﻿# RURO MNL Project File Structure
+
+> **Historical snapshot - not live project state (annotated 2026-07-22).** Point-in-time file-structure snapshot, retained for reference only. For current state see JMP_project_state_v1.md (Job_Market_paper) and the sole certified baseline joint_pooled_v1_bll0_tlmpin (negLL 238504.6360973987). Do not treat paths here as current.
 
 Generated from: U:\Desktop\Nizam_Hisham\MNL
 Generated on: 2026-05-12 14:39:19

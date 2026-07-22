@@ -4,7 +4,7 @@ Generated: 2026-06-13 15:37:19 +02:00
 
 Git root: C:\Users\hisham\Repo\MNL
 
-Scope: tracked files plus untracked files not ignored by Git. Every dot-prefixed directory and conventional environment/dependency directory is excluded even if Git-visible. Dot-prefiJMP_ability_opportunity_cut_v1.mdxed files outside excluded directories remain included.
+Scope: tracked files plus untracked files not ignored by Git. Every dot-prefixed directory and conventional environment/dependency directory is excluded even if Git-visible. Dot-prefixed files outside excluded directories remain included.
 
 The report file files_structure_detailed.md is excluded from its own inventory. Gitlinks/submodules are listed but not traversed.
 

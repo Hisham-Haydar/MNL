@@ -1,11 +1,17 @@
 # RURO Labor Supply Model - France
 
-Python research code for estimating French labor-supply models with a Random Utility Random Opportunity (RURO) structure. The repository contains two active empirical branches:
+Python research code for estimating French labor-supply models with a Random Utility Random Opportunity (RURO) structure.
 
-- a continuous RURO branch that draws hours and wages directly;
-- a job-choice RURO branch that draws discrete job bundles made from hours, wages, and occupation/sector-like job information.
+> **Certified baseline (updated 2026-07-22).** The **sole certified baseline** is the **47-parameter pooled specification `joint_pooled_v1_bll0_tlmpin`** — France 2015–2017 pooled; **JAX** backend; singles 101 / couples 901 alternatives; **negLL 238504.6360973987**; synthetic-recovery certified; real-data Hessian positive definite; clustered inference on `idorighh`. It is produced by the `scripts/bpool` JAX estimator; the validated JAX engine and its provenance are mirrored in `dclaborsupply-monorepo` (`packages/dclaborsupply/.../likelihood/engine_jax.py`). Provenance log: `docs/France_case/P3a/execution_logs/Bpool/RURO_realdata_2016_2017_joint_901_v1.md`; spec `scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml`; theta `scripts/bpool/specs/theta_hat_realdata_901_v1.csv`.
+>
+> The earlier **continuous-RURO**, **job-choice RURO**, **corrected-P3a**, **NC-pilot**, and **GAMSPy/CONOPT** material described throughout this README is **legacy / provenance**, superseded by the certified JAX baseline. It is retained for history and reproducibility, not as the active result. Sections below that call the GAMSPy branches "active" are historical.
 
-The repository is being cleaned toward a package layout, but it is still a research codebase first. The reusable package skeleton lives in `src/mnl/`; the production RURO estimation workflow currently lives in `scripts/enhanced/` and `scripts/Job_model/`.
+This repository is the **certified-provenance and legacy-pipeline** layer (it also currently hosts the active FR-2016 singles P2a track under `outputs/p2a_singles2016/` and `scripts/welfare/`). Two historical empirical branches remain documented below:
+
+- a continuous RURO branch that draws hours and wages directly (**legacy**);
+- a job-choice RURO branch that draws discrete job bundles made from hours, wages, and occupation/sector-like job information (**legacy**).
+
+The reusable package skeleton lives in `src/mnl/` (and, for the certified engine, in `dclaborsupply-monorepo/packages/`); the legacy GAMSPy estimation workflow lives in `scripts/enhanced/` and `scripts/Job_model/`.
 
 Acknowledgements are centralized in [docs/ACKNOWLEDGEMENTS.md](docs/ACKNOWLEDGEMENTS.md). Personal names are not used as package or model-family names.
 
@@ -321,21 +327,31 @@ Outputs normally include:
 
 ## Current Baseline Results
 
-Do not infer the current baseline from the newest timestamped folder. Use [docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md](docs/estimation/RURO_ACTIVE_RESULTS_REGISTRY.md).
-
-Current key baselines:
+**The sole certified baseline is `joint_pooled_v1_bll0_tlmpin`** (47-param, France 2015–2017 pooled, JAX, singles 101 / couples 901, negLL 238504.6360973987, synthetic-recovery certified, real-data Hessian positive definite, clustered on `idorighh`). Provenance:
 
 ```text
-outputs/estimates/fr/spec/job_choice/gamspy/estimation_spec_job_M2h_pruned/run_2026-02-20_11-25-18/
-outputs/estimates/fr/spec/job_choice/gamspy/estimation_spec_job_M2e_a/run_2026-02-20_10-04-46/
-outputs/estimates/fr/spec/v3/gamspy/run_2026-02-05_14-11-43/
+docs/France_case/P3a/execution_logs/Bpool/RURO_realdata_2016_2017_joint_901_v1.md   (results, Hessian, SE)
+scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml                (spec, 47 free)
+scripts/bpool/specs/theta_hat_realdata_901_v1.csv                                   (theta + clustered SE)
 ```
 
-Interpretation:
+The 49-param `gsplit` gender-split relaxation is **not** the baseline (it failed the synthetic-recovery gate; see `docs/France_case/P3a/execution_logs/Bpool/RURO_jax_recovery_gate_gsplit_901_v1.md`).
 
-- `M2h_pruned` is the current compact job-choice candidate.
-- `M2e_a` is a useful parent/comparison job-choice run.
-- `v3` is the richer continuous-RURO exploratory baseline.
+### Legacy GAMSPy runs (provenance only — not the certified baseline)
+
+The following older GAMSPy runs are **superseded** by the certified JAX baseline and are retained for history only. Do not treat them as the active baseline:
+
+```text
+outputs/estimates/fr/spec/job_choice/gamspy/estimation_spec_job_M2h_pruned/run_2026-02-20_11-25-18/   (legacy)
+outputs/estimates/fr/spec/job_choice/gamspy/estimation_spec_job_M2e_a/run_2026-02-20_10-04-46/        (legacy)
+outputs/estimates/fr/spec/v3/gamspy/run_2026-02-05_14-11-43/                                          (legacy)
+```
+
+Interpretation (historical):
+
+- `M2h_pruned` was the compact job-choice candidate (legacy).
+- `M2e_a` was a parent/comparison job-choice run (legacy).
+- `v3` was the richer continuous-RURO exploratory baseline (legacy).
 
 ## Package Direction
 

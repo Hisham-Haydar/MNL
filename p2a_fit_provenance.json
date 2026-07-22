@@ -22,5 +22,7 @@
   ],
   "band_convention": "bpool (11342/7391/7541 rows reflagged vs assembled; negLL 19071.6562 vs 19130.4360)",
   "draws_design": "certified B-pool (D1 hours mixture, W1 occ-conditional wages, empirical occ, pi0=0.10, seed 2026)",
-  "repair_note": "region/urbanisation/gsur revived onto the engine-ready frame before the fit (zero-stubbed by assemble_singles); negLL 19071.6562 region-dead -> 19053.4655 region-live; beta_E -4.31 -> -2.90 absorbed the regional variation"
+  "repair_note": "region/urbanisation/gsur revived onto the engine-ready frame before the fit (zero-stubbed by assemble_singles); negLL 19071.6562 region-dead -> 19053.4655 region-live; beta_E -4.31 -> -2.90 absorbed the regional variation",
+  "theta_pointer_status": "UNRESOLVED (2026-07-22 doc-repair): theta_p2a_singles_2016_v1.csv and theta_p2a_singles_2016_v2.csv contain the same region-live theta (identical to float precision); it is not demonstrable that this fit uses v2 specifically, so the v1 pointer is retained rather than guessed. Both files encode the region-live solution.",
+  "result_status": "PROVISIONAL (2026-07-22 doc-repair): region-live FR-2016 singles P2a fit. NOT accepted; NOT the certified pooled baseline (joint_pooled_v1_bll0_tlmpin, negLL 238504.6360973987). No region-live Hessian/eigenvalues, gradient, cluster-robust SE, or post-estimation report exist. Not safe for inference, manuscript results, or certified welfare. Awaiting production rebuild; see dclaborsupply-monorepo/docs/validation/FR_P2a_region_live_promotion_readiness_v1.md"
 }

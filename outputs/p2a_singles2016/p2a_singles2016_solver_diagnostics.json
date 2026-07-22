@@ -1,16 +1,16 @@
 {
   "solver_name": "notebook P2a (warm->fit)",
-  "objective_ll": -19071.656158180504,
+  "objective_ll": -19053.46553160094,
   "wall_time_seconds": null,
   "per_group": [
     {
       "group": "joint",
       "success": true,
-      "message": "P2a fit (singles-only; certified draw design; occ block free; bpool bands)",
+      "message": "P2a fit (singles-only; certified draws; occ block free; bpool bands; region/urb/gsur revived)",
       "n_iterations": null,
       "n_function_evaluations": null,
       "gradient_norm_results_json": null,
-      "final_ll": -19071.656158180504,
+      "final_ll": -19053.46553160094,
       "walltime_seconds": null
     }
   ],

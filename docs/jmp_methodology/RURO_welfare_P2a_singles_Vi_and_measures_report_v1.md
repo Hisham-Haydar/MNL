@@ -1,6 +1,6 @@
 # RURO Welfare P2a — V_i^IS + W-measure family (singles 2016)
 
-Date: 2026-07-12 · spec_hash `492bcfa9c766bfcb` · theta_hash `5f3722dc2092cda0` · stem `fr_p2a_singles2016_welfare` · S=101/HH · n=1555
+Date: 2026-07-12 · spec_hash `492bcfa9c766bfcb` · theta_hash `7dbf035a5769146a` · stem `fr_p2a_singles2016_welfare` · S=101/HH · n=1555
 
 Produced by `scripts/welfare/run_p2a_singles_welfare.py` on the NEW P2a baseline. No re-estimation; θ is a fixed input (results.joint.parameters).
 

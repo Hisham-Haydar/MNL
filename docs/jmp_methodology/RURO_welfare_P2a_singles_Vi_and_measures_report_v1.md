@@ -1,6 +1,6 @@
 # RURO Welfare P2a — V_i^IS + W-measure family (singles 2016)
 
-Date: 2026-07-12 · spec_hash `492bcfa9c766bfcb` · theta_hash `47d829d11a926b98` · stem `fr_p2a_singles2016_welfare` · S=101/HH · n=1555
+Date: 2026-07-12 · spec_hash `492bcfa9c766bfcb` · theta_hash `5f3722dc2092cda0` · stem `fr_p2a_singles2016_welfare` · S=101/HH · n=1555
 
 Produced by `scripts/welfare/run_p2a_singles_welfare.py` on the NEW P2a baseline. No re-estimation; θ is a fixed input (results.joint.parameters).
 
@@ -20,19 +20,19 @@ Produced by `scripts/welfare/run_p2a_singles_welfare.py` on the NEW P2a baseline
 
 | measure | median ω (EUR) | p05 | p95 | weighted Gini (pooled) |
 |---|---:|---:|---:|---:|
-| W1 | 1315 | 866 | 2244 | 0.1661 |
-| W4 | 4364 | 2369 | 9143 | 0.2448 |
-| W6 | 4843 | 2601 | 10276 | 0.2528 |
+| W1 | 1345 | 846 | 2298 | 0.1757 |
+| W4 | 8505 | 3742 | 17712 | 0.2610 |
+| W6 | 9409 | 3983 | 19725 | 0.2664 |
 
-W3 (own-set laissez-faire transfer) is the identity readout: median 1.39e-12 EUR, |max| 2.40e-10 EUR ≈ 0.
+W3 (own-set laissez-faire transfer) is the identity readout: median 1.29e-12 EUR, |max| 2.40e-10 EUR ≈ 0.
 
 ## Inequality battery (pooled, dwt-weighted, headline)
 
 | measure | Gini | CV² | Theil-L | Atkinson(0.5) | Atkinson(1) | Atkinson(2) |
 |---|---:|---:|---:|---:|---:|---:|
-| W1 | 0.1661 | 0.1280 | 0.0472 | 0.0243 | 0.0461 | 0.0864 |
-| W4 | 0.2448 | 0.2327 | 0.0948 | 0.0474 | 0.0904 | 0.1655 |
-| W6 | 0.2528 | 0.2429 | 0.1009 | 0.0502 | 0.0960 | 0.1761 |
+| W1 | 0.1757 | 0.1350 | 0.0534 | 0.0269 | 0.0520 | 0.1015 |
+| W4 | 0.2610 | 0.2569 | 0.1148 | 0.0554 | 0.1085 | 0.2133 |
+| W6 | 0.2664 | 0.2627 | 0.1195 | 0.0573 | 0.1127 | 0.2222 |
 
 ## Verification (deliverable 4)
 

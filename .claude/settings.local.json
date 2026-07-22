@@ -151,7 +151,8 @@
     "deny": [],
     "ask": [],
     "additionalDirectories": [
-      "\\\\crc\\users\\hisham\\Desktop\\Nizam_Hisham\\MNL\\docs"
+      "\\\\crc\\users\\hisham\\Desktop\\Nizam_Hisham\\MNL\\docs",
+      "C:\\Users\\hisham\\Repo\\Job_Market_paper"
     ]
   }
 }

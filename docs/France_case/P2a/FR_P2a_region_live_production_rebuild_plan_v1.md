@@ -650,10 +650,13 @@ singles-only — roughly 1/40th of the pooled baseline's likelihood work.
 
 ## 25. Open decisions requiring manager approval
 
-- **D-1 — Canonical engine-ready input frame.** Three region-live frames exist (root bpool 07-22,
-  root `_v2` 07-13, adapter stem 07-13 — the one the anchor fit consumed). *Recommended:* seed the
-  frozen stem from the **adapter stem**, require Phase-1 equality of all three; if they disagree,
-  stop and report (S-1).
+- **D-1 — Canonical engine-ready input frame.** The geometry/reference object is the in-memory
+  `er_b` defined in notebook §§12–12b (`draws/pricing` → `assemble_singles` → independent
+  region/urbanisation/GSUR revival → B-pool band overwrite → `er_b`). The committed adapter stem and
+  existing root parquets are comparison artifacts, not automatically authoritative inputs.
+  *Recommended:* reconstruct `er_b` independently, freeze under `region_live_v1`, and require
+  equality against relevant existing frames after canonical sorting, dtype normalization, and
+  common-column alignment; if they disagree, stop and report (S-1).
 - **D-2 — Objective-reproduction and cold-reload tolerances (G-1, G-17).** No existing negLL
   tolerance. *Recommended:* `< 1e-2` vs the 4-dp target (notebook precedent) **and** `≤ 1e-4` vs
   full precision for the fit; `≤ 1e-6` for same-artifact cold reload.

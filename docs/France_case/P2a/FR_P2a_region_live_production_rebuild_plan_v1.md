@@ -1,9 +1,21 @@
 # FR P2a Region-Live — Production Rebuild Plan — v1
 
-Plan-only document. Date: 2026-07-22. Author: senior econometric software architect (planning role).
-No file other than this plan was created; no code was written; no estimation, EUROMOD, notebook,
-or welfare computation was run; no output was rewritten; the certified pooled baseline
-(`joint_pooled_v1_bll0_tlmpin`, negLL 238504.6360973987) is untouched and unaffected.
+Plan-only document. Date: 2026-07-22 (reconciled 2026-07-23). Author: senior econometric software
+architect (planning role). No file other than this plan was created; no code was written; no
+estimation, EUROMOD, notebook, or welfare computation was run; no output was rewritten; the certified
+pooled baseline (`joint_pooled_v1_bll0_tlmpin`, negLL 238504.6360973987) is untouched and unaffected.
+
+> **Reconciliation note (2026-07-23).** The manager decisions D-1…D-8 are now **ratified** in
+> `FR_P2a_region_live_manager_decisions_v1.md`. This plan has been reconciled to that ratified text.
+> Four changes were applied where the manager **amended** the plan's original recommendations:
+> (1) **D-3** — added the required conditional regional-information (regional Schur-complement) test as
+> hard gate **R-4**; (2) **D-3** — reclassified the regional-loading-share test **R-3** from a hard
+> pass/fail gate to a **warning-only diagnostic** (removed from G-9 and stop-condition S-5);
+> (3) **D-4** — encoded the three-tier condition-number scheme (≤1e7 clean / 1e7–1e10 warning /
+> >1e10 hard failure); (4) **D-1** — tightened §8 so the runner **fully rebuilds `er_b` from
+> draws/pricing** per §§12–§12b (with the on-disk frames as equality cross-checks) rather than
+> reconstructing only the five revived columns. §25 now records the ratified decisions, not
+> recommended defaults.
 
 Companion governance documents: `Job_Market_paper/docs/JMP_cross_repo_manager_handoff_v1.md`,
 `JMP_cross_repo_artifact_manifest_v1.md`, `JMP_open_decisions_cross_repo_v1.md`,
@@ -13,7 +25,8 @@ Companion governance documents: `Job_Market_paper/docs/JMP_cross_repo_manager_ha
 
 ## 1. Plan verdict
 
-**READY AFTER MANAGER DECISIONS.**
+**READY TO IMPLEMENT.** (Was "READY AFTER MANAGER DECISIONS"; the decisions D-1…D-8 were ratified
+2026-07-23 and this plan reconciled to them — see the reconciliation note above and §25.)
 
 The rebuild is architecturally unambiguous: every required computational primitive exists and is
 validated (loader, JAX engine, L-BFGS-B wrapper, exact JAX Hessian + verdict, chunked cluster
@@ -209,31 +222,42 @@ modelling.
   `JMP_GSUR_year_alignment_decision_v1.md`; merge audit
   `RURO_GSUR_SOURCE_AND_MERGE_AUDIT_v1.md`).
 
-**Reconstruction route (Questions 7–8).** Full re-assembly from raw (eligibility funnel → draws →
-EUROMOD pricing → assembly) is *not* required and is deliberately avoided (no EUROMOD run in this
-rebuild). The wiring repair is a pure per-household 5-column map, and it is **idempotent**, so the
-production route is *verification-based reconstruction*:
+**Reconstruction route (Questions 7–8) — ratified D-1: full `er_b` rebuild.** Per the ratified D-1,
+the geometry/reference object is the in-memory `er_b` construction of `fr_singles_pipeline_v1.ipynb`
+§§12–§12b, and the production runner must **reconstruct that same `er_b` object independently** — not
+merely re-map the five revived columns onto an existing frame. The committed adapter stem and the
+existing root parquets are **comparison artifacts only**, never authoritative inputs. The route is
+therefore a full independent rebuild of the construction pipeline, with the on-disk frames used only
+as equality cross-checks:
 
-1. Rebuild `singles_dec`-equivalent 5-column mapping **independently of any engine-ready file**:
-   read `FR_2016_a3.txt`, reproduce the eligibility funnel selection to the 1,555 decider
-   households (the funnel logic is in `fr_singles_pipeline_v1.ipynb` §§ up to `singles_dec`; the
-   rebuild script ports the selection deterministically), merge `gsur` from the Stage-A lookup on
-   `(drgn1, educ3, sex)`. Output: `region_map_p2a_singles2016.parquet` — one row per `idhh` with
-   `drgn1, drgur, drgmd, drgru, gsur` (+ `idorighh`, `educ3`, `sex` for audit).
-2. Verify that mapping, household-by-household, against **each** of the three on-disk region-live
-   frames (`_v2` 07-13, root bpool 07-22, adapter stem 07-13) and confirm the three frames agree
-   with each other on every engine-consumed column (not just the five revived ones).
-3. Freeze the canonical engine-ready stem for the rebuild into the new output folder
+1. **Draws / pricing.** Reproduce the certified B-pool proposal draws (D1 hours mixture,
+   W1 occ-conditional wages, empirical occupation, `pi0=0.10`, **seed 2026**) and the EUROMOD pricing
+   of each drawn alternative, exactly as §12–§12b build them, from the raw source
+   (`EUROMOD-STORAGE/Data/FR/FR_2016_a3.txt`) — **not** from any committed engine-ready parquet. This
+   step re-runs the seeded draw generation and the tax-benefit pricing; its determinism (fixed seed,
+   pinned EUROMOD system/data version, recorded library versions) is a Phase-1 precondition and is
+   hashed into the manifest. (This supersedes the earlier "no EUROMOD run / verification-only" stance:
+   D-1 requires the object be rebuilt, so the pricing that defines it is re-run.)
+2. **`assemble_singles` → revival → B-pool bands → `er_b`.** Run `assemble_singles` on the priced
+   draws; then perform the **independent** region/urbanisation/GSUR revival — read `drgn1, drgur,
+   drgmd, drgru` from `FR_2016_a3.txt` and merge `gsur` from the Stage-A lookup on `(drgn1, educ3,
+   sex)` (opportunity-year 2015 for the 2016 wave) — and apply the B-pool band overwrite, yielding the
+   in-memory `er_b`. This is the §12–§12b pipeline reproduced end-to-end in `MNL/scripts/p2a/`.
+3. **Freeze + equality cross-check.** Freeze `er_b` as the canonical engine-ready stem
    (`region_live_v1/fr_p2a_singles2016_regionlive__singles.parquet` + `__mnlmeta.json`), so every
-   downstream phase reads only from `region_live_v1/`. Per Decision D-1 (§25), this freeze is built
-   by reconstructing the same in-memory `er_b` object independently, then proving equality with the
-   relevant existing frames after canonical sorting, dtype normalization, and common-column
-   alignment.
+   downstream phase reads only from `region_live_v1/`. Then **prove equality** of the freshly rebuilt
+   `er_b` against each of the three on-disk region-live frames (`_v2` 07-13, root bpool 07-22, adapter
+   stem 07-13) after canonical row sorting, common-column ordering and dtype normalization: they must
+   agree on **every** engine-consumed column (not only the five revived ones), and the three existing
+   frames must agree with each other. Any disagreement triggers **S-1** and stops the run (Decision D-1).
 
-Because the on-disk region-dead bpool parquet no longer exists (§3), "regenerate `_v2` from the
-region-dead file" (Question 8 option a) is no longer directly possible; option (b)+(c) — source
-singles table + explicit one-to-one household mapping — is exactly what step 1 provides, and
-applying that mapping to the current frames must reproduce them unchanged (idempotence check).
+The five-column idempotence map (source → `drgn1, drgur, drgmd, drgru, gsur`) is retained as a
+**secondary** confirmation inside step 3, not as the primary construction. Because the rebuilt `er_b`
+must reproduce the reference fit, the objective-reproduction gate (G-1) and the "materially-better is
+also a stop" rule (S-2) apply to the fit on the rebuilt frame: if independently reproduced draws/pricing
+do not land within the D-2 tolerances of negLL 19053.46553160094, that is a **finding** returned to the
+manager (a signal that the reference `er_b` was not deterministically reproducible), never silently
+accepted.
 
 **Validations (Question 10)**, all hard-gated in Phase 1:
 
@@ -378,9 +402,10 @@ Phase 4, all at `theta_hat`, all persisted to `hessian_diagnostics.json`:
 5. **Numerical rank**: rank of the free-block Hessian under a pre-registered cutoff (no existing
    project threshold — D-3; recommended default `rank = #{eig_i > ε_rank · max_eig}` with
    `ε_rank = 1e-10`, consistent with the pinv `rcond=1e-10` precedent), gated `== 37`.
-6. **Condition number**: `max_eig/min_eig`; warn at `> 1e10` (diagnostics-bundle precedent), with
-   the contract-level `< 1e7` hard cutoff flagged as the stricter alternative (D-4). Reference
-   points recorded for context: certified pooled cond 1.295e6.
+6. **Condition number**: `max_eig/min_eig`, reported as an actual value and gated on the ratified
+   D-4 three-tier scheme (§19 G-8): **`≤ 1e7` clean**, **`1e7`–`1e10` warning** (recorded, does not
+   halt), **`> 1e10` hard failure** (stop S-4). The actual value is compared against the certified
+   pooled baseline's approximate condition number **1.295e6** (which sits in the clean band).
 7. **Smallest-eigenvector loadings**: top-|loading| parameters of the eigenvectors of the 3 smallest
    eigenvalues (the `_hessian_verdict` "bad_dirs" pattern), explicitly compared against the
    region-dead flat direction (`beta_E_drgn3 −0.616, beta_E_drgur −0.420, beta_E_drgmd −0.405, …`)
@@ -400,19 +425,34 @@ Dedicated block in `hessian_diagnostics.json`, since this is the question the re
   `matrix_rank == 10` under the pre-registered cutoff (no existing threshold — D-3) and report its
   singular-value spectrum and pairwise correlations (near-collinear flag at |corr| > 0.9, the
   `_hessian_verdict` precedent).
-- **Test R-2 — Hessian sub-block PD:** the 10×10 sub-Hessian on the regional params must be PD
-  (min_eig > 0) — necessary for joint identification of the block.
-- **Test R-3 — no regional loading on near-null directions:** in the full free-block spectrum, no
-  eigenvector among the k smallest (k=3) has its largest-|loading| entries dominated by regional
-  params (quantitative form to ratify, D-3; recommended: sum of squared loadings of the 10 regional
-  params < 0.5 in each of the 3 smallest-eig eigenvectors). This is the direct "flat direction
-  lifted" statement vs the region-dead evidence of 5 near-zero eigenvalues loading exactly there.
-- **Verdict field:** `region_urbanisation_identification: PASS / FAIL` + narrative. FAIL does not
-  trigger silent re-specification: it stops the pipeline (S-5) and returns the evidence to the
-  manager for decision A2 (keep all 10 / reduce / regularise). Per the gsplit lesson recorded in the
-  manifest ("PD Hessian is not sufficient without recovery"), a PASS here is a *necessary*
-  identification result for this data-wiring repair, and the strict report will state its scope
-  precisely (no synthetic-recovery claim is made for the region block by this rebuild — see §25 D-7).
+- **Test R-2 (hard gate) — raw Hessian sub-block PD:** the raw 10×10 sub-Hessian on the regional
+  params must be PD (min_eig > 0) — necessary for joint identification of the block.
+- **Test R-4 (hard gate) — conditional regional-information matrix (regional Schur complement,
+  ratified D-3):** partition the free-block Hessian `H` (37×37) into the 10 regional params `R` and
+  the other 27 free params `O`:
+  `H = [[H_RR, H_RO], [H_OR, H_OO]]`. Form the **conditional regional-information matrix** as the
+  Schur complement of `H_OO` in `H`, `S_R = H_RR − H_RO · H_OO⁻¹ · H_OR` (use a pinv with the
+  `ε_rank`/`rcond = 1e-10` precedent for `H_OO⁻¹`). Require `rank(S_R) == 10` under the `ε_rank`
+  cutoff **and** `min_eig(S_R) > 0` strictly. This is the decisive test that the region block is
+  identified **conditional on** (not confounded with) the other parameters — the raw sub-block R-2
+  can be PD while the block is still jointly weakly identified against `O`; R-4 rules that out.
+  Persist `S_R`, its spectrum, rank, and `min_eig`.
+- **Test R-3 (warning diagnostic only — NOT a gate, ratified D-3) — regional loading on near-null
+  directions:** report, for each eigenvector of the 3 smallest free-block eigenvalues, the sum of
+  squared loadings of the 10 regional params; flag a **warning** if that share `≥ 0.5` in any of the
+  three. This is an informative "flat direction lifted" narrative vs the region-dead evidence of 5
+  near-zero eigenvalues loading exactly there, **but the 0.5 cutoff is too arbitrary to determine
+  identification by itself**, so it does **not** contribute to the PASS/FAIL verdict and does **not**
+  halt the pipeline. It is recorded in the diagnostics as `region_loading_share_warning: true/false`.
+- **Verdict field:** `region_urbanisation_identification: PASS / FAIL` is determined by the **hard
+  gates R-1, R-2 and R-4 only** (design rank 10; raw sub-block PD; conditional Schur-complement rank
+  10 and min_eig > 0); the R-3 loading-share result is attached as a warning that never changes the
+  verdict. FAIL does not trigger silent re-specification: it stops the pipeline (S-5) and returns the
+  evidence to the manager for decision A2 (keep all 10 / reduce / regularise). Per the gsplit lesson
+  recorded in the manifest ("PD Hessian is not sufficient without recovery"), a PASS here is a
+  *necessary* real-data local-identification result for this data-wiring repair, and the strict report
+  states its scope precisely (no synthetic-recovery claim is made for the region block by this
+  rebuild — see §25 D-7).
 
 ## 15. Cluster-robust inference
 
@@ -521,8 +561,8 @@ against code on 2026-07-22.)
 | G-5 | Hessian PD | `min_eig > 0` strictly (free block); `n_nonpos` counter at eig ≤ 1e-8 | Existing: Check-5 `jax_recovery_gate.py:397–399`, `gates/recovery.py:95–96` |
 | G-6 | Hessian symmetry | `max\|H − Hᵀ\|` before symmetrization ≤ tol | **MAR (D-4)** — production code symmetrizes untested; precedents: exact (unit test), 1e-10 (meat T2). Recommended: 1e-8 · max\|H\| |
 | G-7 | Numerical rank | free-block rank == 37 with `eig > ε_rank · max_eig` | **MAR (D-3)** — no existing rank cutoff; recommended ε_rank = 1e-10 (pinv rcond precedent) |
-| G-8 | Condition number | warn `> 1e10`; hard-fail level | Existing warn: `diagnostics_bundle.py:571` (> 1e10 "weak identification likely"). Hard-fail **MAR (D-4)**: contract `< 1e7` (`RURO_model_spec_contract_v1.md:476`) vs pooled-baseline reality 1.295e6 — recommend hard-fail > 1e10, report vs 1e7 |
-| G-9 | Region × urbanisation block | R-1 design rank == 10; R-2 sub-Hessian PD; R-3 low regional loading on 3 smallest eigvecs | **MAR (D-3)** — no existing block-rank gate (only \|corr\|>0.9 near-collinear flag, `joint_recovery_test.py:343–353`, which is retained as a sub-check). Recommended quantitative forms in §14 |
+| G-8 | Condition number (three-tier, ratified D-4) | `≤ 1e7` clean; `1e7`–`1e10` **warning** (records, no halt); `> 1e10` **hard failure** (S-4) | **Ratified (D-4).** Report actual value; compare with certified pooled cond 1.295e6 (clean band). Precedents: warn `diagnostics_bundle.py:571` (>1e10), contract `<1e7` (`RURO_model_spec_contract_v1.md:476`) — reconciled into the three tiers |
+| G-9 | Region × urbanisation block (hard gates, ratified D-3) | **R-1** design rank == 10; **R-2** raw sub-Hessian PD; **R-4** conditional regional-information (regional Schur complement vs other free params) rank == 10 **and** min_eig > 0. **R-3** loading-share is a **warning only**, not part of this gate | **Ratified (D-3).** Verdict = R-1 ∧ R-2 ∧ R-4 (§14). `\|corr\|>0.9` near-collinear flag (`joint_recovery_test.py:343–353`) retained as a sub-check; R-3 (share ≥ 0.5 on 3 smallest eigvecs) recorded as `region_loading_share_warning`, never gating |
 | G-10 | Cluster-score identity (T1) | `Σ_h s_h = −grad` within atol | Existing but **inconsistent — MAR (D-5)**: code 1e-6 (`cluster_robust.py:181`), design doc 1e-10, runbook 1e-8. Recommended: 1e-8 |
 | G-11 | Meat symmetry (T2) | atol 1e-10 | Existing: `cluster_robust.py:212` |
 | G-12 | Cluster count (T3) | exact match to measured unique `idorighh` (override package default 9657) | Existing check, expected value **MAR (D-6)** — Phase-1 measured count to be ratified |
@@ -649,27 +689,36 @@ singles-only — roughly 1/40th of the pooled baseline's likelihood work.
 11. Single final commit of scripts + outputs + report (git add limited to the §21 list), message
     referencing this plan; no push/PR unless the manager asks.
 
-## 25. Open decisions requiring manager approval
+## 25. Ratified manager decisions
 
-- **D-1 — Canonical engine-ready input frame.** The geometry/reference object is the in-memory
-  `er_b` construction defined by §§12–§12b of `fr_singles_pipeline_v1.ipynb`:
+**Ratified 2026-07-23** in `FR_P2a_region_live_manager_decisions_v1.md`. The entries below record the
+ratified decisions (no longer "recommended defaults"); D-3 and D-4 carry the manager's amendments.
+
+- **D-1 — Canonical engine-ready input frame (RATIFIED).** The geometry/reference object is the
+  in-memory `er_b` construction defined by §§12–§12b of `fr_singles_pipeline_v1.ipynb`:
   `draws/pricing` → `assemble_singles` → independent region/urbanisation/GSUR revival → B-pool
   band overwrite → `er_b`.
   The committed adapter stem and the existing root parquets are comparison artifacts, not
   automatically authoritative inputs.
-  The production runner must reconstruct the same `er_b` object independently, freeze it under
+  The production runner must **fully reconstruct the same `er_b` object independently** (rebuilding
+  draws/pricing per §8, not merely re-mapping the five revived columns), freeze it under
   `region_live_v1`, and prove equality with the relevant existing frames after canonical sorting,
   dtype normalization, and common-column alignment.
-- **D-2 — Objective-reproduction and cold-reload tolerances (G-1, G-17).** No existing negLL
-  tolerance. *Recommended:* `< 1e-2` vs the 4-dp target (notebook precedent) **and** `≤ 1e-4` vs
-  full precision for the fit; `≤ 1e-6` for same-artifact cold reload.
-- **D-3 — Rank criteria (G-7, G-9).** No existing numerical-rank or block-rank threshold.
-  *Recommended:* `ε_rank = 1e-10 · max_eig` (pinv-rcond precedent); design-matrix rank == 10;
-  R-3 regional-loading share < 0.5 on each of the 3 smallest eigvecs.
-- **D-4 — Hessian symmetry tolerance and condition-number hard-fail (G-6, G-8).** Precedents
-  conflict (exact / 1e-10 / untested; warn 1e10 vs contract 1e7 — note the certified pooled cond
-  1.295e6 already exceeds no threshold but 1e7 is close). *Recommended:* symmetry
-  `≤ 1e-8 · max|H|`; hard-fail cond > 1e10 with the 1e7 contract level reported.
+- **D-2 — Objective-reproduction and cold-reload tolerances (G-1, G-17) (RATIFIED).**
+  `|negLL − 19053.4655| < 1e-2` (4-dp target) **and** `|negLL − 19053.46553160094| ≤ 1e-4` (full);
+  cold reload `|negLL_reload − negLL_stored| ≤ 1e-6`. A materially better objective is also a stop.
+- **D-3 — Rank and regional-block criteria (G-7, G-9) (RATIFIED, amended).** `ε_rank = 1e-10 · max_eig`;
+  full free Hessian rank == 37; regional design-matrix rank == 10. For the regional block, the hard
+  requirements are: **(R-1)** the 10-column household-level regional design matrix has rank 10;
+  **(R-2)** the raw 10×10 regional Hessian sub-block is positive definite; **(R-4)** the conditional
+  regional-information matrix — the regional **Schur complement** against the other free parameters —
+  has rank 10 and strictly positive minimum eigenvalue. The **regional-loading-share** check (R-3;
+  share < 0.5 on each of the 3 smallest eigenvectors) is a **warning diagnostic only**, reported but
+  **not a hard pass/fail gate** (the 0.5 cutoff is too arbitrary to determine identification by itself).
+- **D-4 — Symmetry and condition number (G-6, G-8) (RATIFIED).** Symmetry `max|H − Hᵀ| ≤ 1e-8 · max|H|`.
+  Condition number is a **three-tier** gate: `≤ 1e7` clean / `1e7`–`1e10` warning / `> 1e10` hard
+  failure. The strict report shows the actual value and compares it with the certified pooled
+  baseline's approximate condition number 1.295e6.
 - **D-5 — Tolerance reconciliations.** T1 identity (1e-6 / 1e-8 / 1e-10 → *recommend 1e-8*);
   bound-hit ε (1e-3 / 1e-4 / 1e-5 / 1e-6 → *recommend 1e-5*, the active gate); gradient gate scale
   (*recommend keep 1e-2*).

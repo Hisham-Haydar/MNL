@@ -2,18 +2,22 @@
 
 ## D-1 — Canonical engine-ready frame
 
-Approved with clarification.
+The geometry/reference object is the in-memory `er_b` construction defined by
+§12–§12b of `fr_singles_pipeline_v1.ipynb`:
 
-- Use the adapter stem consumed by the 19053.4655 fit as the geometry/reference frame.
-- Reconstruct the five live variables independently from the authoritative source mapping:
-  - `drgn1`
-  - `drgur`
-  - `drgmd`
-  - `drgru`
-  - `gsur`
-- Write a new frozen stem under `region_live_v1/`; no existing frame becomes canonical merely by being copied.
-- Compare all three existing region-live frames after stable row sorting, common column ordering, and normalized dtypes.
-- They must agree on all substantive values. Any disagreement triggers S-1 and stops the run.
+`draws/pricing`
+→ `assemble_singles`
+→ independent region/urbanisation/GSUR revival
+→ B-pool band overwrite
+→ `er_b`
+
+The committed adapter stem and the existing root parquets are comparison
+artifacts, not automatically authoritative inputs.
+
+The production runner must reconstruct the same `er_b` object independently,
+freeze it under `region_live_v1`, and prove equality with the relevant existing
+frames after canonical sorting, dtype normalization, and common-column
+alignment.
 
 ## D-2 — Objective and reload tolerances
 

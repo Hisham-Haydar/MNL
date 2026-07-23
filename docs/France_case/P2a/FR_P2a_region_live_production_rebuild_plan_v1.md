@@ -225,9 +225,10 @@ production route is *verification-based reconstruction*:
    with each other on every engine-consumed column (not just the five revived ones).
 3. Freeze the canonical engine-ready stem for the rebuild into the new output folder
    (`region_live_v1/fr_p2a_singles2016_regionlive__singles.parquet` + `__mnlmeta.json`), so every
-   downstream phase reads only from `region_live_v1/`. Which existing frame seeds this freeze is
-   Decision D-1 (§25); the recommended default is the adapter stem (the frame the 19053.4655 fit
-   actually consumed), verified byte-value-equal to `_v2`.
+   downstream phase reads only from `region_live_v1/`. Per Decision D-1 (§25), this freeze is built
+   by reconstructing the same in-memory `er_b` object independently, then proving equality with the
+   relevant existing frames after canonical sorting, dtype normalization, and common-column
+   alignment.
 
 Because the on-disk region-dead bpool parquet no longer exists (§3), "regenerate `_v2` from the
 region-dead file" (Question 8 option a) is no longer directly possible; option (b)+(c) — source
@@ -650,10 +651,15 @@ singles-only — roughly 1/40th of the pooled baseline's likelihood work.
 
 ## 25. Open decisions requiring manager approval
 
-- **D-1 — Canonical engine-ready input frame.** Three region-live frames exist (root bpool 07-22,
-  root `_v2` 07-13, adapter stem 07-13 — the one the anchor fit consumed). *Recommended:* seed the
-  frozen stem from the **adapter stem**, require Phase-1 equality of all three; if they disagree,
-  stop and report (S-1).
+- **D-1 — Canonical engine-ready input frame.** The geometry/reference object is the in-memory
+  `er_b` construction defined by §§12–§12b of `fr_singles_pipeline_v1.ipynb`:
+  `draws/pricing` → `assemble_singles` → independent region/urbanisation/GSUR revival → B-pool
+  band overwrite → `er_b`.
+  The committed adapter stem and the existing root parquets are comparison artifacts, not
+  automatically authoritative inputs.
+  The production runner must reconstruct the same `er_b` object independently, freeze it under
+  `region_live_v1`, and prove equality with the relevant existing frames after canonical sorting,
+  dtype normalization, and common-column alignment.
 - **D-2 — Objective-reproduction and cold-reload tolerances (G-1, G-17).** No existing negLL
   tolerance. *Recommended:* `< 1e-2` vs the 4-dp target (notebook precedent) **and** `≤ 1e-4` vs
   full precision for the fit; `≤ 1e-6` for same-artifact cold reload.

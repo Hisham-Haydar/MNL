@@ -1,11 +1,19 @@
 # RURO Labor Supply Model - France
 
-Python research code for estimating French labor-supply models with a Random Utility Random Opportunity (RURO) structure. The repository contains two active empirical branches:
+> **Mirror (annotated 2026-07-23).** This is a **mirror** of the root `MNL/README.md`, kept under `docs/mirrored/root/` for the mirrored-documents index. The authoritative copy is the root `README.md`; if they diverge, the root wins. This header is aligned with the repaired root README.
 
-- a continuous RURO branch that draws hours and wages directly;
-- a job-choice RURO branch that draws discrete job bundles made from hours, wages, and occupation/sector-like job information.
+Python research code for estimating French labor-supply models with a Random Utility Random Opportunity (RURO) structure.
 
-The repository is being cleaned toward a package layout, but it is still a research codebase first. The reusable package skeleton lives in `src/mnl/`; the production RURO estimation workflow currently lives in `scripts/enhanced/` and `scripts/Job_model/`.
+> **Certified baseline.** The **sole certified active JMP baseline** is the **47-parameter pooled specification `joint_pooled_v1_bll0_tlmpin`** — France 2015–2017 pooled; **JAX**; singles 101 / couples 901 alternatives; **negLL 238504.6360973987**; synthetic-recovery certified; real-data Hessian positive definite; clustered inference on `idorighh`. Produced by `scripts/bpool` (engine mirrored in `dclaborsupply-monorepo`).
+>
+> The **continuous-RURO** and **job-choice RURO** material described below is **historical / legacy** development-branch and methodological-reference content, superseded by the certified JAX baseline and retained for provenance. The FR-2016 singles **P2a region-live** work is a separate **provisional** track (awaiting production rebuild), not certified.
+
+This repository is the **certified-provenance and legacy-pipeline** layer. Two historical/legacy empirical branches remain documented below:
+
+- a continuous RURO branch that draws hours and wages directly (**legacy**);
+- a job-choice RURO branch that draws discrete job bundles made from hours, wages, and occupation/sector-like job information (**legacy**).
+
+The reusable package skeleton lives in `src/mnl/` (and, for the certified engine, in `dclaborsupply-monorepo/packages/`); the legacy GAMSPy estimation workflow lives in `scripts/enhanced/` and `scripts/Job_model/`.
 
 ## What This Project Does
 

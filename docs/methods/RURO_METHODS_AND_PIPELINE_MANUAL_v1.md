@@ -53,9 +53,11 @@ exactly once.
 
 ---
 
-## 2. Active Branches
+## 2. Historical / Legacy Branches
 
-There are two active empirical branches.
+> **Status (annotated 2026-07-23).** The **sole certified active JMP baseline** is the 47-parameter pooled JAX specification `joint_pooled_v1_bll0_tlmpin` (France 2015–2017 pooled; JAX; singles 101 / couples 901 alternatives; negLL 238504.6360973987; synthetic-recovery certified; real-data Hessian positive definite; clustered on `idorighh`). It is produced by `scripts/bpool` (engine mirrored in `dclaborsupply-monorepo`). The two branches below — **continuous RURO** and **job-choice RURO** — are **historical/legacy development branches and methodological references**, retained for provenance; they are not the certified baseline. The FR-2016 singles **P2a region-live** work is a separate **provisional** track (awaiting production rebuild), not certified.
+
+The two historical/legacy empirical branches are documented below.
 
 ### Continuous RURO
 

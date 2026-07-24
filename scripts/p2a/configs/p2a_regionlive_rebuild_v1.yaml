@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # FR P2a region-live production rebuild — run-config v1 (Phases 1-2)
 # =============================================================================
 # Governed by (binding, in this order):
@@ -197,30 +197,76 @@ phase3:                                 # AUTHORIZED by FR_P2a_region_live_phase
       pinned entries are set to their pinned_at values (certified warm-start) before the
       optimizer call so start and bounds are consistent; raw and applied start vectors +
       hashes are both persisted.
-  optimizer:
-    method: L-BFGS-B
+  optimizer:                            # EXACT contract (review fix 6 / decision I): the
+    method: L-BFGS-B                    # runner asserts method + option-key set == these
     options: {maxiter: 5000, maxcor: 30, ftol: 1.0e-15, gtol: 1.0e-10}
+  optimizer_route_note:
     settings_sources:
       - plan v2 s11 / G-4 (ratified)
       - frozen checkpoint fr_singles_pipeline_v1.ipynb fit cell (identical options)
     route: >-
       checkpoint-exact scipy.optimize.minimize(L-BFGS-B) over the package-built JAX
-      objective (build_jax_singles_ll sm+sf, jax.value_and_grad, float64). The package
-      wrapper solvers/jax_optimize.optimize_lbfgsb cannot express the pre-registered
-      maxcor=30 (it exposes only gtol/maxiter and hard-codes maxls=60 vs the checkpoint's
-      scipy-default maxls); using it would silently alter pre-registered settings. See
-      FR_P2a_region_live_phase3_implementation_report_v1.md s7.
+      objective (build_jax_singles_ll sm+sf, jax.value_and_grad, float64), driven on the
+      explicit ordered 37-free vector expanded to the 47-name vector with the ten immutable
+      pins injected (review fix 1). The package wrapper solvers/jax_optimize.optimize_lbfgsb
+      cannot express the pre-registered maxcor=30 (it exposes only gtol/maxiter and
+      hard-codes maxls=60 vs the checkpoint's scipy-default maxls); using it would silently
+      alter pre-registered settings. See the phase-3 implementation + remediation reports.
   gates:                                # ratified (D-2/D-5; acceptance s9)
     pre_opt_objective_tol: 1.0e-4       # |negLL(start) - target_full| before optimization
     objective_tol_full: 1.0e-4          # G-1 full-precision reproduction after optimization
     gradient_max_abs_35free: 1.0e-2     # G-3, over the 35 non-bound free parameters
     bound_hit_eps: 1.0e-5               # G-15
+    g16_inbounds_epsilon: 1.0e-9        # G-16 (review fix 2): lo-1e-9 <= theta_hat <= hi+1e-9
     pins_bitwise_unchanged: true        # final theta[pin] == pinned_at, exact float equality
     at_bound_expected_derivation: >-
       derived from the accepted stored theta vs spec bounds at eps 1e-5 and cross-checked
       against run_overlay.at_bound_expected; any additional or different final bound hit
       is a STOP
     target_mismatch_status: REVIEW_REQUIRED_TARGET_MISMATCH   # not automatic acceptance
+  input_authentication:                 # review fix 3 / decision G: every consumed file,
+    # accepted SHA-256 computed from the accepted PASS evidence on disk (2026-07-24).
+    # Verified before optimization AND rechecked after optimization (S-8 on any change).
+    geometry_parquet:
+      path: outputs/p2a_singles2016/region_live_v1/inputs/fr_p2a_draws_geometry__singles.parquet
+      sha256: 5bcf0e5409ef74c57f6de24efdfd24d0075132dc3138ddb57a22740b916cf235
+    geometry_meta:
+      path: outputs/p2a_singles2016/region_live_v1/inputs/fr_p2a_draws_geometry__meta.json
+      sha256: ff2d44221746077546585ea5244899d3b2164af50180be7235ea2a80384e9799
+    frozen_stem_parquet:
+      path: outputs/p2a_singles2016/region_live_v1/fr_p2a_singles2016_regionlive__singles.parquet
+      sha256: 8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d
+    frozen_stem_mnlmeta:
+      path: outputs/p2a_singles2016/region_live_v1/fr_p2a_singles2016_regionlive__mnlmeta.json
+      sha256: 05be40300288bdfb82a1f29d3649b420ee055e548658b6556424d024a87f5de1
+    certified_spec_yaml:
+      path: scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml
+      sha256: 492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211
+    certified_warm_start_theta:
+      path: scripts/bpool/specs/theta_hat_realdata_901_v1.csv
+      sha256: c72e92b16170a7dd2dc8ec0b76dc3f522a1fc6d6182a5eba8f8cad34cef76269
+    stored_region_live_start_theta:
+      path: theta_p2a_singles_2016_v1.csv
+      sha256: 930ef3aa753d0c48b6e923cfa4de9847beac5aae8c585c7eec5512ee01cbbd33
+    phase12_rebuild_manifest:
+      path: outputs/p2a_singles2016/region_live_v1/rebuild_manifest.json
+      sha256: 1ed3041ff275dbd003dfa0a8222896d1aa8e13a1c19574d22a8a847ff4f8c92c
+    phase12_dry_run_report:
+      path: outputs/p2a_singles2016/region_live_v1/dry_run_report.json
+      sha256: ec50ea9803433346a16149b0e21a5c0f33d352fa1993203cff51679d23ede224
+    pre_estimation_reload_verification:
+      path: outputs/p2a_singles2016/region_live_v1/pre_estimation_reload_verification.json
+      sha256: 6f457de9f35a1bf1237222f4280424d85ed57b97e19fa7438700f32e2b24ac2c
+    phase3_runner_script:
+      path: scripts/p2a/run_p2a_regionlive_rebuild.py
+      sha256: efd2204a673df93d988ff08065b9cb7018802eb11d1fb04282198e0d9e23f543
+    phase3_config_self:
+      path: scripts/p2a/configs/p2a_regionlive_rebuild_v1.yaml
+      sha256: SELF   # a file cannot contain its own hash (fixed-point); hashed + recorded
+                     # in the contract evidence and rechecked pre/post optimization (S-8)
+  accepted_phase12_anchors:             # cross-check vs rebuild_manifest.json script/config
+    script_sha256: be11294bf6e0456a37afc713d0e1bd843f574e2dfd136d60968b6519594c4475
+    config_sha256: 68d152e70cb73b6616a8b16a63edfb90298945c65fa15dd8580399033059d8fe
   prohibited_in_phase3:                 # asserted in code (S-0)
     - EUROMOD (any import or call)
     - draw generation or regeneration

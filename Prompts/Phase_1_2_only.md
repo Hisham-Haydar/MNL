@@ -1,15 +1,148 @@
-FINAL VERDICT: STOPPED — the Phase 1–2 dry-run halted at the pre-registered gate G-0 under stop S-1, exit code 2, with a STOPPED manifest and partial evidence persisted. This is the binding outcome, not a defect: the frozen draw-geometry artifact (region_live_v1/inputs/fr_p2a_draws_geometry__singles.parquet + meta) does not exist, and under D-1 v2 I may not regenerate draws, may not substitute an engine-ready parquet, and may not execute the notebook that is supposed to produce it.
+ROLE
 
-On your question about fr_singles_pipeline_v2.ipynb: it is exactly the missing link. I inspected it read-only — 59 cells, none ever executed, and it does not yet contain the geometry-freeze cell: no reference to fr_p2a_draws_geometry or region_live_v1/inputs/ anywhere; its §9 rebuilds draws_p2a in-memory (seed 2026) but never persists it, and all its writes route to notebook_dev_v2/. So the stabilization deliverable assigned to v2 (plan v2 §24 step 1, addendum §14) is still outstanding — an operator action, since this task prohibits executing or modifying either notebook.
+Add the controlled production-geometry freeze operation to the active FR-2016 singles P2a development notebook.
 
-What was built and executed:
+This is a notebook-editing and validation task only.
 
-run_p2a_regionlive_rebuild.py — the complete Phase 1–2 orchestrator: a faithful port of the frozen checkpoint's deterministic pipeline (funnel → features → gsur/pexp → take-up seed 20162016 → assemble_singles → independent 5-column revival → B-pool band overwrite → freeze → reconciliation), plus the Phase-2 package-load and G-19 objective battery. Hard S-0 refusals in code: prohibited-module guard (EUROMOD, all three draw modules, build_bpool_singles, scipy.optimize), write-path guard confined to region_live_v1/, --phase > 2 refused.
-verify_p2a_regionlive_reload.py — fresh-process reload verifier; pre-estimation mode for the dry-run era, Phase-7 cold-reload body present but refusing to run until estimation artifacts exist (not invoked, per plan §26).
-p2a_regionlive_rebuild_v1.yaml — all ratified thresholds, the full SHA-256 input registry, and checkpoint-derived determinism expectations. Both scripts compile; the YAML parses.
-FR_P2a_region_live_dry_run_report_v1.md — the 24-heading report.
-What the stopped run established: 20 of 21 G-0 items PASS — certified spec YAML unchanged (492bcfa9…), warm-start theta, raw FR_2016_a3.txt, gsur lookup, both stored thetas, and all 8 pricing chunks hash-verified with the cache contract confirmed (225,836 rows, 1,555 households, exact column set). One notable finding: the three existing region-live engine-ready frames are byte-identical (all hash 8bf083ce…), so the eventual er_b reconciliation reduces to a single comparison. Evidence lives in region_live_v1/ (data_wiring_validation.json, provenance.json, rebuild_manifest.json).
+Do not execute the notebook.
+Do not run EUROMOD.
+Do not run estimation.
+Do not run inference.
+Do not run post-estimation.
+Do not run welfare.
+Do not modify fr_singles_pipeline_v1.ipynb.
+Do not modify scientific scripts, specifications, theta files, data, or existing outputs.
 
-Git diff (nothing committed, per instructions): no tracked file modified in any repo; MNL has three new untracked paths only — scripts/p2a/, outputs/p2a_singles2016/region_live_v1/, and the report under docs/France_case/P2a/; the monorepo (both notebooks) and Job_Market_paper are clean.
+READ IN FULL
 
-Immediate next action (report §24): an operator adds the geometry-freeze cell to fr_singles_pipeline_v2.ipynb and runs it through §9 (pricing stays cached, RUN_ESTIMATION can stay False), producing the frozen draws_p2a parquet + meta under region_live_v1/inputs/; then re-run the same dry-run command — G-0 will admit Phase 1 and the full G-18 + G-19 battery runs to a reviewable verdict.
+* MNL/dclaborsupply-monorepo/notebooks/fr_singles_pipeline_v2.ipynb
+* MNL/docs/France_case/P2a/FR_P2a_region_live_manager_decisions_v2.md
+* MNL/docs/France_case/P2a/FR_P2a_region_live_production_rebuild_plan_v2.md
+* MNL/docs/France_case/P2a/FR_P2a_region_live_notebook_integration_addendum_v1.md
+* MNL/docs/France_case/P2a/FR_P2a_region_live_dry_run_report_v1.md
+* MNL/scripts/p2a/configs/p2a_regionlive_rebuild_v1.yaml
+* MNL/scripts/p2a/run_p2a_regionlive_rebuild.py
+
+CURRENT BLOCKER
+
+The Phase 1–2 dry run stopped correctly at G-0 because these frozen-input artifacts do not exist:
+
+* MNL/outputs/p2a_singles2016/region_live_v1/inputs/fr_p2a_draws_geometry__singles.parquet
+* MNL/outputs/p2a_singles2016/region_live_v1/inputs/fr_p2a_draws_geometry__meta.json
+
+The in-memory draws_p2a object is created in the notebook's P2a draw-generation cell but is not persisted.
+
+MODIFY ONLY
+
+1. MNL/dclaborsupply-monorepo/notebooks/fr_singles_pipeline_v2.ipynb
+2. MNL/docs/France_case/P2a/FR_P2a_region_live_notebook_integration_addendum_v1.md
+
+Use Python nbformat. Do not edit raw notebook JSON manually.
+
+CONTROL FLAG
+
+Add to the top-level controls:
+
+EXPORT_PRODUCTION_GEOMETRY = False
+
+This must default to False.
+
+GEOMETRY-FREEZE CELL
+
+Insert one code cell immediately after the cell that constructs draws_p2a and completes all its draw-generation gates, and before pricing.
+
+When EXPORT_PRODUCTION_GEOMETRY is False:
+
+* write nothing;
+* print:
+  [SKIPPED: EXPORT_PRODUCTION_GEOMETRY=False] production geometry freeze not run.
+
+When EXPORT_PRODUCTION_GEOMETRY is True:
+
+1. Require draws_p2a to exist.
+2. Load the geometry contract from:
+   MNL/scripts/p2a/configs/p2a_regionlive_rebuild_v1.yaml
+3. Preserve the complete in-memory draws_p2a column set. Do not select only the required columns.
+4. Canonically sort using stable mergesort by:
+
+   * idhh
+   * draw
+5. Reset the row index.
+6. Validate:
+
+   * 157,055 rows;
+   * 1,555 households;
+   * exactly 101 alternatives per household;
+   * all required columns from frozen_inputs.draws_geometry.required_columns exist;
+   * exactly one draw==0 row per household;
+   * chosen rows have is_chosen==1;
+   * chosen rows have log_prior==0;
+   * no duplicate (idhh, draw);
+   * seed is 2026;
+   * prior is positive;
+   * log_prior is finite;
+   * log_prior equals:
+     log_q_E + working * (log_q_H + log_q_W + log_q_Occ)
+     within exact floating-point equality used by the existing notebook gate.
+7. Write only to:
+   MNL/outputs/p2a_singles2016/region_live_v1/inputs/
+8. Produce:
+
+   * fr_p2a_draws_geometry__singles.parquet
+   * fr_p2a_draws_geometry__meta.json
+9. Use an atomic write:
+
+   * write a temporary parquet;
+   * hash the completed temporary file with SHA-256;
+   * atomically replace the final parquet only after all checks pass.
+10. Metadata JSON must include at least:
+
+    * status: frozen_production_input
+    * produced_by: notebooks/fr_singles_pipeline_v2.ipynb
+    * seed: 2026
+    * draw_design
+    * sha256
+    * n_rows
+    * n_households
+    * alternatives_per_household
+    * n_columns
+    * columns
+    * dtypes
+    * required_columns
+    * created_at_utc
+    * manager_decisions document
+    * production_plan document
+11. Existing-file rule:
+
+    * if neither output exists, create both;
+    * if both exist and the existing parquet hash agrees with its metadata and its contents satisfy the same contract, print that the geometry is already frozen and do not rewrite it;
+    * if only one exists, or the existing files fail their contract, raise an error and do not overwrite either.
+12. Do not write any other production artifact.
+13. Do not copy or derive the geometry from an engine-ready parquet.
+14. Do not invoke any draw-generation function inside the freeze cell; it freezes the already-created in-memory draws_p2a only.
+
+OUTPUT-ISOLATION DOCUMENTATION
+
+Update the notebook banner/addendum to state:
+
+* ordinary notebook outputs remain under notebook_dev_v2;
+* the sole authorized production-output exception is the explicit, operator-gated immutable geometry freeze under region_live_v1/inputs;
+* this exception requires EXPORT_PRODUCTION_GEOMETRY=True;
+* it does not authorize estimation, inference, post-estimation, or welfare writes to region_live_v1.
+
+VALIDATION WITHOUT EXECUTION
+
+* Confirm v1 hash is unchanged.
+* Parse v2 with nbformat.
+* AST-compile every code cell.
+* Confirm all execution counts are None and outputs empty.
+* Confirm EXPORT_PRODUCTION_GEOMETRY exists and defaults False.
+* Confirm exactly one cell writes to region_live_v1/inputs.
+* Confirm no other v2 cell writes anywhere under region_live_v1.
+* Confirm the freeze cell cannot run when the flag is False.
+* Confirm the notebook still contains all five previous run flags defaulting False.
+* Show git diff summaries.
+
+Do not execute the notebook.
+Do not commit automatically.
+Stop after validation.

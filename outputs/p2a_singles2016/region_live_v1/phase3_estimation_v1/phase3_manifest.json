@@ -1,0 +1,122 @@
+{
+  "run": "p2a_regionlive_rebuild_v1__phase3",
+  "track": "FR-2016 singles P2a region-live",
+  "mode": "phase3 dry-run (contract only, no optimizer)",
+  "authorization": "docs/France_case/P2a/FR_P2a_region_live_phase12_manager_acceptance_v1.md",
+  "started_at": "2026-07-24T13:16:50.116961+00:00",
+  "status": "PHASE_3_DRY_RUN_COMPLETE",
+  "stop": null,
+  "optimizer_called": false,
+  "config": {
+    "path": "scripts\\p2a\\configs\\p2a_regionlive_rebuild_v1.yaml",
+    "sha256": "db245ec874de3ed7f113061f14506a9554563b2d10584ba8dce75c4edf7a396e"
+  },
+  "script": {
+    "path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\p2a\\run_p2a_regionlive_rebuild.py",
+    "sha256": "c48dd122eb965e238c98e857695f4ec1368a63267cc35ce56d8b2abfdc5b187d"
+  },
+  "git": {
+    "MNL": {
+      "repo": "C:\\Users\\hisham\\Repo\\MNL",
+      "head": "9b3926c52dd65ebaf302b89221ed5a196b060b8a",
+      "dirty": true
+    },
+    "dclaborsupply-monorepo": {
+      "repo": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo",
+      "head": "27756a06ea189339aa82915ed2124628afed20eb",
+      "dirty": false
+    }
+  },
+  "environment": {
+    "python": "3.12.2",
+    "numpy": "2.3.5",
+    "pandas": "2.3.3"
+  },
+  "targets": {
+    "negll_4dp": 19053.4655,
+    "negll_full": 19053.46553160094,
+    "negll_region_dead_context": 19071.6562
+  },
+  "contract": {
+    "checked_at": "2026-07-24T13:16:51.076543+00:00",
+    "hashes": {
+      "geometry_parquet": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\inputs\\fr_p2a_draws_geometry__singles.parquet",
+        "actual": "5bcf0e5409ef74c57f6de24efdfd24d0075132dc3138ddb57a22740b916cf235",
+        "expected": "5bcf0e5409ef74c57f6de24efdfd24d0075132dc3138ddb57a22740b916cf235",
+        "ok": true
+      },
+      "frozen_stem_parquet": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\fr_p2a_singles2016_regionlive__singles.parquet",
+        "actual": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+        "expected": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+        "ok": true
+      },
+      "certified_spec_yaml": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\bpool\\specs\\estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
+        "actual": "492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211",
+        "expected": "492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211",
+        "ok": true
+      },
+      "warm_start_theta_csv": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\bpool\\specs\\theta_hat_realdata_901_v1.csv",
+        "actual": "c72e92b16170a7dd2dc8ec0b76dc3f522a1fc6d6182a5eba8f8cad34cef76269",
+        "expected": "c72e92b16170a7dd2dc8ec0b76dc3f522a1fc6d6182a5eba8f8cad34cef76269",
+        "ok": true
+      },
+      "start_theta_csv": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\theta_p2a_singles_2016_v1.csv",
+        "actual": "930ef3aa753d0c48b6e923cfa4de9847beac5aae8c585c7eec5512ee01cbbd33",
+        "expected": "930ef3aa753d0c48b6e923cfa4de9847beac5aae8c585c7eec5512ee01cbbd33",
+        "ok": true
+      }
+    },
+    "phase12_manifest_status": "DRY_RUN_PHASES_1_2_COMPLETE",
+    "phase12_script_sha256": "be11294bf6e0456a37afc713d0e1bd843f574e2dfd136d60968b6519594c4475",
+    "phase12_config_sha256": "68d152e70cb73b6616a8b16a63edfb90298945c65fa15dd8580399033059d8fe",
+    "current_script_sha256": "c48dd122eb965e238c98e857695f4ec1368a63267cc35ce56d8b2abfdc5b187d",
+    "n_params": 47,
+    "ordering_matches_accepted_dry_run": true,
+    "wage_spec": "vw",
+    "wage_loc_groups_absent": true,
+    "centering": {
+      "within_choice_set": true,
+      "center_weights": "proposal"
+    },
+    "n_pinned": 10,
+    "n_free": 37,
+    "pinned_at": {
+      "beta_l0_m": 1e-06,
+      "beta_l_age_m": -0.067236897452355,
+      "beta_l_age2_m": 0.0877504891847849,
+      "beta_l0_f": 10.052237044896549,
+      "beta_l_age_f": -1.780253386288037,
+      "beta_l_age2_f": 1.0,
+      "beta_l_nkids_f": 0.5857198501055841,
+      "theta_l_f": -2.131739110508045,
+      "beta_E_y2015": -0.2546064112385174,
+      "beta_E_y2017": -0.0694711073761977
+    },
+    "start_theta_raw_sha256": "5f3722dc2092cda0af47cec39cb2cbbb7050dd153df1edf9dd9de8a231d76c9b",
+    "start_theta_applied_sha256": "9a9a4918c32c3ffed4baa0cf87642811c65e0d02cf02840d991ef172b574e39c",
+    "start_pin_adjust_max_abs": 4.6578460377588726e-07,
+    "at_bound_expected_derived": [
+      "beta_l_age2_sm",
+      "beta_l_age2_sf"
+    ],
+    "at_bound_expected_config": [
+      "beta_l_age2_sm",
+      "beta_l_age2_sf"
+    ],
+    "n_hh": 1555,
+    "alts_per_household_ok": true,
+    "prior_positive_ok": true,
+    "log_prior_max_abs_dev": 0.0,
+    "negll_start": 19053.46553160094,
+    "negll_start_abs_dev": 0.0,
+    "ok": true
+  },
+  "finished_at": "2026-07-24T13:16:52.518819+00:00",
+  "wall_seconds": 2.4,
+  "artifact_hashes": {}
+}

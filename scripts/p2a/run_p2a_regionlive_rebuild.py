@@ -13,23 +13,35 @@ Phase 1 (D-1 v2 boundary): frozen already-priced P2a draw artifacts
   -> assemble_singles -> independent region/urbanisation/GSUR revival
   -> B-pool band overwrite -> er_b -> freeze under region_live_v1/.
 Phase 2: package load + stored-theta objective reproduction (G-19). NO optimizer.
+Phase 3 (AUTHORIZED by FR_P2a_region_live_phase12_manager_acceptance_v1.md s9):
+  input contract against the accepted Phase 1-2 evidence, then L-BFGS-B estimation
+  with the pre-registered checkpoint options over the package JAX objective.
+  Writes ONLY under region_live_v1/phase3_estimation_v1/. With --dry-run the
+  contract is verified and NO optimizer is called.
 
 HARD REFUSALS (S-0, asserted in code, not just documented):
   - no EUROMOD (no import, no connection, no pricing run)
   - no draw generation/regeneration (no hours_mixture_d1 / occ_draw_empirical /
     pilot_wage_draw / build_bpool_singles import; geometry is a frozen input)
-  - no optimizer (scipy.optimize is never imported in Phases 1-2)
-  - no notebook I/O; no write outside region_live_v1/
-Phases 3-8 are manager-gated: this runner refuses --phase > 2.
+  - no optimizer in Phases 1-2 and in every --dry-run (scipy.optimize may load
+    only inside the real Phase-3 estimation call)
+  - no Phase-4+ computation in Phase 3 (no Hessian / eigenvalues / rank /
+    per-household scores / sandwich SE / post-estimation / welfare / synthetic
+    recovery code path exists in the Phase-3 route)
+  - no notebook I/O; no write outside region_live_v1/ (Phase 3: only its subdir)
+Phases 4-8 are manager-gated: this runner refuses --phase > 3.
 
 Exit codes: 0 = phases completed; 2 = pre-registered stop (STOPPED manifest);
-3 = unexpected error (STOPPED manifest, stop code S-0/unexpected).
+3 = unexpected error (STOPPED manifest, stop code S-0/unexpected);
+4 = Phase-3 REVIEW_REQUIRED_TARGET_MISMATCH (estimation finished, target not
+reproduced within tolerance -- manager review required, never auto-accepted).
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import time
@@ -52,8 +64,10 @@ _PROHIBITED_MODULES = (
     "occ_draw_empirical",            # draw generation
     "pilot_wage_draw",               # draw generation
     "build_bpool_singles",           # draw generation
-    "scipy.optimize",                # optimizer (Phases 1-2 must not optimize)
 )
+# the optimizer is additionally prohibited everywhere EXCEPT the real Phase-3
+# estimation call (Phases 1-2 and every --dry-run must never optimize)
+_OPTIMIZER_MODULE = "scipy.optimize"
 
 # funnel constants — verbatim from the frozen checkpoint (cell 6, ec=3)
 FUNNEL_CONFIG = dict(
@@ -108,9 +122,11 @@ class OutRoot:
         return p
 
 
-def _assert_no_prohibited_modules(where: str) -> None:
+def _assert_no_prohibited_modules(where: str, *, allow_optimizer: bool = False) -> None:
+    banned = _PROHIBITED_MODULES if allow_optimizer \
+        else (_PROHIBITED_MODULES + (_OPTIMIZER_MODULE,))
     hits = [m for m in sys.modules
-            for p in _PROHIBITED_MODULES if m == p or m.startswith(p + ".")]
+            for p in banned if m == p or m.startswith(p + ".")]
     if hits:
         raise StopRun("S-0", "prohibited-modules",
                       f"prohibited module(s) loaded ({where}): {sorted(set(hits))}")
@@ -146,6 +162,30 @@ def _dump_json(obj: Dict[str, Any], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(obj, f, indent=2, default=_py)
+
+
+def _atomic_write_text(text: str, path: Path) -> None:
+    """tmp-then-os.replace atomic write (Phase-3 artifact contract)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def _atomic_write_json(obj: Dict[str, Any], path: Path) -> None:
+    _atomic_write_text(json.dumps(obj, indent=2, default=_py), path)
+
+
+def _atomic_write_csv(df: pd.DataFrame, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    df.to_csv(tmp, index=False)
+    os.replace(tmp, path)
+
+
+def _theta_sha(v: np.ndarray) -> str:
+    return hashlib.sha256(
+        np.ascontiguousarray(np.asarray(v, dtype="float64")).tobytes()).hexdigest()
 
 
 def _git_state(repo: Path) -> Dict[str, Any]:
@@ -1039,25 +1079,469 @@ def phase2(out: OutRoot, cfg: Dict[str, Any], log) -> Dict[str, Any]:
 
 
 # --------------------------------------------------------------------------- #
+# Phase 3 -- estimation (AUTHORIZED: FR_P2a_region_live_phase12_manager_acceptance_v1.md s9)
+# Consumes the ACCEPTED Phase 1-2 evidence read-only; writes ONLY under
+# region_live_v1/phase3_estimation_v1/. Contains NO Phase-4+ computation.
+# --------------------------------------------------------------------------- #
+def _phase3_contract(out: OutRoot, cfg: Dict[str, Any], log) -> Dict[str, Any]:
+    """Pre-optimization input contract. Returns the working context (spec, data,
+    objective, pins, start vector) plus its evidence dict; raises StopRun on failure."""
+    from dclaborsupply import EstimationSpec
+    from dclaborsupply.spec.parser import load_custom_initial_values
+    from dclaborsupply.data.loader import load_singles
+    from dclaborsupply.likelihood.engine_jax import build_jax_singles_ll
+    import jax
+    import jax.numpy as jnp
+
+    p3 = cfg["phase3"]
+    acc = p3["accepted_evidence"]
+    g3 = p3["gates"]
+    ev: Dict[str, Any] = {"checked_at": _utcnow(), "hashes": {}}
+
+    # 1. passing Phase 1-2 manifest
+    man_path = out.path("rebuild_manifest.json")
+    if not man_path.is_file():
+        raise StopRun("S-1", "phase3-contract", "Phase 1-2 rebuild_manifest.json missing")
+    man12 = json.loads(man_path.read_text(encoding="utf-8"))
+    ev["phase12_manifest_status"] = man12.get("status")
+    ev["phase12_script_sha256"] = (man12.get("script") or {}).get("sha256")
+    ev["phase12_config_sha256"] = (man12.get("config") or {}).get("sha256")
+    if man12.get("status") != acc["manifest_status_required"]:
+        raise StopRun("S-1", "phase3-contract",
+                      f"Phase 1-2 manifest status {man12.get('status')!r} != "
+                      f"{acc['manifest_status_required']!r}")
+
+    # 2. frozen input hashes unchanged (accepted acceptance-doc anchors)
+    def _req_hash(label: str, path: Path, expected: str) -> None:
+        actual = _sha256(path) if path.is_file() else None
+        ev["hashes"][label] = {"path": str(path), "actual": actual,
+                               "expected": expected, "ok": actual == expected}
+        if actual != expected:
+            raise StopRun("S-8", "phase3-contract",
+                          f"{label} hash mismatch: {actual} != {expected}")
+
+    stem = cfg["run"]["frozen_stem_name"]
+    _req_hash("geometry_parquet",
+              MNL_ROOT / cfg["frozen_inputs"]["draws_geometry"]["parquet"],
+              acc["geometry_sha256"])
+    _req_hash("frozen_stem_parquet", out.path(f"{stem}__singles.parquet"),
+              acc["frozen_stem_sha256"])
+    _req_hash("certified_spec_yaml", MNL_ROOT / cfg["certified_spec"]["yaml"],
+              cfg["certified_spec"]["sha256"])
+    _req_hash("warm_start_theta_csv", MNL_ROOT / cfg["warm_start"]["theta_csv"],
+              cfg["warm_start"]["sha256"])
+    _req_hash("start_theta_csv", MNL_ROOT / p3["start_theta"]["csv"],
+              cfg["stored_region_live_theta"]["v1_sha256"])
+    ev["current_script_sha256"] = _sha256(SCRIPT_PATH)
+
+    # 3. spec load + parameter ordering identical to the ACCEPTED dry run
+    spec = EstimationSpec.from_yaml(str(MNL_ROOT / cfg["certified_spec"]["yaml"]))
+    names = list(spec.all_param_names)
+    dr_path = out.path("dry_run_report.json")
+    if not dr_path.is_file():
+        raise StopRun("S-1", "phase3-contract", "accepted dry_run_report.json missing")
+    accepted = json.loads(dr_path.read_text(encoding="utf-8"))
+    if names != list(accepted.get("param_names", [])):
+        raise StopRun("S-1", "phase3-contract",
+                      "parameter ordering differs from the accepted dry run")
+    ev["n_params"] = len(names)
+    ev["ordering_matches_accepted_dry_run"] = True
+
+    # 4. structural route: vw; loc_empirical / vw_occupation inactive; proposal
+    #    correction active exactly once (single -log_prior term in the validated
+    #    engine; proposal-weighted centering flags on; numerically witnessed by the
+    #    accepted 3.64e-12 NumPy/JAX agreement)
+    ev["wage_spec"] = str(spec.wage_spec)
+    ev["wage_loc_groups_absent"] = getattr(spec, "wage_loc_groups", None) in (None, [], {})
+    ev["centering"] = {
+        "within_choice_set": bool(spec.market_opportunity_center_within_choice_set),
+        "center_weights": str(spec.market_opportunity_center_weights)}
+    if not (ev["wage_spec"] == "vw" and ev["wage_loc_groups_absent"]
+            and ev["centering"]["within_choice_set"]
+            and ev["centering"]["center_weights"] == "proposal"):
+        raise StopRun("S-1", "phase3-contract",
+                      "structural route check failed (wage_spec/loc_empirical/"
+                      "vw_occupation/proposal centering)")
+
+    # 5. pins + free block (checkpoint mechanism: bounds clamped at certified warm start)
+    raw_theta = load_custom_initial_values(MNL_ROOT / cfg["warm_start"]["theta_csv"])
+    theta_warm = np.array([float(raw_theta[n]) for n in names], dtype="float64")
+    idx = {n: i for i, n in enumerate(names)}
+    pins: List[str] = list(cfg["run_overlay"]["pinned_params"])
+    b4 = list(spec.get_bounds_tuple())
+    pinned_at: Dict[str, float] = {}
+    for pname in pins:
+        pinned_at[pname] = float(theta_warm[idx[pname]])
+        b4[idx[pname]] = (pinned_at[pname], pinned_at[pname])
+    free = [n for n in names if n not in set(pins)]
+    if not (len(pins) == int(acc["n_pinned"]) and len(free) == int(acc["n_free"])):
+        raise StopRun("S-1", "phase3-contract",
+                      f"pin/free structure {len(pins)}/{len(free)} != "
+                      f"{acc['n_pinned']}/{acc['n_free']}")
+    ev["n_pinned"], ev["n_free"] = len(pins), len(free)
+    ev["pinned_at"] = pinned_at
+
+    # 6. start vector = the accepted stored region-live theta (manager mandate)
+    st_tab = pd.read_csv(MNL_ROOT / p3["start_theta"]["csv"]).set_index("param")
+    if list(st_tab.index) != names:
+        raise StopRun("S-1", "phase3-contract", "start-theta CSV ordering mismatch")
+    theta_trial = st_tab[p3["start_theta"]["column"]].astype(float).reindex(names).to_numpy()
+    ev["start_theta_raw_sha256"] = _theta_sha(theta_trial)
+    if ev["start_theta_raw_sha256"] != acc["theta_star_sha256"]:
+        raise StopRun("S-8", "phase3-contract",
+                      f"stored theta vector hash {ev['start_theta_raw_sha256']} != "
+                      f"accepted {acc['theta_star_sha256']}")
+    theta_start = theta_trial.copy()
+    for pname in pins:                       # start consistent with the pinned bounds
+        theta_start[idx[pname]] = pinned_at[pname]
+    ev["start_theta_applied_sha256"] = _theta_sha(theta_start)
+    ev["start_pin_adjust_max_abs"] = float(np.max(np.abs(theta_start - theta_trial)))
+
+    # 7. expected at-bound set, DERIVED from the accepted input (stored theta vs
+    #    spec bounds at eps), cross-checked against the configured expectation
+    eps = float(g3["bound_hit_eps"])
+    derived = []
+    for n in free:
+        lo, hi = b4[idx[n]]
+        v = float(theta_trial[idx[n]])
+        if (lo is not None and abs(v - lo) < eps) or (hi is not None and abs(v - hi) < eps):
+            derived.append(n)
+    ev["at_bound_expected_derived"] = derived
+    ev["at_bound_expected_config"] = list(cfg["run_overlay"]["at_bound_expected"])
+    if sorted(derived) != sorted(ev["at_bound_expected_config"]):
+        raise StopRun("S-1", "phase3-contract",
+                      f"derived at-bound set {derived} != configured expectation "
+                      f"{ev['at_bound_expected_config']}")
+
+    # 8. frozen-stem load: households / alternatives / prior-correction liveness
+    er = pd.read_parquet(out.path(f"{stem}__singles.parquet"))
+    meta = json.loads(out.path(f"{stem}__mnlmeta.json").read_text(encoding="utf-8"))
+    sm_df = er[pd.to_numeric(er["dgn"]) == 1].reset_index(drop=True)
+    sf_df = er[pd.to_numeric(er["dgn"]) == 0].reset_index(drop=True)
+    dm = load_singles(sm_df, spec, is_male=True, metadata=meta)
+    df_ = load_singles(sf_df, spec, is_male=False, metadata=meta)
+    n_groups = int(dm.n_groups + df_.n_groups)
+    n_alts = int(acc["n_alts"])
+    alts_ok = (int(dm.n_obs) == int(dm.n_groups) * n_alts
+               and int(df_.n_obs) == int(df_.n_groups) * n_alts)
+    ev["n_hh"] = n_groups
+    ev["alts_per_household_ok"] = bool(alts_ok)
+    if n_groups != int(acc["n_hh"]) or not alts_ok:
+        raise StopRun("S-1", "phase3-contract",
+                      f"household/alternative structure mismatch ({n_groups} HH)")
+    lp_dev = 0.0
+    for d, frame in ((dm, sm_df), (df_, sf_df)):
+        if not bool(np.all(np.asarray(d.prior) > 0)):
+            raise StopRun("S-1", "phase3-contract", "loader prior not strictly positive")
+        lp_dev = max(lp_dev, float(np.max(np.abs(
+            np.log(np.asarray(d.prior))
+            - pd.to_numeric(frame["log_prior"], errors="coerce")
+            .to_numpy(dtype="float64")))))
+    ev["prior_positive_ok"] = True
+    ev["log_prior_max_abs_dev"] = lp_dev
+    if lp_dev > float(cfg["gates"]["log_prior_consistency_atol"]):
+        raise StopRun("S-1", "phase3-contract",
+                      f"log(prior) vs log_prior deviation {lp_dev:.3e} exceeds gate")
+
+    # 9. JAX pre-optimization objective at the applied start (evaluation only)
+    nm, _ = build_jax_singles_ll(dm, spec, is_male=True)
+    nf, _ = build_jax_singles_ll(df_, spec, is_male=False)
+    tot = jax.jit(lambda t: nm(t) + nf(t))
+    negll_start = float(tot(jnp.asarray(theta_start)))
+    target = float(cfg["targets"]["negll_full"])
+    ev["negll_start"] = negll_start
+    ev["negll_start_abs_dev"] = abs(negll_start - target)
+    if ev["negll_start_abs_dev"] > float(g3["pre_opt_objective_tol"]):
+        raise StopRun("S-9", "phase3-contract",
+                      f"pre-optimization objective {negll_start:.10f} deviates "
+                      f"{ev['negll_start_abs_dev']:.3e} > {g3['pre_opt_objective_tol']}")
+    log(f"phase3 contract: ordering ok | 10 pins / 37 free | derived at-bound "
+        f"{derived} | negLL(start)={negll_start:.10f} (dev {ev['negll_start_abs_dev']:.2e})")
+    ev["ok"] = True
+    return {"spec": spec, "names": names, "idx": idx, "pins": pins,
+            "pinned_at": pinned_at, "free": free, "b4": b4,
+            "theta_trial": theta_trial, "theta_start": theta_start,
+            "tot": tot, "target": target, "ev": ev}
+
+
+def _phase3_estimate(ctx: Dict[str, Any], out3_json: Dict[str, Path],
+                     cfg: Dict[str, Any], log) -> Tuple[str, Dict[str, Any]]:
+    """Real Phase-3 estimation (checkpoint-exact L-BFGS-B over the package JAX
+    objective). Emits the artifact set atomically; returns (status, diagnostics).
+    NO Hessian / scores / SE / post-estimation code is present in this path."""
+    import jax
+    import jax.numpy as jnp
+    from scipy.optimize import minimize   # permitted ONLY here (real Phase 3)
+
+    p3 = cfg["phase3"]
+    g3 = p3["gates"]
+    opt = p3["optimizer"]["options"]
+    names, idx = ctx["names"], ctx["idx"]
+    pins, pinned_at, free, b4 = ctx["pins"], ctx["pinned_at"], ctx["free"], ctx["b4"]
+    tot, target = ctx["tot"], ctx["target"]
+    theta_start = ctx["theta_start"]
+
+    vg = jax.jit(jax.value_and_grad(tot))
+
+    def f(t):
+        v, g = vg(jnp.asarray(t))
+        return float(v), np.asarray(g, dtype="float64")
+
+    log(f"phase3 optimize: L-BFGS-B options={dict(opt)} (checkpoint-exact route)")
+    t0 = time.time()
+    res = minimize(f, np.asarray(theta_start), jac=True, method="L-BFGS-B",
+                   bounds=list(b4),
+                   options={"maxiter": int(opt["maxiter"]), "maxcor": int(opt["maxcor"]),
+                            "ftol": float(opt["ftol"]), "gtol": float(opt["gtol"])})
+    elapsed = time.time() - t0
+    theta_hat = np.asarray(res.x, dtype="float64")
+    negll_hat, grad_hat = f(theta_hat)
+    log(f"phase3 fit: negLL {negll_hat:.10f}  iters={int(res.nit)} "
+        f"nfev={int(res.nfev)} success={bool(res.success)}  ({elapsed:.1f}s)")
+
+    eps = float(g3["bound_hit_eps"])
+    rows, hits = [], []
+    for n in names:
+        i = idx[n]
+        lo, hi = b4[i]
+        v = float(theta_hat[i])
+        d_lo = (v - lo) if lo is not None else None
+        d_hi = (hi - v) if hi is not None else None
+        pinned = n in pinned_at
+        at_bound = (not pinned) and (
+            (lo is not None and abs(v - lo) < eps)
+            or (hi is not None and abs(v - hi) < eps))
+        if at_bound:
+            hits.append(n)
+        rows.append({"param": n, "value": v, "pinned": pinned, "at_bound": at_bound,
+                     "lb": lo, "ub": hi, "dist_lb": d_lo, "dist_ub": d_hi,
+                     "grad": float(grad_hat[i])})
+
+    expected_bounds = list(ctx["ev"]["at_bound_expected_derived"])
+    nonbound_free = [n for n in free if n not in set(expected_bounds)]
+    max_grad_35 = float(np.max(np.abs(
+        np.array([grad_hat[idx[n]] for n in nonbound_free]))))
+    pins_bitwise = all(
+        np.float64(theta_hat[idx[p]]).tobytes() == np.float64(pinned_at[p]).tobytes()
+        for p in pins)
+    abs_dev = abs(negll_hat - target)
+
+    gates = {
+        "g2_optimizer_success": bool(res.success),
+        "g_structure_37_free_10_pins": (len(free) == 37 and len(pins) == 10),
+        "g_pins_bitwise_unchanged": bool(pins_bitwise),
+        "g15_bound_hits_detected": sorted(hits),
+        "g15_bound_hits_expected": sorted(expected_bounds),
+        "g15_bound_hits_ok": sorted(hits) == sorted(expected_bounds),
+        "g3_max_abs_grad_35free": max_grad_35,
+        "g3_ok": max_grad_35 < float(g3["gradient_max_abs_35free"]),
+        "g1_abs_dev_full": abs_dev,
+        "g1_ok": abs_dev <= float(g3["objective_tol_full"]),
+    }
+    if not gates["g2_optimizer_success"]:
+        status = "STOPPED"
+        stop = {"code": "S-2", "gate": "G-2", "message": f"optimizer failure: {res.message}"}
+    elif not (gates["g_structure_37_free_10_pins"] and gates["g_pins_bitwise_unchanged"]):
+        status = "STOPPED"
+        stop = {"code": "S-3", "gate": "pins", "message": "pin/free structure violated"}
+    elif not gates["g15_bound_hits_ok"]:
+        status = "STOPPED"
+        stop = {"code": "S-3", "gate": "G-15",
+                "message": f"bound-hit set {sorted(hits)} != expected {sorted(expected_bounds)}"}
+    elif not gates["g3_ok"]:
+        status = "STOPPED"
+        stop = {"code": "S-3", "gate": "G-3",
+                "message": f"max|grad| {max_grad_35:.3e} >= {g3['gradient_max_abs_35free']}"}
+    elif not gates["g1_ok"]:
+        status = str(g3["target_mismatch_status"])   # REVIEW_REQUIRED_TARGET_MISMATCH
+        stop = None
+    else:
+        status = "PHASE_3_COMPLETE"
+        stop = None
+
+    diag = {
+        "generated_at": _utcnow(),
+        "optimizer": {"method": "L-BFGS-B",
+                      "options": {k: (int(v) if k in ("maxiter", "maxcor") else float(v))
+                                  for k, v in opt.items()},
+                      "route": cfg["phase3"]["optimizer"]["route"],
+                      "settings_sources": list(cfg["phase3"]["optimizer"]["settings_sources"])},
+        "start_theta_raw_sha256": ctx["ev"]["start_theta_raw_sha256"],
+        "start_theta_applied_sha256": ctx["ev"]["start_theta_applied_sha256"],
+        "start_theta": [float(x) for x in theta_start],
+        "final_theta_sha256": _theta_sha(theta_hat),
+        "final_theta": [float(x) for x in theta_hat],
+        "negll_start": float(ctx["ev"]["negll_start"]),
+        "negll_final": float(negll_hat),
+        "target_full": float(target),
+        "success": bool(res.success), "status_code": int(res.status),
+        "message": str(res.message),
+        "n_iter": int(res.nit), "n_fev": int(res.nfev),
+        "n_jev": int(getattr(res, "njev", res.nfev)),
+        "elapsed_seconds": round(elapsed, 2),
+        "gradient_final": [float(g) for g in grad_hat],
+        "bounds_and_distances": rows,
+        "gates": gates,
+        "stop": stop,
+        "verdict": status,
+    }
+
+    # artifact emission (atomic; confined to phase3_estimation_v1/)
+    _atomic_write_json(diag, out3_json["optimizer_diagnostics"])
+    _atomic_write_csv(pd.DataFrame(rows), out3_json["theta_estimated"])
+    est = {
+        "specification": "joint_pooled_v1_bll0_tlmpin_p2a_singles2016_regionlive_phase3",
+        "wage_spec": "vw",
+        "timestamp": _utcnow(),
+        "command_line": "scripts/p2a/run_p2a_regionlive_rebuild.py --phase 3",
+        "status": ("PROVISIONAL - Phase 3 estimation; Phases 4-8 pending; "
+                   "no identification claim (D-7)"),
+        "verdict": status,
+        "metadata": {
+            "spec_config": cfg["certified_spec"]["yaml"],
+            "authorization": cfg["phase3"]["authorization_doc"],
+            "pinned_params": pins, "at_bound": sorted(hits),
+            "start_theta_source": cfg["phase3"]["start_theta"]["csv"],
+            "optimizer_options": diag["optimizer"]["options"],
+            "n_free": len(free), "n_pinned": len(pins),
+        },
+        "results": {"joint": {
+            "success": bool(res.success),
+            "message": ("Phase-3 estimation (singles-only; frozen stem; occ block free; "
+                        "region-live; 10 pins preserved)"),
+            "final_ll": -float(negll_hat),
+            "parameters": {n: float(theta_hat[idx[n]]) for n in names},
+            "initial_values": {n: float(theta_start[idx[n]]) for n in names},
+            "theta": [float(theta_hat[idx[n]]) for n in names],
+        }},
+        "summary": {"joint_ll": -float(negll_hat),
+                    "n_obs_total": int(cfg["phase3"]["accepted_evidence"]["n_hh"]),
+                    "n_groups_total": int(cfg["phase3"]["accepted_evidence"]["n_hh"])},
+    }
+    _atomic_write_json(est, out3_json["estimation_results"])
+    return status, diag
+
+
+def run_phase3(args, cfg: Dict[str, Any]) -> int:
+    """Phase-3 orchestration: contract -> (dry-run stop | estimation). Own manifest
+    and console log; NEVER writes a Phase 1-2 evidence file."""
+    out_root = Path(args.out) if args.out else (MNL_ROOT / cfg["run"]["output_root"])
+    out = OutRoot(out_root)
+    out3 = out.path(cfg["phase3"]["output_subdir"])
+    out3.mkdir(parents=True, exist_ok=True)
+    paths = {
+        "manifest": out3 / "phase3_manifest.json",
+        "console": out3 / "phase3_console.log",
+        "optimizer_diagnostics": out3 / "optimizer_diagnostics.json",
+        "theta_estimated": out3 / "theta_estimated.csv",
+        "estimation_results": out3 / "estimation_results.json",
+    }
+    t0 = time.time()
+    lines: List[str] = []
+
+    def log(msg: str) -> None:
+        line = f"[{datetime.now().strftime('%H:%M:%S')}] {msg}"
+        print(line)
+        lines.append(line)
+
+    manifest: Dict[str, Any] = {
+        "run": cfg["run"]["name"] + "__phase3",
+        "track": cfg["run"]["track"],
+        "mode": "phase3 dry-run (contract only, no optimizer)" if args.dry_run
+                else "phase3 estimation",
+        "authorization": cfg["phase3"]["authorization_doc"],
+        "started_at": _utcnow(),
+        "status": "RUNNING",
+        "stop": None,
+        "optimizer_called": False,
+        "config": {"path": str(Path(args.config)), "sha256": _sha256(Path(args.config))},
+        "script": {"path": str(SCRIPT_PATH), "sha256": _sha256(SCRIPT_PATH)},
+        "git": {"MNL": _git_state(MNL_ROOT),
+                "dclaborsupply-monorepo": _git_state(MNL_ROOT / "dclaborsupply-monorepo")},
+        "environment": {"python": sys.version.split()[0],
+                        "numpy": np.__version__, "pandas": pd.__version__},
+        "targets": cfg["targets"],
+    }
+
+    def finalize(status: str, stop: Optional[StopRun], code: int) -> int:
+        manifest["status"] = status
+        if stop is not None:
+            manifest["stop"] = {"code": stop.code, "gate": stop.gate,
+                                "message": stop.message}
+        manifest["finished_at"] = _utcnow()
+        manifest["wall_seconds"] = round(time.time() - t0, 1)
+        manifest["artifact_hashes"] = {
+            p.name: _sha256(p) for p in paths.values()
+            if p.is_file() and p.suffix != ".log"}
+        _atomic_write_json(manifest, paths["manifest"])
+        _atomic_write_text("\n".join(lines) + "\n", paths["console"])
+        log(f"phase3 manifest status: {status}"
+            + (f" | stop: {manifest['stop']}" if manifest["stop"] else ""))
+        return code
+
+    try:
+        _assert_no_prohibited_modules("phase3-start")   # optimizer must not be loaded yet
+        log("Phase 3 - input contract (accepted Phase 1-2 evidence)")
+        ctx = _phase3_contract(out, cfg, log)
+        manifest["contract"] = ctx["ev"]
+
+        if args.dry_run:
+            _assert_no_prohibited_modules("phase3-dryrun-end")   # STILL no optimizer
+            log("Phase 3 dry-run COMPLETE - contract verified, optimizer NOT called")
+            return finalize("PHASE_3_DRY_RUN_COMPLETE", None, 0)
+
+        log("Phase 3 - estimation (real run)")
+        status, diag = _phase3_estimate(ctx, paths, cfg, log)
+        manifest["optimizer_called"] = True
+        manifest["gates"] = diag["gates"]
+        _assert_no_prohibited_modules("phase3-end", allow_optimizer=True)
+        if status == "PHASE_3_COMPLETE":
+            return finalize(status, None, 0)
+        if status == "STOPPED":
+            s = diag["stop"] or {}
+            return finalize("STOPPED",
+                            StopRun(s.get("code", "S-3"), s.get("gate", "phase3"),
+                                    s.get("message", "gate failure")), 2)
+        return finalize(status, None, 4)    # REVIEW_REQUIRED_TARGET_MISMATCH
+
+    except StopRun as stop:
+        log(f"STOP {stop.code} [{stop.gate}] {stop.message}")
+        return finalize("STOPPED", stop, 2)
+    except Exception:
+        tb = traceback.format_exc()
+        log("UNEXPECTED ERROR:\n" + tb)
+        stop = StopRun("S-0", "unexpected", tb.splitlines()[-1] if tb else "unknown")
+        return finalize("STOPPED", stop, 3)
+
+
+# --------------------------------------------------------------------------- #
 # orchestration
 # --------------------------------------------------------------------------- #
 def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--config", required=True, help="run-config YAML")
     ap.add_argument("--phase", type=int, default=2,
-                    help="highest phase to run (1 or 2; 3-8 are manager-gated)")
+                    help="highest phase to run (1, 2 or 3; 4-8 are manager-gated). "
+                         "Phase 3 requires the accepted Phase 1-2 evidence in --out.")
     ap.add_argument("--out", default=None,
                     help="output root (default: config run.output_root)")
     ap.add_argument("--dry-run", action="store_true",
-                    help="Phases 1-2 verification only (mandatory stop after Phase 2)")
+                    help="phases 1-2: verification only (stop after Phase 2); "
+                         "phase 3: input-contract validation WITHOUT any optimizer call")
     args = ap.parse_args(argv)
 
-    if args.phase > 2:
-        print("REFUSED: Phases 3-8 are manager-gated; this runner implements "
-              "Phases 1-2 only (plan v2 s24; decisions v2 D-1).", file=sys.stderr)
+    if args.phase > 3:
+        print("REFUSED: Phases 4-8 are manager-gated; this runner implements "
+              "Phases 1-3 only (plan v2 s24; acceptance doc s10).", file=sys.stderr)
         return 2
 
     cfg = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
+
+    if args.phase == 3:
+        # Phase 3 consumes the accepted Phase 1-2 evidence READ-ONLY and writes only
+        # under phase3_estimation_v1/ -- it never re-runs or rewrites Phases 1-2.
+        return run_phase3(args, cfg)
+
     out_root = Path(args.out) if args.out else (MNL_ROOT / cfg["run"]["output_root"])
     out = OutRoot(out_root)
     out.root.mkdir(parents=True, exist_ok=True)

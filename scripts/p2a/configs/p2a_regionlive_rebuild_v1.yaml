@@ -177,3 +177,54 @@ gates:                                  # ratified thresholds — decisions v2
 cluster:
   column: idorighh
   t3_policy: auto-resolve unique nonmissing idorighh in frozen sample (D-6); never 9657
+
+phase3:                                 # AUTHORIZED by FR_P2a_region_live_phase12_manager_acceptance_v1.md s9
+  output_subdir: phase3_estimation_v1   # all Phase-3 writes confined here (never Phase 1-2 files)
+  authorization_doc: docs/France_case/P2a/FR_P2a_region_live_phase12_manager_acceptance_v1.md
+  accepted_evidence:                    # Phase 1-2 acceptance anchors (input contract)
+    manifest_status_required: DRY_RUN_PHASES_1_2_COMPLETE
+    geometry_sha256: 5bcf0e5409ef74c57f6de24efdfd24d0075132dc3138ddb57a22740b916cf235
+    frozen_stem_sha256: 8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d
+    theta_star_sha256: 5f3722dc2092cda0af47cec39cb2cbbb7050dd153df1edf9dd9de8a231d76c9b
+    n_hh: 1555
+    n_alts: 101
+    n_free: 37
+    n_pinned: 10
+  start_theta:
+    csv: theta_p2a_singles_2016_v1.csv  # accepted stored region-live theta (manager mandate)
+    column: trial
+    note: >-
+      pinned entries are set to their pinned_at values (certified warm-start) before the
+      optimizer call so start and bounds are consistent; raw and applied start vectors +
+      hashes are both persisted.
+  optimizer:
+    method: L-BFGS-B
+    options: {maxiter: 5000, maxcor: 30, ftol: 1.0e-15, gtol: 1.0e-10}
+    settings_sources:
+      - plan v2 s11 / G-4 (ratified)
+      - frozen checkpoint fr_singles_pipeline_v1.ipynb fit cell (identical options)
+    route: >-
+      checkpoint-exact scipy.optimize.minimize(L-BFGS-B) over the package-built JAX
+      objective (build_jax_singles_ll sm+sf, jax.value_and_grad, float64). The package
+      wrapper solvers/jax_optimize.optimize_lbfgsb cannot express the pre-registered
+      maxcor=30 (it exposes only gtol/maxiter and hard-codes maxls=60 vs the checkpoint's
+      scipy-default maxls); using it would silently alter pre-registered settings. See
+      FR_P2a_region_live_phase3_implementation_report_v1.md s7.
+  gates:                                # ratified (D-2/D-5; acceptance s9)
+    pre_opt_objective_tol: 1.0e-4       # |negLL(start) - target_full| before optimization
+    objective_tol_full: 1.0e-4          # G-1 full-precision reproduction after optimization
+    gradient_max_abs_35free: 1.0e-2     # G-3, over the 35 non-bound free parameters
+    bound_hit_eps: 1.0e-5               # G-15
+    pins_bitwise_unchanged: true        # final theta[pin] == pinned_at, exact float equality
+    at_bound_expected_derivation: >-
+      derived from the accepted stored theta vs spec bounds at eps 1e-5 and cross-checked
+      against run_overlay.at_bound_expected; any additional or different final bound hit
+      is a STOP
+    target_mismatch_status: REVIEW_REQUIRED_TARGET_MISMATCH   # not automatic acceptance
+  prohibited_in_phase3:                 # asserted in code (S-0)
+    - EUROMOD (any import or call)
+    - draw generation or regeneration
+    - Hessian / eigenvalue / rank / condition diagnostics (Phase 4)
+    - per-household scores / sandwich SE (Phase 5)
+    - post-estimation (Phase 6), welfare, synthetic recovery
+    - any write outside phase3_estimation_v1/

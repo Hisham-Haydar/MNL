@@ -1,0 +1,179 @@
+# =============================================================================
+# FR P2a region-live production rebuild — run-config v1 (Phases 1-2)
+# =============================================================================
+# Governed by (binding, in this order):
+#   docs/France_case/P2a/FR_P2a_region_live_manager_decisions_v2.md   (canonical)
+#   docs/France_case/P2a/FR_P2a_region_live_production_rebuild_plan_v2.md
+#   docs/France_case/P2a/FR_P2a_region_live_notebook_integration_addendum_v1.md
+# Frozen reference checkpoint (never executed / modified by the runner):
+#   dclaborsupply-monorepo/notebooks/fr_singles_pipeline_v1.ipynb
+#
+# All thresholds below are the RATIFIED values (decisions v2) — no placeholders.
+# Paths are MNL-repo-relative unless absolute (EUROMOD-STORAGE is external).
+
+run:
+  name: p2a_regionlive_rebuild_v1
+  track: FR-2016 singles P2a region-live
+  phases_implemented: [1, 2]          # Phases 3-8 are manager-gated; runner refuses them
+  output_root: outputs/p2a_singles2016/region_live_v1
+  frozen_stem_name: fr_p2a_singles2016_regionlive
+
+targets:
+  negll_4dp: 19053.4655
+  negll_full: 19053.46553160094
+  negll_region_dead_context: 19071.6562   # context only, never a target
+
+certified_spec:
+  yaml: scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml
+  sha256: 492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211
+  n_params: 47
+  wage_spec: vw
+  fixed_params_expected: { theta_l_m: -0.8 }
+
+warm_start:
+  theta_csv: scripts/bpool/specs/theta_hat_realdata_901_v1.csv
+  sha256: c72e92b16170a7dd2dc8ec0b76dc3f522a1fc6d6182a5eba8f8cad34cef76269
+
+stored_region_live_theta:
+  # both encode the same region-live solution; trial columns must agree exactly
+  v1_csv: theta_p2a_singles_2016_v1.csv       # certified col rounded ~7 sig figs
+  v1_sha256: 930ef3aa753d0c48b6e923cfa4de9847beac5aae8c585c7eec5512ee01cbbd33
+  v2_csv: theta_p2a_singles_2016_v2.csv       # full float64 columns
+  v2_sha256: 9c8d7ee7f4ee5b1bd4ae3edd2970dd96fe348c242cc4b6bdcd15de82fc1ba981
+  value_column: trial
+  warmstart_column: certified
+
+run_overlay:
+  # run-level pins (bounds clamped to the certified warm-start value, the
+  # checkpoint's exact mechanism) — 47 - 10 = 37 free at run level
+  pinned_params:
+    - beta_l0_m
+    - beta_l_age_m
+    - beta_l_age2_m
+    - beta_l0_f
+    - beta_l_age_f
+    - beta_l_age2_f
+    - beta_l_nkids_f
+    - theta_l_f
+    - beta_E_y2015
+    - beta_E_y2017
+  n_free_expected: 37
+  at_bound_expected: [beta_l_age2_sm, beta_l_age2_sf]   # G-15 reference set (Phase 3+)
+  occupation_block_free: [beta_occ_2_m, beta_occ_3_m, beta_occ_4_m,
+                          beta_occ_2_f, beta_occ_3_f, beta_occ_4_f]
+
+frozen_inputs:                          # D-1 v2 reconstruction boundary — G-0
+  raw_fr_txt:
+    path: 'C:/Users/hisham/MNL/EUROMOD-STORAGE/Data/FR/FR_2016_a3.txt'
+    sha256: da3eed570ff67cb06f9b0cef16bf9e7aa1d33ae579baff14a97f22c0f2c8bf88
+  gsur_lookup:
+    path: 'C:/Users/hisham/MNL/EUROMOD-STORAGE/Data/external/FR_gsur_ruro_v2_stageA_y2015.parquet'
+    sha256: f51ad6306574bf3a1d7b577e7741222c5bf2fb8126e512c0bbf965d6a2d03c83
+    n_valid_rows: 48
+    merge_keys: [drgn1, educ3, sex]
+    opportunity_year_note: 'survey 2016 <- opportunity year 2015'
+  pricing_cache:
+    dir: fr_singles_pricing_p2a
+    chunk_grid: [0, 200, 400, 600, 800, 1000, 1200, 1400]
+    expected_rows_total: 225836
+    expected_hh: 1555
+    columns: [idhh, idperson, source_idhh, source_idorighh, source_idperson,
+              ruro_decider, dgn, draw, ils_dispy, bsa00_s]
+    sha256:
+      priced_00000.parquet: c35ed8b553f24bfa9e51bbdad6ec9aab609c8765e850afc5be8424fceb924d30
+      priced_00200.parquet: f00923ac60705ca70ea53bb77127d3977e628dde8f2bc07de9805f7d732c912c
+      priced_00400.parquet: d21fe881bdfe3768a3c7b6af729919bd2bde166b567c1f397865e0e2d44a42e6
+      priced_00600.parquet: 8a9153de01c033b85bd6fa4d40327f5311263a787288e3919f4163ca6ab0f87f
+      priced_00800.parquet: d24e6d6db6c73288b800f4550f0075272bcbc01791734b4f245d6891cec4df8a
+      priced_01000.parquet: 184bae4430d4b248cbf73b93527b760db22afb146712078334c20a3a28f63cb5
+      priced_01200.parquet: aef0b58678ff59e6512d2bcbee67766c3fe19135941b70605c24831875c53d83
+      priced_01400.parquet: e89d73678f97a9468bffff965d068263e25ea2b8f16ef3556e33c0e585e9d63b
+  draws_geometry:
+    # STABILIZATION DELIVERABLE (fr_singles_pipeline_v2.ipynb) — the frozen
+    # per-(idhh, draw) draws_p2a frame. Produced OUTSIDE this runner; the runner
+    # only verifies + consumes it. sha256 is self-declared in the meta json
+    # (cannot be pre-registered here before the artifact exists).
+    parquet: outputs/p2a_singles2016/region_live_v1/inputs/fr_p2a_draws_geometry__singles.parquet
+    meta: outputs/p2a_singles2016/region_live_v1/inputs/fr_p2a_draws_geometry__meta.json
+    expected_rows: 157055
+    expected_hh: 1555
+    expected_alts_per_hh: 101
+    expected_seed: 2026
+    draw_design: 'certified B-pool (D1 hours mixture, W1 occ-conditional wages, empirical occ, pi0=0.10, seed 2026)'
+    required_columns: [idhh, idhh_true, idperson, idorighh, dgn, draw, is_chosen,
+                       working, hours, wage, loc4, log_q_E, log_q_H, log_q_W, log_q_Occ,
+                       log_prior, working_ft, working_pt1, working_pt2, working_lh,
+                       educ3, educL, educM, educH, pexp_years, pexp_years2, pexp_years_raw,
+                       lhw, yivwg, is_worker, bsa00, dag, les]
+    full_carry_note: >-
+      The freeze must carry the FULL in-memory draws_p2a column set of the
+      checkpoint (162 columns) so the reconstructed er_b reproduces the existing
+      engine-ready frames on every column; a reduced column set fails frame
+      reconciliation (S-1).
+
+comparison_frames:                      # reconciliation artifacts ONLY — never inputs
+  - path: fr_singles_engine_ready_p2a_bpool.parquet
+    sha256: 8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d
+  - path: fr_singles_engine_ready_p2a_bpool_v2.parquet
+    sha256: 8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d
+  - path: outputs/p2a_singles2016/fr_p2a_singles2016__singles.parquet
+    sha256: 8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d
+  # note (2026-07-24 config authoring): all three files are byte-identical
+comparison_mnlmeta:
+  path: outputs/p2a_singles2016/fr_p2a_singles2016__mnlmeta.json
+  sha256: 495e7c6bd265f7a9725bdd953f9449e532137891b76784358ae5790a4f1b2238
+
+phase1_expected:                        # checkpoint-derived determinism evidence (G-18)
+  n_hh_singles: 1555
+  n_persons_singles: 2236
+  n_sf: 841
+  n_sm: 714
+  er_rows: 157055
+  er_cols_checkpoint: 194
+  n_alts: 101
+  drgn1_counts: {1: 245, 2: 254, 3: 122, 4: 135, 5: 279, 6: 175, 7: 182, 8: 163}
+  gsur_range: [0.05, 0.23]
+  gsur_lookup_range: [0.0532, 0.2250]
+  gsur_hh_mean: 0.0945
+  gsur_nunique: 47
+  takeup_seed: 20162016
+  takeup_rate_nw: 0.548     # revealed take-up, 3dp, n=177 entitled non-workers
+  takeup_rate_w: 0.265      # revealed take-up, 3dp, n=294 entitled workers
+  draw0_mode_imputed_rows: 7
+  draw0_mode_imputed_loc4: 4
+  band_reflag_counts: {working_pt1: 11342, working_pt2: 7391, working_ft: 7541, working_lh: 0}
+  funnel_households: {baseline: 10003, age: 5793, education: 5557,
+                      retirement: 4973, les: 4010, other_members: 3887, hours_wage: 3830}
+  year_tag: 2
+
+gates:                                  # ratified thresholds — decisions v2
+  g0_frozen_inputs: hash-and-contract match as declared above (missing/mismatch -> S-1)
+  g18_frame_reconciliation_atol: 1.0e-9   # rtol 0; project precedent scripts/bpool/check_bpool_engine_ready.py
+  g18_exact_columns_policy: engine-consumed columns exact/atol-1e-9; full common-column agreement required
+  g19_theta_eval_tol_full: 1.0e-4         # |negLL_jax - 19053.46553160094|  (D-2 / G-19)
+  g19_backend_agreement_tol: 1.0e-6       # |negLL_jax - negLL_numpy|        (G-19)
+  g19_anchor_tol_4dp: 1.0e-2              # |negLL - 19053.4655|             (D-2)
+  warmstart_equality_tol_v2: 1.0e-9       # theta0 vs v2 'certified' (full float64)
+  warmstart_equality_tol_v1: 5.0e-7       # theta0 vs v1 'certified' (rounded ~7 sig figs)
+  trial_v1_v2_equality_atol: 1.0e-12      # stored-theta cross-check (expect 0.0)
+  log_prior_consistency_atol: 1.0e-9      # prior identity, package precedent (rtol 0)
+  cluster_count_bounds: [1, 1555]         # D-6 auto-resolution window
+  # later-phase ratified values (recorded for completeness; NOT used in Phases 1-2):
+  g1_objective: {tol_4dp: 1.0e-2, tol_full: 1.0e-4}
+  g3_max_abs_grad_35free: 1.0e-2
+  g4_solver_options: {maxiter: 5000, maxcor: 30, ftol: 1.0e-15, gtol: 1.0e-10}
+  g5_hessian_pd: min_eig > 0 strictly; n_nonpos counter at eig <= 1e-8
+  g6_hessian_symmetry_rel: 1.0e-8
+  g7_rank_eps_rel: 1.0e-10
+  g8_condition_tiers: {clean_max: 1.0e7, warn_max: 1.0e10}
+  g9_regional: {design_rank: 10, sub_hessian_pd: true, schur_rank: 10, schur_min_eig: '> 0',
+                r3_loading_share_warn: 0.5}
+  g10_t1: {atol: 1.0e-8, rtol: 1.0e-8}
+  g11_t2_atol: 1.0e-10
+  g15_bound_eps: 1.0e-5
+  g16_inbounds_eps: 1.0e-9
+  g17_cold_reload: {anchor_4dp: 1.0e-2, vs_stored: 1.0e-6}
+
+cluster:
+  column: idorighh
+  t3_policy: auto-resolve unique nonmissing idorighh in frozen sample (D-6); never 9657

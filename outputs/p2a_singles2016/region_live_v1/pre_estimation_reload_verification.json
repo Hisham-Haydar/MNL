@@ -1,0 +1,26 @@
+{
+  "mode": "pre-estimation",
+  "note": "pre-estimation reload check for the Phase 1-2 dry-run; NOT the Phase-7 strict cold-reload gate",
+  "environment": {
+    "python": "3.12.2",
+    "jax": "0.10.1",
+    "numpy": "2.3.5",
+    "pandas": "2.3.3",
+    "platform": "Windows-2022Server-10.0.20348-SP0",
+    "utc": "2026-07-24T12:30:20.805679+00:00"
+  },
+  "stem_parquet_sha256": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+  "stem_mnlmeta_sha256": "05be40300288bdfb82a1f29d3649b420ee055e548658b6556424d024a87f5de1",
+  "theta_source": "theta_p2a_singles_2016_v1.csv",
+  "ordering_ok": true,
+  "negll_jax": 19053.46553160094,
+  "negll_numpy": 19053.465531600945,
+  "abs_dev_full": 0.0,
+  "abs_dev_4dp": 3.160094274790026e-05,
+  "backend_abs_dev": 3.637978807091713e-12,
+  "full_ok": true,
+  "anchor_ok": true,
+  "backend_ok": true,
+  "ok": true,
+  "wall_seconds": 2.6
+}

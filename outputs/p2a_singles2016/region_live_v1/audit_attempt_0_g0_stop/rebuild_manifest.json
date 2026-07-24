@@ -1,0 +1,51 @@
+{
+  "run": "p2a_regionlive_rebuild_v1",
+  "track": "FR-2016 singles P2a region-live",
+  "mode": "dry-run (Phases 1-2)",
+  "started_at": "2026-07-24T10:57:04.027513+00:00",
+  "status": "STOPPED",
+  "stop": {
+    "code": "S-1",
+    "gate": "G-0",
+    "message": "frozen-input gate failed (see data_wiring_validation.json g0 items; geometry artifact is the stabilization deliverable of fr_singles_pipeline_v2.ipynb)"
+  },
+  "phases": {},
+  "config": {
+    "path": "scripts\\p2a\\configs\\p2a_regionlive_rebuild_v1.yaml",
+    "sha256": "68d152e70cb73b6616a8b16a63edfb90298945c65fa15dd8580399033059d8fe"
+  },
+  "script": {
+    "path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\p2a\\run_p2a_regionlive_rebuild.py",
+    "sha256": "be11294bf6e0456a37afc713d0e1bd843f574e2dfd136d60968b6519594c4475"
+  },
+  "git": {
+    "MNL": {
+      "repo": "C:\\Users\\hisham\\Repo\\MNL",
+      "head": "d0345745351bdebc01ac9a3f2b82fe7cfb74bd47",
+      "dirty": true
+    },
+    "dclaborsupply-monorepo": {
+      "repo": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo",
+      "head": "2df94bcd068217a2673eaaad5a4ad90bb1d60e61",
+      "dirty": false
+    }
+  },
+  "environment": {
+    "python": "3.12.2",
+    "numpy": "2.3.5",
+    "pandas": "2.3.3"
+  },
+  "targets": {
+    "negll_4dp": 19053.4655,
+    "negll_full": 19053.46553160094,
+    "negll_region_dead_context": 19071.6562
+  },
+  "finished_at": "2026-07-24T10:57:04.713176+00:00",
+  "wall_seconds": 0.7,
+  "log": [
+    "[12:57:04] Phase 1 - G-0 frozen-inputs gate",
+    "[12:57:04] G-0 frozen-inputs gate: FAIL",
+    "[12:57:04]   G-0 FAIL item: draws_geometry: frozen draws_p2a geometry artifact MISSING - notebook stabilization (fr_singles_pipeline_v2.ipynb geometry-freeze cell) has not been executed; Phase 1 may not start (D-1 v2). The runner is prohibited from regenerating draws and from substituting an engine-ready parquet.",
+    "[12:57:04] STOP S-1 [G-0] frozen-input gate failed (see data_wiring_validation.json g0 items; geometry artifact is the stabilization deliverable of fr_singles_pipeline_v2.ipynb)"
+  ]
+}

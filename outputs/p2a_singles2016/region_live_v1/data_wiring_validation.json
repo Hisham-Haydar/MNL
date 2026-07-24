@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-24T10:57:04.180550+00:00",
+  "generated_at": "2026-07-24T12:29:46.719052+00:00",
   "phase1": {
     "g0": {
-      "checked_at": "2026-07-24T10:57:04.181550+00:00",
+      "checked_at": "2026-07-24T12:29:46.720052+00:00",
       "items": {
         "certified_spec_yaml": {
           "path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\bpool\\specs\\estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
@@ -190,13 +190,165 @@
         "draws_geometry": {
           "parquet": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\inputs\\fr_p2a_draws_geometry__singles.parquet",
           "meta": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\inputs\\fr_p2a_draws_geometry__meta.json",
-          "parquet_exists": false,
-          "meta_exists": false,
-          "ok": false,
-          "reason": "frozen draws_p2a geometry artifact MISSING - notebook stabilization (fr_singles_pipeline_v2.ipynb geometry-freeze cell) has not been executed; Phase 1 may not start (D-1 v2). The runner is prohibited from regenerating draws and from substituting an engine-ready parquet."
+          "parquet_exists": true,
+          "meta_exists": true,
+          "sha256": "5bcf0e5409ef74c57f6de24efdfd24d0075132dc3138ddb57a22740b916cf235",
+          "sha256_meta_declared": "5bcf0e5409ef74c57f6de24efdfd24d0075132dc3138ddb57a22740b916cf235",
+          "sha256_match": true,
+          "seed": 2026,
+          "seed_ok": true,
+          "rows": 157055,
+          "rows_ok": true,
+          "hh": 1555,
+          "alts_ok": true,
+          "missing_required_columns": [],
+          "chosen_contract_ok": true,
+          "ok": true
         }
       },
-      "ok": false
-    }
+      "ok": true
+    },
+    "funnel": {
+      "households": {
+        "baseline": 10003,
+        "age": 5793,
+        "education": 5557,
+        "retirement": 4973,
+        "les": 4010,
+        "other_members": 3887,
+        "hours_wage": 3830
+      },
+      "mutations": {
+        "capped_over_70h": 25,
+        "to_inactive_le5h": 6,
+        "nonemp_hours_zeroed": 407
+      },
+      "expected": {
+        "baseline": 10003,
+        "age": 5793,
+        "education": 5557,
+        "retirement": 4973,
+        "les": 4010,
+        "other_members": 3887,
+        "hours_wage": 3830
+      },
+      "ok": true
+    },
+    "singles_sample": {
+      "n_hh": 1555,
+      "n_persons": 2236,
+      "ok": true
+    },
+    "region_map": {
+      "n_rows": 1555,
+      "n_rows_ok": true,
+      "idhh_unique": true,
+      "no_missing": true,
+      "drgn1_support_ok": true,
+      "drgn1_counts": {
+        "1": 245,
+        "2": 254,
+        "3": 122,
+        "4": 135,
+        "5": 279,
+        "6": 175,
+        "7": 182,
+        "8": 163
+      },
+      "drgn1_counts_ok": true,
+      "urbanisation_one_hot_ok": true,
+      "gsur_in_range_ok": true,
+      "gsur_nunique": 47,
+      "gsur_nunique_ok": true,
+      "gsur_mean": 0.09450886430868168,
+      "ok": true
+    },
+    "takeup": {
+      "seed": 20162016,
+      "rate_nw": 0.548,
+      "rate_nw_expected": 0.548,
+      "rate_w": 0.265,
+      "rate_w_expected": 0.265,
+      "n_entitled_nw": 177,
+      "n_entitled_w": 294,
+      "share_nw": 0.542,
+      "share_w": 0.292,
+      "ok": true
+    },
+    "assembly": {
+      "draw0_mode_imputed_rows": 7,
+      "draw0_mode_imputed_loc4": 4,
+      "mode_imputation_ok": true,
+      "er_rows": 157055,
+      "er_cols": 194,
+      "er_chosen": 1555,
+      "er_shape_ok": true,
+      "band_reflag_counts": {
+        "working_pt1": 11342,
+        "working_pt2": 7391,
+        "working_ft": 7541,
+        "working_lh": 0
+      },
+      "band_reflag_ok": true,
+      "revival": {
+        "drgn1_support_ok": true,
+        "urbanisation_one_hot_ok": true,
+        "gsur_ok": true,
+        "drgn1_counts": {
+          "1": 245,
+          "2": 254,
+          "3": 122,
+          "4": 135,
+          "5": 279,
+          "6": 175,
+          "7": 182,
+          "8": 163
+        },
+        "gsur_hh_mean": 0.09450886430868168,
+        "gsur_nunique": 47,
+        "within_household_constancy_ok": true,
+        "drgn1_counts_ok": true,
+        "no_leakage_ok": true,
+        "ok": true
+      },
+      "bpool_nonworking_zero_ok": true,
+      "er_b_shape": [
+        157055,
+        194
+      ],
+      "er_b_cols_expected_checkpoint": 194,
+      "ok": true
+    },
+    "reconciliation": {
+      "c_scale": 1911.108057855561,
+      "l_scale": 10.0,
+      "c_scale_committed": 1911.108057855561,
+      "l_scale_committed": 10.0,
+      "scales_ok": true,
+      "comparison_frame_sha256": {
+        "fr_singles_engine_ready_p2a_bpool.parquet": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+        "fr_singles_engine_ready_p2a_bpool_v2.parquet": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+        "outputs/p2a_singles2016/fr_p2a_singles2016__singles.parquet": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d"
+      },
+      "frames_byte_identical": true,
+      "rebuilt_shape": [
+        157055,
+        194
+      ],
+      "reference_shape": [
+        157055,
+        194
+      ],
+      "columns_only_in_rebuilt": [],
+      "columns_only_in_reference": [],
+      "engine_consumed_missing_from_common": [],
+      "n_common_columns": 194,
+      "column_diffs": {},
+      "rows_match": true,
+      "values_ok": true,
+      "five_column_idempotence_ok": true,
+      "ok": true
+    },
+    "ok": true
   }
 }

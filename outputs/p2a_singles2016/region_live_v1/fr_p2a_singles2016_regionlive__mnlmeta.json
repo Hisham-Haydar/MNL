@@ -1,0 +1,23 @@
+{
+  "source": "P2a bpool draws (101 alts/HH)",
+  "produced_by": "scripts/p2a/run_p2a_regionlive_rebuild.py",
+  "n_draws": {
+    "singles": 101
+  },
+  "normalization": {
+    "singles": {
+      "c_scale": 1911.108057855561,
+      "l_scale": 10.0,
+      "n_chosen": 1555
+    }
+  },
+  "row_counts": {
+    "singles": 157055,
+    "total": 157055
+  },
+  "cluster_key": {
+    "cluster_id_col": "cluster_id",
+    "source_col": "idorighh"
+  },
+  "prior_convention": "prior=clip(exp(clip(log_prior,-700,700)),1e-16,None)"
+}

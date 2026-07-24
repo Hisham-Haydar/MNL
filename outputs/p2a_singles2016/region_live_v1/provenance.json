@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-24T10:57:04.180550+00:00",
+  "generated_at": "2026-07-24T12:29:46.719052+00:00",
   "run": "p2a_regionlive_rebuild_v1",
   "binding_documents": [
     "docs/France_case/P2a/FR_P2a_region_live_manager_decisions_v2.md",
@@ -34,7 +34,13 @@
     "pricing_priced_00800.parquet": "d24e6d6db6c73288b800f4550f0075272bcbc01791734b4f245d6891cec4df8a",
     "pricing_priced_01000.parquet": "184bae4430d4b248cbf73b93527b760db22afb146712078334c20a3a28f63cb5",
     "pricing_priced_01200.parquet": "aef0b58678ff59e6512d2bcbee67766c3fe19135941b70605c24831875c53d83",
-    "pricing_priced_01400.parquet": "e89d73678f97a9468bffff965d068263e25ea2b8f16ef3556e33c0e585e9d63b"
+    "pricing_priced_01400.parquet": "e89d73678f97a9468bffff965d068263e25ea2b8f16ef3556e33c0e585e9d63b",
+    "draws_geometry": "5bcf0e5409ef74c57f6de24efdfd24d0075132dc3138ddb57a22740b916cf235"
   },
-  "output_hashes": {}
+  "output_hashes": {
+    "region_map_p2a_singles2016.parquet": "b0d44ce825492b3ff7e058b6322b5972dcf728729a8d7c40b2d515b6be63e490",
+    "fr_p2a_singles2016_regionlive__singles.parquet": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+    "fr_p2a_singles2016_regionlive__mnlmeta.json": "05be40300288bdfb82a1f29d3649b420ee055e548658b6556424d024a87f5de1",
+    "dry_run_report.json": "ec50ea9803433346a16149b0e21a5c0f33d352fa1993203cff51679d23ede224"
+  }
 }

@@ -2,14 +2,13 @@
   "run": "p2a_regionlive_rebuild_v1",
   "track": "FR-2016 singles P2a region-live",
   "mode": "dry-run (Phases 1-2)",
-  "started_at": "2026-07-24T10:57:04.027513+00:00",
-  "status": "STOPPED",
-  "stop": {
-    "code": "S-1",
-    "gate": "G-0",
-    "message": "frozen-input gate failed (see data_wiring_validation.json g0 items; geometry artifact is the stabilization deliverable of fr_singles_pipeline_v2.ipynb)"
+  "started_at": "2026-07-24T12:29:46.564016+00:00",
+  "status": "DRY_RUN_PHASES_1_2_COMPLETE",
+  "stop": null,
+  "phases": {
+    "phase1": "PASS",
+    "phase2": "PASS"
   },
-  "phases": {},
   "config": {
     "path": "scripts\\p2a\\configs\\p2a_regionlive_rebuild_v1.yaml",
     "sha256": "68d152e70cb73b6616a8b16a63edfb90298945c65fa15dd8580399033059d8fe"
@@ -21,12 +20,12 @@
   "git": {
     "MNL": {
       "repo": "C:\\Users\\hisham\\Repo\\MNL",
-      "head": "d0345745351bdebc01ac9a3f2b82fe7cfb74bd47",
+      "head": "928d11ba6e70f8812e312d66c30e67aad93d92ec",
       "dirty": true
     },
     "dclaborsupply-monorepo": {
       "repo": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo",
-      "head": "2df94bcd068217a2673eaaad5a4ad90bb1d60e61",
+      "head": "27756a06ea189339aa82915ed2124628afed20eb",
       "dirty": false
     }
   },
@@ -40,12 +39,26 @@
     "negll_full": 19053.46553160094,
     "negll_region_dead_context": 19071.6562
   },
-  "finished_at": "2026-07-24T10:57:04.713176+00:00",
-  "wall_seconds": 0.7,
+  "finished_at": "2026-07-24T12:29:57.135225+00:00",
+  "wall_seconds": 10.6,
   "log": [
-    "[12:57:04] Phase 1 - G-0 frozen-inputs gate",
-    "[12:57:04] G-0 frozen-inputs gate: FAIL",
-    "[12:57:04]   G-0 FAIL item: draws_geometry: frozen draws_p2a geometry artifact MISSING - notebook stabilization (fr_singles_pipeline_v2.ipynb geometry-freeze cell) has not been executed; Phase 1 may not start (D-1 v2). The runner is prohibited from regenerating draws and from substituting an engine-ready parquet.",
-    "[12:57:04] STOP S-1 [G-0] frozen-input gate failed (see data_wiring_validation.json g0 items; geometry artifact is the stabilization deliverable of fr_singles_pipeline_v2.ipynb)"
+    "[14:29:46] Phase 1 - G-0 frozen-inputs gate",
+    "[14:29:47] G-0 frozen-inputs gate: PASS",
+    "[14:29:47] Phase 1 - deterministic pre-assembly (funnel port)",
+    "[14:29:50] funnel households: {'baseline': 10003, 'age': 5793, 'education': 5557, 'retirement': 4973, 'les': 4010, 'other_members': 3887, 'hours_wage': 3830} | mutations: {'capped_over_70h': 25, 'to_inactive_le5h': 6, 'nonemp_hours_zeroed': 407}",
+    "[14:29:50] features built: workers=5519, unknown-occ workers=37",
+    "[14:29:50] gsur merged: n=1555 range [0.0532,0.2250]",
+    "[14:29:50] take-up traits: nw=0.548 w=0.265 (expected 0.548/0.265) ok=True",
+    "[14:29:50] Phase 1 - assemble_singles -> revival -> band overwrite -> er_b",
+    "[14:29:50] assembled er_p2a: (157055, 194) chosen=1555",
+    "[14:29:51] revival: drgn1 counts ok=True gsur mean=0.0945 n_unique=47",
+    "[14:29:51] Phase 1 - freeze + frame reconciliation",
+    "[14:29:53] reconciliation: frames byte-identical=True values_ok=True n_diff_cols=0 idempotence=True",
+    "[14:29:53] Phase 1 COMPLETE",
+    "[14:29:53] Phase 2 - package load + stored-theta objective reproduction (no optimizer)",
+    "[14:29:54] loader liveness [sm]: reg2 mean=0.1807 gsur mean=0.0980 ok=True",
+    "[14:29:54] loader liveness [sf]: reg2 mean=0.1486 gsur mean=0.0915 ok=True",
+    "[14:29:57] G-19 objective: jax=19053.4655316009 numpy=19053.4655316009 |dev_full|=0.00e+00 |jax-np|=3.64e-12",
+    "[14:29:57] Phase 2 COMPLETE - dry-run stops here by design (plan v2 s24 step 4)"
   ]
 }

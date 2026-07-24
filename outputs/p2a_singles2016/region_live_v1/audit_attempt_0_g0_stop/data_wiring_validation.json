@@ -1,0 +1,202 @@
+{
+  "generated_at": "2026-07-24T10:57:04.180550+00:00",
+  "phase1": {
+    "g0": {
+      "checked_at": "2026-07-24T10:57:04.181550+00:00",
+      "items": {
+        "certified_spec_yaml": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\bpool\\specs\\estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
+          "exists": true,
+          "sha256": "492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211",
+          "size": 15925,
+          "sha256_expected": "492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211",
+          "sha256_match": true,
+          "ok": true
+        },
+        "warm_start_theta_csv": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\bpool\\specs\\theta_hat_realdata_901_v1.csv",
+          "exists": true,
+          "sha256": "c72e92b16170a7dd2dc8ec0b76dc3f522a1fc6d6182a5eba8f8cad34cef76269",
+          "size": 3423,
+          "sha256_expected": "c72e92b16170a7dd2dc8ec0b76dc3f522a1fc6d6182a5eba8f8cad34cef76269",
+          "sha256_match": true,
+          "ok": true
+        },
+        "raw_fr_txt": {
+          "path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\Data\\FR\\FR_2016_a3.txt",
+          "exists": true,
+          "sha256": "da3eed570ff67cb06f9b0cef16bf9e7aa1d33ae579baff14a97f22c0f2c8bf88",
+          "size": 10056505,
+          "sha256_expected": "da3eed570ff67cb06f9b0cef16bf9e7aa1d33ae579baff14a97f22c0f2c8bf88",
+          "sha256_match": true,
+          "ok": true
+        },
+        "gsur_lookup": {
+          "path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\Data\\external\\FR_gsur_ruro_v2_stageA_y2015.parquet",
+          "exists": true,
+          "sha256": "f51ad6306574bf3a1d7b577e7741222c5bf2fb8126e512c0bbf965d6a2d03c83",
+          "size": 7433,
+          "sha256_expected": "f51ad6306574bf3a1d7b577e7741222c5bf2fb8126e512c0bbf965d6a2d03c83",
+          "sha256_match": true,
+          "ok": true
+        },
+        "stored_theta_v1": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\theta_p2a_singles_2016_v1.csv",
+          "exists": true,
+          "sha256": "930ef3aa753d0c48b6e923cfa4de9847beac5aae8c585c7eec5512ee01cbbd33",
+          "size": 2799,
+          "sha256_expected": "930ef3aa753d0c48b6e923cfa4de9847beac5aae8c585c7eec5512ee01cbbd33",
+          "sha256_match": true,
+          "ok": true
+        },
+        "stored_theta_v2": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\theta_p2a_singles_2016_v2.csv",
+          "exists": true,
+          "sha256": "9c8d7ee7f4ee5b1bd4ae3edd2970dd96fe348c242cc4b6bdcd15de82fc1ba981",
+          "size": 3319,
+          "sha256_expected": "9c8d7ee7f4ee5b1bd4ae3edd2970dd96fe348c242cc4b6bdcd15de82fc1ba981",
+          "sha256_match": true,
+          "ok": true
+        },
+        "comparison_frame_0": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\fr_singles_engine_ready_p2a_bpool.parquet",
+          "exists": true,
+          "sha256": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+          "size": 23114466,
+          "sha256_expected": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+          "sha256_match": true,
+          "ok": true
+        },
+        "comparison_frame_1": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\fr_singles_engine_ready_p2a_bpool_v2.parquet",
+          "exists": true,
+          "sha256": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+          "size": 23114466,
+          "sha256_expected": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+          "sha256_match": true,
+          "ok": true
+        },
+        "comparison_frame_2": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\fr_p2a_singles2016__singles.parquet",
+          "exists": true,
+          "sha256": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+          "size": 23114466,
+          "sha256_expected": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+          "sha256_match": true,
+          "ok": true
+        },
+        "comparison_mnlmeta": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\fr_p2a_singles2016__mnlmeta.json",
+          "exists": true,
+          "sha256": "495e7c6bd265f7a9725bdd953f9449e532137891b76784358ae5790a4f1b2238",
+          "size": 487,
+          "sha256_expected": "495e7c6bd265f7a9725bdd953f9449e532137891b76784358ae5790a4f1b2238",
+          "sha256_match": true,
+          "ok": true
+        },
+        "pricing_priced_00000.parquet": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\fr_singles_pricing_p2a\\priced_00000.parquet",
+          "exists": true,
+          "sha256": "c35ed8b553f24bfa9e51bbdad6ec9aab609c8765e850afc5be8424fceb924d30",
+          "size": 622229,
+          "sha256_expected": "c35ed8b553f24bfa9e51bbdad6ec9aab609c8765e850afc5be8424fceb924d30",
+          "sha256_match": true,
+          "ok": true
+        },
+        "pricing_priced_00200.parquet": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\fr_singles_pricing_p2a\\priced_00200.parquet",
+          "exists": true,
+          "sha256": "f00923ac60705ca70ea53bb77127d3977e628dde8f2bc07de9805f7d732c912c",
+          "size": 627798,
+          "sha256_expected": "f00923ac60705ca70ea53bb77127d3977e628dde8f2bc07de9805f7d732c912c",
+          "sha256_match": true,
+          "ok": true
+        },
+        "pricing_priced_00400.parquet": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\fr_singles_pricing_p2a\\priced_00400.parquet",
+          "exists": true,
+          "sha256": "d21fe881bdfe3768a3c7b6af729919bd2bde166b567c1f397865e0e2d44a42e6",
+          "size": 600875,
+          "sha256_expected": "d21fe881bdfe3768a3c7b6af729919bd2bde166b567c1f397865e0e2d44a42e6",
+          "sha256_match": true,
+          "ok": true
+        },
+        "pricing_priced_00600.parquet": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\fr_singles_pricing_p2a\\priced_00600.parquet",
+          "exists": true,
+          "sha256": "8a9153de01c033b85bd6fa4d40327f5311263a787288e3919f4163ca6ab0f87f",
+          "size": 638376,
+          "sha256_expected": "8a9153de01c033b85bd6fa4d40327f5311263a787288e3919f4163ca6ab0f87f",
+          "sha256_match": true,
+          "ok": true
+        },
+        "pricing_priced_00800.parquet": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\fr_singles_pricing_p2a\\priced_00800.parquet",
+          "exists": true,
+          "sha256": "d24e6d6db6c73288b800f4550f0075272bcbc01791734b4f245d6891cec4df8a",
+          "size": 614565,
+          "sha256_expected": "d24e6d6db6c73288b800f4550f0075272bcbc01791734b4f245d6891cec4df8a",
+          "sha256_match": true,
+          "ok": true
+        },
+        "pricing_priced_01000.parquet": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\fr_singles_pricing_p2a\\priced_01000.parquet",
+          "exists": true,
+          "sha256": "184bae4430d4b248cbf73b93527b760db22afb146712078334c20a3a28f63cb5",
+          "size": 611648,
+          "sha256_expected": "184bae4430d4b248cbf73b93527b760db22afb146712078334c20a3a28f63cb5",
+          "sha256_match": true,
+          "ok": true
+        },
+        "pricing_priced_01200.parquet": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\fr_singles_pricing_p2a\\priced_01200.parquet",
+          "exists": true,
+          "sha256": "aef0b58678ff59e6512d2bcbee67766c3fe19135941b70605c24831875c53d83",
+          "size": 612838,
+          "sha256_expected": "aef0b58678ff59e6512d2bcbee67766c3fe19135941b70605c24831875c53d83",
+          "sha256_match": true,
+          "ok": true
+        },
+        "pricing_priced_01400.parquet": {
+          "path": "C:\\Users\\hisham\\Repo\\MNL\\fr_singles_pricing_p2a\\priced_01400.parquet",
+          "exists": true,
+          "sha256": "e89d73678f97a9468bffff965d068263e25ea2b8f16ef3556e33c0e585e9d63b",
+          "size": 489308,
+          "sha256_expected": "e89d73678f97a9468bffff965d068263e25ea2b8f16ef3556e33c0e585e9d63b",
+          "sha256_match": true,
+          "ok": true
+        },
+        "pricing_cache_contract": {
+          "chunks_ok": true,
+          "rows": 225836,
+          "rows_expected": 225836,
+          "hh": 1555,
+          "hh_expected": 1555,
+          "columns": [
+            "bsa00_s",
+            "dgn",
+            "draw",
+            "idhh",
+            "idperson",
+            "ils_dispy",
+            "ruro_decider",
+            "source_idhh",
+            "source_idorighh",
+            "source_idperson"
+          ],
+          "columns_match": true,
+          "ok": true
+        },
+        "draws_geometry": {
+          "parquet": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\inputs\\fr_p2a_draws_geometry__singles.parquet",
+          "meta": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\inputs\\fr_p2a_draws_geometry__meta.json",
+          "parquet_exists": false,
+          "meta_exists": false,
+          "ok": false,
+          "reason": "frozen draws_p2a geometry artifact MISSING - notebook stabilization (fr_singles_pipeline_v2.ipynb geometry-freeze cell) has not been executed; Phase 1 may not start (D-1 v2). The runner is prohibited from regenerating draws and from substituting an engine-ready parquet."
+        }
+      },
+      "ok": false
+    }
+  }
+}

@@ -14,7 +14,10 @@
 run:
   name: p2a_regionlive_rebuild_v1
   track: FR-2016 singles P2a region-live
-  phases_implemented: [1, 2]          # Phases 3-8 are manager-gated; runner refuses them
+  phases_implemented: [1, 2, 3]       # Phase 3 supported; execution gated by external authorization
+  phase3_supported: true
+  phase3_execution_authorized: false  # true ONLY via a verified external authorization file (review v2 B)
+  phases_4_to_8_supported: false
   output_root: outputs/p2a_singles2016/region_live_v1
   frozen_stem_name: fr_p2a_singles2016_regionlive
 
@@ -257,13 +260,9 @@ phase3:                                 # AUTHORIZED by FR_P2a_region_live_phase
     pre_estimation_reload_verification:
       path: outputs/p2a_singles2016/region_live_v1/pre_estimation_reload_verification.json
       sha256: 6f457de9f35a1bf1237222f4280424d85ed57b97e19fa7438700f32e2b24ac2c
-    phase3_runner_script:
-      path: scripts/p2a/run_p2a_regionlive_rebuild.py
-      sha256: efd2204a673df93d988ff08065b9cb7018802eb11d1fb04282198e0d9e23f543
-    phase3_config_self:
-      path: scripts/p2a/configs/p2a_regionlive_rebuild_v1.yaml
-      sha256: SELF   # a file cannot contain its own hash (fixed-point); hashed + recorded
-                     # in the contract evidence and rechecked pre/post optimization (S-8)
+    # NOTE (review v2 / decision B): runner + config self-entries REMOVED from this
+    # table; script/config/test identity is controlled by the EXTERNAL execution
+    # authorization (p2a_phase3_execution_authorization_v1) + Git revision checks.
   accepted_phase12_anchors:             # cross-check vs rebuild_manifest.json script/config
     script_sha256: be11294bf6e0456a37afc713d0e1bd843f574e2dfd136d60968b6519594c4475
     config_sha256: 68d152e70cb73b6616a8b16a63edfb90298945c65fa15dd8580399033059d8fe

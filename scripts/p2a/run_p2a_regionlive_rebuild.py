@@ -71,6 +71,23 @@ ACCEPTED_PIN_NAMES = (
     "beta_l_age2_f", "beta_l_nkids_f", "theta_l_f", "beta_E_y2015", "beta_E_y2017",
 )
 EXPECTED_AT_BOUND_NAMES = ("beta_l_age2_sm", "beta_l_age2_sf")
+# immutable safety-critical constants (decision C): the YAML must equal these exactly
+PHASE3_SAFETY_CONSTANTS = {
+    "target_negll_full": 19053.46553160094,
+    "objective_tol_full": 1e-4, "g16_inbounds_epsilon": 1e-9,
+    "gradient_max_abs_35free": 1e-2, "bound_hit_eps": 1e-5,
+    "n_params": 47, "n_free": 37, "n_nonbound_free": 35, "n_pinned": 10,
+    "n_hh": 1555, "n_alts": 101,
+    "optimizer_method": "L-BFGS-B",
+    "optimizer_options": {"maxiter": 5000, "maxcor": 30, "ftol": 1e-15, "gtol": 1e-10},
+}
+# external execution authorization (decision B): created only after third-review APPROVE
+AUTH_SCHEMA = "p2a_phase3_execution_authorization_v1"
+AUTH_REQUIRED_FIELDS = (
+    "schema", "status", "approved_mnl_commit", "approved_dclaborsupply_commit",
+    "approved_runner_sha256", "approved_config_sha256", "approved_test_sha256",
+    "approved_review_path", "approved_review_sha256", "created_at_utc")
+SAFETY_TESTS_PATH = MNL_ROOT / "tests/p2a/test_p2a_regionlive_phase3_safety.py"
 # the successful-bundle artifact set; the manifest is written LAST and is NEVER
 # part of its own artifact-hash dictionary (decision C / review fix 7)
 PHASE3_ARTIFACTS = ("phase3_console.log", "theta_estimated.csv",
@@ -1174,41 +1191,219 @@ def _validate_optimizer_contract(cfg: Dict[str, Any]) -> Dict[str, Any]:
             "options": {"maxiter": 5000, "maxcor": 30, "ftol": 1e-15, "gtol": 1e-10}}
 
 
-def _authenticate_inputs(cfg: Dict[str, Any], config_path: Path) -> Dict[str, Any]:
-    """Hash-authenticate EVERY consumed input against accepted hashes (decision G)."""
+def _phase3_runtime_paths() -> Dict[str, Path]:
+    """Immutable label -> INDEPENDENTLY constructed runtime path (decision A).
+    Never derived from YAML; built only from MNL_ROOT / canonical constants."""
+    return {
+        "geometry_parquet": CANONICAL_REGIONLIVE_ROOT
+            / "inputs/fr_p2a_draws_geometry__singles.parquet",
+        "geometry_meta": CANONICAL_REGIONLIVE_ROOT
+            / "inputs/fr_p2a_draws_geometry__meta.json",
+        "frozen_stem_parquet": CANONICAL_REGIONLIVE_ROOT
+            / f"{CANONICAL_STEM}__singles.parquet",
+        "frozen_stem_mnlmeta": CANONICAL_REGIONLIVE_ROOT
+            / f"{CANONICAL_STEM}__mnlmeta.json",
+        "certified_spec_yaml": MNL_ROOT
+            / "scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
+        "certified_warm_start_theta": MNL_ROOT
+            / "scripts/bpool/specs/theta_hat_realdata_901_v1.csv",
+        "stored_region_live_start_theta": MNL_ROOT / "theta_p2a_singles_2016_v1.csv",
+        "phase12_rebuild_manifest": CANONICAL_REGIONLIVE_ROOT / "rebuild_manifest.json",
+        "phase12_dry_run_report": CANONICAL_REGIONLIVE_ROOT / "dry_run_report.json",
+        "pre_estimation_reload_verification": CANONICAL_REGIONLIVE_ROOT
+            / "pre_estimation_reload_verification.json",
+    }
+
+
+def _authenticate_inputs(cfg: Dict[str, Any],
+                         runtime_paths: Optional[Dict[str, Path]] = None
+                         ) -> Dict[str, Any]:
+    """Exact label<->runtime-path<->hash authentication (decision A): the YAML key set
+    must equal the immutable label set; every configured path must resolve to the
+    independently constructed runtime path; every file must exist and hash-match."""
+    runtime = runtime_paths if runtime_paths is not None else _phase3_runtime_paths()
+    ycfg = cfg["phase3"]["input_authentication"]
+    if set(ycfg.keys()) != set(runtime.keys()):
+        raise StopRun("S-8", "input-authentication",
+                      f"YAML label set mismatch: missing "
+                      f"{sorted(set(runtime) - set(ycfg))}, "
+                      f"extra {sorted(set(ycfg) - set(runtime))}")
     table: Dict[str, Any] = {}
     bad: List[str] = []
-    for label, entry in cfg["phase3"]["input_authentication"].items():
-        path = (Path(config_path).resolve() if label == "phase3_config_self"
-                else (SCRIPT_PATH if label == "phase3_runner_script"
-                      else MNL_ROOT / entry["path"]))
-        actual = _sha256(path) if path.is_file() else None
+    for label, rpath in runtime.items():
+        entry = ycfg[label]
+        rp = Path(rpath).resolve()
+        cpath = (MNL_ROOT / entry["path"]).resolve()
+        path_ok = (cpath == rp)
+        is_file = rp.is_file()
+        actual = _sha256(rp) if is_file else None
         expected = entry["sha256"]
-        if label == "phase3_config_self":
-            expected = actual   # fixed-point: a file cannot contain its own hash
-        ok = (actual is not None and actual == expected)
-        table[label] = {"path": str(path), "expected": expected,
-                        "actual": actual, "ok": ok}
-        if not ok:
+        hash_ok = (actual is not None and actual == expected)
+        table[label] = {"label": label, "runtime_path": str(rp),
+                        "configured_path": str(cpath), "path_identity_ok": path_ok,
+                        "is_file": is_file, "expected": expected, "actual": actual,
+                        "hash_ok": hash_ok, "ok": path_ok and is_file and hash_ok}
+        if not table[label]["ok"]:
             bad.append(label)
     if bad:
         raise StopRun("S-8", "input-authentication",
-                      f"input hash mismatch/missing: {bad}")
+                      f"authentication failed for: {bad}")
     return table
 
 
-def _recheck_inputs(pre_table: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
-    """Post-optimization recheck: recompute, compare to pre-run AND accepted (decision G)."""
+def _recheck_inputs(pre_table: Dict[str, Any],
+                    runtime_paths: Optional[Dict[str, Path]] = None
+                    ) -> Tuple[Dict[str, Any], bool]:
+    """Post-optimization recheck over the SAME immutable mapping (decision A):
+    recompute every label's runtime path + hash; compare to pre-run AND accepted."""
+    runtime = runtime_paths if runtime_paths is not None else _phase3_runtime_paths()
     out: Dict[str, Any] = {}
     all_ok = True
-    for label, entry in pre_table.items():
-        p = Path(entry["path"])
+    for label, rpath in runtime.items():
+        pre = pre_table.get(label) or {}
+        p = Path(rpath).resolve()
         now = _sha256(p) if p.is_file() else None
-        ok = (now == entry["actual"] == entry["expected"])
-        out[label] = {"path": entry["path"], "pre": entry["actual"],
-                      "post": now, "accepted": entry["expected"], "ok": ok}
+        ok = (label in pre_table and str(p) == pre.get("runtime_path")
+              and now is not None and now == pre.get("actual") == pre.get("expected"))
+        out[label] = {"runtime_path": str(p), "pre": pre.get("actual"), "post": now,
+                      "accepted": pre.get("expected"), "ok": ok}
         all_ok &= ok
     return out, all_ok
+
+
+def _validate_safety_constants(cfg: Dict[str, Any]) -> Dict[str, bool]:
+    """YAML equality against the immutable safety constants (decision C)."""
+    C = PHASE3_SAFETY_CONSTANTS
+    g3 = cfg["phase3"]["gates"]
+    acc = cfg["phase3"]["accepted_evidence"]
+    checks = {
+        "target_negll_full": float(cfg["targets"]["negll_full"]) == C["target_negll_full"],
+        "objective_tol_full": float(g3["objective_tol_full"]) == C["objective_tol_full"],
+        "g16_inbounds_epsilon": float(g3["g16_inbounds_epsilon"]) == C["g16_inbounds_epsilon"],
+        "gradient_max_abs_35free":
+            float(g3["gradient_max_abs_35free"]) == C["gradient_max_abs_35free"],
+        "bound_hit_eps": float(g3["bound_hit_eps"]) == C["bound_hit_eps"],
+        "n_params": int(cfg["certified_spec"]["n_params"]) == C["n_params"],
+        "n_free": int(acc["n_free"]) == C["n_free"],
+        "n_pinned": int(acc["n_pinned"]) == C["n_pinned"],
+        "n_hh": int(acc["n_hh"]) == C["n_hh"],
+        "n_alts": int(acc["n_alts"]) == C["n_alts"],
+        "at_bound_tuple":
+            tuple(cfg["run_overlay"]["at_bound_expected"]) == EXPECTED_AT_BOUND_NAMES,
+        "pin_tuple": tuple(cfg["run_overlay"]["pinned_params"]) == ACCEPTED_PIN_NAMES,
+        "n_free_expected": int(cfg["run_overlay"]["n_free_expected"]) == C["n_free"],
+    }
+    bad = [k for k, v in checks.items() if not v]
+    if bad:
+        raise StopRun("S-1", "safety-constants",
+                      f"YAML deviates from immutable constants: {bad}")
+    oc = _validate_optimizer_contract(cfg)
+    if (oc["method"] != C["optimizer_method"]
+            or oc["options"] != C["optimizer_options"]):
+        raise StopRun("S-1", "safety-constants", "optimizer contract != constants")
+    return checks
+
+
+def _git_head_full(repo: Path) -> Optional[str]:
+    try:
+        r = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
+                           capture_output=True, text=True, timeout=15)
+        return r.stdout.strip() if r.returncode == 0 else None
+    except Exception:
+        return None
+
+
+def _git_tracked_dirty(repo: Path) -> Optional[bool]:
+    try:
+        r = subprocess.run(["git", "-C", str(repo), "status", "--porcelain", "-uno"],
+                           capture_output=True, text=True, timeout=15)
+        return bool(r.stdout.strip()) if r.returncode == 0 else None
+    except Exception:
+        return None
+
+
+def _verify_external_authorization(auth_path: Optional[str],
+                                   config_path: Path) -> Dict[str, Any]:
+    """External execution-authorization contract for REAL Phase 3 (decision B)."""
+    if not auth_path:
+        raise StopRun("S-0", "authorization",
+                      "real Phase-3 execution requires --authorization "
+                      "<absolute-json-path> (created only after third-review APPROVE)")
+    p = Path(auth_path)
+    if not p.is_absolute():
+        raise StopRun("S-0", "authorization", "authorization path must be absolute")
+    if not p.is_file():
+        raise StopRun("S-0", "authorization", f"authorization file not found: {p}")
+    a = json.loads(p.read_text(encoding="utf-8"))
+    missing = [f for f in AUTH_REQUIRED_FIELDS if f not in a]
+    if missing:
+        raise StopRun("S-0", "authorization", f"missing fields: {missing}")
+    if a["schema"] != AUTH_SCHEMA or a["status"] != "APPROVED":
+        raise StopRun("S-0", "authorization", "schema/status mismatch")
+    import re as _re
+    hex40 = _re.compile(r"^[0-9a-f]{40}$")
+    hex64 = _re.compile(r"^[0-9a-f]{64}$")
+    if not (hex40.match(a["approved_mnl_commit"])
+            and hex40.match(a["approved_dclaborsupply_commit"])):
+        raise StopRun("S-0", "authorization", "commit SHA format invalid")
+    for f in ("approved_runner_sha256", "approved_config_sha256",
+              "approved_test_sha256", "approved_review_sha256"):
+        if not hex64.match(a[f]):
+            raise StopRun("S-0", "authorization", f"{f} format invalid")
+    head = _git_head_full(MNL_ROOT)
+    if head != a["approved_mnl_commit"]:
+        raise StopRun("S-0", "authorization",
+                      f"MNL HEAD {head} != approved {a['approved_mnl_commit']}")
+    if _git_tracked_dirty(MNL_ROOT) is not False:
+        raise StopRun("S-0", "authorization", "MNL tracked tree is not clean")
+    if _sha256(SCRIPT_PATH) != a["approved_runner_sha256"]:
+        raise StopRun("S-0", "authorization", "runner hash != approved")
+    if _sha256(Path(config_path)) != a["approved_config_sha256"]:
+        raise StopRun("S-0", "authorization", "config hash != approved")
+    if _sha256(SAFETY_TESTS_PATH) != a["approved_test_sha256"]:
+        raise StopRun("S-0", "authorization", "safety-test hash != approved")
+    review = MNL_ROOT / a["approved_review_path"]
+    if not review.is_file() or _sha256(review) != a["approved_review_sha256"]:
+        raise StopRun("S-0", "authorization", "approved review missing or hash mismatch")
+    head_text = review.read_text(encoding="utf-8")[:1000]
+    if "APPROVE" not in head_text or "REJECT" in head_text:
+        raise StopRun("S-0", "authorization", "approved review verdict is not APPROVE")
+    return {"authorization_path": str(p), "verified": True,
+            **{k: a[k] for k in AUTH_REQUIRED_FIELDS}}
+
+
+def _verify_package_identity(expected_commit: Optional[str] = None) -> Dict[str, Any]:
+    """dclaborsupply source-identity verification (decision D)."""
+    import dclaborsupply.spec.parser as _sp
+    import dclaborsupply.data.loader as _dl
+    import dclaborsupply.likelihood.engine_jax as _ej
+    nested = (MNL_ROOT / "dclaborsupply-monorepo").resolve()
+    head = _git_head_full(nested)
+    dirty = _git_tracked_dirty(nested)
+    gitlink = None
+    try:
+        r = subprocess.run(["git", "-C", str(MNL_ROOT), "ls-tree", "HEAD",
+                            "dclaborsupply-monorepo"],
+                           capture_output=True, text=True, timeout=15)
+        if r.returncode == 0 and r.stdout.strip():
+            gitlink = r.stdout.split()[2]
+    except Exception:
+        pass
+    mods = {m.__name__: str(Path(m.__file__).resolve()) for m in (_sp, _dl, _ej)}
+    module_path_ok = all(str(nested) in mp for mp in mods.values())
+    rec = {"nested_repo": str(nested), "nested_head": head, "gitlink": gitlink,
+           "tracked_dirty": dirty, "imported_modules": mods,
+           "module_path_ok": module_path_ok,
+           "expected_commit": expected_commit}
+    ok = (nested.is_dir() and module_path_ok and dirty is False
+          and gitlink is not None and gitlink == head)
+    if expected_commit is not None:
+        ok = ok and (head == expected_commit)
+    rec["package_identity_ok"] = bool(ok)
+    if not ok:
+        raise StopRun("S-0", "package-identity",
+                      f"dclaborsupply source identity failed: {rec}")
+    return rec
 
 
 def _bundle_hashes(staging: Path) -> Tuple[Dict[str, str], str]:
@@ -1245,10 +1440,8 @@ class Phase3Transaction:
                     os.replace(p, dst / p.name)
 
     def acquire(self) -> None:
+        # decision H order: lock FIRST; any one-time legacy migration only under lock
         self.root.mkdir(parents=True, exist_ok=True)
-        self.attempts.mkdir(exist_ok=True)
-        self.migrate_pre_review_evidence()
-        self.staging_base.mkdir(exist_ok=True)
         try:
             fd = os.open(self.lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         except FileExistsError:
@@ -1260,6 +1453,9 @@ class Phase3Transaction:
             json.dump({"pid": os.getpid(), "utc": _utcnow(),
                        "attempt": self.attempt_id}, f)
         self._locked = True
+        self.attempts.mkdir(exist_ok=True)
+        self.migrate_pre_review_evidence()      # under the lock (decision H)
+        self.staging_base.mkdir(exist_ok=True)
         self.staging.mkdir(parents=True)
 
     def complete_exists(self) -> bool:
@@ -1390,7 +1586,8 @@ def _phase3_contract(out: OutRoot, cfg: Dict[str, Any], config_path: Path,
     g3 = p3["gates"]
     ev: Dict[str, Any] = {"checked_at": _utcnow()}
 
-    # optimizer + pin-identity + canonical-stem contracts (decisions I/E/H)
+    # safety-critical constants + optimizer + pin-identity + canonical-stem
+    ev["safety_constants_ok"] = _validate_safety_constants(cfg)
     ev["optimizer_contract"] = _validate_optimizer_contract(cfg)
     cfg_pins = list(cfg["run_overlay"]["pinned_params"])
     if tuple(cfg_pins) != ACCEPTED_PIN_NAMES:
@@ -1408,8 +1605,8 @@ def _phase3_contract(out: OutRoot, cfg: Dict[str, Any], config_path: Path,
             f"{CANONICAL_STEM}__mnlmeta.json"):
         raise StopRun("S-1", "canonical-stem", "mnlmeta path is not the stem companion")
 
-    # complete consumed-input authentication (decision G)
-    ev["input_authentication"] = _authenticate_inputs(cfg, config_path)
+    # exact label->runtime-path->hash authentication (decision A)
+    ev["input_authentication"] = _authenticate_inputs(cfg)
 
     # Phase 1-2 manifest: status + accepted script/config anchors
     man12 = json.loads(out.path("rebuild_manifest.json").read_text(encoding="utf-8"))
@@ -1572,7 +1769,8 @@ def _phase3_contract(out: OutRoot, cfg: Dict[str, Any], config_path: Path,
 
 
 def _phase3_estimate(ctx: Dict[str, Any], staging: Path, cfg: Dict[str, Any], log,
-                     minimize_fn=None) -> Tuple[str, Dict[str, Any]]:
+                     minimize_fn=None, mark_optimizer_called=None
+                     ) -> Tuple[str, Dict[str, Any]]:
     """Real Phase-3 estimation over the ordered 37-free vector (decision D), with
     post-optimization input recheck (G), gate battery (F), and atomic staged artifact
     emission (C). `minimize_fn` injection exists for unit tests ONLY; the production
@@ -1596,10 +1794,22 @@ def _phase3_estimate(ctx: Dict[str, Any], staging: Path, cfg: Dict[str, Any], lo
         return float(v), np.asarray(g, dtype="float64")[pmap["free_idx"]]
 
     log(f"phase3 optimize: 37-free L-BFGS-B, options={oc['options']}")
+    if mark_optimizer_called is not None:
+        mark_optimizer_called()      # decision G: set BEFORE invocation
     t0 = time.time()
-    res = minimize_fn(f_free, np.asarray(ctx["free_start"]), jac=True,
-                      method=oc["method"], bounds=list(ctx["bounds_free"]),
-                      options=dict(oc["options"]))
+    try:
+        res = minimize_fn(f_free, np.asarray(ctx["free_start"]), jac=True,
+                          method=oc["method"], bounds=list(ctx["bounds_free"]),
+                          options=dict(oc["options"]))
+    except Exception as exc:
+        recheck_x, recheck_x_ok = _recheck_inputs(ctx["input_auth"])
+        return "STOPPED", {
+            "generated_at": _utcnow(), "verdict": "STOPPED",
+            "stop": {"code": "S-2", "gate": "optimizer-exception",
+                     "message": f"{type(exc).__name__}: {exc}"},
+            "exception": {"type": type(exc).__name__, "message": str(exc)},
+            "input_recheck_after_optimization": recheck_x, "gates": {},
+        }
     elapsed = time.time() - t0
     theta_hat_full = expand_free_to_full(pmap, np.asarray(res.x, dtype="float64"))
     v_fin, g_fin = vg_full(jnp.asarray(theta_hat_full))
@@ -1690,7 +1900,7 @@ def _phase3_estimate(ctx: Dict[str, Any], staging: Path, cfg: Dict[str, Any], lo
 
 
 def run_phase3(args, cfg: Dict[str, Any], *, _contract_fn=None, _estimate_fn=None,
-               _txn_root=None, _minimize_fn=None) -> int:
+               _txn_root=None, _minimize_fn=None, _package_identity_fn=None) -> int:
     """Phase-3 orchestration under the lock/staging/attempts/complete transaction.
 
     The PRODUCTION CLI path (main -> run_phase3 with no underscore kwargs) enforces the
@@ -1722,6 +1932,15 @@ def run_phase3(args, cfg: Dict[str, Any], *, _contract_fn=None, _estimate_fn=Non
 
     contract_fn = _contract_fn if _contract_fn is not None else _phase3_contract
     estimate_fn = _estimate_fn if _estimate_fn is not None else _phase3_estimate
+    identity_fn = (_package_identity_fn if _package_identity_fn is not None
+                   else _verify_package_identity)
+    # decision B: real execution requires FULL external authorization BEFORE the lock
+    auth_arg = getattr(args, "authorization", None)
+    auth_record: Dict[str, Any] = {}
+    if production and not args.dry_run:
+        # decision B: PRODUCTION real runs verify the external authorization BEFORE
+        # the lock; unit-test seams (non-production roots) simulate post-auth flows
+        auth_record = _verify_external_authorization(auth_arg, Path(args.config))
     txn = Phase3Transaction(txn_root, "dryrun" if args.dry_run else "estimate")
 
     t0 = time.time()
@@ -1739,6 +1958,10 @@ def run_phase3(args, cfg: Dict[str, Any], *, _contract_fn=None, _estimate_fn=Non
         "mode": ("phase3 dry-run (contract only, no optimizer)" if args.dry_run
                  else "phase3 estimation"),
         "authorization": cfg["phase3"]["authorization_doc"],
+        "authorization_status": ("EXTERNALLY_AUTHORIZED" if auth_record.get("verified")
+                                 else "AWAITING_POST_REVIEW_AUTHORIZATION"),
+        "execution_authorization": auth_record or None,
+        "execution_ready": bool(auth_record.get("verified", False)),
         "started_at": _utcnow(),
         "status": "RUNNING",
         "stop": None,
@@ -1759,6 +1982,19 @@ def run_phase3(args, cfg: Dict[str, Any], *, _contract_fn=None, _estimate_fn=Non
             stop = StopRun("S-0", "phase3-immutable",
                            "complete/ appeared during the run; publish refused")
             status, code = "STOPPED", 2
+        if status == "PHASE_3_COMPLETE":
+            # decision F: the successful bundle must contain EXACTLY the required
+            # non-manifest artifacts (the console is written by finalize itself just
+            # below; the post-manifest check then enforces the exact final 5-set)
+            required_pre = sorted(n for n in PHASE3_ARTIFACTS
+                                  if n != "phase3_console.log")
+            present = sorted(p.name for p in txn.staging.iterdir())
+            if (present != required_pre
+                    or any(not (txn.staging / n).is_file() for n in required_pre)):
+                stop = StopRun("S-3", "bundle-completeness",
+                               f"staging artifact set {present} != required "
+                               f"{required_pre} plus console")
+                status, code = "STOPPED", 2
         lines.append(f"FINAL STATUS: {status}")
         _atomic_write_text("\n".join(lines) + "\n", txn.staging / "phase3_console.log")
         artifact_hashes, bundle_sha = _bundle_hashes(txn.staging)
@@ -1771,6 +2007,10 @@ def run_phase3(args, cfg: Dict[str, Any], *, _contract_fn=None, _estimate_fn=Non
         manifest["artifact_hashes"] = artifact_hashes
         manifest["bundle_sha256"] = bundle_sha
         _atomic_write_json(manifest, txn.staging / "phase3_manifest.json")
+        if status == "PHASE_3_COMPLETE":
+            final_set = sorted(p.name for p in txn.staging.iterdir())
+            if final_set != sorted(list(PHASE3_ARTIFACTS) + ["phase3_manifest.json"]):
+                raise RuntimeError(f"post-manifest staging set invalid: {final_set}")
         dest = txn.finish(status)
         txn.release()
         print(f"[phase3] {status} -> {dest}")
@@ -1781,6 +2021,8 @@ def run_phase3(args, cfg: Dict[str, Any], *, _contract_fn=None, _estimate_fn=Non
         txn.acquire()
         acquired = True
         _assert_no_prohibited_modules("phase3-start")
+        manifest["package_identity"] = identity_fn(
+            expected_commit=auth_record.get("approved_dclaborsupply_commit"))
         if (not args.dry_run) and txn.complete_exists():
             raise StopRun("S-0", "phase3-immutable",
                           "complete/ exists; a successful Phase-3 bundle is immutable "
@@ -1795,9 +2037,13 @@ def run_phase3(args, cfg: Dict[str, Any], *, _contract_fn=None, _estimate_fn=Non
             return finalize("PHASE_3_DRY_RUN_COMPLETE", None, 0)
 
         log("Phase 3 - estimation (real run)")
+
+        def _mark_called() -> None:
+            manifest["optimizer_called"] = True     # decision G: before invocation
+
         status, diag = estimate_fn(ctx, txn.staging, cfg, log,
-                                   minimize_fn=_minimize_fn)
-        manifest["optimizer_called"] = True
+                                   minimize_fn=_minimize_fn,
+                                   mark_optimizer_called=_mark_called)
         manifest["gates"] = diag.get("gates", {})
         manifest["input_recheck_after_optimization"] = diag.get(
             "input_recheck_after_optimization", {})
@@ -1841,6 +2087,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--dry-run", action="store_true",
                     help="phases 1-2: verification only (stop after Phase 2); "
                          "phase 3: input-contract validation WITHOUT any optimizer call")
+    ap.add_argument("--authorization", default=None,
+                    help="REAL Phase 3 only: absolute path to the external "
+                         "p2a_phase3_execution_authorization_v1 JSON (created only "
+                         "after third-review APPROVE); dry-runs run without it")
     args = ap.parse_args(argv)
 
     if args.phase > 3:

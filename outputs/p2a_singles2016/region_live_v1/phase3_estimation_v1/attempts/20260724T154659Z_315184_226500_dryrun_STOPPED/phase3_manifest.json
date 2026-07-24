@@ -1,0 +1,82 @@
+{
+  "run": "p2a_regionlive_rebuild_v1__phase3",
+  "track": "FR-2016 singles P2a region-live",
+  "attempt_id": "20260724T154659Z_315184_226500_dryrun",
+  "mode": "phase3 dry-run (contract only, no optimizer)",
+  "authorization": "docs/France_case/P2a/FR_P2a_region_live_phase12_manager_acceptance_v1.md",
+  "authorization_status": "AWAITING_POST_REVIEW_AUTHORIZATION",
+  "execution_authorization": null,
+  "execution_ready": false,
+  "started_at": "2026-07-24T15:46:59.032226+00:00",
+  "status": "STOPPED",
+  "stop": {
+    "code": "S-0",
+    "gate": "unexpected",
+    "message": "KeyError: 'frozen_stem_parquet'"
+  },
+  "optimizer_called": false,
+  "config": {
+    "path": "scripts\\p2a\\configs\\p2a_regionlive_rebuild_v1.yaml",
+    "sha256": "b834832ba64e7ee36d28a4f8885c055059ecb0767adca05abb1c1124dd3c9d88"
+  },
+  "script": {
+    "path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\p2a\\run_p2a_regionlive_rebuild.py",
+    "sha256": "a5829cb41671e6faa8a5d7a561edb077dafece980b679dc0b38710b5af0eb1fb"
+  },
+  "git": {
+    "MNL": {
+      "repo": "C:\\Users\\hisham\\Repo\\MNL",
+      "head": "1af156f7a187ffb2ed0f335db2ff449cf616f9e6",
+      "dirty": true
+    },
+    "dclaborsupply-monorepo": {
+      "repo": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo",
+      "head": "27756a06ea189339aa82915ed2124628afed20eb",
+      "dirty": false
+    }
+  },
+  "environment": {
+    "python": "3.12.2",
+    "numpy": "2.3.5",
+    "pandas": "2.3.3"
+  },
+  "targets": {
+    "negll_4dp": 19053.4655,
+    "negll_full": 19053.46553160094,
+    "negll_region_dead_context": 19071.6562
+  },
+  "package_identity": {
+    "nested_repo": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo",
+    "nested_head": "27756a06ea189339aa82915ed2124628afed20eb",
+    "gitlink": "27756a06ea189339aa82915ed2124628afed20eb",
+    "fully_dirty": false,
+    "package_source_root": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src",
+    "imported_modules": {
+      "dclaborsupply": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\__init__.py",
+        "ancestry_ok": true
+      },
+      "dclaborsupply.spec.parser": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\spec\\parser.py",
+        "ancestry_ok": true
+      },
+      "dclaborsupply.data.loader": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\data\\loader.py",
+        "ancestry_ok": true
+      },
+      "dclaborsupply.likelihood.engine_jax": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\likelihood\\engine_jax.py",
+        "ancestry_ok": true
+      }
+    },
+    "module_path_ok": true,
+    "expected_commit": null,
+    "package_identity_ok": true
+  },
+  "finished_at": "2026-07-24T15:47:00.166031+00:00",
+  "wall_seconds": 1.1,
+  "artifact_hashes": {
+    "phase3_console.log": "06aa3df1c5fff8242944a4de571d8ed3f2f8cd0d8f8f54d032919d2c2fc7df28"
+  },
+  "bundle_sha256": "e75f153c4add39af3bfc5db1f8e0e9abe1cbb503ef1ccc8365ee7f60ca79b4f5"
+}

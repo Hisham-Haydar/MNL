@@ -1,0 +1,12 @@
+[17:47:49] Phase 3 - input contract (accepted Phase 1-2 evidence)
+[17:47:50] UNEXPECTED ERROR:
+Traceback (most recent call last):
+  File "C:\Users\hisham\Repo\MNL\scripts\p2a\run_p2a_regionlive_rebuild.py", line 2210, in _phase3_orchestrate
+    ctx = contract_fn(out, cfg, Path(args.config), log)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\hisham\Repo\MNL\scripts\p2a\run_p2a_regionlive_rebuild.py", line 1876, in _phase3_contract
+    er = pd.read_parquet(Path(rt["frozen_stem_parquet"]))
+                              ~~^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'frozen_stem_parquet'
+
+FINAL STATUS: STOPPED

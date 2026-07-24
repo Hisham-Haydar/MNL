@@ -81,6 +81,23 @@ def _fake_contract(ev=None):
     return contract
 
 
+
+def _tp3(args, cfg, *, _contract_fn=None, _estimate_fn=None, _txn_root=None,
+         _minimize_fn=None, _package_identity_fn=None):
+    """Adapter to the private test helper (decision C): every component explicit."""
+    return runner._run_phase3_test_attempt(
+        args, cfg, test_root=_txn_root,
+        contract_fn=_contract_fn if _contract_fn is not None else _fake_contract(),
+        estimate_fn=(_estimate_fn if _estimate_fn is not None
+                     else (lambda *a, **k: ("PHASE_3_DRY_RUN_COMPLETE", {}))),
+        minimize_fn=(_minimize_fn if _minimize_fn is not None
+                     else (lambda *a, **k: (_ for _ in ()).throw(
+                         AssertionError("minimizer must not be called")))),
+        package_identity_fn=(_package_identity_fn if _package_identity_fn is not None
+                             else (lambda **k: {"test_seam": True})),
+        i_am_a_private_test=True)
+
+
 class _Raiser:
     def __init__(self):
         self.called = False
@@ -182,7 +199,6 @@ def test_8_canonical_output_root_refused(tmp_path):
 
 
 def test_9_wrong_phase3_subdirectory_refused(tmp_path, cfg):
-    bad = dict(cfg)
     bad_cfg_path = tmp_path / "bad.yaml"
     text = CONFIG_PATH.read_text(encoding="utf-8").replace(
         "output_subdir: phase3_estimation_v1", "output_subdir: somewhere_else")
@@ -219,7 +235,7 @@ def test_10_optimizer_contract_mismatch_refused(cfg):
 # --------------------------------------------------------------------------- #
 def test_11_dry_run_cannot_call_injected_optimizer(tmp_path, cfg):
     raiser = _Raiser()
-    rc = runner.run_phase3(_args(dry_run=True), cfg,
+    rc = _tp3(_args(dry_run=True), cfg,
                            _contract_fn=_fake_contract(), _estimate_fn=raiser,
                            _txn_root=tmp_path / "p3")
     assert rc == 0 and not raiser.called
@@ -251,7 +267,7 @@ def test_12_successful_bundle_cannot_be_overwritten(tmp_path, cfg):
         (dest / "estimation_results.json").read_bytes()).hexdigest() == marker
     # CLI-level B.3: a real run refuses before contract/estimate when complete/ exists
     raiser = _Raiser()
-    rc = runner.run_phase3(_args(dry_run=False), cfg,
+    rc = _tp3(_args(dry_run=False), cfg,
                            _contract_fn=raiser, _estimate_fn=raiser, _txn_root=root)
     assert rc == 2 and not raiser.called
 
@@ -269,7 +285,7 @@ def test_13_failed_attempt_cannot_mutate_successful_bundle(tmp_path, cfg):
     def failing_contract(out, cfg_, config_path, log):
         raise runner.StopRun("S-1", "test", "synthetic failure")
 
-    rc = runner.run_phase3(_args(dry_run=True), cfg,
+    rc = _tp3(_args(dry_run=True), cfg,
                            _contract_fn=failing_contract, _txn_root=root)
     assert rc == 2
     after = hashlib.sha256(
@@ -294,7 +310,7 @@ def test_14_artifact_set_publication(tmp_path):
 
 
 def test_15_manifest_does_not_self_hash(tmp_path, cfg):
-    rc = runner.run_phase3(_args(dry_run=True), cfg,
+    rc = _tp3(_args(dry_run=True), cfg,
                            _contract_fn=_fake_contract(), _txn_root=tmp_path / "p3")
     assert rc == 0
     d = next(d for d in (tmp_path / "p3" / "attempts").iterdir()
@@ -306,7 +322,7 @@ def test_15_manifest_does_not_self_hash(tmp_path, cfg):
 
 
 def test_16_console_contains_final_status(tmp_path, cfg):
-    rc = runner.run_phase3(_args(dry_run=True), cfg,
+    rc = _tp3(_args(dry_run=True), cfg,
                            _contract_fn=_fake_contract(), _txn_root=tmp_path / "p3")
     assert rc == 0
     d = next(d for d in (tmp_path / "p3" / "attempts").iterdir()
@@ -339,7 +355,7 @@ def test_18_stopped_evidence_written_before_exit(tmp_path, cfg):
     def failing_contract(out, cfg_, config_path, log):
         raise runner.StopRun("S-8", "test-gate", "synthetic S-8")
 
-    rc = runner.run_phase3(_args(dry_run=False), cfg,
+    rc = _tp3(_args(dry_run=False), cfg,
                            _contract_fn=failing_contract, _txn_root=tmp_path / "p3")
     assert rc == 2
     d = next(d for d in (tmp_path / "p3" / "attempts").iterdir()
@@ -571,7 +587,7 @@ def test_28_no_publication_after_failure_and_called_flag(tmp_path, monkeypatch, 
         return runner._phase3_estimate(c, staging, cfg_, log, minimize_fn=fake,
                                        mark_optimizer_called=mark_optimizer_called)
 
-    rc = runner.run_phase3(_args(dry_run=False), cfg, _contract_fn=contract,
+    rc = _tp3(_args(dry_run=False), cfg, _contract_fn=contract,
                            _estimate_fn=estimate, _txn_root=tmp_path / "p3",
                            _package_identity_fn=lambda **k: {"test_seam": True})
     assert rc == 2
@@ -592,7 +608,7 @@ def test_29_bundle_completeness_refusals(tmp_path, cfg):
         (staging / "estimation_results.json").write_text("{}", encoding="utf-8")
         return "PHASE_3_COMPLETE", {"gates": {}}
 
-    rc = runner.run_phase3(_args(dry_run=False), cfg, _contract_fn=contract,
+    rc = _tp3(_args(dry_run=False), cfg, _contract_fn=contract,
                            _estimate_fn=est_incomplete, _txn_root=tmp_path / "a",
                            _package_identity_fn=lambda **k: {})
     assert rc == 2 and not (tmp_path / "a" / "complete").exists()
@@ -605,7 +621,7 @@ def test_29_bundle_completeness_refusals(tmp_path, cfg):
         (staging / "unexpected.bin").write_text("x", encoding="utf-8")
         return "PHASE_3_COMPLETE", {"gates": {}}
 
-    rc = runner.run_phase3(_args(dry_run=False), cfg, _contract_fn=contract,
+    rc = _tp3(_args(dry_run=False), cfg, _contract_fn=contract,
                            _estimate_fn=est_extra, _txn_root=tmp_path / "b",
                            _package_identity_fn=lambda **k: {})
     assert rc == 2 and not (tmp_path / "b" / "complete").exists()
@@ -617,7 +633,7 @@ def test_29_bundle_completeness_refusals(tmp_path, cfg):
             (staging / n).write_text("x", encoding="utf-8")
         return "PHASE_3_COMPLETE", {"gates": {}}
 
-    rc = runner.run_phase3(_args(dry_run=False), cfg, _contract_fn=contract,
+    rc = _tp3(_args(dry_run=False), cfg, _contract_fn=contract,
                            _estimate_fn=est_full, _txn_root=tmp_path / "c",
                            _package_identity_fn=lambda **k: {})
     assert rc == 0
@@ -632,7 +648,7 @@ def test_30_lock_contention_no_migration(tmp_path, cfg):
     legacy = root / "phase3_manifest.json"
     legacy.write_text("legacy", encoding="utf-8")
     raiser = _Raiser()
-    rc = runner.run_phase3(_args(dry_run=True), cfg, _contract_fn=raiser,
+    rc = _tp3(_args(dry_run=True), cfg, _contract_fn=raiser,
                            _txn_root=root,
                            _package_identity_fn=lambda **k: {})
     assert rc == 2 and not raiser.called
@@ -653,7 +669,7 @@ def test_31_real_run_requires_external_authorization(tmp_path, cfg):
 
 
 def test_32_dry_run_reports_awaiting_authorization(tmp_path, cfg):
-    rc = runner.run_phase3(_args(dry_run=True), cfg,
+    rc = _tp3(_args(dry_run=True), cfg,
                            _contract_fn=_fake_contract(),
                            _txn_root=tmp_path / "p3",
                            _package_identity_fn=lambda **k: {"test_seam": True})
@@ -681,9 +697,6 @@ def test_34_authentication_label_set_and_path_identity(tmp_path, cfg):
     f.write_bytes(b"data")
     sha = hashlib.sha256(b"data").hexdigest()
     rt = {"geometry_parquet": f}
-    good = {"phase3": {"input_authentication": {
-        "geometry_parquet": {
-            "path": str(f.relative_to(f.anchor)), "sha256": sha}}}}
     # configured path resolves elsewhere -> path_identity failure
     wrong = {"phase3": {"input_authentication": {
         "geometry_parquet": {"path": "somewhere/else.parquet", "sha256": sha}}}}
@@ -700,3 +713,303 @@ def test_34_authentication_label_set_and_path_identity(tmp_path, cfg):
                 "extra_label": {"path": "y", "sha256": sha}}}},
             runtime_paths=rt)
 
+
+
+# --------------------------------------------------------------------------- #
+# 35+: remediation-v3 closure tests (review v3 s21; decisions A-H)
+# --------------------------------------------------------------------------- #
+import copy
+import subprocess
+
+
+def _deep(cfg):
+    return json.loads(json.dumps(cfg))
+
+
+def test_35_alias_mutations_refused(cfg):
+    muts = [
+        ("certified_spec.yaml", lambda c: c["certified_spec"].__setitem__(
+            "yaml", "scripts/bpool/specs/other_spec.yaml")),
+        ("warm_start.theta_csv", lambda c: c["warm_start"].__setitem__(
+            "theta_csv", "theta_p2a_singles_2016_v2.csv")),
+        ("phase3.start_theta.csv", lambda c: c["phase3"]["start_theta"].__setitem__(
+            "csv", "theta_p2a_singles_2016_v2.csv")),
+        ("stored_region_live_theta.v1_csv",
+         lambda c: c["stored_region_live_theta"].__setitem__(
+             "v1_csv", "theta_p2a_singles_2016_v2.csv")),
+    ]
+    for name, mut in muts:
+        bad = _deep(cfg)
+        mut(bad)
+        with pytest.raises(runner.StopRun) as e:
+            runner._phase3_contract(None, bad, CONFIG_PATH, lambda m: None)
+        assert e.value.gate == "alias-identity", name
+
+
+def test_36_canonical_config_identity(tmp_path):
+    copied = tmp_path / "copy.yaml"
+    copied.write_text(CONFIG_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+    rc = runner.main(["--config", str(copied), "--phase", "3",
+                      "--out", str(runner.CANONICAL_REGIONLIVE_ROOT), "--dry-run"])
+    assert rc == 2                                   # identical copy elsewhere fails
+    trav = tmp_path / "sub" / ".." / "copy.yaml"
+    rc = runner.main(["--config", str(trav), "--phase", "3",
+                      "--out", str(runner.CANONICAL_REGIONLIVE_ROOT), "--dry-run"])
+    assert rc == 2                                   # traversal resolving elsewhere
+    link = tmp_path / "link.yaml"
+    try:
+        link.symlink_to(copied)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks unavailable")
+    rc = runner.main(["--config", str(link), "--phase", "3",
+                      "--out", str(runner.CANONICAL_REGIONLIVE_ROOT), "--dry-run"])
+    assert rc == 2                                   # symlink resolving elsewhere
+
+
+def test_37_seam_separation(tmp_path, cfg):
+    import inspect
+    assert list(inspect.signature(runner.run_phase3).parameters) == ["args", "cfg"]
+    fakes = dict(contract_fn=_fake_contract(),
+                 estimate_fn=lambda *a, **k: ("PHASE_3_DRY_RUN_COMPLETE", {}),
+                 minimize_fn=lambda *a, **k: None,
+                 package_identity_fn=lambda **k: {})
+    for root in (runner.CANONICAL_PHASE3_ROOT,
+                 runner.CANONICAL_PHASE3_ROOT / "attempts",
+                 runner.CANONICAL_REGIONLIVE_ROOT,
+                 runner.MNL_ROOT / "outputs" / "anywhere_else"):
+        with pytest.raises(ValueError):
+            runner._run_phase3_test_attempt(_args(True), cfg, test_root=root,
+                                            i_am_a_private_test=True, **fakes)
+    for drop in fakes:
+        partial = {k: v for k, v in fakes.items() if k != drop}
+        with pytest.raises(ValueError):
+            runner._run_phase3_test_attempt(_args(True), cfg,
+                                            test_root=tmp_path / "p3",
+                                            i_am_a_private_test=True, **partial)
+    with pytest.raises(ValueError):
+        runner._run_phase3_test_attempt(_args(True), cfg, test_root=tmp_path / "p3",
+                                        i_am_a_private_test=False, **fakes)
+
+
+def test_38_immutable_target_controls(tmp_path, cfg):
+    bad = _deep(cfg)
+    bad["phase3"]["gates"]["pre_opt_objective_tol"] = 1.0e-3
+    with pytest.raises(runner.StopRun):
+        runner._validate_safety_constants(bad)
+    bad = _deep(cfg)
+    bad["phase3"]["gates"]["target_mismatch_status"] = "PHASE_3_COMPLETE"
+    with pytest.raises(runner.StopRun):
+        runner._validate_safety_constants(bad)
+    # even with a hacked YAML status, post-gates return only the immutable constant
+    pmap = _pmap()
+    theta = _theta_ok(pmap)
+    hacked = dict(_gates_cfg(cfg))
+    hacked["target_mismatch_status"] = "PHASE_3_COMPLETE"
+    for dev in (+1e-3, -1e-3):                       # high AND materially lower
+        gates, _r, status, stop = runner._phase3_post_gates(
+            100.0 + dev, theta, np.zeros(47), pmap, _bounds_full(pmap), hacked,
+            100.0, True, "ok")
+        assert status == runner.PHASE3_TARGET_MISMATCH_STATUS
+        assert status != "PHASE_3_COMPLETE" and stop is None
+    txn = runner.Phase3Transaction(tmp_path / "p3", "estimate")
+    txn.acquire()
+    (txn.staging / "x.json").write_text("{}", encoding="utf-8")
+    dest = txn.finish(runner.PHASE3_TARGET_MISMATCH_STATUS)
+    txn.release()
+    assert dest.parent.name == "attempts"            # never complete/
+    assert not (tmp_path / "p3" / "complete").exists()
+
+
+# ---- decision E/F: authorization battery on a temporary git repository ------
+GOOD_REVIEW = "# 1. Fourth-review verdict\n\n**FINAL VERDICT: APPROVE**\n\n# 2. Scope\n\ndetails\n"
+
+
+def _git(repo, *argv):
+    r = subprocess.run(["git", "-C", str(repo), *argv], capture_output=True,
+                       text=True, timeout=30)
+    assert r.returncode == 0, (argv, r.stderr)
+    return r.stdout.strip()
+
+
+def _mk_authrepo(tmp_path, review_text=GOOD_REVIEW):
+    repo = tmp_path / "repo"
+    nested = tmp_path / "nested"
+    for d in (repo, nested):
+        d.mkdir(parents=True)
+        _git(d, "init", "-q")
+        _git(d, "config", "user.email", "t@t")
+        _git(d, "config", "user.name", "t")
+    (repo / "scripts/p2a/configs").mkdir(parents=True)
+    (repo / "tests/p2a").mkdir(parents=True)
+    (repo / "docs/France_case/P2a").mkdir(parents=True)
+    runner_f = repo / "scripts/p2a/run_p2a_regionlive_rebuild.py"
+    cfg_f = repo / "scripts/p2a/configs/p2a_regionlive_rebuild_v1.yaml"
+    tests_f = repo / "tests/p2a/test_p2a_regionlive_phase3_safety.py"
+    review_f = repo / runner.CANONICAL_APPROVED_REVIEW_REL
+    for f, content in ((runner_f, "# runner"), (cfg_f, "# cfg"),
+                       (tests_f, "# tests"), (review_f, review_text)):
+        f.write_text(content, encoding="utf-8", newline="\n")   # LF: blob == file
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "approved state")
+    (nested / "a.txt").write_text("x", encoding="utf-8")
+    _git(nested, "add", "-A")
+    _git(nested, "commit", "-q", "-m", "nested")
+    head = _git(repo, "rev-parse", "HEAD")
+    blob = _git(repo, "rev-parse",
+                f"{head}:{runner.CANONICAL_APPROVED_REVIEW_REL.as_posix()}")
+    blob_bytes = subprocess.run(
+        ["git", "-C", str(repo), "cat-file", "blob", blob],
+        capture_output=True, timeout=30).stdout
+    auth = {
+        "schema": runner.AUTH_SCHEMA, "status": "APPROVED",
+        "approved_mnl_commit": head,
+        "approved_dclaborsupply_commit": _git(nested, "rev-parse", "HEAD"),
+        "approved_runner_sha256": hashlib.sha256(runner_f.read_bytes()).hexdigest(),
+        "approved_config_sha256": hashlib.sha256(cfg_f.read_bytes()).hexdigest(),
+        "approved_test_sha256": hashlib.sha256(tests_f.read_bytes()).hexdigest(),
+        "approved_review_path": runner.CANONICAL_APPROVED_REVIEW_REL.as_posix(),
+        "approved_review_sha256": hashlib.sha256(blob_bytes).hexdigest(),
+        "created_at_utc": "2026-07-24T00:00:00+00:00",
+    }
+    auth_f = tmp_path / "authorization.json"        # OUTSIDE both worktrees
+    auth_f.write_text(json.dumps(auth), encoding="utf-8")
+    return repo, nested, cfg_f, auth_f, auth
+
+
+def _verify(repo, nested, cfg_f, auth_f):
+    return runner._verify_external_authorization(
+        str(auth_f.resolve()), cfg_f, _repo_root=repo, _nested_root=nested)
+
+
+def test_39_authorization_pass_and_verdict_variants(tmp_path):
+    repo, nested, cfg_f, auth_f, _a = _mk_authrepo(tmp_path)
+    rec = _verify(repo, nested, cfg_f, auth_f)
+    assert rec["verified"] is True                   # exact APPROVE passes
+    for i, text in enumerate((
+            "# 1. Verdict\n\n**FINAL VERDICT: APPROVE AFTER FIXES**\n",
+            "# 1. Verdict\n\n**FINAL VERDICT: REJECT**\n",
+            "# 1. Verdict\n\nwe APPROVE of this prose\n",
+            "# 1. V\n\n**FINAL VERDICT: APPROVE**\n\n# 2. X\n\n"
+            "**FINAL VERDICT: REJECT**\n")):
+        repo2, nested2, cfg2, auth2, _ = _mk_authrepo(tmp_path / f"v{i}", text)
+        with pytest.raises(runner.StopRun):
+            _verify(repo2, nested2, cfg2, auth2)
+
+
+def test_40_authorization_review_binding(tmp_path):
+    repo, nested, cfg_f, auth_f, auth = _mk_authrepo(tmp_path)
+    bad = dict(auth)
+    bad["approved_review_path"] = "docs/other_review.md"
+    bf = tmp_path / "bad1.json"
+    bf.write_text(json.dumps(bad), encoding="utf-8")
+    with pytest.raises(runner.StopRun):              # exact canonical path required
+        _verify(repo, nested, cfg_f, bf)
+    review = repo / runner.CANONICAL_APPROVED_REVIEW_REL
+    committed = review.read_bytes()
+    review.write_bytes(committed + b"tamper\n")
+    with pytest.raises(runner.StopRun):              # working tree != committed blob
+        _verify(repo, nested, cfg_f, auth_f)
+    review.write_bytes(committed)
+    wrong_cfg = tmp_path / "elsewhere.yaml"
+    wrong_cfg.write_text("# cfg", encoding="utf-8")
+    with pytest.raises(runner.StopRun):              # canonical config in verifier
+        _verify(repo, nested, wrong_cfg, auth_f)
+
+
+def test_41_authorization_full_cleanliness(tmp_path):
+    repo, nested, cfg_f, auth_f, auth = _mk_authrepo(tmp_path)
+    runner_f = repo / "scripts/p2a/run_p2a_regionlive_rebuild.py"
+    runner_f.write_text("# runner MODIFIED", encoding="utf-8")
+    with pytest.raises(runner.StopRun):              # tracked modification
+        _verify(repo, nested, cfg_f, auth_f)
+    _git(repo, "add", "-A")
+    with pytest.raises(runner.StopRun):              # staged modification
+        _verify(repo, nested, cfg_f, auth_f)
+    _git(repo, "checkout", "--", ".")
+    _git(repo, "reset", "-q")
+    _git(repo, "checkout", "--", ".")
+    (repo / "untracked.txt").write_text("x", encoding="utf-8")
+    with pytest.raises(runner.StopRun):              # untracked file
+        _verify(repo, nested, cfg_f, auth_f)
+    (repo / "untracked.txt").unlink()
+    (nested / "stray.bin").write_text("x", encoding="utf-8")
+    with pytest.raises(runner.StopRun):              # nested untracked
+        _verify(repo, nested, cfg_f, auth_f)
+    (nested / "stray.bin").unlink()
+    (repo / ".gitignore").write_text("ignored.tmp\n", encoding="utf-8",
+                                     newline="\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "gitignore")
+    head = _git(repo, "rev-parse", "HEAD")
+    auth2 = dict(auth)
+    auth2["approved_mnl_commit"] = head
+    (repo / "ignored.tmp").write_text("x", encoding="utf-8")
+    af2 = tmp_path / "auth2.json"
+    af2.write_text(json.dumps(auth2), encoding="utf-8")
+    rec = _verify(repo, nested, cfg_f, af2)
+    assert rec["verified"] is True                   # ignored files never fail
+
+
+def test_42_package_ancestry(tmp_path):
+    rec = runner._verify_package_identity()
+    assert rec["package_identity_ok"] and rec["module_path_ok"]
+    for info in rec["imported_modules"].values():
+        assert Path(info["path"]).resolve().is_relative_to(
+            runner.PACKAGE_SOURCE_ROOT.resolve())
+    from types import SimpleNamespace
+    evil = SimpleNamespace(
+        __name__="dclaborsupply",
+        __file__=str(runner.MNL_ROOT / "dclaborsupply-monorepo_evil"
+                     / "packages/dclaborsupply/src/dclaborsupply/__init__.py"))
+    with pytest.raises(runner.StopRun):              # sibling-substring attack
+        runner._verify_package_identity(_modules=[evil])
+    nofile = SimpleNamespace(__name__="ghost")
+    with pytest.raises(runner.StopRun):              # missing __file__
+        runner._verify_package_identity(_modules=[nofile])
+
+
+def test_43_g16_exact_boundaries(cfg):
+    pmap = _pmap()
+    g3 = _gates_cfg(cfg)
+    lo, hi = -100.0, 100.0
+    cases = [(lo, True), (hi, True), (lo - 0.5e-9, True), (hi + 0.5e-9, True),
+             (lo - 2e-9, False), (hi + 2e-9, False)]
+    for v, expect_ok in cases:
+        theta = _theta_ok(pmap)
+        theta[pmap["name_idx"]["dummy_05"]] = v
+        gates, rows, _s, _p = runner._phase3_post_gates(
+            100.0, theta, np.zeros(47), pmap, _bounds_full(pmap), g3,
+            100.0, True, "ok")
+        row = next(r for r in rows if r["param"] == "dummy_05")
+        assert row["in_bounds"] is expect_ok, (v, expect_ok)
+        assert gates["g16_inbounds_ok"] is expect_ok or not expect_ok
+
+
+def test_44_target_mismatch_cannot_publish(tmp_path, monkeypatch, cfg):
+    for sub, c0 in (("hi", +1e-3), ("lo", -1e-3)):
+        base = tmp_path / sub
+        ctx = _mk_ctx(base, monkeypatch, c0=c0)
+
+        def contract(out, cfg_, config_path, log, _ctx=ctx):
+            return _ctx
+
+        def estimate(c, staging, cfg_, log, minimize_fn=None,
+                     mark_optimizer_called=None):
+            fake = FakeMin()
+            fake.pmap = c["pmap"]
+            return runner._phase3_estimate(c, staging, cfg_, log, minimize_fn=fake,
+                                           mark_optimizer_called=mark_optimizer_called)
+
+        rc = runner._run_phase3_test_attempt(
+            _args(dry_run=False), cfg, test_root=base / "p3",
+            contract_fn=contract, estimate_fn=estimate,
+            minimize_fn=lambda *a, **k: None,
+            package_identity_fn=lambda **k: {"test_seam": True},
+            i_am_a_private_test=True)
+        assert rc == 4
+        root = base / "p3"
+        assert not (root / "complete").exists()
+        d = next(x for x in (root / "attempts").iterdir()
+                 if x.name.endswith(runner.PHASE3_TARGET_MISMATCH_STATUS))
+        man = json.loads((d / "phase3_manifest.json").read_text(encoding="utf-8"))
+        assert man["status"] == runner.PHASE3_TARGET_MISMATCH_STATUS

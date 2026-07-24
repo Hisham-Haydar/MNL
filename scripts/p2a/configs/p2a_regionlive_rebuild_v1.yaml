@@ -1,5 +1,9 @@
 ﻿# =============================================================================
-# FR P2a region-live production rebuild — run-config v1 (Phases 1-2)
+# FR P2a region-live production rebuild — run-config v1 (Phases 1-3)
+# Phases 1-3 implemented; Phase-3 EXECUTION requires the verified post-review
+# external authorization (which must reside OUTSIDE the MNL and nested
+# worktrees — full-cleanliness is enforced with --untracked-files=all);
+# Phases 4-8 unsupported.
 # =============================================================================
 # Governed by (binding, in this order):
 #   docs/France_case/P2a/FR_P2a_region_live_manager_decisions_v2.md   (canonical)

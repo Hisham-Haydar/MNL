@@ -1,9 +1,9 @@
 ﻿# =============================================================================
 # FR P2a region-live production rebuild — run-config v1 (Phases 1-3)
-# Phases 1-3 implemented; Phase-3 EXECUTION requires the verified post-review
-# external authorization (which must reside OUTSIDE the MNL and nested
-# worktrees — full-cleanliness is enforced with --untracked-files=all);
-# Phases 4-8 unsupported.
+# Phases 1-3 implemented; a REAL Phase-3 run requires the documented CLI
+# execution contract (FR_P2a_region_live_phase3_execution_scope_v1.md s8:
+# --execute-phase3, expected MNL/nested HEADs, full --untracked-files=all
+# cleanliness of both worktrees, review-v6 APPROVE hash); Phases 4-8 unsupported.
 # =============================================================================
 # Governed by (binding, in this order):
 #   docs/France_case/P2a/FR_P2a_region_live_manager_decisions_v2.md   (canonical)
@@ -18,9 +18,9 @@
 run:
   name: p2a_regionlive_rebuild_v1
   track: FR-2016 singles P2a region-live
-  phases_implemented: [1, 2, 3]       # Phase 3 supported; execution gated by external authorization
+  phases_implemented: [1, 2, 3]       # Phase 3 supported; execution gated by the CLI contract (scope doc s8)
   phase3_supported: true
-  phase3_execution_authorized: false  # true ONLY via a verified external authorization file (review v2 B)
+  phase3_execution_authorized: false  # real runs require the CLI execution contract (scope doc s8: --execute-phase3 + Git/review-v6 gates)
   phases_4_to_8_supported: false
   output_root: outputs/p2a_singles2016/region_live_v1
   frozen_stem_name: fr_p2a_singles2016_regionlive
@@ -264,9 +264,9 @@ phase3:                                 # AUTHORIZED by FR_P2a_region_live_phase
     pre_estimation_reload_verification:
       path: outputs/p2a_singles2016/region_live_v1/pre_estimation_reload_verification.json
       sha256: 6f457de9f35a1bf1237222f4280424d85ed57b97e19fa7438700f32e2b24ac2c
-    # NOTE (review v2 / decision B): runner + config self-entries REMOVED from this
-    # table; script/config/test identity is controlled by the EXTERNAL execution
-    # authorization (p2a_phase3_execution_authorization_v1) + Git revision checks.
+    # NOTE: runner/config/test identity is controlled by the CLI execution
+    # contract (scope doc s5/s8: expected HEADs + full worktree cleanliness),
+    # not by per-file self-hash entries in this table.
   accepted_phase12_anchors:             # cross-check vs rebuild_manifest.json script/config
     script_sha256: be11294bf6e0456a37afc713d0e1bd843f574e2dfd136d60968b6519594c4475
     config_sha256: 68d152e70cb73b6616a8b16a63edfb90298945c65fa15dd8580399033059d8fe

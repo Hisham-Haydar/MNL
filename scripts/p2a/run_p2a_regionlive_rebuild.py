@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 """FR P2a region-live production rebuild -- Phases 1-3 runner.
 
-Phases 1-3 implemented. Phase-3 EXECUTION additionally requires a verified
-post-review external authorization file (review v3 decision B/E); Phases 4-8
-are unsupported and refused.
+Phases 1-3 implemented. A REAL Phase-3 run is gated by the research-grade
+execution contract of FR_P2a_region_live_phase3_execution_scope_v1.md: the
+documented CLI with --execute-phase3, expected MNL/nested HEADs, full worktree
+cleanliness, and the review-v6 APPROVE file hash. Without --execute-phase3,
+--phase 3 performs only the non-optimizing dry-run. Phases 4-8 are unsupported.
 
 Binding documents (in order):
   docs/France_case/P2a/FR_P2a_region_live_manager_decisions_v2.md      (canonical)
@@ -71,7 +73,7 @@ CANONICAL_STEM = "fr_p2a_singles2016_regionlive"
 # review-v3 canonical identities (decisions B/E/G) + immutable gate controls (D)
 CANONICAL_PHASE3_CONFIG = MNL_ROOT / "scripts/p2a/configs/p2a_regionlive_rebuild_v1.yaml"
 CANONICAL_APPROVED_REVIEW_REL = Path(
-    "docs/France_case/P2a/FR_P2a_region_live_phase3_code_review_v5.md")
+    "docs/France_case/P2a/FR_P2a_region_live_phase3_code_review_v6.md")
 PACKAGE_SOURCE_ROOT = (MNL_ROOT / "dclaborsupply-monorepo"
                        / "packages/dclaborsupply/src")
 PHASE3_PREOPT_OBJECTIVE_TOL = 1.0e-4
@@ -103,15 +105,10 @@ PHASE3_SAFETY_CONSTANTS = {
     "optimizer_method": "L-BFGS-B",
     "optimizer_options": {"maxiter": 5000, "maxcor": 30, "ftol": 1e-15, "gtol": 1e-10},
 }
-# external execution authorization: created ONLY after the canonical review-v5
-# tracked blob carries one exact "**FINAL VERDICT: APPROVE**" line (neither
-# review v3 nor review v4 — both REJECT — can authorize execution)
-AUTH_SCHEMA = "p2a_phase3_execution_authorization_v1"
-AUTH_REQUIRED_FIELDS = (
-    "schema", "status", "approved_mnl_commit", "approved_dclaborsupply_commit",
-    "approved_runner_sha256", "approved_config_sha256", "approved_test_sha256",
-    "approved_review_path", "approved_review_sha256", "created_at_utc")
-SAFETY_TESTS_PATH = MNL_ROOT / "tests/p2a/test_p2a_regionlive_phase3_safety.py"
+# review-v6 is the canonical approval document (scope doc s7); reviews v1-v5
+# (all REJECT) cannot authorize execution
+REVIEW_V6_HEADING = "# 1. Sixth-review verdict"
+APPROVE_LINE = "**FINAL VERDICT: APPROVE**"
 # the successful-bundle artifact set; the manifest is written LAST and is NEVER
 # part of its own artifact-hash dictionary (decision C / review fix 7)
 PHASE3_ARTIFACTS = ("phase3_console.log", "theta_estimated.csv",
@@ -125,9 +122,7 @@ _PROHIBITED_MODULES = (
     "pilot_wage_draw",               # draw generation
     "build_bpool_singles",           # draw generation
 )
-# the optimizer is additionally prohibited everywhere EXCEPT the real Phase-3
-# estimation call (Phases 1-2 and every --dry-run must never optimize)
-_OPTIMIZER_MODULE = "scipy.optimize"
+
 
 # funnel constants — verbatim from the frozen checkpoint (cell 6, ec=3)
 FUNNEL_CONFIG = dict(
@@ -182,11 +177,9 @@ class OutRoot:
         return p
 
 
-def _assert_no_prohibited_modules(where: str, *, allow_optimizer: bool = False) -> None:
-    banned = _PROHIBITED_MODULES if allow_optimizer \
-        else (_PROHIBITED_MODULES + (_OPTIMIZER_MODULE,))
+def _assert_no_prohibited_modules(where: str) -> None:
     hits = [m for m in sys.modules
-            for p in banned if m == p or m.startswith(p + ".")]
+            for p in _PROHIBITED_MODULES if m == p or m.startswith(p + ".")]
     if hits:
         raise StopRun("S-0", "prohibited-modules",
                       f"prohibited module(s) loaded ({where}): {sorted(set(hits))}")
@@ -1358,151 +1351,103 @@ def _git_run(repo: Path, *argv: str) -> Tuple[int, str]:
 
 
 def _git_fully_clean(repo: Path) -> bool:
-    """FULL cleanliness: tracked, staged AND untracked (never -uno; decision F).
-    The execution-authorization JSON must therefore live OUTSIDE both worktrees."""
+    """FULL cleanliness: tracked, staged AND untracked (never -uno; scope doc
+    s5). The review-v6 approval file is committed/tracked, so it does not
+    conflict with this gate."""
     rc, out = _git_run(repo, "status", "--porcelain", "--untracked-files=all")
     return rc == 0 and out.strip() == ""
 
 
-def _parse_review_verdict(text: str) -> str:
-    """Exact verdict parse (decision E): exactly ONE '**FINAL VERDICT: X**' line in
-    the whole document, located in the first section, and X must be exactly
-    APPROVE (APPROVE AFTER FIXES, REJECT, prose mentions all refused)."""
+def _git_gitlink(repo: Path, sub: str = "dclaborsupply-monorepo"
+                 ) -> Optional[str]:
+    rc, out = _git_run(repo, "ls-tree", "HEAD", sub)
+    return out.split()[2] if rc == 0 and out.strip() else None
+
+
+def _parse_review_verdict_v6(text: str) -> None:
+    """Scope doc s7: exactly one ordinary '**FINAL VERDICT: APPROVE**' line, under
+    the exact first heading '# 1. Sixth-review verdict'. AFTER FIXES/REJECT refused."""
     lines = text.splitlines()
+    if not lines or lines[0].strip() != REVIEW_V6_HEADING:
+        raise StopRun("S-0", "review-gate",
+                      f"review must start with the exact heading {REVIEW_V6_HEADING!r}")
     hits = [(i, ln.strip()) for i, ln in enumerate(lines)
             if ln.strip().startswith("**FINAL VERDICT:")]
     if len(hits) != 1:
-        raise StopRun("S-0", "authorization",
-                      f"review must contain exactly one FINAL VERDICT line, "
-                      f"found {len(hits)}")
+        raise StopRun("S-0", "review-gate",
+                      f"review must contain exactly one FINAL VERDICT line "
+                      f"(found {len(hits)})")
     idx, line = hits[0]
     heads = [i for i, ln in enumerate(lines) if ln.startswith("# ")]
     if len(heads) >= 2 and idx > heads[1]:
-        raise StopRun("S-0", "authorization",
+        raise StopRun("S-0", "review-gate",
                       "FINAL VERDICT line is not in the first verdict section")
-    if line != "**FINAL VERDICT: APPROVE**":
-        raise StopRun("S-0", "authorization",
+    if line != APPROVE_LINE:
+        raise StopRun("S-0", "review-gate",
                       f"review final verdict is not an exact APPROVE: {line!r}")
-    return "APPROVE"
 
 
-def _verify_external_authorization(auth_path: Optional[str], config_path: Path,
-                                   *, _repo_root: Optional[Path] = None,
-                                   _nested_root: Optional[Path] = None
-                                   ) -> Dict[str, Any]:
-    """External execution-authorization contract for REAL Phase 3 (decisions B/E/F).
-    The private _repo_root/_nested_root seams exist ONLY for temporary-git-repo unit
-    tests; the production entrypoint never supplies them."""
+def _verify_execution_gates(args, *, _repo_root: Optional[Path] = None,
+                            _nested_root: Optional[Path] = None,
+                            _check_gitlink: bool = True) -> Dict[str, Any]:
+    """Reproducibility gates for a REAL Phase-3 run (scope doc s5/s7): expected
+    HEADs, gitlink identity, FULL cleanliness of both worktrees, and the exact
+    review-v6 path/hash/verdict. Research-grade checks, not adversarial
+    authorization. The _repo_root/_nested_root/_check_gitlink parameters are
+    ordinary test seams for temporary-repository unit tests."""
+    import re as _re
     repo = Path(_repo_root) if _repo_root is not None else MNL_ROOT
     nested = (Path(_nested_root) if _nested_root is not None
               else MNL_ROOT / "dclaborsupply-monorepo")
-    canonical_cfg = repo / "scripts/p2a/configs/p2a_regionlive_rebuild_v1.yaml"
-    runner_path = repo / "scripts/p2a/run_p2a_regionlive_rebuild.py"
-    tests_path = repo / "tests/p2a/test_p2a_regionlive_phase3_safety.py"
-
-    if not auth_path:
-        raise StopRun("S-0", "authorization",
-                      "real Phase-3 execution requires --authorization "
-                      "<absolute-json-path> (created only after the canonical "
-                      "review-v5 APPROVE)")
-    p = Path(auth_path)
-    if not p.is_absolute():
-        raise StopRun("S-0", "authorization", "authorization path must be absolute")
-    if not p.is_file():
-        raise StopRun("S-0", "authorization", f"authorization file not found: {p}")
-    # decision C: the authorization must reside OUTSIDE both worktrees --
-    # checked by resolved ancestry, independent of Git status/ignore rules
-    p_res = p.resolve()
-    for wt in (repo.resolve(), nested.resolve()):
-        if p_res == wt or p_res.is_relative_to(wt):
-            raise StopRun("S-0", "authorization",
-                          f"authorization file must reside OUTSIDE both "
-                          f"worktrees (found under {wt})")
-    a = json.loads(p.read_text(encoding="utf-8"))
-    missing = [f for f in AUTH_REQUIRED_FIELDS if f not in a]
-    if missing:
-        raise StopRun("S-0", "authorization", f"missing fields: {missing}")
-    if a["schema"] != AUTH_SCHEMA or a["status"] != "APPROVED":
-        raise StopRun("S-0", "authorization", "schema/status mismatch")
-    import re as _re
+    exp_mnl = getattr(args, "expected_mnl_head", None)
+    exp_dcl = getattr(args, "expected_dclaborsupply_head", None)
+    review_arg = getattr(args, "approved_review", None)
+    review_sha = getattr(args, "approved_review_sha256", None)
     hex40 = _re.compile(r"^[0-9a-f]{40}$")
     hex64 = _re.compile(r"^[0-9a-f]{64}$")
-    if not (hex40.match(a["approved_mnl_commit"])
-            and hex40.match(a["approved_dclaborsupply_commit"])):
-        raise StopRun("S-0", "authorization", "commit SHA format invalid")
-    for f in ("approved_runner_sha256", "approved_config_sha256",
-              "approved_test_sha256", "approved_review_sha256"):
-        if not hex64.match(a[f]):
-            raise StopRun("S-0", "authorization", f"{f} format invalid")
-
-    # canonical config identity (decision B) + hash
-    if Path(config_path).resolve() != canonical_cfg.resolve():
-        raise StopRun("S-0", "authorization",
-                      f"config path {config_path} is not the canonical config")
-    # revision identity + FULL cleanliness (decision F: -uall for BOTH repos)
-    head = _git_head_full(repo)
-    if head != a["approved_mnl_commit"]:
-        raise StopRun("S-0", "authorization",
-                      f"MNL HEAD {head} != approved {a['approved_mnl_commit']}")
+    if not (exp_mnl and hex40.match(exp_mnl)):
+        raise StopRun("S-0", "git-gate", "--expected-mnl-head must be a 40-hex SHA")
+    if not (exp_dcl and hex40.match(exp_dcl)):
+        raise StopRun("S-0", "git-gate",
+                      "--expected-dclaborsupply-head must be a 40-hex SHA")
+    if not (review_sha and hex64.match(review_sha)):
+        raise StopRun("S-0", "review-gate",
+                      "--approved-review-sha256 must be a 64-hex SHA-256")
+    if review_arg is None or Path(review_arg).as_posix() !=             CANONICAL_APPROVED_REVIEW_REL.as_posix():
+        raise StopRun("S-0", "review-gate",
+                      f"--approved-review must be exactly "
+                      f"{CANONICAL_APPROVED_REVIEW_REL.as_posix()!r}")
+    head_mnl = _git_head_full(repo)
+    if head_mnl != exp_mnl:
+        raise StopRun("S-0", "git-gate",
+                      f"MNL HEAD {head_mnl} != expected {exp_mnl}")
+    head_dcl = _git_head_full(nested)
+    if head_dcl != exp_dcl:
+        raise StopRun("S-0", "git-gate",
+                      f"nested HEAD {head_dcl} != expected {exp_dcl}")
+    gitlink = _git_gitlink(repo) if _check_gitlink else head_dcl
+    if gitlink != head_dcl:
+        raise StopRun("S-0", "git-gate",
+                      f"MNL gitlink {gitlink} != nested HEAD {head_dcl}")
     if not _git_fully_clean(repo):
-        raise StopRun("S-0", "authorization",
-                      "MNL worktree not fully clean (tracked/staged/untracked; "
-                      "the authorization JSON must live outside the worktrees)")
+        raise StopRun("S-0", "git-gate",
+                      "MNL worktree not fully clean (--untracked-files=all)")
     if not _git_fully_clean(nested):
-        raise StopRun("S-0", "authorization",
+        raise StopRun("S-0", "git-gate",
                       "dclaborsupply-monorepo worktree not fully clean")
-    if _sha256(runner_path) != a["approved_runner_sha256"]:
-        raise StopRun("S-0", "authorization", "runner hash != approved")
-    if _sha256(canonical_cfg) != a["approved_config_sha256"]:
-        raise StopRun("S-0", "authorization", "config hash != approved")
-    if _sha256(tests_path) != a["approved_test_sha256"]:
-        raise StopRun("S-0", "authorization", "safety-test hash != approved")
-
-    # exact canonical review-v5 binding (decision E): tracked blob at the commit
-    rel = CANONICAL_APPROVED_REVIEW_REL.as_posix()
-    if a["approved_review_path"] != rel:
-        raise StopRun("S-0", "authorization",
-                      f"approved_review_path must be exactly {rel!r}")
     review = repo / CANONICAL_APPROVED_REVIEW_REL
     if not review.is_file():
-        raise StopRun("S-0", "authorization", f"approved review missing: {review}")
-    rc, blob_id = _git_run(repo, "rev-parse", f"{a['approved_mnl_commit']}:{rel}")
-    if rc != 0 or not blob_id.strip():
-        raise StopRun("S-0", "authorization",
-                      "approved review is not a tracked blob at the approved commit")
-    try:
-        r = subprocess.run(["git", "-C", str(repo), "cat-file", "blob",
-                            blob_id.strip()], capture_output=True, timeout=30)
-        blob_bytes = r.stdout if r.returncode == 0 else None
-    except Exception:  # noqa: BLE001
-        blob_bytes = None
-    if blob_bytes is None:
-        raise StopRun("S-0", "authorization", "cannot read committed review blob")
-    blob_sha = hashlib.sha256(blob_bytes).hexdigest()
-    if blob_sha != a["approved_review_sha256"]:
-        raise StopRun("S-0", "authorization",
-                      "committed review blob hash != approved_review_sha256")
-    if _sha256(review) != blob_sha:
-        raise StopRun("S-0", "authorization",
-                      "working-tree review differs from the committed blob")
-    _parse_review_verdict(blob_bytes.decode("utf-8", "replace"))
-    return {"authorization_path": str(p), "verified": True,
-            "execution_ready": True,
-            "review_blob_sha256": blob_sha,
-            **{k: a[k] for k in AUTH_REQUIRED_FIELDS}}
-
-
-def _module_ancestry_ok(mod, root: Path) -> Tuple[bool, str]:
-    """True resolved-path ancestry (decision G): Path.is_relative_to, never substring."""
-    f = getattr(mod, "__file__", None)
-    if not f:
-        return False, "<no __file__>"
-    p = Path(f).resolve()
-    try:
-        ok = p.is_relative_to(root.resolve())
-    except Exception:  # noqa: BLE001
-        ok = False
-    return ok, str(p)
+        raise StopRun("S-0", "review-gate", f"approved review missing: {review}")
+    actual_sha = _sha256(review)
+    if actual_sha != review_sha:
+        raise StopRun("S-0", "review-gate",
+                      "approved review SHA-256 != --approved-review-sha256")
+    _parse_review_verdict_v6(review.read_text(encoding="utf-8"))
+    return {"verified": True, "execution_ready": True,
+            "expected_mnl_head": exp_mnl, "expected_dclaborsupply_head": exp_dcl,
+            "gitlink": gitlink, "approved_review":
+                CANONICAL_APPROVED_REVIEW_REL.as_posix(),
+            "approved_review_sha256": actual_sha}
 
 
 def _verify_package_identity(expected_commit: Optional[str] = None,
@@ -1511,8 +1456,8 @@ def _verify_package_identity(expected_commit: Optional[str] = None,
                              _nested_root: Optional[Path] = None) -> Dict[str, Any]:
     """dclaborsupply source-identity verification (decision D): the COMPLETE loaded
     module inventory of the Phase-3 route must resolve under the reviewed source
-    root AND byte-match its tracked blob at the approved nested commit (HEAD when no
-    authorization is present, e.g. dry-runs). Private seams are for unit tests only."""
+    root AND match its tracked blob (Git-canonical) at the expected nested commit
+    (nested HEAD for dry-runs). Private seams are for unit tests only."""
     root = (Path(_package_root) if _package_root is not None
             else PACKAGE_SOURCE_ROOT).resolve()
     nested = (Path(_nested_root) if _nested_root is not None
@@ -2021,16 +1966,15 @@ def _phase3_contract(out: OutRoot, cfg: Dict[str, Any], config_path: Path,
 
 
 def _phase3_estimate(ctx: Dict[str, Any], staging: Path, cfg: Dict[str, Any], log,
-                     minimize_fn=None, mark_optimizer_called=None
-                     ) -> Tuple[str, Dict[str, Any]]:
+                     mark_optimizer_called=None) -> Tuple[str, Dict[str, Any]]:
     """Real Phase-3 estimation over the ordered 37-free vector (decision D), with
     post-optimization input recheck (G), gate battery (F), and atomic staged artifact
     emission (C). `minimize_fn` injection exists for unit tests ONLY; the production
     path imports scipy here and nowhere else."""
     import jax
     import jax.numpy as jnp
-    if minimize_fn is None:
-        from scipy.optimize import minimize as minimize_fn   # real Phase 3 only
+    import scipy.optimize as _sopt          # resolved at call time so ordinary
+    minimize_fn = _sopt.minimize            # test monkeypatching of the symbol works
 
     p3 = cfg["phase3"]
     g3 = p3["gates"]
@@ -2161,9 +2105,9 @@ def _phase3_estimate(ctx: Dict[str, Any], staging: Path, cfg: Dict[str, Any], lo
 
 
 def run_phase3(args, cfg: Dict[str, Any]) -> int:
-    """PRODUCTION Phase-3 entrypoint. No injectable seams exist anywhere on this
-    route (review v4 fix 1): it verifies the canonical config/root/subdir and the
-    external authorization, then calls the production-only orchestrator."""
+    """The ONLY production Phase-3 entrypoint (scope doc s8). Without
+    --execute-phase3 this performs the non-optimizing dry-run; with it, the s5/s7
+    Git + review-v6 gates must pass before the real estimation starts."""
     cfg_resolved = Path(args.config).resolve()
     if cfg_resolved != CANONICAL_PHASE3_CONFIG.resolve():
         print(f"REFUSED: Phase 3 requires the canonical config "
@@ -2174,8 +2118,7 @@ def run_phase3(args, cfg: Dict[str, Any]) -> int:
     canonical = CANONICAL_REGIONLIVE_ROOT.resolve()
     if out_resolved != canonical:
         print(f"REFUSED: Phase-3 --out must equal the canonical production root "
-              f"{canonical} (got {out_resolved}); no test-root override exists.",
-              file=sys.stderr)
+              f"{canonical} (got {out_resolved}).", file=sys.stderr)
         return 2
     if (MNL_ROOT / cfg["run"]["output_root"]).resolve() != canonical:
         print("REFUSED: config run.output_root is not the canonical production root.",
@@ -2185,15 +2128,17 @@ def run_phase3(args, cfg: Dict[str, Any]) -> int:
         print(f"REFUSED: config phase3.output_subdir must equal "
               f"'{CANONICAL_PHASE3_SUBDIR}'.", file=sys.stderr)
         return 2
-    auth_record: Dict[str, Any] = {}
-    if not args.dry_run:
-        auth_record = _verify_external_authorization(
-            getattr(args, "authorization", None), cfg_resolved)
-    return _phase3_orchestrate_production(args, cfg, auth_record)
+    execute = bool(getattr(args, "execute_phase3", False))
+    if not execute:
+        args.dry_run = True          # --phase 3 without --execute-phase3 == dry-run
+        return _phase3_run(args, cfg, {})
+    gates_record = _verify_execution_gates(args)
+    args.dry_run = False
+    return _phase3_run(args, cfg, gates_record)
 
 
 def _phase3_manifest_skeleton(args, cfg: Dict[str, Any], txn: "Phase3Transaction",
-                              auth_record: Dict[str, Any]) -> Dict[str, Any]:
+                              gates_record: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "run": cfg["run"]["name"] + "__phase3",
         "track": cfg["run"]["track"],
@@ -2201,12 +2146,11 @@ def _phase3_manifest_skeleton(args, cfg: Dict[str, Any], txn: "Phase3Transaction
         "mode": ("phase3 dry-run (contract only, no optimizer)" if args.dry_run
                  else "phase3 estimation"),
         "authorization": cfg["phase3"]["authorization_doc"],
-        "authorization_status": ("EXTERNALLY_AUTHORIZED"
-                                 if auth_record.get("verified")
-                                 else "AWAITING_POST_REVIEW_AUTHORIZATION"),
-        "execution_authorization": auth_record or None,
-        "execution_ready": bool(auth_record.get("verified", False)
-                                and auth_record.get("execution_ready", False)),
+        "review_gate": ("REVIEW_V6_APPROVED" if gates_record.get("verified")
+                        else "AWAITING_REVIEW_V6_APPROVE"),
+        "execution_gates": gates_record or None,
+        "execution_ready": bool(gates_record.get("verified", False)
+                                and gates_record.get("execution_ready", False)),
         "started_at": _utcnow(),
         "status": "RUNNING",
         "stop": None,
@@ -2264,26 +2208,17 @@ def _phase3_finalize(txn: "Phase3Transaction", manifest: Dict[str, Any],
     return code
 
 
-def _phase3_orchestrate_production(args, cfg: Dict[str, Any],
-                                   authorization_record: Dict[str, Any]) -> int:
-    """PRODUCTION-ONLY orchestration (review v4 fix 1). It exposes NO injectable
-    transaction root, contract, estimator, minimizer, package verifier, or
-    alternative authorization: it hard-uses CANONICAL_PHASE3_ROOT, the genuine
-    _phase3_contract / _phase3_estimate / _verify_package_identity, and the real
-    SciPy minimizer route, and refuses a non-dry call without a verified,
-    execution-ready authorization record."""
-    if Path(args.config).resolve() != CANONICAL_PHASE3_CONFIG.resolve():
-        print("REFUSED: production orchestration requires the canonical config.",
-              file=sys.stderr)
+def _phase3_run(args, cfg: Dict[str, Any],
+                gates_record: Dict[str, Any]) -> int:
+    """Production Phase-3 attempt body (private; not a supported external
+    interface). Real estimation requires the verified gates record from
+    run_phase3; dry-runs are structurally non-optimizing (the estimation branch
+    is never reached)."""
+    if not args.dry_run and not (gates_record.get("verified") is True
+                                 and gates_record.get("execution_ready") is True):
+        print("REFUSED: real Phase-3 execution requires the verified Git + "
+              "review-v6 gates (scope doc s5/s7).", file=sys.stderr)
         return 2
-    if not args.dry_run and not (authorization_record.get("verified") is True
-                                 and authorization_record.get(
-                                     "execution_ready") is True):
-        print("REFUSED: real Phase-3 execution requires a VERIFIED external "
-              "authorization record (review-v5 APPROVE); none was accepted.",
-              file=sys.stderr)
-        return 2
-
     txn = Phase3Transaction(CANONICAL_PHASE3_ROOT,
                             "dryrun" if args.dry_run else "estimate")
     t0 = time.time()
@@ -2294,7 +2229,7 @@ def _phase3_orchestrate_production(args, cfg: Dict[str, Any],
         print(line)
         lines.append(line)
 
-    manifest = _phase3_manifest_skeleton(args, cfg, txn, authorization_record)
+    manifest = _phase3_manifest_skeleton(args, cfg, txn, gates_record)
     out = OutRoot(CANONICAL_REGIONLIVE_ROOT)
     acquired = False
     try:
@@ -2306,16 +2241,14 @@ def _phase3_orchestrate_production(args, cfg: Dict[str, Any],
                           "complete/ exists; a successful Phase-3 bundle is "
                           "immutable and a new real estimation is refused")
         manifest["package_identity"] = _verify_package_identity(
-            expected_commit=authorization_record.get(
-                "approved_dclaborsupply_commit"))
+            expected_commit=gates_record.get("expected_dclaborsupply_head"))
         log("Phase 3 - input contract (accepted Phase 1-2 evidence)")
-        rtmap = _phase3_runtime_paths()          # decision E: ONE map per attempt
+        rtmap = _phase3_runtime_paths()          # ONE map per attempt
         manifest["rtmap_fingerprint"] = _runtime_map_fingerprint(rtmap)
         ctx = _phase3_contract(out, cfg, Path(args.config), log, rtmap=rtmap)
         manifest["contract"] = ctx["ev"]
 
         if args.dry_run:
-            _assert_no_prohibited_modules("phase3-dryrun-end")
             log("Phase 3 dry-run COMPLETE - contract verified, optimizer NOT called")
             return _phase3_finalize(txn, manifest, lines, t0,
                                     "PHASE_3_DRY_RUN_COMPLETE", None, 0)
@@ -2326,12 +2259,10 @@ def _phase3_orchestrate_production(args, cfg: Dict[str, Any],
             manifest["optimizer_called"] = True
 
         status, diag = _phase3_estimate(ctx, txn.staging, cfg, log,
-                                        minimize_fn=None,
                                         mark_optimizer_called=_mark_called)
         manifest["gates"] = diag.get("gates", {})
         manifest["input_recheck_after_optimization"] = diag.get(
             "input_recheck_after_optimization", {})
-        _assert_no_prohibited_modules("phase3-end", allow_optimizer=True)
         if status == "PHASE_3_COMPLETE":
             return _phase3_finalize(txn, manifest, lines, t0, status, None, 0)
         if status == "STOPPED":
@@ -2359,126 +2290,6 @@ def _phase3_orchestrate_production(args, cfg: Dict[str, Any],
         return _phase3_finalize(txn, manifest, lines, t0, "STOPPED", stop, 3)
 
 
-def _phase3_forbidden_test_roots() -> Tuple[Path, ...]:
-    return (CANONICAL_PHASE3_ROOT, CANONICAL_REGIONLIVE_ROOT,
-            MNL_ROOT / "outputs", MNL_ROOT,
-            MNL_ROOT / "dclaborsupply-monorepo")
-
-
-def _validate_test_double(name: str, fn) -> None:
-    """Decision B: every injected test component must be a GENUINE double."""
-    genuine = (_phase3_contract, _phase3_estimate, _verify_package_identity,
-               _phase3_orchestrate_production, run_phase3)
-    for g in genuine:
-        if fn is g:
-            raise ValueError(f"{name}: genuine production component refused as "
-                             "a test double")
-    mod = str(getattr(fn, "__module__", "") or "")
-    qn = str(getattr(fn, "__qualname__", getattr(fn, "__name__", "")) or "")
-    if mod.startswith("scipy.optimize") or ("scipy" in mod and qn == "minimize"):
-        raise ValueError(f"{name}: real SciPy minimizer refused as a test double")
-    if getattr(fn, "__phase3_test_double__", None) is not True:
-        raise ValueError(f"{name}: missing __phase3_test_double__ marker")
-
-
-def _run_phase3_test_attempt(args, cfg: Dict[str, Any], *, test_root=None,
-                             contract_fn=None, estimate_fn=None, minimize_fn=None,
-                             package_identity_fn=None,
-                             i_am_a_private_test: bool = False) -> int:
-    """PRIVATE unit-test orchestration (decision A/B). Structurally separate from
-    production: it never calls _phase3_orchestrate_production, requires explicitly
-    marked test doubles for every component, and refuses any root at or beneath
-    the canonical trees, MNL/outputs, or EITHER repository worktree."""
-    if i_am_a_private_test is not True:
-        raise ValueError("private test-mode marker required")
-    missing = [n for n, v in (("test_root", test_root), ("contract_fn", contract_fn),
-                              ("estimate_fn", estimate_fn),
-                              ("minimize_fn", minimize_fn),
-                              ("package_identity_fn", package_identity_fn))
-               if v is None]
-    if missing:
-        raise ValueError(f"test helper requires explicit fake components: {missing}")
-    for pname, fn in (("contract_fn", contract_fn), ("estimate_fn", estimate_fn),
-                      ("minimize_fn", minimize_fn),
-                      ("package_identity_fn", package_identity_fn)):
-        _validate_test_double(pname, fn)
-    root = Path(test_root).resolve()
-    for forb in _phase3_forbidden_test_roots():
-        fr = Path(forb).resolve()
-        if root == fr or root.is_relative_to(fr):
-            raise ValueError(f"test root {root} is inside the forbidden tree {fr}")
-    return _phase3_attempt_test_body(args, cfg, root, contract_fn, estimate_fn,
-                                     minimize_fn, package_identity_fn)
-
-
-def _phase3_attempt_test_body(args, cfg: Dict[str, Any], root: Path, contract_fn,
-                              estimate_fn, minimize_fn, identity_fn) -> int:
-    """Test-only attempt body. Re-validates (structurally) that the root cannot be
-    any production/worktree path, then runs the same transaction/finalize shape
-    with the injected doubles. Never used by production code."""
-    root = Path(root).resolve()
-    for forb in _phase3_forbidden_test_roots():
-        fr = Path(forb).resolve()
-        if root == fr or root.is_relative_to(fr):
-            raise ValueError(f"test body refuses root inside {fr}")
-    txn = Phase3Transaction(root, "dryrun" if args.dry_run else "estimate")
-    t0 = time.time()
-    lines: List[str] = []
-
-    def log(msg: str) -> None:
-        line = f"[{datetime.now().strftime('%H:%M:%S')}] {msg}"
-        print(line)
-        lines.append(line)
-
-    manifest = _phase3_manifest_skeleton(args, cfg, txn, {})
-    out = OutRoot(root.parent)
-    acquired = False
-    try:
-        txn.acquire()
-        acquired = True
-        if (not args.dry_run) and txn.complete_exists():
-            raise StopRun("S-0", "phase3-immutable",
-                          "complete/ exists; refusing (test body)")
-        manifest["package_identity"] = identity_fn(expected_commit=None)
-        ctx = contract_fn(out, cfg, Path(args.config), log)
-        manifest["contract"] = ctx["ev"]
-        if args.dry_run:
-            log("Phase 3 dry-run COMPLETE - contract verified, optimizer NOT called")
-            return _phase3_finalize(txn, manifest, lines, t0,
-                                    "PHASE_3_DRY_RUN_COMPLETE", None, 0)
-
-        def _mark_called() -> None:
-            manifest["optimizer_called"] = True
-
-        status, diag = estimate_fn(ctx, txn.staging, cfg, log,
-                                   minimize_fn=minimize_fn,
-                                   mark_optimizer_called=_mark_called)
-        manifest["gates"] = diag.get("gates", {})
-        manifest["input_recheck_after_optimization"] = diag.get(
-            "input_recheck_after_optimization", {})
-        if status == "PHASE_3_COMPLETE":
-            return _phase3_finalize(txn, manifest, lines, t0, status, None, 0)
-        if status == "STOPPED":
-            s = diag.get("stop") or {}
-            return _phase3_finalize(
-                txn, manifest, lines, t0, "STOPPED",
-                StopRun(s.get("code", "S-3"), s.get("gate", "phase3"),
-                        s.get("message", "gate failure")), 2)
-        return _phase3_finalize(txn, manifest, lines, t0, status, None, 4)
-    except StopRun as stop:
-        log(f"STOP {stop.code} [{stop.gate}] {stop.message}")
-        if not acquired:
-            return 2
-        return _phase3_finalize(txn, manifest, lines, t0, "STOPPED", stop, 2)
-    except Exception:
-        tb = traceback.format_exc()
-        log("UNEXPECTED ERROR:\n" + tb)
-        if not acquired:
-            return 3
-        stop = StopRun("S-0", "unexpected", tb.splitlines()[-1] if tb else "unknown")
-        return _phase3_finalize(txn, manifest, lines, t0, "STOPPED", stop, 3)
-
-
 # --------------------------------------------------------------------------- #
 # orchestration
 # --------------------------------------------------------------------------- #
@@ -2493,12 +2304,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--dry-run", action="store_true",
                     help="phases 1-2: verification only (stop after Phase 2); "
                          "phase 3: input-contract validation WITHOUT any optimizer call")
-    ap.add_argument("--authorization", default=None,
-                    help="REAL Phase 3 only: absolute path (OUTSIDE both "
-                         "worktrees) to the external "
-                         "p2a_phase3_execution_authorization_v1 JSON, created only "
-                         "after the canonical review-v5 APPROVE; dry-runs run "
-                         "without it")
+    ap.add_argument("--execute-phase3", action="store_true",
+                    help="REQUIRED for a real Phase-3 estimation; without it, "
+                         "--phase 3 performs only the non-optimizing dry-run")
+    ap.add_argument("--expected-mnl-head", default=None,
+                    help="real run: 40-hex SHA the current MNL HEAD must equal")
+    ap.add_argument("--expected-dclaborsupply-head", default=None,
+                    help="real run: 40-hex SHA the nested HEAD (and MNL gitlink) "
+                         "must equal")
+    ap.add_argument("--approved-review",
+                    default=None,
+                    help="real run: must be exactly "
+                         "docs/France_case/P2a/"
+                         "FR_P2a_region_live_phase3_code_review_v6.md")
+    ap.add_argument("--approved-review-sha256", default=None,
+                    help="real run: 64-hex SHA-256 of the review-v6 file, which "
+                         "must carry one exact '**FINAL VERDICT: APPROVE**' line "
+                         "under '# 1. Sixth-review verdict'")
     args = ap.parse_args(argv)
 
     if args.phase > 3:

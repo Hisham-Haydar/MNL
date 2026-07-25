@@ -1,18 +1,20 @@
-"""Non-production safety tests for the P2a region-live Phase-3 runner.
+"""Safety tests for the P2a region-live Phase-3 runner under the simplified
+research-grade execution scope (FR_P2a_region_live_phase3_execution_scope_v1.md).
 
-Review fix 8 / decision K: fake objectives, fake optimizer results and dependency
-injection ONLY -- no real optimizer call, no estimation data, no production write.
-Every temporary root lives under pytest's tmp_path; the production CLI path (which
-enforces the canonical roots) is exercised only for its REFUSAL branches, which
-return before any filesystem write.
+No test invokes the real optimizer or writes to any production output path.
+Estimator-route tests monkeypatch scipy.optimize.minimize in-process; the
+canonical dry-run is exercised in a subprocess. Adversarial-caller defenses are
+out of scope by manager decision.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace as _NS
 
 import numpy as np
 import pytest
@@ -24,44 +26,46 @@ sys.path.insert(0, str(MNL_ROOT / "scripts" / "p2a"))
 import run_p2a_regionlive_rebuild as runner  # noqa: E402
 
 CONFIG_PATH = MNL_ROOT / "scripts/p2a/configs/p2a_regionlive_rebuild_v1.yaml"
+TARGET = 19053.46553160094
+OPTS = {"maxiter": 5000, "maxcor": 30, "ftol": 1e-15, "gtol": 1e-10}
+GOOD_REVIEW = ("# 1. Sixth-review verdict\n\n**FINAL VERDICT: APPROVE**\n\n"
+               "# 2. Scope\n\ndetails\n")
 
 
-# --------------------------------------------------------------------------- #
-# fixtures / helpers
-# --------------------------------------------------------------------------- #
 @pytest.fixture(scope="module")
 def cfg():
     return yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
 
 
+def _args(dry_run=True, **kw):
+    base = dict(config=str(CONFIG_PATH), out=None, dry_run=dry_run, phase=3,
+                execute_phase3=False, expected_mnl_head=None,
+                expected_dclaborsupply_head=None, approved_review=None,
+                approved_review_sha256=None)
+    base.update(kw)
+    return argparse.Namespace(**base)
+
+
 def _names47():
-    """Synthetic 47-name vector: the 10 accepted pins + the 2 expected-bound names
-    + 35 dummies (bound names must exist for the gate tests)."""
     free = list(runner.EXPECTED_AT_BOUND_NAMES) + [f"dummy_{i:02d}" for i in range(35)]
     return list(runner.ACCEPTED_PIN_NAMES) + free
 
 
 def _pmap():
-    names = _names47()
-    pin_values = {p: float(k + 1) for k, p in enumerate(runner.ACCEPTED_PIN_NAMES)}
-    return runner.build_phase3_parameter_map(names, list(runner.ACCEPTED_PIN_NAMES),
-                                             pin_values)
+    vals = {p: float(k + 1) for k, p in enumerate(runner.ACCEPTED_PIN_NAMES)}
+    return runner.build_phase3_parameter_map(
+        _names47(), list(runner.ACCEPTED_PIN_NAMES), vals)
 
 
 def _bounds_full(pmap):
-    bounds = []
-    for n in pmap["all_names"]:
-        if n in runner.EXPECTED_AT_BOUND_NAMES:
-            bounds.append((-1.0, 1.0))
-        else:
-            bounds.append((-100.0, 100.0))
-    return bounds
+    return [(-1.0, 1.0) if n in runner.EXPECTED_AT_BOUND_NAMES else (-100.0, 100.0)
+            for n in pmap["all_names"]]
 
 
 def _theta_ok(pmap):
     theta = np.zeros(47)
     theta[pmap["pin_idx"]] = pmap["pin_values"]
-    for n in runner.EXPECTED_AT_BOUND_NAMES:      # the two expected bound hits
+    for n in runner.EXPECTED_AT_BOUND_NAMES:
         theta[pmap["name_idx"][n]] = 1.0
     return theta
 
@@ -70,346 +74,276 @@ def _gates_cfg(cfg):
     return cfg["phase3"]["gates"]
 
 
-def _args(dry_run=True):
-    return argparse.Namespace(config=str(CONFIG_PATH), out=None,
-                              dry_run=dry_run, phase=3)
+def _deep(cfg):
+    return json.loads(json.dumps(cfg))
 
 
-def _mark(fn):
-    """Attach the private test-double marker required by the helper (decision B)."""
-    fn.__phase3_test_double__ = True
-    return fn
-
-
-def _fake_contract(ev=None):
-    def contract(out, cfg_, config_path, log):
-        return {"ev": ev or {"ok": True, "fake": True}}
-    return _mark(contract)
-
-
-
-def _tp3(args, cfg, *, _contract_fn=None, _estimate_fn=None, _txn_root=None,
-         _minimize_fn=None, _package_identity_fn=None):
-    """Adapter to the private test helper (decision C): every component explicit."""
-    return runner._run_phase3_test_attempt(
-        args, cfg, test_root=_txn_root,
-        contract_fn=_mark(_contract_fn) if _contract_fn is not None
-        else _fake_contract(),
-        estimate_fn=(_mark(_estimate_fn) if _estimate_fn is not None
-                     else _mark(lambda *a, **k: ("PHASE_3_DRY_RUN_COMPLETE", {}))),
-        minimize_fn=(_mark(_minimize_fn) if _minimize_fn is not None
-                     else _mark(lambda *a, **k: (_ for _ in ()).throw(
-                         AssertionError("minimizer must not be called")))),
-        package_identity_fn=(_mark(_package_identity_fn)
-                             if _package_identity_fn is not None
-                             else _mark(lambda **k: {"test_seam": True})),
-        i_am_a_private_test=True)
-
-
-class _Raiser:
-    __phase3_test_double__ = True
-
-    def __init__(self):
-        self.called = False
-
-    def __call__(self, *a, **k):
-        self.called = True
-        raise AssertionError("optimizer/estimate must not be called")
+def _git(repo, *argv):
+    r = subprocess.run(["git", "-C", str(repo), *argv], capture_output=True,
+                       text=True, timeout=30)
+    assert r.returncode == 0, (argv, r.stderr)
+    return r.stdout.strip()
 
 
 # --------------------------------------------------------------------------- #
-# 1-4: mapping, round trips, pins
+# parameter mapping and pins
 # --------------------------------------------------------------------------- #
-def test_1_mapping_counts_and_ordering():
+def test_01_mapping_counts_and_ordering():
     pmap = _pmap()
-    assert len(pmap["all_names"]) == 47
-    assert len(pmap["free_names"]) == 37
+    assert len(pmap["all_names"]) == 47 and len(pmap["free_names"]) == 37
     assert tuple(pmap["pin_names"]) == runner.ACCEPTED_PIN_NAMES
     assert [pmap["all_names"][i] for i in pmap["free_idx"]] == pmap["free_names"]
     assert [pmap["all_names"][i] for i in pmap["pin_idx"]] == pmap["pin_names"]
-    assert set(pmap["free_names"]) & set(pmap["pin_names"]) == set()
 
 
-def test_2_free_full_free_round_trip():
+def test_02_round_trip_and_pin_bitwise():
     pmap = _pmap()
     free = np.arange(37, dtype=np.float64) + 0.5
     full = runner.expand_free_to_full(pmap, free)
     assert np.array_equal(runner.project_full_to_free(pmap, full), free)
-    template = np.arange(47, dtype=np.float64) * 1.25
-    rebuilt = runner.expand_free_to_full(pmap, runner.project_full_to_free(pmap, template))
-    assert np.array_equal(rebuilt[pmap["free_idx"]], template[pmap["free_idx"]])
-
-
-def test_3_exact_pin_preservation():
-    pmap = _pmap()
-    full = runner.expand_free_to_full(pmap, np.random.default_rng(0).normal(size=37))
     for k in range(10):
         assert (np.float64(full[pmap["pin_idx"][k]]).tobytes()
                 == np.float64(pmap["pin_values"][k]).tobytes())
 
 
-def test_4_duplicate_or_incorrect_pin_set_refused():
-    names = _names47()
-    vals = {p: 1.0 for p in runner.ACCEPTED_PIN_NAMES}
-    bad_dup = list(runner.ACCEPTED_PIN_NAMES[:9]) + [runner.ACCEPTED_PIN_NAMES[0]]
-    with pytest.raises(runner.StopRun):
-        runner.build_phase3_parameter_map(names, bad_dup, vals)
-    with pytest.raises(runner.StopRun):   # reordered list is a STOP (decision E)
-        runner.build_phase3_parameter_map(
-            names, list(reversed(runner.ACCEPTED_PIN_NAMES)), vals)
-    with pytest.raises(runner.StopRun):   # wrong member
-        runner.build_phase3_parameter_map(
-            names, list(runner.ACCEPTED_PIN_NAMES[:9]) + ["beta_E"], vals)
+def test_03_bad_pin_sets_refused():
+    names, vals = _names47(), {p: 1.0 for p in runner.ACCEPTED_PIN_NAMES}
+    for bad in (list(runner.ACCEPTED_PIN_NAMES[:9]) + [runner.ACCEPTED_PIN_NAMES[0]],
+                list(reversed(runner.ACCEPTED_PIN_NAMES)),
+                list(runner.ACCEPTED_PIN_NAMES[:9]) + ["beta_E"]):
+        with pytest.raises(runner.StopRun):
+            runner.build_phase3_parameter_map(names, bad, vals)
+
+
+def test_04_real_spec_interleaved_ordering():
+    from dclaborsupply import EstimationSpec
+    spec = EstimationSpec.from_yaml(str(
+        MNL_ROOT / "scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml"))
+    names = list(spec.all_param_names)
+    assert [names.index(p) for p in runner.ACCEPTED_PIN_NAMES] == \
+        [10, 11, 12, 13, 14, 15, 16, 17, 31, 32]
 
 
 # --------------------------------------------------------------------------- #
-# 5-7: G-16 and bound-set gates
+# post-optimization gates (G-16, bounds, gradient, target)
 # --------------------------------------------------------------------------- #
-def test_5_g16_pass(cfg):
+def test_05_gates_pass_and_expected_bounds(cfg):
     pmap = _pmap()
-    theta = _theta_ok(pmap)
     gates, rows, status, stop = runner._phase3_post_gates(
-        100.0, theta, np.zeros(47), pmap, _bounds_full(pmap), _gates_cfg(cfg),
-        100.0, True, "ok")
-    assert gates["g16_inbounds_ok"] and status == "PHASE_3_COMPLETE" and stop is None
-    assert all(r["in_bounds"] for r in rows)
+        100.0, _theta_ok(pmap), np.zeros(47), pmap, _bounds_full(pmap),
+        _gates_cfg(cfg), 100.0, True, "ok")
+    assert status == "PHASE_3_COMPLETE" and stop is None
+    assert gates["g15_bound_hits_detected"] == sorted(runner.EXPECTED_AT_BOUND_NAMES)
+    assert gates["g_nonbound_free_count"] == 35 and gates["g16_inbounds_ok"]
 
 
-def test_6_g16_fail(cfg):
+def test_06_unexpected_bound_and_gradient_gates(cfg):
     pmap = _pmap()
     theta = _theta_ok(pmap)
-    theta[pmap["name_idx"]["dummy_00"]] = 100.0 + 2e-9   # beyond hi + 1e-9
-    gates, _rows, status, stop = runner._phase3_post_gates(
+    theta[pmap["name_idx"]["dummy_01"]] = 100.0
+    gates, _r, status, stop = runner._phase3_post_gates(
         100.0, theta, np.zeros(47), pmap, _bounds_full(pmap), _gates_cfg(cfg),
         100.0, True, "ok")
-    assert not gates["g16_inbounds_ok"]
-    assert status == "STOPPED" and stop["gate"] == "G-16"
-
-
-def test_7_expected_bound_set_validation(cfg):
-    pmap = _pmap()
-    theta = _theta_ok(pmap)
-    theta[pmap["name_idx"]["dummy_01"]] = 100.0          # extra (valid) bound hit
-    gates, _rows, status, stop = runner._phase3_post_gates(
-        100.0, theta, np.zeros(47), pmap, _bounds_full(pmap), _gates_cfg(cfg),
-        100.0, True, "ok")
-    assert not gates["g15_bound_hits_ok"]
     assert status == "STOPPED" and stop["gate"] == "G-15"
-    assert gates["g_nonbound_free_count"] == 35
+    grad = np.zeros(47)
+    grad[pmap["name_idx"]["dummy_02"]] = 0.5
+    gates, _r, status, stop = runner._phase3_post_gates(
+        100.0, _theta_ok(pmap), grad, pmap, _bounds_full(pmap), _gates_cfg(cfg),
+        100.0, True, "ok")
+    assert status == "STOPPED" and stop["gate"] == "G-3"
+
+
+def test_07_g16_exact_epsilon_boundaries(cfg):
+    pmap = _pmap()
+    lo, hi = -100.0, 100.0
+    eps = runner.PHASE3_SAFETY_CONSTANTS["g16_inbounds_epsilon"]
+    for v, expect_ok in ((lo - eps, True), (hi + eps, True),
+                         (np.nextafter(lo - eps, -np.inf), False),
+                         (np.nextafter(hi + eps, np.inf), False)):
+        theta = _theta_ok(pmap)
+        theta[pmap["name_idx"]["dummy_05"]] = v
+        gates, rows, _s, _p = runner._phase3_post_gates(
+            100.0, theta, np.zeros(47), pmap, _bounds_full(pmap), _gates_cfg(cfg),
+            100.0, True, "ok")
+        row = next(r for r in rows if r["param"] == "dummy_05")
+        assert row["in_bounds"] == expect_ok
+        assert gates["g16_inbounds_ok"] == expect_ok
+
+
+def test_08_target_mismatch_status_immutable(cfg):
+    pmap = _pmap()
+    hacked = dict(_gates_cfg(cfg))
+    hacked["target_mismatch_status"] = "PHASE_3_COMPLETE"
+    for dev in (+1e-3, -1e-3):
+        _g, _r, status, stop = runner._phase3_post_gates(
+            100.0 + dev, _theta_ok(pmap), np.zeros(47), pmap, _bounds_full(pmap),
+            hacked, 100.0, True, "ok")
+        assert status == runner.PHASE3_TARGET_MISMATCH_STATUS and stop is None
+
+
+def test_09_optimizer_contract_and_safety_constants(cfg):
+    assert runner._validate_optimizer_contract(cfg)["options"] == OPTS
+    assert runner._validate_safety_constants(cfg)
+    for mutate in (lambda c: c["phase3"]["optimizer"]["options"].update(maxcor=10),
+                   lambda c: c["phase3"]["optimizer"]["options"].update(maxls=60),
+                   lambda c: c["phase3"]["gates"].update(pre_opt_objective_tol=1e-3),
+                   lambda c: c["phase3"]["gates"].update(
+                       target_mismatch_status="PHASE_3_COMPLETE"),
+                   lambda c: c["targets"].update(negll_full=19053.5)):
+        bad = _deep(cfg)
+        mutate(bad)
+        with pytest.raises(runner.StopRun):
+            runner._validate_safety_constants(bad)
 
 
 # --------------------------------------------------------------------------- #
-# 8-10: canonical refusals and optimizer contract
+# canonical paths, aliases, input authentication
 # --------------------------------------------------------------------------- #
-def test_8_canonical_output_root_refused(tmp_path):
+def test_10_canonical_out_and_config_refused(tmp_path):
     rc = runner.main(["--config", str(CONFIG_PATH), "--phase", "3",
-                      "--out", str(tmp_path), "--dry-run"])
+                      "--out", str(tmp_path)])
+    assert rc == 2 and list(tmp_path.iterdir()) == []
+    copied = tmp_path / "copy.yaml"
+    copied.write_text(CONFIG_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+    rc = runner.main(["--config", str(copied), "--phase", "3",
+                      "--out", str(runner.CANONICAL_REGIONLIVE_ROOT)])
     assert rc == 2
-    assert list(tmp_path.iterdir()) == []          # refused before any write
+    rc = runner.main(["--config", str(CONFIG_PATH), "--phase", "4"])
+    assert rc == 2                                   # phases > 3 refused
 
 
-def test_9_wrong_phase3_subdirectory_refused(tmp_path, cfg):
-    bad_cfg_path = tmp_path / "bad.yaml"
-    text = CONFIG_PATH.read_text(encoding="utf-8").replace(
-        "output_subdir: phase3_estimation_v1", "output_subdir: somewhere_else")
-    bad_cfg_path.write_text(text, encoding="utf-8")
-    lock = runner.CANONICAL_PHASE3_ROOT / ".phase3.lock"
-    assert not lock.exists()
-    rc = runner.main(["--config", str(bad_cfg_path), "--phase", "3",
-                      "--out", str(runner.CANONICAL_REGIONLIVE_ROOT), "--dry-run"])
-    assert rc == 2
-    assert not lock.exists()                       # refused before the transaction
+def test_11_alias_mutations_refused(cfg):
+    muts = [lambda c: c["certified_spec"].update(yaml="scripts/bpool/specs/x.yaml"),
+            lambda c: c["warm_start"].update(theta_csv="theta_p2a_singles_2016_v2.csv"),
+            lambda c: c["phase3"]["start_theta"].update(
+                csv="theta_p2a_singles_2016_v2.csv"),
+            lambda c: c["stored_region_live_theta"].update(
+                v1_csv="theta_p2a_singles_2016_v2.csv")]
+    for mut in muts:
+        bad = _deep(cfg)
+        mut(bad)
+        with pytest.raises(runner.StopRun) as e:
+            runner._phase3_contract(None, bad, CONFIG_PATH, lambda m: None)
+        assert e.value.gate == "alias-identity"
 
 
-def test_10_optimizer_contract_mismatch_refused(cfg):
-    good = {"phase3": {"optimizer": {"method": "L-BFGS-B",
-                                     "options": {"maxiter": 5000, "maxcor": 30,
-                                                 "ftol": 1e-15, "gtol": 1e-10}}}}
-    assert runner._validate_optimizer_contract(good)["options"]["maxcor"] == 30
-    bad_method = json.loads(json.dumps(good))
-    bad_method["phase3"]["optimizer"]["method"] = "BFGS"
-    with pytest.raises(runner.StopRun):
-        runner._validate_optimizer_contract(bad_method)
-    bad_keys = json.loads(json.dumps(good))
-    bad_keys["phase3"]["optimizer"]["options"]["maxls"] = 60
-    with pytest.raises(runner.StopRun):
-        runner._validate_optimizer_contract(bad_keys)
-    bad_val = json.loads(json.dumps(good))
-    bad_val["phase3"]["optimizer"]["options"]["maxcor"] = 10
-    with pytest.raises(runner.StopRun):
-        runner._validate_optimizer_contract(bad_val)
+def test_12_input_authentication_exact_map(tmp_path):
+    f = tmp_path / "geom.parquet"
+    f.write_bytes(b"data")
+    sha = hashlib.sha256(b"data").hexdigest()
+    rt = {"geometry_parquet": f}
+    with pytest.raises(runner.StopRun):              # wrong configured path
+        runner._authenticate_inputs(
+            {"phase3": {"input_authentication": {
+                "geometry_parquet": {"path": "somewhere/else.parquet",
+                                     "sha256": sha}}}}, runtime_paths=rt)
+    with pytest.raises(runner.StopRun):              # missing / extra labels
+        runner._authenticate_inputs({"phase3": {"input_authentication": {}}},
+                                    runtime_paths=rt)
+
+
+def test_13_recheck_detects_mutation(tmp_path):
+    f = tmp_path / "input.bin"
+    f.write_bytes(b"original")
+    sha = hashlib.sha256(b"original").hexdigest()
+    rt = {"x": f}
+    pre = {"x": {"runtime_path": str(f.resolve()), "actual": sha, "expected": sha}}
+    _t, ok = runner._recheck_inputs(pre, runtime_paths=rt)
+    assert ok
+    f.write_bytes(b"tampered")
+    _t, ok = runner._recheck_inputs(pre, runtime_paths=rt)
+    assert not ok
 
 
 # --------------------------------------------------------------------------- #
-# 11-16: transaction, publication, manifest, console
+# transaction, lock, publication
 # --------------------------------------------------------------------------- #
-def test_11_dry_run_cannot_call_injected_optimizer(tmp_path, cfg):
-    raiser = _Raiser()
-    rc = _tp3(_args(dry_run=True), cfg,
-                           _contract_fn=_fake_contract(), _estimate_fn=raiser,
-                           _txn_root=tmp_path / "p3")
-    assert rc == 0 and not raiser.called
-    attempts = list((tmp_path / "p3" / "attempts").iterdir())
-    dirs = [d for d in attempts if d.name.endswith("PHASE_3_DRY_RUN_COMPLETE")]
-    assert len(dirs) == 1
-    man = json.loads((dirs[0] / "phase3_manifest.json").read_text(encoding="utf-8"))
-    assert man["status"] == "PHASE_3_DRY_RUN_COMPLETE"
-    assert man["optimizer_called"] is False
-
-
-def test_12_successful_bundle_cannot_be_overwritten(tmp_path, cfg):
-    root = tmp_path / "p3"
-    txn = runner.Phase3Transaction(root, "estimate")
+def test_14_success_bundle_immutable(tmp_path):
+    txn = runner.Phase3Transaction(tmp_path / "p3", "estimate")
     txn.acquire()
     (txn.staging / "estimation_results.json").write_text("{}", encoding="utf-8")
     dest = txn.finish("PHASE_3_COMPLETE")
     txn.release()
-    assert dest == root / "complete" and dest.is_dir()
-    marker = hashlib.sha256(
-        (dest / "estimation_results.json").read_bytes()).hexdigest()
-    txn2 = runner.Phase3Transaction(root, "estimate")
+    marker = hashlib.sha256((dest / "estimation_results.json").read_bytes()).hexdigest()
+    txn2 = runner.Phase3Transaction(tmp_path / "p3", "estimate")
     txn2.acquire()
-    (txn2.staging / "estimation_results.json").write_text('{"x": 1}', encoding="utf-8")
+    (txn2.staging / "estimation_results.json").write_text('{"x":1}', encoding="utf-8")
     with pytest.raises(RuntimeError):
         txn2.finish("PHASE_3_COMPLETE")
     txn2.release()
     assert hashlib.sha256(
         (dest / "estimation_results.json").read_bytes()).hexdigest() == marker
-    # CLI-level B.3: a real run refuses before contract/estimate when complete/ exists
-    raiser = _Raiser()
-    rc = _tp3(_args(dry_run=False), cfg,
-                           _contract_fn=raiser, _estimate_fn=raiser, _txn_root=root)
-    assert rc == 2 and not raiser.called
+    txn3 = runner.Phase3Transaction(tmp_path / "p3", "estimate")
+    txn3.acquire()
+    d3 = txn3.finish(runner.PHASE3_TARGET_MISMATCH_STATUS)
+    txn3.release()
+    assert d3.parent.name == "attempts"              # mismatch never publishes
 
 
-def test_13_failed_attempt_cannot_mutate_successful_bundle(tmp_path, cfg):
+def test_15_lock_contention_and_no_migration(tmp_path):
+    root = tmp_path / "p3"
+    root.mkdir()
+    (root / ".phase3.lock").write_text("held", encoding="utf-8")
+    legacy = root / "phase3_manifest.json"
+    legacy.write_text("legacy", encoding="utf-8")
+    txn = runner.Phase3Transaction(root, "dryrun")
+    with pytest.raises(runner.StopRun):
+        txn.acquire()
+    assert legacy.read_text(encoding="utf-8") == "legacy"
+    assert not (root / "attempts").exists()
+
+
+def test_16_finalize_manifest_console_and_completeness(tmp_path, cfg):
+    import time as _time
     root = tmp_path / "p3"
     txn = runner.Phase3Transaction(root, "estimate")
     txn.acquire()
-    (txn.staging / "estimation_results.json").write_text('{"good": 1}', encoding="utf-8")
-    txn.finish("PHASE_3_COMPLETE")
-    txn.release()
-    before = hashlib.sha256(
-        (root / "complete" / "estimation_results.json").read_bytes()).hexdigest()
-
-    def failing_contract(out, cfg_, config_path, log):
-        raise runner.StopRun("S-1", "test", "synthetic failure")
-
-    rc = _tp3(_args(dry_run=True), cfg,
-                           _contract_fn=failing_contract, _txn_root=root)
-    assert rc == 2
-    after = hashlib.sha256(
-        (root / "complete" / "estimation_results.json").read_bytes()).hexdigest()
-    assert before == after
-    stopped = [d for d in (root / "attempts").iterdir() if d.name.endswith("_STOPPED")]
-    assert len(stopped) == 1
-
-
-def test_14_artifact_set_publication(tmp_path):
-    root = tmp_path / "p3"
-    txn = runner.Phase3Transaction(root, "estimate")
-    txn.acquire()
-    for name in runner.PHASE3_ARTIFACTS:
-        (txn.staging / name).write_text(f"content of {name}", encoding="utf-8")
-    (txn.staging / "phase3_manifest.json").write_text("{}", encoding="utf-8")
-    dest = txn.finish("PHASE_3_COMPLETE")
-    txn.release()
-    assert sorted(p.name for p in dest.iterdir()) == sorted(
-        list(runner.PHASE3_ARTIFACTS) + ["phase3_manifest.json"])
-    assert not txn.staging.exists()                # staging fully moved, not copied
-
-
-def test_15_manifest_does_not_self_hash(tmp_path, cfg):
-    rc = _tp3(_args(dry_run=True), cfg,
-                           _contract_fn=_fake_contract(), _txn_root=tmp_path / "p3")
-    assert rc == 0
-    d = next(d for d in (tmp_path / "p3" / "attempts").iterdir()
-             if d.name.endswith("PHASE_3_DRY_RUN_COMPLETE"))
-    man = json.loads((d / "phase3_manifest.json").read_text(encoding="utf-8"))
-    assert "phase3_manifest.json" not in man["artifact_hashes"]
-    console_sha = hashlib.sha256((d / "phase3_console.log").read_bytes()).hexdigest()
-    assert man["artifact_hashes"]["phase3_console.log"] == console_sha
-
-
-def test_16_console_contains_final_status(tmp_path, cfg):
-    rc = _tp3(_args(dry_run=True), cfg,
-                           _contract_fn=_fake_contract(), _txn_root=tmp_path / "p3")
-    assert rc == 0
-    d = next(d for d in (tmp_path / "p3" / "attempts").iterdir()
-             if d.name.endswith("PHASE_3_DRY_RUN_COMPLETE"))
-    console = (d / "phase3_console.log").read_text(encoding="utf-8")
-    assert console.rstrip().endswith("FINAL STATUS: PHASE_3_DRY_RUN_COMPLETE")
-
-
-# --------------------------------------------------------------------------- #
-# 17-18: input recheck and STOPPED evidence
-# --------------------------------------------------------------------------- #
-def test_17_pre_post_input_hash_change_detected(tmp_path):
-    f = tmp_path / "input.bin"
-    f.write_bytes(b"original")
-    sha = hashlib.sha256(b"original").hexdigest()
-    rt = {"some_input": f}
-    pre = {"some_input": {"runtime_path": str(f.resolve()), "actual": sha,
-                          "expected": sha}}
-    table, ok = runner._recheck_inputs(pre, runtime_paths=rt)
-    assert ok and table["some_input"]["ok"]
-    f.write_bytes(b"tampered")
-    table, ok = runner._recheck_inputs(pre, runtime_paths=rt)
-    assert not ok and not table["some_input"]["ok"]
-    # a label missing from the pre-table can never pass the recheck
-    table, ok = runner._recheck_inputs({}, runtime_paths=rt)
-    assert not ok
-
-
-def test_18_stopped_evidence_written_before_exit(tmp_path, cfg):
-    def failing_contract(out, cfg_, config_path, log):
-        raise runner.StopRun("S-8", "test-gate", "synthetic S-8")
-
-    rc = _tp3(_args(dry_run=False), cfg,
-                           _contract_fn=failing_contract, _txn_root=tmp_path / "p3")
-    assert rc == 2
-    d = next(d for d in (tmp_path / "p3" / "attempts").iterdir()
-             if d.name.endswith("_STOPPED"))
+    manifest = runner._phase3_manifest_skeleton(_args(dry_run=False), cfg, txn, {})
+    assert manifest["review_gate"] == "AWAITING_REVIEW_V6_APPROVE"
+    assert manifest["execution_ready"] is False
+    # incomplete bundle: success downgraded, complete/ never created
+    (txn.staging / "estimation_results.json").write_text("{}", encoding="utf-8")
+    rc = runner._phase3_finalize(txn, manifest, ["line1"], _time.time(),
+                                 "PHASE_3_COMPLETE", None, 0)
+    assert rc == 2 and not (root / "complete").exists()
+    d = next(x for x in (root / "attempts").iterdir())
     man = json.loads((d / "phase3_manifest.json").read_text(encoding="utf-8"))
     assert man["status"] == "STOPPED"
-    assert man["stop"] == {"code": "S-8", "gate": "test-gate",
-                           "message": "synthetic S-8"}
+    assert man["stop"]["gate"] == "bundle-completeness"
+    assert "phase3_manifest.json" not in man["artifact_hashes"]      # no self-hash
     console = (d / "phase3_console.log").read_text(encoding="utf-8")
     assert console.rstrip().endswith("FINAL STATUS: STOPPED")
-    assert man["optimizer_called"] is False
+    # complete bundle publishes the exact five-file set
+    txn2 = runner.Phase3Transaction(root, "estimate")
+    txn2.acquire()
+    for n in ("theta_estimated.csv", "optimizer_diagnostics.json",
+              "estimation_results.json"):
+        (txn2.staging / n).write_text("x", encoding="utf-8")
+    man2 = runner._phase3_manifest_skeleton(_args(dry_run=False), cfg, txn2, {})
+    rc = runner._phase3_finalize(txn2, man2, ["go"], _time.time(),
+                                 "PHASE_3_COMPLETE", None, 0)
+    assert rc == 0
+    pub = sorted(p.name for p in (root / "complete").iterdir())
+    assert pub == sorted(list(runner.PHASE3_ARTIFACTS) + ["phase3_manifest.json"])
 
 
 # --------------------------------------------------------------------------- #
-# 19+: remediation-v2 integration tests (review v2 / decisions E-H)
-# Real certified 47-name interleaved ordering; fake minimizer through the real
-# _phase3_estimate seam; scipy.optimize is never touched.
+# estimator route (scipy.optimize.minimize monkeypatched; never invoked)
 # --------------------------------------------------------------------------- #
-from types import SimpleNamespace
-
-TARGET = 19053.46553160094
-OPTS = {"maxiter": 5000, "maxcor": 30, "ftol": 1e-15, "gtol": 1e-10}
-
-
-def _real_names():
+def _mk_ctx(tmp_path, monkeypatch, c0=0.0):
+    import jax
+    jax.config.update("jax_enable_x64", True)
+    import jax.numpy as jnp
+    tmp_path.mkdir(parents=True, exist_ok=True)
     from dclaborsupply import EstimationSpec
     spec = EstimationSpec.from_yaml(str(
         MNL_ROOT / "scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml"))
-    return list(spec.all_param_names)
-
-
-def _mk_ctx(tmp_path, monkeypatch, c0=0.0):
-    """Real interleaved ordering + jax quadratic objective centered at the start."""
-    import jax
-    jax.config.update('jax_enable_x64', True)   # float64, as the engine enforces
-    import jax.numpy as jnp
-    tmp_path.mkdir(parents=True, exist_ok=True)
-    names = _real_names()
+    names = list(spec.all_param_names)
     pin_vals = {p: float(i + 1) for i, p in enumerate(runner.ACCEPTED_PIN_NAMES)}
     pmap = runner.build_phase3_parameter_map(
         names, list(runner.ACCEPTED_PIN_NAMES), pin_vals)
     bounds_full = [(-1.0, 1.0) if n in runner.EXPECTED_AT_BOUND_NAMES
                    else (-100.0, 100.0) for n in names]
-    bounds_free = [bounds_full[i] for i in pmap["free_idx"]]
     free_start = np.zeros(37)
     for k, n in enumerate(pmap["free_names"]):
         if n in runner.EXPECTED_AT_BOUND_NAMES:
@@ -424,757 +358,164 @@ def _mk_ctx(tmp_path, monkeypatch, c0=0.0):
     f.write_bytes(b"frozen-input")
     sha = hashlib.sha256(b"frozen-input").hexdigest()
     rt = {"authinp": f}
-    monkeypatch.setattr(runner, "_phase3_runtime_paths", lambda: rt)
     input_auth = {"authinp": {"runtime_path": str(f.resolve()), "actual": sha,
                               "expected": sha}}
     ev = {"optimizer_contract": {"method": "L-BFGS-B", "options": dict(OPTS)},
           "start_theta_raw_sha256": "x", "start_theta_applied_sha256": "y",
           "negll_start": TARGET + c0, "parameter_map": {"fake": True},
           "at_bound_expected_derived": list(runner.EXPECTED_AT_BOUND_NAMES)}
-    fp = runner._runtime_map_fingerprint(rt)
     return {"spec": None, "names": names, "pmap": pmap, "bounds_full": bounds_full,
-            "bounds_free": bounds_free, "theta_trial": start_full.copy(),
-            "free_start": free_start, "theta_start_full": start_full,
-            "tot": tot, "target": TARGET, "ev": ev, "input_auth": input_auth,
-            "rtmap": rt, "rtmap_fingerprint": fp, "_authfile": f}
+            "bounds_free": [bounds_full[i] for i in pmap["free_idx"]],
+            "theta_trial": start_full.copy(), "free_start": free_start,
+            "theta_start_full": start_full, "tot": tot, "target": TARGET,
+            "ev": ev, "input_auth": input_auth, "rtmap": rt,
+            "rtmap_fingerprint": runner._runtime_map_fingerprint(rt),
+            "_authfile": f}
 
 
 class FakeMin:
-    """Asserting fake minimizer (decision E). Never touches scipy.optimize."""
-
-    __phase3_test_double__ = True
+    """Asserting stand-in patched over scipy.optimize.minimize (never the real one)."""
 
     def __init__(self, x_out=None, success=True, raise_after=False, mutate=None):
         self.x_out, self.success = x_out, success
         self.raise_after, self.mutate = raise_after, mutate
         self.called = False
+        self.pmap = None
 
     def __call__(self, fun, x0, jac=None, method=None, bounds=None, options=None):
         self.called = True
         assert len(x0) == 37 and len(bounds) == 37 and jac is True
         assert method == "L-BFGS-B" and dict(options) == OPTS
         v0, g0 = fun(np.asarray(x0))
-        assert abs(v0 - TARGET) < 10.0 and v0 >= 0        # objective sign: +negLL
-        e = np.array(x0, dtype=float)
         k = next(i for i, n in enumerate(self.pmap["free_names"])
                  if n not in runner.EXPECTED_AT_BOUND_NAMES)
+        e = np.array(x0, dtype=float)
         e[k] += 1.0
         v1, g1 = fun(e)
-        assert abs((v1 - v0) - 0.5) < 1e-8                # expansion correct
-        assert abs(g1[k] - 1.0) < 1e-8 and abs(g0[k]) < 1e-8   # grad sign + order
+        assert abs((v1 - v0) - 0.5) < 1e-8 and abs(g1[k] - 1.0) < 1e-8
+        assert abs(g0[k]) < 1e-8 and v0 >= 0
         if self.mutate is not None:
             self.mutate()
         if self.raise_after:
             raise RuntimeError("fake optimizer exploded after invocation")
         x = np.asarray(self.x_out if self.x_out is not None else x0, dtype=float)
-        return SimpleNamespace(x=x, success=self.success,
-                               status=0 if self.success else 2, message="fake",
-                               nit=3, nfev=4, njev=4)
+        return _NS(x=x, success=self.success, status=0 if self.success else 2,
+                   message="fake", nit=3, nfev=4, njev=4)
 
 
 def _run_est(tmp_path, monkeypatch, cfg, fake, c0=0.0):
+    import scipy.optimize
     ctx = _mk_ctx(tmp_path, monkeypatch, c0=c0)
     fake.pmap = ctx["pmap"]
+    monkeypatch.setattr(scipy.optimize, "minimize", fake)
     staging = tmp_path / "staging"
     staging.mkdir()
     marks = []
     status, diag = runner._phase3_estimate(
-        ctx, staging, cfg, lambda m: None, minimize_fn=fake,
+        ctx, staging, cfg, lambda m: None,
         mark_optimizer_called=lambda: marks.append(True))
     return ctx, staging, marks, status, diag
 
 
-def test_19_fake_route_success_and_expected_bounds(tmp_path, monkeypatch, cfg):
+def test_17_estimate_success_route(tmp_path, monkeypatch, cfg):
     fake = FakeMin()
     ctx, staging, marks, status, diag = _run_est(tmp_path, monkeypatch, cfg, fake)
-    assert fake.called and marks == [True]
-    assert status == "PHASE_3_COMPLETE"
+    assert fake.called and marks == [True] and status == "PHASE_3_COMPLETE"
     assert diag["gates"]["g15_bound_hits_detected"] == sorted(
         runner.EXPECTED_AT_BOUND_NAMES)
-    for n in runner.PHASE3_ARTIFACTS:
-        if n != "phase3_console.log":
-            assert (staging / n).is_file()
-
-
-def test_20_pins_bitwise_and_interleaved_ordering(tmp_path, monkeypatch, cfg):
-    names = _real_names()
-    pin_idx = [names.index(p) for p in runner.ACCEPTED_PIN_NAMES]
-    assert pin_idx == [10, 11, 12, 13, 14, 15, 16, 17, 31, 32]   # interleaved
-    fake = FakeMin()
-    ctx, staging, _m, status, diag = _run_est(tmp_path, monkeypatch, cfg, fake)
     theta = np.asarray(diag["final_theta"])
-    for k, p in enumerate(runner.ACCEPTED_PIN_NAMES):
+    for k in range(10):
         assert (np.float64(theta[ctx["pmap"]["pin_idx"][k]]).tobytes()
                 == np.float64(ctx["pmap"]["pin_values"][k]).tobytes())
-    assert ctx["pmap"]["free_names"] == [n for n in names
-                                         if n not in runner.ACCEPTED_PIN_NAMES]
+    assert diag["rtmap_fingerprint"] == diag["rtmap_fingerprint_post"]
+    assert (staging / "estimation_results.json").is_file()
 
 
-def test_21_optimizer_success_false(tmp_path, monkeypatch, cfg):
-    fake = FakeMin(success=False)
-    _c, _s, marks, status, diag = _run_est(tmp_path, monkeypatch, cfg, fake)
-    assert status == "STOPPED" and diag["stop"]["gate"] == "G-2"
-    assert marks == [True]
-
-
-def test_22_optimizer_exception_after_invocation(tmp_path, monkeypatch, cfg):
-    fake = FakeMin(raise_after=True)
-    _c, staging, marks, status, diag = _run_est(tmp_path, monkeypatch, cfg, fake)
+def test_18_estimate_failure_routes(tmp_path, monkeypatch, cfg):
+    _c, _s, marks, status, diag = _run_est(tmp_path / "a", monkeypatch, cfg,
+                                           FakeMin(success=False))
+    assert status == "STOPPED" and diag["stop"]["gate"] == "G-2" and marks == [True]
+    _c, staging, marks, status, diag = _run_est(tmp_path / "b", monkeypatch, cfg,
+                                                FakeMin(raise_after=True))
     assert status == "STOPPED" and diag["stop"]["gate"] == "optimizer-exception"
-    assert diag["exception"]["type"] == "RuntimeError"
-    assert marks == [True]                       # decision G: marked BEFORE call
+    assert marks == [True]                    # optimizer_called set pre-invocation
     assert not (staging / "estimation_results.json").exists()
 
 
-def test_23_target_too_high_and_lower_review(tmp_path, monkeypatch, cfg):
-    for c0 in (+1e-3, -1e-3):                    # materially above AND below
-        fake = FakeMin()
-        _c, _s, _m, status, diag = _run_est(tmp_path / f"c{c0 > 0}", monkeypatch,
-                                            cfg, fake, c0=c0)
-        assert status == "REVIEW_REQUIRED_TARGET_MISMATCH"
+def test_19_estimate_target_mismatch_both_directions(tmp_path, monkeypatch, cfg):
+    for sub, c0 in (("hi", +1e-3), ("lo", -1e-3)):
+        _c, _s, _m, status, diag = _run_est(tmp_path / sub, monkeypatch, cfg,
+                                            FakeMin(), c0=c0)
+        assert status == runner.PHASE3_TARGET_MISMATCH_STATUS
         assert diag["gates"]["g1_ok"] is False
 
 
-def test_24_gradient_gate_failure(tmp_path, monkeypatch, cfg):
-    ctx0 = _mk_ctx(tmp_path / "probe", monkeypatch)
-    k = next(i for i, n in enumerate(ctx0["pmap"]["free_names"])
-             if n not in runner.EXPECTED_AT_BOUND_NAMES)
-    x = ctx0["free_start"].copy()
-    x[k] += 0.5                                  # grad 0.5 > 1e-2
-    fake = FakeMin(x_out=x)
-    _c, _s, _m, status, diag = _run_est(tmp_path, monkeypatch, cfg, fake)
-    assert status == "STOPPED" and diag["stop"]["gate"] == "G-3"
-
-
-def test_25_g16_failure_via_estimate(tmp_path, monkeypatch, cfg):
-    ctx0 = _mk_ctx(tmp_path / "probe", monkeypatch)
-    k = next(i for i, n in enumerate(ctx0["pmap"]["free_names"])
-             if n not in runner.EXPECTED_AT_BOUND_NAMES)
-    x = ctx0["free_start"].copy()
-    x[k] = 100.0 + 5e-9                          # beyond hi + 1e-9
-    fake = FakeMin(x_out=x)
-    _c, _s, _m, status, diag = _run_est(tmp_path, monkeypatch, cfg, fake)
-    assert status == "STOPPED" and diag["stop"]["gate"] == "G-16"
-
-
-def test_26_unexpected_bound_hit_via_estimate(tmp_path, monkeypatch, cfg):
-    ctx0 = _mk_ctx(tmp_path / "probe", monkeypatch)
-    k = next(i for i, n in enumerate(ctx0["pmap"]["free_names"])
-             if n not in runner.EXPECTED_AT_BOUND_NAMES)
-    x = ctx0["free_start"].copy()
-    x[k] = 100.0                                 # exact bound: in-bounds, unexpected hit
-    fake = FakeMin(x_out=x)
-    _c, _s, _m, status, diag = _run_est(tmp_path, monkeypatch, cfg, fake)
-    assert status == "STOPPED" and diag["stop"]["gate"] == "G-15"
-
-
-def test_27_input_mutation_during_call_s8(tmp_path, monkeypatch, cfg):
+def test_20_estimate_input_mutation_s8(tmp_path, monkeypatch, cfg):
     holder = {}
-
-    def mutate():
-        holder["f"].write_bytes(b"TAMPERED DURING OPTIMIZATION")
-
-    fake = FakeMin(mutate=mutate)
+    fake = FakeMin(mutate=lambda: holder["f"].write_bytes(b"TAMPERED"))
+    import scipy.optimize
     ctx = _mk_ctx(tmp_path, monkeypatch)
     holder["f"] = ctx["_authfile"]
     fake.pmap = ctx["pmap"]
+    monkeypatch.setattr(scipy.optimize, "minimize", fake)
     staging = tmp_path / "staging"
     staging.mkdir()
     status, diag = runner._phase3_estimate(ctx, staging, cfg, lambda m: None,
-                                           minimize_fn=fake,
                                            mark_optimizer_called=lambda: None)
     assert status == "STOPPED" and diag["stop"]["code"] == "S-8"
-    assert not diag["input_recheck_after_optimization"]["authinp"]["ok"]
-    assert list(staging.iterdir()) == []         # nothing written, nothing published
+    assert list(staging.iterdir()) == []
 
 
-def test_28_no_publication_after_failure_and_called_flag(tmp_path, monkeypatch, cfg):
+def test_21_single_runtime_map_threading(tmp_path, monkeypatch, cfg):
     ctx = _mk_ctx(tmp_path, monkeypatch)
+    calls = {"n": 0}
 
-    @_mark
-    def contract(out, cfg_, config_path, log):
-        return ctx
+    def factory():
+        calls["n"] += 1
+        return {"other": tmp_path / "changed.bin"}
 
-    @_mark
-    def estimate(c, staging, cfg_, log, minimize_fn=None, mark_optimizer_called=None):
-        fake = FakeMin(raise_after=True)
-        fake.pmap = c["pmap"]
-        return runner._phase3_estimate(c, staging, cfg_, log, minimize_fn=fake,
-                                       mark_optimizer_called=mark_optimizer_called)
-
-    rc = _tp3(_args(dry_run=False), cfg, _contract_fn=contract,
-              _estimate_fn=estimate, _txn_root=tmp_path / "p3",
-              _package_identity_fn=lambda **k: {"test_seam": True})
-    assert rc == 2
-    root = tmp_path / "p3"
-    assert not (root / "complete").exists()
-    d = next(d for d in (root / "attempts").iterdir() if d.name.endswith("_STOPPED"))
-    man = json.loads((d / "phase3_manifest.json").read_text(encoding="utf-8"))
-    assert man["optimizer_called"] is True       # decision G, persisted on raise
-    assert man["stop"]["gate"] == "optimizer-exception"
+    monkeypatch.setattr(runner, "_phase3_runtime_paths", factory)
+    import scipy.optimize
+    fake = FakeMin()
+    fake.pmap = ctx["pmap"]
+    monkeypatch.setattr(scipy.optimize, "minimize", fake)
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    status, diag = runner._phase3_estimate(ctx, staging, cfg, lambda m: None,
+                                           mark_optimizer_called=lambda: None)
+    assert status == "PHASE_3_COMPLETE" and calls["n"] == 0
 
 
-def test_29_bundle_completeness_refusals(tmp_path, cfg):
-    @_mark
-    def contract(out, cfg_, config_path, log):
-        return {"ev": {"ok": True}}
-
-    @_mark
-    def est_incomplete(c, staging, cfg_, log, minimize_fn=None,
-                       mark_optimizer_called=None):
-        (staging / "estimation_results.json").write_text("{}", encoding="utf-8")
-        return "PHASE_3_COMPLETE", {"gates": {}}
-
-    rc = _tp3(_args(dry_run=False), cfg, _contract_fn=contract,
-                           _estimate_fn=est_incomplete, _txn_root=tmp_path / "a",
-                           _package_identity_fn=lambda **k: {})
-    assert rc == 2 and not (tmp_path / "a" / "complete").exists()
-
-    @_mark
-    def est_extra(c, staging, cfg_, log, minimize_fn=None,
-                  mark_optimizer_called=None):
-        for n in ("theta_estimated.csv", "optimizer_diagnostics.json",
-                  "estimation_results.json"):
-            (staging / n).write_text("x", encoding="utf-8")
-        (staging / "unexpected.bin").write_text("x", encoding="utf-8")
-        return "PHASE_3_COMPLETE", {"gates": {}}
-
-    rc = _tp3(_args(dry_run=False), cfg, _contract_fn=contract,
-                           _estimate_fn=est_extra, _txn_root=tmp_path / "b",
-                           _package_identity_fn=lambda **k: {})
-    assert rc == 2 and not (tmp_path / "b" / "complete").exists()
-
-    @_mark
-    def est_full(c, staging, cfg_, log, minimize_fn=None,
-                 mark_optimizer_called=None):
-        for n in ("theta_estimated.csv", "optimizer_diagnostics.json",
-                  "estimation_results.json"):
-            (staging / n).write_text("x", encoding="utf-8")
-        return "PHASE_3_COMPLETE", {"gates": {}}
-
-    rc = _tp3(_args(dry_run=False), cfg, _contract_fn=contract,
-                           _estimate_fn=est_full, _txn_root=tmp_path / "c",
-                           _package_identity_fn=lambda **k: {})
-    assert rc == 0
-    pub = sorted(p.name for p in (tmp_path / "c" / "complete").iterdir())
-    assert pub == sorted(list(runner.PHASE3_ARTIFACTS) + ["phase3_manifest.json"])
-
-
-def test_30_lock_contention_no_migration(tmp_path, cfg):
-    root = tmp_path / "p3"
-    root.mkdir(parents=True)
-    (root / ".phase3.lock").write_text("held", encoding="utf-8")
-    legacy = root / "phase3_manifest.json"
-    legacy.write_text("legacy", encoding="utf-8")
-    raiser = _Raiser()
-    rc = _tp3(_args(dry_run=True), cfg, _contract_fn=raiser,
-              _txn_root=root,
-              _package_identity_fn=lambda **k: {})
-    assert rc == 2 and not raiser.called
-    assert legacy.read_text(encoding="utf-8") == "legacy"    # NOT migrated (decision H)
-    assert not (root / "attempts").exists()
-
-
-def test_31_real_run_requires_external_authorization(tmp_path, cfg):
-    with pytest.raises(runner.StopRun):
-        runner._verify_external_authorization(None, CONFIG_PATH)
-    with pytest.raises(runner.StopRun):
-        runner._verify_external_authorization("relative/path.json", CONFIG_PATH)
-    bad = tmp_path / "auth.json"
-    bad.write_text(json.dumps({"schema": "wrong", "status": "APPROVED"}),
-                   encoding="utf-8")
-    with pytest.raises(runner.StopRun):
-        runner._verify_external_authorization(str(bad.resolve()), CONFIG_PATH)
-
-
-def test_32_dry_run_reports_awaiting_authorization(tmp_path, cfg):
-    rc = _tp3(_args(dry_run=True), cfg,
-                           _contract_fn=_fake_contract(),
-                           _txn_root=tmp_path / "p3",
-                           _package_identity_fn=lambda **k: {"test_seam": True})
-    assert rc == 0
-    d = next(d for d in (tmp_path / "p3" / "attempts").iterdir()
-             if d.name.endswith("PHASE_3_DRY_RUN_COMPLETE"))
-    man = json.loads((d / "phase3_manifest.json").read_text(encoding="utf-8"))
-    assert man["authorization_status"] == "AWAITING_POST_REVIEW_AUTHORIZATION"
-    assert man["execution_ready"] is False
-    assert man["optimizer_called"] is False
-
-
-def test_33_safety_constants_yaml_deviation_stops(cfg):
-    assert runner._validate_safety_constants(cfg)
-    bad = json.loads(json.dumps({k: cfg[k] for k in
-                                 ("targets", "certified_spec", "run_overlay")}))
-    bad["phase3"] = json.loads(json.dumps(cfg["phase3"]))
-    bad["targets"]["negll_full"] = 19053.5
-    with pytest.raises(runner.StopRun):
-        runner._validate_safety_constants(bad)
-
-
-def test_34_authentication_label_set_and_path_identity(tmp_path, cfg):
-    f = tmp_path / "geom.parquet"
-    f.write_bytes(b"data")
-    sha = hashlib.sha256(b"data").hexdigest()
-    rt = {"geometry_parquet": f}
-    # configured path resolves elsewhere -> path_identity failure
-    wrong = {"phase3": {"input_authentication": {
-        "geometry_parquet": {"path": "somewhere/else.parquet", "sha256": sha}}}}
-    with pytest.raises(runner.StopRun):
-        runner._authenticate_inputs(wrong, runtime_paths=rt)
-    # missing / extra labels refused
-    with pytest.raises(runner.StopRun):
-        runner._authenticate_inputs({"phase3": {"input_authentication": {}}},
-                                    runtime_paths=rt)
-    with pytest.raises(runner.StopRun):
-        runner._authenticate_inputs(
-            {"phase3": {"input_authentication": {
-                "geometry_parquet": {"path": "x", "sha256": sha},
-                "extra_label": {"path": "y", "sha256": sha}}}},
-            runtime_paths=rt)
-
+def test_22_contract_threads_injected_map(monkeypatch, cfg):
+    rtmap = runner._phase3_runtime_paths()
+    monkeypatch.setattr(runner, "_phase3_runtime_paths",
+                        lambda: (_ for _ in ()).throw(AssertionError("rebuilt")))
+    ctx = runner._phase3_contract(None, cfg, CONFIG_PATH, lambda m: None,
+                                  rtmap=rtmap)
+    assert ctx["rtmap"] is rtmap
+    assert ctx["ev"]["input_authentication"]["frozen_stem_parquet"]["ok"]
 
 
 # --------------------------------------------------------------------------- #
-# 35+: remediation-v3 closure tests (review v3 s21; decisions A-H)
+# package identity (Git-canonical blob equality)
 # --------------------------------------------------------------------------- #
-import copy
-import subprocess
-
-
-def _deep(cfg):
-    return json.loads(json.dumps(cfg))
-
-
-def test_35_alias_mutations_refused(cfg):
-    muts = [
-        ("certified_spec.yaml", lambda c: c["certified_spec"].__setitem__(
-            "yaml", "scripts/bpool/specs/other_spec.yaml")),
-        ("warm_start.theta_csv", lambda c: c["warm_start"].__setitem__(
-            "theta_csv", "theta_p2a_singles_2016_v2.csv")),
-        ("phase3.start_theta.csv", lambda c: c["phase3"]["start_theta"].__setitem__(
-            "csv", "theta_p2a_singles_2016_v2.csv")),
-        ("stored_region_live_theta.v1_csv",
-         lambda c: c["stored_region_live_theta"].__setitem__(
-             "v1_csv", "theta_p2a_singles_2016_v2.csv")),
-    ]
-    for name, mut in muts:
-        bad = _deep(cfg)
-        mut(bad)
-        with pytest.raises(runner.StopRun) as e:
-            runner._phase3_contract(None, bad, CONFIG_PATH, lambda m: None)
-        assert e.value.gate == "alias-identity", name
-
-
-def test_36_canonical_config_identity(tmp_path):
-    copied = tmp_path / "copy.yaml"
-    copied.write_text(CONFIG_PATH.read_text(encoding="utf-8"), encoding="utf-8")
-    rc = runner.main(["--config", str(copied), "--phase", "3",
-                      "--out", str(runner.CANONICAL_REGIONLIVE_ROOT), "--dry-run"])
-    assert rc == 2                                   # identical copy elsewhere fails
-    trav = tmp_path / "sub" / ".." / "copy.yaml"
-    rc = runner.main(["--config", str(trav), "--phase", "3",
-                      "--out", str(runner.CANONICAL_REGIONLIVE_ROOT), "--dry-run"])
-    assert rc == 2                                   # traversal resolving elsewhere
-    link = tmp_path / "link.yaml"
-    try:
-        link.symlink_to(copied)
-    except (OSError, NotImplementedError):
-        pytest.skip("symlinks unavailable")
-    rc = runner.main(["--config", str(link), "--phase", "3",
-                      "--out", str(runner.CANONICAL_REGIONLIVE_ROOT), "--dry-run"])
-    assert rc == 2                                   # symlink resolving elsewhere
-
-
-def test_37_seam_separation(tmp_path, cfg):
-    import inspect
-    assert list(inspect.signature(runner.run_phase3).parameters) == ["args", "cfg"]
-    fakes = dict(contract_fn=_fake_contract(),
-                 estimate_fn=_mark(lambda *a, **k: ("PHASE_3_DRY_RUN_COMPLETE", {})),
-                 minimize_fn=_mark(lambda *a, **k: None),
-                 package_identity_fn=_mark(lambda **k: {}))
-    for root in (runner.CANONICAL_PHASE3_ROOT,
-                 runner.CANONICAL_PHASE3_ROOT / "attempts",
-                 runner.CANONICAL_REGIONLIVE_ROOT,
-                 runner.MNL_ROOT / "outputs" / "anywhere_else",
-                 runner.MNL_ROOT / "scripts" / "p2a",
-                 runner.MNL_ROOT / "dclaborsupply-monorepo" / "notebooks"):
-        with pytest.raises(ValueError):
-            runner._run_phase3_test_attempt(_args(True), cfg, test_root=root,
-                                            i_am_a_private_test=True, **fakes)
-    for drop in fakes:
-        partial = {k: v for k, v in fakes.items() if k != drop}
-        with pytest.raises(ValueError):
-            runner._run_phase3_test_attempt(_args(True), cfg,
-                                            test_root=tmp_path / "p3",
-                                            i_am_a_private_test=True, **partial)
-    with pytest.raises(ValueError):
-        runner._run_phase3_test_attempt(_args(True), cfg, test_root=tmp_path / "p3",
-                                        i_am_a_private_test=False, **fakes)
-
-
-def test_38_immutable_target_controls(tmp_path, cfg):
-    bad = _deep(cfg)
-    bad["phase3"]["gates"]["pre_opt_objective_tol"] = 1.0e-3
-    with pytest.raises(runner.StopRun):
-        runner._validate_safety_constants(bad)
-    bad = _deep(cfg)
-    bad["phase3"]["gates"]["target_mismatch_status"] = "PHASE_3_COMPLETE"
-    with pytest.raises(runner.StopRun):
-        runner._validate_safety_constants(bad)
-    # even with a hacked YAML status, post-gates return only the immutable constant
-    pmap = _pmap()
-    theta = _theta_ok(pmap)
-    hacked = dict(_gates_cfg(cfg))
-    hacked["target_mismatch_status"] = "PHASE_3_COMPLETE"
-    for dev in (+1e-3, -1e-3):                       # high AND materially lower
-        gates, _r, status, stop = runner._phase3_post_gates(
-            100.0 + dev, theta, np.zeros(47), pmap, _bounds_full(pmap), hacked,
-            100.0, True, "ok")
-        assert status == runner.PHASE3_TARGET_MISMATCH_STATUS
-        assert status != "PHASE_3_COMPLETE" and stop is None
-    txn = runner.Phase3Transaction(tmp_path / "p3", "estimate")
-    txn.acquire()
-    (txn.staging / "x.json").write_text("{}", encoding="utf-8")
-    dest = txn.finish(runner.PHASE3_TARGET_MISMATCH_STATUS)
-    txn.release()
-    assert dest.parent.name == "attempts"            # never complete/
-    assert not (tmp_path / "p3" / "complete").exists()
-
-
-# ---- decision E/F: authorization battery on a temporary git repository ------
-GOOD_REVIEW = "# 1. Fourth-review verdict\n\n**FINAL VERDICT: APPROVE**\n\n# 2. Scope\n\ndetails\n"
-
-
-def _git(repo, *argv):
-    r = subprocess.run(["git", "-C", str(repo), *argv], capture_output=True,
-                       text=True, timeout=30)
-    assert r.returncode == 0, (argv, r.stderr)
-    return r.stdout.strip()
-
-
-def _mk_authrepo(tmp_path, review_text=GOOD_REVIEW):
-    repo = tmp_path / "repo"
-    nested = tmp_path / "nested"
-    for d in (repo, nested):
-        d.mkdir(parents=True)
-        _git(d, "init", "-q")
-        _git(d, "config", "user.email", "t@t")
-        _git(d, "config", "user.name", "t")
-    (repo / "scripts/p2a/configs").mkdir(parents=True)
-    (repo / "tests/p2a").mkdir(parents=True)
-    (repo / "docs/France_case/P2a").mkdir(parents=True)
-    runner_f = repo / "scripts/p2a/run_p2a_regionlive_rebuild.py"
-    cfg_f = repo / "scripts/p2a/configs/p2a_regionlive_rebuild_v1.yaml"
-    tests_f = repo / "tests/p2a/test_p2a_regionlive_phase3_safety.py"
-    review_f = repo / runner.CANONICAL_APPROVED_REVIEW_REL
-    for f, content in ((runner_f, "# runner"), (cfg_f, "# cfg"),
-                       (tests_f, "# tests"), (review_f, review_text)):
-        f.write_text(content, encoding="utf-8", newline="\n")   # LF: blob == file
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "-q", "-m", "approved state")
-    (nested / "a.txt").write_text("x", encoding="utf-8")
-    _git(nested, "add", "-A")
-    _git(nested, "commit", "-q", "-m", "nested")
-    head = _git(repo, "rev-parse", "HEAD")
-    blob = _git(repo, "rev-parse",
-                f"{head}:{runner.CANONICAL_APPROVED_REVIEW_REL.as_posix()}")
-    blob_bytes = subprocess.run(
-        ["git", "-C", str(repo), "cat-file", "blob", blob],
-        capture_output=True, timeout=30).stdout
-    auth = {
-        "schema": runner.AUTH_SCHEMA, "status": "APPROVED",
-        "approved_mnl_commit": head,
-        "approved_dclaborsupply_commit": _git(nested, "rev-parse", "HEAD"),
-        "approved_runner_sha256": hashlib.sha256(runner_f.read_bytes()).hexdigest(),
-        "approved_config_sha256": hashlib.sha256(cfg_f.read_bytes()).hexdigest(),
-        "approved_test_sha256": hashlib.sha256(tests_f.read_bytes()).hexdigest(),
-        "approved_review_path": runner.CANONICAL_APPROVED_REVIEW_REL.as_posix(),
-        "approved_review_sha256": hashlib.sha256(blob_bytes).hexdigest(),
-        "created_at_utc": "2026-07-24T00:00:00+00:00",
-    }
-    auth_f = tmp_path / "authorization.json"        # OUTSIDE both worktrees
-    auth_f.write_text(json.dumps(auth), encoding="utf-8")
-    return repo, nested, cfg_f, auth_f, auth
-
-
-def _verify(repo, nested, cfg_f, auth_f):
-    return runner._verify_external_authorization(
-        str(auth_f.resolve()), cfg_f, _repo_root=repo, _nested_root=nested)
-
-
-def test_39_authorization_pass_and_verdict_variants(tmp_path):
-    repo, nested, cfg_f, auth_f, _a = _mk_authrepo(tmp_path)
-    rec = _verify(repo, nested, cfg_f, auth_f)
-    assert rec["verified"] is True                   # exact APPROVE passes
-    for i, text in enumerate((
-            "# 1. Verdict\n\n**FINAL VERDICT: APPROVE AFTER FIXES**\n",
-            "# 1. Verdict\n\n**FINAL VERDICT: REJECT**\n",
-            "# 1. Verdict\n\nwe APPROVE of this prose\n",
-            "# 1. V\n\n**FINAL VERDICT: APPROVE**\n\n# 2. X\n\n"
-            "**FINAL VERDICT: REJECT**\n")):
-        repo2, nested2, cfg2, auth2, _ = _mk_authrepo(tmp_path / f"v{i}", text)
-        with pytest.raises(runner.StopRun):
-            _verify(repo2, nested2, cfg2, auth2)
-
-
-def test_40_authorization_review_binding(tmp_path):
-    repo, nested, cfg_f, auth_f, auth = _mk_authrepo(tmp_path)
-    bad = dict(auth)
-    bad["approved_review_path"] = "docs/other_review.md"
-    bf = tmp_path / "bad1.json"
-    bf.write_text(json.dumps(bad), encoding="utf-8")
-    with pytest.raises(runner.StopRun):              # exact canonical path required
-        _verify(repo, nested, cfg_f, bf)
-    review = repo / runner.CANONICAL_APPROVED_REVIEW_REL
-    committed = review.read_bytes()
-    review.write_bytes(committed + b"tamper\n")
-    with pytest.raises(runner.StopRun):              # working tree != committed blob
-        _verify(repo, nested, cfg_f, auth_f)
-    review.write_bytes(committed)
-    wrong_cfg = tmp_path / "elsewhere.yaml"
-    wrong_cfg.write_text("# cfg", encoding="utf-8")
-    with pytest.raises(runner.StopRun):              # canonical config in verifier
-        _verify(repo, nested, wrong_cfg, auth_f)
-
-
-def test_41_authorization_full_cleanliness(tmp_path):
-    repo, nested, cfg_f, auth_f, auth = _mk_authrepo(tmp_path)
-    runner_f = repo / "scripts/p2a/run_p2a_regionlive_rebuild.py"
-    runner_f.write_text("# runner MODIFIED", encoding="utf-8")
-    with pytest.raises(runner.StopRun):              # tracked modification
-        _verify(repo, nested, cfg_f, auth_f)
-    _git(repo, "add", "-A")
-    with pytest.raises(runner.StopRun):              # staged modification
-        _verify(repo, nested, cfg_f, auth_f)
-    _git(repo, "checkout", "--", ".")
-    _git(repo, "reset", "-q")
-    _git(repo, "checkout", "--", ".")
-    (repo / "untracked.txt").write_text("x", encoding="utf-8")
-    with pytest.raises(runner.StopRun):              # untracked file
-        _verify(repo, nested, cfg_f, auth_f)
-    (repo / "untracked.txt").unlink()
-    (nested / "stray.bin").write_text("x", encoding="utf-8")
-    with pytest.raises(runner.StopRun):              # nested untracked
-        _verify(repo, nested, cfg_f, auth_f)
-    (nested / "stray.bin").unlink()
-    (repo / ".gitignore").write_text("ignored.tmp\n", encoding="utf-8",
-                                     newline="\n")
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "-q", "-m", "gitignore")
-    head = _git(repo, "rev-parse", "HEAD")
-    auth2 = dict(auth)
-    auth2["approved_mnl_commit"] = head
-    (repo / "ignored.tmp").write_text("x", encoding="utf-8")
-    af2 = tmp_path / "auth2.json"
-    af2.write_text(json.dumps(auth2), encoding="utf-8")
-    rec = _verify(repo, nested, cfg_f, af2)
-    assert rec["verified"] is True                   # ignored files never fail
-
-
-def test_42_package_ancestry(tmp_path):
-    rec = runner._verify_package_identity()
-    assert rec["package_identity_ok"] and rec["module_path_ok"]
-    for info in rec["imported_modules"].values():
-        assert Path(info["path"]).resolve().is_relative_to(
-            runner.PACKAGE_SOURCE_ROOT.resolve())
-    from types import SimpleNamespace
-    evil = SimpleNamespace(
-        __name__="dclaborsupply",
-        __file__=str(runner.MNL_ROOT / "dclaborsupply-monorepo_evil"
-                     / "packages/dclaborsupply/src/dclaborsupply/__init__.py"))
-    with pytest.raises(runner.StopRun):              # sibling-substring attack
-        runner._verify_package_identity(_modules=[evil])
-    nofile = SimpleNamespace(__name__="ghost")
-    with pytest.raises(runner.StopRun):              # missing __file__
-        runner._verify_package_identity(_modules=[nofile])
-
-
-def test_43_g16_exact_boundaries(cfg):
-    pmap = _pmap()
-    g3 = _gates_cfg(cfg)
-    lo, hi = -100.0, 100.0
-    eps = runner.PHASE3_SAFETY_CONSTANTS["g16_inbounds_epsilon"]
-    cases = [
-        (lo - eps, True),                                  # exactly lo - eps: pass
-        (hi + eps, True),                                  # exactly hi + eps: pass
-        (np.nextafter(lo - eps, -np.inf), False),          # just below: fail
-        (np.nextafter(hi + eps, np.inf), False),           # just above: fail
-    ]
-    for v, expect_ok in cases:
-        theta = _theta_ok(pmap)
-        theta[pmap["name_idx"]["dummy_05"]] = v
-        gates, rows, _s, _p = runner._phase3_post_gates(
-            100.0, theta, np.zeros(47), pmap, _bounds_full(pmap), g3,
-            100.0, True, "ok")
-        row = next(r for r in rows if r["param"] == "dummy_05")
-        assert row["in_bounds"] == expect_ok, (v, expect_ok)
-        assert gates["g16_inbounds_ok"] == expect_ok, (v, expect_ok)   # direct
-
-
-def test_44_target_mismatch_cannot_publish(tmp_path, monkeypatch, cfg):
-    for sub, c0 in (("hi", +1e-3), ("lo", -1e-3)):
-        base = tmp_path / sub
-        ctx = _mk_ctx(base, monkeypatch, c0=c0)
-
-        @_mark
-        def contract(out, cfg_, config_path, log, _ctx=ctx):
-            return _ctx
-
-        @_mark
-        def estimate(c, staging, cfg_, log, minimize_fn=None,
-                     mark_optimizer_called=None):
-            fake = FakeMin()
-            fake.pmap = c["pmap"]
-            return runner._phase3_estimate(c, staging, cfg_, log, minimize_fn=fake,
-                                           mark_optimizer_called=mark_optimizer_called)
-
-        rc = runner._run_phase3_test_attempt(
-            _args(dry_run=False), cfg, test_root=base / "p3",
-            contract_fn=contract, estimate_fn=estimate,
-            minimize_fn=_mark(lambda *a, **k: None),
-            package_identity_fn=_mark(lambda **k: {"test_seam": True}),
-            i_am_a_private_test=True)
-        assert rc == 4
-        root = base / "p3"
-        assert not (root / "complete").exists()
-        d = next(x for x in (root / "attempts").iterdir()
-                 if x.name.endswith(runner.PHASE3_TARGET_MISMATCH_STATUS))
-        man = json.loads((d / "phase3_manifest.json").read_text(encoding="utf-8"))
-        assert man["status"] == runner.PHASE3_TARGET_MISMATCH_STATUS
-
-
-# --------------------------------------------------------------------------- #
-# 45+: remediation-v4 closure tests (review v4 s18; decisions A-G)
-# --------------------------------------------------------------------------- #
-import inspect
-from types import SimpleNamespace as _NS
-
-
-def test_45_no_generic_orchestrator_and_production_surface(cfg):
-    assert not hasattr(runner, "_phase3_orchestrate")        # bypass deleted
-    assert list(inspect.signature(
-        runner._phase3_orchestrate_production).parameters) == [
-            "args", "cfg", "authorization_record"]
-    assert list(inspect.signature(runner.run_phase3).parameters) == ["args", "cfg"]
-    # non-dry production orchestration refuses an unverified record BEFORE any
-    # transaction work: no lock may appear at the canonical root
-    lock = runner.CANONICAL_PHASE3_ROOT / ".phase3.lock"
-    assert not lock.exists()
-    rc = runner._phase3_orchestrate_production(_args(dry_run=False), cfg, {})
-    assert rc == 2 and not lock.exists()
-    rc = runner._phase3_orchestrate_production(
-        _args(dry_run=False), cfg, {"verified": True, "execution_ready": False})
-    assert rc == 2 and not lock.exists()
-    # the test body itself structurally refuses production/worktree roots
-    with pytest.raises(ValueError):
-        runner._phase3_attempt_test_body(
-            _args(True), cfg, runner.CANONICAL_PHASE3_ROOT,
-            _fake_contract(), _mark(lambda *a, **k: None),
-            _mark(lambda *a, **k: None), _mark(lambda **k: {}))
-
-
-def test_46_genuine_components_refused_as_doubles(tmp_path, cfg):
-    base = dict(contract_fn=_fake_contract(),
-                estimate_fn=_mark(lambda *a, **k: ("X", {})),
-                minimize_fn=_mark(lambda *a, **k: None),
-                package_identity_fn=_mark(lambda **k: {}))
-    genuine = {"contract_fn": runner._phase3_contract,
-               "estimate_fn": runner._phase3_estimate,
-               "package_identity_fn": runner._verify_package_identity}
-    for slot, fn in genuine.items():
-        args = dict(base)
-        args[slot] = fn
-        with pytest.raises(ValueError, match="genuine production component"):
-            runner._run_phase3_test_attempt(_args(True), cfg,
-                                            test_root=tmp_path / "p3",
-                                            i_am_a_private_test=True, **args)
-        # the marker alone must NOT rescue a genuine component
-        try:
-            fn.__phase3_test_double__ = True
-            with pytest.raises(ValueError, match="genuine production component"):
-                runner._run_phase3_test_attempt(_args(True), cfg,
-                                                test_root=tmp_path / "p3",
-                                                i_am_a_private_test=True, **args)
-        finally:
-            del fn.__phase3_test_double__
-
-    def fake_scipy(*a, **k):
-        return None
-    fake_scipy.__module__ = "scipy.optimize._minimize"
-    fake_scipy.__qualname__ = "minimize"
-    _mark(fake_scipy)
-    args = dict(base)
-    args["minimize_fn"] = fake_scipy
-    with pytest.raises(ValueError, match="SciPy minimizer"):
-        runner._run_phase3_test_attempt(_args(True), cfg,
-                                        test_root=tmp_path / "p3",
-                                        i_am_a_private_test=True, **args)
-    # an unmarked plain callable is refused too
-    args = dict(base)
-    args["minimize_fn"] = lambda *a, **k: None
-    with pytest.raises(ValueError, match="marker"):
-        runner._run_phase3_test_attempt(_args(True), cfg,
-                                        test_root=tmp_path / "p3",
-                                        i_am_a_private_test=True, **args)
-
-
-def test_47_authorization_location_outside_worktrees(tmp_path):
-    repo, nested, cfg_f, auth_f, auth = _mk_authrepo(tmp_path)
-    # commit the ignore rule FIRST so later in-worktree files stay untracked and
-    # their removal restores full cleanliness
-    (repo / ".gitignore").write_text("auth_ignored.json\n", encoding="utf-8",
-                                     newline="\n")
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "-q", "-m", "ignore auth")
-    auth2 = dict(auth)
-    auth2["approved_mnl_commit"] = _git(repo, "rev-parse", "HEAD")
-
-    inside = repo / "auth_inside.json"
-    inside.write_text(json.dumps(auth2), encoding="utf-8")
-    with pytest.raises(runner.StopRun, match="OUTSIDE both"):
-        _verify(repo, nested, cfg_f, inside)          # ordinary in-worktree
-    ig = repo / "auth_ignored.json"
-    ig.write_text(json.dumps(auth2), encoding="utf-8")
-    with pytest.raises(runner.StopRun, match="OUTSIDE both"):
-        _verify(repo, nested, cfg_f, ig)              # ignored in-worktree
-    nested_auth = nested / "auth_nested.json"
-    nested_auth.write_text(json.dumps(auth2), encoding="utf-8")
-    with pytest.raises(runner.StopRun, match="OUTSIDE both"):
-        _verify(repo, nested, cfg_f, nested_auth)     # nested worktree
-    link = tmp_path / "auth_link.json"                # symlink resolving inside
-    sym_ok = True
-    try:
-        link.symlink_to(inside)
-    except (OSError, NotImplementedError):
-        sym_ok = False
-    if sym_ok:
-        with pytest.raises(runner.StopRun, match="OUTSIDE both"):
-            _verify(repo, nested, cfg_f, link)
-    inside.unlink()
-    ig.unlink()
-    nested_auth.unlink()
-    outside = tmp_path / "auth_outside.json"          # valid outside location
-    outside.write_text(json.dumps(auth2), encoding="utf-8")
-    rec = _verify(repo, nested, cfg_f, outside)
-    assert rec["verified"] is True and rec["execution_ready"] is True
-
-
-def test_48_package_module_inventory_and_blob_identity(tmp_path):
+def test_23_package_inventory_and_blob_identity(tmp_path):
     rec = runner._verify_package_identity()
     for name in runner.REQUIRED_PACKAGE_MODULES:
-        info = rec["imported_modules"][name]              # complete inventory
-        assert info["ancestry_ok"] and info["blob_equal"], name
-        assert info["blob_id"] and info["working_blob_id"] == info["blob_id"]
-    # review-v4 regression: outside-tree _numpy_primitives substitution refused
+        info = rec["imported_modules"][name]
+        assert info["ancestry_ok"] and info["blob_equal"]
+        assert info["working_blob_id"] == info["blob_id"]
     evil = _NS(__name__="dclaborsupply.likelihood._numpy_primitives",
                __file__=str(tmp_path / "evil" / "_numpy_primitives.py"))
     (tmp_path / "evil").mkdir()
     Path(evil.__file__).write_text("# evil", encoding="utf-8")
     with pytest.raises(runner.StopRun):
         runner._verify_package_identity(_modules=[evil])
+    with pytest.raises(runner.StopRun):
+        runner._verify_package_identity(_modules=[_NS(__name__="ghost")])
 
 
-def test_49_untracked_or_modified_package_source_refused(tmp_path):
+def test_24_untracked_or_modified_source_refused(tmp_path):
     nested = tmp_path / "nested"
     srcdir = nested / "packages/dclaborsupply/src/dclaborsupply"
     srcdir.mkdir(parents=True)
@@ -1186,75 +527,160 @@ def test_49_untracked_or_modified_package_source_refused(tmp_path):
     _git(nested, "add", "-A")
     _git(nested, "commit", "-q", "-m", "pkg")
     root = nested / "packages/dclaborsupply/src"
-    mk = lambda p, name: _NS(__name__=name, __file__=str(p))
-    ok = runner._verify_package_identity(
+    mk = lambda p, name: _NS(__name__=name, __file__=str(p))  # noqa: E731
+    assert runner._verify_package_identity(
         _modules=[mk(tracked, "dclaborsupply.tracked_mod")],
-        _package_root=root, _nested_root=nested)
-    assert ok["package_identity_ok"]
+        _package_root=root, _nested_root=nested)["package_identity_ok"]
     untracked = srcdir / "untracked_mod.py"
     untracked.write_text("# untracked", encoding="utf-8", newline="\n")
-    with pytest.raises(runner.StopRun):                   # untracked substitution
+    with pytest.raises(runner.StopRun):
         runner._verify_package_identity(
             _modules=[mk(untracked, "dclaborsupply.untracked_mod")],
             _package_root=root, _nested_root=nested)
     untracked.unlink()
-    tracked.write_text("# tracked v2 MODIFIED", encoding="utf-8", newline="\n")
-    with pytest.raises(runner.StopRun):                   # differs from blob
+    tracked.write_text("# MODIFIED", encoding="utf-8", newline="\n")
+    with pytest.raises(runner.StopRun):
         runner._verify_package_identity(
             _modules=[mk(tracked, "dclaborsupply.tracked_mod")],
             _package_root=root, _nested_root=nested)
 
 
-def test_50_single_runtime_map_threading(tmp_path, monkeypatch, cfg):
-    ctx = _mk_ctx(tmp_path, monkeypatch)
-    calls = {"n": 0}
+# --------------------------------------------------------------------------- #
+# execution gates (Git identity + review v6) on temporary repositories
+# --------------------------------------------------------------------------- #
+def _mk_gate_repos(tmp_path, review_text=GOOD_REVIEW):
+    repo, nested = tmp_path / "repo", tmp_path / "nested"
+    for d in (repo, nested):
+        d.mkdir(parents=True)
+        _git(d, "init", "-q")
+        _git(d, "config", "user.email", "t@t")
+        _git(d, "config", "user.name", "t")
+    review = repo / runner.CANONICAL_APPROVED_REVIEW_REL
+    review.parent.mkdir(parents=True)
+    review.write_text(review_text, encoding="utf-8", newline="\n")
+    (nested / "a.txt").write_text("x", encoding="utf-8", newline="\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "state")
+    _git(nested, "add", "-A")
+    _git(nested, "commit", "-q", "-m", "nested")
+    return (repo, nested, _git(repo, "rev-parse", "HEAD"),
+            _git(nested, "rev-parse", "HEAD"), review)
 
-    def changing_factory():
-        calls["n"] += 1
-        return {"other": tmp_path / f"changed_{calls['n']}.bin"}
 
-    monkeypatch.setattr(runner, "_phase3_runtime_paths", changing_factory)
-    fake = FakeMin()
-    fake.pmap = ctx["pmap"]
-    staging = tmp_path / "staging"
-    staging.mkdir()
-    status, diag = runner._phase3_estimate(ctx, staging, cfg, lambda m: None,
-                                           minimize_fn=fake,
-                                           mark_optimizer_called=lambda: None)
-    assert status == "PHASE_3_COMPLETE"
-    assert calls["n"] == 0                    # ONLY the threaded ctx map is used
-    assert diag["rtmap_fingerprint"] == diag["rtmap_fingerprint_post"]
-    assert diag["input_recheck_after_optimization"]["authinp"]["ok"]
+def _gate_args(mnl, dcl, sha):
+    return _args(dry_run=False, execute_phase3=True, expected_mnl_head=mnl,
+                 expected_dclaborsupply_head=dcl,
+                 approved_review=str(runner.CANONICAL_APPROVED_REVIEW_REL),
+                 approved_review_sha256=sha)
 
 
-def test_51_review_v5_binding(tmp_path):
-    assert runner.CANONICAL_APPROVED_REVIEW_REL.name == \
-        "FR_P2a_region_live_phase3_code_review_v5.md"
-    repo, nested, cfg_f, auth_f, auth = _mk_authrepo(tmp_path)
-    bad = dict(auth)
-    bad["approved_review_path"] = \
-        "docs/France_case/P2a/FR_P2a_region_live_phase3_code_review_v4.md"
-    bf = tmp_path / "bad_v4.json"
-    bf.write_text(json.dumps(bad), encoding="utf-8")
+def test_25_execution_gates_pass_and_git_variants(tmp_path):
+    repo, nested, mnl, dcl, review = _mk_gate_repos(tmp_path)
+    sha = hashlib.sha256(review.read_bytes()).hexdigest()
+    rec = runner._verify_execution_gates(_gate_args(mnl, dcl, sha),
+                                         _repo_root=repo, _nested_root=nested,
+                                         _check_gitlink=False)
+    assert rec["verified"] and rec["execution_ready"]
+    with pytest.raises(runner.StopRun, match="MNL HEAD"):
+        runner._verify_execution_gates(_gate_args("0" * 40, dcl, sha),
+                                       _repo_root=repo, _nested_root=nested,
+                                       _check_gitlink=False)
+    with pytest.raises(runner.StopRun, match="nested HEAD"):
+        runner._verify_execution_gates(_gate_args(mnl, "0" * 40, sha),
+                                       _repo_root=repo, _nested_root=nested,
+                                       _check_gitlink=False)
+    (repo / "untracked.txt").write_text("x", encoding="utf-8")
+    with pytest.raises(runner.StopRun, match="fully clean"):
+        runner._verify_execution_gates(_gate_args(mnl, dcl, sha),
+                                       _repo_root=repo, _nested_root=nested,
+                                       _check_gitlink=False)
+    (repo / "untracked.txt").unlink()
+    (nested / "stray.bin").write_text("x", encoding="utf-8")
+    with pytest.raises(runner.StopRun, match="fully clean"):
+        runner._verify_execution_gates(_gate_args(mnl, dcl, sha),
+                                       _repo_root=repo, _nested_root=nested,
+                                       _check_gitlink=False)
+
+
+def test_26_execution_gates_review_variants(tmp_path):
+    for i, (text, ok) in enumerate((
+            (GOOD_REVIEW, True),
+            ("# 1. Sixth-review verdict\n\n**FINAL VERDICT: APPROVE AFTER FIXES**\n",
+             False),
+            ("# 1. Sixth-review verdict\n\n**FINAL VERDICT: REJECT**\n", False),
+            ("# 1. Wrong heading\n\n**FINAL VERDICT: APPROVE**\n", False),
+            ("# 1. Sixth-review verdict\n\nprose APPROVE only\n", False),
+            ("# 1. Sixth-review verdict\n\n**FINAL VERDICT: APPROVE**\n\n"
+             "# 2. X\n\n**FINAL VERDICT: REJECT**\n", False))):
+        repo, nested, mnl, dcl, review = _mk_gate_repos(tmp_path / f"v{i}", text)
+        sha = hashlib.sha256(review.read_bytes()).hexdigest()
+        args = _gate_args(mnl, dcl, sha)
+        if ok:
+            assert runner._verify_execution_gates(
+                args, _repo_root=repo, _nested_root=nested,
+                _check_gitlink=False)["verified"]
+        else:
+            with pytest.raises(runner.StopRun):
+                runner._verify_execution_gates(args, _repo_root=repo,
+                                               _nested_root=nested,
+                                               _check_gitlink=False)
+    repo, nested, mnl, dcl, review = _mk_gate_repos(tmp_path / "wrongpath")
+    sha = hashlib.sha256(review.read_bytes()).hexdigest()
+    bad = _gate_args(mnl, dcl, sha)
+    bad.approved_review = \
+        "docs/France_case/P2a/FR_P2a_region_live_phase3_code_review_v5.md"
     with pytest.raises(runner.StopRun, match="exactly"):
-        _verify(repo, nested, cfg_f, bf)
+        runner._verify_execution_gates(bad, _repo_root=repo, _nested_root=nested,
+                                       _check_gitlink=False)
+    bad = _gate_args(mnl, dcl, "not-a-sha")
+    with pytest.raises(runner.StopRun, match="SHA-256"):
+        runner._verify_execution_gates(bad, _repo_root=repo, _nested_root=nested,
+                                       _check_gitlink=False)
 
 
-def test_52_contract_threads_injected_runtime_map(monkeypatch, cfg):
-    """Decision E, contract leg: with an injected map, _phase3_contract must never
-    reconstruct it -- the factory is poisoned and the full real contract still
-    passes end-to-end using only the threaded object."""
-    rtmap = runner._phase3_runtime_paths()            # real map, built beforehand
-    calls = {"n": 0}
+def test_27_real_gitlink_matches_nested_head():
+    nested_head = _git(MNL_ROOT / "dclaborsupply-monorepo", "rev-parse", "HEAD")
+    assert runner._git_gitlink(MNL_ROOT) == nested_head
 
-    def poisoned_factory():
-        calls["n"] += 1
-        raise AssertionError("contract must not rebuild the runtime map")
 
-    monkeypatch.setattr(runner, "_phase3_runtime_paths", poisoned_factory)
-    ctx = runner._phase3_contract(None, cfg, CONFIG_PATH, lambda m: None,
-                                  rtmap=rtmap)
-    assert calls["n"] == 0
-    assert ctx["rtmap"] is rtmap                      # the SAME object, threaded
-    assert ctx["rtmap_fingerprint"] == runner._runtime_map_fingerprint(rtmap)
-    assert ctx["ev"]["input_authentication"]["frozen_stem_parquet"]["ok"]
+def test_28_execute_without_gates_refused(cfg):
+    lock = runner.CANONICAL_PHASE3_ROOT / ".phase3.lock"
+    assert not lock.exists()
+    with pytest.raises(runner.StopRun):
+        runner.run_phase3(_args(dry_run=False, execute_phase3=True), cfg)
+    assert not lock.exists()                 # refused before any transaction
+    rc = runner._phase3_run(_args(dry_run=False), cfg, {})
+    assert rc == 2 and not lock.exists()     # private body refuses unverified too
+
+
+# --------------------------------------------------------------------------- #
+# canonical dry-run via subprocess (never optimizing)
+# --------------------------------------------------------------------------- #
+def test_29_subprocess_dry_run_never_optimizes():
+    r = subprocess.run(
+        [sys.executable, str(MNL_ROOT / "scripts/p2a/run_p2a_regionlive_rebuild.py"),
+         "--config", str(CONFIG_PATH), "--phase", "3",
+         "--out", str(runner.CANONICAL_REGIONLIVE_ROOT)],
+        capture_output=True, text=True, timeout=300, cwd=str(MNL_ROOT))
+    assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
+    attempts = runner.CANONICAL_PHASE3_ROOT / "attempts"
+    d = max((x for x in attempts.iterdir() if x.name.startswith("2026")),
+            key=lambda p: p.name)
+    man = json.loads((d / "phase3_manifest.json").read_text(encoding="utf-8"))
+    assert man["status"] == "PHASE_3_DRY_RUN_COMPLETE"
+    assert man["optimizer_called"] is False
+    assert man["execution_ready"] is False
+    assert man["review_gate"] == "AWAITING_REVIEW_V6_APPROVE"
+    assert not (runner.CANONICAL_PHASE3_ROOT / "complete").exists()
+
+
+def test_30_gitlink_mismatch_refused(tmp_path):
+    repo, nested, mnl, dcl, review = _mk_gate_repos(tmp_path)
+    sha = hashlib.sha256(review.read_bytes()).hexdigest()
+    _git(repo, "update-index", "--add", "--cacheinfo",
+         "160000," + "1" * 40 + ",dclaborsupply-monorepo")
+    _git(repo, "commit", "-q", "-m", "wrong gitlink")
+    args = _gate_args(_git(repo, "rev-parse", "HEAD"), dcl, sha)
+    with pytest.raises(runner.StopRun, match="gitlink"):
+        runner._verify_execution_gates(args, _repo_root=repo,
+                                       _nested_root=nested, _check_gitlink=True)

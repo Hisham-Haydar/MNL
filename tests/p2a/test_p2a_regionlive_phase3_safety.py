@@ -75,10 +75,16 @@ def _args(dry_run=True):
                               dry_run=dry_run, phase=3)
 
 
+def _mark(fn):
+    """Attach the private test-double marker required by the helper (decision B)."""
+    fn.__phase3_test_double__ = True
+    return fn
+
+
 def _fake_contract(ev=None):
     def contract(out, cfg_, config_path, log):
         return {"ev": ev or {"ok": True, "fake": True}}
-    return contract
+    return _mark(contract)
 
 
 
@@ -87,18 +93,22 @@ def _tp3(args, cfg, *, _contract_fn=None, _estimate_fn=None, _txn_root=None,
     """Adapter to the private test helper (decision C): every component explicit."""
     return runner._run_phase3_test_attempt(
         args, cfg, test_root=_txn_root,
-        contract_fn=_contract_fn if _contract_fn is not None else _fake_contract(),
-        estimate_fn=(_estimate_fn if _estimate_fn is not None
-                     else (lambda *a, **k: ("PHASE_3_DRY_RUN_COMPLETE", {}))),
-        minimize_fn=(_minimize_fn if _minimize_fn is not None
-                     else (lambda *a, **k: (_ for _ in ()).throw(
+        contract_fn=_mark(_contract_fn) if _contract_fn is not None
+        else _fake_contract(),
+        estimate_fn=(_mark(_estimate_fn) if _estimate_fn is not None
+                     else _mark(lambda *a, **k: ("PHASE_3_DRY_RUN_COMPLETE", {}))),
+        minimize_fn=(_mark(_minimize_fn) if _minimize_fn is not None
+                     else _mark(lambda *a, **k: (_ for _ in ()).throw(
                          AssertionError("minimizer must not be called")))),
-        package_identity_fn=(_package_identity_fn if _package_identity_fn is not None
-                             else (lambda **k: {"test_seam": True})),
+        package_identity_fn=(_mark(_package_identity_fn)
+                             if _package_identity_fn is not None
+                             else _mark(lambda **k: {"test_seam": True})),
         i_am_a_private_test=True)
 
 
 class _Raiser:
+    __phase3_test_double__ = True
+
     def __init__(self):
         self.called = False
 
@@ -421,15 +431,18 @@ def _mk_ctx(tmp_path, monkeypatch, c0=0.0):
           "start_theta_raw_sha256": "x", "start_theta_applied_sha256": "y",
           "negll_start": TARGET + c0, "parameter_map": {"fake": True},
           "at_bound_expected_derived": list(runner.EXPECTED_AT_BOUND_NAMES)}
+    fp = runner._runtime_map_fingerprint(rt)
     return {"spec": None, "names": names, "pmap": pmap, "bounds_full": bounds_full,
             "bounds_free": bounds_free, "theta_trial": start_full.copy(),
             "free_start": free_start, "theta_start_full": start_full,
             "tot": tot, "target": TARGET, "ev": ev, "input_auth": input_auth,
-            "_authfile": f}
+            "rtmap": rt, "rtmap_fingerprint": fp, "_authfile": f}
 
 
 class FakeMin:
     """Asserting fake minimizer (decision E). Never touches scipy.optimize."""
+
+    __phase3_test_double__ = True
 
     def __init__(self, x_out=None, success=True, raise_after=False, mutate=None):
         self.x_out, self.success = x_out, success
@@ -578,9 +591,11 @@ def test_27_input_mutation_during_call_s8(tmp_path, monkeypatch, cfg):
 def test_28_no_publication_after_failure_and_called_flag(tmp_path, monkeypatch, cfg):
     ctx = _mk_ctx(tmp_path, monkeypatch)
 
+    @_mark
     def contract(out, cfg_, config_path, log):
         return ctx
 
+    @_mark
     def estimate(c, staging, cfg_, log, minimize_fn=None, mark_optimizer_called=None):
         fake = FakeMin(raise_after=True)
         fake.pmap = c["pmap"]
@@ -588,8 +603,8 @@ def test_28_no_publication_after_failure_and_called_flag(tmp_path, monkeypatch, 
                                        mark_optimizer_called=mark_optimizer_called)
 
     rc = _tp3(_args(dry_run=False), cfg, _contract_fn=contract,
-                           _estimate_fn=estimate, _txn_root=tmp_path / "p3",
-                           _package_identity_fn=lambda **k: {"test_seam": True})
+              _estimate_fn=estimate, _txn_root=tmp_path / "p3",
+              _package_identity_fn=lambda **k: {"test_seam": True})
     assert rc == 2
     root = tmp_path / "p3"
     assert not (root / "complete").exists()
@@ -600,9 +615,11 @@ def test_28_no_publication_after_failure_and_called_flag(tmp_path, monkeypatch, 
 
 
 def test_29_bundle_completeness_refusals(tmp_path, cfg):
+    @_mark
     def contract(out, cfg_, config_path, log):
         return {"ev": {"ok": True}}
 
+    @_mark
     def est_incomplete(c, staging, cfg_, log, minimize_fn=None,
                        mark_optimizer_called=None):
         (staging / "estimation_results.json").write_text("{}", encoding="utf-8")
@@ -613,6 +630,7 @@ def test_29_bundle_completeness_refusals(tmp_path, cfg):
                            _package_identity_fn=lambda **k: {})
     assert rc == 2 and not (tmp_path / "a" / "complete").exists()
 
+    @_mark
     def est_extra(c, staging, cfg_, log, minimize_fn=None,
                   mark_optimizer_called=None):
         for n in ("theta_estimated.csv", "optimizer_diagnostics.json",
@@ -626,6 +644,7 @@ def test_29_bundle_completeness_refusals(tmp_path, cfg):
                            _package_identity_fn=lambda **k: {})
     assert rc == 2 and not (tmp_path / "b" / "complete").exists()
 
+    @_mark
     def est_full(c, staging, cfg_, log, minimize_fn=None,
                  mark_optimizer_called=None):
         for n in ("theta_estimated.csv", "optimizer_diagnostics.json",
@@ -649,8 +668,8 @@ def test_30_lock_contention_no_migration(tmp_path, cfg):
     legacy.write_text("legacy", encoding="utf-8")
     raiser = _Raiser()
     rc = _tp3(_args(dry_run=True), cfg, _contract_fn=raiser,
-                           _txn_root=root,
-                           _package_identity_fn=lambda **k: {})
+              _txn_root=root,
+              _package_identity_fn=lambda **k: {})
     assert rc == 2 and not raiser.called
     assert legacy.read_text(encoding="utf-8") == "legacy"    # NOT migrated (decision H)
     assert not (root / "attempts").exists()
@@ -770,13 +789,15 @@ def test_37_seam_separation(tmp_path, cfg):
     import inspect
     assert list(inspect.signature(runner.run_phase3).parameters) == ["args", "cfg"]
     fakes = dict(contract_fn=_fake_contract(),
-                 estimate_fn=lambda *a, **k: ("PHASE_3_DRY_RUN_COMPLETE", {}),
-                 minimize_fn=lambda *a, **k: None,
-                 package_identity_fn=lambda **k: {})
+                 estimate_fn=_mark(lambda *a, **k: ("PHASE_3_DRY_RUN_COMPLETE", {})),
+                 minimize_fn=_mark(lambda *a, **k: None),
+                 package_identity_fn=_mark(lambda **k: {}))
     for root in (runner.CANONICAL_PHASE3_ROOT,
                  runner.CANONICAL_PHASE3_ROOT / "attempts",
                  runner.CANONICAL_REGIONLIVE_ROOT,
-                 runner.MNL_ROOT / "outputs" / "anywhere_else"):
+                 runner.MNL_ROOT / "outputs" / "anywhere_else",
+                 runner.MNL_ROOT / "scripts" / "p2a",
+                 runner.MNL_ROOT / "dclaborsupply-monorepo" / "notebooks"):
         with pytest.raises(ValueError):
             runner._run_phase3_test_attempt(_args(True), cfg, test_root=root,
                                             i_am_a_private_test=True, **fakes)
@@ -972,8 +993,13 @@ def test_43_g16_exact_boundaries(cfg):
     pmap = _pmap()
     g3 = _gates_cfg(cfg)
     lo, hi = -100.0, 100.0
-    cases = [(lo, True), (hi, True), (lo - 0.5e-9, True), (hi + 0.5e-9, True),
-             (lo - 2e-9, False), (hi + 2e-9, False)]
+    eps = runner.PHASE3_SAFETY_CONSTANTS["g16_inbounds_epsilon"]
+    cases = [
+        (lo - eps, True),                                  # exactly lo - eps: pass
+        (hi + eps, True),                                  # exactly hi + eps: pass
+        (np.nextafter(lo - eps, -np.inf), False),          # just below: fail
+        (np.nextafter(hi + eps, np.inf), False),           # just above: fail
+    ]
     for v, expect_ok in cases:
         theta = _theta_ok(pmap)
         theta[pmap["name_idx"]["dummy_05"]] = v
@@ -981,8 +1007,8 @@ def test_43_g16_exact_boundaries(cfg):
             100.0, theta, np.zeros(47), pmap, _bounds_full(pmap), g3,
             100.0, True, "ok")
         row = next(r for r in rows if r["param"] == "dummy_05")
-        assert row["in_bounds"] is expect_ok, (v, expect_ok)
-        assert gates["g16_inbounds_ok"] is expect_ok or not expect_ok
+        assert row["in_bounds"] == expect_ok, (v, expect_ok)
+        assert gates["g16_inbounds_ok"] == expect_ok, (v, expect_ok)   # direct
 
 
 def test_44_target_mismatch_cannot_publish(tmp_path, monkeypatch, cfg):
@@ -990,9 +1016,11 @@ def test_44_target_mismatch_cannot_publish(tmp_path, monkeypatch, cfg):
         base = tmp_path / sub
         ctx = _mk_ctx(base, monkeypatch, c0=c0)
 
+        @_mark
         def contract(out, cfg_, config_path, log, _ctx=ctx):
             return _ctx
 
+        @_mark
         def estimate(c, staging, cfg_, log, minimize_fn=None,
                      mark_optimizer_called=None):
             fake = FakeMin()
@@ -1003,8 +1031,8 @@ def test_44_target_mismatch_cannot_publish(tmp_path, monkeypatch, cfg):
         rc = runner._run_phase3_test_attempt(
             _args(dry_run=False), cfg, test_root=base / "p3",
             contract_fn=contract, estimate_fn=estimate,
-            minimize_fn=lambda *a, **k: None,
-            package_identity_fn=lambda **k: {"test_seam": True},
+            minimize_fn=_mark(lambda *a, **k: None),
+            package_identity_fn=_mark(lambda **k: {"test_seam": True}),
             i_am_a_private_test=True)
         assert rc == 4
         root = base / "p3"
@@ -1013,3 +1041,220 @@ def test_44_target_mismatch_cannot_publish(tmp_path, monkeypatch, cfg):
                  if x.name.endswith(runner.PHASE3_TARGET_MISMATCH_STATUS))
         man = json.loads((d / "phase3_manifest.json").read_text(encoding="utf-8"))
         assert man["status"] == runner.PHASE3_TARGET_MISMATCH_STATUS
+
+
+# --------------------------------------------------------------------------- #
+# 45+: remediation-v4 closure tests (review v4 s18; decisions A-G)
+# --------------------------------------------------------------------------- #
+import inspect
+from types import SimpleNamespace as _NS
+
+
+def test_45_no_generic_orchestrator_and_production_surface(cfg):
+    assert not hasattr(runner, "_phase3_orchestrate")        # bypass deleted
+    assert list(inspect.signature(
+        runner._phase3_orchestrate_production).parameters) == [
+            "args", "cfg", "authorization_record"]
+    assert list(inspect.signature(runner.run_phase3).parameters) == ["args", "cfg"]
+    # non-dry production orchestration refuses an unverified record BEFORE any
+    # transaction work: no lock may appear at the canonical root
+    lock = runner.CANONICAL_PHASE3_ROOT / ".phase3.lock"
+    assert not lock.exists()
+    rc = runner._phase3_orchestrate_production(_args(dry_run=False), cfg, {})
+    assert rc == 2 and not lock.exists()
+    rc = runner._phase3_orchestrate_production(
+        _args(dry_run=False), cfg, {"verified": True, "execution_ready": False})
+    assert rc == 2 and not lock.exists()
+    # the test body itself structurally refuses production/worktree roots
+    with pytest.raises(ValueError):
+        runner._phase3_attempt_test_body(
+            _args(True), cfg, runner.CANONICAL_PHASE3_ROOT,
+            _fake_contract(), _mark(lambda *a, **k: None),
+            _mark(lambda *a, **k: None), _mark(lambda **k: {}))
+
+
+def test_46_genuine_components_refused_as_doubles(tmp_path, cfg):
+    base = dict(contract_fn=_fake_contract(),
+                estimate_fn=_mark(lambda *a, **k: ("X", {})),
+                minimize_fn=_mark(lambda *a, **k: None),
+                package_identity_fn=_mark(lambda **k: {}))
+    genuine = {"contract_fn": runner._phase3_contract,
+               "estimate_fn": runner._phase3_estimate,
+               "package_identity_fn": runner._verify_package_identity}
+    for slot, fn in genuine.items():
+        args = dict(base)
+        args[slot] = fn
+        with pytest.raises(ValueError, match="genuine production component"):
+            runner._run_phase3_test_attempt(_args(True), cfg,
+                                            test_root=tmp_path / "p3",
+                                            i_am_a_private_test=True, **args)
+        # the marker alone must NOT rescue a genuine component
+        try:
+            fn.__phase3_test_double__ = True
+            with pytest.raises(ValueError, match="genuine production component"):
+                runner._run_phase3_test_attempt(_args(True), cfg,
+                                                test_root=tmp_path / "p3",
+                                                i_am_a_private_test=True, **args)
+        finally:
+            del fn.__phase3_test_double__
+
+    def fake_scipy(*a, **k):
+        return None
+    fake_scipy.__module__ = "scipy.optimize._minimize"
+    fake_scipy.__qualname__ = "minimize"
+    _mark(fake_scipy)
+    args = dict(base)
+    args["minimize_fn"] = fake_scipy
+    with pytest.raises(ValueError, match="SciPy minimizer"):
+        runner._run_phase3_test_attempt(_args(True), cfg,
+                                        test_root=tmp_path / "p3",
+                                        i_am_a_private_test=True, **args)
+    # an unmarked plain callable is refused too
+    args = dict(base)
+    args["minimize_fn"] = lambda *a, **k: None
+    with pytest.raises(ValueError, match="marker"):
+        runner._run_phase3_test_attempt(_args(True), cfg,
+                                        test_root=tmp_path / "p3",
+                                        i_am_a_private_test=True, **args)
+
+
+def test_47_authorization_location_outside_worktrees(tmp_path):
+    repo, nested, cfg_f, auth_f, auth = _mk_authrepo(tmp_path)
+    # commit the ignore rule FIRST so later in-worktree files stay untracked and
+    # their removal restores full cleanliness
+    (repo / ".gitignore").write_text("auth_ignored.json\n", encoding="utf-8",
+                                     newline="\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "ignore auth")
+    auth2 = dict(auth)
+    auth2["approved_mnl_commit"] = _git(repo, "rev-parse", "HEAD")
+
+    inside = repo / "auth_inside.json"
+    inside.write_text(json.dumps(auth2), encoding="utf-8")
+    with pytest.raises(runner.StopRun, match="OUTSIDE both"):
+        _verify(repo, nested, cfg_f, inside)          # ordinary in-worktree
+    ig = repo / "auth_ignored.json"
+    ig.write_text(json.dumps(auth2), encoding="utf-8")
+    with pytest.raises(runner.StopRun, match="OUTSIDE both"):
+        _verify(repo, nested, cfg_f, ig)              # ignored in-worktree
+    nested_auth = nested / "auth_nested.json"
+    nested_auth.write_text(json.dumps(auth2), encoding="utf-8")
+    with pytest.raises(runner.StopRun, match="OUTSIDE both"):
+        _verify(repo, nested, cfg_f, nested_auth)     # nested worktree
+    link = tmp_path / "auth_link.json"                # symlink resolving inside
+    sym_ok = True
+    try:
+        link.symlink_to(inside)
+    except (OSError, NotImplementedError):
+        sym_ok = False
+    if sym_ok:
+        with pytest.raises(runner.StopRun, match="OUTSIDE both"):
+            _verify(repo, nested, cfg_f, link)
+    inside.unlink()
+    ig.unlink()
+    nested_auth.unlink()
+    outside = tmp_path / "auth_outside.json"          # valid outside location
+    outside.write_text(json.dumps(auth2), encoding="utf-8")
+    rec = _verify(repo, nested, cfg_f, outside)
+    assert rec["verified"] is True and rec["execution_ready"] is True
+
+
+def test_48_package_module_inventory_and_blob_identity(tmp_path):
+    rec = runner._verify_package_identity()
+    for name in runner.REQUIRED_PACKAGE_MODULES:
+        info = rec["imported_modules"][name]              # complete inventory
+        assert info["ancestry_ok"] and info["blob_equal"], name
+        assert info["blob_id"] and info["working_blob_id"] == info["blob_id"]
+    # review-v4 regression: outside-tree _numpy_primitives substitution refused
+    evil = _NS(__name__="dclaborsupply.likelihood._numpy_primitives",
+               __file__=str(tmp_path / "evil" / "_numpy_primitives.py"))
+    (tmp_path / "evil").mkdir()
+    Path(evil.__file__).write_text("# evil", encoding="utf-8")
+    with pytest.raises(runner.StopRun):
+        runner._verify_package_identity(_modules=[evil])
+
+
+def test_49_untracked_or_modified_package_source_refused(tmp_path):
+    nested = tmp_path / "nested"
+    srcdir = nested / "packages/dclaborsupply/src/dclaborsupply"
+    srcdir.mkdir(parents=True)
+    _git(nested, "init", "-q")
+    _git(nested, "config", "user.email", "t@t")
+    _git(nested, "config", "user.name", "t")
+    tracked = srcdir / "tracked_mod.py"
+    tracked.write_text("# tracked v1", encoding="utf-8", newline="\n")
+    _git(nested, "add", "-A")
+    _git(nested, "commit", "-q", "-m", "pkg")
+    root = nested / "packages/dclaborsupply/src"
+    mk = lambda p, name: _NS(__name__=name, __file__=str(p))
+    ok = runner._verify_package_identity(
+        _modules=[mk(tracked, "dclaborsupply.tracked_mod")],
+        _package_root=root, _nested_root=nested)
+    assert ok["package_identity_ok"]
+    untracked = srcdir / "untracked_mod.py"
+    untracked.write_text("# untracked", encoding="utf-8", newline="\n")
+    with pytest.raises(runner.StopRun):                   # untracked substitution
+        runner._verify_package_identity(
+            _modules=[mk(untracked, "dclaborsupply.untracked_mod")],
+            _package_root=root, _nested_root=nested)
+    untracked.unlink()
+    tracked.write_text("# tracked v2 MODIFIED", encoding="utf-8", newline="\n")
+    with pytest.raises(runner.StopRun):                   # differs from blob
+        runner._verify_package_identity(
+            _modules=[mk(tracked, "dclaborsupply.tracked_mod")],
+            _package_root=root, _nested_root=nested)
+
+
+def test_50_single_runtime_map_threading(tmp_path, monkeypatch, cfg):
+    ctx = _mk_ctx(tmp_path, monkeypatch)
+    calls = {"n": 0}
+
+    def changing_factory():
+        calls["n"] += 1
+        return {"other": tmp_path / f"changed_{calls['n']}.bin"}
+
+    monkeypatch.setattr(runner, "_phase3_runtime_paths", changing_factory)
+    fake = FakeMin()
+    fake.pmap = ctx["pmap"]
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    status, diag = runner._phase3_estimate(ctx, staging, cfg, lambda m: None,
+                                           minimize_fn=fake,
+                                           mark_optimizer_called=lambda: None)
+    assert status == "PHASE_3_COMPLETE"
+    assert calls["n"] == 0                    # ONLY the threaded ctx map is used
+    assert diag["rtmap_fingerprint"] == diag["rtmap_fingerprint_post"]
+    assert diag["input_recheck_after_optimization"]["authinp"]["ok"]
+
+
+def test_51_review_v5_binding(tmp_path):
+    assert runner.CANONICAL_APPROVED_REVIEW_REL.name == \
+        "FR_P2a_region_live_phase3_code_review_v5.md"
+    repo, nested, cfg_f, auth_f, auth = _mk_authrepo(tmp_path)
+    bad = dict(auth)
+    bad["approved_review_path"] = \
+        "docs/France_case/P2a/FR_P2a_region_live_phase3_code_review_v4.md"
+    bf = tmp_path / "bad_v4.json"
+    bf.write_text(json.dumps(bad), encoding="utf-8")
+    with pytest.raises(runner.StopRun, match="exactly"):
+        _verify(repo, nested, cfg_f, bf)
+
+
+def test_52_contract_threads_injected_runtime_map(monkeypatch, cfg):
+    """Decision E, contract leg: with an injected map, _phase3_contract must never
+    reconstruct it -- the factory is poisoned and the full real contract still
+    passes end-to-end using only the threaded object."""
+    rtmap = runner._phase3_runtime_paths()            # real map, built beforehand
+    calls = {"n": 0}
+
+    def poisoned_factory():
+        calls["n"] += 1
+        raise AssertionError("contract must not rebuild the runtime map")
+
+    monkeypatch.setattr(runner, "_phase3_runtime_paths", poisoned_factory)
+    ctx = runner._phase3_contract(None, cfg, CONFIG_PATH, lambda m: None,
+                                  rtmap=rtmap)
+    assert calls["n"] == 0
+    assert ctx["rtmap"] is rtmap                      # the SAME object, threaded
+    assert ctx["rtmap_fingerprint"] == runner._runtime_map_fingerprint(rtmap)
+    assert ctx["ev"]["input_authentication"]["frozen_stem_parquet"]["ok"]

@@ -71,11 +71,21 @@ CANONICAL_STEM = "fr_p2a_singles2016_regionlive"
 # review-v3 canonical identities (decisions B/E/G) + immutable gate controls (D)
 CANONICAL_PHASE3_CONFIG = MNL_ROOT / "scripts/p2a/configs/p2a_regionlive_rebuild_v1.yaml"
 CANONICAL_APPROVED_REVIEW_REL = Path(
-    "docs/France_case/P2a/FR_P2a_region_live_phase3_code_review_v4.md")
+    "docs/France_case/P2a/FR_P2a_region_live_phase3_code_review_v5.md")
 PACKAGE_SOURCE_ROOT = (MNL_ROOT / "dclaborsupply-monorepo"
                        / "packages/dclaborsupply/src")
 PHASE3_PREOPT_OBJECTIVE_TOL = 1.0e-4
 PHASE3_TARGET_MISMATCH_STATUS = "REVIEW_REQUIRED_TARGET_MISMATCH"
+# decision D: the EXACT dclaborsupply module inventory of the Phase-3
+# contract/objective route; each must be a tracked, byte-identical blob at the
+# approved nested commit (ignored/untracked substitutions therefore fail)
+REQUIRED_PACKAGE_MODULES = (
+    "dclaborsupply", "dclaborsupply.models", "dclaborsupply.data",
+    "dclaborsupply.data.loader", "dclaborsupply.spec",
+    "dclaborsupply.spec.parser", "dclaborsupply.likelihood",
+    "dclaborsupply.likelihood.index", "dclaborsupply.likelihood.engine_jax",
+    "dclaborsupply.likelihood._numpy_primitives",
+)
 # accepted pin identity -- exact ordered ten-name tuple (decision E); the YAML list
 # must equal this exactly (order included); any deviation is a STOP
 ACCEPTED_PIN_NAMES = (
@@ -93,7 +103,9 @@ PHASE3_SAFETY_CONSTANTS = {
     "optimizer_method": "L-BFGS-B",
     "optimizer_options": {"maxiter": 5000, "maxcor": 30, "ftol": 1e-15, "gtol": 1e-10},
 }
-# external execution authorization (decision B): created only after third-review APPROVE
+# external execution authorization: created ONLY after the canonical review-v5
+# tracked blob carries one exact "**FINAL VERDICT: APPROVE**" line (neither
+# review v3 nor review v4 — both REJECT — can authorize execution)
 AUTH_SCHEMA = "p2a_phase3_execution_authorization_v1"
 AUTH_REQUIRED_FIELDS = (
     "schema", "status", "approved_mnl_commit", "approved_dclaborsupply_commit",
@@ -1203,6 +1215,13 @@ def _validate_optimizer_contract(cfg: Dict[str, Any]) -> Dict[str, Any]:
             "options": {"maxiter": 5000, "maxcor": 30, "ftol": 1e-15, "gtol": 1e-10}}
 
 
+def _runtime_map_fingerprint(rtmap: Dict[str, Path]) -> str:
+    """Deterministic fingerprint of ONE runtime-path map (decision E)."""
+    joined = "\n".join(f"{k}:{Path(v).resolve()}" for k, v in
+                        sorted(rtmap.items()))
+    return hashlib.sha256(joined.encode("utf-8")).hexdigest()
+
+
 def _phase3_runtime_paths() -> Dict[str, Path]:
     """Immutable label -> INDEPENDENTLY constructed runtime path (decision A).
     Never derived from YAML; built only from MNL_ROOT / canonical constants."""
@@ -1329,15 +1348,6 @@ def _git_head_full(repo: Path) -> Optional[str]:
         return None
 
 
-def _git_tracked_dirty(repo: Path) -> Optional[bool]:
-    try:
-        r = subprocess.run(["git", "-C", str(repo), "status", "--porcelain", "-uno"],
-                           capture_output=True, text=True, timeout=15)
-        return bool(r.stdout.strip()) if r.returncode == 0 else None
-    except Exception:
-        return None
-
-
 def _git_run(repo: Path, *argv: str) -> Tuple[int, str]:
     try:
         r = subprocess.run(["git", "-C", str(repo), *argv],
@@ -1393,12 +1403,21 @@ def _verify_external_authorization(auth_path: Optional[str], config_path: Path,
     if not auth_path:
         raise StopRun("S-0", "authorization",
                       "real Phase-3 execution requires --authorization "
-                      "<absolute-json-path> (created only after review-v4 APPROVE)")
+                      "<absolute-json-path> (created only after the canonical "
+                      "review-v5 APPROVE)")
     p = Path(auth_path)
     if not p.is_absolute():
         raise StopRun("S-0", "authorization", "authorization path must be absolute")
     if not p.is_file():
         raise StopRun("S-0", "authorization", f"authorization file not found: {p}")
+    # decision C: the authorization must reside OUTSIDE both worktrees --
+    # checked by resolved ancestry, independent of Git status/ignore rules
+    p_res = p.resolve()
+    for wt in (repo.resolve(), nested.resolve()):
+        if p_res == wt or p_res.is_relative_to(wt):
+            raise StopRun("S-0", "authorization",
+                          f"authorization file must reside OUTSIDE both "
+                          f"worktrees (found under {wt})")
     a = json.loads(p.read_text(encoding="utf-8"))
     missing = [f for f in AUTH_REQUIRED_FIELDS if f not in a]
     if missing:
@@ -1439,7 +1458,7 @@ def _verify_external_authorization(auth_path: Optional[str], config_path: Path,
     if _sha256(tests_path) != a["approved_test_sha256"]:
         raise StopRun("S-0", "authorization", "safety-test hash != approved")
 
-    # exact canonical review-v4 binding (decision E): tracked blob at the commit
+    # exact canonical review-v5 binding (decision E): tracked blob at the commit
     rel = CANONICAL_APPROVED_REVIEW_REL.as_posix()
     if a["approved_review_path"] != rel:
         raise StopRun("S-0", "authorization",
@@ -1468,6 +1487,7 @@ def _verify_external_authorization(auth_path: Optional[str], config_path: Path,
                       "working-tree review differs from the committed blob")
     _parse_review_verdict(blob_bytes.decode("utf-8", "replace"))
     return {"authorization_path": str(p), "verified": True,
+            "execution_ready": True,
             "review_blob_sha256": blob_sha,
             **{k: a[k] for k in AUTH_REQUIRED_FIELDS}}
 
@@ -1487,52 +1507,129 @@ def _module_ancestry_ok(mod, root: Path) -> Tuple[bool, str]:
 
 def _verify_package_identity(expected_commit: Optional[str] = None,
                              *, _modules=None,
-                             _package_root: Optional[Path] = None) -> Dict[str, Any]:
-    """dclaborsupply source-identity verification (decision G). The private
-    _modules/_package_root seams exist only for unit tests (sibling-attack cases)."""
+                             _package_root: Optional[Path] = None,
+                             _nested_root: Optional[Path] = None) -> Dict[str, Any]:
+    """dclaborsupply source-identity verification (decision D): the COMPLETE loaded
+    module inventory of the Phase-3 route must resolve under the reviewed source
+    root AND byte-match its tracked blob at the approved nested commit (HEAD when no
+    authorization is present, e.g. dry-runs). Private seams are for unit tests only."""
     root = (Path(_package_root) if _package_root is not None
-            else PACKAGE_SOURCE_ROOT)
+            else PACKAGE_SOURCE_ROOT).resolve()
+    nested = (Path(_nested_root) if _nested_root is not None
+              else MNL_ROOT / "dclaborsupply-monorepo").resolve()
+    head = _git_head_full(nested)
+    dirty = not _git_fully_clean(nested)
+    gitlink = None
+    if _nested_root is None:
+        try:
+            r = subprocess.run(["git", "-C", str(MNL_ROOT), "ls-tree", "HEAD",
+                                "dclaborsupply-monorepo"],
+                               capture_output=True, text=True, timeout=15)
+            if r.returncode == 0 and r.stdout.strip():
+                gitlink = r.stdout.split()[2]
+        except Exception:  # noqa: BLE001
+            pass
+    commit_ref = expected_commit or head
+
     if _modules is None:
-        import dclaborsupply as _dcl
-        import dclaborsupply.spec.parser as _sp
-        import dclaborsupply.data.loader as _dl
-        import dclaborsupply.likelihood.engine_jax as _ej
-        mods = [_dcl, _sp, _dl, _ej]
+        import importlib
+        mods = [importlib.import_module(n) for n in REQUIRED_PACKAGE_MODULES]
+        seen = {m.__name__ for m in mods}
+        for name, m in sorted(sys.modules.items()):
+            if ((name == "dclaborsupply" or name.startswith("dclaborsupply."))
+                    and name not in seen and m is not None
+                    and getattr(m, "__file__", None)):
+                mods.append(m)
+                seen.add(name)
     else:
         mods = list(_modules)
-    nested = (MNL_ROOT / "dclaborsupply-monorepo").resolve()
-    head = _git_head_full(nested)
-    dirty = not _git_fully_clean(nested)          # FULL cleanliness (review fix 6)
-    gitlink = None
-    try:
-        r = subprocess.run(["git", "-C", str(MNL_ROOT), "ls-tree", "HEAD",
-                            "dclaborsupply-monorepo"],
-                           capture_output=True, text=True, timeout=15)
-        if r.returncode == 0 and r.stdout.strip():
-            gitlink = r.stdout.split()[2]
-    except Exception:  # noqa: BLE001
-        pass
-    paths: Dict[str, Any] = {}
-    module_path_ok = True
+
+    records: Dict[str, Any] = {}
+    failures: List[str] = []
     for m in mods:
-        ok, pstr = _module_ancestry_ok(m, root)
-        paths[getattr(m, "__name__", repr(m))] = {"path": pstr, "ancestry_ok": ok}
-        module_path_ok &= ok
-    rec = {"nested_repo": str(nested), "nested_head": head, "gitlink": gitlink,
-           "fully_dirty": dirty, "package_source_root": str(root),
-           "imported_modules": paths, "module_path_ok": module_path_ok,
-           "expected_commit": expected_commit}
-    ok = (module_path_ok and dirty is False
-          and gitlink is not None and gitlink == head)
-    if _modules is None:
-        ok = ok and nested.is_dir()
+        name = getattr(m, "__name__", repr(m))
+        rec: Dict[str, Any] = {}
+        f = getattr(m, "__file__", None)
+        if not f:
+            rec.update(path=None, ancestry_ok=False, reason="missing __file__")
+            failures.append(name)
+            records[name] = rec
+            continue
+        p = Path(f).resolve()
+        try:
+            ancestry_ok = p.is_relative_to(root)
+        except Exception:  # noqa: BLE001
+            ancestry_ok = False
+        rec.update(path=str(p), ancestry_ok=ancestry_ok)
+        if not ancestry_ok:
+            rec["reason"] = "outside reviewed source root"
+            failures.append(name)
+            records[name] = rec
+            continue
+        try:
+            rel = p.relative_to(nested).as_posix()
+        except ValueError:
+            rec["reason"] = "not under nested repository"
+            failures.append(name)
+            records[name] = rec
+            continue
+        rec["relative_path"] = rel
+        rc, blob_id = _git_run(nested, "rev-parse", f"{commit_ref}:{rel}")
+        if rc != 0 or not blob_id.strip():
+            rec["reason"] = "not a tracked blob at the approved commit"
+            failures.append(name)
+            records[name] = rec
+            continue
+        rec["blob_id"] = blob_id.strip()
+        try:
+            r = subprocess.run(["git", "-C", str(nested), "cat-file", "blob",
+                                blob_id.strip()], capture_output=True, timeout=30)
+            blob_bytes = r.stdout if r.returncode == 0 else None
+        except Exception:  # noqa: BLE001
+            blob_bytes = None
+        if blob_bytes is None:
+            rec["reason"] = "cannot read committed blob"
+            failures.append(name)
+            records[name] = rec
+            continue
+        # equality in Git's OWN canonical form: hash-object with the module's
+        # attribute/eol filters applied (--path) must reproduce the tracked blob
+        # id. Raw byte comparison would false-fail on autocrlf checkouts while
+        # this still rejects every real modification or substitution.
+        rc2, working_id = _git_run(nested, "hash-object", "--path", rel,
+                                   "--", str(p))
+        rec["committed_sha256"] = hashlib.sha256(blob_bytes).hexdigest()
+        rec["working_sha256"] = _sha256(p)
+        rec["working_blob_id"] = working_id.strip() if rc2 == 0 else None
+        rec["blob_equal"] = (rc2 == 0
+                             and working_id.strip() == blob_id.strip())
+        if not rec["blob_equal"]:
+            rec["reason"] = "working file differs from committed blob"
+            failures.append(name)
+        records[name] = rec
+
+    rec_out = {"nested_repo": str(nested), "nested_head": head,
+               "commit_ref": commit_ref, "gitlink": gitlink,
+               "fully_dirty": dirty, "package_source_root": str(root),
+               "imported_modules": records,
+               "module_path_ok": not failures,
+               "module_failures": failures,
+               "expected_commit": expected_commit}
+    ok = (not failures and dirty is False and head is not None)
+    if _nested_root is None:
+        ok = ok and gitlink is not None and gitlink == head
+        if _modules is None:
+            required_missing = [n for n in REQUIRED_PACKAGE_MODULES
+                                if n not in records]
+            ok = ok and not required_missing
     if expected_commit is not None:
         ok = ok and (head == expected_commit)
-    rec["package_identity_ok"] = bool(ok)
+    rec_out["package_identity_ok"] = bool(ok)
     if not ok:
         raise StopRun("S-0", "package-identity",
-                      f"dclaborsupply source identity failed: {rec}")
-    return rec
+                      f"dclaborsupply source identity failed "
+                      f"(failures={failures}): see record")
+    return rec_out
 
 
 def _bundle_hashes(staging: Path) -> Tuple[Dict[str, str], str]:
@@ -1701,7 +1798,8 @@ def _phase3_post_gates(negll_hat: float, theta_hat_full: np.ndarray,
 
 
 def _phase3_contract(out: OutRoot, cfg: Dict[str, Any], config_path: Path,
-                     log) -> Dict[str, Any]:
+                     log, rtmap: Optional[Dict[str, Path]] = None
+                     ) -> Dict[str, Any]:
     """Pre-optimization input contract (decisions D-I). Raises StopRun on failure."""
     from dclaborsupply import EstimationSpec
     from dclaborsupply.spec.parser import load_custom_initial_values
@@ -1720,7 +1818,7 @@ def _phase3_contract(out: OutRoot, cfg: Dict[str, Any], config_path: Path,
     ev["optimizer_contract"] = _validate_optimizer_contract(cfg)
     # decision A: ONE immutable runtime map is the sole source of every Phase-3
     # file open; every retained legacy config alias must resolve EXACTLY onto it
-    rt = _phase3_runtime_paths()
+    rt = rtmap if rtmap is not None else _phase3_runtime_paths()
     _aliases = {
         "certified_spec.yaml": (cfg["certified_spec"]["yaml"], "certified_spec_yaml"),
         "warm_start.theta_csv": (cfg["warm_start"]["theta_csv"],
@@ -1758,7 +1856,7 @@ def _phase3_contract(out: OutRoot, cfg: Dict[str, Any], config_path: Path,
         raise StopRun("S-1", "canonical-stem", "mnlmeta path is not the stem companion")
 
     # exact label->runtime-path->hash authentication (decision A)
-    ev["input_authentication"] = _authenticate_inputs(cfg)
+    ev["input_authentication"] = _authenticate_inputs(cfg, runtime_paths=rt)
 
     # Phase 1-2 manifest: status + accepted script/config anchors
     man12 = json.loads(Path(rt["phase12_rebuild_manifest"]).read_text(encoding="utf-8"))
@@ -1917,7 +2015,9 @@ def _phase3_contract(out: OutRoot, cfg: Dict[str, Any], config_path: Path,
             "bounds_free": bounds_free, "theta_trial": theta_trial,
             "free_start": free_start, "theta_start_full": theta_start_full,
             "tot": tot, "target": target, "ev": ev,
-            "input_auth": ev["input_authentication"]}
+            "input_auth": ev["input_authentication"],
+            "rtmap": rt,
+            "rtmap_fingerprint": _runtime_map_fingerprint(rt)}
 
 
 def _phase3_estimate(ctx: Dict[str, Any], staging: Path, cfg: Dict[str, Any], log,
@@ -1954,7 +2054,8 @@ def _phase3_estimate(ctx: Dict[str, Any], staging: Path, cfg: Dict[str, Any], lo
                           method=oc["method"], bounds=list(ctx["bounds_free"]),
                           options=dict(oc["options"]))
     except Exception as exc:
-        recheck_x, recheck_x_ok = _recheck_inputs(ctx["input_auth"])
+        recheck_x, recheck_x_ok = _recheck_inputs(
+            ctx["input_auth"], runtime_paths=ctx["rtmap"])
         return "STOPPED", {
             "generated_at": _utcnow(), "verdict": "STOPPED",
             "stop": {"code": "S-2", "gate": "optimizer-exception",
@@ -1970,8 +2071,14 @@ def _phase3_estimate(ctx: Dict[str, Any], staging: Path, cfg: Dict[str, Any], lo
     log(f"phase3 fit: negLL {negll_hat:.10f}  iters={int(res.nit)} "
         f"nfev={int(res.nfev)} success={bool(res.success)}  ({elapsed:.1f}s)")
 
-    # post-optimization input recheck BEFORE any result write (decision G / S-8)
-    recheck, recheck_ok = _recheck_inputs(ctx["input_auth"])
+    # post-optimization input recheck BEFORE any result write, over the SAME
+    # single runtime-map object threaded from the contract (decisions E + G)
+    fp_post = _runtime_map_fingerprint(ctx["rtmap"])
+    if fp_post != ctx["rtmap_fingerprint"]:
+        raise StopRun("S-8", "runtime-map",
+                      "runtime-map fingerprint changed during the attempt")
+    recheck, recheck_ok = _recheck_inputs(ctx["input_auth"],
+                                          runtime_paths=ctx["rtmap"])
     if not recheck_ok:
         return "STOPPED", {
             "generated_at": _utcnow(), "verdict": "STOPPED",
@@ -2009,6 +2116,8 @@ def _phase3_estimate(ctx: Dict[str, Any], staging: Path, cfg: Dict[str, Any], lo
         "parameter_map": ctx["ev"]["parameter_map"],
         "bounds_and_distances": rows,
         "input_recheck_after_optimization": recheck,
+        "rtmap_fingerprint": ctx["rtmap_fingerprint"],
+        "rtmap_fingerprint_post": fp_post,
         "gates": gates,
         "stop": stop,
         "verdict": status,
@@ -2052,9 +2161,9 @@ def _phase3_estimate(ctx: Dict[str, Any], staging: Path, cfg: Dict[str, Any], lo
 
 
 def run_phase3(args, cfg: Dict[str, Any]) -> int:
-    """PRODUCTION Phase-3 entrypoint (decision C): NO injectable transaction root,
-    contract, estimator, minimizer, or package-identity argument exists here. Real
-    (non-dry) runs additionally require the verified external authorization."""
+    """PRODUCTION Phase-3 entrypoint. No injectable seams exist anywhere on this
+    route (review v4 fix 1): it verifies the canonical config/root/subdir and the
+    external authorization, then calls the production-only orchestrator."""
     cfg_resolved = Path(args.config).resolve()
     if cfg_resolved != CANONICAL_PHASE3_CONFIG.resolve():
         print(f"REFUSED: Phase 3 requires the canonical config "
@@ -2080,20 +2189,206 @@ def run_phase3(args, cfg: Dict[str, Any]) -> int:
     if not args.dry_run:
         auth_record = _verify_external_authorization(
             getattr(args, "authorization", None), cfg_resolved)
-    return _phase3_orchestrate(
-        args, cfg, txn_root=CANONICAL_PHASE3_ROOT, contract_fn=_phase3_contract,
-        estimate_fn=_phase3_estimate, minimize_fn=None,
-        identity_fn=_verify_package_identity, auth_record=auth_record)
+    return _phase3_orchestrate_production(args, cfg, auth_record)
+
+
+def _phase3_manifest_skeleton(args, cfg: Dict[str, Any], txn: "Phase3Transaction",
+                              auth_record: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "run": cfg["run"]["name"] + "__phase3",
+        "track": cfg["run"]["track"],
+        "attempt_id": txn.attempt_id,
+        "mode": ("phase3 dry-run (contract only, no optimizer)" if args.dry_run
+                 else "phase3 estimation"),
+        "authorization": cfg["phase3"]["authorization_doc"],
+        "authorization_status": ("EXTERNALLY_AUTHORIZED"
+                                 if auth_record.get("verified")
+                                 else "AWAITING_POST_REVIEW_AUTHORIZATION"),
+        "execution_authorization": auth_record or None,
+        "execution_ready": bool(auth_record.get("verified", False)
+                                and auth_record.get("execution_ready", False)),
+        "started_at": _utcnow(),
+        "status": "RUNNING",
+        "stop": None,
+        "optimizer_called": False,
+        "config": {"path": str(Path(args.config)),
+                   "sha256": _sha256(Path(args.config))},
+        "script": {"path": str(SCRIPT_PATH), "sha256": _sha256(SCRIPT_PATH)},
+        "git": {"MNL": _git_state(MNL_ROOT),
+                "dclaborsupply-monorepo": _git_state(
+                    MNL_ROOT / "dclaborsupply-monorepo")},
+        "environment": {"python": sys.version.split()[0],
+                        "numpy": np.__version__, "pandas": pd.__version__},
+        "targets": cfg["targets"],
+    }
+
+
+def _phase3_finalize(txn: "Phase3Transaction", manifest: Dict[str, Any],
+                     lines: List[str], t0: float, status: str,
+                     stop: Optional[StopRun], code: int) -> int:
+    """Shared attempt finalization (decision C order preserved; takes NO injectable
+    component and NO root -- only the already-validated transaction)."""
+    if status == "PHASE_3_COMPLETE" and txn.complete_exists():
+        stop = StopRun("S-0", "phase3-immutable",
+                       "complete/ appeared during the run; publish refused")
+        status, code = "STOPPED", 2
+    if status == "PHASE_3_COMPLETE":
+        required_pre = sorted(n for n in PHASE3_ARTIFACTS
+                              if n != "phase3_console.log")
+        present = sorted(p.name for p in txn.staging.iterdir())
+        if (present != required_pre
+                or any(not (txn.staging / n).is_file() for n in required_pre)):
+            stop = StopRun("S-3", "bundle-completeness",
+                           f"staging artifact set {present} != required "
+                           f"{required_pre} plus console")
+            status, code = "STOPPED", 2
+    lines.append(f"FINAL STATUS: {status}")
+    _atomic_write_text("\n".join(lines) + "\n", txn.staging / "phase3_console.log")
+    artifact_hashes, bundle_sha = _bundle_hashes(txn.staging)
+    manifest["status"] = status
+    if stop is not None:
+        manifest["stop"] = {"code": stop.code, "gate": stop.gate,
+                            "message": stop.message}
+    manifest["finished_at"] = _utcnow()
+    manifest["wall_seconds"] = round(time.time() - t0, 1)
+    manifest["artifact_hashes"] = artifact_hashes
+    manifest["bundle_sha256"] = bundle_sha
+    _atomic_write_json(manifest, txn.staging / "phase3_manifest.json")
+    if status == "PHASE_3_COMPLETE":
+        final_set = sorted(p.name for p in txn.staging.iterdir())
+        if final_set != sorted(list(PHASE3_ARTIFACTS) + ["phase3_manifest.json"]):
+            raise RuntimeError(f"post-manifest staging set invalid: {final_set}")
+    dest = txn.finish(status)
+    txn.release()
+    print(f"[phase3] {status} -> {dest}")
+    return code
+
+
+def _phase3_orchestrate_production(args, cfg: Dict[str, Any],
+                                   authorization_record: Dict[str, Any]) -> int:
+    """PRODUCTION-ONLY orchestration (review v4 fix 1). It exposes NO injectable
+    transaction root, contract, estimator, minimizer, package verifier, or
+    alternative authorization: it hard-uses CANONICAL_PHASE3_ROOT, the genuine
+    _phase3_contract / _phase3_estimate / _verify_package_identity, and the real
+    SciPy minimizer route, and refuses a non-dry call without a verified,
+    execution-ready authorization record."""
+    if Path(args.config).resolve() != CANONICAL_PHASE3_CONFIG.resolve():
+        print("REFUSED: production orchestration requires the canonical config.",
+              file=sys.stderr)
+        return 2
+    if not args.dry_run and not (authorization_record.get("verified") is True
+                                 and authorization_record.get(
+                                     "execution_ready") is True):
+        print("REFUSED: real Phase-3 execution requires a VERIFIED external "
+              "authorization record (review-v5 APPROVE); none was accepted.",
+              file=sys.stderr)
+        return 2
+
+    txn = Phase3Transaction(CANONICAL_PHASE3_ROOT,
+                            "dryrun" if args.dry_run else "estimate")
+    t0 = time.time()
+    lines: List[str] = []
+
+    def log(msg: str) -> None:
+        line = f"[{datetime.now().strftime('%H:%M:%S')}] {msg}"
+        print(line)
+        lines.append(line)
+
+    manifest = _phase3_manifest_skeleton(args, cfg, txn, authorization_record)
+    out = OutRoot(CANONICAL_REGIONLIVE_ROOT)
+    acquired = False
+    try:
+        txn.acquire()
+        acquired = True
+        _assert_no_prohibited_modules("phase3-start")
+        if (not args.dry_run) and txn.complete_exists():
+            raise StopRun("S-0", "phase3-immutable",
+                          "complete/ exists; a successful Phase-3 bundle is "
+                          "immutable and a new real estimation is refused")
+        manifest["package_identity"] = _verify_package_identity(
+            expected_commit=authorization_record.get(
+                "approved_dclaborsupply_commit"))
+        log("Phase 3 - input contract (accepted Phase 1-2 evidence)")
+        rtmap = _phase3_runtime_paths()          # decision E: ONE map per attempt
+        manifest["rtmap_fingerprint"] = _runtime_map_fingerprint(rtmap)
+        ctx = _phase3_contract(out, cfg, Path(args.config), log, rtmap=rtmap)
+        manifest["contract"] = ctx["ev"]
+
+        if args.dry_run:
+            _assert_no_prohibited_modules("phase3-dryrun-end")
+            log("Phase 3 dry-run COMPLETE - contract verified, optimizer NOT called")
+            return _phase3_finalize(txn, manifest, lines, t0,
+                                    "PHASE_3_DRY_RUN_COMPLETE", None, 0)
+
+        log("Phase 3 - estimation (real run)")
+
+        def _mark_called() -> None:
+            manifest["optimizer_called"] = True
+
+        status, diag = _phase3_estimate(ctx, txn.staging, cfg, log,
+                                        minimize_fn=None,
+                                        mark_optimizer_called=_mark_called)
+        manifest["gates"] = diag.get("gates", {})
+        manifest["input_recheck_after_optimization"] = diag.get(
+            "input_recheck_after_optimization", {})
+        _assert_no_prohibited_modules("phase3-end", allow_optimizer=True)
+        if status == "PHASE_3_COMPLETE":
+            return _phase3_finalize(txn, manifest, lines, t0, status, None, 0)
+        if status == "STOPPED":
+            s = diag.get("stop") or {}
+            return _phase3_finalize(
+                txn, manifest, lines, t0, "STOPPED",
+                StopRun(s.get("code", "S-3"), s.get("gate", "phase3"),
+                        s.get("message", "gate failure")), 2)
+        return _phase3_finalize(txn, manifest, lines, t0, status, None, 4)
+
+    except StopRun as stop:
+        log(f"STOP {stop.code} [{stop.gate}] {stop.message}")
+        if not acquired:
+            print(f"[phase3] STOPPED (no attempt bundle: {stop.message})",
+                  file=sys.stderr)
+            return 2
+        return _phase3_finalize(txn, manifest, lines, t0, "STOPPED", stop, 2)
+    except Exception:
+        tb = traceback.format_exc()
+        log("UNEXPECTED ERROR:\n" + tb)
+        if not acquired:
+            print(tb, file=sys.stderr)
+            return 3
+        stop = StopRun("S-0", "unexpected", tb.splitlines()[-1] if tb else "unknown")
+        return _phase3_finalize(txn, manifest, lines, t0, "STOPPED", stop, 3)
+
+
+def _phase3_forbidden_test_roots() -> Tuple[Path, ...]:
+    return (CANONICAL_PHASE3_ROOT, CANONICAL_REGIONLIVE_ROOT,
+            MNL_ROOT / "outputs", MNL_ROOT,
+            MNL_ROOT / "dclaborsupply-monorepo")
+
+
+def _validate_test_double(name: str, fn) -> None:
+    """Decision B: every injected test component must be a GENUINE double."""
+    genuine = (_phase3_contract, _phase3_estimate, _verify_package_identity,
+               _phase3_orchestrate_production, run_phase3)
+    for g in genuine:
+        if fn is g:
+            raise ValueError(f"{name}: genuine production component refused as "
+                             "a test double")
+    mod = str(getattr(fn, "__module__", "") or "")
+    qn = str(getattr(fn, "__qualname__", getattr(fn, "__name__", "")) or "")
+    if mod.startswith("scipy.optimize") or ("scipy" in mod and qn == "minimize"):
+        raise ValueError(f"{name}: real SciPy minimizer refused as a test double")
+    if getattr(fn, "__phase3_test_double__", None) is not True:
+        raise ValueError(f"{name}: missing __phase3_test_double__ marker")
 
 
 def _run_phase3_test_attempt(args, cfg: Dict[str, Any], *, test_root=None,
                              contract_fn=None, estimate_fn=None, minimize_fn=None,
                              package_identity_fn=None,
                              i_am_a_private_test: bool = False) -> int:
-    """PRIVATE unit-test orchestration helper (decision C). Requires an explicit
-    test root plus EXPLICIT fake contract/estimator/minimizer/package-identity and
-    the private test-mode marker; refuses every production tree by resolved
-    ancestry. Production code never calls this."""
+    """PRIVATE unit-test orchestration (decision A/B). Structurally separate from
+    production: it never calls _phase3_orchestrate_production, requires explicitly
+    marked test doubles for every component, and refuses any root at or beneath
+    the canonical trees, MNL/outputs, or EITHER repository worktree."""
     if i_am_a_private_test is not True:
         raise ValueError("private test-mode marker required")
     missing = [n for n, v in (("test_root", test_root), ("contract_fn", contract_fn),
@@ -2103,25 +2398,30 @@ def _run_phase3_test_attempt(args, cfg: Dict[str, Any], *, test_root=None,
                if v is None]
     if missing:
         raise ValueError(f"test helper requires explicit fake components: {missing}")
+    for pname, fn in (("contract_fn", contract_fn), ("estimate_fn", estimate_fn),
+                      ("minimize_fn", minimize_fn),
+                      ("package_identity_fn", package_identity_fn)):
+        _validate_test_double(pname, fn)
     root = Path(test_root).resolve()
-    for forb in (CANONICAL_PHASE3_ROOT, CANONICAL_REGIONLIVE_ROOT,
-                 MNL_ROOT / "outputs"):
+    for forb in _phase3_forbidden_test_roots():
         fr = Path(forb).resolve()
         if root == fr or root.is_relative_to(fr):
-            raise ValueError(f"test root {root} is inside the production tree {fr}")
-    return _phase3_orchestrate(args, cfg, txn_root=root, contract_fn=contract_fn,
-                               estimate_fn=estimate_fn, minimize_fn=minimize_fn,
-                               identity_fn=package_identity_fn, auth_record={})
+            raise ValueError(f"test root {root} is inside the forbidden tree {fr}")
+    return _phase3_attempt_test_body(args, cfg, root, contract_fn, estimate_fn,
+                                     minimize_fn, package_identity_fn)
 
 
-def _phase3_orchestrate(args, cfg: Dict[str, Any], *, txn_root: Path, contract_fn,
-                        estimate_fn, minimize_fn, identity_fn,
-                        auth_record: Dict[str, Any]) -> int:
-    """Shared Phase-3 attempt body under the lock/staging/attempts/complete
-    transaction. Callers fix every dependency explicitly (decision C)."""
-    out = OutRoot(Path(txn_root).parent)
-    txn = Phase3Transaction(txn_root, "dryrun" if args.dry_run else "estimate")
-
+def _phase3_attempt_test_body(args, cfg: Dict[str, Any], root: Path, contract_fn,
+                              estimate_fn, minimize_fn, identity_fn) -> int:
+    """Test-only attempt body. Re-validates (structurally) that the root cannot be
+    any production/worktree path, then runs the same transaction/finalize shape
+    with the injected doubles. Never used by production code."""
+    root = Path(root).resolve()
+    for forb in _phase3_forbidden_test_roots():
+        fr = Path(forb).resolve()
+        if root == fr or root.is_relative_to(fr):
+            raise ValueError(f"test body refuses root inside {fr}")
+    txn = Phase3Transaction(root, "dryrun" if args.dry_run else "estimate")
     t0 = time.time()
     lines: List[str] = []
 
@@ -2130,95 +2430,25 @@ def _phase3_orchestrate(args, cfg: Dict[str, Any], *, txn_root: Path, contract_f
         print(line)
         lines.append(line)
 
-    manifest: Dict[str, Any] = {
-        "run": cfg["run"]["name"] + "__phase3",
-        "track": cfg["run"]["track"],
-        "attempt_id": txn.attempt_id,
-        "mode": ("phase3 dry-run (contract only, no optimizer)" if args.dry_run
-                 else "phase3 estimation"),
-        "authorization": cfg["phase3"]["authorization_doc"],
-        "authorization_status": ("EXTERNALLY_AUTHORIZED" if auth_record.get("verified")
-                                 else "AWAITING_POST_REVIEW_AUTHORIZATION"),
-        "execution_authorization": auth_record or None,
-        "execution_ready": bool(auth_record.get("verified", False)),
-        "started_at": _utcnow(),
-        "status": "RUNNING",
-        "stop": None,
-        "optimizer_called": False,
-        "config": {"path": str(Path(args.config)), "sha256": _sha256(Path(args.config))},
-        "script": {"path": str(SCRIPT_PATH), "sha256": _sha256(SCRIPT_PATH)},
-        "git": {"MNL": _git_state(MNL_ROOT),
-                "dclaborsupply-monorepo": _git_state(MNL_ROOT / "dclaborsupply-monorepo")},
-        "environment": {"python": sys.version.split()[0],
-                        "numpy": np.__version__, "pandas": pd.__version__},
-        "targets": cfg["targets"],
-    }
-
-    def finalize(status: str, stop: Optional[StopRun], code: int) -> int:
-        # decision C order: final status line -> console -> hashes -> manifest LAST ->
-        # atomic directory publication; the manifest is never self-hashed.
-        if status == "PHASE_3_COMPLETE" and txn.complete_exists():
-            stop = StopRun("S-0", "phase3-immutable",
-                           "complete/ appeared during the run; publish refused")
-            status, code = "STOPPED", 2
-        if status == "PHASE_3_COMPLETE":
-            # decision F: the successful bundle must contain EXACTLY the required
-            # non-manifest artifacts (the console is written by finalize itself just
-            # below; the post-manifest check then enforces the exact final 5-set)
-            required_pre = sorted(n for n in PHASE3_ARTIFACTS
-                                  if n != "phase3_console.log")
-            present = sorted(p.name for p in txn.staging.iterdir())
-            if (present != required_pre
-                    or any(not (txn.staging / n).is_file() for n in required_pre)):
-                stop = StopRun("S-3", "bundle-completeness",
-                               f"staging artifact set {present} != required "
-                               f"{required_pre} plus console")
-                status, code = "STOPPED", 2
-        lines.append(f"FINAL STATUS: {status}")
-        _atomic_write_text("\n".join(lines) + "\n", txn.staging / "phase3_console.log")
-        artifact_hashes, bundle_sha = _bundle_hashes(txn.staging)
-        manifest["status"] = status
-        if stop is not None:
-            manifest["stop"] = {"code": stop.code, "gate": stop.gate,
-                                "message": stop.message}
-        manifest["finished_at"] = _utcnow()
-        manifest["wall_seconds"] = round(time.time() - t0, 1)
-        manifest["artifact_hashes"] = artifact_hashes
-        manifest["bundle_sha256"] = bundle_sha
-        _atomic_write_json(manifest, txn.staging / "phase3_manifest.json")
-        if status == "PHASE_3_COMPLETE":
-            final_set = sorted(p.name for p in txn.staging.iterdir())
-            if final_set != sorted(list(PHASE3_ARTIFACTS) + ["phase3_manifest.json"]):
-                raise RuntimeError(f"post-manifest staging set invalid: {final_set}")
-        dest = txn.finish(status)
-        txn.release()
-        print(f"[phase3] {status} -> {dest}")
-        return code
-
+    manifest = _phase3_manifest_skeleton(args, cfg, txn, {})
+    out = OutRoot(root.parent)
     acquired = False
     try:
         txn.acquire()
         acquired = True
-        _assert_no_prohibited_modules("phase3-start")
-        manifest["package_identity"] = identity_fn(
-            expected_commit=auth_record.get("approved_dclaborsupply_commit"))
         if (not args.dry_run) and txn.complete_exists():
             raise StopRun("S-0", "phase3-immutable",
-                          "complete/ exists; a successful Phase-3 bundle is immutable "
-                          "and a new real estimation is refused (decision B.3)")
-        log("Phase 3 - input contract (accepted Phase 1-2 evidence)")
+                          "complete/ exists; refusing (test body)")
+        manifest["package_identity"] = identity_fn(expected_commit=None)
         ctx = contract_fn(out, cfg, Path(args.config), log)
         manifest["contract"] = ctx["ev"]
-
         if args.dry_run:
-            _assert_no_prohibited_modules("phase3-dryrun-end")   # STILL no optimizer
             log("Phase 3 dry-run COMPLETE - contract verified, optimizer NOT called")
-            return finalize("PHASE_3_DRY_RUN_COMPLETE", None, 0)
-
-        log("Phase 3 - estimation (real run)")
+            return _phase3_finalize(txn, manifest, lines, t0,
+                                    "PHASE_3_DRY_RUN_COMPLETE", None, 0)
 
         def _mark_called() -> None:
-            manifest["optimizer_called"] = True     # decision G: before invocation
+            manifest["optimizer_called"] = True
 
         status, diag = estimate_fn(ctx, txn.staging, cfg, log,
                                    minimize_fn=minimize_fn,
@@ -2226,31 +2456,28 @@ def _phase3_orchestrate(args, cfg: Dict[str, Any], *, txn_root: Path, contract_f
         manifest["gates"] = diag.get("gates", {})
         manifest["input_recheck_after_optimization"] = diag.get(
             "input_recheck_after_optimization", {})
-        _assert_no_prohibited_modules("phase3-end", allow_optimizer=True)
         if status == "PHASE_3_COMPLETE":
-            return finalize(status, None, 0)
+            return _phase3_finalize(txn, manifest, lines, t0, status, None, 0)
         if status == "STOPPED":
             s = diag.get("stop") or {}
-            return finalize("STOPPED",
-                            StopRun(s.get("code", "S-3"), s.get("gate", "phase3"),
-                                    s.get("message", "gate failure")), 2)
-        return finalize(status, None, 4)    # REVIEW_REQUIRED_TARGET_MISMATCH
-
+            return _phase3_finalize(
+                txn, manifest, lines, t0, "STOPPED",
+                StopRun(s.get("code", "S-3"), s.get("gate", "phase3"),
+                        s.get("message", "gate failure")), 2)
+        return _phase3_finalize(txn, manifest, lines, t0, status, None, 4)
     except StopRun as stop:
         log(f"STOP {stop.code} [{stop.gate}] {stop.message}")
         if not acquired:
-            print(f"[phase3] STOPPED (no attempt bundle: {stop.message})",
-                  file=sys.stderr)
             return 2
-        return finalize("STOPPED", stop, 2)
+        return _phase3_finalize(txn, manifest, lines, t0, "STOPPED", stop, 2)
     except Exception:
         tb = traceback.format_exc()
         log("UNEXPECTED ERROR:\n" + tb)
         if not acquired:
-            print(tb, file=sys.stderr)
             return 3
         stop = StopRun("S-0", "unexpected", tb.splitlines()[-1] if tb else "unknown")
-        return finalize("STOPPED", stop, 3)
+        return _phase3_finalize(txn, manifest, lines, t0, "STOPPED", stop, 3)
+
 
 # --------------------------------------------------------------------------- #
 # orchestration
@@ -2267,9 +2494,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     help="phases 1-2: verification only (stop after Phase 2); "
                          "phase 3: input-contract validation WITHOUT any optimizer call")
     ap.add_argument("--authorization", default=None,
-                    help="REAL Phase 3 only: absolute path to the external "
-                         "p2a_phase3_execution_authorization_v1 JSON (created only "
-                         "after third-review APPROVE); dry-runs run without it")
+                    help="REAL Phase 3 only: absolute path (OUTSIDE both "
+                         "worktrees) to the external "
+                         "p2a_phase3_execution_authorization_v1 JSON, created only "
+                         "after the canonical review-v5 APPROVE; dry-runs run "
+                         "without it")
     args = ap.parse_args(argv)
 
     if args.phase > 3:

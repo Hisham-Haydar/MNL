@@ -1,0 +1,10 @@
+[19:36:41] Phase 3 - input contract (accepted Phase 1-2 evidence)
+[19:36:41] UNEXPECTED ERROR:
+Traceback (most recent call last):
+  File "C:\Users\hisham\Repo\MNL\scripts\p2a\run_p2a_regionlive_rebuild.py", line 2298, in _phase3_run
+    ctx = _phase3_contract(out, cfg, Path(args.config), log, rtmap=rtmap)
+  File "C:\Users\hisham\Repo\MNL\scripts\p2a\run_p2a_regionlive_rebuild.py", line 1802, in _phase3_contract
+    import jax
+ModuleNotFoundError: No module named 'jax'
+
+FINAL STATUS: STOPPED

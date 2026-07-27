@@ -1,10 +1,12 @@
 """Safety tests for the P2a region-live Phase-3 runner under the simplified
 research-grade execution scope (FR_P2a_region_live_phase3_execution_scope_v1.md).
 
-No test invokes the real optimizer or writes to any production output path.
-Estimator-route tests monkeypatch scipy.optimize.minimize in-process; the
-canonical dry-run is exercised in a subprocess. Adversarial-caller defenses are
-out of scope by manager decision.
+No test invokes the real optimizer. The canonical dry-run test (test 29) runs
+in a subprocess and intentionally writes one preserved attempt bundle under the
+production attempts/ history, consistent with the never-delete evidence
+discipline; no other test writes any production output path. Estimator-route
+tests monkeypatch scipy.optimize.minimize in-process. Adversarial-caller
+defenses are out of scope by manager decision.
 """
 from __future__ import annotations
 
@@ -684,3 +686,98 @@ def test_30_gitlink_mismatch_refused(tmp_path):
     with pytest.raises(runner.StopRun, match="gitlink"):
         runner._verify_execution_gates(args, _repo_root=repo,
                                        _nested_root=nested, _check_gitlink=True)
+
+
+# --------------------------------------------------------------------------- #
+# collision-resistant attempt allocation (review-v6 required fixes 1-2)
+# --------------------------------------------------------------------------- #
+class _FrozenDT:
+    """Freeze the attempt-id timestamp so a repeated UUID forces an id collision."""
+
+    @staticmethod
+    def now(tz=None):
+        import datetime as _d
+        return _d.datetime(2026, 7, 25, 12, 0, 0, tzinfo=tz)
+
+
+def _uuid_seq(monkeypatch, hexes):
+    """uuid4 stub returning the given hex tokens in order (last one repeats)."""
+    calls = {"n": 0}
+
+    def fake_uuid4():
+        i = min(calls["n"], len(hexes) - 1)
+        calls["n"] += 1
+        return _NS(hex=hexes[i])
+
+    monkeypatch.setattr(runner.uuid, "uuid4", fake_uuid4)
+    return calls
+
+
+def test_31_attempt_allocation_collision_retry(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner, "datetime", _FrozenDT)
+    calls = _uuid_seq(monkeypatch, ["a" * 32, "a" * 32, "a" * 32, "b" * 32])
+    root = tmp_path / "p3"
+    txn1 = runner.Phase3Transaction(root, "estimate")
+    txn1.acquire()
+    id1 = txn1.attempt_id
+    assert "a" * 32 in id1                       # full untruncated uuid4 hex
+    (txn1.staging / "evidence.txt").write_text("first", encoding="utf-8")
+    txn1.finish("STOPPED")
+    txn1.release()
+    assert calls["n"] == 1
+
+    txn2 = runner.Phase3Transaction(root, "estimate")   # same label, same status
+    txn2.acquire()
+    id2 = txn2.attempt_id
+    assert calls["n"] == 4                       # 2 detected collisions, then fresh
+    assert id2 != id1 and "b" * 32 in id2
+    (txn2.staging / "evidence.txt").write_text("second", encoding="utf-8")
+    txn2.finish("STOPPED")
+    txn2.release()
+
+    dests = sorted(p.name for p in (root / "attempts").iterdir())
+    assert dests == sorted([f"{id1}_STOPPED", f"{id2}_STOPPED"])
+    assert ((root / "attempts" / f"{id1}_STOPPED" / "evidence.txt")
+            .read_text(encoding="utf-8") == "first")     # nothing overwritten
+    assert ((root / "attempts" / f"{id2}_STOPPED" / "evidence.txt")
+            .read_text(encoding="utf-8") == "second")
+    assert list((root / ".staging").iterdir()) == []     # no stranded staging
+    assert not (root / ".phase3.lock").exists()          # lock released normally
+    # a stranded .staging directory also counts as an occupied destination
+    planted = root / ".staging" / "someone_elses_attempt"
+    planted.mkdir()
+    probe = runner.Phase3Transaction(root, "estimate")
+    assert probe._attempt_destination_exists("someone_elses_attempt")
+    planted.rmdir()
+
+
+def test_32_attempt_allocation_retry_exhaustion(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner, "datetime", _FrozenDT)
+    calls = _uuid_seq(monkeypatch, ["f" * 32])           # every candidate collides
+    root = tmp_path / "p3"
+    txn1 = runner.Phase3Transaction(root, "estimate")
+    txn1.acquire()
+    id1 = txn1.attempt_id
+    (txn1.staging / "evidence.txt").write_text("first", encoding="utf-8")
+    txn1.finish("STOPPED")
+    txn1.release()
+
+    txn2 = runner.Phase3Transaction(root, "estimate")
+    with pytest.raises(runner.StopRun, match="attempt-allocation"):
+        txn2.acquire()
+    assert calls["n"] == 1 + txn2._ATTEMPT_ALLOC_MAX_TRIES   # finite retry bound
+    assert txn2.attempt_id is None and txn2.staging is None
+    assert not (root / ".phase3.lock").exists()   # controlled release, not stranded
+    assert list((root / ".staging").iterdir()) == []         # no stranded evidence
+    assert sorted(p.name for p in (root / "attempts").iterdir()) == [
+        f"{id1}_STOPPED"]                                    # nothing published
+    assert ((root / "attempts" / f"{id1}_STOPPED" / "evidence.txt")
+            .read_text(encoding="utf-8") == "first")         # first attempt intact
+    assert not (root / "complete").exists()
+    # after the controlled stop the root remains usable by a fresh transaction
+    _uuid_seq(monkeypatch, ["e" * 32])
+    txn3 = runner.Phase3Transaction(root, "estimate")
+    txn3.acquire()
+    txn3.finish("STOPPED")
+    txn3.release()
+    assert not (root / ".phase3.lock").exists()

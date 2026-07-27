@@ -52,6 +52,7 @@ import subprocess
 import sys
 import time
 import traceback
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -79,8 +80,10 @@ PACKAGE_SOURCE_ROOT = (MNL_ROOT / "dclaborsupply-monorepo"
 PHASE3_PREOPT_OBJECTIVE_TOL = 1.0e-4
 PHASE3_TARGET_MISMATCH_STATUS = "REVIEW_REQUIRED_TARGET_MISMATCH"
 # decision D: the EXACT dclaborsupply module inventory of the Phase-3
-# contract/objective route; each must be a tracked, byte-identical blob at the
-# approved nested commit (ignored/untracked substitutions therefore fail)
+# contract/objective route; each must be a tracked blob at the expected nested
+# commit with Git-canonical content equality (git hash-object --path; under
+# autocrlf the raw worktree bytes may legitimately differ from the LF blob).
+# Ignored/untracked substitutions therefore fail.
 REQUIRED_PACKAGE_MODULES = (
     "dclaborsupply", "dclaborsupply.models", "dclaborsupply.data",
     "dclaborsupply.data.loader", "dclaborsupply.spec",
@@ -1588,17 +1591,52 @@ def _bundle_hashes(staging: Path) -> Tuple[Dict[str, str], str]:
 class Phase3Transaction:
     """Lock + staging/attempts/complete result-directory transaction (decision B)."""
 
+    _ATTEMPT_ALLOC_MAX_TRIES = 100   # defensive bound; uuid4 repeats are ~impossible
+
     def __init__(self, root: Path, label: str):
         self.root = Path(root)
+        self.label = str(label)
         self.lock = self.root / ".phase3.lock"
         self.staging_base = self.root / ".staging"
         self.attempts = self.root / "attempts"
         self.complete = self.root / "complete"
-        # pid + nanosecond suffix: unique even for same-second attempts in one process
-        self.attempt_id = (f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
-                           f"_{os.getpid()}_{time.time_ns() % 1_000_000:06d}_{label}")
-        self.staging = self.staging_base / self.attempt_id
+        # review-v6 fix 1: the attempt id is NOT chosen here -- it is allocated
+        # collision-resistantly (full uuid4 hex) in acquire(), under the lock
+        self.attempt_id: Optional[str] = None
+        self.staging: Optional[Path] = None
         self._locked = False
+
+    def _attempt_destination_exists(self, attempt_id: str) -> bool:
+        """True if any prior destination clashes with this attempt id: its staging
+        directory, or an attempts/ entry under ANY status suffix. complete/ has a
+        fixed name (never attempt-id derived) so it cannot clash with an id."""
+        if (self.staging_base / attempt_id).exists():
+            return True
+        if self.attempts.is_dir():
+            for p in self.attempts.iterdir():
+                if p.name == attempt_id or p.name.startswith(attempt_id + "_"):
+                    return True
+        return False
+
+    def _allocate_unique_attempt(self, label: str) -> str:
+        """Collision-resistant attempt allocation (review-v6 required fix 1).
+        Called ONLY while the exclusive lock is held, so no two normal Phase-3
+        processes can reserve the same destination; the staging mkdir with
+        exist_ok=False is the atomic reservation itself."""
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        for _ in range(self._ATTEMPT_ALLOC_MAX_TRIES):
+            attempt_id = f"{stamp}_{os.getpid()}_{uuid.uuid4().hex}_{label}"
+            if self._attempt_destination_exists(attempt_id):
+                continue
+            try:
+                (self.staging_base / attempt_id).mkdir(parents=True,
+                                                       exist_ok=False)
+            except FileExistsError:
+                continue
+            return attempt_id
+        raise StopRun("S-0", "attempt-allocation",
+                      f"no unique attempt id after "
+                      f"{self._ATTEMPT_ALLOC_MAX_TRIES} tries (label={label})")
 
     def migrate_pre_review_evidence(self) -> None:
         """One-time byte-preserving relocation of the pre-review loose dry-run files."""
@@ -1622,12 +1660,23 @@ class Phase3Transaction:
                           "(the lock is never deleted automatically)")
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump({"pid": os.getpid(), "utc": _utcnow(),
-                       "attempt": self.attempt_id}, f)
+                       "attempt": None}, f)     # attempt allocated below
         self._locked = True
         self.attempts.mkdir(exist_ok=True)
         self.migrate_pre_review_evidence()      # under the lock (decision H)
         self.staging_base.mkdir(exist_ok=True)
-        self.staging.mkdir(parents=True)
+        # review-v6 fix 2: allocate the unique attempt AFTER the lock is held;
+        # on the (defensive) exhaustion stop, no evidence has been staged, so
+        # the lock is released through the normal controlled path
+        try:
+            self.attempt_id = self._allocate_unique_attempt(self.label)
+        except StopRun:
+            self.release()
+            raise
+        self.staging = self.staging_base / self.attempt_id
+        self.lock.write_text(json.dumps({"pid": os.getpid(), "utc": _utcnow(),
+                                         "attempt": self.attempt_id}),
+                             encoding="utf-8")
 
     def complete_exists(self) -> bool:
         return self.complete.exists()
@@ -1969,7 +2018,7 @@ def _phase3_estimate(ctx: Dict[str, Any], staging: Path, cfg: Dict[str, Any], lo
                      mark_optimizer_called=None) -> Tuple[str, Dict[str, Any]]:
     """Real Phase-3 estimation over the ordered 37-free vector (decision D), with
     post-optimization input recheck (G), gate battery (F), and atomic staged artifact
-    emission (C). `minimize_fn` injection exists for unit tests ONLY; the production
+    emission (C). Unit tests monkeypatch scipy.optimize.minimize; the production
     path imports scipy here and nowhere else."""
     import jax
     import jax.numpy as jnp
@@ -2235,6 +2284,7 @@ def _phase3_run(args, cfg: Dict[str, Any],
     try:
         txn.acquire()
         acquired = True
+        manifest["attempt_id"] = txn.attempt_id     # allocated under the lock
         _assert_no_prohibited_modules("phase3-start")
         if (not args.dry_run) and txn.complete_exists():
             raise StopRun("S-0", "phase3-immutable",

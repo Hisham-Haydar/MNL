@@ -1,0 +1,4 @@
+[19:29:21] Phase 3 - input contract (accepted Phase 1-2 evidence)
+[19:29:23] phase3 contract: pins/map/round-trips ok | derived at-bound ['beta_l_age2_sm', 'beta_l_age2_sf'] | negLL(start)=19053.4655316009 (dev 0.00e+00)
+[19:29:23] Phase 3 dry-run COMPLETE - contract verified, optimizer NOT called
+FINAL STATUS: PHASE_3_DRY_RUN_COMPLETE

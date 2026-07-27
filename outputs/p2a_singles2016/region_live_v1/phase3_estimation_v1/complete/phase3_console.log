@@ -1,0 +1,6 @@
+[08:35:02] Phase 3 - input contract (accepted Phase 1-2 evidence)
+[08:35:08] phase3 contract: pins/map/round-trips ok | derived at-bound ['beta_l_age2_sm', 'beta_l_age2_sf'] | negLL(start)=19053.4655316009 (dev 0.00e+00)
+[08:35:08] Phase 3 - estimation (real run)
+[08:35:11] phase3 optimize: 37-free L-BFGS-B, options={'maxiter': 5000, 'maxcor': 30, 'ftol': 1e-15, 'gtol': 1e-10}
+[08:35:12] phase3 fit: negLL 19053.4655316009  iters=1 nfev=3 success=True  (1.3s)
+FINAL STATUS: PHASE_3_COMPLETE

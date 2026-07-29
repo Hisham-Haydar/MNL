@@ -1,9 +1,14 @@
 ﻿# =============================================================================
-# FR P2a region-live production rebuild — run-config v1 (Phases 1-3)
-# Phases 1-3 implemented; a REAL Phase-3 run requires the documented CLI
+# FR P2a region-live production rebuild — run-config v1 (Phases 1-4)
+# Phases 1-4 implemented; a REAL Phase-3 run requires the documented CLI
 # execution contract (FR_P2a_region_live_phase3_execution_scope_v1.md s8:
 # --execute-phase3, expected MNL/nested HEADs, full --untracked-files=all
-# cleanliness of both worktrees, review-v6 APPROVE hash); Phases 4-8 unsupported.
+# cleanliness of both worktrees, review-v6 APPROVE hash). A REAL Phase-4 run
+# requires the PHASE-4-SPECIFIC gate (--execute-phase4 + the same Git gates +
+# FR_P2a_region_live_phase4_code_review_v6.md APPROVE hash; Phase-4 reviews
+# v1-v5 and the Phase-3 review-v6 are rejected).
+# Phase-4 dry-run is supported and never evaluates the Hessian.
+# Phases 5-8 are unsupported and refused.
 # =============================================================================
 # Governed by (binding, in this order):
 #   docs/France_case/P2a/FR_P2a_region_live_manager_decisions_v2.md   (canonical)
@@ -18,10 +23,12 @@
 run:
   name: p2a_regionlive_rebuild_v1
   track: FR-2016 singles P2a region-live
-  phases_implemented: [1, 2, 3]       # Phase 3 supported; execution gated by the CLI contract (scope doc s8)
+  phases_implemented: [1, 2, 3, 4]    # Phases 1-4; real Phase-3/4 runs are CLI-contract gated
   phase3_supported: true
   phase3_execution_authorized: false  # real runs require the CLI execution contract (scope doc s8: --execute-phase3 + Git/review-v6 gates)
-  phases_4_to_8_supported: false
+  phase4_supported: true              # dry-run supported (never evaluates the Hessian)
+  phase4_execution_authorized: false  # real runs require --execute-phase4 + Git gates + phase4 review-v6 APPROVE (phase4 reviews v1-v5 + phase3 review-v6 rejected)
+  phases_5_to_8_supported: false      # refused by the runner (exit 2)
   output_root: outputs/p2a_singles2016/region_live_v1
   frozen_stem_name: fr_p2a_singles2016_regionlive
 
@@ -277,3 +284,34 @@ phase3:                                 # AUTHORIZED by FR_P2a_region_live_phase
     - per-household scores / sandwich SE (Phase 5)
     - post-estimation (Phase 6), welfare, synthetic recovery
     - any write outside phase3_estimation_v1/
+
+phase4:                                 # AUTHORIZED by FR_P2a_region_live_phase3_manager_acceptance_v1.md s15
+  output_subdir: phase4_curvature_v1    # all Phase-4 writes confined here
+  authorization_doc: docs/France_case/P2a/FR_P2a_region_live_phase3_manager_acceptance_v1.md
+  accepted_phase3_bundle:               # the IMMUTABLE accepted Phase-3 result diagnosed
+    dir: outputs/p2a_singles2016/region_live_v1/phase3_estimation_v1/complete
+    bundle_sha256: 2cf237648743f59bd742b12feceaea67c5fd377b26faf4fb6fad6f452f86864b
+    negll_final: 19053.46553160093
+  gates:                                # ratified D-3/D-4 (plan v2 s13-s14, G-5..G-9);
+    # the runner asserts EXACT equality with its immutable PHASE4_SAFETY_CONSTANTS
+    symmetry_rel_tol: 1.0e-8            # G-6: max|H - H'| <= tol * max|H| before symmetrization
+    rank_rel_tol: 1.0e-10               # eps_rank (D-3): G-7 / R-1 / R-4 rank tolerance
+    nonpos_count_eig_tol: 1.0e-8        # G-5 n_nonpos counter threshold
+    condition_clean_max: 1.0e+7         # G-8 three-tier (D-4): <=1e7 clean
+    condition_warn_max: 1.0e+10         # 1e7..1e10 warning; >1e10 hard failure (S-4)
+    pooled_baseline_condition: 1.295e+6 # D-4 comparison anchor (certified pooled baseline)
+    n_free: 37                          # full free-Hessian rank requirement (G-7)
+    regional_n: 10                      # R-1 design rank / R-4 Schur rank requirement
+    loading_share_warn: 0.5             # R-3: warning-only, never gates (D-3)
+    consistency_negll_tol: 1.0e-6       # |negLL(theta_hat) - accepted final| (D-2 analog)
+    consistency_grad_tol: 1.0e-6        # max|grad - published Phase-3 gradient_final|
+  regional_parameters:                  # plan v2 s5/s14; must equal the spec-derived set
+    [beta_E_gsur, beta_E_drgn2, beta_E_drgn3, beta_E_drgn4, beta_E_drgn5,
+     beta_E_drgn6, beta_E_drgn7, beta_E_drgn8, beta_E_drgur, beta_E_drgmd]
+  regional_design_columns:              # R-1 household-level columns, position-matched
+    [gsur, reg2, reg3, reg4, reg5, reg6, reg7, reg8, drgur, drgmd]
+  prohibited_in_phase4:                 # asserted in code (S-0) + structural
+    - any optimizer call or theta change
+    - clustered standard errors / scores / sandwich (Phase 5)
+    - post-estimation (Phase 6), welfare, synthetic recovery
+    - any write outside phase4_curvature_v1/

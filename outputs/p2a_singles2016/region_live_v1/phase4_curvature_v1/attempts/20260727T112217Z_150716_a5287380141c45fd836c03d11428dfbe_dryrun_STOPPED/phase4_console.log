@@ -1,0 +1,4 @@
+[13:22:18] Phase 4 - contract (accepted Phase-3 bundle + inputs)
+[13:22:24] phase3 contract: pins/map/round-trips ok | derived at-bound ['beta_l_age2_sm', 'beta_l_age2_sf'] | negLL(start)=19053.4655316009 (dev 0.00e+00)
+[13:22:24] STOP S-8 [phase4-contract] bundle theta csv/json vectors disagree
+FINAL STATUS: STOPPED

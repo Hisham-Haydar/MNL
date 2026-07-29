@@ -210,8 +210,14 @@ def test_10_canonical_out_and_config_refused(tmp_path):
     rc = runner.main(["--config", str(copied), "--phase", "3",
                       "--out", str(runner.CANONICAL_REGIONLIVE_ROOT)])
     assert rc == 2
-    rc = runner.main(["--config", str(CONFIG_PATH), "--phase", "4"])
-    assert rc == 2                                   # phases > 3 refused
+    rc = runner.main(["--config", str(CONFIG_PATH), "--phase", "4",
+                      "--out", str(tmp_path / "p4out")])
+    assert rc == 2                                   # phase 4: canonical out only
+    rc = runner.main(["--config", str(copied), "--phase", "4",
+                      "--out", str(runner.CANONICAL_REGIONLIVE_ROOT)])
+    assert rc == 2                                   # phase 4: canonical config only
+    rc = runner.main(["--config", str(CONFIG_PATH), "--phase", "5"])
+    assert rc == 2                                   # phases > 4 refused
 
 
 def test_11_alias_mutations_refused(cfg):
@@ -673,7 +679,14 @@ def test_29_subprocess_dry_run_never_optimizes():
     assert man["optimizer_called"] is False
     assert man["execution_ready"] is False
     assert man["review_gate"] == "AWAITING_REVIEW_V6_APPROVE"
-    assert not (runner.CANONICAL_PHASE3_ROOT / "complete").exists()
+    # the ACCEPTED immutable complete/ bundle exists since the real Phase-3 run;
+    # the dry-run must leave it byte-identical (recomputed deterministic hash)
+    comp = runner.CANONICAL_PHASE3_ROOT / "complete"
+    hashes = {n: hashlib.sha256((comp / n).read_bytes()).hexdigest()
+              for n in runner.PHASE3_ARTIFACTS}
+    joined = "\n".join(f"{n}:{hashes[n]}" for n in sorted(hashes))
+    assert (hashlib.sha256(joined.encode("utf-8")).hexdigest()
+            == runner.PHASE3_ACCEPTED_BUNDLE_SHA256)
 
 
 def test_30_gitlink_mismatch_refused(tmp_path):
@@ -780,4 +793,848 @@ def test_32_attempt_allocation_retry_exhaustion(tmp_path, monkeypatch):
     txn3.acquire()
     txn3.finish("STOPPED")
     txn3.release()
+    assert not (root / ".phase3.lock").exists()
+
+# --------------------------------------------------------------------------- #
+# Phase 4: curvature, rank and regional identification (no Hessian evaluation
+# of the real objective anywhere in this battery)
+# --------------------------------------------------------------------------- #
+def _mk_fake_p3_bundle(d, gates_ok=True, status="PHASE_3_COMPLETE"):
+    d.mkdir(parents=True, exist_ok=True)
+    arts = {"phase3_console.log": "log\nFINAL STATUS: PHASE_3_COMPLETE\n",
+            "theta_estimated.csv": "param,value\n",
+            "optimizer_diagnostics.json": "{}",
+            "estimation_results.json": "{}"}
+    for n, c in arts.items():
+        (d / n).write_text(c, encoding="utf-8")
+    hashes = {n: hashlib.sha256((d / n).read_bytes()).hexdigest() for n in arts}
+    joined = "\n".join(f"{n}:{hashes[n]}" for n in sorted(hashes))
+    bundle = hashlib.sha256(joined.encode("utf-8")).hexdigest()
+    man = {"status": status, "optimizer_called": True,
+           "artifact_hashes": hashes, "bundle_sha256": bundle,
+           "gates": {k: bool(gates_ok) for k in
+                     ("g1_ok", "g3_ok", "g15_bound_hits_ok", "g16_inbounds_ok",
+                      "g2_optimizer_success", "g_pins_bitwise_unchanged")}}
+    (d / "phase3_manifest.json").write_text(json.dumps(man), encoding="utf-8")
+    return bundle
+
+
+def test_33_phase3_bundle_hash_binding(tmp_path):
+    d = tmp_path / "complete"
+    bundle = _mk_fake_p3_bundle(d)
+    rec = runner._phase4_verify_phase3_bundle(d, bundle)
+    assert rec["bundle_sha256"] == bundle
+    with pytest.raises(runner.StopRun, match="phase3-bundle"):
+        runner._phase4_verify_phase3_bundle(d, "0" * 64)   # accepted-sha mismatch
+    (d / "estimation_results.json").write_text('{"x":1}', encoding="utf-8")
+    with pytest.raises(runner.StopRun, match="phase3-bundle"):
+        runner._phase4_verify_phase3_bundle(d, bundle)     # tampered artifact
+    d2 = tmp_path / "c2"
+    b2 = _mk_fake_p3_bundle(d2)
+    (d2 / "theta_estimated.csv").unlink()
+    with pytest.raises(runner.StopRun, match="phase3-bundle"):
+        runner._phase4_verify_phase3_bundle(d2, b2)        # missing artifact
+    d3 = tmp_path / "c3"
+    b3 = _mk_fake_p3_bundle(d3, status="REVIEW_REQUIRED_TARGET_MISMATCH")
+    with pytest.raises(runner.StopRun, match="phase3-bundle"):
+        runner._phase4_verify_phase3_bundle(d3, b3)        # not an accepted result
+    d4 = tmp_path / "c4"
+    b4 = _mk_fake_p3_bundle(d4, gates_ok=False)
+    with pytest.raises(runner.StopRun, match="phase3-bundle"):
+        runner._phase4_verify_phase3_bundle(d4, b4)        # recorded gates failing
+
+
+def test_34_regional_name_binding():
+    fillers = [f"free_{i:02d}" for i in range(27)]
+    free = fillers[:15] + list(runner.PHASE4_REGIONAL_PARAMS) + fillers[15:]
+    got = runner._phase4_regional_names(free, list(runner.PHASE4_REGIONAL_PARAMS))
+    assert tuple(got) == runner.PHASE4_REGIONAL_PARAMS
+    with pytest.raises(runner.StopRun, match="regional-names"):
+        runner._phase4_regional_names(
+            free, list(reversed(runner.PHASE4_REGIONAL_PARAMS)))  # config conflict
+    with pytest.raises(runner.StopRun, match="regional-names"):
+        runner._phase4_regional_names(free + ["beta_E_extra"],
+                                      list(runner.PHASE4_REGIONAL_PARAMS))
+    with pytest.raises(runner.StopRun, match="regional-names"):
+        runner._phase4_regional_names(
+            [n for n in free if n != "beta_E_drgn5"],
+            list(runner.PHASE4_REGIONAL_PARAMS))              # spec missing one
+
+
+def test_35_symmetry_gate():
+    rng = np.random.default_rng(7)
+    A = rng.normal(size=(6, 6))
+    H = A + A.T                                  # exactly symmetric
+    rec, Hs = runner._phase4_symmetry(H, 1e-8)
+    assert rec["ok"] and np.array_equal(Hs, Hs.T)
+    bad = H.copy()
+    bad[0, 1] += 1e-4 * np.max(np.abs(H))        # asymmetry above threshold
+    rec2, _ = runner._phase4_symmetry(bad, 1e-8)
+    assert not rec2["ok"] and rec2["max_abs_asymmetry"] > rec2["threshold"]
+    ok3, _ = runner._phase4_symmetry(H + 1e-12 * np.triu(np.ones((6, 6)), 1),
+                                     1e-8)       # tiny asymmetry within tol
+    assert ok3["ok"]
+
+
+def test_36_rank_tolerance_and_full_rank():
+    c = runner.PHASE4_SAFETY_CONSTANTS
+    good = np.diag(np.linspace(1.0, 2.0, 37))
+    e = runner._phase4_eigen(good, 37, c)
+    assert e["rank"] == 37 and e["rank_ok"] and e["pd_ok"] and e["n_nonpos"] == 0
+    assert e["rank_tolerance"] == pytest.approx(1e-10 * 2.0)
+    deficient = np.diag([1e-15] + list(np.linspace(1.0, 2.0, 36)))
+    e2 = runner._phase4_eigen(deficient, 37, c)
+    assert e2["rank"] == 36 and not e2["rank_ok"]     # below eps_rank = 1e-10*max
+    neg = np.diag([-1e-3] + list(np.linspace(1.0, 2.0, 36)))
+    e3 = runner._phase4_eigen(neg, 37, c)
+    assert (not e3["pd_ok"]) and e3["n_nonpos"] == 1
+    assert e3["condition_number"] == float("inf")
+    assert e3["condition_tier"] == "failure" and not e3["condition_ok"]
+
+
+def test_37_condition_tiers():
+    c = runner.PHASE4_SAFETY_CONSTANTS
+    def mk(hi):
+        return np.diag([1.0] + [hi] * 36)
+    assert runner._phase4_eigen(mk(1e6), 37, c)["condition_tier"] == "clean"
+    w = runner._phase4_eigen(mk(1e8), 37, c)
+    assert w["condition_tier"] == "warning" and w["condition_ok"]
+    f = runner._phase4_eigen(mk(1e11), 37, c)
+    assert f["condition_tier"] == "failure" and not f["condition_ok"]
+
+
+def test_38_regional_design_rank():
+    rng = np.random.default_rng(11)
+    M = rng.normal(size=(200, 10))
+    d = runner._phase4_design_rank(M, 1e-10)
+    assert d["rank"] == 10 and d["rank_ok"] and d["shape"] == [200, 10]
+    M2 = M.copy()
+    M2[:, 3] = M2[:, 7]                          # exact collinearity
+    d2 = runner._phase4_design_rank(M2, 1e-10)
+    assert d2["rank"] == 9 and not d2["rank_ok"]
+    assert any({p["i"], p["j"]} == {3, 7} for p in d2["high_corr_pairs"])
+
+
+def _pd_matrix(n, seed=3):
+    rng = np.random.default_rng(seed)
+    A = rng.normal(size=(n, n))
+    return A @ A.T + n * np.eye(n)
+
+
+def test_39_schur_complement_calculation():
+    c = runner.PHASE4_SAFETY_CONSTANTS
+    H = _pd_matrix(12)
+    reg = [4, 9, 11]
+    s = runner._phase4_schur(H, reg, c)
+    oth = [i for i in range(12) if i not in reg]
+    S_manual = (H[np.ix_(reg, reg)]
+                - H[np.ix_(reg, oth)] @ np.linalg.inv(H[np.ix_(oth, oth)])
+                @ H[np.ix_(oth, reg)])
+    assert np.allclose(s["_S"], 0.5 * (S_manual + S_manual.T),
+                       rtol=1e-10, atol=1e-10)
+    assert s["raw_subblock_pd_ok"] and s["schur_rank"] == 3
+    assert s["schur_rank_ok"] and s["schur_min_eig_ok"]
+    assert s["solve_vs_pinv_max_abs_diff"] < 1e-8
+
+
+def test_40_schur_rank_and_min_eig_gates():
+    c = runner.PHASE4_SAFETY_CONSTANTS
+    # deterministic negative Schur direction: coupling 1.1 between one nuisance
+    # and one regional coordinate drives S[r,r] to exactly 1 - 1.21 = -0.21
+    H = np.eye(12)
+    H[0, 4] = H[4, 0] = 1.1
+    s = runner._phase4_schur(H, [4, 9, 11], c)
+    assert s["raw_subblock_pd_ok"] is True          # raw block is the identity
+    assert s["schur_min_eig"] == pytest.approx(1.0 - 1.1 ** 2)
+    assert s["schur_rank"] == 2 and s["schur_rank_ok"] is False
+    assert s["schur_min_eig_ok"] is False
+    # deterministic raw-subblock PD failure (review-v1 fix: DIRECT assertions,
+    # no disjunction that can pass while raw_subblock_pd_ok is true)
+    H2 = np.diag(np.linspace(1.0, 2.0, 12))
+    H2[9, 9] = -0.5                                 # regional coordinate
+    s2 = runner._phase4_schur(H2, [4, 9, 11], c)
+    assert s2["raw_subblock_pd_ok"] is False
+    assert s2["raw_subblock_min_eig"] <= 0.0
+    # loading shares: regional-dominated smallest eigenvector triggers warning
+    eig, vec = np.linalg.eigh(H2)
+    ls = runner._phase4_loading_shares(eig, vec, [4, 9, 11], 0.5)
+    assert ls["three_smallest"][0]["regional_loading_share"] > 0.5
+    assert ls["any_warning"] and "never gates" in ls["note"]
+
+
+def test_41_phase4_transaction_and_overwrite_refusal(tmp_path, cfg):
+    import time as _time
+    root = tmp_path / "p4"
+    txn = runner.Phase3Transaction(root, "curvature",
+                                   success_status="PHASE_4_COMPLETE")
+    txn.acquire()
+    man = runner._phase4_manifest_skeleton(_args(dry_run=False), cfg, txn, {})
+    assert man["phase"] == 4 and man["optimizer_called"] is False
+    assert man["hessian_evaluated"] is False
+    assert man["execution_ready"] is False
+    # incomplete artifact set: success downgraded, complete/ never created
+    (txn.staging / "phase4_diagnostics.json").write_text("{}", encoding="utf-8")
+    rc = runner._phase4_finalize(txn, man, ["l"], _time.time(),
+                                 "PHASE_4_COMPLETE", None, 0)
+    assert rc == 2 and not (root / "complete").exists()
+    d = next(x for x in (root / "attempts").iterdir())
+    m = json.loads((d / "phase4_manifest.json").read_text(encoding="utf-8"))
+    assert m["status"] == "STOPPED"
+    assert m["stop"]["gate"] == "bundle-completeness"
+    assert "phase4_manifest.json" not in m["artifact_hashes"]     # no self-hash
+    # complete artifact set publishes the exact eight-file bundle
+    txn2 = runner.Phase3Transaction(root, "curvature",
+                                   success_status="PHASE_4_COMPLETE")
+    txn2.acquire()
+    for n in runner.PHASE4_ARTIFACTS:
+        if n != "phase4_console.log":
+            (txn2.staging / n).write_text("x", encoding="utf-8")
+    man2 = runner._phase4_manifest_skeleton(_args(dry_run=False), cfg, txn2, {})
+    rc = runner._phase4_finalize(txn2, man2, ["go"], _time.time(),
+                                 "PHASE_4_COMPLETE", None, 0)
+    assert rc == 0
+    pub = sorted(p.name for p in (root / "complete").iterdir())
+    assert pub == sorted(list(runner.PHASE4_ARTIFACTS) + ["phase4_manifest.json"])
+    # a further success can never overwrite the published complete/ result
+    txn3 = runner.Phase3Transaction(root, "curvature",
+                                   success_status="PHASE_4_COMPLETE")
+    txn3.acquire()
+    for n in runner.PHASE4_ARTIFACTS:
+        if n != "phase4_console.log":
+            (txn3.staging / n).write_text("y", encoding="utf-8")
+    man3 = runner._phase4_manifest_skeleton(_args(dry_run=False), cfg, txn3, {})
+    rc = runner._phase4_finalize(txn3, man3, ["again"], _time.time(),
+                                 "PHASE_4_COMPLETE", None, 0)
+    assert rc == 2                              # downgraded, publish refused
+    assert (root / "complete" / "phase4_diagnostics.json"
+            ).read_text(encoding="utf-8") == "x"
+    assert not (root / ".phase3.lock").exists()
+
+
+def test_42_phase4_subprocess_dry_run_never_evaluates_hessian():
+    r = subprocess.run(
+        [sys.executable, str(MNL_ROOT / "scripts/p2a/run_p2a_regionlive_rebuild.py"),
+         "--config", str(CONFIG_PATH), "--phase", "4",
+         "--out", str(runner.CANONICAL_REGIONLIVE_ROOT)],
+        capture_output=True, text=True, timeout=600, cwd=str(MNL_ROOT))
+    assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
+    attempts = runner.CANONICAL_PHASE4_ROOT / "attempts"
+    d = max((x for x in attempts.iterdir() if x.name.startswith("2026")),
+            key=lambda p: p.name)
+    man = json.loads((d / "phase4_manifest.json").read_text(encoding="utf-8"))
+    assert man["status"] == "PHASE_4_DRY_RUN_COMPLETE"
+    assert man["gradient_evaluated"] is False
+    assert man["hessian_evaluated"] is False
+    assert man["optimizer_called"] is False
+    assert man["execution_ready"] is False
+    assert man["review_gate"] == "AWAITING_PHASE4_REVIEW_V6_APPROVE"
+    assert man["contract_phase4"]["derivative_route"]["loaded"] is True
+    assert man["contract_phase4"]["derivative_route"]["evaluated"] is False
+    assert (man["accepted_phase3_bundle_sha256"]
+            == runner.PHASE3_ACCEPTED_BUNDLE_SHA256)
+    assert not (runner.CANONICAL_PHASE4_ROOT / "complete").exists()
+    assert not (runner.CANONICAL_PHASE4_ROOT / ".phase3.lock").exists()
+
+
+def test_43_phase5_refused(cfg):
+    for ph in (5, 6, 7, 8):
+        rc = runner.main(["--config", str(CONFIG_PATH), "--phase", str(ph)])
+        assert rc == 2
+
+
+def test_44_phase4_execute_without_gates_refused(cfg):
+    lock = runner.CANONICAL_PHASE4_ROOT / ".phase3.lock"
+    assert not lock.exists()
+    with pytest.raises(runner.StopRun):
+        runner.run_phase4(_args(dry_run=False, execute_phase4=True), cfg)
+    assert not lock.exists()                 # refused before any transaction
+    rc = runner._phase4_run(_args(dry_run=False), cfg, {})
+    assert rc == 2 and not lock.exists()     # private body refuses unverified too
+    # YAML phase4 block must equal the immutable constants exactly
+    assert all(runner._validate_phase4_constants(cfg).values())
+    bad = _deep(cfg)
+    bad["phase4"]["gates"]["condition_warn_max"] = 1.0e9
+    with pytest.raises(runner.StopRun, match="phase4-constants"):
+        runner._validate_phase4_constants(bad)
+    bad2 = _deep(cfg)
+    bad2["phase4"]["regional_parameters"][0] = "beta_E_wrong"
+    with pytest.raises(runner.StopRun, match="phase4-constants"):
+        runner._validate_phase4_constants(bad2)
+
+
+# --------------------------------------------------------------------------- #
+# Phase-4-specific approval gate (review-v1 required fixes 1-2)
+# --------------------------------------------------------------------------- #
+GOOD_P4_REVIEW = ("# 1. Phase-4 review verdict\n\n**FINAL VERDICT: APPROVE**"
+                  "\n\n# 2. Scope\n\ndetails\n")
+
+
+def _mk_p4_gate_repos(tmp_path, p4_text=GOOD_P4_REVIEW):
+    repo, nested, _mnl, dcl, _v6 = _mk_gate_repos(tmp_path)   # v6 file committed
+    p4 = repo / runner.CANONICAL_APPROVED_PHASE4_REVIEW_REL
+    p4.write_text(p4_text, encoding="utf-8", newline="\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "phase4 review")
+    return repo, nested, _git(repo, "rev-parse", "HEAD"), dcl, p4
+
+
+def _p4_gate_args(mnl, dcl, sha, review=None):
+    return _args(dry_run=False, execute_phase4=True, expected_mnl_head=mnl,
+                 expected_dclaborsupply_head=dcl,
+                 approved_phase4_review=(
+                     review if review is not None
+                     else str(runner.CANONICAL_APPROVED_PHASE4_REVIEW_REL)),
+                 approved_phase4_review_sha256=sha)
+
+
+def test_45_phase4_gate_pass_path_hash_git_variants(tmp_path):
+    repo, nested, mnl, dcl, p4 = _mk_p4_gate_repos(tmp_path)
+    sha = hashlib.sha256(p4.read_bytes()).hexdigest()
+    rec = runner._verify_phase4_execution_gates(
+        _p4_gate_args(mnl, dcl, sha), _repo_root=repo, _nested_root=nested,
+        _check_gitlink=False)
+    assert rec["verified"] and rec["execution_ready"] and rec["phase"] == 4
+    assert rec["approved_phase4_review"] ==         runner.CANONICAL_APPROVED_PHASE4_REVIEW_REL.as_posix()
+    # the Phase-3 review-v6 document is explicitly rejected
+    with pytest.raises(runner.StopRun, match="cannot authorize"):
+        runner._verify_phase4_execution_gates(
+            _p4_gate_args(mnl, dcl, sha,
+                          review=str(runner.CANONICAL_APPROVED_REVIEW_REL)),
+            _repo_root=repo, _nested_root=nested, _check_gitlink=False)
+    # any other path (e.g. a phase4 review v1) is rejected
+    with pytest.raises(runner.StopRun, match="must be exactly"):
+        runner._verify_phase4_execution_gates(
+            _p4_gate_args(mnl, dcl, sha, review=(
+                "docs/France_case/P2a/"
+                "FR_P2a_region_live_phase4_code_review_v1.md")),
+            _repo_root=repo, _nested_root=nested, _check_gitlink=False)
+    # wrong review hash / malformed hash
+    with pytest.raises(runner.StopRun, match="SHA-256"):
+        runner._verify_phase4_execution_gates(
+            _p4_gate_args(mnl, dcl, "f" * 64), _repo_root=repo,
+            _nested_root=nested, _check_gitlink=False)
+    with pytest.raises(runner.StopRun, match="64-hex"):
+        runner._verify_phase4_execution_gates(
+            _p4_gate_args(mnl, dcl, "nothex"), _repo_root=repo,
+            _nested_root=nested, _check_gitlink=False)
+    # MNL / nested commit mismatches
+    with pytest.raises(runner.StopRun, match="MNL HEAD"):
+        runner._verify_phase4_execution_gates(
+            _p4_gate_args("0" * 40, dcl, sha), _repo_root=repo,
+            _nested_root=nested, _check_gitlink=False)
+    with pytest.raises(runner.StopRun, match="nested HEAD"):
+        runner._verify_phase4_execution_gates(
+            _p4_gate_args(mnl, "0" * 40, sha), _repo_root=repo,
+            _nested_root=nested, _check_gitlink=False)
+    # dirty MNL worktree (untracked), then dirty nested worktree
+    dirt = repo / "untracked.txt"
+    dirt.write_text("x", encoding="utf-8")
+    with pytest.raises(runner.StopRun, match="not fully clean"):
+        runner._verify_phase4_execution_gates(
+            _p4_gate_args(mnl, dcl, sha), _repo_root=repo,
+            _nested_root=nested, _check_gitlink=False)
+    dirt.unlink()
+    dirt2 = nested / "untracked.txt"
+    dirt2.write_text("x", encoding="utf-8")
+    with pytest.raises(runner.StopRun, match="not fully clean"):
+        runner._verify_phase4_execution_gates(
+            _p4_gate_args(mnl, dcl, sha), _repo_root=repo,
+            _nested_root=nested, _check_gitlink=False)
+    dirt2.unlink()
+
+
+def test_46_phase4_review_verdict_and_gitlink_variants(tmp_path):
+    variants = {
+        "after_fixes": GOOD_P4_REVIEW.replace(
+            "**FINAL VERDICT: APPROVE**",
+            "**FINAL VERDICT: APPROVE AFTER FIXES**"),
+        "reject": GOOD_P4_REVIEW.replace("**FINAL VERDICT: APPROVE**",
+                                         "**FINAL VERDICT: REJECT**"),
+        "wrong_heading": GOOD_P4_REVIEW.replace(
+            "# 1. Phase-4 review verdict", "# 1. Sixth-review verdict"),
+        "multi_verdict": GOOD_P4_REVIEW + "\n**FINAL VERDICT: APPROVE**\n",
+    }
+    for name, text in variants.items():
+        repo, nested, mnl, dcl, p4 = _mk_p4_gate_repos(tmp_path / name, text)
+        sha = hashlib.sha256(p4.read_bytes()).hexdigest()
+        with pytest.raises(runner.StopRun) as e:
+            runner._verify_phase4_execution_gates(
+                _p4_gate_args(mnl, dcl, sha), _repo_root=repo,
+                _nested_root=nested, _check_gitlink=False)
+        assert e.value.gate == "phase4-review-gate", name
+    # committed wrong gitlink is refused when the gitlink check is live
+    repo, nested, mnl, dcl, p4 = _mk_p4_gate_repos(tmp_path / "gitlink")
+    sha = hashlib.sha256(p4.read_bytes()).hexdigest()
+    _git(repo, "update-index", "--add", "--cacheinfo",
+         "160000," + "1" * 40 + ",dclaborsupply-monorepo")
+    _git(repo, "commit", "-q", "-m", "wrong gitlink")
+    args = _p4_gate_args(_git(repo, "rev-parse", "HEAD"), dcl, sha)
+    with pytest.raises(runner.StopRun, match="gitlink"):
+        runner._verify_phase4_execution_gates(args, _repo_root=repo,
+                                              _nested_root=nested,
+                                              _check_gitlink=True)
+
+
+# --------------------------------------------------------------------------- #
+# fake-derivative Phase-4 orchestration (review-v1 fixes 2-3; NO real Hessian)
+# --------------------------------------------------------------------------- #
+def _mk_p4_ctx(H, design_M=None):
+    import pandas as pd
+    pmap = _pmap()
+    reg_pos = list(range(15, 25))               # production regional positions
+    if design_M is None:
+        design_M = np.random.default_rng(23).normal(size=(60, 10))
+    return {
+        "pmap": pmap,
+        "ev4": {"theta_hat_sha256": "0" * 64},
+        "negll_hat": 0.0,
+        "grad_fn": lambda x: np.zeros(37),
+        "free_hat": np.zeros(37),
+        "pub_grad_free": np.zeros(37),
+        "reg_pos_free": reg_pos,
+        "reg_names": [pmap["free_names"][i] for i in reg_pos],
+        "design": pd.DataFrame(np.asarray(design_M, dtype="float64")),
+        "hess_fn": lambda x: np.asarray(H, dtype="float64"),
+    }
+
+
+def _p4_base_H():
+    return np.diag(np.linspace(1.0, 2.0, 37))
+
+
+def _run_p4_diag(H, design_M=None):
+    return runner._phase4_diagnose(_mk_p4_ctx(H, design_M), lambda m: None)
+
+
+def test_47_raw_subblock_pd_failure_orchestration(tmp_path, cfg):
+    import time as _time
+    H = _p4_base_H()
+    H[17, 17] = -0.5                            # regional free position 15..24
+    ctx = _mk_p4_ctx(H)
+    status, stop, diag, arrays = runner._phase4_diagnose(ctx, lambda m: None)
+    assert status == "STOPPED"
+    assert stop.code == "S-5" and stop.gate == "G-9"      # registered R-2 stop
+    assert diag["regional"]["raw_subblock_pd_ok"] is False
+    assert diag["regional"]["raw_subblock_min_eig"] <= 0.0
+    assert diag["gates"]["r2_raw_subblock_pd_ok"] is False
+    assert diag["hessian_evaluated"] is True    # the fake path reached the gate
+    # the STOPPED result publishes to attempts/ and never creates complete/
+    root = tmp_path / "p4"
+    txn = runner.Phase3Transaction(root, "curvature",
+                                   success_status="PHASE_4_COMPLETE")
+    txn.acquire()
+    man = runner._phase4_manifest_skeleton(_args(dry_run=False), cfg, txn, {})
+    runner._phase4_write_artifacts(txn.staging, ctx, diag, arrays)
+    rc = runner._phase4_finalize(txn, man, ["x"], _time.time(), "STOPPED",
+                                 stop, 2)
+    assert rc == 2 and not (root / "complete").exists()
+    assert any(x.name.endswith("_STOPPED") for x in (root / "attempts").iterdir())
+
+
+def test_48_fake_derivative_orchestration_matrix():
+    # 1. raw-Hessian symmetry failure -> S-4
+    H = _p4_base_H()
+    H[0, 1] = 1e-3
+    status, stop, diag, _a = _run_p4_diag(H)
+    assert status == "STOPPED" and stop.code == "S-4" and stop.gate == "curvature"
+    assert diag["gates"]["g6_symmetry_ok"] is False
+    # 2. full-Hessian non-PD (nuisance direction) -> S-4
+    H = _p4_base_H()
+    H[0, 0] = -1.0
+    status, stop, diag, _a = _run_p4_diag(H)
+    assert status == "STOPPED" and stop.code == "S-4"
+    assert diag["gates"]["g5_pd_ok"] is False
+    # 3. rank < 37 (positive eigenvalue below eps_rank) -> S-4
+    H = _p4_base_H()
+    H[0, 0] = 1e-15
+    status, stop, diag, _a = _run_p4_diag(H)
+    assert status == "STOPPED" and stop.code == "S-4"
+    assert diag["gates"]["g5_pd_ok"] is True
+    assert diag["gates"]["g7_rank"] == 36 and diag["gates"]["g7_rank_ok"] is False
+    # 4. condition > 1e10 -> S-4 with tier failure
+    H = _p4_base_H()
+    H[0, 0] = 2e-11
+    status, stop, diag, _a = _run_p4_diag(H)
+    assert status == "STOPPED" and stop.code == "S-4"
+    assert diag["gates"]["g8_condition_tier"] == "failure"
+    # 5. regional design-rank failure -> S-5/G-9
+    M = np.random.default_rng(23).normal(size=(60, 10))
+    M[:, 2] = M[:, 6]
+    status, stop, diag, _a = _run_p4_diag(_p4_base_H(), M)
+    assert status == "STOPPED" and stop.code == "S-5" and stop.gate == "G-9"
+    assert diag["gates"]["r1_design_rank_ok"] is False
+    # 6. raw regional-subblock PD failure -> S-5/G-9 (see also test 47)
+    H = _p4_base_H()
+    H[20, 20] = -2.0
+    status, stop, diag, _a = _run_p4_diag(H)
+    assert status == "STOPPED" and stop.code == "S-5"
+    assert diag["gates"]["r2_raw_subblock_pd_ok"] is False
+    # 7. exactly singular nuisance block H_NN -> registered schur-solve stop
+    H = _p4_base_H()
+    H[0, 0] = H[1, 1] = 1.0
+    H[0, 1] = H[1, 0] = 1.0                     # [[1,1],[1,1]] nuisance block
+    with pytest.raises(runner.StopRun) as e:
+        _run_p4_diag(H)
+    assert e.value.code == "S-5" and e.value.gate == "schur-solve"
+    # 8./9. Schur rank < 10 and Schur min eigenvalue <= 0 -> S-5/G-9
+    H = np.eye(37)
+    H[0, 15] = H[15, 0] = 1.1                   # S[reg0,reg0] = -0.21 exactly
+    status, stop, diag, _a = _run_p4_diag(H)
+    assert status == "STOPPED" and stop.code == "S-5" and stop.gate == "G-9"
+    assert diag["gates"]["r2_raw_subblock_pd_ok"] is True
+    assert diag["gates"]["r4_schur_rank_ok"] is False
+    assert diag["gates"]["r4_schur_min_eig_ok"] is False
+    # 10. warning-only regional loading share on a clean success
+    H = _p4_base_H()
+    H[17, 17] = 0.5                             # smallest eig on a regional coord
+    status, stop, diag, _a = _run_p4_diag(H)
+    assert status == "PHASE_4_COMPLETE" and stop is None
+    assert diag["gates"]["r3_loading_share_warning"] is True
+    assert any("loading share" in w for w in diag["warnings"])
+    # 11. clean successful fake-Hessian route
+    status, stop, diag, _a = _run_p4_diag(_p4_base_H())
+    assert status == "PHASE_4_COMPLETE" and stop is None
+    assert diag["warnings"] == []
+    g = diag["gates"]
+    assert (g["g5_pd_ok"] and g["g6_symmetry_ok"] and g["g7_rank_ok"]
+            and g["g8_condition_tier"] == "clean"
+            and g["region_urbanisation_identification"])
+
+
+def test_49_exact_gate_boundaries():
+    c = runner.PHASE4_SAFETY_CONSTANTS
+    # symmetry: exactly at 1e-8 * max_abs_H passes; immediately above fails
+    H = np.eye(2)
+    H[0, 1] = 1e-8                              # max_abs_H = 1.0 -> thr = 1e-8
+    rec, _ = runner._phase4_symmetry(H, 1e-8)
+    assert rec["max_abs_asymmetry"] == rec["threshold"] and rec["ok"] is True
+    H[0, 1] = np.nextafter(1e-8, 1.0)
+    rec, _ = runner._phase4_symmetry(H, 1e-8)
+    assert rec["ok"] is False
+    # rank: eigenvalue exactly at 1e-10 * max is NOT counted; just above is
+    e = runner._phase4_eigen(np.diag([1e-10, 1.0]), 2, c)
+    assert e["rank"] == 1 and e["rank_ok"] is False
+    e = runner._phase4_eigen(np.diag([np.nextafter(1e-10, 1.0), 1.0]), 2, c)
+    assert e["rank"] == 2 and e["rank_ok"] is True
+    # condition tiers at the exact edges
+    assert runner._phase4_eigen(np.diag([1.0, 1e7]), 2,
+                                c)["condition_tier"] == "clean"
+    assert runner._phase4_eigen(np.diag([1.0, np.nextafter(1e7, np.inf)]), 2,
+                                c)["condition_tier"] == "warning"
+    assert runner._phase4_eigen(np.diag([1.0, 1e10]), 2,
+                                c)["condition_tier"] == "warning"
+    assert runner._phase4_eigen(np.diag([1.0, np.nextafter(1e10, np.inf)]), 2,
+                                c)["condition_tier"] == "failure"
+    # positive definiteness: > 0 passes; exactly 0 and negative fail
+    assert runner._phase4_eigen(np.diag([1e-12, 1.0]), 2, c)["pd_ok"] is True
+    assert runner._phase4_eigen(np.diag([0.0, 1.0]), 2, c)["pd_ok"] is False
+    assert runner._phase4_eigen(np.diag([-1e-12, 1.0]), 2, c)["pd_ok"] is False
+
+
+# --------------------------------------------------------------------------- #
+# review-v2/v3 remediation: exceptional-path finalization + review binding
+# --------------------------------------------------------------------------- #
+def _p4_stopped_run(tmp_path, cfg, ctx):
+    """Drive the production diagnostics-and-finalize body with a fake ctx."""
+    import time as _time
+    root = tmp_path / "p4"
+    txn = runner.Phase3Transaction(root, "curvature",
+                                   success_status="PHASE_4_COMPLETE")
+    txn.acquire()
+    man = runner._phase4_manifest_skeleton(_args(dry_run=False), cfg, txn, {})
+    progress = {"gradient_evaluated": False, "hessian_evaluated": False,
+                "partial_diagnostics": None, "artifacts_staged": False,
+                "diagnostics_artifact_name": None}
+    rc = runner._phase4_run_diagnostics(txn, man, ["l"], _time.time(), ctx,
+                                        lambda m: None, progress)
+    d = next(x for x in (root / "attempts").iterdir())
+    m = json.loads((d / "phase4_manifest.json").read_text(encoding="utf-8"))
+    return rc, root, d, m
+
+
+def test_50_gradient_consistency_stopped_finalization(tmp_path, cfg):
+    ctx = _mk_p4_ctx(_p4_base_H())
+    ctx["grad_fn"] = lambda x: np.ones(37)      # published projection is zeros
+    rc, root, d, m = _p4_stopped_run(tmp_path, cfg, ctx)
+    assert rc == 2 and d.name.endswith("_STOPPED")
+    assert m["status"] == "STOPPED"
+    assert m["gradient_evaluated"] is True      # review-v2 fix 1: true/false
+    assert m["hessian_evaluated"] is False
+    assert m["stop"]["code"] == "S-8" and m["stop"]["gate"] == "phase4-gradient"
+    assert m["exception"]["type"] == "StopRun"
+    pdg = m["partial_diagnostics"]              # partial gradient preserved
+    assert len(pdg["gradient_free"]) == 37
+    assert pdg["gradient_consistency_max_abs_dev"] == 1.0
+    assert "gates" not in pdg and "eigen" not in pdg   # Hessian never reached
+    assert not (root / "complete").exists()
+    assert list((root / ".staging").iterdir()) == []
+    assert not (root / ".phase3.lock").exists()
+
+
+def test_51_singular_schur_stopped_finalization(tmp_path, cfg):
+    H = _p4_base_H()
+    H[0, 0] = H[1, 1] = 1.0
+    H[0, 1] = H[1, 0] = 1.0                     # exactly singular nuisance block
+    rc, root, d, m = _p4_stopped_run(tmp_path, cfg, _mk_p4_ctx(H))
+    assert rc == 2 and d.name.endswith("_STOPPED")
+    assert m["status"] == "STOPPED"
+    assert m["gradient_evaluated"] is True      # review-v2 fix 1: true/true
+    assert m["hessian_evaluated"] is True
+    assert m["stop"]["code"] == "S-5" and m["stop"]["gate"] == "schur-solve"
+    assert m["exception"]["type"] == "StopRun"
+    pdg = m["partial_diagnostics"]              # pre-solve diagnostics preserved
+    assert pdg["hessian_evaluated"] is True
+    assert pdg["symmetry"]["ok"] is True
+    assert len(pdg["eigen"]["eigenvalues"]) == 37
+    assert pdg["design"]["rank"] == 10
+    assert "regional" not in pdg                # no pinv substitute for the solve
+    assert not (root / "complete").exists()
+    assert list((root / ".staging").iterdir()) == []
+    assert not (root / ".phase3.lock").exists()
+
+
+def test_52_review_v6_binding_and_stale_strings(tmp_path):
+    assert (runner.CANONICAL_APPROVED_PHASE4_REVIEW_REL.name
+            == "FR_P2a_region_live_phase4_code_review_v6.md")
+    repo, nested, mnl, dcl, p4 = _mk_p4_gate_repos(tmp_path)
+    sha = hashlib.sha256(p4.read_bytes()).hexdigest()
+    # exact synthetic phase4 review-v6 APPROVE contract passes structurally
+    rec = runner._verify_phase4_execution_gates(
+        _p4_gate_args(mnl, dcl, sha), _repo_root=repo, _nested_root=nested,
+        _check_gitlink=False)
+    assert rec["approved_phase4_review"].endswith(
+        "phase4_code_review_v6.md") and rec["execution_ready"]
+    # Phase-4 review v1-v5 paths are all rejected
+    for bad in ("docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v1.md",
+                "docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v2.md",
+                "docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v3.md",
+                "docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v4.md",
+                "docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v5.md"):
+        with pytest.raises(runner.StopRun, match="must be exactly"):
+            runner._verify_phase4_execution_gates(
+                _p4_gate_args(mnl, dcl, sha, review=bad), _repo_root=repo,
+                _nested_root=nested, _check_gitlink=False)
+    # Phase-3 review-v6 is rejected with the dedicated message
+    with pytest.raises(runner.StopRun, match="cannot authorize"):
+        runner._verify_phase4_execution_gates(
+            _p4_gate_args(mnl, dcl, sha,
+                          review=str(runner.CANONICAL_APPROVED_REVIEW_REL)),
+            _repo_root=repo, _nested_root=nested, _check_gitlink=False)
+    # the REAL review-v5 body (APPROVE AFTER FIXES) placed at the v6 path fails
+    real_v5 = (MNL_ROOT / "docs/France_case/P2a/"
+               "FR_P2a_region_live_phase4_code_review_v5.md").read_text(
+        encoding="utf-8")
+    repo2, nested2, mnl2, dcl2, p42 = _mk_p4_gate_repos(tmp_path / "v5body",
+                                                        real_v5)
+    sha2 = hashlib.sha256(p42.read_bytes()).hexdigest()
+    with pytest.raises(runner.StopRun) as e:
+        runner._verify_phase4_execution_gates(
+            _p4_gate_args(mnl2, dcl2, sha2), _repo_root=repo2,
+            _nested_root=nested2, _check_gitlink=False)
+    assert e.value.gate == "phase4-review-gate"
+    # stale-string sweep: generic --dry-run help covers Phase 4; no live
+    # Phase-4 text claims Phase-3 review-v6 authorization
+    src = (MNL_ROOT / "scripts/p2a/run_p2a_regionlive_rebuild.py").read_text(
+        encoding="utf-8")
+    seg = src[src.index('"--dry-run"'):src.index('"--execute-phase3"')]
+    assert "phase 4" in seg and "Hessian" in seg
+    p4_src = src[src.index("def _verify_phase4_execution_gates"):
+                 src.index("def _verify_package_identity")]
+    p4_src += src[src.index("def _validate_phase4_constants"):
+                  src.index("def main(")]
+    # every PHASE-3 review-v6 mention in Phase-4 code must be a rejection
+    # statement (the Phase-4 approval doc is itself named review v6 now, so
+    # only "Phase-3 review-v6" claims are in scope for this sweep)
+    for line in p4_src.splitlines():
+        low = line.lower()
+        if "phase-3 review-v6" in low:
+            assert ("reject" in low or "never" in low
+                    or "cannot authorize" in low), line
+    assert "the same s5/s7 Git + review-v6 gates as Phase 3" not in src
+    assert "review-v6 gates (scope doc s5/s7).\" " not in p4_src
+
+
+# --------------------------------------------------------------------------- #
+# review-v3 remediation: failed-authentication diagnostic preservation
+# --------------------------------------------------------------------------- #
+def test_53_runtime_map_fingerprint_failure_finalization(tmp_path, cfg):
+    ctx = _mk_p4_ctx(_p4_base_H())                # clean fake diagnostics
+    ctx["rtmap"] = {"lbl": tmp_path / "input.bin"}
+    ctx["rtmap_fingerprint"] = "0" * 64           # forced post-eval mismatch
+    ctx["input_auth"] = {}
+    rc, root, d, m = _p4_stopped_run(tmp_path, cfg, ctx)
+    assert rc == 2 and d.name.endswith("_STOPPED")
+    assert m["status"] == "STOPPED"
+    assert m["stop"]["code"] == "S-8" and m["stop"]["gate"] == "runtime-map"
+    assert m["gradient_evaluated"] is True        # review-v3 fix: true/true
+    assert m["hessian_evaluated"] is True
+    assert m["exception"]["type"] == "StopRun"
+    # the FULL live diagnostic record is retained and explicitly labelled
+    assert m["diagnostic_evidence_status"] == "FAILED_AUTHENTICATION_ATTEMPT"
+    pdg = m["partial_diagnostics"]
+    for key in ("gradient_free", "gradient_consistency_max_abs_dev",
+                "symmetry", "eigen", "loading_shares", "design",
+                "regional", "gates"):                # review-v4 fix 4
+        assert key in pdg, key
+    assert len(pdg["gradient_free"]) == 37
+    assert pdg["symmetry"]["ok"] is True
+    assert len(pdg["eigen"]["eigenvalues"]) == 37
+    assert pdg["loading_shares"]["three_smallest"]
+    assert pdg["design"]["rank"] == 10
+    assert pdg["regional"]["schur_rank"] == 10    # Schur evidence retained
+    assert pdg["gates"]["region_urbanisation_identification"] is True
+    assert m["gates4"]["g5_pd_ok"] is True        # summary presence is NOT
+    assert "partial_diagnostics" in m             # ...taken as persistence
+    assert not (root / "complete").exists()
+    assert list((root / ".staging").iterdir()) == []
+    assert not (root / ".phase3.lock").exists()
+
+
+def test_54_input_recheck_failure_finalization(tmp_path, cfg):
+    f = tmp_path / "input.bin"
+    f.write_text("original", encoding="utf-8")
+    orig_sha = hashlib.sha256(f.read_bytes()).hexdigest()
+    rtmap = {"lbl": f}
+    ctx = _mk_p4_ctx(_p4_base_H())
+    ctx["rtmap"] = rtmap
+    ctx["rtmap_fingerprint"] = runner._runtime_map_fingerprint(rtmap)
+    ctx["input_auth"] = {"lbl": {"runtime_path": str(f.resolve()),
+                                 "actual": orig_sha, "expected": orig_sha}}
+    f.write_text("tampered", encoding="utf-8")    # authenticated input changed
+    rc, root, d, m = _p4_stopped_run(tmp_path, cfg, ctx)
+    assert rc == 2 and d.name.endswith("_STOPPED")
+    assert m["status"] == "STOPPED"
+    assert m["stop"]["code"] == "S-8" and m["stop"]["gate"] == "input-recheck"
+    assert m["gradient_evaluated"] is True        # review-v3 fix: true/true
+    assert m["hessian_evaluated"] is True
+    assert m["diagnostic_evidence_status"] == "FAILED_AUTHENTICATION_ATTEMPT"
+    rec = m["input_recheck_after_evaluation"]["lbl"]   # pre/post hash evidence
+    assert rec["pre"] == orig_sha and rec["accepted"] == orig_sha
+    assert rec["post"] is not None and rec["post"] != orig_sha
+    assert rec["ok"] is False
+    pdg = m["partial_diagnostics"]                # all pre-recheck diagnostics
+    for key in ("gradient_free", "gradient_consistency_max_abs_dev",
+                "symmetry", "eigen", "loading_shares", "design",
+                "regional", "gates"):                # review-v4 fix 4
+        assert key in pdg, key
+    assert len(pdg["gradient_free"]) == 37
+    assert len(pdg["eigen"]["eigenvalues"]) == 37
+    assert pdg["design"]["rank"] == 10
+    assert pdg["regional"]["schur_min_eig_ok"] is True
+    table = m["input_recheck_after_evaluation"]
+    assert all(v["pre"] and v["accepted"] and v["post"] is not None
+               for v in table.values())              # complete evidence
+    assert any(v["ok"] is False for v in table.values())
+    assert not (root / "complete").exists()
+    assert list((root / ".staging").iterdir()) == []
+    assert not (root / ".phase3.lock").exists()
+
+
+# --------------------------------------------------------------------------- #
+# review-v4 remediation: post-staging exceptional-evidence consistency
+# --------------------------------------------------------------------------- #
+def test_55_post_staging_exception_finalization(tmp_path, cfg, monkeypatch):
+    real_fin = runner._phase4_finalize
+    calls = {"n": 0}
+
+    def flaky_finalize(*a, **k):
+        calls["n"] += 1
+        if calls["n"] == 1:                     # first call AFTER staging
+            raise RuntimeError("forced post-staging failure")
+        return real_fin(*a, **k)
+
+    monkeypatch.setattr(runner, "_phase4_finalize", flaky_finalize)
+    ctx = _mk_p4_ctx(_p4_base_H())              # clean fake diagnostics
+    rc, root, d, m = _p4_stopped_run(tmp_path, cfg, ctx)
+    assert rc == 3 and d.name.endswith("_STOPPED")
+    assert calls["n"] == 2                      # forced raise, then real final
+    assert m["status"] == "STOPPED"
+    assert m["gradient_evaluated"] is True and m["hessian_evaluated"] is True
+    assert m["exception"]["type"] == "RuntimeError"
+    assert m["exception"]["message"] == "forced post-staging failure"
+    assert m["stop"]["code"] == "S-0" and m["stop"]["gate"] == "unexpected"
+    # the staged artifact is the SOLE authoritative record: no duplicate,
+    # no "partial" label
+    assert "partial_diagnostics" not in m
+    assert (m["diagnostic_evidence_status"]
+            == "FULL_DIAGNOSTIC_ARTIFACT_STAGED_STOPPED_ATTEMPT")
+    assert m["diagnostic_artifact_authority"] == "phase4_diagnostics.json"
+    assert m["diagnostic_artifact_staged"] is True
+    full = json.loads((d / "phase4_diagnostics.json").read_text(
+        encoding="utf-8"))
+    for key in ("gradient_free", "symmetry", "eigen", "loading_shares",
+                "design", "regional", "gates"):
+        assert key in full, key                 # full scientific record staged
+    assert len(full["eigen"]["eigenvalues"]) == 37
+    assert sorted(p.name for p in d.iterdir()) == sorted(
+        list(runner.PHASE4_ARTIFACTS) + ["phase4_manifest.json"])
+    assert not (root / "complete").exists()
+    assert list((root / ".staging").iterdir()) == []
+    assert not (root / ".phase3.lock").exists()
+
+
+# --------------------------------------------------------------------------- #
+# review-v5 closure: the OUTER _phase4_run() post-staging exception fallback
+# --------------------------------------------------------------------------- #
+def test_56_outer_phase4_run_post_staging_fallback(tmp_path, cfg, monkeypatch):
+    """Drives _phase4_run() itself (not _phase4_run_diagnostics) on a temporary
+    root: the diagnostic-call boundary stages the FULL fake artifact set via the
+    production writer, updates the genuine shared progress state, then raises a
+    RuntimeError that escapes to the outer unexpected-exception handler. Both
+    handlers must route through the single production merge policy."""
+    root = tmp_path / "p4root"
+    monkeypatch.setattr(runner, "CANONICAL_PHASE4_ROOT", root)
+    monkeypatch.setattr(runner, "_verify_package_identity",
+                        lambda expected_commit=None: {"stub": True})
+    ctx = _mk_p4_ctx(_p4_base_H())              # clean fake diagnostics
+    ctx["ev"] = {"stub_contract": True}
+    monkeypatch.setattr(runner, "_phase4_contract",
+                        lambda out, c, p, log, rtmap=None: ctx)
+    merges = []
+    real_merge = runner._merge_phase4_exception_evidence
+
+    def spy_merge(man, prog, exc):              # same policy, observed
+        merges.append(type(exc).__name__)
+        return real_merge(man, prog, exc)
+
+    monkeypatch.setattr(runner, "_merge_phase4_exception_evidence", spy_merge)
+
+    def fake_diag_boundary(txn, manifest, lines, t0, c, log, progress):
+        status, stop, diag, arrays = runner._phase4_diagnose(
+            c, log, progress=progress)          # genuine progress object
+        assert status == "PHASE_4_COMPLETE"
+        runner._phase4_write_artifacts(txn.staging, c, diag, arrays)
+        progress["artifacts_staged"] = True
+        progress["diagnostics_artifact_name"] = "phase4_diagnostics.json"
+        raise RuntimeError("forced outer post-staging failure")
+
+    monkeypatch.setattr(runner, "_phase4_run_diagnostics", fake_diag_boundary)
+    rc = runner._phase4_run(_args(dry_run=False), cfg,
+                            {"verified": True, "execution_ready": True})
+    assert rc == 3                              # controlled unexpected failure
+    d = next(x for x in (root / "attempts").iterdir())
+    assert d.name.endswith("_STOPPED")
+    m = json.loads((d / "phase4_manifest.json").read_text(encoding="utf-8"))
+    assert m["mode"] == "phase4 curvature diagnostics"   # reached _phase4_run
+    assert m["status"] == "STOPPED"
+    assert m["stop"]["code"] == "S-0" and m["stop"]["gate"] == "unexpected"
+    assert m["exception"]["type"] == "RuntimeError"
+    assert m["exception"]["message"] == "forced outer post-staging failure"
+    assert m["gradient_evaluated"] is True and m["hessian_evaluated"] is True
+    assert m["diagnostic_artifact_staged"] is True
+    assert m["diagnostic_artifact_authority"] == "phase4_diagnostics.json"
+    assert (m["diagnostic_evidence_status"]
+            == "FULL_DIAGNOSTIC_ARTIFACT_STAGED_STOPPED_ATTEMPT")
+    assert "partial_diagnostics" not in m
+    assert merges == ["RuntimeError"]           # ONE shared merge policy fired
+    full = json.loads((d / "phase4_diagnostics.json").read_text(
+        encoding="utf-8"))
+    for key in ("gradient_free", "symmetry", "eigen", "loading_shares",
+                "design", "regional", "gates"):
+        assert key in full, key                 # complete fake record retained
+    assert len(full["eigen"]["eigenvalues"]) == 37
+    assert sorted(p.name for p in d.iterdir()) == sorted(
+        list(runner.PHASE4_ARTIFACTS) + ["phase4_manifest.json"])
+    assert not (root / "complete").exists()
+    assert list((root / ".staging").iterdir()) == []
     assert not (root / ".phase3.lock").exists()

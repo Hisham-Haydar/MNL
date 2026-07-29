@@ -1,11 +1,16 @@
 #!/usr/bin/env python
-"""FR P2a region-live production rebuild -- Phases 1-3 runner.
+"""FR P2a region-live production rebuild -- Phases 1-4 runner.
 
-Phases 1-3 implemented. A REAL Phase-3 run is gated by the research-grade
+Phases 1-4 implemented. A REAL Phase-3 run is gated by the research-grade
 execution contract of FR_P2a_region_live_phase3_execution_scope_v1.md: the
 documented CLI with --execute-phase3, expected MNL/nested HEADs, full worktree
-cleanliness, and the review-v6 APPROVE file hash. Without --execute-phase3,
---phase 3 performs only the non-optimizing dry-run. Phases 4-8 are unsupported.
+cleanliness, and the review-v6 APPROVE file hash. A REAL Phase-4 run is gated
+by the PHASE-4-SPECIFIC approval (--execute-phase4 + the same Git gates + the
+FR_P2a_region_live_phase4_code_review_v6.md APPROVE file hash; Phase-4 reviews
+v1-v5 and the Phase-3 review-v6 are rejected there). Without the execute flag,
+--phase 3 / --phase 4
+perform only the non-optimizing / non-evaluating dry-run. Phases 5-8 are
+unsupported and refused.
 
 Binding documents (in order):
   docs/France_case/P2a/FR_P2a_region_live_manager_decisions_v2.md      (canonical)
@@ -35,7 +40,12 @@ HARD REFUSALS (S-0, asserted in code, not just documented):
     per-household scores / sandwich SE / post-estimation / welfare / synthetic
     recovery code path exists in the Phase-3 route)
   - no notebook I/O; no write outside region_live_v1/ (Phase 3: only its subdir)
-Phases 4-8 are manager-gated: this runner refuses --phase > 3.
+Phase 4 (AUTHORIZED by FR_P2a_region_live_phase3_manager_acceptance_v1.md s15):
+  curvature/rank/regional-identification diagnostics of the ACCEPTED immutable
+  Phase-3 bundle. NO optimizer, NO theta change, NO standard errors. Writes ONLY
+  under region_live_v1/phase4_curvature_v1/. Dry-run never evaluates the
+  Hessian; real execution additionally requires the Phase-4 review-v6 APPROVE.
+Phases 5-8 are manager-gated and unsupported: this runner refuses --phase > 4.
 
 Exit codes: 0 = phases completed; 2 = pre-registered stop (STOPPED manifest);
 3 = unexpected error (STOPPED manifest, stop code S-0/unexpected);
@@ -116,6 +126,50 @@ APPROVE_LINE = "**FINAL VERDICT: APPROVE**"
 # part of its own artifact-hash dictionary (decision C / review fix 7)
 PHASE3_ARTIFACTS = ("phase3_console.log", "theta_estimated.csv",
                     "optimizer_diagnostics.json", "estimation_results.json")
+
+# --- Phase 4: curvature & regional identification (acceptance doc s15) ---------
+# Phase 4 diagnoses the ACCEPTED immutable Phase-3 result only: no optimizer, no
+# theta change, no standard errors. Gates are the ratified D-3/D-4 values
+# (plan v2 s13-s14, G-5..G-9); the YAML phase4 block must equal these exactly.
+CANONICAL_PHASE4_SUBDIR = "phase4_curvature_v1"
+CANONICAL_PHASE4_ROOT = CANONICAL_REGIONLIVE_ROOT / CANONICAL_PHASE4_SUBDIR
+# Phase-4-specific approval (review-v1 fix 1; rebound by review-v2/v3/v4/v5
+# fixes): a real Phase-4 run is authorized ONLY by the PHASE-4 review below
+# -- Phase-4 reviews v1-v5 (all APPROVE AFTER FIXES) and the PHASE-3
+# review-v6 are all rejected
+CANONICAL_APPROVED_PHASE4_REVIEW_REL = Path(
+    "docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v6.md")
+PHASE4_REVIEW_HEADING = "# 1. Phase-4 review verdict"
+PHASE3_ACCEPTED_BUNDLE_SHA256 = (
+    "2cf237648743f59bd742b12feceaea67c5fd377b26faf4fb6fad6f452f86864b")
+PHASE3_ACCEPTED_NEGLL_FINAL = 19053.46553160093
+# exact regional block (plan v2 s5/s14, decision D-3): derived from the accepted
+# spec at run time and REQUIRED to equal this tuple AND the YAML list -- any
+# conflict between the sources is a STOP, never a guess
+PHASE4_REGIONAL_PARAMS = (
+    "beta_E_gsur", "beta_E_drgn2", "beta_E_drgn3", "beta_E_drgn4",
+    "beta_E_drgn5", "beta_E_drgn6", "beta_E_drgn7", "beta_E_drgn8",
+    "beta_E_drgur", "beta_E_drgmd")
+# R-1 household-level design columns, position-matched to PHASE4_REGIONAL_PARAMS
+PHASE4_REGIONAL_DESIGN_COLUMNS = (
+    "gsur", "reg2", "reg3", "reg4", "reg5", "reg6", "reg7", "reg8",
+    "drgur", "drgmd")
+PHASE4_SAFETY_CONSTANTS = {
+    "symmetry_rel_tol": 1e-8,               # G-6 (D-4)
+    "rank_rel_tol": 1e-10,                  # eps_rank (D-3): G-7 / R-1 / R-4
+    "nonpos_count_eig_tol": 1e-8,           # G-5 n_nonpos counter (plan v2 s19)
+    "condition_clean_max": 1e7,             # G-8 three-tier (D-4)
+    "condition_warn_max": 1e10,
+    "pooled_baseline_condition": 1.295e6,   # D-4 comparison anchor
+    "n_free": 37, "regional_n": 10,
+    "loading_share_warn": 0.5,              # R-3 warning-only (D-3)
+    "consistency_negll_tol": 1e-6,          # |negLL(theta_hat) - accepted final|
+    "consistency_grad_tol": 1e-6,           # max|grad - published gradient_final|
+}
+PHASE4_ARTIFACTS = (
+    "phase4_console.log", "hessian_free.csv", "hessian_free.npy",
+    "hessian_eigenvalues.csv", "regional_hessian_subblock.csv",
+    "regional_schur_complement.csv", "phase4_diagnostics.json")
 
 # modules whose presence in sys.modules is an S-0 prohibited-operation stop
 _PROHIBITED_MODULES = (
@@ -1390,6 +1444,32 @@ def _parse_review_verdict_v6(text: str) -> None:
                       f"review final verdict is not an exact APPROVE: {line!r}")
 
 
+def _parse_review_verdict_phase4(text: str) -> None:
+    """Phase-4 approval form (review-v1 fix 1): exactly one ordinary
+    '**FINAL VERDICT: APPROVE**' line, under the exact first heading
+    '# 1. Phase-4 review verdict'. AFTER FIXES/REJECT refused."""
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != PHASE4_REVIEW_HEADING:
+        raise StopRun("S-0", "phase4-review-gate",
+                      f"Phase-4 review must start with the exact heading "
+                      f"{PHASE4_REVIEW_HEADING!r}")
+    hits = [(i, ln.strip()) for i, ln in enumerate(lines)
+            if ln.strip().startswith("**FINAL VERDICT:")]
+    if len(hits) != 1:
+        raise StopRun("S-0", "phase4-review-gate",
+                      f"Phase-4 review must contain exactly one FINAL VERDICT "
+                      f"line (found {len(hits)})")
+    idx, line = hits[0]
+    heads = [i for i, ln in enumerate(lines) if ln.startswith("# ")]
+    if len(heads) >= 2 and idx > heads[1]:
+        raise StopRun("S-0", "phase4-review-gate",
+                      "FINAL VERDICT line is not in the first verdict section")
+    if line != APPROVE_LINE:
+        raise StopRun("S-0", "phase4-review-gate",
+                      f"Phase-4 review final verdict is not an exact APPROVE: "
+                      f"{line!r}")
+
+
 def _verify_execution_gates(args, *, _repo_root: Optional[Path] = None,
                             _nested_root: Optional[Path] = None,
                             _check_gitlink: bool = True) -> Dict[str, Any]:
@@ -1451,6 +1531,80 @@ def _verify_execution_gates(args, *, _repo_root: Optional[Path] = None,
             "gitlink": gitlink, "approved_review":
                 CANONICAL_APPROVED_REVIEW_REL.as_posix(),
             "approved_review_sha256": actual_sha}
+
+
+def _verify_phase4_execution_gates(args, *, _repo_root: Optional[Path] = None,
+                                   _nested_root: Optional[Path] = None,
+                                   _check_gitlink: bool = True) -> Dict[str, Any]:
+    """Reproducibility gates for a REAL Phase-4 run (review-v1 required fix 1):
+    expected HEADs, gitlink identity, FULL cleanliness of both worktrees, and
+    the exact PHASE-4 review path/hash/verdict
+    (FR_P2a_region_live_phase4_code_review_v6.md). Phase-4 reviews v1-v5
+    and the Phase-3 review-v6 are all explicitly rejected here. All checks run
+    BEFORE any gradient or Hessian evaluation. The _repo_root/_nested_root/
+    _check_gitlink parameters are ordinary test seams."""
+    import re as _re
+    repo = Path(_repo_root) if _repo_root is not None else MNL_ROOT
+    nested = (Path(_nested_root) if _nested_root is not None
+              else MNL_ROOT / "dclaborsupply-monorepo")
+    exp_mnl = getattr(args, "expected_mnl_head", None)
+    exp_dcl = getattr(args, "expected_dclaborsupply_head", None)
+    review_arg = getattr(args, "approved_phase4_review", None)
+    review_sha = getattr(args, "approved_phase4_review_sha256", None)
+    hex40 = _re.compile(r"^[0-9a-f]{40}$")
+    hex64 = _re.compile(r"^[0-9a-f]{64}$")
+    if not (exp_mnl and hex40.match(exp_mnl)):
+        raise StopRun("S-0", "git-gate", "--expected-mnl-head must be a 40-hex SHA")
+    if not (exp_dcl and hex40.match(exp_dcl)):
+        raise StopRun("S-0", "git-gate",
+                      "--expected-dclaborsupply-head must be a 40-hex SHA")
+    if not (review_sha and hex64.match(review_sha)):
+        raise StopRun("S-0", "phase4-review-gate",
+                      "--approved-phase4-review-sha256 must be a 64-hex SHA-256")
+    if (review_arg is not None and Path(review_arg).as_posix()
+            == CANONICAL_APPROVED_REVIEW_REL.as_posix()):
+        raise StopRun("S-0", "phase4-review-gate",
+                      "the Phase-3 review-v6 document cannot authorize Phase-4 "
+                      "execution; a Phase-4-specific approved review is required")
+    if (review_arg is None or Path(review_arg).as_posix()
+            != CANONICAL_APPROVED_PHASE4_REVIEW_REL.as_posix()):
+        raise StopRun("S-0", "phase4-review-gate",
+                      f"--approved-phase4-review must be exactly "
+                      f"{CANONICAL_APPROVED_PHASE4_REVIEW_REL.as_posix()!r}")
+    head_mnl = _git_head_full(repo)
+    if head_mnl != exp_mnl:
+        raise StopRun("S-0", "git-gate",
+                      f"MNL HEAD {head_mnl} != expected {exp_mnl}")
+    head_dcl = _git_head_full(nested)
+    if head_dcl != exp_dcl:
+        raise StopRun("S-0", "git-gate",
+                      f"nested HEAD {head_dcl} != expected {exp_dcl}")
+    gitlink = _git_gitlink(repo) if _check_gitlink else head_dcl
+    if gitlink != head_dcl:
+        raise StopRun("S-0", "git-gate",
+                      f"MNL gitlink {gitlink} != nested HEAD {head_dcl}")
+    if not _git_fully_clean(repo):
+        raise StopRun("S-0", "git-gate",
+                      "MNL worktree not fully clean (--untracked-files=all)")
+    if not _git_fully_clean(nested):
+        raise StopRun("S-0", "git-gate",
+                      "dclaborsupply-monorepo worktree not fully clean")
+    review = repo / CANONICAL_APPROVED_PHASE4_REVIEW_REL
+    if not review.is_file():
+        raise StopRun("S-0", "phase4-review-gate",
+                      f"approved Phase-4 review missing: {review}")
+    actual_sha = _sha256(review)
+    if actual_sha != review_sha:
+        raise StopRun("S-0", "phase4-review-gate",
+                      "approved Phase-4 review SHA-256 != "
+                      "--approved-phase4-review-sha256")
+    _parse_review_verdict_phase4(review.read_text(encoding="utf-8"))
+    return {"verified": True, "execution_ready": True, "phase": 4,
+            "expected_mnl_head": exp_mnl, "expected_dclaborsupply_head": exp_dcl,
+            "gitlink": gitlink,
+            "approved_phase4_review":
+                CANONICAL_APPROVED_PHASE4_REVIEW_REL.as_posix(),
+            "approved_phase4_review_sha256": actual_sha}
 
 
 def _verify_package_identity(expected_commit: Optional[str] = None,
@@ -1593,9 +1747,11 @@ class Phase3Transaction:
 
     _ATTEMPT_ALLOC_MAX_TRIES = 100   # defensive bound; uuid4 repeats are ~impossible
 
-    def __init__(self, root: Path, label: str):
+    def __init__(self, root: Path, label: str,
+                 success_status: str = "PHASE_3_COMPLETE"):
         self.root = Path(root)
         self.label = str(label)
+        self.success_status = str(success_status)   # publishes to complete/
         self.lock = self.root / ".phase3.lock"
         self.staging_base = self.root / ".staging"
         self.attempts = self.root / "attempts"
@@ -1684,7 +1840,7 @@ class Phase3Transaction:
     def finish(self, status: str) -> Path:
         """Atomic directory-level publication: complete/ on success, attempts/ otherwise.
         A failed/repeated run can never overwrite or mutate a prior successful bundle."""
-        if status == "PHASE_3_COMPLETE":
+        if status == self.success_status:
             if self.complete.exists():
                 raise RuntimeError("complete/ already exists -- publish refused")
             os.replace(self.staging, self.complete)
@@ -2341,22 +2497,816 @@ def _phase3_run(args, cfg: Dict[str, Any],
 
 
 # --------------------------------------------------------------------------- #
+# Phase 4: curvature, rank and regional identification (acceptance doc s15)
+# --------------------------------------------------------------------------- #
+def _validate_phase4_constants(cfg: Dict[str, Any]) -> Dict[str, bool]:
+    """YAML phase4 block must equal the immutable ratified constants exactly."""
+    p4 = cfg.get("phase4") or {}
+    g4 = p4.get("gates") or {}
+    ok: Dict[str, bool] = {}
+    for k, v in PHASE4_SAFETY_CONSTANTS.items():
+        ok[k] = (k in g4) and float(g4[k]) == float(v)
+    ok["regional_parameters"] = (tuple(p4.get("regional_parameters") or ())
+                                 == PHASE4_REGIONAL_PARAMS)
+    ok["regional_design_columns"] = (tuple(p4.get("regional_design_columns") or ())
+                                     == PHASE4_REGIONAL_DESIGN_COLUMNS)
+    ok["output_subdir"] = p4.get("output_subdir") == CANONICAL_PHASE4_SUBDIR
+    b = p4.get("accepted_phase3_bundle") or {}
+    ok["bundle_sha256"] = b.get("bundle_sha256") == PHASE3_ACCEPTED_BUNDLE_SHA256
+    ok["negll_final"] = (float(b.get("negll_final", float("nan")))
+                         == PHASE3_ACCEPTED_NEGLL_FINAL)
+    if not all(ok.values()):
+        raise StopRun("S-0", "phase4-constants",
+                      f"YAML phase4 block != immutable ratified constants: "
+                      f"{sorted(k for k, v in ok.items() if not v)}")
+    return ok
+
+
+def _phase4_verify_phase3_bundle(complete_dir: Path,
+                                 expected_bundle_sha: str) -> Dict[str, Any]:
+    """Bind Phase 4 to the ACCEPTED immutable Phase-3 bundle (acceptance s2/s4):
+    exact five-file set, per-artifact hash equality with the Phase-3 manifest,
+    recomputed deterministic bundle hash == manifest == the accepted constant,
+    and a fully-passing recorded gate battery."""
+    d = Path(complete_dir)
+    required = sorted(list(PHASE3_ARTIFACTS) + ["phase3_manifest.json"])
+    if not d.is_dir():
+        raise StopRun("S-1", "phase3-bundle", f"accepted bundle missing: {d}")
+    present = sorted(p.name for p in d.iterdir())
+    if present != required:
+        raise StopRun("S-1", "phase3-bundle",
+                      f"bundle set {present} != required {required}")
+    man = json.loads((d / "phase3_manifest.json").read_text(encoding="utf-8"))
+    hashes = {n: _sha256(d / n) for n in PHASE3_ARTIFACTS}
+    if man.get("artifact_hashes") != hashes:
+        raise StopRun("S-8", "phase3-bundle",
+                      "artifact hashes != Phase-3 manifest record")
+    joined = "\n".join(f"{n}:{hashes[n]}" for n in sorted(hashes))
+    bundle_sha = hashlib.sha256(joined.encode("utf-8")).hexdigest()
+    if not (bundle_sha == man.get("bundle_sha256") == expected_bundle_sha):
+        raise StopRun("S-8", "phase3-bundle",
+                      f"bundle sha {bundle_sha} != accepted {expected_bundle_sha}")
+    if man.get("status") != "PHASE_3_COMPLETE" or man.get("optimizer_called") is not True:
+        raise StopRun("S-1", "phase3-bundle",
+                      "manifest is not an accepted PHASE_3_COMPLETE result")
+    g = man.get("gates") or {}
+    needed = ("g1_ok", "g3_ok", "g15_bound_hits_ok", "g16_inbounds_ok",
+              "g2_optimizer_success", "g_pins_bitwise_unchanged")
+    missing = [k for k in needed if g.get(k) is not True]
+    if missing:
+        raise StopRun("S-1", "phase3-bundle",
+                      f"recorded Phase-3 gates not all passing: {missing}")
+    return {"dir": str(d), "artifact_hashes": hashes,
+            "bundle_sha256": bundle_sha, "manifest_status": man["status"],
+            "manifest": man}
+
+
+def _phase4_regional_names(free_names: Sequence[str],
+                           cfg_list: Sequence[str]) -> List[str]:
+    """Derive the regional block from the accepted spec ordering (the free
+    `beta_E_*` covariate parameters; the year dummies are pinned and the plain
+    `beta_E` intercept does not match) and require exact agreement with the
+    canonical plan list (constant AND YAML). Conflict = STOP, never a guess."""
+    derived = [n for n in free_names if n.startswith("beta_E_")]
+    if (tuple(derived) != PHASE4_REGIONAL_PARAMS
+            or tuple(cfg_list) != PHASE4_REGIONAL_PARAMS):
+        raise StopRun("S-5", "regional-names",
+                      f"regional-parameter sources conflict: spec-derived "
+                      f"{derived}; config {list(cfg_list)}; plan "
+                      f"{list(PHASE4_REGIONAL_PARAMS)}")
+    return derived
+
+
+def _phase4_symmetry(H: np.ndarray,
+                     rel_tol: float) -> Tuple[Dict[str, Any], np.ndarray]:
+    """G-6 (D-4): max|H - H'| <= rel_tol * max|H| BEFORE symmetrization."""
+    H = np.asarray(H, dtype="float64")
+    max_abs = float(np.max(np.abs(H)))
+    asym = float(np.max(np.abs(H - H.T)))
+    thr = float(rel_tol) * max_abs
+    return ({"max_abs_H": max_abs, "max_abs_asymmetry": asym,
+             "threshold": thr, "ok": bool(asym <= thr)},
+            0.5 * (H + H.T))
+
+
+def _phase4_eigen(Hs: np.ndarray, n_expected: int,
+                  c: Dict[str, Any]) -> Dict[str, Any]:
+    """G-5 (PD, n_nonpos), G-7 (rank under eps_rank), G-8 (condition tier)."""
+    eig, vec = np.linalg.eigh(np.asarray(Hs, dtype="float64"))
+    min_eig, max_eig = float(eig[0]), float(eig[-1])
+    max_abs = float(np.max(np.abs(eig)))
+    tol = float(c["rank_rel_tol"]) * max_abs
+    rank = int(np.sum(eig > tol))
+    cond = float(max_eig / min_eig) if min_eig > 0.0 else float("inf")
+    tier = ("clean" if cond <= float(c["condition_clean_max"])
+            else "warning" if cond <= float(c["condition_warn_max"])
+            else "failure")
+    return {"eigenvalues": [float(x) for x in eig],
+            "min_eig": min_eig, "max_eig": max_eig,
+            "rank_tolerance": tol, "rank": rank,
+            "rank_expected": int(n_expected),
+            "rank_ok": bool(rank == int(n_expected)),
+            "n_nonpos": int(np.sum(eig <= float(c["nonpos_count_eig_tol"]))),
+            "pd_ok": bool(min_eig > 0.0),
+            "condition_number": cond, "condition_tier": tier,
+            "condition_ok": bool(tier != "failure"),
+            "pooled_baseline_condition": float(c["pooled_baseline_condition"]),
+            "_eigvecs": vec}
+
+
+def _phase4_design_rank(M: np.ndarray, rank_rel_tol: float) -> Dict[str, Any]:
+    """R-1 (D-3): household-level regional design matrix rank under eps_rank,
+    with singular values and |corr| > 0.9 sub-check reported."""
+    M = np.asarray(M, dtype="float64")
+    sv = np.linalg.svd(M, compute_uv=False)
+    tol = float(rank_rel_tol) * float(sv[0])
+    rank = int(np.sum(sv > tol))
+    with np.errstate(invalid="ignore", divide="ignore"):
+        corr = np.corrcoef(M, rowvar=False)
+    flags = [{"i": int(i), "j": int(j), "corr": float(corr[i, j])}
+             for i in range(M.shape[1]) for j in range(i + 1, M.shape[1])
+             if np.isfinite(corr[i, j]) and abs(float(corr[i, j])) > 0.9]
+    return {"shape": [int(M.shape[0]), int(M.shape[1])],
+            "singular_values": [float(x) for x in sv],
+            "rank_tolerance": tol, "rank": rank,
+            "rank_ok": bool(rank == int(M.shape[1])),
+            "high_corr_pairs": flags}
+
+
+def _phase4_schur(Hs: np.ndarray, reg_pos: Sequence[int],
+                  c: Dict[str, Any]) -> Dict[str, Any]:
+    """R-2 + R-4 (D-3): raw regional sub-block PD, and the conditional regional
+    Schur complement H_RR - H_RO H_OO^{-1} H_OR computed via a numerically
+    stable SOLVE (never an explicit inverse); the plan-v1 pinv(rcond 1e-10)
+    construction is recomputed only as an informational cross-check."""
+    Hs = np.asarray(Hs, dtype="float64")
+    n = Hs.shape[0]
+    reg = np.asarray(sorted(int(i) for i in reg_pos), dtype="int64")
+    oth = np.asarray([i for i in range(n) if i not in set(reg.tolist())],
+                     dtype="int64")
+    H_RR = Hs[np.ix_(reg, reg)]
+    H_RO = Hs[np.ix_(reg, oth)]
+    H_OO = Hs[np.ix_(oth, oth)]
+    raw_sym = 0.5 * (H_RR + H_RR.T)
+    raw_eig = np.linalg.eigvalsh(raw_sym)
+    try:
+        X = np.linalg.solve(H_OO, H_RO.T)          # H_OO X = H_OR (stable solve)
+    except np.linalg.LinAlgError as exc:
+        raise StopRun("S-5", "schur-solve", f"H_OO solve failed: {exc}")
+    S = H_RR - H_RO @ X
+    S_sym = 0.5 * (S + S.T)
+    eig = np.linalg.eigvalsh(S_sym)
+    tol = float(c["rank_rel_tol"]) * float(np.max(np.abs(eig)))
+    S_pinv = H_RR - H_RO @ np.linalg.pinv(H_OO, rcond=1e-10) @ H_RO.T
+    return {"regional_positions_free": [int(i) for i in reg],
+            "raw_subblock_eigenvalues": [float(x) for x in raw_eig],
+            "raw_subblock_min_eig": float(raw_eig[0]),
+            "raw_subblock_pd_ok": bool(float(raw_eig[0]) > 0.0),
+            "schur_eigenvalues": [float(x) for x in eig],
+            "schur_min_eig": float(eig[0]),
+            "schur_min_eig_ok": bool(float(eig[0]) > 0.0),
+            "schur_rank_tolerance": tol,
+            "schur_rank": int(np.sum(eig > tol)),
+            "schur_rank_ok": bool(int(np.sum(eig > tol)) == len(reg)),
+            "solve_vs_pinv_max_abs_diff": float(np.max(np.abs(
+                S_sym - 0.5 * (S_pinv + S_pinv.T)))),
+            "_H_RR": H_RR, "_S": S_sym}
+
+
+def _phase4_loading_shares(eigvals: np.ndarray, eigvecs: np.ndarray,
+                           reg_pos: Sequence[int], warn: float) -> Dict[str, Any]:
+    """R-3 (D-3, warning only, never gates): regional squared-loading share of
+    every eigenvector; the three smallest carry the warning flag at >= warn."""
+    reg = np.asarray(sorted(int(i) for i in reg_pos), dtype="int64")
+    shares = [float(np.sum(eigvecs[reg, j] ** 2) / np.sum(eigvecs[:, j] ** 2))
+              for j in range(eigvecs.shape[1])]
+    smallest = [{"eig_index": j, "eigenvalue": float(eigvals[j]),
+                 "regional_loading_share": shares[j],
+                 "warning_ge_threshold": bool(shares[j] >= float(warn))}
+                for j in range(min(3, len(shares)))]
+    return {"all_shares": shares, "three_smallest": smallest,
+            "threshold": float(warn),
+            "any_warning": bool(any(s["warning_ge_threshold"] for s in smallest)),
+            "note": "warning-only diagnostic (D-3); never gates"}
+
+
+def _phase4_contract(out: OutRoot, cfg: Dict[str, Any], config_path: Path,
+                     log, rtmap: Optional[Dict[str, Path]] = None
+                     ) -> Dict[str, Any]:
+    """Phase-4 input contract: full Phase-3 contract revalidation, immutable
+    accepted-bundle binding, accepted-theta load (never altered), exact
+    regional-name binding, design-source validation, objective consistency at
+    theta_hat, and derivative-route construction WITHOUT evaluation."""
+    import jax
+    import jax.numpy as jnp
+
+    p4 = cfg["phase4"]
+    ev: Dict[str, Any] = {"checked_at": _utcnow()}
+    ev["phase4_constants_ok"] = _validate_phase4_constants(cfg)
+    ctx3 = _phase3_contract(out, cfg, config_path, log, rtmap=rtmap)
+
+    bundle_dir = (MNL_ROOT / p4["accepted_phase3_bundle"]["dir"]).resolve()
+    if bundle_dir != (CANONICAL_PHASE3_ROOT / "complete").resolve():
+        raise StopRun("S-1", "phase3-bundle",
+                      "configured accepted bundle dir is not the canonical "
+                      "phase3_estimation_v1/complete")
+    bundle = _phase4_verify_phase3_bundle(bundle_dir, PHASE3_ACCEPTED_BUNDLE_SHA256)
+    man3 = bundle.pop("manifest")
+    ev["phase3_bundle"] = bundle
+
+    names, pmap = ctx3["names"], ctx3["pmap"]
+    tab = pd.read_csv(bundle_dir / "theta_estimated.csv")
+    if list(tab["param"]) != names:
+        raise StopRun("S-1", "phase4-contract",
+                      "accepted theta_estimated.csv ordering != specification")
+    theta_csv = tab["value"].astype("float64").to_numpy()
+    res3 = json.loads((bundle_dir / "estimation_results.json")
+                      .read_text(encoding="utf-8"))
+    # the JSON theta is the authoritative full-precision vector: it is bitwise
+    # consistent with optimizer_diagnostics final_theta + its recorded sha; the
+    # CSV table carries pandas ~16-digit formatting (<= 1 ulp representational)
+    theta_hat = np.asarray(res3["results"]["joint"]["theta"], dtype="float64")
+    diag3 = json.loads((bundle_dir / "optimizer_diagnostics.json")
+                       .read_text(encoding="utf-8"))
+    if not np.array_equal(theta_hat, np.asarray(diag3["final_theta"],
+                                                dtype="float64")):
+        raise StopRun("S-8", "phase4-contract",
+                      "bundle results/diagnostics theta vectors disagree")
+    if diag3.get("final_theta_sha256") != _theta_sha(theta_hat):
+        raise StopRun("S-8", "phase4-contract",
+                      "bundle final_theta_sha256 != recomputed theta hash")
+    if not np.allclose(theta_csv, theta_hat, rtol=1e-12, atol=0.0):
+        raise StopRun("S-8", "phase4-contract",
+                      "bundle theta csv/json vectors disagree beyond "
+                      "representational round-off")
+    if not all(np.float64(theta_hat[pmap["pin_idx"][k]]).tobytes()
+               == np.float64(pmap["pin_values"][k]).tobytes()
+               for k in range(len(pmap["pin_names"]))):
+        raise StopRun("S-8", "phase4-contract",
+                      "accepted theta pins not bitwise-identical to pin values")
+    free_hat = project_full_to_free(pmap, theta_hat)
+    ev["theta_hat_sha256"] = _theta_sha(theta_hat)
+    diag3 = json.loads((bundle_dir / "optimizer_diagnostics.json")
+                       .read_text(encoding="utf-8"))
+    pub_grad_free = np.asarray(diag3["gradient_free_projection"], dtype="float64")
+    if pub_grad_free.shape != (len(pmap["free_names"]),):
+        raise StopRun("S-1", "phase4-contract",
+                      "published free-gradient projection has wrong length")
+
+    reg_names = _phase4_regional_names(pmap["free_names"],
+                                       p4["regional_parameters"])
+    reg_pos_free = [pmap["free_names"].index(n) for n in reg_names]
+    ev["regional"] = {"names": reg_names,
+                      "free_positions": [int(i) for i in reg_pos_free],
+                      "design_columns": list(PHASE4_REGIONAL_DESIGN_COLUMNS),
+                      "column_to_parameter": dict(zip(
+                          PHASE4_REGIONAL_DESIGN_COLUMNS, reg_names))}
+
+    # R-1 source: household-level design columns from the authenticated stem
+    dcols = list(PHASE4_REGIONAL_DESIGN_COLUMNS)
+    stem = pd.read_parquet(Path(ctx3["rtmap"]["frozen_stem_parquet"]),
+                           columns=["idhh"] + dcols)
+    nun = stem.groupby("idhh")[dcols].nunique()
+    if int(nun.to_numpy().max()) != 1:
+        raise StopRun("S-5", "phase4-contract",
+                      "regional design columns are not household-constant")
+    design = stem.groupby("idhh", sort=True)[dcols].first()
+    n_hh = int(cfg["phase3"]["accepted_evidence"]["n_hh"])
+    if design.shape != (n_hh, len(dcols)):
+        raise StopRun("S-5", "phase4-contract",
+                      f"design shape {design.shape} != ({n_hh}, {len(dcols)})")
+    ev["design_shape"] = [int(x) for x in design.shape]
+
+    # objective consistency at the ACCEPTED estimate (evaluation only)
+    negll_hat = float(ctx3["tot"](jnp.asarray(theta_hat)))
+    ev["negll_at_theta_hat"] = negll_hat
+    ev["negll_abs_dev_accepted"] = abs(negll_hat - PHASE3_ACCEPTED_NEGLL_FINAL)
+    ev["negll_abs_dev_target"] = abs(negll_hat - float(ctx3["target"]))
+    if ev["negll_abs_dev_accepted"] > PHASE4_SAFETY_CONSTANTS[
+            "consistency_negll_tol"]:
+        raise StopRun("S-8", "phase4-contract",
+                      f"negLL(theta_hat) deviates "
+                      f"{ev['negll_abs_dev_accepted']:.3e} from the accepted "
+                      f"final value")
+
+    # derivative route: CONSTRUCTED here, evaluated only in the real run
+    free_idx = jnp.asarray(np.asarray(pmap["free_idx"], dtype="int64"))
+    base_full = jnp.asarray(expand_free_to_full(pmap, np.zeros(len(free_hat))))
+    tot = ctx3["tot"]
+
+    def negll_free(x_free):
+        return tot(base_full.at[free_idx].set(x_free))
+
+    hess_fn = jax.hessian(negll_free)
+    grad_fn = jax.grad(negll_free)
+    ev["derivative_route"] = {
+        "objective": "package build_jax_singles_ll sm+sf (float64)",
+        "hessian": "jax.hessian over the ordered 37-free vector (pins fixed)",
+        "gradient": "jax.grad over the same free vector",
+        "loaded": True, "evaluated": False}
+    ev["ok"] = True
+    log(f"phase4 contract: bundle {bundle['bundle_sha256'][:12]}... ok | "
+        f"negLL(theta_hat)={negll_hat:.10f} "
+        f"(dev {ev['negll_abs_dev_accepted']:.2e}) | regional {len(reg_names)}")
+    return {**ctx3, "ev4": ev, "theta_hat": theta_hat, "free_hat": free_hat,
+            "reg_names": reg_names, "reg_pos_free": reg_pos_free,
+            "design": design, "hess_fn": hess_fn, "grad_fn": grad_fn,
+            "negll_hat": negll_hat, "pub_grad_free": pub_grad_free,
+            "man3": man3}
+
+
+def _phase4_diagnose(ctx: Dict[str, Any], log,
+                     progress: Optional[Dict[str, Any]] = None
+                     ) -> Tuple[str, Optional[StopRun], Dict[str, Any],
+                                Dict[str, np.ndarray]]:
+    """Real Phase-4 diagnostics at the accepted estimate: gradient consistency,
+    exact 37x37 JAX Hessian, G-5..G-8 and R-1..R-4 batteries. NEVER optimizes,
+    never alters theta, never computes standard errors. `progress` (review-v2
+    fix 1) is the orchestration-owned mutable attempt state: each derivative
+    flag flips IMMEDIATELY after its callable returns, and the live diag dict
+    is exposed as partial_diagnostics so exception finalization stays accurate."""
+    import jax.numpy as jnp
+
+    c = PHASE4_SAFETY_CONSTANTS
+    pmap = ctx["pmap"]
+    if progress is None:
+        progress = {}
+    progress.setdefault("gradient_evaluated", False)
+    progress.setdefault("hessian_evaluated", False)
+    diag: Dict[str, Any] = {"generated_at": _utcnow(),
+                            "theta_hat_sha256": ctx["ev4"]["theta_hat_sha256"],
+                            "negll_at_theta_hat": ctx["negll_hat"]}
+    progress["partial_diagnostics"] = diag      # live reference, never copied
+
+    grad_free = np.asarray(ctx["grad_fn"](jnp.asarray(ctx["free_hat"])),
+                           dtype="float64")
+    progress["gradient_evaluated"] = True       # set BEFORE any gradient gate
+    grad_dev = float(np.max(np.abs(grad_free - ctx["pub_grad_free"])))
+    diag["gradient_free"] = [float(x) for x in grad_free]
+    diag["gradient_consistency_max_abs_dev"] = grad_dev
+    if grad_dev > float(c["consistency_grad_tol"]):
+        raise StopRun("S-8", "phase4-gradient",
+                      f"free gradient deviates {grad_dev:.3e} from the "
+                      f"published Phase-3 gradient")
+    nb = [i for i, n in enumerate(pmap["free_names"])
+          if n not in set(EXPECTED_AT_BOUND_NAMES)]
+    diag["g3_consistency_max_abs_grad_35free"] = float(
+        np.max(np.abs(grad_free[nb])))
+
+    log("phase4: evaluating exact 37x37 JAX Hessian at the accepted estimate")
+    t0 = time.time()
+    H = np.asarray(ctx["hess_fn"](jnp.asarray(ctx["free_hat"])),
+                   dtype="float64")
+    progress["hessian_evaluated"] = True        # set BEFORE any Hessian gate
+    diag["hessian_evaluated"] = True
+    diag["hessian_wall_seconds"] = round(time.time() - t0, 1)
+    log(f"phase4: Hessian evaluated ({diag['hessian_wall_seconds']}s)")
+
+    sym, Hs = _phase4_symmetry(H, c["symmetry_rel_tol"])
+    diag["symmetry"] = sym
+    eigen = _phase4_eigen(Hs, int(c["n_free"]), c)
+    vec = eigen.pop("_eigvecs")
+    diag["eigen"] = eigen
+    diag["loading_shares"] = _phase4_loading_shares(
+        np.asarray(eigen["eigenvalues"]), vec, ctx["reg_pos_free"],
+        c["loading_share_warn"])
+    diag["design"] = _phase4_design_rank(
+        ctx["design"].to_numpy(dtype="float64"), c["rank_rel_tol"])
+    schur = _phase4_schur(Hs, ctx["reg_pos_free"], c)
+    H_RR = schur.pop("_H_RR")
+    S = schur.pop("_S")
+    diag["regional"] = schur
+
+    gates = {
+        "g5_pd_ok": eigen["pd_ok"],
+        "g5_n_nonpos": eigen["n_nonpos"],
+        "g6_symmetry_ok": sym["ok"],
+        "g7_rank": eigen["rank"],
+        "g7_rank_ok": eigen["rank_ok"],
+        "g8_condition_number": eigen["condition_number"],
+        "g8_condition_tier": eigen["condition_tier"],
+        "g8_condition_ok": eigen["condition_ok"],
+        "r1_design_rank": diag["design"]["rank"],
+        "r1_design_rank_ok": bool(diag["design"]["rank"]
+                                  == int(c["regional_n"])),
+        "r2_raw_subblock_pd_ok": schur["raw_subblock_pd_ok"],
+        "r4_schur_rank_ok": schur["schur_rank_ok"],
+        "r4_schur_min_eig_ok": schur["schur_min_eig_ok"],
+        "r3_loading_share_warning": diag["loading_shares"]["any_warning"],
+    }
+    gates["region_urbanisation_identification"] = bool(
+        gates["r1_design_rank_ok"] and gates["r2_raw_subblock_pd_ok"]
+        and gates["r4_schur_rank_ok"] and gates["r4_schur_min_eig_ok"])
+    diag["gates"] = gates
+    warnings = []
+    if gates["g8_condition_tier"] == "warning":
+        warnings.append("condition number in the 1e7-1e10 warning tier")
+    if gates["r3_loading_share_warning"]:
+        warnings.append("regional loading share >= 0.5 on a smallest eigenvector")
+    if diag["design"]["high_corr_pairs"]:
+        warnings.append("regional design |corr| > 0.9 pair(s)")
+    diag["warnings"] = warnings
+    diag["identification_scope"] = ("real-data LOCAL identification diagnostics "
+                                    "only; no synthetic-recovery claim (D-7)")
+
+    curvature_ok = (gates["g5_pd_ok"] and gates["g6_symmetry_ok"]
+                    and gates["g7_rank_ok"] and gates["g8_condition_ok"])
+    arrays = {"H": H, "Hs": Hs, "H_RR": H_RR, "S": S,
+              "eigvals": np.asarray(eigen["eigenvalues"]),
+              "shares": np.asarray(diag["loading_shares"]["all_shares"])}
+    # review-v1 fix (raw-subblock coverage): when the regional hard conjunction
+    # fails, S-5/G-9 is the registered stop even if curvature gates also fail --
+    # eigenvalue interlacing makes a non-PD regional subblock imply a non-PD
+    # full Hessian, so the joint failure is the typical R-2 case; curvature
+    # flags remain recorded in gates either way
+    if not gates["region_urbanisation_identification"]:
+        return ("STOPPED",
+                StopRun("S-5", "G-9",
+                        "region x urbanisation hard gates failed "
+                        "(R-1/R-2/R-4); evidence to the manager"),
+                diag, arrays)
+    if not curvature_ok:
+        return ("STOPPED",
+                StopRun("S-4", "curvature",
+                        f"curvature gate failure: G-5 {gates['g5_pd_ok']}, "
+                        f"G-6 {gates['g6_symmetry_ok']}, "
+                        f"G-7 {gates['g7_rank_ok']}, "
+                        f"G-8 {gates['g8_condition_tier']}"),
+                diag, arrays)
+    return "PHASE_4_COMPLETE", None, diag, arrays
+
+
+def _phase4_write_artifacts(staging: Path, ctx: Dict[str, Any],
+                            diag: Dict[str, Any],
+                            arrays: Dict[str, np.ndarray]) -> None:
+    """Stage every non-console Phase-4 artifact atomically."""
+    fn = list(ctx["pmap"]["free_names"])
+    hdf = pd.DataFrame(arrays["H"], columns=fn)
+    hdf.insert(0, "param", fn)
+    _atomic_write_csv(hdf, staging / "hessian_free.csv")
+    tmp = staging / "hessian_free.npy.tmp"
+    with open(tmp, "wb") as f:
+        np.save(f, arrays["H"])
+    os.replace(tmp, staging / "hessian_free.npy")
+    edf = pd.DataFrame({
+        "index": range(len(arrays["eigvals"])),
+        "eigenvalue": arrays["eigvals"],
+        "regional_loading_share": arrays["shares"]})
+    _atomic_write_csv(edf, staging / "hessian_eigenvalues.csv")
+    rn = list(ctx["reg_names"])
+    rdf = pd.DataFrame(arrays["H_RR"], columns=rn)
+    rdf.insert(0, "param", rn)
+    _atomic_write_csv(rdf, staging / "regional_hessian_subblock.csv")
+    sdf = pd.DataFrame(arrays["S"], columns=rn)
+    sdf.insert(0, "param", rn)
+    _atomic_write_csv(sdf, staging / "regional_schur_complement.csv")
+    _atomic_write_json(diag, staging / "phase4_diagnostics.json")
+
+
+def _phase4_manifest_skeleton(args, cfg: Dict[str, Any],
+                              txn: "Phase3Transaction",
+                              gates_record: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "run": cfg["run"]["name"] + "__phase4",
+        "track": cfg["run"]["track"],
+        "phase": 4,
+        "attempt_id": txn.attempt_id,
+        "mode": ("phase4 dry-run (contract only, no Hessian)" if args.dry_run
+                 else "phase4 curvature diagnostics"),
+        "authorization": cfg["phase4"]["authorization_doc"],
+        "review_gate": ("PHASE4_REVIEW_V6_APPROVED"
+                        if gates_record.get("verified")
+                        else "AWAITING_PHASE4_REVIEW_V6_APPROVE"),
+        "execution_gates": gates_record or None,
+        "execution_ready": bool(gates_record.get("verified", False)
+                                and gates_record.get("execution_ready", False)),
+        "accepted_phase3_bundle_sha256": PHASE3_ACCEPTED_BUNDLE_SHA256,
+        "started_at": _utcnow(),
+        "status": "RUNNING",
+        "stop": None,
+        "optimizer_called": False,       # Phase 4 NEVER optimizes
+        "gradient_evaluated": False,
+        "hessian_evaluated": False,
+        "config": {"path": str(Path(args.config)),
+                   "sha256": _sha256(Path(args.config))},
+        "script": {"path": str(SCRIPT_PATH), "sha256": _sha256(SCRIPT_PATH)},
+        "git": {"MNL": _git_state(MNL_ROOT),
+                "dclaborsupply-monorepo": _git_state(
+                    MNL_ROOT / "dclaborsupply-monorepo")},
+        "environment": {"python": sys.version.split()[0],
+                        "numpy": np.__version__, "pandas": pd.__version__},
+        "targets": cfg["targets"],
+    }
+
+
+def _phase4_finalize(txn: "Phase3Transaction", manifest: Dict[str, Any],
+                     lines: List[str], t0: float, status: str,
+                     stop: Optional[StopRun], code: int) -> int:
+    """Phase-4 attempt finalization: decision-C order (console, artifact hashes
+    with NO manifest self-hash, manifest LAST, exact-set check, atomic publish)."""
+    if status == "PHASE_4_COMPLETE" and txn.complete_exists():
+        stop = StopRun("S-0", "phase4-immutable",
+                       "complete/ appeared during the run; publish refused")
+        status, code = "STOPPED", 2
+    if status == "PHASE_4_COMPLETE":
+        required_pre = sorted(n for n in PHASE4_ARTIFACTS
+                              if n != "phase4_console.log")
+        present = sorted(p.name for p in txn.staging.iterdir())
+        if (present != required_pre
+                or any(not (txn.staging / n).is_file() for n in required_pre)):
+            stop = StopRun("S-3", "bundle-completeness",
+                           f"staging artifact set {present} != required "
+                           f"{required_pre} plus console")
+            status, code = "STOPPED", 2
+    lines.append(f"FINAL STATUS: {status}")
+    _atomic_write_text("\n".join(lines) + "\n", txn.staging / "phase4_console.log")
+    hashes = {n: _sha256(txn.staging / n) for n in PHASE4_ARTIFACTS
+              if (txn.staging / n).is_file()}
+    joined = "\n".join(f"{n}:{hashes[n]}" for n in sorted(hashes))
+    manifest["status"] = status
+    if stop is not None:
+        manifest["stop"] = {"code": stop.code, "gate": stop.gate,
+                            "message": stop.message}
+    manifest["finished_at"] = _utcnow()
+    manifest["wall_seconds"] = round(time.time() - t0, 1)
+    manifest["artifact_hashes"] = hashes
+    manifest["bundle_sha256"] = hashlib.sha256(
+        joined.encode("utf-8")).hexdigest()
+    _atomic_write_json(manifest, txn.staging / "phase4_manifest.json")
+    if status == "PHASE_4_COMPLETE":
+        final_set = sorted(p.name for p in txn.staging.iterdir())
+        if final_set != sorted(list(PHASE4_ARTIFACTS)
+                               + ["phase4_manifest.json"]):
+            raise RuntimeError(f"post-manifest staging set invalid: {final_set}")
+    dest = txn.finish(status)
+    txn.release()
+    print(f"[phase4] {status} -> {dest}")
+    return code
+
+
+def _phase4_merge_progress(manifest: Dict[str, Any],
+                           progress: Dict[str, Any]) -> None:
+    """Flags-only merge of the live derivative-progress state (review-v2 fix
+    1) for the successful/gated route. Every EXCEPTIONAL path goes through the
+    single policy in _merge_phase4_exception_evidence (review-v4 fix 2)."""
+    manifest["gradient_evaluated"] = bool(progress.get("gradient_evaluated"))
+    manifest["hessian_evaluated"] = bool(progress.get("hessian_evaluated"))
+
+
+def _phase4_evidence_status(gate: Optional[str]) -> str:
+    """Evidence label for retained pre-staging exceptional diagnostics
+    (review-v3 fix 3): post-evaluation authentication stops are labelled
+    distinctly."""
+    return ("FAILED_AUTHENTICATION_ATTEMPT"
+            if gate in ("runtime-map", "input-recheck")
+            else "STOPPED_ATTEMPT_PARTIAL_EVIDENCE")
+
+
+def _merge_phase4_exception_evidence(manifest: Dict[str, Any],
+                                     progress: Dict[str, Any],
+                                     stop_or_exc: BaseException) -> None:
+    """THE single exceptional-evidence merge policy (review-v4 fixes 1-2), used
+    by every Phase-4 exception handler. Whether partial diagnostics attach is
+    decided ONLY by progress["artifacts_staged"]:
+
+    - artifacts NOT staged: the live record attaches as partial_diagnostics
+      with the pre-staging evidence label (FAILED_AUTHENTICATION_ATTEMPT for
+      the runtime-map/input-recheck gates, STOPPED_ATTEMPT_PARTIAL_EVIDENCE
+      otherwise);
+    - artifacts staged: the staged phase4_diagnostics.json is the SOLE
+      authoritative scientific record -- no duplicate manifest copy, any stale
+      partial_diagnostics key is removed, and the evidence is labelled
+      FULL_DIAGNOSTIC_ARTIFACT_STAGED_STOPPED_ATTEMPT with the artifact named
+      as the authority."""
+    manifest["gradient_evaluated"] = bool(progress.get("gradient_evaluated"))
+    manifest["hessian_evaluated"] = bool(progress.get("hessian_evaluated"))
+    if isinstance(stop_or_exc, StopRun):
+        manifest["exception"] = {"type": "StopRun",
+                                 "message": stop_or_exc.message,
+                                 "code": stop_or_exc.code,
+                                 "gate": stop_or_exc.gate}
+        gate: Optional[str] = stop_or_exc.gate
+    else:
+        manifest["exception"] = {"type": type(stop_or_exc).__name__,
+                                 "message": str(stop_or_exc)}
+        gate = None
+    if progress.get("artifacts_staged"):
+        manifest.pop("partial_diagnostics", None)
+        manifest["diagnostic_evidence_status"] = (
+            "FULL_DIAGNOSTIC_ARTIFACT_STAGED_STOPPED_ATTEMPT")
+        manifest["diagnostic_artifact_authority"] = (
+            progress.get("diagnostics_artifact_name")
+            or "phase4_diagnostics.json")
+        manifest["diagnostic_artifact_staged"] = True
+    elif progress.get("partial_diagnostics") is not None:
+        manifest["partial_diagnostics"] = progress["partial_diagnostics"]
+        manifest["diagnostic_evidence_status"] = _phase4_evidence_status(gate)
+
+
+def _phase4_run_diagnostics(txn: "Phase3Transaction", manifest: Dict[str, Any],
+                            lines: List[str], t0: float, ctx: Dict[str, Any],
+                            log, progress: Dict[str, Any]) -> int:
+    """Real-run diagnostic body (review-v2 fixes 1-2; also driven by the
+    exceptional-path tests with fake-derivative contexts): evaluates via
+    _phase4_diagnose under live progress accounting, merges that state into
+    the manifest on EVERY outcome -- including a StopRun raised mid-diagnostics
+    after a derivative already evaluated -- and finalizes. The post-evaluation
+    input recheck runs whenever the ctx carries the production runtime map."""
+    try:
+        status, stop, diag, arrays = _phase4_diagnose(ctx, log,
+                                                      progress=progress)
+        _phase4_merge_progress(manifest, progress)
+        manifest["gates4"] = diag.get("gates", {})
+        manifest["warnings"] = diag.get("warnings", [])
+        if "rtmap" in ctx and "input_auth" in ctx:
+            # post-evaluation input recheck BEFORE any result write (decision G)
+            fp_post = _runtime_map_fingerprint(ctx["rtmap"])
+            if fp_post != ctx["rtmap_fingerprint"]:
+                raise StopRun("S-8", "runtime-map",
+                              "runtime-map fingerprint changed during the "
+                              "attempt")
+            recheck, recheck_ok = _recheck_inputs(ctx["input_auth"],
+                                                  runtime_paths=ctx["rtmap"])
+            manifest["input_recheck_after_evaluation"] = recheck
+            if not recheck_ok:
+                raise StopRun("S-8", "input-recheck",
+                              "input hash recheck failed after evaluation")
+        _phase4_write_artifacts(txn.staging, ctx, diag, arrays)
+        # review-v4 fix 1: staging state lives in the SHARED progress object,
+        # set only after every required numerical artifact was written
+        progress["artifacts_staged"] = True
+        progress["diagnostics_artifact_name"] = "phase4_diagnostics.json"
+        if status == "PHASE_4_COMPLETE":
+            return _phase4_finalize(txn, manifest, lines, t0, status, None, 0)
+        return _phase4_finalize(txn, manifest, lines, t0, "STOPPED", stop, 2)
+    except StopRun as stop:
+        log(f"STOP {stop.code} [{stop.gate}] {stop.message}")
+        _merge_phase4_exception_evidence(manifest, progress, stop)
+        return _phase4_finalize(txn, manifest, lines, t0, "STOPPED", stop, 2)
+    except Exception as exc:
+        # review-v4 fix 1: unexpected post-contract failures (including any
+        # raised AFTER artifact staging) finalize here, where the shared
+        # staging state is available to the single merge policy
+        tb = traceback.format_exc()
+        log("UNEXPECTED ERROR:\n" + tb)
+        _merge_phase4_exception_evidence(manifest, progress, exc)
+        stop = StopRun("S-0", "unexpected", tb.splitlines()[-1] if tb else
+                       "unknown")
+        return _phase4_finalize(txn, manifest, lines, t0, "STOPPED", stop, 3)
+
+
+def _phase4_run(args, cfg: Dict[str, Any],
+                gates_record: Dict[str, Any]) -> int:
+    """Production Phase-4 attempt body (private). Real diagnostics require the
+    verified gates record from run_phase4; dry-runs never evaluate the Hessian
+    (the evaluation branch is structurally unreachable)."""
+    if not args.dry_run and not (gates_record.get("verified") is True
+                                 and gates_record.get("execution_ready") is True):
+        print("REFUSED: real Phase-4 diagnostics require the verified Git + "
+              "Phase-4 review-v6 approval gates.", file=sys.stderr)
+        return 2
+    txn = Phase3Transaction(CANONICAL_PHASE4_ROOT,
+                            "dryrun" if args.dry_run else "curvature",
+                            success_status="PHASE_4_COMPLETE")
+    t0 = time.time()
+    lines: List[str] = []
+
+    def log(msg: str) -> None:
+        line = f"[{datetime.now().strftime('%H:%M:%S')}] {msg}"
+        print(line)
+        lines.append(line)
+
+    manifest = _phase4_manifest_skeleton(args, cfg, txn, gates_record)
+    out = OutRoot(CANONICAL_REGIONLIVE_ROOT)
+    acquired = False
+    # orchestration-owned live attempt state (review-v2 fix 1; review-v4 fix
+    # 1): visible to every finalization path, including exceptions after
+    # evaluation and after artifact staging
+    progress: Dict[str, Any] = {"gradient_evaluated": False,
+                                "hessian_evaluated": False,
+                                "partial_diagnostics": None,
+                                "artifacts_staged": False,
+                                "diagnostics_artifact_name": None}
+    try:
+        txn.acquire()
+        acquired = True
+        manifest["attempt_id"] = txn.attempt_id     # allocated under the lock
+        _assert_no_prohibited_modules("phase4-start")
+        if (not args.dry_run) and txn.complete_exists():
+            raise StopRun("S-0", "phase4-immutable",
+                          "complete/ exists; a successful Phase-4 bundle is "
+                          "immutable and a new real run is refused")
+        manifest["package_identity"] = _verify_package_identity(
+            expected_commit=gates_record.get("expected_dclaborsupply_head"))
+        log("Phase 4 - contract (accepted Phase-3 bundle + inputs)")
+        rtmap = _phase4_runtime_paths()             # ONE map per attempt
+        manifest["rtmap_fingerprint"] = _runtime_map_fingerprint(rtmap)
+        ctx = _phase4_contract(out, cfg, Path(args.config), log, rtmap=rtmap)
+        manifest["contract"] = ctx["ev"]
+        manifest["contract_phase4"] = ctx["ev4"]
+
+        if args.dry_run:
+            log("Phase 4 dry-run COMPLETE - contract verified, Hessian NOT "
+                "evaluated")
+            return _phase4_finalize(txn, manifest, lines, t0,
+                                    "PHASE_4_DRY_RUN_COMPLETE", None, 0)
+
+        log("Phase 4 - curvature diagnostics (real run)")
+        return _phase4_run_diagnostics(txn, manifest, lines, t0, ctx, log,
+                                       progress)
+
+    except StopRun as stop:
+        log(f"STOP {stop.code} [{stop.gate}] {stop.message}")
+        if not acquired:
+            print(f"[phase4] STOPPED (no attempt bundle: {stop.message})",
+                  file=sys.stderr)
+            return 2
+        _merge_phase4_exception_evidence(manifest, progress, stop)
+        return _phase4_finalize(txn, manifest, lines, t0, "STOPPED", stop, 2)
+    except Exception as exc:
+        tb = traceback.format_exc()
+        log("UNEXPECTED ERROR:\n" + tb)
+        if not acquired:
+            print(tb, file=sys.stderr)
+            return 3
+        # review-v4 fix 3: the SAME single merge policy, consulting the shared
+        # progress["artifacts_staged"] state -- never unconditional
+        _merge_phase4_exception_evidence(manifest, progress, exc)
+        stop = StopRun("S-0", "unexpected", tb.splitlines()[-1] if tb else
+                       "unknown")
+        return _phase4_finalize(txn, manifest, lines, t0, "STOPPED", stop, 3)
+
+
+def _phase4_runtime_paths() -> Dict[str, Path]:
+    """Phase 4 consumes exactly the Phase-3 runtime map (same ten labels); the
+    accepted Phase-3 bundle is bound separately by its deterministic hash."""
+    return _phase3_runtime_paths()
+
+
+def run_phase4(args, cfg: Dict[str, Any]) -> int:
+    """The ONLY production Phase-4 entrypoint (acceptance doc s15). Without
+    --execute-phase4 this performs the non-evaluating dry-run; with it, the
+    Git gates plus the PHASE-4-SPECIFIC review-v6 APPROVE must pass first
+    (Phase-4 reviews v1-v5 and the Phase-3 review-v6 are rejected)."""
+    cfg_resolved = Path(args.config).resolve()
+    if cfg_resolved != CANONICAL_PHASE3_CONFIG.resolve():
+        print(f"REFUSED: Phase 4 requires the canonical config "
+              f"{CANONICAL_PHASE3_CONFIG} (got {cfg_resolved}).", file=sys.stderr)
+        return 2
+    out_resolved = (Path(args.out).resolve() if args.out
+                    else (MNL_ROOT / cfg["run"]["output_root"]).resolve())
+    canonical = CANONICAL_REGIONLIVE_ROOT.resolve()
+    if out_resolved != canonical:
+        print(f"REFUSED: Phase-4 --out must equal the canonical production root "
+              f"{canonical} (got {out_resolved}).", file=sys.stderr)
+        return 2
+    if (MNL_ROOT / cfg["run"]["output_root"]).resolve() != canonical:
+        print("REFUSED: config run.output_root is not the canonical production "
+              "root.", file=sys.stderr)
+        return 2
+    if (cfg.get("phase4") or {}).get("output_subdir") != CANONICAL_PHASE4_SUBDIR:
+        print(f"REFUSED: config phase4.output_subdir must equal "
+              f"'{CANONICAL_PHASE4_SUBDIR}'.", file=sys.stderr)
+        return 2
+    execute = bool(getattr(args, "execute_phase4", False))
+    if not execute:
+        args.dry_run = True          # --phase 4 without --execute-phase4 == dry-run
+        return _phase4_run(args, cfg, {})
+    # review v1-v5 required fixes: the PHASE-4-SPECIFIC gate must pass
+    # before any gradient/Hessian evaluation -- it accepts phase4 review v6
+    # only (never Phase-4 reviews v1-v5, never the Phase-3 review-v6)
+    gates_record = _verify_phase4_execution_gates(args)
+    args.dry_run = False
+    return _phase4_run(args, cfg, gates_record)
+
+
+# --------------------------------------------------------------------------- #
 # orchestration
 # --------------------------------------------------------------------------- #
 def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--config", required=True, help="run-config YAML")
     ap.add_argument("--phase", type=int, default=2,
-                    help="highest phase to run (1, 2 or 3; 4-8 are manager-gated). "
-                         "Phase 3 requires the accepted Phase 1-2 evidence in --out.")
+                    help="highest phase to run (1-4; 5-8 are manager-gated and "
+                         "refused). Phase 3 requires the accepted Phase 1-2 "
+                         "evidence; Phase 4 requires the accepted Phase-3 "
+                         "complete/ bundle.")
     ap.add_argument("--out", default=None,
                     help="output root (default: config run.output_root)")
     ap.add_argument("--dry-run", action="store_true",
-                    help="phases 1-2: verification only (stop after Phase 2); "
-                         "phase 3: input-contract validation WITHOUT any optimizer call")
+                    help="phase 1: deterministic rebuild verification; "
+                         "phase 2: stored-theta objective check (stop after "
+                         "Phase 2, no optimizer); phase 3: input-contract "
+                         "validation WITHOUT any optimizer call; phase 4: "
+                         "bundle/contract validation WITHOUT any gradient or "
+                         "Hessian evaluation")
     ap.add_argument("--execute-phase3", action="store_true",
                     help="REQUIRED for a real Phase-3 estimation; without it, "
                          "--phase 3 performs only the non-optimizing dry-run")
+    ap.add_argument("--execute-phase4", action="store_true",
+                    help="REQUIRED for real Phase-4 curvature diagnostics; "
+                         "without it, --phase 4 performs only the "
+                         "non-evaluating dry-run (no Hessian)")
     ap.add_argument("--expected-mnl-head", default=None,
                     help="real run: 40-hex SHA the current MNL HEAD must equal")
     ap.add_argument("--expected-dclaborsupply-head", default=None,
@@ -2368,14 +3318,26 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                          "docs/France_case/P2a/"
                          "FR_P2a_region_live_phase3_code_review_v6.md")
     ap.add_argument("--approved-review-sha256", default=None,
-                    help="real run: 64-hex SHA-256 of the review-v6 file, which "
-                         "must carry one exact '**FINAL VERDICT: APPROVE**' line "
-                         "under '# 1. Sixth-review verdict'")
+                    help="real Phase-3 run: 64-hex SHA-256 of the review-v6 "
+                         "file, which must carry one exact "
+                         "'**FINAL VERDICT: APPROVE**' line under "
+                         "'# 1. Sixth-review verdict'")
+    ap.add_argument("--approved-phase4-review", default=None,
+                    help="real Phase-4 run: must be exactly "
+                         "docs/France_case/P2a/"
+                         "FR_P2a_region_live_phase4_code_review_v6.md "
+                         "(Phase-4 reviews v1-v5 and the Phase-3 "
+                         "review-v6 are rejected)")
+    ap.add_argument("--approved-phase4-review-sha256", default=None,
+                    help="real Phase-4 run: 64-hex SHA-256 of the Phase-4 "
+                         "review-v6 file, which must carry one exact "
+                         "'**FINAL VERDICT: APPROVE**' line under "
+                         "'# 1. Phase-4 review verdict'")
     args = ap.parse_args(argv)
 
-    if args.phase > 3:
-        print("REFUSED: Phases 4-8 are manager-gated; this runner implements "
-              "Phases 1-3 only (plan v2 s24; acceptance doc s10).", file=sys.stderr)
+    if args.phase > 4:
+        print("REFUSED: Phases 5-8 are manager-gated; this runner implements "
+              "Phases 1-4 only (phase3 acceptance doc s16).", file=sys.stderr)
         return 2
 
     cfg = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
@@ -2388,6 +3350,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         # Phase 3 consumes the accepted Phase 1-2 evidence READ-ONLY and writes only
         # under phase3_estimation_v1/ -- it never re-runs or rewrites Phases 1-2.
         return run_phase3(args, cfg)
+
+    if args.phase == 4:
+        if Path(args.config).resolve() != CANONICAL_PHASE3_CONFIG.resolve():
+            print(f"REFUSED: Phase 4 requires the canonical config "
+                  f"{CANONICAL_PHASE3_CONFIG}.", file=sys.stderr)
+            return 2
+        # Phase 4 diagnoses the ACCEPTED immutable Phase-3 bundle READ-ONLY and
+        # writes only under phase4_curvature_v1/ -- no optimizer, no theta change.
+        return run_phase4(args, cfg)
 
     out_root = Path(args.out) if args.out else (MNL_ROOT / cfg["run"]["output_root"])
     out = OutRoot(out_root)

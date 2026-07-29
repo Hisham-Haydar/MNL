@@ -1,0 +1,172 @@
+{
+  "run": "p2a_regionlive_rebuild_v1__phase4",
+  "track": "FR-2016 singles P2a region-live",
+  "phase": 4,
+  "attempt_id": "20260727T112217Z_150716_a5287380141c45fd836c03d11428dfbe_dryrun",
+  "mode": "phase4 dry-run (contract only, no Hessian)",
+  "authorization": "docs/France_case/P2a/FR_P2a_region_live_phase3_manager_acceptance_v1.md",
+  "review_gate": "AWAITING_REVIEW_V6_APPROVE",
+  "execution_gates": null,
+  "execution_ready": false,
+  "accepted_phase3_bundle_sha256": "2cf237648743f59bd742b12feceaea67c5fd377b26faf4fb6fad6f452f86864b",
+  "started_at": "2026-07-27T11:22:16.955071+00:00",
+  "status": "STOPPED",
+  "stop": {
+    "code": "S-8",
+    "gate": "phase4-contract",
+    "message": "bundle theta csv/json vectors disagree"
+  },
+  "optimizer_called": false,
+  "hessian_evaluated": false,
+  "config": {
+    "path": "scripts\\p2a\\configs\\p2a_regionlive_rebuild_v1.yaml",
+    "sha256": "84bac9a5009ff1262439016461e5a7ee531c38aa17d04bec7de32ec8541734e3"
+  },
+  "script": {
+    "path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\p2a\\run_p2a_regionlive_rebuild.py",
+    "sha256": "06abbc84064bfc1aca293008a5a608e8251723437a520c256c6296bd2e713f32"
+  },
+  "git": {
+    "MNL": {
+      "repo": "C:\\Users\\hisham\\Repo\\MNL",
+      "head": "c7d558a36489520a0f8487abf939d5300deaffb1",
+      "dirty": true
+    },
+    "dclaborsupply-monorepo": {
+      "repo": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo",
+      "head": "27756a06ea189339aa82915ed2124628afed20eb",
+      "dirty": false
+    }
+  },
+  "environment": {
+    "python": "3.12.2",
+    "numpy": "2.3.5",
+    "pandas": "2.3.3"
+  },
+  "targets": {
+    "negll_4dp": 19053.4655,
+    "negll_full": 19053.46553160094,
+    "negll_region_dead_context": 19071.6562
+  },
+  "package_identity": {
+    "nested_repo": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo",
+    "nested_head": "27756a06ea189339aa82915ed2124628afed20eb",
+    "commit_ref": "27756a06ea189339aa82915ed2124628afed20eb",
+    "gitlink": "27756a06ea189339aa82915ed2124628afed20eb",
+    "fully_dirty": false,
+    "package_source_root": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src",
+    "imported_modules": {
+      "dclaborsupply": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\__init__.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/__init__.py",
+        "blob_id": "8b7406fd0dc8de2dd22f91f1122bdf72b4dadf25",
+        "committed_sha256": "556c53716b4e1539b5521388dd6008d895fa3f4424ca5bede932662c7e3061b8",
+        "working_sha256": "556c53716b4e1539b5521388dd6008d895fa3f4424ca5bede932662c7e3061b8",
+        "working_blob_id": "8b7406fd0dc8de2dd22f91f1122bdf72b4dadf25",
+        "blob_equal": true
+      },
+      "dclaborsupply.models": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\models.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/models.py",
+        "blob_id": "d2b1d1ebbd5417e6274420efae400c9bcfd1d090",
+        "committed_sha256": "f98a4bf91029628ad8c14ed1720f96c315d9a57eca73895be191fd8d45e60ba2",
+        "working_sha256": "f98a4bf91029628ad8c14ed1720f96c315d9a57eca73895be191fd8d45e60ba2",
+        "working_blob_id": "d2b1d1ebbd5417e6274420efae400c9bcfd1d090",
+        "blob_equal": true
+      },
+      "dclaborsupply.data": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\data\\__init__.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/data/__init__.py",
+        "blob_id": "edc62cf5ba23ac5c84378c9cd28b6e4995b09805",
+        "committed_sha256": "e15c751d4da060689b8e9b69442f87ea16a219cdfc274c274cb4976d2c75a52b",
+        "working_sha256": "e15c751d4da060689b8e9b69442f87ea16a219cdfc274c274cb4976d2c75a52b",
+        "working_blob_id": "edc62cf5ba23ac5c84378c9cd28b6e4995b09805",
+        "blob_equal": true
+      },
+      "dclaborsupply.data.loader": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\data\\loader.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/data/loader.py",
+        "blob_id": "8adf02eebdfa27c7fc9fc334c54b780a9efaac4b",
+        "committed_sha256": "68cf26f141d1459043f3fba32df503518e45c87310c23a1c04afd66a4220a651",
+        "working_sha256": "68cf26f141d1459043f3fba32df503518e45c87310c23a1c04afd66a4220a651",
+        "working_blob_id": "8adf02eebdfa27c7fc9fc334c54b780a9efaac4b",
+        "blob_equal": true
+      },
+      "dclaborsupply.spec": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\spec\\__init__.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/spec/__init__.py",
+        "blob_id": "91c961515d99d7cd4304603ddbdc1bfb144c4fd8",
+        "committed_sha256": "325760d17a8b7f57b21f7e8c2898904e625d12150837991524c71e9f6ae5f4b2",
+        "working_sha256": "325760d17a8b7f57b21f7e8c2898904e625d12150837991524c71e9f6ae5f4b2",
+        "working_blob_id": "91c961515d99d7cd4304603ddbdc1bfb144c4fd8",
+        "blob_equal": true
+      },
+      "dclaborsupply.spec.parser": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\spec\\parser.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/spec/parser.py",
+        "blob_id": "4df2b347330255ff6b7788c0dc90a579eadc0a6e",
+        "committed_sha256": "8207260fb1c4e363f523df5d3eccbefed29eab35b989bfbdf1eb162a71893456",
+        "working_sha256": "94d436749f7bffbbd92683c390c452d575212f2d8ade2d449aa26dab1a7dbf29",
+        "working_blob_id": "4df2b347330255ff6b7788c0dc90a579eadc0a6e",
+        "blob_equal": true
+      },
+      "dclaborsupply.likelihood": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\likelihood\\__init__.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/likelihood/__init__.py",
+        "blob_id": "62c3445ea1c3ded796179a87c6742f852eeafc81",
+        "committed_sha256": "06355efa1b05bc01873824e347c8df6c36789a5b3ba33214556c016e5d51dfdc",
+        "working_sha256": "06355efa1b05bc01873824e347c8df6c36789a5b3ba33214556c016e5d51dfdc",
+        "working_blob_id": "62c3445ea1c3ded796179a87c6742f852eeafc81",
+        "blob_equal": true
+      },
+      "dclaborsupply.likelihood.index": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\likelihood\\index.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/likelihood/index.py",
+        "blob_id": "2f85e87459103e42089e6f7ae07691915ca461fd",
+        "committed_sha256": "c1a42a685d46d9723007122a20d110aae73272367939f1fc9bed2c7a5b10a90e",
+        "working_sha256": "c1a42a685d46d9723007122a20d110aae73272367939f1fc9bed2c7a5b10a90e",
+        "working_blob_id": "2f85e87459103e42089e6f7ae07691915ca461fd",
+        "blob_equal": true
+      },
+      "dclaborsupply.likelihood.engine_jax": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\likelihood\\engine_jax.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/likelihood/engine_jax.py",
+        "blob_id": "d64a5af624b3aff458ab007dfbfbee9e17620210",
+        "committed_sha256": "49bf6b7048f0065f248bf49dc750797ca9d9809c2aade29bd8808baeea2ceeed",
+        "working_sha256": "49bf6b7048f0065f248bf49dc750797ca9d9809c2aade29bd8808baeea2ceeed",
+        "working_blob_id": "d64a5af624b3aff458ab007dfbfbee9e17620210",
+        "blob_equal": true
+      },
+      "dclaborsupply.likelihood._numpy_primitives": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\likelihood\\_numpy_primitives.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/likelihood/_numpy_primitives.py",
+        "blob_id": "08c7af4cb382b1902d7841bdfab5b8d29a85b314",
+        "committed_sha256": "99e47ea35e1da94ac96bc490a87ab917ceb27f6db07b41aefb8a7af04ae650f8",
+        "working_sha256": "4d1a2ad6d781e0b834acc6ef20b51f8c96ad894f4a4dea962384acc69163cffe",
+        "working_blob_id": "08c7af4cb382b1902d7841bdfab5b8d29a85b314",
+        "blob_equal": true
+      }
+    },
+    "module_path_ok": true,
+    "module_failures": [],
+    "expected_commit": null,
+    "package_identity_ok": true
+  },
+  "rtmap_fingerprint": "f9a5ba9f4d7db55c6b9913376974855f79e65ac0b9e696debb8958b7b4a5d0de",
+  "finished_at": "2026-07-27T11:22:24.254494+00:00",
+  "wall_seconds": 7.3,
+  "artifact_hashes": {
+    "phase4_console.log": "868f7a23ea7d90c078561da24da9eb9eb2ee49747c68d687376101b4578099c6"
+  },
+  "bundle_sha256": "08fba53a2ba77998bf418ef4f6e8030a7efeee1b1809d106d08489399a9ceb1a"
+}

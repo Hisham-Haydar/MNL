@@ -1,0 +1,639 @@
+{
+  "run": "p2a_regionlive_rebuild_v1__phase4",
+  "track": "FR-2016 singles P2a region-live",
+  "phase": 4,
+  "attempt_id": "20260729T103745Z_417364_ab8ef12471744950bd88b3ab559d6945_dryrun",
+  "mode": "phase4 dry-run (contract only, no Hessian)",
+  "authorization": "docs/France_case/P2a/FR_P2a_region_live_phase3_manager_acceptance_v1.md",
+  "review_gate": "AWAITING_PHASE4_REVIEW_V5_APPROVE",
+  "execution_gates": null,
+  "execution_ready": false,
+  "accepted_phase3_bundle_sha256": "2cf237648743f59bd742b12feceaea67c5fd377b26faf4fb6fad6f452f86864b",
+  "started_at": "2026-07-29T10:37:45.714890+00:00",
+  "status": "PHASE_4_DRY_RUN_COMPLETE",
+  "stop": null,
+  "optimizer_called": false,
+  "gradient_evaluated": false,
+  "hessian_evaluated": false,
+  "config": {
+    "path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\p2a\\configs\\p2a_regionlive_rebuild_v1.yaml",
+    "sha256": "09d7d547a95d46d913e0da314e614160d50b8ba14ef09a9d85c2fdbc5433da8e"
+  },
+  "script": {
+    "path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\p2a\\run_p2a_regionlive_rebuild.py",
+    "sha256": "a42a01ca458b35620270b0f3066d1bf76f393cb481bc499847edc0892b301c8b"
+  },
+  "git": {
+    "MNL": {
+      "repo": "C:\\Users\\hisham\\Repo\\MNL",
+      "head": "c7d558a36489520a0f8487abf939d5300deaffb1",
+      "dirty": true
+    },
+    "dclaborsupply-monorepo": {
+      "repo": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo",
+      "head": "27756a06ea189339aa82915ed2124628afed20eb",
+      "dirty": false
+    }
+  },
+  "environment": {
+    "python": "3.12.2",
+    "numpy": "2.3.5",
+    "pandas": "2.3.3"
+  },
+  "targets": {
+    "negll_4dp": 19053.4655,
+    "negll_full": 19053.46553160094,
+    "negll_region_dead_context": 19071.6562
+  },
+  "package_identity": {
+    "nested_repo": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo",
+    "nested_head": "27756a06ea189339aa82915ed2124628afed20eb",
+    "commit_ref": "27756a06ea189339aa82915ed2124628afed20eb",
+    "gitlink": "27756a06ea189339aa82915ed2124628afed20eb",
+    "fully_dirty": false,
+    "package_source_root": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src",
+    "imported_modules": {
+      "dclaborsupply": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\__init__.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/__init__.py",
+        "blob_id": "8b7406fd0dc8de2dd22f91f1122bdf72b4dadf25",
+        "committed_sha256": "556c53716b4e1539b5521388dd6008d895fa3f4424ca5bede932662c7e3061b8",
+        "working_sha256": "556c53716b4e1539b5521388dd6008d895fa3f4424ca5bede932662c7e3061b8",
+        "working_blob_id": "8b7406fd0dc8de2dd22f91f1122bdf72b4dadf25",
+        "blob_equal": true
+      },
+      "dclaborsupply.models": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\models.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/models.py",
+        "blob_id": "d2b1d1ebbd5417e6274420efae400c9bcfd1d090",
+        "committed_sha256": "f98a4bf91029628ad8c14ed1720f96c315d9a57eca73895be191fd8d45e60ba2",
+        "working_sha256": "f98a4bf91029628ad8c14ed1720f96c315d9a57eca73895be191fd8d45e60ba2",
+        "working_blob_id": "d2b1d1ebbd5417e6274420efae400c9bcfd1d090",
+        "blob_equal": true
+      },
+      "dclaborsupply.data": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\data\\__init__.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/data/__init__.py",
+        "blob_id": "edc62cf5ba23ac5c84378c9cd28b6e4995b09805",
+        "committed_sha256": "e15c751d4da060689b8e9b69442f87ea16a219cdfc274c274cb4976d2c75a52b",
+        "working_sha256": "e15c751d4da060689b8e9b69442f87ea16a219cdfc274c274cb4976d2c75a52b",
+        "working_blob_id": "edc62cf5ba23ac5c84378c9cd28b6e4995b09805",
+        "blob_equal": true
+      },
+      "dclaborsupply.data.loader": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\data\\loader.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/data/loader.py",
+        "blob_id": "8adf02eebdfa27c7fc9fc334c54b780a9efaac4b",
+        "committed_sha256": "68cf26f141d1459043f3fba32df503518e45c87310c23a1c04afd66a4220a651",
+        "working_sha256": "68cf26f141d1459043f3fba32df503518e45c87310c23a1c04afd66a4220a651",
+        "working_blob_id": "8adf02eebdfa27c7fc9fc334c54b780a9efaac4b",
+        "blob_equal": true
+      },
+      "dclaborsupply.spec": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\spec\\__init__.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/spec/__init__.py",
+        "blob_id": "91c961515d99d7cd4304603ddbdc1bfb144c4fd8",
+        "committed_sha256": "325760d17a8b7f57b21f7e8c2898904e625d12150837991524c71e9f6ae5f4b2",
+        "working_sha256": "325760d17a8b7f57b21f7e8c2898904e625d12150837991524c71e9f6ae5f4b2",
+        "working_blob_id": "91c961515d99d7cd4304603ddbdc1bfb144c4fd8",
+        "blob_equal": true
+      },
+      "dclaborsupply.spec.parser": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\spec\\parser.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/spec/parser.py",
+        "blob_id": "4df2b347330255ff6b7788c0dc90a579eadc0a6e",
+        "committed_sha256": "8207260fb1c4e363f523df5d3eccbefed29eab35b989bfbdf1eb162a71893456",
+        "working_sha256": "94d436749f7bffbbd92683c390c452d575212f2d8ade2d449aa26dab1a7dbf29",
+        "working_blob_id": "4df2b347330255ff6b7788c0dc90a579eadc0a6e",
+        "blob_equal": true
+      },
+      "dclaborsupply.likelihood": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\likelihood\\__init__.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/likelihood/__init__.py",
+        "blob_id": "62c3445ea1c3ded796179a87c6742f852eeafc81",
+        "committed_sha256": "06355efa1b05bc01873824e347c8df6c36789a5b3ba33214556c016e5d51dfdc",
+        "working_sha256": "06355efa1b05bc01873824e347c8df6c36789a5b3ba33214556c016e5d51dfdc",
+        "working_blob_id": "62c3445ea1c3ded796179a87c6742f852eeafc81",
+        "blob_equal": true
+      },
+      "dclaborsupply.likelihood.index": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\likelihood\\index.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/likelihood/index.py",
+        "blob_id": "2f85e87459103e42089e6f7ae07691915ca461fd",
+        "committed_sha256": "c1a42a685d46d9723007122a20d110aae73272367939f1fc9bed2c7a5b10a90e",
+        "working_sha256": "c1a42a685d46d9723007122a20d110aae73272367939f1fc9bed2c7a5b10a90e",
+        "working_blob_id": "2f85e87459103e42089e6f7ae07691915ca461fd",
+        "blob_equal": true
+      },
+      "dclaborsupply.likelihood.engine_jax": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\likelihood\\engine_jax.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/likelihood/engine_jax.py",
+        "blob_id": "d64a5af624b3aff458ab007dfbfbee9e17620210",
+        "committed_sha256": "49bf6b7048f0065f248bf49dc750797ca9d9809c2aade29bd8808baeea2ceeed",
+        "working_sha256": "49bf6b7048f0065f248bf49dc750797ca9d9809c2aade29bd8808baeea2ceeed",
+        "working_blob_id": "d64a5af624b3aff458ab007dfbfbee9e17620210",
+        "blob_equal": true
+      },
+      "dclaborsupply.likelihood._numpy_primitives": {
+        "path": "C:\\Users\\hisham\\Repo\\MNL\\dclaborsupply-monorepo\\packages\\dclaborsupply\\src\\dclaborsupply\\likelihood\\_numpy_primitives.py",
+        "ancestry_ok": true,
+        "relative_path": "packages/dclaborsupply/src/dclaborsupply/likelihood/_numpy_primitives.py",
+        "blob_id": "08c7af4cb382b1902d7841bdfab5b8d29a85b314",
+        "committed_sha256": "99e47ea35e1da94ac96bc490a87ab917ceb27f6db07b41aefb8a7af04ae650f8",
+        "working_sha256": "4d1a2ad6d781e0b834acc6ef20b51f8c96ad894f4a4dea962384acc69163cffe",
+        "working_blob_id": "08c7af4cb382b1902d7841bdfab5b8d29a85b314",
+        "blob_equal": true
+      }
+    },
+    "module_path_ok": true,
+    "module_failures": [],
+    "expected_commit": null,
+    "package_identity_ok": true
+  },
+  "rtmap_fingerprint": "f9a5ba9f4d7db55c6b9913376974855f79e65ac0b9e696debb8958b7b4a5d0de",
+  "contract": {
+    "checked_at": "2026-07-29T10:37:47.618565+00:00",
+    "safety_constants_ok": {
+      "target_negll_full": true,
+      "objective_tol_full": true,
+      "g16_inbounds_epsilon": true,
+      "gradient_max_abs_35free": true,
+      "bound_hit_eps": true,
+      "n_params": true,
+      "n_free": true,
+      "n_pinned": true,
+      "n_hh": true,
+      "n_alts": true,
+      "at_bound_tuple": true,
+      "pin_tuple": true,
+      "n_free_expected": true,
+      "pre_opt_objective_tol": true,
+      "target_mismatch_status": true
+    },
+    "optimizer_contract": {
+      "method": "L-BFGS-B",
+      "options": {
+        "maxiter": 5000,
+        "maxcor": 30,
+        "ftol": 1e-15,
+        "gtol": 1e-10
+      }
+    },
+    "alias_identity": {
+      "certified_spec.yaml": {
+        "alias_value": "scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
+        "resolves_to": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\bpool\\specs\\estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
+        "runtime_map_path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\bpool\\specs\\estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
+        "ok": true
+      },
+      "warm_start.theta_csv": {
+        "alias_value": "scripts/bpool/specs/theta_hat_realdata_901_v1.csv",
+        "resolves_to": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\bpool\\specs\\theta_hat_realdata_901_v1.csv",
+        "runtime_map_path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\bpool\\specs\\theta_hat_realdata_901_v1.csv",
+        "ok": true
+      },
+      "phase3.start_theta.csv": {
+        "alias_value": "theta_p2a_singles_2016_v1.csv",
+        "resolves_to": "C:\\Users\\hisham\\Repo\\MNL\\theta_p2a_singles_2016_v1.csv",
+        "runtime_map_path": "C:\\Users\\hisham\\Repo\\MNL\\theta_p2a_singles_2016_v1.csv",
+        "ok": true
+      },
+      "stored_region_live_theta.v1_csv": {
+        "alias_value": "theta_p2a_singles_2016_v1.csv",
+        "resolves_to": "C:\\Users\\hisham\\Repo\\MNL\\theta_p2a_singles_2016_v1.csv",
+        "runtime_map_path": "C:\\Users\\hisham\\Repo\\MNL\\theta_p2a_singles_2016_v1.csv",
+        "ok": true
+      }
+    },
+    "input_authentication": {
+      "geometry_parquet": {
+        "label": "geometry_parquet",
+        "runtime_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\inputs\\fr_p2a_draws_geometry__singles.parquet",
+        "configured_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\inputs\\fr_p2a_draws_geometry__singles.parquet",
+        "path_identity_ok": true,
+        "is_file": true,
+        "expected": "5bcf0e5409ef74c57f6de24efdfd24d0075132dc3138ddb57a22740b916cf235",
+        "actual": "5bcf0e5409ef74c57f6de24efdfd24d0075132dc3138ddb57a22740b916cf235",
+        "hash_ok": true,
+        "ok": true
+      },
+      "geometry_meta": {
+        "label": "geometry_meta",
+        "runtime_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\inputs\\fr_p2a_draws_geometry__meta.json",
+        "configured_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\inputs\\fr_p2a_draws_geometry__meta.json",
+        "path_identity_ok": true,
+        "is_file": true,
+        "expected": "ff2d44221746077546585ea5244899d3b2164af50180be7235ea2a80384e9799",
+        "actual": "ff2d44221746077546585ea5244899d3b2164af50180be7235ea2a80384e9799",
+        "hash_ok": true,
+        "ok": true
+      },
+      "frozen_stem_parquet": {
+        "label": "frozen_stem_parquet",
+        "runtime_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\fr_p2a_singles2016_regionlive__singles.parquet",
+        "configured_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\fr_p2a_singles2016_regionlive__singles.parquet",
+        "path_identity_ok": true,
+        "is_file": true,
+        "expected": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+        "actual": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+        "hash_ok": true,
+        "ok": true
+      },
+      "frozen_stem_mnlmeta": {
+        "label": "frozen_stem_mnlmeta",
+        "runtime_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\fr_p2a_singles2016_regionlive__mnlmeta.json",
+        "configured_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\fr_p2a_singles2016_regionlive__mnlmeta.json",
+        "path_identity_ok": true,
+        "is_file": true,
+        "expected": "05be40300288bdfb82a1f29d3649b420ee055e548658b6556424d024a87f5de1",
+        "actual": "05be40300288bdfb82a1f29d3649b420ee055e548658b6556424d024a87f5de1",
+        "hash_ok": true,
+        "ok": true
+      },
+      "certified_spec_yaml": {
+        "label": "certified_spec_yaml",
+        "runtime_path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\bpool\\specs\\estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
+        "configured_path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\bpool\\specs\\estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
+        "path_identity_ok": true,
+        "is_file": true,
+        "expected": "492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211",
+        "actual": "492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211",
+        "hash_ok": true,
+        "ok": true
+      },
+      "certified_warm_start_theta": {
+        "label": "certified_warm_start_theta",
+        "runtime_path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\bpool\\specs\\theta_hat_realdata_901_v1.csv",
+        "configured_path": "C:\\Users\\hisham\\Repo\\MNL\\scripts\\bpool\\specs\\theta_hat_realdata_901_v1.csv",
+        "path_identity_ok": true,
+        "is_file": true,
+        "expected": "c72e92b16170a7dd2dc8ec0b76dc3f522a1fc6d6182a5eba8f8cad34cef76269",
+        "actual": "c72e92b16170a7dd2dc8ec0b76dc3f522a1fc6d6182a5eba8f8cad34cef76269",
+        "hash_ok": true,
+        "ok": true
+      },
+      "stored_region_live_start_theta": {
+        "label": "stored_region_live_start_theta",
+        "runtime_path": "C:\\Users\\hisham\\Repo\\MNL\\theta_p2a_singles_2016_v1.csv",
+        "configured_path": "C:\\Users\\hisham\\Repo\\MNL\\theta_p2a_singles_2016_v1.csv",
+        "path_identity_ok": true,
+        "is_file": true,
+        "expected": "930ef3aa753d0c48b6e923cfa4de9847beac5aae8c585c7eec5512ee01cbbd33",
+        "actual": "930ef3aa753d0c48b6e923cfa4de9847beac5aae8c585c7eec5512ee01cbbd33",
+        "hash_ok": true,
+        "ok": true
+      },
+      "phase12_rebuild_manifest": {
+        "label": "phase12_rebuild_manifest",
+        "runtime_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\rebuild_manifest.json",
+        "configured_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\rebuild_manifest.json",
+        "path_identity_ok": true,
+        "is_file": true,
+        "expected": "1ed3041ff275dbd003dfa0a8222896d1aa8e13a1c19574d22a8a847ff4f8c92c",
+        "actual": "1ed3041ff275dbd003dfa0a8222896d1aa8e13a1c19574d22a8a847ff4f8c92c",
+        "hash_ok": true,
+        "ok": true
+      },
+      "phase12_dry_run_report": {
+        "label": "phase12_dry_run_report",
+        "runtime_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\dry_run_report.json",
+        "configured_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\dry_run_report.json",
+        "path_identity_ok": true,
+        "is_file": true,
+        "expected": "ec50ea9803433346a16149b0e21a5c0f33d352fa1993203cff51679d23ede224",
+        "actual": "ec50ea9803433346a16149b0e21a5c0f33d352fa1993203cff51679d23ede224",
+        "hash_ok": true,
+        "ok": true
+      },
+      "pre_estimation_reload_verification": {
+        "label": "pre_estimation_reload_verification",
+        "runtime_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\pre_estimation_reload_verification.json",
+        "configured_path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\pre_estimation_reload_verification.json",
+        "path_identity_ok": true,
+        "is_file": true,
+        "expected": "6f457de9f35a1bf1237222f4280424d85ed57b97e19fa7438700f32e2b24ac2c",
+        "actual": "6f457de9f35a1bf1237222f4280424d85ed57b97e19fa7438700f32e2b24ac2c",
+        "hash_ok": true,
+        "ok": true
+      }
+    },
+    "phase12_manifest_status": "DRY_RUN_PHASES_1_2_COMPLETE",
+    "phase12_anchor_check": {
+      "manifest_script": "be11294bf6e0456a37afc713d0e1bd843f574e2dfd136d60968b6519594c4475",
+      "anchor_script": "be11294bf6e0456a37afc713d0e1bd843f574e2dfd136d60968b6519594c4475",
+      "manifest_config": "68d152e70cb73b6616a8b16a63edfb90298945c65fa15dd8580399033059d8fe",
+      "anchor_config": "68d152e70cb73b6616a8b16a63edfb90298945c65fa15dd8580399033059d8fe"
+    },
+    "n_params": 47,
+    "wage_spec": "vw",
+    "wage_loc_groups_absent": true,
+    "centering": {
+      "within_choice_set": true,
+      "center_weights": "proposal"
+    },
+    "mnlmeta": {
+      "c_scale": 1911.108057855561,
+      "l_scale": 10.0,
+      "n_chosen": 1555
+    },
+    "start_theta_raw_sha256": "5f3722dc2092cda0af47cec39cb2cbbb7050dd153df1edf9dd9de8a231d76c9b",
+    "parameter_map": {
+      "all_names": [
+        "beta_l0_sm",
+        "beta_l_age_sm",
+        "beta_l_age2_sm",
+        "theta_l_sm",
+        "beta_l0_sf",
+        "beta_l_age_sf",
+        "beta_l_age2_sf",
+        "beta_l_nkids_sf",
+        "theta_l_sf",
+        "theta_c_singles",
+        "beta_l0_m",
+        "beta_l_age_m",
+        "beta_l_age2_m",
+        "beta_l0_f",
+        "beta_l_age_f",
+        "beta_l_age2_f",
+        "beta_l_nkids_f",
+        "theta_l_f",
+        "beta_E",
+        "beta_h_pt1",
+        "beta_h_pt2",
+        "beta_h_ft",
+        "beta_h_lh",
+        "beta_E_gsur",
+        "beta_E_drgn2",
+        "beta_E_drgn3",
+        "beta_E_drgn4",
+        "beta_E_drgn5",
+        "beta_E_drgn6",
+        "beta_E_drgn7",
+        "beta_E_drgn8",
+        "beta_E_y2015",
+        "beta_E_y2017",
+        "beta_E_drgur",
+        "beta_E_drgmd",
+        "beta_occ_2_m",
+        "beta_occ_3_m",
+        "beta_occ_4_m",
+        "beta_occ_2_f",
+        "beta_occ_3_f",
+        "beta_occ_4_f",
+        "beta_w0",
+        "beta_w_educL",
+        "beta_w_educH",
+        "beta_w_pexp",
+        "beta_w_pexp2",
+        "sigma"
+      ],
+      "free_names": [
+        "beta_l0_sm",
+        "beta_l_age_sm",
+        "beta_l_age2_sm",
+        "theta_l_sm",
+        "beta_l0_sf",
+        "beta_l_age_sf",
+        "beta_l_age2_sf",
+        "beta_l_nkids_sf",
+        "theta_l_sf",
+        "theta_c_singles",
+        "beta_E",
+        "beta_h_pt1",
+        "beta_h_pt2",
+        "beta_h_ft",
+        "beta_h_lh",
+        "beta_E_gsur",
+        "beta_E_drgn2",
+        "beta_E_drgn3",
+        "beta_E_drgn4",
+        "beta_E_drgn5",
+        "beta_E_drgn6",
+        "beta_E_drgn7",
+        "beta_E_drgn8",
+        "beta_E_drgur",
+        "beta_E_drgmd",
+        "beta_occ_2_m",
+        "beta_occ_3_m",
+        "beta_occ_4_m",
+        "beta_occ_2_f",
+        "beta_occ_3_f",
+        "beta_occ_4_f",
+        "beta_w0",
+        "beta_w_educL",
+        "beta_w_educH",
+        "beta_w_pexp",
+        "beta_w_pexp2",
+        "sigma"
+      ],
+      "pin_names": [
+        "beta_l0_m",
+        "beta_l_age_m",
+        "beta_l_age2_m",
+        "beta_l0_f",
+        "beta_l_age_f",
+        "beta_l_age2_f",
+        "beta_l_nkids_f",
+        "theta_l_f",
+        "beta_E_y2015",
+        "beta_E_y2017"
+      ],
+      "free_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "pin_indices": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        31,
+        32
+      ],
+      "pin_values": {
+        "beta_l0_m": 1e-06,
+        "beta_l_age_m": -0.067236897452355,
+        "beta_l_age2_m": 0.0877504891847849,
+        "beta_l0_f": 10.052237044896549,
+        "beta_l_age_f": -1.780253386288037,
+        "beta_l_age2_f": 1.0,
+        "beta_l_nkids_f": 0.5857198501055841,
+        "theta_l_f": -2.131739110508045,
+        "beta_E_y2015": -0.2546064112385174,
+        "beta_E_y2017": -0.0694711073761977
+      },
+      "round_trips": {
+        "project_expand_free_exact": true,
+        "expand_project_full_free_coords_exact": true,
+        "pins_bitwise_accepted": true
+      }
+    },
+    "start_theta_applied_sha256": "9a9a4918c32c3ffed4baa0cf87642811c65e0d02cf02840d991ef172b574e39c",
+    "start_pin_adjust_max_abs": 4.6578460377588726e-07,
+    "at_bound_expected_derived": [
+      "beta_l_age2_sm",
+      "beta_l_age2_sf"
+    ],
+    "at_bound_expected_config": [
+      "beta_l_age2_sm",
+      "beta_l_age2_sf"
+    ],
+    "n_hh": 1555,
+    "log_prior_max_abs_dev": 0.0,
+    "negll_start": 19053.46553160094,
+    "negll_start_abs_dev": 0.0,
+    "ok": true
+  },
+  "contract_phase4": {
+    "checked_at": "2026-07-29T10:37:47.618565+00:00",
+    "phase4_constants_ok": {
+      "symmetry_rel_tol": true,
+      "rank_rel_tol": true,
+      "nonpos_count_eig_tol": true,
+      "condition_clean_max": true,
+      "condition_warn_max": true,
+      "pooled_baseline_condition": true,
+      "n_free": true,
+      "regional_n": true,
+      "loading_share_warn": true,
+      "consistency_negll_tol": true,
+      "consistency_grad_tol": true,
+      "regional_parameters": true,
+      "regional_design_columns": true,
+      "output_subdir": true,
+      "bundle_sha256": true,
+      "negll_final": true
+    },
+    "phase3_bundle": {
+      "dir": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase3_estimation_v1\\complete",
+      "artifact_hashes": {
+        "phase3_console.log": "5077604317dfc7a4f5665d6f856832ed1987b265c9007236a47e8823d780c37f",
+        "theta_estimated.csv": "8b2f3fcbc7427712ac05576e9da32ece87101381054a619db47d337c4dd3eb97",
+        "optimizer_diagnostics.json": "81301f01dd98a240411a532b9ba3f19b277d80e03ac0cd87ff8fbb1583860e19",
+        "estimation_results.json": "be66f02314778ab69734a4221ccdc286475a83a9d38d74ed3f5cabc7d047b343"
+      },
+      "bundle_sha256": "2cf237648743f59bd742b12feceaea67c5fd377b26faf4fb6fad6f452f86864b",
+      "manifest_status": "PHASE_3_COMPLETE"
+    },
+    "theta_hat_sha256": "c024b89386c502003f9d4abb927b048dfab42c0bafe48d9a69d9fcb330f0580d",
+    "regional": {
+      "names": [
+        "beta_E_gsur",
+        "beta_E_drgn2",
+        "beta_E_drgn3",
+        "beta_E_drgn4",
+        "beta_E_drgn5",
+        "beta_E_drgn6",
+        "beta_E_drgn7",
+        "beta_E_drgn8",
+        "beta_E_drgur",
+        "beta_E_drgmd"
+      ],
+      "free_positions": [
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "design_columns": [
+        "gsur",
+        "reg2",
+        "reg3",
+        "reg4",
+        "reg5",
+        "reg6",
+        "reg7",
+        "reg8",
+        "drgur",
+        "drgmd"
+      ],
+      "column_to_parameter": {
+        "gsur": "beta_E_gsur",
+        "reg2": "beta_E_drgn2",
+        "reg3": "beta_E_drgn3",
+        "reg4": "beta_E_drgn4",
+        "reg5": "beta_E_drgn5",
+        "reg6": "beta_E_drgn6",
+        "reg7": "beta_E_drgn7",
+        "reg8": "beta_E_drgn8",
+        "drgur": "beta_E_drgur",
+        "drgmd": "beta_E_drgmd"
+      }
+    },
+    "design_shape": [
+      1555,
+      10
+    ],
+    "negll_at_theta_hat": 19053.46553160093,
+    "negll_abs_dev_accepted": 0.0,
+    "negll_abs_dev_target": 1.0913936421275139e-11,
+    "derivative_route": {
+      "objective": "package build_jax_singles_ll sm+sf (float64)",
+      "hessian": "jax.hessian over the ordered 37-free vector (pins fixed)",
+      "gradient": "jax.grad over the same free vector",
+      "loaded": true,
+      "evaluated": false
+    },
+    "ok": true
+  },
+  "finished_at": "2026-07-29T10:37:49.160114+00:00",
+  "wall_seconds": 3.4,
+  "artifact_hashes": {
+    "phase4_console.log": "b89523560715c8bad6a2050e8fbbb0f0563958ce1dcc955bb44dab552e241620"
+  },
+  "bundle_sha256": "caec22ae52fbabef5f34660c12910bdf13bedd23fb05086e7267ce9973a7a3cb"
+}

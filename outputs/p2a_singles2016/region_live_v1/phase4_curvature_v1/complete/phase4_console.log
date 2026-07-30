@@ -1,0 +1,7 @@
+[09:28:16] Phase 4 - contract (accepted Phase-3 bundle + inputs)
+[09:28:18] phase3 contract: pins/map/round-trips ok | derived at-bound ['beta_l_age2_sm', 'beta_l_age2_sf'] | negLL(start)=19053.4655316009 (dev 0.00e+00)
+[09:28:18] phase4 contract: bundle 2cf237648743... ok | negLL(theta_hat)=19053.4655316009 (dev 0.00e+00) | regional 10
+[09:28:18] Phase 4 - curvature diagnostics (real run)
+[09:28:20] phase4: evaluating exact 37x37 JAX Hessian at the accepted estimate
+[09:28:24] phase4: Hessian evaluated (4.0s)
+FINAL STATUS: PHASE_4_COMPLETE

@@ -1,0 +1,5 @@
+[09:02:50] Phase 4 - contract (accepted Phase-3 bundle + inputs)
+[09:02:52] phase3 contract: pins/map/round-trips ok | derived at-bound ['beta_l_age2_sm', 'beta_l_age2_sf'] | negLL(start)=19053.4655316009 (dev 0.00e+00)
+[09:02:52] phase4 contract: bundle 2cf237648743... ok | negLL(theta_hat)=19053.4655316009 (dev 0.00e+00) | regional 10
+[09:02:52] Phase 4 dry-run COMPLETE - contract verified, Hessian NOT evaluated
+FINAL STATUS: PHASE_4_DRY_RUN_COMPLETE

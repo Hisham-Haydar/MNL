@@ -1027,9 +1027,21 @@ def test_42_phase4_subprocess_dry_run_never_evaluates_hessian():
     assert man["hessian_evaluated"] is False
     assert man["optimizer_called"] is False
     assert man["execution_ready"] is False
-    assert man["review_gate"] == "AWAITING_PHASE4_REVIEW_V6_APPROVE"
+    assert man["review_gate"] == "AWAITING_PHASE4_REVIEW_V7_APPROVE"
     assert man["contract_phase4"]["derivative_route"]["loaded"] is True
     assert man["contract_phase4"]["derivative_route"]["evaluated"] is False
+    c4 = man["contract_phase4"]                    # R1 audit fix fields
+    assert c4["regional_design_source"] == \
+        "production_likelihood_loader_arrays"
+    assert c4["design_shape"] == [1555, 10]
+    assert c4["design_column_names"] == \
+        list(runner.PHASE4_REGIONAL_DESIGN_COLUMNS)
+    assert (c4["design_column_to_parameter"]["gsur"] == "beta_E_gsur"
+            and c4["design_column_to_parameter"]["reg2"]
+            == "beta_E_drgn2")
+    b = c4["design_loader_binding"]
+    assert (b["within_block_constant"] and b["all_finite"]
+            and b["unique_households"] == 1555 and b["groups"] == 1555)
     assert (man["accepted_phase3_bundle_sha256"]
             == runner.PHASE3_ACCEPTED_BUNDLE_SHA256)
     assert not (runner.CANONICAL_PHASE4_ROOT / "complete").exists()
@@ -1393,23 +1405,24 @@ def test_51_singular_schur_stopped_finalization(tmp_path, cfg):
     assert not (root / ".phase3.lock").exists()
 
 
-def test_52_review_v6_binding_and_stale_strings(tmp_path):
+def test_52_review_v7_binding_and_stale_strings(tmp_path):
     assert (runner.CANONICAL_APPROVED_PHASE4_REVIEW_REL.name
-            == "FR_P2a_region_live_phase4_code_review_v6.md")
+            == "FR_P2a_region_live_phase4_code_review_v7.md")
     repo, nested, mnl, dcl, p4 = _mk_p4_gate_repos(tmp_path)
     sha = hashlib.sha256(p4.read_bytes()).hexdigest()
-    # exact synthetic phase4 review-v6 APPROVE contract passes structurally
+    # exact synthetic phase4 review-v7 APPROVE contract passes structurally
     rec = runner._verify_phase4_execution_gates(
         _p4_gate_args(mnl, dcl, sha), _repo_root=repo, _nested_root=nested,
         _check_gitlink=False)
     assert rec["approved_phase4_review"].endswith(
-        "phase4_code_review_v6.md") and rec["execution_ready"]
-    # Phase-4 review v1-v5 paths are all rejected
+        "phase4_code_review_v7.md") and rec["execution_ready"]
+    # Phase-4 review v1-v6 paths are all rejected
     for bad in ("docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v1.md",
                 "docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v2.md",
                 "docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v3.md",
                 "docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v4.md",
-                "docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v5.md"):
+                "docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v5.md",
+                "docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v6.md"):
         with pytest.raises(runner.StopRun, match="must be exactly"):
             runner._verify_phase4_execution_gates(
                 _p4_gate_args(mnl, dcl, sha, review=bad), _repo_root=repo,
@@ -1420,7 +1433,10 @@ def test_52_review_v6_binding_and_stale_strings(tmp_path):
             _p4_gate_args(mnl, dcl, sha,
                           review=str(runner.CANONICAL_APPROVED_REVIEW_REL)),
             _repo_root=repo, _nested_root=nested, _check_gitlink=False)
-    # the REAL review-v5 body (APPROVE AFTER FIXES) placed at the v6 path fails
+    # the REAL phase4 review-v6 body (exact APPROVE for the SUPERSEDED code
+    # state) placed at the v7 path still fails: only structure is parsed, so
+    # an APPROVE body passes the parser -- rejection relies on the path/hash
+    # binding; assert the hash mismatch refusal instead
     real_v5 = (MNL_ROOT / "docs/France_case/P2a/"
                "FR_P2a_region_live_phase4_code_review_v5.md").read_text(
         encoding="utf-8")
@@ -1432,6 +1448,15 @@ def test_52_review_v6_binding_and_stale_strings(tmp_path):
             _p4_gate_args(mnl2, dcl2, sha2), _repo_root=repo2,
             _nested_root=nested2, _check_gitlink=False)
     assert e.value.gate == "phase4-review-gate"
+    real_v6 = (MNL_ROOT / "docs/France_case/P2a/"
+               "FR_P2a_region_live_phase4_code_review_v6.md").read_text(
+        encoding="utf-8")
+    repo3, nested3, mnl3, dcl3, p43 = _mk_p4_gate_repos(tmp_path / "v6body",
+                                                        real_v6)
+    with pytest.raises(runner.StopRun, match="SHA-256"):
+        runner._verify_phase4_execution_gates(
+            _p4_gate_args(mnl3, dcl3, "f" * 64), _repo_root=repo3,
+            _nested_root=nested3, _check_gitlink=False)
     # stale-string sweep: generic --dry-run help covers Phase 4; no live
     # Phase-4 text claims Phase-3 review-v6 authorization
     src = (MNL_ROOT / "scripts/p2a/run_p2a_regionlive_rebuild.py").read_text(
@@ -1638,3 +1663,76 @@ def test_56_outer_phase4_run_post_staging_fallback(tmp_path, cfg, monkeypatch):
     assert not (root / "complete").exists()
     assert list((root / ".staging").iterdir()) == []
     assert not (root / ".phase3.lock").exists()
+
+
+# --------------------------------------------------------------------------- #
+# R1 audit correction: the false-failure regression (frozen stem + production
+# loader; NO gradient/Hessian evaluation anywhere)
+# --------------------------------------------------------------------------- #
+def test_57_r1_false_failure_regression():
+    import pandas as pd
+    rt = runner._phase3_runtime_paths()
+    dcols = list(runner.PHASE4_REGIONAL_DESIGN_COLUMNS)
+    stem = pd.read_parquet(rt["frozen_stem_parquet"],
+                           columns=["idhh", "dgn", "drgn1"] + dcols)
+    # 1. the STORED stem reg2..reg8 are identically zero (dead placeholders)
+    stored = stem.groupby("idhh", sort=True)[dcols].first().to_numpy("float64")
+    for j in range(1, 8):
+        assert int((stored[:, j] != 0).sum()) == 0, dcols[j]
+    # 2. the old stored-column construction has rank 3 and fails the gate
+    d_old = runner._phase4_design_rank(stored, 1e-10)
+    assert d_old["rank"] == 3 and d_old["rank_ok"] is False
+    # production loader route (the arrays entering the likelihood)
+    import json as _json
+    from dclaborsupply import EstimationSpec
+    from dclaborsupply.data.loader import load_singles
+    spec = EstimationSpec.from_yaml(str(rt["certified_spec_yaml"]))
+    meta = _json.loads(Path(rt["frozen_stem_mnlmeta"]).read_text(
+        encoding="utf-8"))
+    full = pd.read_parquet(rt["frozen_stem_parquet"])
+    dm = load_singles(full[pd.to_numeric(full["dgn"]) == 1]
+                      .reset_index(drop=True), spec, is_male=True,
+                      metadata=meta)
+    dfem = load_singles(full[pd.to_numeric(full["dgn"]) == 0]
+                        .reset_index(drop=True), spec, is_male=False,
+                        metadata=meta)
+    # 4./5. the corrected helper uses the loader arrays, reduced at the
+    # loader's own group boundaries -- proven by exact reconstruction
+    M, ids, binding = runner._phase4_regional_design(dm, dfem)
+    assert M.shape == (1555, 10)
+    assert binding["within_block_constant"] and binding["all_finite"]
+    assert binding["unique_households"] == 1555 and binding["groups"] == 1555
+    manual_rows, manual_ids = [], []
+    for d in (dm, dfem):
+        starts = np.asarray(d.group_starts)
+        manual_rows.append(np.column_stack(
+            [np.asarray(getattr(d, n), dtype="float64")[starts]
+             for n in dcols]))
+        manual_ids.append(np.asarray(d.group_ids))
+    manual = np.vstack(manual_rows)
+    mid = np.concatenate(manual_ids)
+    order = np.argsort(mid, kind="stable")
+    assert np.array_equal(M, manual[order])            # exact array equality
+    assert np.array_equal(ids, mid[order])
+    # 3./6. the production loader matrix has rank 10; the corrected gate passes
+    d_new = runner._phase4_design_rank(M, 1e-10)
+    assert d_new["rank"] == 10 and d_new["rank_ok"] is True
+    # 7. substituting the dead stored-column matrix still fails the gate
+    assert runner._phase4_design_rank(stored, 1e-10)["rank_ok"] is False
+    # the loader dummies are the drgn1 derivation, NOT the stored zeros
+    hh = stem.groupby("idhh", sort=True).first()
+    drgn1 = hh["drgn1"].to_numpy("float64")
+    for k in range(2, 9):
+        assert np.array_equal(M[:, k - 1], (drgn1 == k).astype("float64"))
+    # production R-1 must never read the stored stem columns again: the
+    # Phase-4 contract builds the design ONLY via _phase4_regional_design on
+    # the loader_data objects (source guard)
+    src = (MNL_ROOT / "scripts/p2a/run_p2a_regionlive_rebuild.py").read_text(
+        encoding="utf-8")
+    seg = src[src.index("def _phase4_contract"):
+              src.index("def _phase4_diagnose")]
+    assert "_phase4_regional_design(" in seg
+    assert "loader_data" in seg
+    assert "frozen_stem_parquet" not in seg      # no stem read for the design
+    assert '"production_likelihood_loader_arrays"' in seg
+    # 8. no gradient or Hessian was evaluated anywhere in this test

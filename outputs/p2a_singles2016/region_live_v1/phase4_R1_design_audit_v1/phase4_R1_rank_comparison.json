@@ -1,0 +1,249 @@
+{
+  "observed_stopped_attempt": {
+    "r1_design_rank": 3,
+    "tolerance": 2.8972812327725502e-09
+  },
+  "checks": {
+    "A_shape": [
+      1555,
+      10
+    ],
+    "B_shape": [
+      1555,
+      10
+    ],
+    "C_shape": [
+      1555,
+      10
+    ],
+    "ids_A_equals_B": true,
+    "ids_A_equals_C_sorted": true,
+    "loader_within_group_constant": true,
+    "B_equals_C_exact": true,
+    "A_vs_B_columns": [
+      {
+        "column": "gsur",
+        "A_equals_B": true,
+        "max_abs_diff": 0.0
+      },
+      {
+        "column": "reg2",
+        "A_equals_B": false,
+        "max_abs_diff": 1.0
+      },
+      {
+        "column": "reg3",
+        "A_equals_B": false,
+        "max_abs_diff": 1.0
+      },
+      {
+        "column": "reg4",
+        "A_equals_B": false,
+        "max_abs_diff": 1.0
+      },
+      {
+        "column": "reg5",
+        "A_equals_B": false,
+        "max_abs_diff": 1.0
+      },
+      {
+        "column": "reg6",
+        "A_equals_B": false,
+        "max_abs_diff": 1.0
+      },
+      {
+        "column": "reg7",
+        "A_equals_B": false,
+        "max_abs_diff": 1.0
+      },
+      {
+        "column": "reg8",
+        "A_equals_B": false,
+        "max_abs_diff": 1.0
+      },
+      {
+        "column": "drgur",
+        "A_equals_B": true,
+        "max_abs_diff": 0.0
+      },
+      {
+        "column": "drgmd",
+        "A_equals_B": true,
+        "max_abs_diff": 0.0
+      }
+    ]
+  },
+  "ranks": [
+    {
+      "matrix": "A_stored_columns",
+      "shape": [
+        1555,
+        10
+      ],
+      "singular_values": [
+        28.972812327725503,
+        18.19533012343387,
+        2.355613452019684,
+        1.2500966874070684e-15,
+        1.660438387170443e-16,
+        2.745066752240043e-32,
+        1.9206829946729974e-32,
+        1.3552064125475927e-48,
+        1.92504610673254e-49,
+        1.2915704455611513e-64
+      ],
+      "rank_tolerance": 2.8972812327725502e-09,
+      "numerical_rank": 3
+    },
+    {
+      "matrix": "B_drgn1_derived",
+      "shape": [
+        1555,
+        10
+      ],
+      "singular_values": [
+        30.39984958299669,
+        19.67675727383953,
+        16.41103017246679,
+        15.07020653763568,
+        13.355537185200278,
+        12.880070373284571,
+        12.026781286376002,
+        11.2692152426744,
+        7.717399389200271,
+        1.6794699664289112
+      ],
+      "rank_tolerance": 3.0399849582996693e-09,
+      "numerical_rank": 10
+    },
+    {
+      "matrix": "C_likelihood_loader",
+      "shape": [
+        1555,
+        10
+      ],
+      "singular_values": [
+        30.39984958299669,
+        19.67675727383953,
+        16.41103017246679,
+        15.07020653763568,
+        13.355537185200278,
+        12.880070373284571,
+        12.026781286376002,
+        11.2692152426744,
+        7.717399389200271,
+        1.6794699664289112
+      ],
+      "rank_tolerance": 3.0399849582996693e-09,
+      "numerical_rank": 10
+    },
+    {
+      "matrix": "region_dummies_only_from_drgn1",
+      "shape": [
+        1555,
+        7
+      ],
+      "singular_values": [
+        16.703293088490067,
+        15.937377450509228,
+        13.490737563232042,
+        13.228756555322953,
+        12.767145334803704,
+        11.61895003862225,
+        11.045361017187261
+      ],
+      "rank_tolerance": 1.6703293088490067e-09,
+      "numerical_rank": 7
+    },
+    {
+      "matrix": "region_dummies_plus_urbanisation_from_drgn1",
+      "shape": [
+        1555,
+        9
+      ],
+      "singular_values": [
+        30.247367521795173,
+        19.610723494863887,
+        16.40958846031417,
+        15.07008429024793,
+        13.354331119597175,
+        12.877470157711917,
+        12.026749665549714,
+        11.269190318587636,
+        7.6373747314400156
+      ],
+      "rank_tolerance": 3.0247367521795173e-09,
+      "numerical_rank": 9
+    },
+    {
+      "matrix": "full_ten_column_authoritative",
+      "shape": [
+        1555,
+        10
+      ],
+      "singular_values": [
+        30.39984958299669,
+        19.67675727383953,
+        16.41103017246679,
+        15.07020653763568,
+        13.355537185200278,
+        12.880070373284571,
+        12.026781286376002,
+        11.2692152426744,
+        7.717399389200271,
+        1.6794699664289112
+      ],
+      "rank_tolerance": 3.0399849582996693e-09,
+      "numerical_rank": 10
+    },
+    {
+      "matrix": "region_columns_only_stored",
+      "shape": [
+        1555,
+        7
+      ],
+      "singular_values": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rank_tolerance": 0.0,
+      "numerical_rank": 0
+    }
+  ],
+  "exact_linear_dependencies_in_A": [
+    "A[reg2] is identically zero (trivial dependency: reg2 = 0)",
+    "A[reg3] is identically zero (trivial dependency: reg3 = 0)",
+    "A[reg4] is identically zero (trivial dependency: reg4 = 0)",
+    "A[reg5] is identically zero (trivial dependency: reg5 = 0)",
+    "A[reg6] is identically zero (trivial dependency: reg6 = 0)",
+    "A[reg7] is identically zero (trivial dependency: reg7 = 0)",
+    "A[reg8] is identically zero (trivial dependency: reg8 = 0)",
+    "A[reg2] == A[reg3] exactly",
+    "A[reg2] == A[reg4] exactly",
+    "A[reg2] == A[reg5] exactly",
+    "A[reg2] == A[reg6] exactly",
+    "A[reg2] == A[reg7] exactly",
+    "A[reg2] == A[reg8] exactly",
+    "A[reg3] == A[reg4] exactly",
+    "A[reg3] == A[reg5] exactly",
+    "A[reg3] == A[reg6] exactly",
+    "A[reg3] == A[reg7] exactly",
+    "A[reg3] == A[reg8] exactly",
+    "A[reg4] == A[reg5] exactly",
+    "A[reg4] == A[reg6] exactly",
+    "A[reg4] == A[reg7] exactly",
+    "A[reg4] == A[reg8] exactly",
+    "A[reg5] == A[reg6] exactly",
+    "A[reg5] == A[reg7] exactly",
+    "A[reg5] == A[reg8] exactly",
+    "A[reg6] == A[reg7] exactly",
+    "A[reg6] == A[reg8] exactly",
+    "A[reg7] == A[reg8] exactly"
+  ],
+  "loader_source_rule": "dclaborsupply loader _region_dummies: uses reg_nuts1_2..8 columns if ALL present, else derives reg2..reg8 from drgn1; the stem has no reg_nuts1_* columns, so the likelihood uses drgn1-derived dummies and NEVER reads the stem's stored reg2..reg8"
+}

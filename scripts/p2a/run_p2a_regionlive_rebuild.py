@@ -6,8 +6,8 @@ execution contract of FR_P2a_region_live_phase3_execution_scope_v1.md: the
 documented CLI with --execute-phase3, expected MNL/nested HEADs, full worktree
 cleanliness, and the review-v6 APPROVE file hash. A REAL Phase-4 run is gated
 by the PHASE-4-SPECIFIC approval (--execute-phase4 + the same Git gates + the
-FR_P2a_region_live_phase4_code_review_v6.md APPROVE file hash; Phase-4 reviews
-v1-v5 and the Phase-3 review-v6 are rejected there). Without the execute flag,
+FR_P2a_region_live_phase4_code_review_v7.md APPROVE file hash; Phase-4 reviews
+v1-v6 and the Phase-3 review-v6 are rejected there). Without the execute flag,
 --phase 3 / --phase 4
 perform only the non-optimizing / non-evaluating dry-run. Phases 5-8 are
 unsupported and refused.
@@ -44,7 +44,7 @@ Phase 4 (AUTHORIZED by FR_P2a_region_live_phase3_manager_acceptance_v1.md s15):
   curvature/rank/regional-identification diagnostics of the ACCEPTED immutable
   Phase-3 bundle. NO optimizer, NO theta change, NO standard errors. Writes ONLY
   under region_live_v1/phase4_curvature_v1/. Dry-run never evaluates the
-  Hessian; real execution additionally requires the Phase-4 review-v6 APPROVE.
+  Hessian; real execution additionally requires the Phase-4 review-v7 APPROVE.
 Phases 5-8 are manager-gated and unsupported: this runner refuses --phase > 4.
 
 Exit codes: 0 = phases completed; 2 = pre-registered stop (STOPPED manifest);
@@ -133,12 +133,12 @@ PHASE3_ARTIFACTS = ("phase3_console.log", "theta_estimated.csv",
 # (plan v2 s13-s14, G-5..G-9); the YAML phase4 block must equal these exactly.
 CANONICAL_PHASE4_SUBDIR = "phase4_curvature_v1"
 CANONICAL_PHASE4_ROOT = CANONICAL_REGIONLIVE_ROOT / CANONICAL_PHASE4_SUBDIR
-# Phase-4-specific approval (review-v1 fix 1; rebound by review-v2/v3/v4/v5
-# fixes): a real Phase-4 run is authorized ONLY by the PHASE-4 review below
-# -- Phase-4 reviews v1-v5 (all APPROVE AFTER FIXES) and the PHASE-3
+# Phase-4-specific approval (review-v1 fix 1; rebound after every conditional
+# review and after the R1 audit correction): a real Phase-4 run is authorized
+# ONLY by the PHASE-4 review below -- Phase-4 reviews v1-v6 and the PHASE-3
 # review-v6 are all rejected
 CANONICAL_APPROVED_PHASE4_REVIEW_REL = Path(
-    "docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v6.md")
+    "docs/France_case/P2a/FR_P2a_region_live_phase4_code_review_v7.md")
 PHASE4_REVIEW_HEADING = "# 1. Phase-4 review verdict"
 PHASE3_ACCEPTED_BUNDLE_SHA256 = (
     "2cf237648743f59bd742b12feceaea67c5fd377b26faf4fb6fad6f452f86864b")
@@ -1539,7 +1539,7 @@ def _verify_phase4_execution_gates(args, *, _repo_root: Optional[Path] = None,
     """Reproducibility gates for a REAL Phase-4 run (review-v1 required fix 1):
     expected HEADs, gitlink identity, FULL cleanliness of both worktrees, and
     the exact PHASE-4 review path/hash/verdict
-    (FR_P2a_region_live_phase4_code_review_v6.md). Phase-4 reviews v1-v5
+    (FR_P2a_region_live_phase4_code_review_v7.md). Phase-4 reviews v1-v6
     and the Phase-3 review-v6 are all explicitly rejected here. All checks run
     BEFORE any gradient or Hessian evaluation. The _repo_root/_nested_root/
     _check_gitlink parameters are ordinary test seams."""
@@ -2167,7 +2167,11 @@ def _phase3_contract(out: OutRoot, cfg: Dict[str, Any], config_path: Path,
             "tot": tot, "target": target, "ev": ev,
             "input_auth": ev["input_authentication"],
             "rtmap": rt,
-            "rtmap_fingerprint": _runtime_map_fingerprint(rt)}
+            "rtmap_fingerprint": _runtime_map_fingerprint(rt),
+            # the EXACT production loader data objects behind `tot` (consumed by
+            # the Phase-4 R-1 design; audit fix -- returning them changes no
+            # Phase-3 behavior)
+            "loader_data": (dm, df_)}
 
 
 def _phase3_estimate(ctx: Dict[str, Any], staging: Path, cfg: Dict[str, Any], log,
@@ -2510,6 +2514,8 @@ def _validate_phase4_constants(cfg: Dict[str, Any]) -> Dict[str, bool]:
                                  == PHASE4_REGIONAL_PARAMS)
     ok["regional_design_columns"] = (tuple(p4.get("regional_design_columns") or ())
                                      == PHASE4_REGIONAL_DESIGN_COLUMNS)
+    ok["regional_design_source"] = (p4.get("regional_design_source")
+                                    == "production_likelihood_loader_arrays")
     ok["output_subdir"] = p4.get("output_subdir") == CANONICAL_PHASE4_SUBDIR
     b = p4.get("accepted_phase3_bundle") or {}
     ok["bundle_sha256"] = b.get("bundle_sha256") == PHASE3_ACCEPTED_BUNDLE_SHA256
@@ -2575,6 +2581,40 @@ def _phase4_regional_names(free_names: Sequence[str],
                       f"{derived}; config {list(cfg_list)}; plan "
                       f"{list(PHASE4_REGIONAL_PARAMS)}")
     return derived
+
+
+def _phase4_regional_design(dm, dfem) -> Tuple[np.ndarray, np.ndarray,
+                                               Dict[str, Any]]:
+    """R-1 design from the EXACT production loader arrays that enter the JAX
+    likelihood (R1 audit fix: the frozen stem's STORED reg2..reg8 are
+    identically-zero region-dead placeholders the likelihood never reads; the
+    loader derives its dummies from drgn1). Extracts the canonical ordered ten
+    attributes directly from the two loaded singles data objects, verifies
+    finiteness and within-household-block constancy, and reduces to one row per
+    household at the loader's OWN group boundaries."""
+    blocks: List[np.ndarray] = []
+    ids: List[np.ndarray] = []
+    binding = {"within_block_constant": True, "all_finite": True,
+               "groups": 0}
+    for d in (dm, dfem):
+        arrs = [np.asarray(getattr(d, n), dtype="float64")
+                for n in PHASE4_REGIONAL_DESIGN_COLUMNS]
+        starts = np.asarray(d.group_starts, dtype="int64")
+        ends = np.asarray(d.group_ends, dtype="int64")
+        binding["groups"] += int(len(starts))
+        for a in arrs:
+            if not bool(np.all(np.isfinite(a))):
+                binding["all_finite"] = False
+            for s, e in zip(starts, ends):
+                if not bool(np.all(a[s:e] == a[s])):
+                    binding["within_block_constant"] = False
+        blocks.append(np.column_stack([a[starts] for a in arrs]))
+        ids.append(np.asarray(d.group_ids))
+    M = np.vstack(blocks)
+    gid = np.concatenate(ids)
+    order = np.argsort(gid, kind="stable")
+    binding["unique_households"] = int(np.unique(gid).size)
+    return M[order], gid[order], binding
 
 
 def _phase4_symmetry(H: np.ndarray,
@@ -2762,20 +2802,31 @@ def _phase4_contract(out: OutRoot, cfg: Dict[str, Any], config_path: Path,
                       "column_to_parameter": dict(zip(
                           PHASE4_REGIONAL_DESIGN_COLUMNS, reg_names))}
 
-    # R-1 source: household-level design columns from the authenticated stem
+    # R-1 source (R1 audit fix / CURRENT_R1_FALSE_FAILURE): the EXACT
+    # production loader arrays behind the likelihood objective -- NEVER the
+    # stem's stored reg2..reg8 (identically-zero region-dead placeholders)
     dcols = list(PHASE4_REGIONAL_DESIGN_COLUMNS)
-    stem = pd.read_parquet(Path(ctx3["rtmap"]["frozen_stem_parquet"]),
-                           columns=["idhh"] + dcols)
-    nun = stem.groupby("idhh")[dcols].nunique()
-    if int(nun.to_numpy().max()) != 1:
-        raise StopRun("S-5", "phase4-contract",
-                      "regional design columns are not household-constant")
-    design = stem.groupby("idhh", sort=True)[dcols].first()
+    dm_l, df_l = ctx3["loader_data"]
+    design_M, design_ids, binding = _phase4_regional_design(dm_l, df_l)
     n_hh = int(cfg["phase3"]["accepted_evidence"]["n_hh"])
-    if design.shape != (n_hh, len(dcols)):
+    if design_M.shape != (n_hh, len(dcols)):
         raise StopRun("S-5", "phase4-contract",
-                      f"design shape {design.shape} != ({n_hh}, {len(dcols)})")
-    ev["design_shape"] = [int(x) for x in design.shape]
+                      f"design shape {design_M.shape} != ({n_hh}, {len(dcols)})")
+    if binding["unique_households"] != n_hh or binding["groups"] != n_hh:
+        raise StopRun("S-5", "phase4-contract",
+                      "loader group structure does not yield one row per "
+                      "household")
+    if not (binding["within_block_constant"] and binding["all_finite"]):
+        raise StopRun("S-5", "phase4-contract",
+                      f"loader design arrays invalid: {binding}")
+    design = pd.DataFrame(
+        design_M, columns=dcols,
+        index=pd.Index(design_ids.astype("int64"), name="idhh"))
+    ev["regional_design_source"] = "production_likelihood_loader_arrays"
+    ev["design_shape"] = [int(x) for x in design_M.shape]
+    ev["design_column_names"] = dcols
+    ev["design_column_to_parameter"] = dict(zip(dcols, reg_names))
+    ev["design_loader_binding"] = binding
 
     # objective consistency at the ACCEPTED estimate (evaluation only)
     negll_hat = float(ctx3["tot"](jnp.asarray(theta_hat)))
@@ -2872,6 +2923,8 @@ def _phase4_diagnose(ctx: Dict[str, Any], log,
         c["loading_share_warn"])
     diag["design"] = _phase4_design_rank(
         ctx["design"].to_numpy(dtype="float64"), c["rank_rel_tol"])
+    diag["design"]["regional_design_source"] = ctx.get("ev4", {}).get(
+        "regional_design_source", "test_fake_context")
     schur = _phase4_schur(Hs, ctx["reg_pos_free"], c)
     H_RR = schur.pop("_H_RR")
     S = schur.pop("_S")
@@ -2974,9 +3027,9 @@ def _phase4_manifest_skeleton(args, cfg: Dict[str, Any],
         "mode": ("phase4 dry-run (contract only, no Hessian)" if args.dry_run
                  else "phase4 curvature diagnostics"),
         "authorization": cfg["phase4"]["authorization_doc"],
-        "review_gate": ("PHASE4_REVIEW_V6_APPROVED"
+        "review_gate": ("PHASE4_REVIEW_V7_APPROVED"
                         if gates_record.get("verified")
-                        else "AWAITING_PHASE4_REVIEW_V6_APPROVE"),
+                        else "AWAITING_PHASE4_REVIEW_V7_APPROVE"),
         "execution_gates": gates_record or None,
         "execution_ready": bool(gates_record.get("verified", False)
                                 and gates_record.get("execution_ready", False)),
@@ -3163,7 +3216,7 @@ def _phase4_run(args, cfg: Dict[str, Any],
     if not args.dry_run and not (gates_record.get("verified") is True
                                  and gates_record.get("execution_ready") is True):
         print("REFUSED: real Phase-4 diagnostics require the verified Git + "
-              "Phase-4 review-v6 approval gates.", file=sys.stderr)
+              "Phase-4 review-v7 approval gates.", file=sys.stderr)
         return 2
     txn = Phase3Transaction(CANONICAL_PHASE4_ROOT,
                             "dryrun" if args.dry_run else "curvature",
@@ -3246,8 +3299,8 @@ def _phase4_runtime_paths() -> Dict[str, Path]:
 def run_phase4(args, cfg: Dict[str, Any]) -> int:
     """The ONLY production Phase-4 entrypoint (acceptance doc s15). Without
     --execute-phase4 this performs the non-evaluating dry-run; with it, the
-    Git gates plus the PHASE-4-SPECIFIC review-v6 APPROVE must pass first
-    (Phase-4 reviews v1-v5 and the Phase-3 review-v6 are rejected)."""
+    Git gates plus the PHASE-4-SPECIFIC review-v7 APPROVE must pass first
+    (Phase-4 reviews v1-v6 and the Phase-3 review-v6 are rejected)."""
     cfg_resolved = Path(args.config).resolve()
     if cfg_resolved != CANONICAL_PHASE3_CONFIG.resolve():
         print(f"REFUSED: Phase 4 requires the canonical config "
@@ -3272,9 +3325,9 @@ def run_phase4(args, cfg: Dict[str, Any]) -> int:
     if not execute:
         args.dry_run = True          # --phase 4 without --execute-phase4 == dry-run
         return _phase4_run(args, cfg, {})
-    # review v1-v5 required fixes: the PHASE-4-SPECIFIC gate must pass
-    # before any gradient/Hessian evaluation -- it accepts phase4 review v6
-    # only (never Phase-4 reviews v1-v5, never the Phase-3 review-v6)
+    # review v1-v6 + R1-audit fixes: the PHASE-4-SPECIFIC gate must pass
+    # before any gradient/Hessian evaluation -- it accepts phase4 review v7
+    # only (never Phase-4 reviews v1-v6, never the Phase-3 review-v6)
     gates_record = _verify_phase4_execution_gates(args)
     args.dry_run = False
     return _phase4_run(args, cfg, gates_record)
@@ -3325,12 +3378,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--approved-phase4-review", default=None,
                     help="real Phase-4 run: must be exactly "
                          "docs/France_case/P2a/"
-                         "FR_P2a_region_live_phase4_code_review_v6.md "
-                         "(Phase-4 reviews v1-v5 and the Phase-3 "
+                         "FR_P2a_region_live_phase4_code_review_v7.md "
+                         "(Phase-4 reviews v1-v6 and the Phase-3 "
                          "review-v6 are rejected)")
     ap.add_argument("--approved-phase4-review-sha256", default=None,
                     help="real Phase-4 run: 64-hex SHA-256 of the Phase-4 "
-                         "review-v6 file, which must carry one exact "
+                         "review-v7 file, which must carry one exact "
                          "'**FINAL VERDICT: APPROVE**' line under "
                          "'# 1. Phase-4 review verdict'")
     args = ap.parse_args(argv)

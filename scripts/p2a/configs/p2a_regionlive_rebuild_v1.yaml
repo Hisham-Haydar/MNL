@@ -5,8 +5,8 @@
 # --execute-phase3, expected MNL/nested HEADs, full --untracked-files=all
 # cleanliness of both worktrees, review-v6 APPROVE hash). A REAL Phase-4 run
 # requires the PHASE-4-SPECIFIC gate (--execute-phase4 + the same Git gates +
-# FR_P2a_region_live_phase4_code_review_v6.md APPROVE hash; Phase-4 reviews
-# v1-v5 and the Phase-3 review-v6 are rejected).
+# FR_P2a_region_live_phase4_code_review_v7.md APPROVE hash; Phase-4 reviews
+# v1-v6 and the Phase-3 review-v6 are rejected).
 # Phase-4 dry-run is supported and never evaluates the Hessian.
 # Phases 5-8 are unsupported and refused.
 # =============================================================================
@@ -27,7 +27,7 @@ run:
   phase3_supported: true
   phase3_execution_authorized: false  # real runs require the CLI execution contract (scope doc s8: --execute-phase3 + Git/review-v6 gates)
   phase4_supported: true              # dry-run supported (never evaluates the Hessian)
-  phase4_execution_authorized: false  # real runs require --execute-phase4 + Git gates + phase4 review-v6 APPROVE (phase4 reviews v1-v5 + phase3 review-v6 rejected)
+  phase4_execution_authorized: false  # real runs require --execute-phase4 + Git gates + phase4 review-v7 APPROVE (phase4 reviews v1-v6 + phase3 review-v6 rejected)
   phases_5_to_8_supported: false      # refused by the runner (exit 2)
   output_root: outputs/p2a_singles2016/region_live_v1
   frozen_stem_name: fr_p2a_singles2016_regionlive
@@ -308,8 +308,12 @@ phase4:                                 # AUTHORIZED by FR_P2a_region_live_phase
   regional_parameters:                  # plan v2 s5/s14; must equal the spec-derived set
     [beta_E_gsur, beta_E_drgn2, beta_E_drgn3, beta_E_drgn4, beta_E_drgn5,
      beta_E_drgn6, beta_E_drgn7, beta_E_drgn8, beta_E_drgur, beta_E_drgmd]
-  regional_design_columns:              # R-1 household-level columns, position-matched
+  regional_design_columns:              # R-1: LOADER-ARRAY attribute names of the
+    # production likelihood data object (R1 audit fix: reg2..reg8 are the
+    # loader's drgn1-derived dummies; the stem's STORED reg2..reg8 columns are
+    # identically-zero region-dead placeholders and are never read for R-1)
     [gsur, reg2, reg3, reg4, reg5, reg6, reg7, reg8, drgur, drgmd]
+  regional_design_source: production_likelihood_loader_arrays
   prohibited_in_phase4:                 # asserted in code (S-0) + structural
     - any optimizer call or theta change
     - clustered standard errors / scores / sandwich (Phase 5)

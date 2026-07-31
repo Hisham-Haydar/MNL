@@ -1,0 +1,378 @@
+{
+  "artifact": "phase5_source_inventory_v1.json",
+  "mission": "JMP-M05 Stage A \u2014 source verification",
+  "generated_for": "FR_P2a_region_live_phase5_source_verification_v1.md",
+  "read_only_audit": true,
+  "revisions": {
+    "Job_Market_paper_head": "1d31d10a355a5c154bdb84ac419f89fff46c12fa",
+    "Job_Market_paper_governance_checkpoint": "30fbe2da40dd5c032fad8bd81f2840ef60ab0ba0",
+    "MNL_head": "982c52217031158c4a2368709d4a6b211ebcde76",
+    "MNL_phase4_execution_revision": "fee60723ed27d6979976a3dc85b09cde3096e011",
+    "dclaborsupply_head": "27756a06ea189339aa82915ed2124628afed20eb",
+    "MNL_gitlink_dclaborsupply": "27756a06ea189339aa82915ed2124628afed20eb",
+    "descendancy_982c5221_from_fee60723": true,
+    "intervening_commits": [
+      "982c52217031158c4a2368709d4a6b211ebcde76"
+    ]
+  },
+  "bundles": {
+    "phase3": {
+      "dir": "outputs/p2a_singles2016/region_live_v1/phase3_estimation_v1/complete",
+      "bundle_sha256_expected": "2cf237648743f59bd742b12feceaea67c5fd377b26faf4fb6fad6f452f86864b",
+      "bundle_sha256_recomputed": "2cf237648743f59bd742b12feceaea67c5fd377b26faf4fb6fad6f452f86864b",
+      "match": true,
+      "files": [
+        "estimation_results.json",
+        "optimizer_diagnostics.json",
+        "phase3_console.log",
+        "phase3_manifest.json",
+        "theta_estimated.csv"
+      ],
+      "hashed_members_excluding_manifest": [
+        "estimation_results.json",
+        "optimizer_diagnostics.json",
+        "phase3_console.log",
+        "theta_estimated.csv"
+      ]
+    },
+    "phase4": {
+      "dir": "outputs/p2a_singles2016/region_live_v1/phase4_curvature_v1/complete",
+      "bundle_sha256_expected": "5484886985aecd28e511719e42f45b85ad0e1755d1f951dbd13a79281d9665f3",
+      "bundle_sha256_recomputed": "5484886985aecd28e511719e42f45b85ad0e1755d1f951dbd13a79281d9665f3",
+      "match": true,
+      "files": [
+        "hessian_eigenvalues.csv",
+        "hessian_free.csv",
+        "hessian_free.npy",
+        "phase4_console.log",
+        "phase4_diagnostics.json",
+        "phase4_manifest.json",
+        "regional_hessian_subblock.csv",
+        "regional_schur_complement.csv"
+      ],
+      "hashed_members_excluding_manifest": [
+        "hessian_eigenvalues.csv",
+        "hessian_free.csv",
+        "hessian_free.npy",
+        "phase4_console.log",
+        "phase4_diagnostics.json",
+        "regional_hessian_subblock.csv",
+        "regional_schur_complement.csv"
+      ],
+      "bundle_hash_algorithm": "sha256(utf8('\\n'.join(f'{name}:{sha256(name)}' for name in sorted(PHASE4_ARTIFACTS present))))  \u2014 manifest excluded",
+      "authoritative_bread": "hessian_free.npy",
+      "bread_is_unsymmetrized": true
+    }
+  },
+  "sources": {
+    "mnl_production": [
+      {
+        "path": "scripts/p2a/run_p2a_regionlive_rebuild.py",
+        "role": "production runner (Phases 1-4)",
+        "exists": true,
+        "sha256": "9dd3681807941ad0e3c0fcf2b31366949a6da14847c158ec96bcea9dcdd8232d",
+        "git_blob_at_head": "dd49dc61cca8cb4e39999146fbf35de5d3fb6a78",
+        "tracked_and_clean": true,
+        "note": "manifest-recorded sha256 4e9b\u2026 config / 9dd3681807941ad0e3c0fcf2b31366949a6da14847c158ec96bcea9dcdd8232d script"
+      },
+      {
+        "path": "scripts/p2a/configs/p2a_regionlive_rebuild_v1.yaml",
+        "role": "production config",
+        "exists": true,
+        "sha256": "4e9b4f57aec9fc28565a2fc22c8017601ffedc5b505a9a2ac00b99c98979c48c",
+        "git_blob_at_head": "7e3be78a959b71ac659eb920439db47dd9fece85",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "scripts/bpool/specs/estimation_spec_joint_pooled_v1_bll0_tlmpin.yaml",
+        "role": "certified 47-parameter specification",
+        "exists": true,
+        "sha256": "492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211",
+        "git_blob_at_head": "90792aaef0bfa477e63a71af48c38860028b66eb",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "theta_p2a_singles_2016_v1.csv",
+        "role": "accepted stored region-live start theta ('trial' column)",
+        "exists": true,
+        "sha256": "930ef3aa753d0c48b6e923cfa4de9847beac5aae8c585c7eec5512ee01cbbd33",
+        "git_blob_at_head": "9f5e6910e1e3b669f3130fe97e2b4ad1638fcab1",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "scripts/bpool/specs/theta_hat_realdata_901_v1.csv",
+        "role": "certified 901 warm-start theta",
+        "exists": true,
+        "sha256": "c72e92b16170a7dd2dc8ec0b76dc3f522a1fc6d6182a5eba8f8cad34cef76269",
+        "git_blob_at_head": "e59aa0dd2b90f547d8f9023f82f1f78f907179e9",
+        "tracked_and_clean": true,
+        "note": ""
+      }
+    ],
+    "mnl_accepted_artifacts": [
+      {
+        "path": "outputs/p2a_singles2016/region_live_v1/phase3_estimation_v1/complete/theta_estimated.csv",
+        "role": "accepted theta table (47 rows)",
+        "exists": true,
+        "sha256": "8b2f3fcbc7427712ac05576e9da32ece87101381054a619db47d337c4dd3eb97",
+        "git_blob_at_head": "8205ee566828b8d4a2a72fd32c5577f8767b1663",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "outputs/p2a_singles2016/region_live_v1/phase3_estimation_v1/complete/estimation_results.json",
+        "role": "authoritative full-precision accepted theta (47)",
+        "exists": true,
+        "sha256": "be66f02314778ab69734a4221ccdc286475a83a9d38d74ed3f5cabc7d047b343",
+        "git_blob_at_head": "6210461765d954a62fc63afccf5d5732e05f30d0",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "outputs/p2a_singles2016/region_live_v1/phase3_estimation_v1/complete/optimizer_diagnostics.json",
+        "role": "published gradient_final (47) + gradient_free_projection (37)",
+        "exists": true,
+        "sha256": "81301f01dd98a240411a532b9ba3f19b277d80e03ac0cd87ff8fbb1583860e19",
+        "git_blob_at_head": "384f3331e17fa85431611e31377683974c3137d2",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "outputs/p2a_singles2016/region_live_v1/phase3_estimation_v1/complete/phase3_manifest.json",
+        "role": "Phase-3 manifest",
+        "exists": true,
+        "sha256": "60eb1412cc14211a866d795e6bac3a7bde07c1f5879f4b000e066c2020fa8884",
+        "git_blob_at_head": "4197f27918e3b82775a78fd37eee74148493672e",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "outputs/p2a_singles2016/region_live_v1/phase4_curvature_v1/complete/hessian_free.npy",
+        "role": "authoritative 37x37 negLL Hessian (bit-exact, unsymmetrized)",
+        "exists": true,
+        "sha256": "e9ca080ecc7e40e43881b9422af0095f23ad2bfef3e84648d2031a33eb9e4061",
+        "git_blob_at_head": "3a6f2adfd7b54bf03f88c183554d95eb66edbc6a",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "outputs/p2a_singles2016/region_live_v1/phase4_curvature_v1/complete/hessian_free.csv",
+        "role": "same Hessian, ~16 s.f. CSV rendering (NOT bit-exact)",
+        "exists": true,
+        "sha256": "8985b619858ce8b6c5f4bbb2700bfbb7c22333c17538cc1eb8dc5b09b58f470e",
+        "git_blob_at_head": "447160b1e578b6a79b29e8dbe8a2e96b07a4280d",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "outputs/p2a_singles2016/region_live_v1/phase4_curvature_v1/complete/phase4_diagnostics.json",
+        "role": "Phase-4 diagnostics",
+        "exists": true,
+        "sha256": "5facb3ab9a6aa326e688eede781da8178b6033569c5891eb7bd0b8197ba3a1f3",
+        "git_blob_at_head": "9c352140766ed55185675fcfc8f0a200226a6a54",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "outputs/p2a_singles2016/region_live_v1/phase4_curvature_v1/complete/phase4_manifest.json",
+        "role": "Phase-4 manifest incl. parameter_map and regional binding",
+        "exists": true,
+        "sha256": "1b9bf807499edf92a70bc9ad737fa6834c9a44c191db676b1a7512a4066d503b",
+        "git_blob_at_head": "902dd909b43d053685a7c9576010bba8782e2ee3",
+        "tracked_and_clean": true,
+        "note": ""
+      }
+    ],
+    "mnl_data_inputs": [
+      {
+        "path": "outputs/p2a_singles2016/region_live_v1/fr_p2a_singles2016_regionlive__singles.parquet",
+        "role": "frozen engine-ready stem, 157055 rows = 1555 x 101",
+        "exists": true,
+        "sha256": "8bf083ce3be17f8c74af894bc3748718cbb0a991eb9a411db7188e806d1e9f0d",
+        "git_blob_at_head": "4a4b83960e2c56dc5b7c06c62079d2388d19b3ce",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "outputs/p2a_singles2016/region_live_v1/fr_p2a_singles2016_regionlive__mnlmeta.json",
+        "role": "normalization + cluster_key metadata",
+        "exists": true,
+        "sha256": "05be40300288bdfb82a1f29d3649b420ee055e548658b6556424d024a87f5de1",
+        "git_blob_at_head": "7f50d05b1bbfc9cce9c430d99e81a8111a7d5714",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "outputs/p2a_singles2016/region_live_v1/region_map_p2a_singles2016.parquet",
+        "role": "idhh -> {drgn1,drgur,drgmd,drgru,gsur} source mapping",
+        "exists": true,
+        "sha256": "b0d44ce825492b3ff7e058b6322b5972dcf728729a8d7c40b2d515b6be63e490",
+        "git_blob_at_head": "4cd6811fb3b78b531c6f8a20bde62bee4a8aa960",
+        "tracked_and_clean": true,
+        "note": ""
+      }
+    ],
+    "dclaborsupply_nested": [
+      {
+        "path": "packages/dclaborsupply/src/dclaborsupply/likelihood/engine_jax.py",
+        "role": "PRODUCTION negLL: build_jax_singles_ll (+ per_group score hook)",
+        "exists": true,
+        "sha256": "49bf6b7048f0065f248bf49dc750797ca9d9809c2aade29bd8808baeea2ceeed",
+        "git_blob_at_head": "d64a5af624b3aff458ab007dfbfbee9e17620210",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "packages/dclaborsupply/src/dclaborsupply/data/loader.py",
+        "role": "PRODUCTION loader: load_singles, grouping, cluster_ids, region dummies",
+        "exists": true,
+        "sha256": "68cf26f141d1459043f3fba32df503518e45c87310c23a1c04afd66a4220a651",
+        "git_blob_at_head": "8adf02eebdfa27c7fc9fc334c54b780a9efaac4b",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "packages/dclaborsupply/src/dclaborsupply/likelihood/_numpy_primitives.py",
+        "role": "PrecomputedDataSingles container + EPS",
+        "exists": true,
+        "sha256": "4d1a2ad6d781e0b834acc6ef20b51f8c96ad894f4a4dea962384acc69163cffe",
+        "git_blob_at_head": "08c7af4cb382b1902d7841bdfab5b8d29a85b314",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "packages/dclaborsupply/src/dclaborsupply/likelihood/index.py",
+        "role": "compute_index backend router (numpy cross-check)",
+        "exists": true,
+        "sha256": "c1a42a685d46d9723007122a20d110aae73272367939f1fc9bed2c7a5b10a90e",
+        "git_blob_at_head": "2f85e87459103e42089e6f7ae07691915ca461fd",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "packages/dclaborsupply/src/dclaborsupply/likelihood/engine_numpy.py",
+        "role": "numpy engine (G-19 backend agreement only)",
+        "exists": true,
+        "sha256": "6de16f1927088e8bfd567df5e405683de3432ca8aa7abafe99ad96ee70d2caac",
+        "git_blob_at_head": "17d61d24d0fa0a870a3eeae91f6d92b5e9d06a26",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "packages/dclaborsupply/src/dclaborsupply/spec/parser.py",
+        "role": "EstimationSpec: all_param_names, get_bounds_tuple, fixed_params",
+        "exists": true,
+        "sha256": "94d436749f7bffbbd92683c390c452d575212f2d8ade2d449aa26dab1a7dbf29",
+        "git_blob_at_head": "4df2b347330255ff6b7788c0dc90a579eadc0a6e",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "packages/dclaborsupply/src/dclaborsupply/models.py",
+        "role": "model containers",
+        "exists": true,
+        "sha256": "f98a4bf91029628ad8c14ed1720f96c315d9a57eca73895be191fd8d45e60ba2",
+        "git_blob_at_head": "d2b1d1ebbd5417e6274420efae400c9bcfd1d090",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "packages/dclaborsupply/src/dclaborsupply/se/cluster_robust.py",
+        "role": "PRE-EXISTING cluster sandwich helper; default expected=9657 is a P3a-pooled constant and does NOT apply to P2a",
+        "exists": true,
+        "sha256": "89f192e20d5c5f71cb83072d6ad5830de133f97b4567757203919494b0d598fb",
+        "git_blob_at_head": "5e981f456322d66d2fb5d2bf69999e984b79ad96",
+        "tracked_and_clean": true,
+        "note": ""
+      },
+      {
+        "path": "packages/dclaborsupply/src/dclaborsupply/se/numerical.py",
+        "role": "PRE-EXISTING numerical SE helper; sets jax_enable_x64 independently",
+        "exists": true,
+        "sha256": "b7bd336dec9c137005defef9d69eaa8651f9664565a129f33ed27e6cd29dc4aa",
+        "git_blob_at_head": "d5c752239ab13d6595268642ee67a6fdea89eb78",
+        "tracked_and_clean": true,
+        "note": ""
+      }
+    ]
+  },
+  "likelihood_contract": {
+    "production_objective_symbol": "tot",
+    "definition": "tot(theta_47) = nm(theta_47) + nf(theta_47)",
+    "builders": [
+      "build_jax_singles_ll(dm, spec, is_male=True)   -> nm",
+      "build_jax_singles_ll(df_, spec, is_male=False) -> nf"
+    ],
+    "builder_defaults": {
+      "use_actual_choice": false,
+      "per_group": false,
+      "gender_split": null
+    },
+    "phase4_free_wrapper": "negll_free(x_free_37) = tot(base_full_47.at[free_idx].set(x_free))",
+    "index": "V = u + log_h + log_w + log_market - log_prior",
+    "per_group_loglik": "l_g = V_obs,g - logsumexp_j(V_gj); V_obs = column 0",
+    "objective": "negLL = -sum_g l_g  (UNWEIGHTED SUM over households)",
+    "weights_in_objective": false,
+    "survey_weight_column_present_but_unused": "dwt",
+    "n_terms": 1555,
+    "n_terms_male": 714,
+    "n_terms_female": 841,
+    "n_alternatives_per_term": 101,
+    "n_rows": 157055,
+    "per_group_score_hook_available": true,
+    "per_group_score_hook": "build_jax_singles_ll(..., per_group=True) returns the (n_groups,) POSITIVE log-likelihood vector; jax.jacrev of it is the score matrix"
+  },
+  "cluster_contract": {
+    "loader_group_key": "idhh (year_tag not pooled: single year 2016)",
+    "loader_group_ids": "idhh value at each group start (sorted mergesort by idhh)",
+    "cluster_id_resolution_order": [
+      "cluster_id",
+      "idorighh",
+      "idorighh",
+      "idhh"
+    ],
+    "resolved_column": "cluster_id",
+    "cluster_id_equals_idhh_elementwise": true,
+    "cluster_id_equals_idorighh_elementwise": true,
+    "n_groups": 1555,
+    "n_unique_clusters": 1555,
+    "terms_per_cluster": 1,
+    "clustering_status": "degenerate (exactly one likelihood term per cluster)"
+  },
+  "numerical_environment": {
+    "recorded_in_accepted_manifests": {
+      "python": "3.12.2",
+      "numpy": "2.3.5",
+      "pandas": "2.3.3",
+      "jax": null,
+      "jaxlib": null,
+      "platform": null,
+      "threads": null
+    },
+    "jax_version_recorded": false,
+    "audit_time_interpreter": {
+      "python": "3.12.2",
+      "numpy": "2.3.5",
+      "pandas": "2.3.3",
+      "scipy": "1.16.2",
+      "jax": "0.10.1",
+      "jaxlib": "0.10.1",
+      "platform": "Windows-2022Server-10.0.20348-SP0",
+      "machine": "AMD64"
+    },
+    "x64_enable_point": "dclaborsupply/likelihood/engine_jax.py::_load_jax() -> jax.config.update('jax_enable_x64', True), called at the top of build_jax_singles_ll, before every jnp array creation in the runner",
+    "hessian_dtype": "float64",
+    "hessian_shape": [
+      37,
+      37
+    ]
+  },
+  "open_unknowns": [
+    "JAX / jaxlib version at Phase-3 and Phase-4 execution time (not recorded in either accepted manifest)",
+    "Thread / XLA flag settings at execution time (not recorded)",
+    "Platform string at execution time (not recorded in the manifests)"
+  ]
+}

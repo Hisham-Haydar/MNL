@@ -4,15 +4,21 @@ research-grade execution scope (FR_P2a_region_live_phase3_execution_scope_v1.md)
 No test invokes the real optimizer. The canonical dry-run test (test 29) runs
 in a subprocess and intentionally writes one preserved attempt bundle under the
 production attempts/ history, consistent with the never-delete evidence
-discipline; no other test writes any production output path. Estimator-route
-tests monkeypatch scipy.optimize.minimize in-process. Adversarial-caller
-defenses are out of scope by manager decision.
+discipline; no other test writes any production output path. The Phase-4
+dry-run subprocess test (test 42) must also target the canonical production
+root (the runner refuses any other --out for phase 4), but it isolates its
+generated attempt evidence under a test-owned tmp root and removes it before
+returning, and it re-verifies the accepted Phase-4 complete/ bundle is
+byte-identical before and after -- it leaves no residue in production
+attempts/ history. Estimator-route tests monkeypatch scipy.optimize.minimize
+in-process. Adversarial-caller defenses are out of scope by manager decision.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -1011,40 +1017,69 @@ def test_41_phase4_transaction_and_overwrite_refusal(tmp_path, cfg):
     assert not (root / ".phase3.lock").exists()
 
 
-def test_42_phase4_subprocess_dry_run_never_evaluates_hessian():
+def _phase4_complete_inventory():
+    """Full member set + per-file SHA-256 of the accepted Phase-4 complete/
+    bundle (every file present, not just the PHASE4_ARTIFACTS subset), so a
+    byte-for-byte before/after comparison also catches an added or removed
+    member, not only a content change."""
+    d = runner.CANONICAL_PHASE4_ROOT / "complete"
+    return {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in sorted(d.iterdir())}
+
+
+def test_42_phase4_subprocess_dry_run_never_evaluates_hessian(tmp_path):
+    before = _phase4_complete_inventory()
+    attempts = runner.CANONICAL_PHASE4_ROOT / "attempts"
+    before_names = {p.name for p in attempts.iterdir()}
     r = subprocess.run(
         [sys.executable, str(MNL_ROOT / "scripts/p2a/run_p2a_regionlive_rebuild.py"),
          "--config", str(CONFIG_PATH), "--phase", "4",
          "--out", str(runner.CANONICAL_REGIONLIVE_ROOT)],
         capture_output=True, text=True, timeout=600, cwd=str(MNL_ROOT))
     assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
-    attempts = runner.CANONICAL_PHASE4_ROOT / "attempts"
-    d = max((x for x in attempts.iterdir() if x.name.startswith("2026")),
-            key=lambda p: p.name)
-    man = json.loads((d / "phase4_manifest.json").read_text(encoding="utf-8"))
-    assert man["status"] == "PHASE_4_DRY_RUN_COMPLETE"
-    assert man["gradient_evaluated"] is False
-    assert man["hessian_evaluated"] is False
-    assert man["optimizer_called"] is False
-    assert man["execution_ready"] is False
-    assert man["review_gate"] == "AWAITING_PHASE4_REVIEW_V7_APPROVE"
-    assert man["contract_phase4"]["derivative_route"]["loaded"] is True
-    assert man["contract_phase4"]["derivative_route"]["evaluated"] is False
-    c4 = man["contract_phase4"]                    # R1 audit fix fields
-    assert c4["regional_design_source"] == \
-        "production_likelihood_loader_arrays"
-    assert c4["design_shape"] == [1555, 10]
-    assert c4["design_column_names"] == \
-        list(runner.PHASE4_REGIONAL_DESIGN_COLUMNS)
-    assert (c4["design_column_to_parameter"]["gsur"] == "beta_E_gsur"
-            and c4["design_column_to_parameter"]["reg2"]
-            == "beta_E_drgn2")
-    b = c4["design_loader_binding"]
-    assert (b["within_block_constant"] and b["all_finite"]
-            and b["unique_households"] == 1555 and b["groups"] == 1555)
-    assert (man["accepted_phase3_bundle_sha256"]
-            == runner.PHASE3_ACCEPTED_BUNDLE_SHA256)
-    assert not (runner.CANONICAL_PHASE4_ROOT / "complete").exists()
+    new_names = {p.name for p in attempts.iterdir()} - before_names
+    assert len(new_names) == 1, sorted(new_names)          # exactly this run's attempt
+    produced = attempts / next(iter(new_names))
+    # phase 4 refuses any --out but the canonical production root (test 10),
+    # so the dry run cannot be pointed at a scratch location directly; instead
+    # move its freshly-produced evidence into a test-owned tmp root immediately
+    # and restore canonical attempts/ before asserting anything about it
+    isolated = tmp_path / produced.name
+    shutil.move(str(produced), str(isolated))
+    try:
+        assert not produced.exists()
+        assert {p.name for p in attempts.iterdir()} == before_names
+
+        man = json.loads((isolated / "phase4_manifest.json")
+                         .read_text(encoding="utf-8"))
+        assert man["status"] == "PHASE_4_DRY_RUN_COMPLETE"
+        assert man["gradient_evaluated"] is False
+        assert man["hessian_evaluated"] is False
+        assert man["optimizer_called"] is False
+        assert man["execution_ready"] is False
+        assert man["review_gate"] == "AWAITING_PHASE4_REVIEW_V7_APPROVE"
+        assert man["contract_phase4"]["derivative_route"]["loaded"] is True
+        assert man["contract_phase4"]["derivative_route"]["evaluated"] is False
+        c4 = man["contract_phase4"]                    # R1 audit fix fields
+        assert c4["regional_design_source"] == \
+            "production_likelihood_loader_arrays"
+        assert c4["design_shape"] == [1555, 10]
+        assert c4["design_column_names"] == \
+            list(runner.PHASE4_REGIONAL_DESIGN_COLUMNS)
+        assert (c4["design_column_to_parameter"]["gsur"] == "beta_E_gsur"
+                and c4["design_column_to_parameter"]["reg2"]
+                == "beta_E_drgn2")
+        b = c4["design_loader_binding"]
+        assert (b["within_block_constant"] and b["all_finite"]
+                and b["unique_households"] == 1555 and b["groups"] == 1555)
+        assert (man["accepted_phase3_bundle_sha256"]
+                == runner.PHASE3_ACCEPTED_BUNDLE_SHA256)
+        # the ACCEPTED immutable Phase-4 complete/ bundle exists from the real
+        # curvature run; the dry-run must leave it byte-identical, member-for-
+        # member (not just its aggregate hash) -- it never touches complete/
+        assert _phase4_complete_inventory() == before
+    finally:
+        shutil.rmtree(isolated, ignore_errors=True)    # remove temp test output
     assert not (runner.CANONICAL_PHASE4_ROOT / ".phase3.lock").exists()
 
 

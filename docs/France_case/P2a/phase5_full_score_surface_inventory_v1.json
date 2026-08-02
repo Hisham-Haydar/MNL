@@ -1,0 +1,103 @@
+{
+  "application_full_score_surface_count": 1,
+  "canonical_surface": {
+    "authorization_context": {
+      "created_by": "the gated entry only, after every gate passes",
+      "public_constructor": false,
+      "substitutable_by_caller": false,
+      "torn_down": "in the _run/_t12_child finally block; never outlives an attempt",
+      "type": "_ScoringAuthorization"
+    },
+    "authorization_prerequisites": [
+      "Phase-5 review v3 path, digest, exact heading and exact APPROVE verdict",
+      "exact MNL and nested dclaborsupply revisions, and gitlink identity",
+      "full cleanliness of both worktrees (--untracked-files=all)",
+      "accepted Phase-3 and Phase-4 closed-set bundle verification",
+      "authenticated parameter-map CSV (byte digest, schema, cross-source)",
+      "accepted 47-element gradient from the reverified Phase-3 bundle member",
+      "canonical Phase-5 configuration digest",
+      "provisioned restricted-store contract and store identity",
+      "installed optimizer guard (T-20)"
+    ],
+    "canonical_config_digest_rule": "loaded by the gated entry via _load_canonical_config(); re-asserted by _assert_config_is_canonical() before the scoring session opens and again during post-evaluation reauthentication. An in-memory substituted configuration object is refused.",
+    "canonical_config_source": "scripts/p2a/configs/p2a_phase5_inference_v1.yaml",
+    "description": "The single application-level process entry capable of evaluating all 1,555 household scores. It parses the CLI, loads the canonical Phase-5 YAML itself, binds its digest, authenticates every gate, and only then creates the opaque process-local authorization context that the nested score provider requires.",
+    "post_evaluation_reauthentication": {
+      "note": "every full-score process reauthenticates before publication",
+      "parent": "_t13_reauthenticate (T-13)",
+      "t12_child": "_t12_child_reauthenticate"
+    },
+    "process_entry_symbol": "main",
+    "restricted_store_binding": "_bind_restricted_store() on the canonical configuration only; provisioning-record digest plus store identity; reparse points and Git-worktree ancestry rejected at the root, the fixed children, the staging attempt, the STOPPED destination and the publication destination.",
+    "roles": [
+      {
+        "entered_via": "main -> _run",
+        "role": "parent-dry-run",
+        "score_path": "_open_scoring_session -> nested _NestedScoreProvider.forward"
+      },
+      {
+        "entered_via": "main -> _t12_child (private flag + nonce + single-use capability)",
+        "role": "t12-child",
+        "score_path": "_open_scoring_session -> nested _NestedScoreProvider.forward"
+      }
+    ],
+    "source_file": "scripts/p2a/run_p2a_phase5_inference.py"
+  },
+  "commit_status": "created in the architectural closure cycle; committed only at the deputy s9 step-2 gate after review v4 APPROVE",
+  "excluded_generic_primitives": [
+    {
+      "rationale": "generic mathematical primitive: it differentiates caller-supplied per-group callables. It cannot independently construct the accepted Phase-5 score artifact, which additionally requires the production loader data, the authenticated 47->37->35 embedding, the accepted theta and the canonical row order.",
+      "symbol": "phase5_inference.build_score_matrix"
+    },
+    {
+      "rationale": "generic reverse-mode primitive for the T-16 subset; not a full-score route.",
+      "symbol": "phase5_inference.jacrev_subset_scores"
+    },
+    {
+      "rationale": "nested package source, outside the application surface per deputy s3. It yields a per-group log-likelihood, not the accepted Phase-5 score artifact, and the package is frozen at the accepted gitlink.",
+      "symbol": "dclaborsupply.likelihood.engine_jax.build_jax_singles_ll"
+    }
+  ],
+  "expected_full_score_call_sites": [
+    "scripts/p2a/run_p2a_phase5_inference.py:625"
+  ],
+  "files_scanned": [
+    "scripts/p2a/run_p2a_phase5_inference.py",
+    "scripts/p2a/phase5_inference.py"
+  ],
+  "generated_for": "JMP-M05B architectural closure cycle (deputy E2 decision v2 s5)",
+  "inventory_sha256": "734606947854ed1bfd3ee807df5000e3128cc93d2fa1b33fcfaedee7412cf330",
+  "inventory_version": "v1",
+  "mnl_base_revision": "983a2ecf1d16592b9f90085f6a6b690b8a964110",
+  "nested_dclaborsupply_revision": "27756a06ea189339aa82915ed2124628afed20eb",
+  "removed_or_disabled_former_surfaces": [
+    {
+      "former_capability": "import-callable full 1,555x37 score with no authorization or custody gate (review v3 gates 5-8)",
+      "mechanism": "_phase5_contract is contract-only without an active authorization: loader data, JAX handles and per-group score callables are withheld. _phase5_evaluate additionally requires both the active authorization context and the nested score provider, and refuses before computing anything.",
+      "status": "structurally incapable",
+      "surface": "_phase5_contract(cfg5, cfg34, log) + _phase5_evaluate(ctx, cfg5, log, progress)"
+    },
+    {
+      "former_capability": "caller-supplied cfg5 selected the restricted root; forgeable two-boolean record",
+      "mechanism": "_run rederives the full authorization from the live repositories at entry and again immediately before scoring, and the configuration in use is bound to the canonical file digest.",
+      "status": "structurally incapable",
+      "surface": "_run(args, cfg5, cfg34, gates_record)"
+    },
+    {
+      "former_capability": "nonce-only child that scored without a bound capability and without post-evaluation reauthentication",
+      "mechanism": "requires a single-use parent-issued capability consumed atomically from inside the authenticated restricted staging transaction, and runs complete post-evaluation reauthentication before returning its digest.",
+      "status": "role of the canonical surface",
+      "surface": "_t12_child(cfg5, cfg34)"
+    }
+  ],
+  "tests_proving_noncanonical_routes_refuse": [
+    "test_ac_single_gated_entry_is_the_only_full_score_surface",
+    "test_ac_direct_contract_evaluate_route_cannot_full_score",
+    "test_ac_canonical_config_binding_refuses_substitution",
+    "test_c2_fix1_scoring_entry_point_rederives_authorization",
+    "test_c2_fix1_no_route_skips_reauthorization",
+    "test_16_real_run_is_refused_by_construction",
+    "test_16b_flipping_the_authorization_constant_fails_closed"
+  ],
+  "threat_model": "deputy E2 decision v2 s2: operationally unforgeable through supported interfaces and ordinary imports. NOT claimed against an adversary with arbitrary in-process code execution who may monkeypatch or rewrite this source."
+}

@@ -52,6 +52,24 @@ CONFIG_PATH = MNL_ROOT / rc.CONFIG_REL
 SUBSET = 12          # bounded subset for the integration runs
 
 
+def _canonical_root_listing():
+    """Sorted relative-path listing of the canonical Phase-5 output root.
+
+    Captures ``None`` when the root does not exist. Used for before/after
+    equality checks that a refused or bounded-tmp-path run left the
+    canonical root untouched -- the root itself may legitimately exist
+    (the accepted Phase-5 result), so tests must not assert its absence.
+    """
+    root = MNL_ROOT / rc.CANONICAL_OUTPUT_ROOT
+    if not root.exists():
+        return None
+    return sorted(p.relative_to(root).as_posix() for p in root.rglob("*"))
+
+
+# Captured at import time, before any fixture or test in this module runs.
+_CANONICAL_ROOT_LISTING_AT_COLLECTION = _canonical_root_listing()
+
+
 @pytest.fixture(scope="module")
 def cfg():
     conf, digest = rc.load_config(MNL_ROOT)
@@ -395,13 +413,16 @@ def test_N5_cli_refuses_the_full_population_run(tmp_path):
 
 
 def test_N6_cli_refuses_a_subset_into_the_canonical_root():
+    before = _canonical_root_listing()
     proc = subprocess.run(
         [sys.executable, str(RUNNER_PATH), "--households", "8",
          "--out", rc.CANONICAL_OUTPUT_ROOT],
         capture_output=True, text=True, cwd=str(MNL_ROOT), timeout=900)
     assert proc.returncode == 2
     assert "canonical production root" in proc.stderr
-    assert not (MNL_ROOT / rc.CANONICAL_OUTPUT_ROOT).exists()
+    # the refused invocation must not change the canonical root's listing,
+    # whether or not the root already holds the accepted Phase-5 result
+    assert _canonical_root_listing() == before
 
 
 # =========================================================================== #
@@ -539,7 +560,9 @@ def test_P4_gate_register_is_complete_and_gating_passes(bounded_run):
 def test_P5_run_writes_nothing_into_the_repository(bounded_run):
     outcome, _ = bounded_run
     assert outcome.status == rc.STATUS_COMPLETE
-    assert not (MNL_ROOT / rc.CANONICAL_OUTPUT_ROOT).exists()
+    # the bounded tmp-path run must not change the canonical root's listing,
+    # whether or not the root already holds the accepted Phase-5 result
+    assert _canonical_root_listing() == _CANONICAL_ROOT_LISTING_AT_COLLECTION
     for name in rc.ALLOWED_ARTIFACTS:
         assert not (MNL_ROOT / name).exists()
 

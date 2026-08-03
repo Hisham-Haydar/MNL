@@ -1,0 +1,78 @@
+# =============================================================================
+# FR P2a region-live Phase-5 inference — dry-run-only runner config v1
+# =============================================================================
+# Governed by, in binding order:
+#   docs/France_case/P2a/JMP_M05C_streaming_inference_design_addendum_v1.md
+#   docs/France_case/P2a/FR_P2a_region_live_phase5_inference_design_v4.md
+#   docs/France_case/P2a/JMP_M05C_minimal_streaming_implementation_mission_charter_v1.md
+#
+# This file is DIGEST-BOUND: the runner recomputes its SHA-256 and refuses to
+# start if it differs from the digest recorded in the runner module. Editing it
+# therefore requires editing the recorded digest, which is a reviewable change.
+#
+# There is NO real-run pathway. The only execution mode is the dry run, and the
+# full-population dry run additionally requires the Increment-C review
+# authorization (see `authorization` below), which does not exist yet.
+# =============================================================================
+
+run:
+  name: p2a_phase5_inference_v1
+  track: FR-2016 singles P2a region-live
+  phase: 5
+  mode: dry-run-only            # the runner refuses any other mode
+  output_root: outputs/p2a_singles2016/region_live_v1/phase5_inference_v1
+  real_run_supported: false     # structural: no code path exists
+
+population:
+  n_households_full: 1555       # design v4 s3.3 / DL D-008
+  batch_size: 128               # recorded in the manifest; part of the R-32b tuple
+  ad_mode: jacfwd               # design v4 s5.4 baseline; part of the R-32b tuple
+
+# The frozen reproduction tuple of ruling R-32b. T-12S compares the score-stream
+# digest only within this tuple and refuses a cross-tuple comparison.
+reproduction_tuple:
+  idhh_encoding: int64_le
+  batch_size: 128
+  ad_mode: jacfwd
+
+accepted:
+  phase3_bundle_dir: outputs/p2a_singles2016/region_live_v1/phase3_estimation_v1/complete
+  phase3_bundle_sha256: 2cf237648743f59bd742b12feceaea67c5fd377b26faf4fb6fad6f452f86864b
+  phase3_manifest_member: phase3_manifest.json
+  phase4_bundle_dir: outputs/p2a_singles2016/region_live_v1/phase4_curvature_v1/complete
+  phase4_bundle_sha256: 5484886985aecd28e511719e42f45b85ad0e1755d1f951dbd13a79281d9665f3
+  phase4_manifest_member: phase4_manifest.json
+  bread_sha256: e9ca080ecc7e40e43881b9422af0095f23ad2bfef3e84648d2031a33eb9e4061
+  theta_bytes_sha256: c024b89386c502003f9d4abb927b048dfab42c0bafe48d9a69d9fcb330f0580d
+  spec_sha256: 492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211
+
+revisions:
+  expected_dclaborsupply_head: 27756a06ea189339aa82915ed2124628afed20eb
+
+gates:
+  score_identity_atol: 1.0e-8   # addendum s5, frozen
+  score_identity_rtol: 1.0e-8
+  # T-12S mixed exact/allclose rules (design v4 s16)
+  repro_digest_exact: true       # digest, order fingerprint, counts: bitwise
+  repro_aggregate_atol: 0.0      # score sum / meats: exact within the frozen tuple
+  repro_aggregate_rtol: 0.0
+
+# Dry-run authorization (addendum s8; design v4 s18.1; charter s9).
+# The FULL-population dry run is reachable from this config but refused until
+# every field below is satisfied on the command line AND the named review file
+# exists with an exact APPROVE verdict. The file does not exist yet, so the
+# full dry run cannot run in the implementation task.
+authorization:
+  required: true
+  # ADVISORY ONLY -- the runner binds to CANONICAL_APPROVED_REVIEW_REL.
+  # Advanced v2 -> v3 with that constant (third application of the R-29 / R-48
+  # precedent): review v1 is immutable APPROVE-AFTER-FIXES evidence and review
+  # v2 is immutable REJECT evidence; neither may ever authorize the run.
+  approved_review_path: docs/France_case/P2a/FR_P2a_streaming_incrementC_review_v3.md
+  superseded_review_paths:
+    - docs/France_case/P2a/FR_P2a_streaming_incrementC_review_v1.md
+    - docs/France_case/P2a/FR_P2a_streaming_incrementC_review_v2.md
+  approved_review_verdict_line: "**FINAL VERDICT: APPROVE**"
+  requires_clean_worktrees: true
+  requires_expected_heads: true
+  never_creates_complete: true

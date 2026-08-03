@@ -1,0 +1,6 @@
+[13:31:23] accepted binding verified: MNL bd7e3af2a005 gitlink 27756a06ea18
+[13:31:45] streamed 1555 households, batch 128, digest 7f71a532ff66
+[13:31:45] inference objects built (inference_grade=full-sample)
+[13:32:09] T-12S fresh-process reproduction: PASS
+[13:32:09] staged 16 aggregate artifacts
+FINAL STATUS: PHASE_5_DRY_RUN_COMPLETE

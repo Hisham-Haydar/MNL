@@ -1,0 +1,347 @@
+{
+  "accepted_binding": {
+    "bread_sha256": "e9ca080ecc7e40e43881b9422af0095f23ad2bfef3e84648d2031a33eb9e4061",
+    "checked_at": "2026-08-03T13:31:23.083142+00:00",
+    "config_sha256": "08be1cf6a7be0ff64a6417aef8e979003f5fa4f48f826b4d202ffd50c1f161d9",
+    "dclaborsupply_head": "27756a06ea189339aa82915ed2124628afed20eb",
+    "gitlink": "27756a06ea189339aa82915ed2124628afed20eb",
+    "mnl_head": "bd7e3af2a0056b43f3fb8b50b858f358ed7a8825",
+    "mnl_worktree_clean": false,
+    "nested_worktree_clean": true,
+    "phase3_bundle_sha256": "2cf237648743f59bd742b12feceaea67c5fd377b26faf4fb6fad6f452f86864b",
+    "phase4_bundle_sha256": "5484886985aecd28e511719e42f45b85ad0e1755d1f951dbd13a79281d9665f3",
+    "spec_sha256": "492bcfa9c766bfcb5d8536f5e920cc0b00ffa600b7b89db60b250365f331f211",
+    "theta_bytes_sha256": "c024b89386c502003f9d4abb927b048dfab42c0bafe48d9a69d9fcb330f0580d",
+    "verified": true
+  },
+  "allowlist": [
+    "score_aggregate_summary.json",
+    "score_sum_free37.csv",
+    "meat_free37.npy",
+    "meat_free37.csv",
+    "meat_interior35.npy",
+    "meat_interior35.csv",
+    "phase5_covariance_model.npy",
+    "phase5_covariance_model.csv",
+    "phase5_covariance_robust.npy",
+    "phase5_covariance_robust.csv",
+    "phase5_correlation_model.csv",
+    "phase5_correlation_robust.csv",
+    "phase5_parameter_table.csv",
+    "phase5_regional_covariance.csv",
+    "phase5_regional_tests.csv",
+    "phase5_standard_errors.csv",
+    "phase5_diagnostics.json",
+    "phase5_manifest.json",
+    "phase5_console.log"
+  ],
+  "artifact_hashes": {
+    "meat_free37.csv": "548be0a6c122ef636931e53f7818296929fab2ee6060b2a2eba8781ccc49b02c",
+    "meat_free37.npy": "4bac680485d6e651165666c80ee1929ae4a6efc4f41c7d4a35d9b981426b4d94",
+    "meat_interior35.csv": "b2a1f2144745a55423695523c3d2e8f2837a0bb9d65756f6a222ed562af3cfed",
+    "meat_interior35.npy": "3551b319ead355619577e58725e1071ae400c6964ef9510c2a029a81753e0e89",
+    "phase5_console.log": "7111aa441f38ad2b9648fa920cda414c7b155f546ddacda27a45681ddc4e31b9",
+    "phase5_correlation_model.csv": "d9d0d2eb4616693297021bb2b17aba1dbb49e752f057302dc02da2a0d0bd461a",
+    "phase5_correlation_robust.csv": "b0c857c8a9432031996f8d2ee5fb51943e649cfc52417dcfd44e3bbcaa7af652",
+    "phase5_covariance_model.csv": "2e72678a6b7392f53794add0d20ff089bf2f0c5c8819f8327877c97a81e2ed73",
+    "phase5_covariance_model.npy": "04952ba16eb1032a315000f2fd5593de7faa37f8bd571a01c1c8181e0c185632",
+    "phase5_covariance_robust.csv": "c43710b4f5452ba10e569f44bab4b2853c4b21c9c09bbbf3510f153cbe3b094c",
+    "phase5_covariance_robust.npy": "0b4e2a509b718ad67d337784df7c38cb4e1edcec9514b78a1f73edf3aff6a80b",
+    "phase5_diagnostics.json": "943d8532dc0c4825b435b65fefa677d8ecca6018c924e9663e9024a34c60c34f",
+    "phase5_parameter_table.csv": "6727692a8614c8a8cf01c0d5d98a75bc737d026e6c297c73b6f4826172deebb2",
+    "phase5_regional_covariance.csv": "3cba5b4389073d41022cc9e3a43afc6a3a826f2e139ec18a09d554e795db4111",
+    "phase5_regional_tests.csv": "47dae8014ec2c536cb3cf79e27a61f50af4871f3c0303d3be1737fb9f735b584",
+    "phase5_standard_errors.csv": "da92759879c7e451a5b1ff488a48e13ec7e6dd98b793ebf7caa9313b420f3fbb",
+    "score_aggregate_summary.json": "b3533fa4d52ee504d89b8b0d3d7e6e7fc217815aa91cd2388b43d9130108cf08",
+    "score_sum_free37.csv": "b76ff964ec40561a625f660657258c5effe97ce12bd47c6bda618f952f48cc19"
+  },
+  "artifact_records": [
+    {
+      "inference_grade": "full-sample",
+      "kind": "json",
+      "member": "score_aggregate_summary.json",
+      "metadata": {
+        "n_households": 1555
+      },
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\score_aggregate_summary.json",
+      "sha256": "b3533fa4d52ee504d89b8b0d3d7e6e7fc217815aa91cd2388b43d9130108cf08",
+      "shape": [
+        16
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "table",
+      "member": "score_sum_free37.csv",
+      "metadata": {},
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\score_sum_free37.csv",
+      "sha256": "b76ff964ec40561a625f660657258c5effe97ce12bd47c6bda618f952f48cc19",
+      "shape": [
+        37,
+        2
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "matrix",
+      "member": "meat_free37.npy",
+      "metadata": {},
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\meat_free37.npy",
+      "sha256": "4bac680485d6e651165666c80ee1929ae4a6efc4f41c7d4a35d9b981426b4d94",
+      "shape": [
+        37,
+        37
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "matrix",
+      "member": "meat_free37.csv",
+      "metadata": {},
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\meat_free37.csv",
+      "sha256": "548be0a6c122ef636931e53f7818296929fab2ee6060b2a2eba8781ccc49b02c",
+      "shape": [
+        37,
+        37
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "matrix",
+      "member": "meat_interior35.npy",
+      "metadata": {},
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\meat_interior35.npy",
+      "sha256": "3551b319ead355619577e58725e1071ae400c6964ef9510c2a029a81753e0e89",
+      "shape": [
+        35,
+        35
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "matrix",
+      "member": "meat_interior35.csv",
+      "metadata": {},
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\meat_interior35.csv",
+      "sha256": "b2a1f2144745a55423695523c3d2e8f2837a0bb9d65756f6a222ed562af3cfed",
+      "shape": [
+        35,
+        35
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "matrix",
+      "member": "phase5_covariance_model.npy",
+      "metadata": {},
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\phase5_covariance_model.npy",
+      "sha256": "04952ba16eb1032a315000f2fd5593de7faa37f8bd571a01c1c8181e0c185632",
+      "shape": [
+        35,
+        35
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "matrix",
+      "member": "phase5_covariance_model.csv",
+      "metadata": {},
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\phase5_covariance_model.csv",
+      "sha256": "2e72678a6b7392f53794add0d20ff089bf2f0c5c8819f8327877c97a81e2ed73",
+      "shape": [
+        35,
+        35
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "matrix",
+      "member": "phase5_covariance_robust.npy",
+      "metadata": {},
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\phase5_covariance_robust.npy",
+      "sha256": "0b4e2a509b718ad67d337784df7c38cb4e1edcec9514b78a1f73edf3aff6a80b",
+      "shape": [
+        35,
+        35
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "matrix",
+      "member": "phase5_covariance_robust.csv",
+      "metadata": {},
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\phase5_covariance_robust.csv",
+      "sha256": "c43710b4f5452ba10e569f44bab4b2853c4b21c9c09bbbf3510f153cbe3b094c",
+      "shape": [
+        35,
+        35
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "matrix",
+      "member": "phase5_correlation_model.csv",
+      "metadata": {},
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\phase5_correlation_model.csv",
+      "sha256": "d9d0d2eb4616693297021bb2b17aba1dbb49e752f057302dc02da2a0d0bd461a",
+      "shape": [
+        35,
+        35
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "matrix",
+      "member": "phase5_correlation_robust.csv",
+      "metadata": {},
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\phase5_correlation_robust.csv",
+      "sha256": "b0c857c8a9432031996f8d2ee5fb51943e649cfc52417dcfd44e3bbcaa7af652",
+      "shape": [
+        35,
+        35
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "matrix",
+      "member": "phase5_regional_covariance.csv",
+      "metadata": {},
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\phase5_regional_covariance.csv",
+      "sha256": "3cba5b4389073d41022cc9e3a43afc6a3a826f2e139ec18a09d554e795db4111",
+      "shape": [
+        10,
+        10
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "table",
+      "member": "phase5_standard_errors.csv",
+      "metadata": {},
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\phase5_standard_errors.csv",
+      "sha256": "da92759879c7e451a5b1ff488a48e13ec7e6dd98b793ebf7caa9313b420f3fbb",
+      "shape": [
+        35,
+        4
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "table",
+      "member": "phase5_parameter_table.csv",
+      "metadata": {
+        "correction_c": 1.0230263157894737,
+        "csv_gradient_column_used_for_arithmetic": false,
+        "csv_gradient_note": "phase5_parameter_map_v1.csv grad_free_negll is a reduced-precision rendering, compared here and never used in any computation",
+        "csv_vs_authoritative_gradient_max_abs_dev": 3.06287113727155e-17,
+        "full_sample_meat": true,
+        "gradient_source": "outputs/p2a_singles2016/region_live_v1/phase4_curvature_v1/complete/phase4_diagnostics.json",
+        "gradient_source_authoritative": true,
+        "inference_grade": "full-sample",
+        "meat_n_households": 1555
+      },
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\phase5_parameter_table.csv",
+      "sha256": "6727692a8614c8a8cf01c0d5d98a75bc737d026e6c297c73b6f4826172deebb2",
+      "shape": [
+        47,
+        13
+      ]
+    },
+    {
+      "inference_grade": "full-sample",
+      "kind": "table",
+      "member": "phase5_regional_tests.csv",
+      "metadata": {
+        "correction_c": 1.0230263157894737,
+        "full_sample_meat": true,
+        "inference_grade": "full-sample",
+        "meat_n_households": 1555,
+        "scale_note": "bread is always the whole-sample Phase-4 Hessian; a meat accumulated over n < 1555 households yields a covariance scaled by ~n/G. Such an object exercises algebra and structural gates only and is not an inferential result."
+      },
+      "path": "C:\\Users\\hisham\\Repo\\MNL\\outputs\\p2a_singles2016\\region_live_v1\\phase5_inference_v1\\.staging\\20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun\\phase5_regional_tests.csv",
+      "sha256": "47dae8014ec2c536cb3cf79e27a61f50af4871f3c0303d3be1737fb9f735b584",
+      "shape": [
+        4,
+        9
+      ]
+    }
+  ],
+  "attempt_id": "20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun",
+  "bundle_sha256": "d08947ce015f2b2a922c6d5591ebe600c53016922b3a1158d90f125cd2195232",
+  "config": {
+    "path": "scripts/p2a/configs/p2a_phase5_inference_v1.yaml",
+    "sha256": "08be1cf6a7be0ff64a6417aef8e979003f5fa4f48f826b4d202ffd50c1f161d9"
+  },
+  "creates_complete": false,
+  "environment": {
+    "cpu_count": 64,
+    "executable": "C:\\Users\\hisham\\Repo\\MNL\\.venv\\Scripts\\python.exe",
+    "jax": "0.10.1",
+    "jax_default_backend": "cpu",
+    "jax_device_count": 1,
+    "jaxlib": "0.10.1",
+    "machine": "AMD64",
+    "numpy": "2.3.5",
+    "pandas": "2.3.3",
+    "platform": "Windows-2022Server-10.0.20348-SP0",
+    "processor": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD",
+    "python": "3.12.2",
+    "python_full": "3.12.2 (tags/v3.12.2:6abddd9, Feb  6 2024, 21:26:36) [MSC v.1937 64 bit (AMD64)]",
+    "scipy": "1.16.2",
+    "threads": {
+      "JAX_ENABLE_X64": null,
+      "JAX_PLATFORMS": null,
+      "MKL_NUM_THREADS": null,
+      "NUMEXPR_NUM_THREADS": null,
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "XLA_FLAGS": null
+    }
+  },
+  "float64_activation": {
+    "activated_by": "dclaborsupply.likelihood.engine_jax._load_jax",
+    "jax_enable_x64": true
+  },
+  "gating_failures": [],
+  "generated_at": "2026-08-03T13:32:09.510170+00:00",
+  "inference_grade": "full-sample",
+  "member_inventory": [
+    "meat_free37.csv",
+    "meat_free37.npy",
+    "meat_interior35.csv",
+    "meat_interior35.npy",
+    "phase5_console.log",
+    "phase5_correlation_model.csv",
+    "phase5_correlation_robust.csv",
+    "phase5_covariance_model.csv",
+    "phase5_covariance_model.npy",
+    "phase5_covariance_robust.csv",
+    "phase5_covariance_robust.npy",
+    "phase5_diagnostics.json",
+    "phase5_parameter_table.csv",
+    "phase5_regional_covariance.csv",
+    "phase5_regional_tests.csv",
+    "phase5_standard_errors.csv",
+    "score_aggregate_summary.json",
+    "score_sum_free37.csv",
+    "phase5_manifest.json"
+  ],
+  "mode": "dry-run-only",
+  "phase": 5,
+  "real_run_supported": false,
+  "reproduction": {
+    "child_digest": "7f71a532ff66a1e882f4a085ca78e14a9788e6c98cff8c04957b9df4c3ff4a80",
+    "child_environment_recorded": true,
+    "second_score_file_created": false
+  },
+  "reproduction_tuple": {
+    "ad_mode": "jacfwd",
+    "batch_size": 128,
+    "idhh_encoding": "int64_le"
+  },
+  "run": "p2a_phase5_inference_v1",
+  "status": "PHASE_5_DRY_RUN_COMPLETE",
+  "stop": null,
+  "transient_batch_existed_in_memory_only": false,
+  "transient_batch_serialized": false
+}

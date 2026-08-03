@@ -1,0 +1,468 @@
+{
+  "attempt_id": "20260803T133122Z_14772_817e8deb503d408fa73b8b53d598c0db_dryrun",
+  "full_population": true,
+  "gates": [
+    {
+      "bar": {
+        "bread_sha256": "e9ca080ecc7e40e43881b9422af0095f23ad2bfef3e84648d2031a33eb9e4061",
+        "phase3": "2cf237648743f59bd742b12feceaea67c5fd377b26faf4fb6fad6f452f86864b",
+        "phase4": "5484886985aecd28e511719e42f45b85ad0e1755d1f951dbd13a79281d9665f3",
+        "theta_sha256": "c024b89386c502003f9d4abb927b048dfab42c0bafe48d9a69d9fcb330f0580d"
+      },
+      "gate": "T-5",
+      "observed": {
+        "bread_sha256": "e9ca080ecc7e40e43881b9422af0095f23ad2bfef3e84648d2031a33eb9e4061",
+        "bread_sha256_matches": true,
+        "phase3": "2cf237648743f59bd742b12feceaea67c5fd377b26faf4fb6fad6f452f86864b",
+        "phase3_bundle_matches": true,
+        "phase4": "5484886985aecd28e511719e42f45b85ad0e1755d1f951dbd13a79281d9665f3",
+        "phase4_bundle_matches": true,
+        "theta_bytes_match": true,
+        "theta_sha256": "c024b89386c502003f9d4abb927b048dfab42c0bafe48d9a69d9fcb330f0580d"
+      },
+      "passed": true,
+      "statement": "Bread provenance: hessian_free.npy SHA-256, the Phase-3 and Phase-4 bundle hashes, and the accepted theta-byte hash all match their design v4 s15 anchors",
+      "tier": "gating"
+    },
+    {
+      "bar": {
+        "eigen_rtol": 1e-10,
+        "phase4_condition_number": 405353.94719781954,
+        "phase4_min_eig": 0.1037326963880782,
+        "symmetry_threshold": 0.00023588019878151842
+      },
+      "gate": "T-6",
+      "observed": {
+        "H_II_cholesky_succeeds": true,
+        "asymmetry_within_threshold": true,
+        "condition_matches_phase4": true,
+        "condition_number_Hs": 405353.9471978127,
+        "max_abs_asymmetry_raw": 1.8189894035458565e-12,
+        "min_eig_Hs": 0.10373269638807983,
+        "min_eig_matches_phase4": true,
+        "min_eig_positive": true,
+        "rank_Hs": 37,
+        "rank_is_37": true
+      },
+      "passed": true,
+      "statement": "Bread integrity on load: symmetry, PD, rank 37, Phase-4 eigen agreement at rtol 1e-10, name-keyed H_II, Cholesky of H_II",
+      "tier": "gating"
+    },
+    {
+      "bar": {
+        "kappa_BE_certified": 6.0424e-12,
+        "psd_floor": -2.8352958779233604e-07,
+        "symmetry_rel": 1e-12
+      },
+      "gate": "T-7",
+      "observed": {
+        "max_abs_M": 46526.863665472956,
+        "max_abs_asymmetry": 0.0,
+        "max_eig": 46923.33969818881,
+        "min_eig": 0.14190654222532723,
+        "psd_within_backward_error": true,
+        "rank": 35,
+        "symmetric_before_symmetrisation": true
+      },
+      "passed": true,
+      "statement": "Meat validity: max|M - M'| <= 1e-12*max|M| before symmetrisation; min_eig(M) >= -kappa_BE_certified * max_eig(M)",
+      "tier": "gating"
+    },
+    {
+      "bar": {
+        "atol": 1e-08
+      },
+      "gate": "T-8",
+      "observed": {
+        "explicit_inverse_used": false,
+        "inverse_route": "scipy.linalg.cho_solve(cho_factor(H_II), I_35)",
+        "solve_vs_pinv_max_abs_dev": 1.9602097722781764e-12
+      },
+      "passed": true,
+      "statement": "Solve stability: every inverse-like operation by factorisation; max abs deviation from a pseudo-inverse reference <= 1e-8",
+      "tier": "gating"
+    },
+    {
+      "bar": {
+        "psd_rel": 1e-10,
+        "symmetry_rel": 1e-12
+      },
+      "gate": "T-9",
+      "observed": {
+        "V_model_diag_positive_finite": true,
+        "V_model_max_abs_asymmetry": 3.0531133177191805e-16,
+        "V_model_max_eig": 7.072330963477993,
+        "V_model_min_eig": 2.378208564786934e-05,
+        "V_model_positive_definite": true,
+        "V_model_symmetric": true,
+        "V_robust_diag_positive_finite": true,
+        "V_robust_max_abs_asymmetry": 1.6653345369377348e-15,
+        "V_robust_max_eig": 16.022778095587135,
+        "V_robust_min_eig": 2.2265986370736487e-05,
+        "V_robust_psd": true,
+        "V_robust_symmetric": true
+      },
+      "passed": true,
+      "statement": "Covariance validity: symmetry to 1e-12 relative; V_model PD; V_robust PSD at min_eig >= -1e-10*max_eig; all 35 diagonals strictly positive and finite",
+      "tier": "gating"
+    },
+    {
+      "bar": {
+        "correction_c": 1.0230263157894737
+      },
+      "gate": "T-10",
+      "observed": {
+        "correction_G": 1555,
+        "correction_K": 35,
+        "correction_N": 1555,
+        "correction_c": 1.0230263157894737,
+        "correction_formula": "[G/(G-1)] * [(N-1)/(N-K)] = G/(G-K)",
+        "correction_se_inflation_pct": 1.1447633735663931,
+        "correction_telescoped": "1555/1520",
+        "cr0_recoverable": true
+      },
+      "passed": true,
+      "statement": "Correction scalar recorded as an explicit number with its formula, G, N, K and the telescoped form G/(G-K)",
+      "tier": "gating"
+    },
+    {
+      "bar": {
+        "degrees_of_freedom": [
+          10,
+          7,
+          2,
+          1
+        ],
+        "rank": 10
+      },
+      "gate": "T-14",
+      "observed": {
+        "V_RR_positive_definite": true,
+        "V_RR_rank_10": true,
+        "V_RR_robust_min_eig": 0.018139225240310614,
+        "all_W_finite": true,
+        "both_forms_present": true,
+        "degrees_of_freedom": true
+      },
+      "passed": true,
+      "statement": "Regional tests: V_RR PD, rank 10; W finite for H0-A/B/C/G; both model and robust computed; df recorded as 10, 7, 2, 1",
+      "tier": "gating"
+    },
+    {
+      "bar": {
+        "free_names_sha256": "cb50ecd838951c83a7c7844e388c764a3f4b5686047d94b733b71e3da32d3333",
+        "interior_names_sha256": "44af628ff113e675ec530e70e712da4ce3f0231e7bea5b449e144046e4c3942b"
+      },
+      "gate": "T-17",
+      "observed": {
+        "free_fingerprint_match": true,
+        "free_names_match": true,
+        "free_names_sha256": "cb50ecd838951c83a7c7844e388c764a3f4b5686047d94b733b71e3da32d3333",
+        "interior_fingerprint_match": true,
+        "interior_names_match": true,
+        "interior_names_sha256": "44af628ff113e675ec530e70e712da4ce3f0231e7bea5b449e144046e4c3942b"
+      },
+      "passed": true,
+      "statement": "Parameter-order fingerprint: SHA-256 of the newline-joined ordered 37 free names and 35 interior names equal the values recomputed from phase4_manifest.json contract.parameter_map",
+      "tier": "gating"
+    },
+    {
+      "bar": {
+        "correlation_bound": 1.0000000001
+      },
+      "gate": "T-18",
+      "observed": {
+        "model_bounded": true,
+        "model_max_abs_rho": 1.0,
+        "model_max_diag_dev": 0.0,
+        "model_unit_diagonal": true,
+        "robust_bounded": true,
+        "robust_max_abs_rho": 1.0,
+        "robust_max_diag_dev": 0.0,
+        "robust_unit_diagonal": true
+      },
+      "passed": true,
+      "statement": "Valid correlations: |rho_ij| <= 1 + 1e-10 for all pairs in both covariances; unit diagonal after construction",
+      "tier": "gating"
+    },
+    {
+      "bar": {
+        "se_fraction": 0.05
+      },
+      "gate": "T-19",
+      "observed": {
+        "displacement_l2": 8.56120900863063e-05,
+        "max_ratio": 3.395227883277041e-05,
+        "worst_coordinate_index": 5,
+        "worst_coordinate_name": "beta_l_nkids_sf"
+      },
+      "passed": true,
+      "statement": "Conditional-35 stationarity: |(H_II^-1 g_I)_j| <= 0.05 * se_robust_j for every interior coordinate",
+      "tier": "gating"
+    },
+    {
+      "bar": {
+        "factor": 100.0,
+        "floor": 0.010992597206183063,
+        "required_names": [
+          "beta_l_age2_sm",
+          "beta_l_age2_sf"
+        ]
+      },
+      "gate": "T-22",
+      "observed": {
+        "active_names_ok": true,
+        "extra_names": [],
+        "interior_max_abs_grad": 0.00010992597206183063,
+        "missing_names": [],
+        "multipliers": {
+          "beta_l_age2_sf": 1.4682021491125388,
+          "beta_l_age2_sm": 0.8445544161794221
+        },
+        "ratios": {
+          "beta_l_age2_sf": 13356.280791282987,
+          "beta_l_age2_sm": 7682.937893006588
+        },
+        "supplied_names": [
+          "beta_l_age2_sf",
+          "beta_l_age2_sm"
+        ],
+        "threshold_ok": true
+      },
+      "passed": true,
+      "statement": "Numerical KKT activity (sample-level, not a population claim): the multiplier mapping must carry EXACTLY the two authenticated active-bound names, and each multiplier must be >= 100 x the interior max |grad negLL|",
+      "tier": "gating"
+    },
+    {
+      "bar": {
+        "atol": 1e-08,
+        "gradient_source": "outputs/p2a_singles2016/region_live_v1/phase4_curvature_v1/complete/phase4_diagnostics.json",
+        "rtol": 1e-08
+      },
+      "gate": "T-1/T-4",
+      "observed": {
+        "applicable": true,
+        "max_abs_dev": 1.4566126083082054e-13,
+        "n_households": 1555
+      },
+      "passed": true,
+      "statement": "Score identity from the streamed aggregate: np.allclose(sum_scores, -gradient_free, atol=1e-8, rtol=1e-8)",
+      "tier": "gating"
+    },
+    {
+      "bar": {
+        "range": [
+          0.2,
+          5.0
+        ]
+      },
+      "gate": "W-1",
+      "observed": {
+        "flagged": [],
+        "inference_grade": "full-sample",
+        "max_ratio": 1.8283414026495457,
+        "min_ratio": 0.721073967218604
+      },
+      "passed": true,
+      "statement": "Robust/model SE ratio per parameter; flag any ratio outside [0.2, 5]. Warning-tier: never determines the verdict",
+      "tier": "warning"
+    },
+    {
+      "bar": {},
+      "gate": "W-2",
+      "observed": {
+        "eigenvalues": [
+          0.018139225240310614,
+          0.03209758906273046,
+          0.03803406547578143,
+          0.042679425754353406,
+          0.056675146426539744,
+          0.05750545324429541,
+          0.06721433536599497,
+          0.078886532034432,
+          0.09820920961688148,
+          0.4451523077290235
+        ],
+        "inference_grade": "full-sample",
+        "weakest_direction_eigenvalue": 0.018139225240310614,
+        "weakest_direction_index": 0
+      },
+      "passed": true,
+      "statement": "Eigenspectrum of V_RR reported with its weakest direction identified (reporting requirement, not a gate)",
+      "tier": "warning"
+    },
+    {
+      "bar": {
+        "dimension": 35
+      },
+      "gate": "W-3",
+      "observed": {
+        "effective_rank_participation": 2.4775911885215502,
+        "max_eig": 46923.33969818881,
+        "min_eig": 0.14190654222532723,
+        "numerical_rank": 35
+      },
+      "passed": true,
+      "statement": "Effective-rank summary of M relative to 35",
+      "tier": "warning"
+    },
+    {
+      "bar": {
+        "rule": "strict interiority; <= lb or >= ub triggers"
+      },
+      "gate": "W-4",
+      "observed": {
+        "detail": {
+          "beta_l0_sm": {
+            "hi": 9.683896877332586,
+            "lb": 0.05,
+            "lo": -0.12309900960568587,
+            "ub": 50.0
+          },
+          "beta_w_pexp2": {
+            "hi": 0.07539182354674019,
+            "lb": -0.1,
+            "lo": -0.1014429187847586,
+            "ub": 0.1
+          }
+        },
+        "flagged": [
+          "beta_l0_sm",
+          "beta_w_pexp2"
+        ],
+        "inference_grade": "full-sample",
+        "z_975": 1.959963984540054
+      },
+      "passed": false,
+      "statement": "Near-boundary containment on the ROBUST 95% interval: theta_j +- z_0.975 * se_robust_j must lie strictly inside [lb_j, ub_j]; equality with a bound triggers the warning (mandatory escalation)",
+      "tier": "warning"
+    },
+    {
+      "bar": {},
+      "gate": "W-5",
+      "observed": {
+        "inference_grade": "full-sample",
+        "omitted_correction_max_abs": 7.770880597461057e-12,
+        "score_sum_interior_l2": 0.0002623980639074418,
+        "score_sum_interior_max_abs": 0.00010992597204051435,
+        "uncentred": true
+      },
+      "passed": true,
+      "statement": "Centring diagnostic: record ||sum_g s_{g,I}||_inf and the magnitude of the centring correction to M that is NOT applied (design v4 s9.2 baseline: do not centre)",
+      "tier": "warning"
+    },
+    {
+      "bar": {
+        "aggregate_atol": 0.0,
+        "aggregate_rtol": 0.0,
+        "exact_keys": [
+          "score_stream_sha256",
+          "order_sha256",
+          "free_names_sha256",
+          "interior_names_sha256",
+          "n_households",
+          "batch_size",
+          "n_batches",
+          "idhh_encoding",
+          "dtype",
+          "byte_order"
+        ],
+        "frozen_tuple": {
+          "ad_mode": "jacfwd",
+          "batch_size": 128,
+          "idhh_encoding": "int64_le"
+        }
+      },
+      "gate": "T-12S",
+      "observed": {
+        "batch_size_exact": true,
+        "byte_order_exact": true,
+        "child_digest": "7f71a532ff66a1e882f4a085ca78e14a9788e6c98cff8c04957b9df4c3ff4a80",
+        "dtype_exact": true,
+        "free_names_sha256_exact": true,
+        "idhh_encoding_exact": true,
+        "interior_names_sha256_exact": true,
+        "meat_free37_match": true,
+        "meat_free37_max_abs_dev": 0.0,
+        "meat_interior35_match": true,
+        "meat_interior35_max_abs_dev": 0.0,
+        "n_batches_exact": true,
+        "n_households_exact": true,
+        "order_sha256_exact": true,
+        "parent_digest": "7f71a532ff66a1e882f4a085ca78e14a9788e6c98cff8c04957b9df4c3ff4a80",
+        "score_stream_sha256_exact": true,
+        "score_sum_free37_match": true,
+        "score_sum_free37_max_abs_dev": 0.0
+      },
+      "passed": true,
+      "statement": "Fresh-process aggregate reproduction: a new interpreter re-streams from the accepted sources and reproduces the score-stream digest, score sum, M_37, M_35, order fingerprint, household count, batch size and environment. No second score file is created.",
+      "tier": "gating"
+    },
+    {
+      "bar": {
+        "allowlist": [
+          "score_aggregate_summary.json",
+          "score_sum_free37.csv",
+          "meat_free37.npy",
+          "meat_free37.csv",
+          "meat_interior35.npy",
+          "meat_interior35.csv",
+          "phase5_covariance_model.npy",
+          "phase5_covariance_model.csv",
+          "phase5_covariance_robust.npy",
+          "phase5_covariance_robust.csv",
+          "phase5_correlation_model.csv",
+          "phase5_correlation_robust.csv",
+          "phase5_parameter_table.csv",
+          "phase5_regional_covariance.csv",
+          "phase5_regional_tests.csv",
+          "phase5_standard_errors.csv",
+          "phase5_diagnostics.json",
+          "phase5_manifest.json",
+          "phase5_console.log"
+        ]
+      },
+      "gate": "T-23S",
+      "observed": {
+        "leftovers": [],
+        "member_set_allowlisted": true,
+        "members": [
+          "meat_free37.csv",
+          "meat_free37.npy",
+          "meat_interior35.csv",
+          "meat_interior35.npy",
+          "phase5_correlation_model.csv",
+          "phase5_correlation_robust.csv",
+          "phase5_covariance_model.csv",
+          "phase5_covariance_model.npy",
+          "phase5_covariance_robust.csv",
+          "phase5_covariance_robust.npy",
+          "phase5_parameter_table.csv",
+          "phase5_regional_covariance.csv",
+          "phase5_regional_tests.csv",
+          "phase5_standard_errors.csv",
+          "score_aggregate_summary.json",
+          "score_sum_free37.csv"
+        ],
+        "no_restricted_store_member": true,
+        "no_row_level_2d_array": true,
+        "no_row_level_score_member": true,
+        "no_temporary_batch_remains": true,
+        "non_allowlisted": [],
+        "row_level_arrays": [],
+        "transient_batch_existed_in_memory_only": false,
+        "transient_batch_serialized": false
+      },
+      "passed": true,
+      "statement": "No row-level score persistence: the member set is allowlist-closed and aggregate-only, no restricted-store member exists, and no temporary batch remains after success or failure.",
+      "tier": "gating"
+    }
+  ],
+  "gating_failures": [],
+  "generated_at": "2026-08-03T13:31:22.268483+00:00",
+  "n_households_requested": null,
+  "status": "PHASE_5_DRY_RUN_COMPLETE",
+  "stop": null,
+  "transient_batch_existed_in_memory_only": false,
+  "transient_batch_serialized": false
+}

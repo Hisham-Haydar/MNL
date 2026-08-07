@@ -1,0 +1,32 @@
+cell02| v2 controls: {'RUN_PRICING': False, 'RUN_ESTIMATION': False, 'RUN_INFERENCE': False, 'RUN_POST_ESTIMATION': False, 'RUN_WELFARE': False, 'EXPORT_PRODUCTION_GEOMETRY': False}
+cell02| NOTEBOOK_OUTPUT_ROOT = outputs\p2a_singles2016\notebook_dev_v2
+cell03| raw shape   : (26560, 124) | households: 11459 | persons: 26560
+cell05| required present : {'idhh': True, 'idperson': True, 'idpartner': True, 'dag': True, 'dgn': True, 'les': True, 'lhw': True, 'deh': True, 'loc': True, 'yivwg': True, 'yem': True, 'yse': True}
+cell05| FR-specific      : {'drgn1': True, 'drgur': True, 'drgmd': True, 'drgru': True, 'yem00': True, 'yemxp': True, 'lma': False, 'liwwh': True, 'dew': True, 'dey': True, 'bsa00': True, 'bsa00_s': False}
+cell09| household_class
+cell09| couple_mf              5965
+cell09| single                 4038
+cell09| excl_3plus_adults       930
+cell09| excl_2adult_no_link     452
+cell09| excl_same_sex            53
+cell09| excl_no_adult            21
+cell09| Name: count, dtype: int64
+cell09| 
+cell09| deciders flagged: 15968
+cell11| 4.0 baseline (single + couple_mf)                households= 10003  persons= 21842
+cell12| 4.1 age (all deciders 20-60)                     households=  5793  persons= 15252
+cell13| 4.2 education (deciders dec==0)                  households=  5557  persons= 14701
+cell14| retire cols used: ['pdi', 'poa', 'psu']
+cell14| 4.3 retirement/disability (HH sum == 0)          households=  4973  persons= 13521
+cell15| 4.4 allowed LES (deciders in {3,5,7})            households=  4010  persons= 10369
+cell16| 4.5 other members (no capable/earning non-deciders) households=  3887  persons=  9922
+cell17| capped >70h: 25   ->inactive (<=5h): 6   nonemp hours->0: 407
+cell17| 4.6 hours cap + wage bounds (employees)          households=  3830  persons=  9740
+cell18| singles households: 1555
+cell18| couples households: 2275
+cell20| worker rule: les==3 & lhw>0 fallback
+cell20|   region drgn1: present (keep for FR)
+cell20|   region drgur: present (keep for FR)
+cell20|   region drgmd: present (keep for FR)
+cell20|   region drgru: present (keep for FR)
+cell20|   yem00/yemxp present: (True, True)

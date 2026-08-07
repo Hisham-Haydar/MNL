@@ -1,0 +1,80 @@
+cell02| v2 controls: {'RUN_PRICING': False, 'RUN_ESTIMATION': False, 'RUN_INFERENCE': False, 'RUN_POST_ESTIMATION': False, 'RUN_WELFARE': False, 'EXPORT_PRODUCTION_GEOMETRY': False}
+cell02| NOTEBOOK_OUTPUT_ROOT = outputs\p2a_singles2016\notebook_dev_v2
+cell03| raw shape   : (26560, 124) | households: 11459 | persons: 26560
+cell05| required present : {'idhh': True, 'idperson': True, 'idpartner': True, 'dag': True, 'dgn': True, 'les': True, 'lhw': True, 'deh': True, 'loc': True, 'yivwg': True, 'yem': True, 'yse': True}
+cell05| FR-specific      : {'drgn1': True, 'drgur': True, 'drgmd': True, 'drgru': True, 'yem00': True, 'yemxp': True, 'lma': False, 'liwwh': True, 'dew': True, 'dey': True, 'bsa00': True, 'bsa00_s': False}
+cell09| household_class
+cell09| couple_mf              5965
+cell09| single                 4038
+cell09| excl_3plus_adults       930
+cell09| excl_2adult_no_link     452
+cell09| excl_same_sex            53
+cell09| excl_no_adult            21
+cell09| Name: count, dtype: int64
+cell09| 
+cell09| deciders flagged: 15968
+cell11| 4.0 baseline (single + couple_mf)                households= 10003  persons= 21842
+cell12| 4.1 age (all deciders 20-60)                     households=  5793  persons= 15252
+cell13| 4.2 education (deciders dec==0)                  households=  5557  persons= 14701
+cell14| retire cols used: ['pdi', 'poa', 'psu']
+cell14| 4.3 retirement/disability (HH sum == 0)          households=  4973  persons= 13521
+cell15| 4.4 allowed LES (deciders in {3,5,7})            households=  4010  persons= 10369
+cell16| 4.5 other members (no capable/earning non-deciders) households=  3887  persons=  9922
+cell17| capped >70h: 25   ->inactive (<=5h): 6   nonemp hours->0: 407
+cell17| 4.6 hours cap + wage bounds (employees)          households=  3830  persons=  9740
+cell18| singles households: 1555
+cell18| couples households: 2275
+cell20| worker rule: les==3 & lhw>0 fallback
+cell20|   region drgn1: present (keep for FR)
+cell20|   region drgur: present (keep for FR)
+cell20|   region drgmd: present (keep for FR)
+cell20|   region drgru: present (keep for FR)
+cell20|   yem00/yemxp present: (True, True)
+cell21| Observed is_worker rows with loc4=-2: 37 (35 households). Keeping them: MNL convention treats -2 as unknown observed occupation; simulated working draws are mode-imputed to {1,2,3,4}.
+cell21| loc4 counts:
+cell23| EUROMOD input columns: 124
+cell23| SKIP_PRICING=True: observed-state EUROMOD run skipped (em_input + conn built).
+cell24| SKIP_PRICING: observed ils_dispy histogram skipped.
+cell26| singles households: 1555 | persons: 2236
+cell26| single deciders   : 1555 | female share   : 0.541
+cell28| gsur merged: n=1555 range [0.0532,0.2250]
+cell28| pexp_years: med=1.000 max=2.200
+cell30| == hours_mixture_d1 -> C:\Users\hisham\Repo\MNL\scripts\bpool\hours_mixture_d1.py
+cell30|    draw_hours_d1(n: 'int', rng: 'np.random.Generator', weights: 'np.ndarray | None' = None) -> 'tuple[np.ndarray, np.ndarray]'
+cell30|    log_q_H_d1(hours: 'np.ndarray', weights: 'np.ndarray | None' = None) -> 'np.ndarray'
+cell30|    lockstep_check_d1(hours: 'np.ndarray', log_q_H_drawn: 'np.ndarray', component_k: 'np.ndarray', weights: 'np.ndarray | None' = None, rtol: 'float' = 1e-06) -> 'dict'
+cell30|    hours_bin_summary(hours_chosen: 'np.ndarray', weights: 'np.ndarray | None' = None) -> 'dict'
+cell30| == occ_draw_empirical -> C:\Users\hisham\Repo\MNL\scripts\bpool\occ_draw_empirical.py
+cell30|    draw_loc4(dgn: 'np.ndarray', educ3: 'np.ndarray', rng: 'np.random.Generator') -> 'tuple[np.ndarray, np.ndarray]'
+cell30|    log_q_loc4(loc4: 'np.ndarray', dgn: 'np.ndarray', educ3: 'np.ndarray') -> 'np.ndarray'
+cell30| == pilot_wage_draw -> C:\Users\hisham\Repo\MNL\scripts\pilot\pilot_wage_draw.py
+cell30|    draw_pilot_wages(*, n: 'int', educL: 'np.ndarray', educH: 'np.ndarray', pexp_years: 'np.ndarray', pexp_years2: 'np.ndarray', loc4: 'np.ndarray', year_tag: 'np.ndarray | None', mincer_payload: 'dict[str, Any]', seed: 'int', draw_method: 'str' = 'halton') -> 'dict[str, np.ndarray | str]'
+cell30|    log_q_pilot_wages(*, wage: 'np.ndarray', mu: 'np.ndarray', sigma: 'float') -> 'np.ndarray'
+cell30|    lockstep_sanity_check(*, educL: 'np.ndarray', educH: 'np.ndarray', pexp_years: 'np.ndarray', pexp_years2: 'np.ndarray', loc4: 'np.ndarray', year_tag: 'np.ndarray | None', mincer_payload: 'dict[str, Any]', seed: 'int' = 12345) -> 'dict[str, float | int]'
+cell30| missing: none — all three importable
+cell30| mincer wage_model_W1 keys: ['specification', 'coef', 'se', 'sigma', 'sigma_note', 'r2', 'n', 'k', 'calibrated_delta_occ'] | sigma: 0.377087
+cell30| 
+cell30| 5-person working smoke:
+cell30|   dgn=1 educ3=0 | hours= 40.2 loc4=2 wage=  6.55 | log_q_H=-2.996 log_q_Occ=-2.312 log_q_W=-2.650
+cell30|   dgn=1 educ3=1 | hours= 35.3 loc4=4 wage= 16.60 | log_q_H=-2.526 log_q_Occ=-1.527 log_q_W=-2.785
+cell30|   dgn=0 educ3=2 | hours= 20.4 loc4=2 wage= 11.11 | log_q_H=-3.283 log_q_Occ=-2.560 log_q_W=-2.427
+cell30|   dgn=0 educ3=0 | hours= 19.7 loc4=1 wage= 17.00 | log_q_H=-3.283 log_q_Occ=-0.550 log_q_W=-3.310
+cell30|   dgn=1 educ3=2 | hours= 65.8 loc4=4 wage= 13.32 | log_q_H=-5.735 log_q_Occ=-0.210 log_q_W=-2.821
+cell30|   log_prior (working) = [-8.063 -6.943 -8.375 -7.249 -8.871] | wage draw method: halton
+cell31|   occ (dgn=0,educ3=0) max|emp-table|=0.0082  n=10103
+cell31|   occ (dgn=0,educ3=1) max|emp-table|=0.0028  n=32791
+cell31|   occ (dgn=0,educ3=2) max|emp-table|=0.0012  n=32697
+cell31|   occ (dgn=1,educ3=0) max|emp-table|=0.0019  n=10668
+cell31|   occ (dgn=1,educ3=1) max|emp-table|=0.0023  n=29485
+cell31|   occ (dgn=1,educ3=2) max|emp-table|=0.0022  n=24149
+cell31| 
+cell31| wage residual (log w - mu): mean=-0.0007 sd=0.3770  (sigma=0.3771)
+cell31|   loc4=1: n=43020 resid mean=+0.0004 sd=0.3754
+cell31|   loc4=2: n=20786 resid mean=-0.0048 sd=0.3777
+cell31|   loc4=3: n=13231 resid mean=-0.0001 sd=0.3775
+cell31|   loc4=4: n=62856 resid mean=-0.0001 sd=0.3778
+cell31| 
+cell31| draws_p2a: (157055, 162)  (1555 HH x 101)  — ALL GATES PASS
+cell31| cols: ['aca', 'aco', 'afc', 'age_norm', 'age_norm2', 'amrrm', 'amrtn', 'ate', 'bch00', 'bchcc', 'bched', 'bchlg', 'bchot', 'bchyc', 'bdi', 'bed', 'bfa', 'bhl', 'bho', 'bhoot', 'bhotn', 'bsa', 'bsa00', 'bsaoa', 'bsaot', 'bsuwd', 'bun', 'bunct', 'bunmt', 'bunmy', 'dag', 'dct', 'dcu', 'dcz', 'ddi', 'ddt', 'dec', 'decde', 'deh', 'dehde', 'dew', 'dey', 'dgn', 'dmb', 'dms', 'dncsy', 'draw', 'drg01', 'drgmd', 'drgn1', 'drgn2', 'drgru', 'drgur', 'dsu00', 'dsu01', 'dsu02', 'dwt', 'e20ps_o', 'e20pslw_o', 'e20psmd_o', 'e20pspo_o', 'educ3', 'educH', 'educL', 'educM', 'female', 'gsur', 'hours', 'household_class', 'idfather', 'idhh', 'idhh_true', 'idmother', 'idorighh', 'idorigperson', 'idpartner', 'idperson', 'idperson_true', 'is_chosen', 'is_worker', 'kfb', 'kfbcc', 'kfbmy', 'kivho', 'lcs', 'les', 'lfs', 'lhw', 'lhw_f', 'lindi', 'liwftmy', 'liwmy', 'liwmy_f', 'liwptmy', 'liwwh', 'liwwh_f', 'loc', 'loc4', 'loc_armed', 'loc_raw', 'loc_ruro', 'log_prior', 'log_q_E', 'log_q_H', 'log_q_Occ', 'log_q_W', 'lowas', 'lpemy', 'lse', 'lunmy', 'lunmy_f', 'pdi', 'pdi00', 'pdimy', 'pexp_years', 'pexp_years2', 'pexp_years_raw', 'poa', 'poa00', 'poamy', 'prior', 'psu', 'psumy', 'ruro_decider', 'tad', 'tis', 'tscer', 'twl', 'wage', 'wage_for_draws', 'wage_mu', 'wage_ruro', 'working', 'working_ft', 'working_lh', 'working_pt1', 'working_pt2', 'xhc', 'xhcmomi', 'xhcot', 'xhcrt', 'xmp', 'xpp', 'yds', 'ydses_o', 'yem', 'yem00', 'yem_f', 'yem_hour', 'yemmy', 'yempv', 'yemxp', 'yivwg', 'yiy', 'yot', 'ypp', 'ypr', 'ypt', 'yptmp', 'yse', 'yse_f', 'ysemy']
+cell32| [SKIPPED: EXPORT_PRODUCTION_GEOMETRY=False] production geometry freeze not run.
+cell34| pricing setup ready | working-zero cols: ('bun', 'bunmt', 'bunct', 'bsa') | fullyear: {'yemmy': 12.0, 'lunmy': 0.0}

@@ -1,0 +1,50 @@
+{
+  "chunk": "priced_00000",
+  "chunk_start": 0,
+  "households_in_batch": 200,
+  "alternatives_in_batch": 20200,
+  "euromod_rows_in_batch": 29492,
+  "stored_rows": 29492,
+  "row_order_identical_to_stored": true,
+  "euromod_seconds": 146.5,
+  "euromod_hard_errors": [],
+  "euromod_uprate_notes": 6,
+  "kept_columns": [
+    "idhh",
+    "idperson",
+    "source_idhh",
+    "source_idorighh",
+    "source_idperson",
+    "ruro_decider",
+    "dgn",
+    "draw",
+    "ils_dispy",
+    "bsa00_s"
+  ],
+  "components_available_repriced": [
+    "ils_origy",
+    "ils_sicdy",
+    "ils_tax",
+    "ils_ben"
+  ],
+  "accumulators_available": [
+    "i_bsa00_cumpers_nw",
+    "i_bsa00_cumpers_w"
+  ],
+  "column_summary": {
+    "ils_dispy": {
+      "max_abs_diff": 0.0,
+      "median_abs_diff": 0.0,
+      "n_rows_above_tol": 0,
+      "is_gate_column": true
+    },
+    "bsa00_s": {
+      "max_abs_diff": 0.0,
+      "median_abs_diff": 0.0,
+      "n_rows_above_tol": 0,
+      "is_gate_column": false
+    }
+  },
+  "n_rows_above_tol": 0,
+  "status": "PASS"
+}

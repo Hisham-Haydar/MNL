@@ -1,0 +1,1158 @@
+{
+  "gate": "m08_p2a_singles2016_parity_v1",
+  "cell": "FR-2016 singles, P2a region-live",
+  "tol_eur": 1e-06,
+  "attempt_id": "20260806T062050Z_339096_ffa19dbeb2a340babf918b3acdaa9f74_parity",
+  "started_utc": "2026-08-06T06:20:50Z",
+  "config": "scripts/welfare/configs/welfare_m08_p2a_parity_v1.yaml",
+  "config_sha256": "029d5ee618576c9a91cc2374500e3d632912c52d637a1b4268c1db4796979e81",
+  "runner_sha256": "69571a671492ec37151ca322003a4c551c6b218996949ea47e11b74a1a0b6467",
+  "library_sha256": "441b416d164827eab6b0822b2f6dfbda9d3de639aac61ddbdc0f144ac3181046",
+  "certification_standard": "PASS requires, on EVERY chunk: zero rows above the frozen tol_eur on every gate column AND zero non-finite values on BOTH the stored and the repriced side of every gate column AND zero EUROMOD hard errors. A non-finite value on either side is treated as an infinite absolute difference, never a masked NaN, so it both fails the chunk and appears in the failing-row capture. Witness-column non-finiteness is counted, captured and reported but does not gate.",
+  "scope": "reprice-parity validation of the committed P2a pricing cache; no redrawn node, no counterfactual, no welfare number, no production pricing-code change, no stored value modified",
+  "artifact_binding": {
+    "pin_source": "scripts/p2a/configs/p2a_regionlive_rebuild_v1.yaml",
+    "pin_path": [
+      "frozen_inputs",
+      "pricing_cache"
+    ],
+    "dir": "fr_singles_pricing_p2a",
+    "chunk_grid": [
+      0,
+      200,
+      400,
+      600,
+      800,
+      1000,
+      1200,
+      1400
+    ],
+    "declared_columns": [
+      "idhh",
+      "idperson",
+      "source_idhh",
+      "source_idorighh",
+      "source_idperson",
+      "ruro_decider",
+      "dgn",
+      "draw",
+      "ils_dispy",
+      "bsa00_s"
+    ],
+    "expected_rows_total": 225836,
+    "expected_hh": 1555,
+    "observed_rows_total": 225836,
+    "observed_hh": 1555,
+    "all_pins_match": true,
+    "chunks": [
+      {
+        "chunk": "priced_00000.parquet",
+        "expected_sha256": "c35ed8b553f24bfa9e51bbdad6ec9aab609c8765e850afc5be8424fceb924d30",
+        "observed_sha256": "c35ed8b553f24bfa9e51bbdad6ec9aab609c8765e850afc5be8424fceb924d30",
+        "match": true,
+        "bytes": 622229,
+        "rows": 29492,
+        "households": 200,
+        "draws": 101
+      },
+      {
+        "chunk": "priced_00200.parquet",
+        "expected_sha256": "f00923ac60705ca70ea53bb77127d3977e628dde8f2bc07de9805f7d732c912c",
+        "observed_sha256": "f00923ac60705ca70ea53bb77127d3977e628dde8f2bc07de9805f7d732c912c",
+        "match": true,
+        "bytes": 627798,
+        "rows": 29593,
+        "households": 200,
+        "draws": 101
+      },
+      {
+        "chunk": "priced_00400.parquet",
+        "expected_sha256": "d21fe881bdfe3768a3c7b6af729919bd2bde166b567c1f397865e0e2d44a42e6",
+        "observed_sha256": "d21fe881bdfe3768a3c7b6af729919bd2bde166b567c1f397865e0e2d44a42e6",
+        "match": true,
+        "bytes": 600875,
+        "rows": 27775,
+        "households": 200,
+        "draws": 101
+      },
+      {
+        "chunk": "priced_00600.parquet",
+        "expected_sha256": "8a9153de01c033b85bd6fa4d40327f5311263a787288e3919f4163ca6ab0f87f",
+        "observed_sha256": "8a9153de01c033b85bd6fa4d40327f5311263a787288e3919f4163ca6ab0f87f",
+        "match": true,
+        "bytes": 638376,
+        "rows": 30704,
+        "households": 200,
+        "draws": 101
+      },
+      {
+        "chunk": "priced_00800.parquet",
+        "expected_sha256": "d24e6d6db6c73288b800f4550f0075272bcbc01791734b4f245d6891cec4df8a",
+        "observed_sha256": "d24e6d6db6c73288b800f4550f0075272bcbc01791734b4f245d6891cec4df8a",
+        "match": true,
+        "bytes": 614565,
+        "rows": 28583,
+        "households": 200,
+        "draws": 101
+      },
+      {
+        "chunk": "priced_01000.parquet",
+        "expected_sha256": "184bae4430d4b248cbf73b93527b760db22afb146712078334c20a3a28f63cb5",
+        "observed_sha256": "184bae4430d4b248cbf73b93527b760db22afb146712078334c20a3a28f63cb5",
+        "match": true,
+        "bytes": 611648,
+        "rows": 28078,
+        "households": 200,
+        "draws": 101
+      },
+      {
+        "chunk": "priced_01200.parquet",
+        "expected_sha256": "aef0b58678ff59e6512d2bcbee67766c3fe19135941b70605c24831875c53d83",
+        "observed_sha256": "aef0b58678ff59e6512d2bcbee67766c3fe19135941b70605c24831875c53d83",
+        "match": true,
+        "bytes": 612838,
+        "rows": 28482,
+        "households": 200,
+        "draws": 101
+      },
+      {
+        "chunk": "priced_01400.parquet",
+        "expected_sha256": "e89d73678f97a9468bffff965d068263e25ea2b8f16ef3556e33c0e585e9d63b",
+        "observed_sha256": "e89d73678f97a9468bffff965d068263e25ea2b8f16ef3556e33c0e585e9d63b",
+        "match": true,
+        "bytes": 489308,
+        "rows": 23129,
+        "households": 155,
+        "draws": 101
+      }
+    ]
+  },
+  "frozen_inputs": {
+    "raw_fr_txt": {
+      "path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\Data\\FR\\FR_2016_a3.txt",
+      "expected_sha256": "da3eed570ff67cb06f9b0cef16bf9e7aa1d33ae579baff14a97f22c0f2c8bf88",
+      "observed_sha256": "da3eed570ff67cb06f9b0cef16bf9e7aa1d33ae579baff14a97f22c0f2c8bf88",
+      "match": true
+    },
+    "gsur_lookup": {
+      "path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\Data\\external\\FR_gsur_ruro_v2_stageA_y2015.parquet",
+      "expected_sha256": "f51ad6306574bf3a1d7b577e7741222c5bf2fb8126e512c0bbf965d6a2d03c83",
+      "observed_sha256": "f51ad6306574bf3a1d7b577e7741222c5bf2fb8126e512c0bbf965d6a2d03c83",
+      "match": true
+    },
+    "draws_geometry": {
+      "path": "outputs/p2a_singles2016/region_live_v1/inputs/fr_p2a_draws_geometry__singles.parquet",
+      "present": true,
+      "observed_sha256": "5bcf0e5409ef74c57f6de24efdfd24d0075132dc3138ddb57a22740b916cf235",
+      "declared_sha256": "5bcf0e5409ef74c57f6de24efdfd24d0075132dc3138ddb57a22740b916cf235",
+      "match": true
+    },
+    "euromod_system_files": {
+      "FR.xml": {
+        "path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\Euromod_model\\EUROMOD_RELEASES_J2.0+\\XMLParam\\Countries\\FR\\FR.xml",
+        "bytes": 57072125,
+        "mtime_utc": "2026-05-26T09:30:39Z"
+      },
+      "FR_DataConfig.xml": {
+        "path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\Euromod_model\\EUROMOD_RELEASES_J2.0+\\XMLParam\\Countries\\FR\\FR_DataConfig.xml",
+        "bytes": 808223,
+        "mtime_utc": "2026-05-26T09:30:39Z"
+      }
+    }
+  },
+  "reconstruction": {
+    "notebook": "dclaborsupply-monorepo/notebooks/fr_singles_pipeline_v2.ipynb",
+    "cells": [
+      2,
+      34
+    ],
+    "seconds": 20.8,
+    "chunk_size": 200,
+    "n_households": 1555,
+    "euromod": {
+      "country": "FR",
+      "system": "FR_2015",
+      "dataset": "FR_2016_a3",
+      "weeks_per_month": 4.333333333333333
+    }
+  },
+  "geometry_check": {
+    "frozen_geometry_present": true,
+    "rebuilt_rows": 157055,
+    "rebuilt_households": 1555,
+    "expected_rows": 157055,
+    "expected_households": 1555,
+    "compared_columns": [
+      "hours",
+      "wage",
+      "working",
+      "loc4",
+      "log_prior",
+      "is_chosen",
+      "idhh_true",
+      "idperson_true"
+    ],
+    "max_abs_diff_by_column": {
+      "hours": 0.0,
+      "wage": 0.0,
+      "working": 0.0,
+      "loc4": 0.0,
+      "log_prior": 0.0,
+      "is_chosen": 0.0,
+      "idhh_true": 0.0,
+      "idperson_true": 0.0
+    },
+    "max_abs_diff_overall": 0.0,
+    "matches_frozen_geometry": true
+  },
+  "run": {
+    "requested_chunks": [
+      0,
+      200,
+      400,
+      600,
+      800,
+      1000,
+      1200,
+      1400
+    ],
+    "chunk_grid": [
+      0,
+      200,
+      400,
+      600,
+      800,
+      1000,
+      1200,
+      1400
+    ],
+    "is_full_run": true
+  },
+  "chunk_results": [
+    {
+      "certification_standard": "PASS requires, on EVERY chunk: zero rows above the frozen tol_eur on every gate column AND zero non-finite values on BOTH the stored and the repriced side of every gate column AND zero EUROMOD hard errors. A non-finite value on either side is treated as an infinite absolute difference, never a masked NaN, so it both fails the chunk and appears in the failing-row capture. Witness-column non-finiteness is counted, captured and reported but does not gate.",
+      "n_rows_compared": 29492,
+      "finiteness": {
+        "n_rows_compared": 29492,
+        "stored_rows": 29492,
+        "rows_compared_equals_stored_rows": true,
+        "gate_columns": [
+          "ils_dispy"
+        ],
+        "witness_columns": [
+          "bsa00_s"
+        ],
+        "n_nonfinite_gate_stored": 0,
+        "n_nonfinite_gate_repriced": 0,
+        "n_rows_nonfinite_gate_either_side": 0,
+        "n_nonfinite_witness_stored": 0,
+        "n_nonfinite_witness_repriced": 0,
+        "n_rows_nonfinite_any_compared_column": 0,
+        "all_gate_values_finite_both_sides": true,
+        "all_compared_values_finite_both_sides": true,
+        "witness_nonfiniteness_gates": false
+      },
+      "n_rows_nonfinite_gate": 0,
+      "n_rows_captured": 0,
+      "chunk": "priced_00000",
+      "chunk_start": 0,
+      "households_in_batch": 200,
+      "alternatives_in_batch": 20200,
+      "euromod_rows_in_batch": 29492,
+      "stored_rows": 29492,
+      "row_order_identical_to_stored": true,
+      "euromod_seconds": 148.7,
+      "euromod_hard_errors": [],
+      "euromod_uprate_notes": 6,
+      "kept_columns": [
+        "idhh",
+        "idperson",
+        "source_idhh",
+        "source_idorighh",
+        "source_idperson",
+        "ruro_decider",
+        "dgn",
+        "draw",
+        "ils_dispy",
+        "bsa00_s"
+      ],
+      "components_available_repriced": [
+        "ils_origy",
+        "ils_sicdy",
+        "ils_tax",
+        "ils_ben"
+      ],
+      "accumulators_available": [
+        "i_bsa00_cumpers_nw",
+        "i_bsa00_cumpers_w"
+      ],
+      "column_summary": {
+        "ils_dispy": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 29492,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": true
+        },
+        "bsa00_s": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 29492,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": false
+        }
+      },
+      "n_rows_above_tol": 0,
+      "status": "PASS"
+    },
+    {
+      "certification_standard": "PASS requires, on EVERY chunk: zero rows above the frozen tol_eur on every gate column AND zero non-finite values on BOTH the stored and the repriced side of every gate column AND zero EUROMOD hard errors. A non-finite value on either side is treated as an infinite absolute difference, never a masked NaN, so it both fails the chunk and appears in the failing-row capture. Witness-column non-finiteness is counted, captured and reported but does not gate.",
+      "n_rows_compared": 29593,
+      "finiteness": {
+        "n_rows_compared": 29593,
+        "stored_rows": 29593,
+        "rows_compared_equals_stored_rows": true,
+        "gate_columns": [
+          "ils_dispy"
+        ],
+        "witness_columns": [
+          "bsa00_s"
+        ],
+        "n_nonfinite_gate_stored": 0,
+        "n_nonfinite_gate_repriced": 0,
+        "n_rows_nonfinite_gate_either_side": 0,
+        "n_nonfinite_witness_stored": 0,
+        "n_nonfinite_witness_repriced": 0,
+        "n_rows_nonfinite_any_compared_column": 0,
+        "all_gate_values_finite_both_sides": true,
+        "all_compared_values_finite_both_sides": true,
+        "witness_nonfiniteness_gates": false
+      },
+      "n_rows_nonfinite_gate": 0,
+      "n_rows_captured": 0,
+      "chunk": "priced_00200",
+      "chunk_start": 200,
+      "households_in_batch": 200,
+      "alternatives_in_batch": 20200,
+      "euromod_rows_in_batch": 29593,
+      "stored_rows": 29593,
+      "row_order_identical_to_stored": true,
+      "euromod_seconds": 146.7,
+      "euromod_hard_errors": [],
+      "euromod_uprate_notes": 6,
+      "kept_columns": [
+        "idhh",
+        "idperson",
+        "source_idhh",
+        "source_idorighh",
+        "source_idperson",
+        "ruro_decider",
+        "dgn",
+        "draw",
+        "ils_dispy",
+        "bsa00_s"
+      ],
+      "components_available_repriced": [
+        "ils_origy",
+        "ils_sicdy",
+        "ils_tax",
+        "ils_ben"
+      ],
+      "accumulators_available": [
+        "i_bsa00_cumpers_nw",
+        "i_bsa00_cumpers_w"
+      ],
+      "column_summary": {
+        "ils_dispy": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 29593,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": true
+        },
+        "bsa00_s": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 29593,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": false
+        }
+      },
+      "n_rows_above_tol": 0,
+      "status": "PASS"
+    },
+    {
+      "certification_standard": "PASS requires, on EVERY chunk: zero rows above the frozen tol_eur on every gate column AND zero non-finite values on BOTH the stored and the repriced side of every gate column AND zero EUROMOD hard errors. A non-finite value on either side is treated as an infinite absolute difference, never a masked NaN, so it both fails the chunk and appears in the failing-row capture. Witness-column non-finiteness is counted, captured and reported but does not gate.",
+      "n_rows_compared": 27775,
+      "finiteness": {
+        "n_rows_compared": 27775,
+        "stored_rows": 27775,
+        "rows_compared_equals_stored_rows": true,
+        "gate_columns": [
+          "ils_dispy"
+        ],
+        "witness_columns": [
+          "bsa00_s"
+        ],
+        "n_nonfinite_gate_stored": 0,
+        "n_nonfinite_gate_repriced": 0,
+        "n_rows_nonfinite_gate_either_side": 0,
+        "n_nonfinite_witness_stored": 0,
+        "n_nonfinite_witness_repriced": 0,
+        "n_rows_nonfinite_any_compared_column": 0,
+        "all_gate_values_finite_both_sides": true,
+        "all_compared_values_finite_both_sides": true,
+        "witness_nonfiniteness_gates": false
+      },
+      "n_rows_nonfinite_gate": 0,
+      "n_rows_captured": 0,
+      "chunk": "priced_00400",
+      "chunk_start": 400,
+      "households_in_batch": 200,
+      "alternatives_in_batch": 20200,
+      "euromod_rows_in_batch": 27775,
+      "stored_rows": 27775,
+      "row_order_identical_to_stored": true,
+      "euromod_seconds": 145.2,
+      "euromod_hard_errors": [],
+      "euromod_uprate_notes": 6,
+      "kept_columns": [
+        "idhh",
+        "idperson",
+        "source_idhh",
+        "source_idorighh",
+        "source_idperson",
+        "ruro_decider",
+        "dgn",
+        "draw",
+        "ils_dispy",
+        "bsa00_s"
+      ],
+      "components_available_repriced": [
+        "ils_origy",
+        "ils_sicdy",
+        "ils_tax",
+        "ils_ben"
+      ],
+      "accumulators_available": [
+        "i_bsa00_cumpers_nw",
+        "i_bsa00_cumpers_w"
+      ],
+      "column_summary": {
+        "ils_dispy": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 27775,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": true
+        },
+        "bsa00_s": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 27775,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": false
+        }
+      },
+      "n_rows_above_tol": 0,
+      "status": "PASS"
+    },
+    {
+      "certification_standard": "PASS requires, on EVERY chunk: zero rows above the frozen tol_eur on every gate column AND zero non-finite values on BOTH the stored and the repriced side of every gate column AND zero EUROMOD hard errors. A non-finite value on either side is treated as an infinite absolute difference, never a masked NaN, so it both fails the chunk and appears in the failing-row capture. Witness-column non-finiteness is counted, captured and reported but does not gate.",
+      "n_rows_compared": 30704,
+      "finiteness": {
+        "n_rows_compared": 30704,
+        "stored_rows": 30704,
+        "rows_compared_equals_stored_rows": true,
+        "gate_columns": [
+          "ils_dispy"
+        ],
+        "witness_columns": [
+          "bsa00_s"
+        ],
+        "n_nonfinite_gate_stored": 0,
+        "n_nonfinite_gate_repriced": 0,
+        "n_rows_nonfinite_gate_either_side": 0,
+        "n_nonfinite_witness_stored": 0,
+        "n_nonfinite_witness_repriced": 0,
+        "n_rows_nonfinite_any_compared_column": 0,
+        "all_gate_values_finite_both_sides": true,
+        "all_compared_values_finite_both_sides": true,
+        "witness_nonfiniteness_gates": false
+      },
+      "n_rows_nonfinite_gate": 0,
+      "n_rows_captured": 0,
+      "chunk": "priced_00600",
+      "chunk_start": 600,
+      "households_in_batch": 200,
+      "alternatives_in_batch": 20200,
+      "euromod_rows_in_batch": 30704,
+      "stored_rows": 30704,
+      "row_order_identical_to_stored": true,
+      "euromod_seconds": 147.8,
+      "euromod_hard_errors": [],
+      "euromod_uprate_notes": 6,
+      "kept_columns": [
+        "idhh",
+        "idperson",
+        "source_idhh",
+        "source_idorighh",
+        "source_idperson",
+        "ruro_decider",
+        "dgn",
+        "draw",
+        "ils_dispy",
+        "bsa00_s"
+      ],
+      "components_available_repriced": [
+        "ils_origy",
+        "ils_sicdy",
+        "ils_tax",
+        "ils_ben"
+      ],
+      "accumulators_available": [
+        "i_bsa00_cumpers_nw",
+        "i_bsa00_cumpers_w"
+      ],
+      "column_summary": {
+        "ils_dispy": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 30704,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": true
+        },
+        "bsa00_s": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 30704,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": false
+        }
+      },
+      "n_rows_above_tol": 0,
+      "status": "PASS"
+    },
+    {
+      "certification_standard": "PASS requires, on EVERY chunk: zero rows above the frozen tol_eur on every gate column AND zero non-finite values on BOTH the stored and the repriced side of every gate column AND zero EUROMOD hard errors. A non-finite value on either side is treated as an infinite absolute difference, never a masked NaN, so it both fails the chunk and appears in the failing-row capture. Witness-column non-finiteness is counted, captured and reported but does not gate.",
+      "n_rows_compared": 28583,
+      "finiteness": {
+        "n_rows_compared": 28583,
+        "stored_rows": 28583,
+        "rows_compared_equals_stored_rows": true,
+        "gate_columns": [
+          "ils_dispy"
+        ],
+        "witness_columns": [
+          "bsa00_s"
+        ],
+        "n_nonfinite_gate_stored": 0,
+        "n_nonfinite_gate_repriced": 0,
+        "n_rows_nonfinite_gate_either_side": 0,
+        "n_nonfinite_witness_stored": 0,
+        "n_nonfinite_witness_repriced": 0,
+        "n_rows_nonfinite_any_compared_column": 0,
+        "all_gate_values_finite_both_sides": true,
+        "all_compared_values_finite_both_sides": true,
+        "witness_nonfiniteness_gates": false
+      },
+      "n_rows_nonfinite_gate": 0,
+      "n_rows_captured": 0,
+      "chunk": "priced_00800",
+      "chunk_start": 800,
+      "households_in_batch": 200,
+      "alternatives_in_batch": 20200,
+      "euromod_rows_in_batch": 28583,
+      "stored_rows": 28583,
+      "row_order_identical_to_stored": true,
+      "euromod_seconds": 144.6,
+      "euromod_hard_errors": [],
+      "euromod_uprate_notes": 6,
+      "kept_columns": [
+        "idhh",
+        "idperson",
+        "source_idhh",
+        "source_idorighh",
+        "source_idperson",
+        "ruro_decider",
+        "dgn",
+        "draw",
+        "ils_dispy",
+        "bsa00_s"
+      ],
+      "components_available_repriced": [
+        "ils_origy",
+        "ils_sicdy",
+        "ils_tax",
+        "ils_ben"
+      ],
+      "accumulators_available": [
+        "i_bsa00_cumpers_nw",
+        "i_bsa00_cumpers_w"
+      ],
+      "column_summary": {
+        "ils_dispy": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 28583,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": true
+        },
+        "bsa00_s": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 28583,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": false
+        }
+      },
+      "n_rows_above_tol": 0,
+      "status": "PASS"
+    },
+    {
+      "certification_standard": "PASS requires, on EVERY chunk: zero rows above the frozen tol_eur on every gate column AND zero non-finite values on BOTH the stored and the repriced side of every gate column AND zero EUROMOD hard errors. A non-finite value on either side is treated as an infinite absolute difference, never a masked NaN, so it both fails the chunk and appears in the failing-row capture. Witness-column non-finiteness is counted, captured and reported but does not gate.",
+      "n_rows_compared": 28078,
+      "finiteness": {
+        "n_rows_compared": 28078,
+        "stored_rows": 28078,
+        "rows_compared_equals_stored_rows": true,
+        "gate_columns": [
+          "ils_dispy"
+        ],
+        "witness_columns": [
+          "bsa00_s"
+        ],
+        "n_nonfinite_gate_stored": 0,
+        "n_nonfinite_gate_repriced": 0,
+        "n_rows_nonfinite_gate_either_side": 0,
+        "n_nonfinite_witness_stored": 0,
+        "n_nonfinite_witness_repriced": 0,
+        "n_rows_nonfinite_any_compared_column": 0,
+        "all_gate_values_finite_both_sides": true,
+        "all_compared_values_finite_both_sides": true,
+        "witness_nonfiniteness_gates": false
+      },
+      "n_rows_nonfinite_gate": 0,
+      "n_rows_captured": 0,
+      "chunk": "priced_01000",
+      "chunk_start": 1000,
+      "households_in_batch": 200,
+      "alternatives_in_batch": 20200,
+      "euromod_rows_in_batch": 28078,
+      "stored_rows": 28078,
+      "row_order_identical_to_stored": true,
+      "euromod_seconds": 146.5,
+      "euromod_hard_errors": [],
+      "euromod_uprate_notes": 6,
+      "kept_columns": [
+        "idhh",
+        "idperson",
+        "source_idhh",
+        "source_idorighh",
+        "source_idperson",
+        "ruro_decider",
+        "dgn",
+        "draw",
+        "ils_dispy",
+        "bsa00_s"
+      ],
+      "components_available_repriced": [
+        "ils_origy",
+        "ils_sicdy",
+        "ils_tax",
+        "ils_ben"
+      ],
+      "accumulators_available": [
+        "i_bsa00_cumpers_nw",
+        "i_bsa00_cumpers_w"
+      ],
+      "column_summary": {
+        "ils_dispy": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 28078,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": true
+        },
+        "bsa00_s": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 28078,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": false
+        }
+      },
+      "n_rows_above_tol": 0,
+      "status": "PASS"
+    },
+    {
+      "certification_standard": "PASS requires, on EVERY chunk: zero rows above the frozen tol_eur on every gate column AND zero non-finite values on BOTH the stored and the repriced side of every gate column AND zero EUROMOD hard errors. A non-finite value on either side is treated as an infinite absolute difference, never a masked NaN, so it both fails the chunk and appears in the failing-row capture. Witness-column non-finiteness is counted, captured and reported but does not gate.",
+      "n_rows_compared": 28482,
+      "finiteness": {
+        "n_rows_compared": 28482,
+        "stored_rows": 28482,
+        "rows_compared_equals_stored_rows": true,
+        "gate_columns": [
+          "ils_dispy"
+        ],
+        "witness_columns": [
+          "bsa00_s"
+        ],
+        "n_nonfinite_gate_stored": 0,
+        "n_nonfinite_gate_repriced": 0,
+        "n_rows_nonfinite_gate_either_side": 0,
+        "n_nonfinite_witness_stored": 0,
+        "n_nonfinite_witness_repriced": 0,
+        "n_rows_nonfinite_any_compared_column": 0,
+        "all_gate_values_finite_both_sides": true,
+        "all_compared_values_finite_both_sides": true,
+        "witness_nonfiniteness_gates": false
+      },
+      "n_rows_nonfinite_gate": 0,
+      "n_rows_captured": 0,
+      "chunk": "priced_01200",
+      "chunk_start": 1200,
+      "households_in_batch": 200,
+      "alternatives_in_batch": 20200,
+      "euromod_rows_in_batch": 28482,
+      "stored_rows": 28482,
+      "row_order_identical_to_stored": true,
+      "euromod_seconds": 145.7,
+      "euromod_hard_errors": [],
+      "euromod_uprate_notes": 6,
+      "kept_columns": [
+        "idhh",
+        "idperson",
+        "source_idhh",
+        "source_idorighh",
+        "source_idperson",
+        "ruro_decider",
+        "dgn",
+        "draw",
+        "ils_dispy",
+        "bsa00_s"
+      ],
+      "components_available_repriced": [
+        "ils_origy",
+        "ils_sicdy",
+        "ils_tax",
+        "ils_ben"
+      ],
+      "accumulators_available": [
+        "i_bsa00_cumpers_nw",
+        "i_bsa00_cumpers_w"
+      ],
+      "column_summary": {
+        "ils_dispy": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 28482,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": true
+        },
+        "bsa00_s": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 28482,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": false
+        }
+      },
+      "n_rows_above_tol": 0,
+      "status": "PASS"
+    },
+    {
+      "certification_standard": "PASS requires, on EVERY chunk: zero rows above the frozen tol_eur on every gate column AND zero non-finite values on BOTH the stored and the repriced side of every gate column AND zero EUROMOD hard errors. A non-finite value on either side is treated as an infinite absolute difference, never a masked NaN, so it both fails the chunk and appears in the failing-row capture. Witness-column non-finiteness is counted, captured and reported but does not gate.",
+      "n_rows_compared": 23129,
+      "finiteness": {
+        "n_rows_compared": 23129,
+        "stored_rows": 23129,
+        "rows_compared_equals_stored_rows": true,
+        "gate_columns": [
+          "ils_dispy"
+        ],
+        "witness_columns": [
+          "bsa00_s"
+        ],
+        "n_nonfinite_gate_stored": 0,
+        "n_nonfinite_gate_repriced": 0,
+        "n_rows_nonfinite_gate_either_side": 0,
+        "n_nonfinite_witness_stored": 0,
+        "n_nonfinite_witness_repriced": 0,
+        "n_rows_nonfinite_any_compared_column": 0,
+        "all_gate_values_finite_both_sides": true,
+        "all_compared_values_finite_both_sides": true,
+        "witness_nonfiniteness_gates": false
+      },
+      "n_rows_nonfinite_gate": 0,
+      "n_rows_captured": 0,
+      "chunk": "priced_01400",
+      "chunk_start": 1400,
+      "households_in_batch": 155,
+      "alternatives_in_batch": 15655,
+      "euromod_rows_in_batch": 23129,
+      "stored_rows": 23129,
+      "row_order_identical_to_stored": true,
+      "euromod_seconds": 112.9,
+      "euromod_hard_errors": [],
+      "euromod_uprate_notes": 6,
+      "kept_columns": [
+        "idhh",
+        "idperson",
+        "source_idhh",
+        "source_idorighh",
+        "source_idperson",
+        "ruro_decider",
+        "dgn",
+        "draw",
+        "ils_dispy",
+        "bsa00_s"
+      ],
+      "components_available_repriced": [
+        "ils_origy",
+        "ils_sicdy",
+        "ils_tax",
+        "ils_ben"
+      ],
+      "accumulators_available": [
+        "i_bsa00_cumpers_nw",
+        "i_bsa00_cumpers_w"
+      ],
+      "column_summary": {
+        "ils_dispy": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 23129,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": true
+        },
+        "bsa00_s": {
+          "max_abs_diff": 0.0,
+          "median_abs_diff": 0.0,
+          "max_abs_diff_finite_rows": 0.0,
+          "n_rows_above_tol": 0,
+          "n_rows_compared": 23129,
+          "n_nonfinite_stored": 0,
+          "n_nonfinite_repriced": 0,
+          "n_rows_nonfinite_either_side": 0,
+          "stored_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "repriced_side_counts": {
+            "n_raw_null": 0,
+            "n_noncoercible": 0,
+            "n_nan": 0,
+            "n_inf": 0,
+            "n_nonfinite": 0
+          },
+          "is_gate_column": false
+        }
+      },
+      "n_rows_above_tol": 0,
+      "status": "PASS"
+    }
+  ],
+  "aggregate": {
+    "chunks_run": 8,
+    "chunks_on_grid": 8,
+    "is_full_run": true,
+    "rows_compared": 225836,
+    "rows_compared_from_chunks": 225836,
+    "rows_compared_equals_stored_rows": true,
+    "gate_column": "ils_dispy",
+    "tol_eur": 1e-06,
+    "ils_dispy_max_abs_diff": 0.0,
+    "rows_above_tol": 0,
+    "gate_nonfinite_stored": 0,
+    "gate_nonfinite_repriced": 0,
+    "rows_with_nonfinite_gate_value": 0,
+    "all_gate_values_finite_both_sides": true,
+    "chunks_with_nonfinite_gate_value": [],
+    "witness_nonfinite_stored": 0,
+    "witness_nonfinite_repriced": 0,
+    "witness_nonfiniteness_gates": false,
+    "chunks_failing": [],
+    "euromod_seconds_total": 1138.1,
+    "bsa00_s_max_abs_diff": 0.0,
+    "bsa00_s_rows_above_tol": 0,
+    "bsa00_s_nonfinite_stored": 0,
+    "bsa00_s_nonfinite_repriced": 0,
+    "verdict": "PASS",
+    "certification_standard": "PASS requires, on EVERY chunk: zero rows above the frozen tol_eur on every gate column AND zero non-finite values on BOTH the stored and the repriced side of every gate column AND zero EUROMOD hard errors. A non-finite value on either side is treated as an infinite absolute difference, never a masked NaN, so it both fails the chunk and appears in the failing-row capture. Witness-column non-finiteness is counted, captured and reported but does not gate."
+  },
+  "finished_utc": "2026-08-06T06:40:10Z"
+}

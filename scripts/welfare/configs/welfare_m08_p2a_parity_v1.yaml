@@ -1,0 +1,82 @@
+# =============================================================================
+# JMP-M08 Stage-B — P2a singles-2016 reprice-parity gate (Route 6 -> Route 1)
+# =============================================================================
+# Authority (in order):
+#   Job_Market_paper docs/Missions/JMP_M08_singles_welfare_execution_contract_v1.md s1-s2
+#   MNL docs/France_case/P2a/FR_P2a_m08_parity_diagnosis_memo_v1.md s4 (Route 6 -> Route 1),
+#     s5 (what the correction must prove)
+#   Goal-1 ruling R-60 (Route 6 -> Route 1, ratified)
+#
+# WHAT THIS GATE IS. It reprices the artifact M08 actually consumes -- the
+# committed, hash-pinned P2a pricing cache -- through the SAME production pricing
+# path that produced it, at the SAME batch geometry, and compares repriced vs
+# stored at the frozen 1e-6 EUR tolerance.
+#
+# WHAT IT IS NOT. No redrawn node. No counterfactual covariate. No welfare number.
+# No production pricing-code change. No stored value modified or regenerated.
+# EUROMOD is executed for parity validation only.
+# =============================================================================
+
+gate:
+  name: m08_p2a_singles2016_parity_v1
+  cell: FR-2016 singles, P2a region-live
+  # D10 (contract s3.1) / stage2.parity_grid.tol -- frozen, never relaxed
+  tol_eur: 1.0e-6
+
+artifact:
+  # (a) THE BOUND ARTIFACT -- the P2a pricing cache M08 consumes.
+  # Pins are NOT duplicated here: they are read from the committed production
+  # config, which is the single source of truth (G-0 frozen input contract).
+  pin_source: scripts/p2a/configs/p2a_regionlive_rebuild_v1.yaml
+  pin_path: [frozen_inputs, pricing_cache]
+  dir: fr_singles_pricing_p2a
+  # every chunk is verified against its committed sha256 before it is compared
+
+geometry:
+  # (b) TARGET-ONLY PRODUCTION BATCH GEOMETRY (D-BEN Option B).
+  #
+  # D-BEN Option B = "per-household isolated full run: target rows carry the node
+  # being priced, every OTHER household is held at its actual staged state." For a
+  # PARITY run the target node IS the stored node, so no household is displaced
+  # from its actual state and Option B degenerates exactly onto the production
+  # batch that produced the stored value: D-BEN batch A, the certified production
+  # method (F3-R2B Gate A: re-run == frozen at max_abs 0).
+  #
+  # Concretely that is the notebook pricing loop: hh_all = sorted(single idhh),
+  # chunks of 200 source households, ONE EuromodPricingRunner.price() call per
+  # chunk, alt_key_cols=['draw'], every alternative replicated as an isolated
+  # synthetic household. NOT n_hh=5, NOT a row-group slice, NOT an arbitrary batch.
+  source: production_notebook_pricing_loop
+  notebook: dclaborsupply-monorepo/notebooks/fr_singles_pipeline_v2.ipynb
+  reconstruct_cells: [2, 34]      # inclusive code-cell span rebuilt before pricing
+  chunk_size: 200
+  alt_key_cols: [draw]
+  weeks_per_month_expr: 13.0/3.0
+  euromod:
+    country: FR
+    system: FR_2015
+    dataset: FR_2016_a3
+    model_root: 'C:/Users/hisham/MNL/EUROMOD-STORAGE/Euromod_model/EUROMOD_RELEASES_J2.0+'
+
+comparison:
+  # (c) STORED vs REPRICED, per row, at tol_eur.
+  #
+  # GATE COLUMNS -- the columns the stored cache actually persists. The pinned
+  # cache carries exactly ten columns; ils_dispy is the gate, bsa00_s is the RSA
+  # batch-context witness the diagnosis memo s5 item 5 requires.
+  gate_columns: [ils_dispy]
+  witness_columns: [bsa00_s]
+  # DECOMPOSITION -- ils_origy/ils_sicdy/ils_tax/ils_ben are produced live by the
+  # repriced run but are NOT persisted in the stored cache, so a stored-vs-repriced
+  # DIFFERENCE does not exist for them. They are captured per failing row (repriced
+  # side) to localise any divergence, and the ils_dispy identity is checked.
+  decompose_components: [ils_origy, ils_sicdy, ils_tax, ils_ben]
+  # batch-context witnesses (D-BEN Task 1 conduits): recorded when present
+  accumulator_witnesses: [i_bsa00_cumpers_nw, i_bsa00_cumpers_w]
+  join_keys: [source_idhh, draw, source_idperson]
+
+output:
+  # U9-resolved namespace + the Phases 3-5 attempts/ transaction pattern.
+  # complete/ is NEVER created or promoted by this runner.
+  root: outputs/p2a_singles2016/region_live_v1/welfare_m08_v1
+  label: parity

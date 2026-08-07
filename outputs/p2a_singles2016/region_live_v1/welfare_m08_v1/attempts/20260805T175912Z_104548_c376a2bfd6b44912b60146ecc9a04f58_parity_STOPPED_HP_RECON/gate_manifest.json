@@ -1,0 +1,168 @@
+{
+  "gate": "m08_p2a_singles2016_parity_v1",
+  "cell": "FR-2016 singles, P2a region-live",
+  "tol_eur": 1e-06,
+  "attempt_id": "20260805T175912Z_104548_c376a2bfd6b44912b60146ecc9a04f58_parity",
+  "started_utc": "2026-08-05T17:59:12Z",
+  "config": "scripts/welfare/configs/welfare_m08_p2a_parity_v1.yaml",
+  "config_sha256": "029d5ee618576c9a91cc2374500e3d632912c52d637a1b4268c1db4796979e81",
+  "runner_sha256": "1eea3cc7583811170426c12e2a44058d9145dac52eceb202c7f10ecda31423d8",
+  "library_sha256": "bde41a0718093855ec310e1725633df5532d50c44def056a2b041389823d82c7",
+  "scope": "reprice-parity validation of the committed P2a pricing cache; no redrawn node, no counterfactual, no welfare number, no production pricing-code change, no stored value modified",
+  "artifact_binding": {
+    "pin_source": "scripts/p2a/configs/p2a_regionlive_rebuild_v1.yaml",
+    "pin_path": [
+      "frozen_inputs",
+      "pricing_cache"
+    ],
+    "dir": "fr_singles_pricing_p2a",
+    "chunk_grid": [
+      0,
+      200,
+      400,
+      600,
+      800,
+      1000,
+      1200,
+      1400
+    ],
+    "declared_columns": [
+      "idhh",
+      "idperson",
+      "source_idhh",
+      "source_idorighh",
+      "source_idperson",
+      "ruro_decider",
+      "dgn",
+      "draw",
+      "ils_dispy",
+      "bsa00_s"
+    ],
+    "expected_rows_total": 225836,
+    "expected_hh": 1555,
+    "observed_rows_total": 225836,
+    "observed_hh": 1555,
+    "all_pins_match": true,
+    "chunks": [
+      {
+        "chunk": "priced_00000.parquet",
+        "expected_sha256": "c35ed8b553f24bfa9e51bbdad6ec9aab609c8765e850afc5be8424fceb924d30",
+        "observed_sha256": "c35ed8b553f24bfa9e51bbdad6ec9aab609c8765e850afc5be8424fceb924d30",
+        "match": true,
+        "bytes": 622229,
+        "rows": 29492,
+        "households": 200,
+        "draws": 101
+      },
+      {
+        "chunk": "priced_00200.parquet",
+        "expected_sha256": "f00923ac60705ca70ea53bb77127d3977e628dde8f2bc07de9805f7d732c912c",
+        "observed_sha256": "f00923ac60705ca70ea53bb77127d3977e628dde8f2bc07de9805f7d732c912c",
+        "match": true,
+        "bytes": 627798,
+        "rows": 29593,
+        "households": 200,
+        "draws": 101
+      },
+      {
+        "chunk": "priced_00400.parquet",
+        "expected_sha256": "d21fe881bdfe3768a3c7b6af729919bd2bde166b567c1f397865e0e2d44a42e6",
+        "observed_sha256": "d21fe881bdfe3768a3c7b6af729919bd2bde166b567c1f397865e0e2d44a42e6",
+        "match": true,
+        "bytes": 600875,
+        "rows": 27775,
+        "households": 200,
+        "draws": 101
+      },
+      {
+        "chunk": "priced_00600.parquet",
+        "expected_sha256": "8a9153de01c033b85bd6fa4d40327f5311263a787288e3919f4163ca6ab0f87f",
+        "observed_sha256": "8a9153de01c033b85bd6fa4d40327f5311263a787288e3919f4163ca6ab0f87f",
+        "match": true,
+        "bytes": 638376,
+        "rows": 30704,
+        "households": 200,
+        "draws": 101
+      },
+      {
+        "chunk": "priced_00800.parquet",
+        "expected_sha256": "d24e6d6db6c73288b800f4550f0075272bcbc01791734b4f245d6891cec4df8a",
+        "observed_sha256": "d24e6d6db6c73288b800f4550f0075272bcbc01791734b4f245d6891cec4df8a",
+        "match": true,
+        "bytes": 614565,
+        "rows": 28583,
+        "households": 200,
+        "draws": 101
+      },
+      {
+        "chunk": "priced_01000.parquet",
+        "expected_sha256": "184bae4430d4b248cbf73b93527b760db22afb146712078334c20a3a28f63cb5",
+        "observed_sha256": "184bae4430d4b248cbf73b93527b760db22afb146712078334c20a3a28f63cb5",
+        "match": true,
+        "bytes": 611648,
+        "rows": 28078,
+        "households": 200,
+        "draws": 101
+      },
+      {
+        "chunk": "priced_01200.parquet",
+        "expected_sha256": "aef0b58678ff59e6512d2bcbee67766c3fe19135941b70605c24831875c53d83",
+        "observed_sha256": "aef0b58678ff59e6512d2bcbee67766c3fe19135941b70605c24831875c53d83",
+        "match": true,
+        "bytes": 612838,
+        "rows": 28482,
+        "households": 200,
+        "draws": 101
+      },
+      {
+        "chunk": "priced_01400.parquet",
+        "expected_sha256": "e89d73678f97a9468bffff965d068263e25ea2b8f16ef3556e33c0e585e9d63b",
+        "observed_sha256": "e89d73678f97a9468bffff965d068263e25ea2b8f16ef3556e33c0e585e9d63b",
+        "match": true,
+        "bytes": 489308,
+        "rows": 23129,
+        "households": 155,
+        "draws": 101
+      }
+    ]
+  },
+  "frozen_inputs": {
+    "raw_fr_txt": {
+      "path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\Data\\FR\\FR_2016_a3.txt",
+      "expected_sha256": "da3eed570ff67cb06f9b0cef16bf9e7aa1d33ae579baff14a97f22c0f2c8bf88",
+      "observed_sha256": "da3eed570ff67cb06f9b0cef16bf9e7aa1d33ae579baff14a97f22c0f2c8bf88",
+      "match": true
+    },
+    "gsur_lookup": {
+      "path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\Data\\external\\FR_gsur_ruro_v2_stageA_y2015.parquet",
+      "expected_sha256": "f51ad6306574bf3a1d7b577e7741222c5bf2fb8126e512c0bbf965d6a2d03c83",
+      "observed_sha256": "f51ad6306574bf3a1d7b577e7741222c5bf2fb8126e512c0bbf965d6a2d03c83",
+      "match": true
+    },
+    "draws_geometry": {
+      "path": "outputs/p2a_singles2016/region_live_v1/inputs/fr_p2a_draws_geometry__singles.parquet",
+      "present": true,
+      "observed_sha256": "5bcf0e5409ef74c57f6de24efdfd24d0075132dc3138ddb57a22740b916cf235",
+      "declared_sha256": "5bcf0e5409ef74c57f6de24efdfd24d0075132dc3138ddb57a22740b916cf235",
+      "match": true
+    },
+    "euromod_system_files": {
+      "FR.xml": {
+        "path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\Euromod_model\\EUROMOD_RELEASES_J2.0+\\XMLParam\\Countries\\FR\\FR.xml",
+        "bytes": 57072125,
+        "mtime_utc": "2026-05-26T09:30:39Z"
+      },
+      "FR_DataConfig.xml": {
+        "path": "C:\\Users\\hisham\\MNL\\EUROMOD-STORAGE\\Euromod_model\\EUROMOD_RELEASES_J2.0+\\XMLParam\\Countries\\FR\\FR_DataConfig.xml",
+        "bytes": 808223,
+        "mtime_utc": "2026-05-26T09:30:39Z"
+      }
+    }
+  },
+  "halt": {
+    "code": "HP-RECON",
+    "where": "cell-21",
+    "detail": "NameError: name 'display' is not defined",
+    "utc": "2026-08-05T17:59:15Z"
+  }
+}
